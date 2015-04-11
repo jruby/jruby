@@ -36,12 +36,10 @@ package org.jruby.test;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-import org.jruby.TestRegexpCache;
 import org.jruby.ext.posix.JavaFileStatTest;
 import org.jruby.javasupport.TestJava;
 import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
-import org.jruby.parser.DetailedSourcePositionTest;
 import org.jruby.runtime.EventHookTest;
 import org.jruby.util.JRubyThreadContextTest;
 import org.jruby.util.ShellLauncherTest;

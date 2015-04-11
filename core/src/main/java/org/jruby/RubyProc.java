@@ -36,6 +36,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.StaticScope;
@@ -44,7 +45,9 @@ import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
 import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
@@ -266,9 +269,13 @@ public class RubyProc extends RubyObject implements DataType {
             actual = args.length;
         }
 
-        // fixed arity > 0 with mismatch needs a new args array
-        if (isFixed && required > 0 && required != actual) {
+        // FIXME: This code is horrible so I named it poorly.  We add 1 if we have kwargs so we do not accidentally
+        // chomp it off of args array.  Much of this logic needs to be encapsulated as part of our transition from
+        // Arity to Signature.
+        int fudge = blockBody instanceof IRBlockBody && ((IRBlockBody) blockBody).getSignature().kwargs() ? 1 : 0;
 
+        // fixed arity > 0 with mismatch needs a new args array
+        if (isFixed && required > 0 && required+fudge != actual) {
             IRubyObject[] newArgs = Arrays.copyOf(args, required);
 
             // pad with nil

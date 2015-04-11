@@ -183,6 +183,10 @@ public abstract class IRScope implements ParseResult {
         flags.add(REQUIRES_DYNSCOPE);
         flags.add(USES_ZSUPER);
 
+        // We only can compute this once since 'module X; using A; class B; end; end' vs
+        // 'module X; class B; using A; end; end'.  First case B can see refinements and in second it cannot.
+        if (parentMaybeUsingRefinements()) flags.add(MAYBE_USING_REFINEMENTS);
+
         this.localVars = new HashMap<>();
         this.scopeId = globalScopeCount.getAndIncrement();
 
@@ -257,10 +261,7 @@ public abstract class IRScope implements ParseResult {
         flags.add(MAYBE_USING_REFINEMENTS);
     }
 
-    // FIXME: This is somewhat expensive to walk all parent scopes for refined scopes but
-    // the life cycle of when to do this walking makes wonder if I can just stuff this into
-    // computeScopeFlags?
-    public boolean maybeUsingRefinements() {
+    public boolean parentMaybeUsingRefinements() {
         for (IRScope s = this; s != null; s = s.getLexicalParent()) {
             if (s.getFlags().contains(MAYBE_USING_REFINEMENTS)) return true;
 
@@ -269,6 +270,10 @@ public abstract class IRScope implements ParseResult {
         }
 
         return false;
+    }
+
+    public boolean maybeUsingRefinements() {
+        return getFlags().contains(MAYBE_USING_REFINEMENTS);
     }
 
     /**

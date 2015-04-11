@@ -1,4 +1,3 @@
 fails:Encoding::Converter#primitive_convert accepts a nil source buffer
 fails:Encoding::Converter#primitive_convert calls #to_int to convert the destination byte size
-fails:Encoding::Converter#primitive_convert keeps removing invalid bytes from the source buffer
 fails:Encoding::Converter#primitive_convert reuses read-again bytes after the first error

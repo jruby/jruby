@@ -17,32 +17,11 @@ class MSpecScript
     # Can't load these - so tags aren't enough to exclude them. The problem is
     # either fixtures or syntax. Some of them are probably easy fixes.
 
-    # as_superuser, as_user, Process.euid
-    "^spec/ruby/core/file/chown_spec.rb",
-    "^spec/ruby/core/file/lchown_spec.rb",
-    "^spec/ruby/core/process/euid_spec.rb",
-    "^spec/ruby/core/process/kill_spec.rb",
-    "^spec/ruby/core/process/setpriority_spec.rb",
-    "^spec/ruby/core/process/uid_spec.rb",
-
     # require 'socket'
     "^spec/ruby/core/file/socket_spec.rb",
 
-    # FileTest in describe
-    "^spec/ruby/core/filetest",
-
-    # STDOUT.tty?
-    "^spec/ruby/core/io/tty_spec.rb",
-    "^spec/ruby/core/io/isatty_spec.rb",
-
     # require 'fcntl'
     "^spec/ruby/core/io/reopen_spec.rb",
-
-    # __method__ in fixtures
-    "^spec/ruby/core/kernel/__method___spec.rb",
-
-    # autoload in describe
-    "^spec/ruby/core/kernel/autoload_spec.rb",
 
     # seem side-effecting when not run in isolation
     "^spec/ruby/core/marshal/dump_spec.rb",
@@ -103,9 +82,12 @@ class MSpecScript
     "spec/ruby/library/abbrev",
     "spec/ruby/library/base64",
     "spec/ruby/library/complex",
+    "spec/ruby/library/date",
+    "spec/ruby/library/datetime",
     "spec/ruby/library/erb",
     "spec/ruby/library/getoptlong",
     "spec/ruby/library/observer",
+    "spec/ruby/library/matrix",
     "spec/ruby/library/set",
     "spec/ruby/library/shellwords",
     "spec/ruby/library/strscan",

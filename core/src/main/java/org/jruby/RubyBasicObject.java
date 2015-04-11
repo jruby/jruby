@@ -583,33 +583,41 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * Does this object respond to the specified message? Uses a
-     * shortcut if it can be proved that respond_to? haven't been
-     * overridden.
+     * shortcut if it can be proved that respond_to? and respond_to_missing?
+     * haven't been overridden.
      */
     @Override
     public final boolean respondsTo(String name) {
         Ruby runtime = getRuntime();
 
-        DynamicMethod method = getMetaClass().searchMethod("respond_to?");
-        if(method.equals(runtime.getRespondToMethod())) {
+        DynamicMethod respondTo = getMetaClass().searchMethod("respond_to?");
+        DynamicMethod respondToMissing = getMetaClass().searchMethod("respond_to_missing?");
+
+        if(respondTo.equals(runtime.getRespondToMethod()) && respondToMissing.equals(runtime.getRespondToMissingMethod())) {
             // fastest path; builtin respond_to? which just does isMethodBound
             return getMetaClass().isMethodBound(name, false);
-        } else if (!method.isUndefined()) {
-            // medium path, invoke user's respond_to? if defined
+        } else if (!(respondTo.isUndefined() && respondToMissing.isUndefined())) {
+            // medium path, invoke user's respond_to?/respond_to_missing? if defined
+            DynamicMethod method;
+            String methodName;
+            if (respondTo.isUndefined()) {
+                method = respondToMissing;
+                methodName = "respond_to_missing?";
+            } else {
+                method = respondTo;
+                methodName = "respond_to?";
+            }
 
             // We have to check and enforce arity
             Arity arity = method.getArity();
             ThreadContext context = runtime.getCurrentContext();
             if (arity.isFixed() && arity.required() == 1) {
-                return method.call(context, this, metaClass, "respond_to?", runtime.newSymbol(name)).isTrue();
+                return method.call(context, this, metaClass, methodName, runtime.newSymbol(name)).isTrue();
             } else if (arity.isFixed() && arity.required() != 2) {
-                throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + arity.getValue() + ")");
-            } else {
-
+                throw runtime.newArgumentError(methodName + " must accept 1 or 2 arguments (requires " + arity.getValue() + ")");
             }
 
-            return method.call(context, this, metaClass, "respond_to?", runtime.newSymbol(name), runtime.newBoolean(true)).isTrue();
-
+            return method.call(context, this, metaClass, methodName, runtime.newSymbol(name), runtime.newBoolean(true)).isTrue();
         } else {
             // slowest path, full callMethod to hit method_missing if present, or produce error
             return callMethod(runtime.getCurrentContext(), "respond_to?", runtime.newSymbol(name)).isTrue();
@@ -1489,11 +1497,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     public List<Variable<IRubyObject>> getInstanceVariableList() {
         Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
-        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>(ivarAccessors.size());
         for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
-            Object value = entry.getValue().get(this);
-            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
-            list.add(new VariableEntry<IRubyObject>(entry.getKey(), (IRubyObject)value));
+            final String key = entry.getKey();
+            final Object value = entry.getValue().get(this);
+            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(key)) continue;
+            list.add(new VariableEntry<IRubyObject>(key, (IRubyObject) value));
         }
         return list;
     }
@@ -1505,11 +1514,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
    public List<String> getInstanceVariableNameList() {
         Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<String>(ivarAccessors.size());
         for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
-            Object value = entry.getValue().get(this);
-            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
-            list.add(entry.getKey());
+            final String key = entry.getKey();
+            final Object value = entry.getValue().get(this);
+            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(key)) continue;
+            list.add(key);
         }
         return list;
     }

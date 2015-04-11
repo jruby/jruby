@@ -933,7 +933,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "define_method", needsBlock = true, required = 1, optional = 1)
+    @CoreMethod(names = "define_method", needsBlock = true, required = 1, optional = 1, visibility = Visibility.PRIVATE)
     @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("proc"), @NodeChild("block") })
     public abstract static class DefineMethodNode extends RubyNode {
 
@@ -1748,7 +1748,7 @@ public abstract class ModuleNodes {
 
             final InternalMethod method = ModuleOperations.lookupMethod(module, name);
             if (method == null) {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, module, this));
+                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnModule(name, module, this));
             }
             module.undefMethod(this, method);
             return module;

@@ -3,6 +3,7 @@ package org.jruby.ir.interpreter;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.Unrescuable;
@@ -113,6 +114,8 @@ public class InterpreterEngine {
         int       ipc       = 0;
         Object    exception = null;
 
+        if (interpreterContext.receivesKeywordArguments()) IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
+
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
         IRScope scope = currScope.getIRScope();
@@ -167,7 +170,7 @@ public class InterpreterEngine {
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
                         } else {
-                            processBookKeepingOp(context, instr, operation, name, args, self, block, implClass, null);
+                            processBookKeepingOp(context, instr, operation, name, args, self, block, blockType, implClass, null);
                         }
                         break;
                     case OTHER_OP:
@@ -325,7 +328,7 @@ public class InterpreterEngine {
 
     protected static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block block,
-                                             RubyModule implClass, Stack<Integer> rescuePCs) {
+                                             Block.Type blockType, RubyModule implClass, Stack<Integer> rescuePCs) {
         switch(operation) {
             case LABEL:
                 break;
@@ -353,7 +356,7 @@ public class InterpreterEngine {
                 context.callThreadPoll();
                 break;
             case CHECK_ARITY:
-                ((CheckArityInstr)instr).checkArity(context, args);
+                ((CheckArityInstr)instr).checkArity(context, args, blockType);
                 break;
             case LINE_NUM:
                 context.setLine(((LineNumberInstr)instr).lineNumber);

@@ -1,5 +1,1 @@
-fails:File.delete returns 0 when called without arguments
-fails:File.delete deletes multiple files
 fails:File.delete raises an Errno::ENOENT when the given file doesn't exist
-fails:File.delete coerces a given parameter into a string if possible
-fails:File.delete accepts an object that has a #to_path method

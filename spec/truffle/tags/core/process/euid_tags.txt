@@ -1,7 +1,5 @@
-fails:Process.euid returns the effective user ID for this process
 fails:Process.euid also goes by Process::UID.eid
 fails:Process.euid also goes by Process::Sys.geteuid
 fails:Process.euid= raises TypeError if not passed an Integer
 fails:Process.euid= raises Errno::ERPERM if run by a non superuser trying to set the superuser id
 fails:Process.euid= raises Errno::ERPERM if run by a non superuser trying to set the superuser id from username
-fails:Process.euid= needs to be reviewed for spec completeness

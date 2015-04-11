@@ -27,44 +27,38 @@ public class CallInstr extends CallBase implements ResultInstr {
     }
 
     public static CallInstr create(IRScope scope, CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
-        if (scope.maybeUsingRefinements()) {
-            // FIXME: Make same instr with refined callSite here or push though all path below
-        }
+        boolean isPotentiallyRefined = scope.maybeUsingRefinements();
 
         if (!containsArgSplat(args)) {
             boolean hasClosure = closure != null;
 
             if (args.length == 0 && !hasClosure) {
-                return new ZeroOperandArgNoBlockCallInstr(callType, result, name, receiver, args);
+                return new ZeroOperandArgNoBlockCallInstr(callType, result, name, receiver, args, isPotentiallyRefined);
             } else if (args.length == 1) {
-                if (hasClosure) return new OneOperandArgBlockCallInstr(callType, result, name, receiver, args, closure);
-                if (isAllFixnums(args)) return new OneFixnumArgNoBlockCallInstr(callType, result, name, receiver, args);
-                if (isAllFloats(args)) return new OneFloatArgNoBlockCallInstr(callType, result, name, receiver, args);
+                if (hasClosure) return new OneOperandArgBlockCallInstr(callType, result, name, receiver, args, closure, isPotentiallyRefined);
+                if (isAllFixnums(args)) return new OneFixnumArgNoBlockCallInstr(callType, result, name, receiver, args, isPotentiallyRefined);
+                if (isAllFloats(args)) return new OneFloatArgNoBlockCallInstr(callType, result, name, receiver, args, isPotentiallyRefined);
 
-                return new OneOperandArgNoBlockCallInstr(callType, result, name, receiver, args);
+                return new OneOperandArgNoBlockCallInstr(callType, result, name, receiver, args, isPotentiallyRefined);
             }
         }
 
-        return new CallInstr(callType, result, name, receiver, args, closure);
+        return new CallInstr(callType, result, name, receiver, args, closure, isPotentiallyRefined);
     }
 
 
-    public CallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
-        this(Operation.CALL, callType, result, name, receiver, args, closure);
+    public CallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure,
+                     boolean potentiallyRefined) {
+        this(Operation.CALL, callType, result, name, receiver, args, closure, potentiallyRefined);
     }
 
-    protected CallInstr(Operation op, CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
-        super(op, callType, name, receiver, args, closure);
+    protected CallInstr(Operation op, CallType callType, Variable result, String name, Operand receiver, Operand[] args,
+                        Operand closure, boolean potentiallyRefined) {
+        super(op, callType, name, receiver, args, closure, potentiallyRefined);
 
         assert result != null;
 
         this.result = result;
-    }
-
-    public CallInstr(Operation op, CallInstr ordinary) {
-        this(op, ordinary.getCallType(), ordinary.getResult(),
-                ordinary.getName(), ordinary.getReceiver(), ordinary.getCallArgs(),
-                ordinary.getClosureArg(null));
     }
 
     @Override
@@ -112,13 +106,14 @@ public class CallInstr extends CallBase implements ResultInstr {
     }
 
     public Instr discardResult() {
-        return NoResultCallInstr.create(getCallType(), getName(), getReceiver(), getCallArgs(), getClosureArg());
+        return NoResultCallInstr.create(getCallType(), getName(), getReceiver(), getCallArgs(), getClosureArg(), isPotentiallyRefined());
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new CallInstr(getCallType(), ii.getRenamedVariable(result), getName(), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii));
+        return new CallInstr(getCallType(), ii.getRenamedVariable(result), getName(),
+                getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
+                getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
     }
 
     @Override

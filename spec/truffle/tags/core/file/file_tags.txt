@@ -1,5 +1,4 @@
 fails:File includes File::Constants
-fails:File.file? accepts an object that has a #to_path method
 windows:File.file? returns true if the named file exists and is a regular file.
 windows:File.file? raises an ArgumentError if not passed one argument
 windows:File.file? raises a TypeError if not passed a String type

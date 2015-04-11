@@ -160,14 +160,19 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return result;
     }
 
+    private transient JavaProxyConstructor[] constructors;
+
     public JavaProxyConstructor[] getConstructors() {
+        JavaProxyConstructor[] constructors = this.constructors;
+        if ( constructors != null ) return constructors;
+
         final Ruby runtime = getRuntime();
-        final Constructor[] constructors = proxyClass.getConstructors();
-        JavaProxyConstructor[] result = new JavaProxyConstructor[constructors.length];
-        for ( int i = 0; i < constructors.length; i++ ) {
-            result[i] = new JavaProxyConstructor(runtime, this, constructors[i]);
+        final Constructor[] ctors = proxyClass.getConstructors();
+        constructors = new JavaProxyConstructor[ ctors.length ];
+        for ( int i = 0; i < ctors.length; i++ ) {
+            constructors[i] = new JavaProxyConstructor(runtime, this, ctors[i]);
         }
-        return result;
+        return this.constructors = constructors;
     }
 
     public JavaProxyConstructor getConstructor(final Class[] args)
@@ -407,7 +412,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             }
         }
 
-        private int getArity() {
+        public final int getArity() {
             return getParameterTypes().length;
         }
 
@@ -734,7 +739,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     @JRubyMethod
     public RubyArray methods() {
-        return toRubyArray(getMethods());
+        return toRubyArray( getMethods() );
     }
 
     @JRubyMethod
@@ -742,13 +747,9 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return toRubyArray(getInterfaces());
     }
 
-    private RubyArray constructors;
-
     @JRubyMethod
     public final RubyArray constructors() {
-        final RubyArray constructors = this.constructors;
-        if ( constructors != null ) return constructors;
-        return this.constructors = toRubyArray( getConstructors() );
+        return toRubyArray( getConstructors() );
     }
 
     public final String nameOnInspection() {

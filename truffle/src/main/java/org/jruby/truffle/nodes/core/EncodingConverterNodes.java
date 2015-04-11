@@ -17,26 +17,19 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConv;
-import org.jcodings.transcode.Transcoder;
+import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.TranscoderDB;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
 import org.jruby.Ruby;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.hash.HashOperations;
-import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @CoreClass(name = "Encoding::Converter")
 public abstract class EncodingConverterNodes {
@@ -70,6 +63,13 @@ public abstract class EncodingConverterNodes {
             final IRubyObject destinationAsJRubyObj = getContext().toJRuby(destination);
 
             EncodingUtils.econvArgs(runtime.getCurrentContext(), new IRubyObject[]{sourceAsJRubyObj, destinationAsJRubyObj}, encNames, encs, ecflags, ecopts);
+
+            // This method should only be called after the Encoding::Converter instance has already been initialized
+            // by Rubinius.  Rubinius will do the heavy lifting of parsing the options hash and setting the `@options`
+            // ivar to the resulting int for EConv flags.  Since we don't pass the proper data structures to EncodingUtils,
+            // we must override the flags after its had a pass in order to correct the bad flags value.
+            ecflags[0] = rubiniusToJRubyFlags((int) self.getInstanceVariable("@options"));
+
             EConv econv = EncodingUtils.econvOpenOpts(runtime.getCurrentContext(), encNames[0], encNames[1], ecflags[0], ecopts[0]);
 
             if (econv == null) {
@@ -93,6 +93,23 @@ public abstract class EncodingConverterNodes {
             return nil();
         }
 
+        /**
+         * Rubinius and JRuby process Encoding::Converter options flags differently.  Rubinius splits the processing
+         * between initial setup and the replacement value setup, whereas JRuby handles them all during initial setup.
+         * We figure out what flags JRuby additionally expects to be set and set them to satisfy EConv.
+         */
+        private int rubiniusToJRubyFlags(int flags) {
+            if ((flags & EConvFlags.XML_TEXT_DECORATOR) != 0) {
+                flags |= EConvFlags.UNDEF_HEX_CHARREF;
+            }
+
+            if ((flags & EConvFlags.XML_ATTR_CONTENT_DECORATOR) != 0) {
+                flags |= EConvFlags.UNDEF_HEX_CHARREF;
+            }
+
+            return flags;
+        }
+
     }
 
     @RubiniusOnly
@@ -103,6 +120,7 @@ public abstract class EncodingConverterNodes {
         @Child private CallDispatchHeadNode toSymNode;
         @Child private CallDispatchHeadNode newLookupTableNode;
         @Child private CallDispatchHeadNode lookupTableWriteNode;
+        @Child private CallDispatchHeadNode newTranscodingNode;
 
         public TranscodingMapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -110,6 +128,7 @@ public abstract class EncodingConverterNodes {
             toSymNode = DispatchHeadNodeFactory.createMethodCall(context);
             newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
+            newTranscodingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public TranscodingMapNode(TranscodingMapNode prev) {
@@ -118,11 +137,12 @@ public abstract class EncodingConverterNodes {
             toSymNode = prev.toSymNode;
             newLookupTableNode = prev.newLookupTableNode;
             lookupTableWriteNode = prev.lookupTableWriteNode;
+            newTranscodingNode = prev.newTranscodingNode;
         }
 
         @Specialization
-        public RubyHash transcodingMap(VirtualFrame frame) {
-            List<KeyValue> entries = new ArrayList<>();
+        public Object transcodingMap(VirtualFrame frame) {
+            final Object ret = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
 
             for (CaseInsensitiveBytesHash<TranscoderDB.Entry> sourceEntry : TranscoderDB.transcoders) {
                 Object key = null;
@@ -138,34 +158,14 @@ public abstract class EncodingConverterNodes {
 
                     final Object upcasedLookupTableKey = upcaseNode.call(frame, getContext().makeString(new ByteList(e.getDestination())), "upcase", null);
                     final Object lookupTableKey = toSymNode.call(frame, upcasedLookupTableKey, "to_sym", null);
-                    lookupTableWriteNode.call(frame, value, "[]=", null, lookupTableKey, true);
+                    final Object lookupTableValue = newTranscodingNode.call(frame, getContext().getCoreLibrary().getTranscodingClass(), "create", null, key, lookupTableKey);
+                    lookupTableWriteNode.call(frame, value, "[]=", null, lookupTableKey, lookupTableValue);
                 }
 
-                entries.add(new KeyValue(key, value));
+                lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
             }
 
-            return HashOperations.verySlowFromEntries(getContext().getCoreLibrary().getHashClass(), entries, true);
-        }
-    }
-
-    @RubiniusOnly
-    @CoreMethod(names = "transcoding_path_lookup", onSingleton = true, required = 2)
-    public abstract static class TranscodingPathLookupNode extends CoreMethodNode {
-
-        public TranscodingPathLookupNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public TranscodingPathLookupNode(TranscodingPathLookupNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean transcodingPathLookup(RubyString sourceEncodingName, RubyString destinationEncodingName) {
-            final TranscoderDB.Entry entry = TranscoderDB.getEntry(sourceEncodingName.getByteList().getUnsafeBytes(),
-                    destinationEncodingName.getByteList().getUnsafeBytes());
-
-            return entry.getTranscoder() != null;
+            return ret;
         }
     }
 

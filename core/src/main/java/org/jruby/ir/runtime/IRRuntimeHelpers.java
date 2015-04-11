@@ -32,6 +32,7 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.ByteList;
@@ -246,7 +247,7 @@ public class IRRuntimeHelpers {
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
 
-        DynamicMethod method = new CompiledIRMethod(handle, irScope, newVisibility, containingClass);
+        DynamicMethod method = new CompiledIRMethod(handle, irScope, newVisibility, containingClass, irScope.receivesKeywordArgs());
 
         Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
     }
@@ -263,7 +264,7 @@ public class IRRuntimeHelpers {
 
         RubyClass containingClass = obj.getSingletonClass();
 
-        DynamicMethod method = new CompiledIRMethod(handle, irScope, Visibility.PUBLIC, containingClass);
+        DynamicMethod method = new CompiledIRMethod(handle, irScope, Visibility.PUBLIC, containingClass, irScope.receivesKeywordArgs());
 
         containingClass.addMethod(rubyName, method);
 
@@ -507,20 +508,33 @@ public class IRRuntimeHelpers {
     }
 
     public static void checkArity(ThreadContext context, Object[] args, int required, int opt, int rest,
-                                  boolean receivesKwargs, int restKey) {
+                                  boolean receivesKwargs, int restKey, Block.Type blockType) {
         int argsLength = args.length;
-        RubyHash keywordArgs = (RubyHash) extractKwargsHash(args, required, receivesKwargs);
+        RubyHash keywordArgs = extractKwargsHash(args, required, receivesKwargs);
 
         if (restKey == -1 && keywordArgs != null) checkForExtraUnwantedKeywordArgs(context, keywordArgs);
 
         // keyword arguments value is not used for arity checking.
         if (keywordArgs != null) argsLength -= 1;
 
-        if (argsLength < required || (rest == -1 && argsLength > (required + opt))) {
+        if ((blockType == null || blockType.checkArity) && (argsLength < required || (rest == -1 && argsLength > (required + opt)))) {
 //            System.out.println("NUMARGS: " + argsLength + ", REQUIRED: " + required + ", OPT: " + opt + ", AL: " + args.length + ",RKW: " + receivesKwargs );
 //            System.out.println("ARGS[0]: " + args[0]);
 
             Arity.raiseArgumentError(context.runtime, argsLength, required, required + opt);
+        }
+    }
+
+    // Due to our current strategy of destructively processing the kwargs hash we need to dup
+    // and make sure the copy is not frozen.  This has a poor name as encouragement to rewrite
+    // how we handle kwargs internally :)
+    public static void frobnicateKwargsArgument(ThreadContext context, int requiredArguments, IRubyObject[] args) {
+        RubyHash kwargs = IRRuntimeHelpers.extractKwargsHash(args, requiredArguments, true);
+
+        if (kwargs != null) {
+            kwargs = (RubyHash) kwargs.dup(context);
+            kwargs.setFrozen(false);
+            args[args.length - 1] = kwargs;
         }
     }
 
@@ -530,7 +544,15 @@ public class IRRuntimeHelpers {
 
         Object lastArg = args[args.length - 1];
 
-        return !(lastArg instanceof RubyHash) ? null : (RubyHash) lastArg;
+        if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
+
+        if (((IRubyObject) lastArg).respondsTo("to_hash")) {
+            lastArg = ((IRubyObject) lastArg).callMethod(((IRubyObject) lastArg).getRuntime().getCurrentContext(), "to_hash");
+
+            if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
+        }
+
+        return null;
     }
 
     public static void checkForExtraUnwantedKeywordArgs(final ThreadContext context, RubyHash keywordArgs) {
@@ -1093,7 +1115,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static DynamicMethod newCompiledModuleBody(ThreadContext context, MethodHandle handle, IRScope irModule, Object rubyContainer) {
         RubyModule newRubyModule = newRubyModuleFromIR(context, irModule, rubyContainer);
-        return new CompiledIRMethod(handle, irModule, Visibility.PUBLIC, newRubyModule);
+        return new CompiledIRMethod(handle, irModule, Visibility.PUBLIC, newRubyModule, false);
     }
 
     private static RubyModule newRubyModuleFromIR(ThreadContext context, IRScope irModule, Object rubyContainer) {
@@ -1117,7 +1139,7 @@ public class IRRuntimeHelpers {
     public static DynamicMethod newCompiledClassBody(ThreadContext context, MethodHandle handle, IRScope irClassBody, Object container, Object superClass) {
         RubyModule newRubyClass = newRubyClassFromIR(context.runtime, irClassBody, superClass, container);
 
-        return new CompiledIRMethod(handle, irClassBody, Visibility.PUBLIC, newRubyClass);
+        return new CompiledIRMethod(handle, irClassBody, Visibility.PUBLIC, newRubyClass, false);
     }
 
     public static RubyModule newRubyClassFromIR(Ruby runtime, IRScope irClassBody, Object superClass, Object container) {
@@ -1157,23 +1179,29 @@ public class IRRuntimeHelpers {
             newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
         }
         rubyClass.addMethod(method.getName(), newMethod);
-        obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        if (!rubyClass.isRefinement()) {
+            obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        }
     }
 
     @JIT
     public static void defCompiledClassMethod(ThreadContext context, MethodHandle handle, IRScope method, IRubyObject obj) {
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
-        rubyClass.addMethod(method.getName(), new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass));
-        obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        rubyClass.addMethod(method.getName(), new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass, method.receivesKeywordArgs()));
+        if (!rubyClass.isRefinement()) {
+            obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        }
     }
 
     @JIT
     public static void defCompiledClassMethod(ThreadContext context, MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, IRubyObject obj) {
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
-        rubyClass.addMethod(method.getName(), new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass));
-        obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        rubyClass.addMethod(method.getName(), new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass, method.receivesKeywordArgs()));
+        if (!rubyClass.isRefinement()) {
+            obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        }
     }
 
     private static RubyClass checkClassForDef(ThreadContext context, IRScope method, IRubyObject obj) {
@@ -1212,7 +1240,7 @@ public class IRRuntimeHelpers {
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, method.getName(), currVisibility);
 
-        DynamicMethod newMethod = new CompiledIRMethod(handle, method, newVisibility, clazz);
+        DynamicMethod newMethod = new CompiledIRMethod(handle, method, newVisibility, clazz, method.receivesKeywordArgs());
 
         Helpers.addInstanceMethod(clazz, method.getName(), newMethod, currVisibility, context, runtime);
     }
@@ -1225,7 +1253,7 @@ public class IRRuntimeHelpers {
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, method.getName(), currVisibility);
 
-        DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, method, newVisibility, clazz);
+        DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, method, newVisibility, clazz, method.receivesKeywordArgs());
 
         Helpers.addInstanceMethod(clazz, method.getName(), newMethod, currVisibility, context, runtime);
     }
@@ -1326,6 +1354,11 @@ public class IRRuntimeHelpers {
     @JIT
     public static VariableCachingCallSite newVariableCachingCallSite(String name) {
         return new VariableCachingCallSite(name);
+    }
+
+    @JIT
+    public static RefinedCachingCallSite newRefinedCachingCallSite(String name, String callType) {
+        return new RefinedCachingCallSite(name, CallType.valueOf(callType));
     }
 
     @JIT

@@ -888,8 +888,7 @@ public final class ThreadContext {
     public void postNodeEval() {
         popFrame();
     }
-    
-    // XXX: Again, screwy evaling under previous frame's scope
+
     public void preExecuteUnder(IRubyObject executeUnderObj, RubyModule executeUnderClass, Block block) {
         Frame frame = getCurrentFrame();
         
@@ -900,7 +899,7 @@ public final class ThreadContext {
         pushCallFrame(frame.getKlazz(), frame.getName(), executeUnderObj, block);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
-    
+
     public void postExecuteUnder() {
         popFrame();
         popScope();

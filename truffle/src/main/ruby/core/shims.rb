@@ -83,21 +83,17 @@ class Regexp
 end
 
 module Rubinius
-
   L64 = true
 
   def extended_modules(object)
     []
   end
-
 end
 
 class Module
-
   def extended_modules(object)
     []
   end
-
 end
 
 class String
@@ -113,34 +109,18 @@ class String
 end
 
 class Rational
-
   alias :__slash__ :/
-
-  def _offset_to_milliseconds
-    (self * 1000).to_i
-  end
-
 end
 
 ENV['TZ'] = 'UTC'
 
 class Method
-
   def to_proc
     meth = self
     proc { |*args|
       meth.call(*args)
     }
   end
-
-end
-
-class IO
-
-  def tty?
-    false
-  end
-
 end
 
 class MatchData
@@ -184,7 +164,6 @@ module Rubinius
 end
 
 class IO
-
   RDONLY = 0
   WRONLY = 1
   RDWR = 2
@@ -197,7 +176,6 @@ class IO
   NONBLOCK = 4
   SYNC = 128
   SEEK_SET = 0
-
 end
 
 # We use Rubinius's encoding subsystem for the most part, but we need to keep JRuby's up to date in case we
