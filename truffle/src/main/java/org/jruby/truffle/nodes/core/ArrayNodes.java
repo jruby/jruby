@@ -2153,6 +2153,11 @@ public abstract class ArrayNodes {
             return accumulator;
         }
 
+        @Specialization(guards = "isNullArray")
+        public Object injectNull(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+            return initial;
+        }
+
         @Specialization
         public Object inject(VirtualFrame frame, RubyArray array, RubySymbol symbol, UndefinedPlaceholder unused) {
             notDesignedForCompilation();
