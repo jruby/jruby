@@ -1,0 +1,1 @@
+# Stub to satisfy `require "timeout"` for MRI tests
