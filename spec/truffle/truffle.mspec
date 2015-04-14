@@ -90,6 +90,7 @@ class MSpecScript
     "spec/ruby/library/open3",
     "spec/ruby/library/openstruct",
     "spec/ruby/library/matrix",
+    "spec/ruby/library/pathname",
     "spec/ruby/library/set",
     "spec/ruby/library/shellwords",
     "spec/ruby/library/strscan",
