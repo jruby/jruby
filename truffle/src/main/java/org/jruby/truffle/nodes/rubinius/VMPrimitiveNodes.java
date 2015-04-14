@@ -56,6 +56,7 @@ import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
+import org.jruby.util.io.PosixShim;
 import sun.misc.Signal;
 
 import com.oracle.truffle.api.CompilerDirectives;
@@ -578,7 +579,7 @@ public abstract class VMPrimitiveNodes {
             // Transliterated from Rubinius C++ - not tidied up significantly to make merging changes easier
 
             int options = 0;
-            final int[] status = new int[]{0};
+            final int[] statusReference = new int[]{0};
             int pid;
 
             if(no_hang) {
@@ -593,7 +594,7 @@ public abstract class VMPrimitiveNodes {
 
                 @Override
                 public Integer block() throws InterruptedException {
-                    return getContext().getRuntime().getPosix().waitpid(input_pid, status, finalOptions);
+                    return getContext().getRuntime().getPosix().waitpid(input_pid, statusReference, finalOptions);
                 }
 
             });
@@ -620,15 +621,15 @@ public abstract class VMPrimitiveNodes {
             Object termsig = nil();
             Object stopsig = nil();
 
-            /* TODO CS 14-April-15 figure out how to do this using JNR
-            if(status == WIFEXITED.i) {
-                output = WEXITSTATUS(status);
-            } else if(WIFSIGNALED(status)) {
-                termsig = WTERMSIG(status);
-            } else if(WIFSTOPPED(status)){
-                stopsig = WSTOPSIG(status);
+            final int status = statusReference[0];
+
+            if(PosixShim.WAIT_MACROS.WIFEXITED(status)) {
+                output = PosixShim.WAIT_MACROS.WEXITSTATUS(status);
+            } else if(PosixShim.WAIT_MACROS.WIFSIGNALED(status)) {
+                termsig = PosixShim.WAIT_MACROS.WTERMSIG(status);
+            } else if(PosixShim.WAIT_MACROS.WIFSTOPPED(status)){
+                stopsig = PosixShim.WAIT_MACROS.WSTOPSIG(status);
             }
-            */
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), output, termsig, stopsig, pid);
         }
