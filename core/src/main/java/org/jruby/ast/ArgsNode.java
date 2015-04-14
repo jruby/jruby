@@ -43,36 +43,40 @@ import org.jruby.runtime.Arity;
 
 /**
  * Represents the argument declarations of a method.  The fields:
- * foo(p1, ..., pn, o1 = v1, ..., on = v2, *r, q1, ..., qn)
+ * foo(p1, ..., pn, o1 = v1, ..., on = v2, *r, q1, ..., qn, k1:, ..., kn:, **K, &b)
  *
  * p1...pn = pre arguments
  * o1...on = optional arguments
  * r       = rest argument
  * q1...qn = post arguments (only in 1.9)
+ * k1...kn = keyword arguments
+ * K       = keyword rest argument
+ * b       = block arg
  */
 public class ArgsNode extends Node {
+    // Basic struct fields
     private final ListNode pre;
-    private final int preCount;
     private final ListNode optArgs;
     protected final ArgumentNode restArgNode;
-    protected final int restArg;
+    private final ListNode post;
+    private final ListNode keywords;
+    private final KeywordRestArgNode keyRest;
     private final BlockArgNode blockArgNode;
+
+    // Helpful fields derived from struct fields
+    private final int preCount;
+    private final int postCount;
+    private final int postIndex;
+    protected final int restArg;
+
     protected Arity arity;
+
     private final int requiredArgsCount;
     protected final boolean hasOptArgs;
     protected final boolean hasMasgnArgs;
     protected final boolean hasKwargs;
     protected int maxArgsCount;
     protected final boolean isSimple;
-
-    // Only in ruby 1.9 methods
-    private final ListNode post;
-    private final int postCount;
-    private final int postIndex;
-
-    // Only in ruby 2.0 methods
-    private final ListNode keywords;
-    private final KeywordRestArgNode keyRest;
 
     /**
      * Construct a new ArgsNode with no keyword arguments.
