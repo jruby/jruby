@@ -94,8 +94,9 @@ public class RubyClass extends RubyModule {
 
     @Override
     public void initCopy(RubyModule other) {
-        super.initCopy(other);
         assert other instanceof RubyClass;
+        super.initCopy(other);
+        this.allocator = ((RubyClass) other).allocator;
     }
 
     private RubyClass ensureSingletonConsistency() {
