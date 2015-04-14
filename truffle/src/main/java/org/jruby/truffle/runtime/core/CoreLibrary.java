@@ -874,6 +874,11 @@ public class CoreLibrary {
         return nameError(String.format("undefined local variable or method `%s' for %s", name, object), currentNode);
     }
 
+    public RubyException nameErrorUndefinedMethod(String name, String object, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return nameError(String.format("undefined method `%s' for %s", name, object), currentNode);
+    }
+
     public RubyException noMethodError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));

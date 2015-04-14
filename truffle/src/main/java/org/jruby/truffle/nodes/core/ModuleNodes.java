@@ -289,6 +289,15 @@ public abstract class ModuleNodes {
             module.alias(this, newName.toString(), oldName.toString());
             return module;
         }
+
+        @Specialization
+        public RubyModule aliasMethod(RubyModule module, RubyString newName, RubyString oldName) {
+            notDesignedForCompilation();
+
+            module.alias(this, newName.toString(), oldName.toString());
+            return module;
+        }
+
     }
 
     @CoreMethod(names = "ancestors")

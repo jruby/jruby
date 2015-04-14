@@ -44,4 +44,9 @@ class Module
   end
   private :extended
 
+  def method_added(name)
+  end
+
+  private :method_added
+
 end

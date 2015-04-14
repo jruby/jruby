@@ -38,49 +38,47 @@ import org.jruby.embed.LocalVariableBehavior;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class SingleThreadLocalContextProvider extends AbstractLocalContextProvider {
-    private LocalContext localContext;
+
+    private final LocalContext instance;
+
+    public SingleThreadLocalContextProvider(LocalVariableBehavior behavior) {
+        super(behavior);
+        instance = getInstance();
+    }
 
     public SingleThreadLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
-        this.behavior = behavior;
+        super(behavior);
         this.lazy = lazy;
-        localContext = null;
-    }
-    
-    private void initializeLocalContext() {
-        if (localContext == null) {
-            localContext = getInstance();
-        }
+        instance = getInstance();
     }
 
+    private LocalContext getLocalContext() {
+        return instance;
+    }
+
+    @Override
     public Ruby getRuntime() {
-        initializeLocalContext();
-        if (localContext.runtime == null) {
-            // stopped loading java library (runtime.getLoadService().require("java");)
-            // during the intialization process.
-            localContext.runtime = Ruby.newInstance(config);
-            localContext.initialized = true;
-        }
-        return localContext.runtime;
+        return getLocalContext().getRuntime();
     }
 
+    @Override
     public BiVariableMap getVarMap() {
-        initializeLocalContext();
-        return localContext.getVarMap(this);
+        return getLocalContext().getVarMap(this);
     }
 
+    @Override
     public Map getAttributeMap() {
-        initializeLocalContext();
-        return localContext.getAttributeMap();
+        return getLocalContext().getAttributeMap();
     }
 
+    @Override
     public boolean isRuntimeInitialized() {
-        initializeLocalContext();
-        return localContext.initialized;
+        return getLocalContext().isInitialized();
     }
-    
+
+    @Override
     public void terminate() {
-        initializeLocalContext();
-        localContext.remove();
-        localContext = null;
+        getLocalContext().remove();
     }
+
 }

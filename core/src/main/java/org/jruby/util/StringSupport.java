@@ -52,9 +52,9 @@ import sun.misc.Unsafe;
 import java.util.Arrays;
 
 public final class StringSupport {
-    public static final int CR_MASK      = RubyObject.USER0_F | RubyObject.USER1_F;  
+    public static final int CR_MASK      = RubyObject.USER0_F | RubyObject.USER1_F;
     public static final int CR_UNKNOWN   = 0;
-    public static final int CR_7BIT      = RubyObject.USER0_F; 
+    public static final int CR_7BIT      = RubyObject.USER0_F;
     public static final int CR_VALID     = RubyObject.USER1_F;
     public static final int CR_BROKEN    = RubyObject.USER0_F | RubyObject.USER1_F;
 
@@ -72,7 +72,7 @@ public final class StringSupport {
             return null;
         }
     }
-    
+
     public static String codeRangeAsString(int codeRange) {
         switch (codeRange) {
             case CR_UNKNOWN: return "unknown";
@@ -80,7 +80,7 @@ public final class StringSupport {
             case CR_VALID: return "valid";
             case CR_BROKEN: return "broken";
         }
-        
+
         return "???";  // Not reached unless something seriously boned
     }
 
@@ -104,7 +104,7 @@ public final class StringSupport {
         if (n > end - p) return MBCLEN_NEEDMORE(n - (end - p));
         return n;
     }
-    
+
     // MBCLEN_NEEDMORE_P, ONIGENC_MBCLEN_NEEDMORE_P
     public static boolean MBCLEN_NEEDMORE_P(int r) {
         return r < -1;
@@ -114,12 +114,12 @@ public final class StringSupport {
     public static int MBCLEN_NEEDMORE(int n) {
         return -1 - n;
     }
-    
+
     // MBCLEN_INVALID_P, ONIGENC_MBCLEN_INVALID_P
     public static boolean MBCLEN_INVALID_P(int r) {
         return r == -1;
     }
-    
+
     // MBCLEN_CHARFOUND_LEN, ONIGENC_MBCLEN_CHARFOUND_LEN
     public static int MBCLEN_CHARFOUND_LEN(int r) {
         return r;
@@ -144,7 +144,7 @@ public final class StringSupport {
         return -1;
     }
 
-    public static int searchNonAscii(ByteList bytes) { 
+    public static int searchNonAscii(ByteList bytes) {
         return searchNonAscii(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
@@ -162,7 +162,7 @@ public final class StringSupport {
         int end = p + len;
         p = searchNonAscii(bytes, p, end);
         if (p == -1) return CR_7BIT;
-        
+
         while (p < end) {
             int cl = preciseLength(enc, bytes, p, end);
             if (cl <= 0) return CR_BROKEN;
@@ -174,10 +174,10 @@ public final class StringSupport {
         }
         return p > end ? CR_BROKEN : CR_VALID;
     }
-    
+
     private static int codeRangeScanNonAsciiCompatible(Encoding enc, byte[]bytes, int p, int len) {
         int end = p + len;
-        while (p < end) {        
+        while (p < end) {
             int cl = preciseLength(enc, bytes, p, end);
             if (cl <= 0) return CR_BROKEN;
             p += cl;
@@ -189,10 +189,10 @@ public final class StringSupport {
         return codeRangeScan(enc, bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
     }
 
-    public static long codeRangeScanRestartable(Encoding enc, byte[]bytes, int s, int end, int cr) { 
+    public static long codeRangeScanRestartable(Encoding enc, byte[]bytes, int s, int end, int cr) {
         if (cr == CR_BROKEN) return pack(end - s, cr);
         int p = s;
-        
+
         if (enc == ASCIIEncoding.INSTANCE) {
             return pack(end - s, searchNonAscii(bytes, p, end) == -1 && cr != CR_VALID ? CR_7BIT : CR_VALID);
         } else if (enc.isAsciiCompatible()) {
@@ -296,14 +296,14 @@ public final class StringSupport {
             }
             return c;
         }
-        
+
         for (c = 0; p < e; c++) {
             p += length(enc, bytes, p, e);
         }
         return c;
     }
 
-    public static int strLength(ByteList bytes) { 
+    public static int strLength(ByteList bytes) {
         return strLength(bytes.getEncoding(), bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
@@ -328,7 +328,7 @@ public final class StringSupport {
             }
             int cl = preciseLength(enc, bytes, p, end);
             if (cl > 0) {
-                cr |= CR_VALID; 
+                cr |= CR_VALID;
                 p += cl;
             } else {
                 cr = CR_BROKEN;
@@ -344,7 +344,7 @@ public final class StringSupport {
         for (c = 0; p < end; c++) {
             int cl = preciseLength(enc, bytes, p, end);
             if (cl > 0) {
-                cr |= CR_VALID; 
+                cr |= CR_VALID;
                 p += cl;
             } else {
                 cr = CR_BROKEN;
@@ -354,11 +354,11 @@ public final class StringSupport {
         return pack(c, cr == 0 ? CR_7BIT : cr);
     }
 
-    public static long strLengthWithCodeRange(ByteList bytes) { 
+    public static long strLengthWithCodeRange(ByteList bytes) {
         return strLengthWithCodeRange(bytes.getEncoding(), bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
-    public static long strLengthWithCodeRange(ByteList bytes, Encoding enc) { 
+    public static long strLengthWithCodeRange(ByteList bytes, Encoding enc) {
         return strLengthWithCodeRange(enc, bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
@@ -378,8 +378,8 @@ public final class StringSupport {
     public static int codePoint(Ruby runtime, Encoding enc, byte[]bytes, int p, int end) {
         if (p >= end) throw runtime.newArgumentError("empty string");
         int cl = preciseLength(enc, bytes, p, end);
-        if (cl <= 0) throw runtime.newArgumentError("invalid byte sequence in " + enc); 
-        return enc.mbcToCode(bytes, p, end); 
+        if (cl <= 0) throw runtime.newArgumentError("invalid byte sequence in " + enc);
+        return enc.mbcToCode(bytes, p, end);
     }
 
     public static int codeLength(Encoding enc, int c) {
@@ -480,12 +480,12 @@ public final class StringSupport {
 
     public static int utf8Offset(byte[]bytes, int p, int end, int n) {
         int pp = utf8Nth(bytes, p, end, n);
-        return pp == -1 ? end - p : pp - p; 
+        return pp == -1 ? end - p : pp - p;
     }
 
     public static int offset(Encoding enc, byte[]bytes, int p, int end, int n) {
         int pp = nth(enc, bytes, p, end, n);
-        return pp == -1 ? end - p : pp - p; 
+        return pp == -1 ? end - p : pp - p;
     }
 
     public static int offset(Encoding enc, byte[]bytes, int p, int end, int n, boolean singlebyte) {
@@ -510,7 +510,7 @@ public final class StringSupport {
         int i = -1;
         for (; ++i < len && bytes1[p1 + i] == bytes2[p2 + i];) {}
         if (i < len) return (bytes1[p1 + i] & 0xff) > (bytes2[p2 + i] & 0xff) ? 1 : -1;
-        return 0;        
+        return 0;
     }
 
     public static int scanHex(byte[]bytes, int p, int len) {
@@ -564,7 +564,7 @@ public final class StringSupport {
      * Check whether input object's string value contains a null byte, and if so
      * throw SecurityError.
      * @param runtime
-     * @param value 
+     * @param value
      */
     public static final void checkStringSafety(Ruby runtime, IRubyObject value) {
         RubyString s = value.asString();
@@ -580,7 +580,7 @@ public final class StringSupport {
 
     public static boolean isUnicode(Encoding enc) {
         byte[] name = enc.getName();
-        return name.length > 4 && name[0] == 'U' && name[1] == 'T' && name[2] == 'F' && name[4] != '7'; 
+        return name.length > 4 && name[0] == 'U' && name[1] == 'T' && name[2] == 'F' && name[4] != '7';
     }
 
     public static String escapedCharFormat(int c, boolean isUnicode) {
@@ -589,7 +589,7 @@ public final class StringSupport {
         if (isUnicode) {
 
             if ((c & 0xFFFFFFFFL) < 0x7F && Encoding.isAscii(c) && ASCIIEncoding.INSTANCE.isPrint(c)) {
-                format = "%c"; 
+                format = "%c";
             } else if (c < 0x10000) {
                 format = "\\u%04X";
             } else {
@@ -609,11 +609,11 @@ public final class StringSupport {
     public static boolean isIncompleteChar(int b) {
         return b < -1;
     }
-    
+
     public static int bytesToFixBrokenTrailingCharacter(ByteList val, int usingLength) {
         return bytesToFixBrokenTrailingCharacter(val.getUnsafeBytes(), val.getBegin(), val.getRealSize(), val.getEncoding(), usingLength);
     }
-    
+
     public static int bytesToFixBrokenTrailingCharacter(byte[] bytes, int begin, int byteSize, Encoding encoding, int usingLength) {
         // read additional bytes to fix broken char
         if (byteSize > 0) {
@@ -623,22 +623,22 @@ public final class StringSupport {
                     begin, // start of string
                     begin + usingLength - 1, // last byte
                     begin + usingLength); // end of using
-            
+
             // external offset
             charHead -= begin;
-            
+
             // byte at char head
             byte byteHead = (byte)(bytes[begin + charHead] & 0xFF);
-            
+
             // total bytes we would need to complete character
             int extra = encoding.length(byteHead);
-            
+
             // what we already have
             extra -= usingLength - charHead;
-            
+
             return extra;
         }
-        
+
         return 0;
     }
 

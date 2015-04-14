@@ -638,7 +638,7 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = { "isSingleByteOptimizableOrAsciiCompatible(string)", "!isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
+        @Specialization(guards = "isSingleByteOptimizableOrAsciiCompatible(string)")
         public int stringByteCharacterIndexSingleByte(RubyString string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index.
             return index;

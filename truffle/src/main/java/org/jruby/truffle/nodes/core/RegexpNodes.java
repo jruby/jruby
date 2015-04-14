@@ -97,29 +97,6 @@ public abstract class RegexpNodes {
         }
     }
 
-    @CoreMethod(names = "===", required = 1)
-    public abstract static class CaseEqualNode extends CoreMethodNode {
-
-        public CaseEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object match(RubyRegexp regexp, RubyString string) {
-            notDesignedForCompilation();
-
-            return regexp.matchCommon(string, true, false) != nil();
-        }
-
-        @Specialization
-        public Object match(RubyRegexp regexp, RubySymbol symbol) {
-            notDesignedForCompilation();
-
-            return regexp.matchCommon(symbol.toRubyString(), true, false) != nil();
-        }
-
-    }
-
     @CoreMethod(names = "=~", required = 1)
     public abstract static class MatchOperatorNode extends CoreMethodNode {
 

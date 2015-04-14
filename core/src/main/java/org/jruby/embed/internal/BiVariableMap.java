@@ -29,14 +29,17 @@
  */
 package org.jruby.embed.internal;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.variable.BiVariable;
@@ -64,16 +67,18 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
-public class BiVariableMap<K, V> implements Map<K, V> {
+public class BiVariableMap implements Map<String, Object> {
+
     private final LocalContextProvider provider;
-    private List<String> varNames = null;
-    private List<BiVariable> variables = null;
-    private boolean lazy;
+    private final boolean lazy;
+
+    private List<String> varNames;
+    private List<BiVariable> variables;
 
     /**
      * Constructs an empty map. Users do not instantiate this map. The map is created
      * internally.
-     * 
+     *
      * @param runtime is environment where variables are used to execute Ruby scripts.
      * @param behavior is one of variable behaviors defined in VariableBehavior.
      */
@@ -88,7 +93,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return a List of all names.
      */
     public List<String> getNames() {
-        return varNames;
+        return varNames == null ? varNames = new ArrayList<String>() : varNames;
     }
 
     /**
@@ -97,8 +102,10 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return a List of all values.
      */
     public List<BiVariable> getVariables() {
-        return variables;
+        return variables == null ? variables = new ArrayList<BiVariable>() : variables;
     }
+
+    public Ruby getRuntime() { return provider.getRuntime(); }
 
     /**
      * Returns a local variable behavior
@@ -114,73 +121,75 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      *
      * @return a Map of key and value pair, in which values are simple Java objects.
      */
-    public Map getMap() {
-        Map m = new HashMap();
-        for (BiVariable v : variables) {
-            m.put(v.getName(), v.getJavaObject());
+    public Map<String, Object> getMap() {
+        HashMap<String, Object> map = new HashMap<String, Object>();
+        if ( variables != null ) {
+            for ( final BiVariable var : getVariables() ) {
+                map.put( var.getName(), var.getJavaObject() );
+            }
         }
-        return m;
+        return map;
     }
 
     /**
      * Returns the number of key-value mappings in this map.
-     * 
+     *
      * @return the number of key-value mappings in this map
      */
+    @Override
     public int size() {
-        if (varNames == null) return 0;
-        return varNames.size();
+        return variables == null ? 0 : variables.size();
     }
 
     /**
      * Returns <tt>true</tt> if this map contains no key-value mappings.
-     * 
+     *
      * @return <tt>true</tt> if this map contains no key-value mappings
      */
+    @Override
     public boolean isEmpty() {
-        return varNames == null || varNames.isEmpty();
+        return variables == null || variables.isEmpty();
     }
 
-    private void checkKey(Object key) {
-        if (key == null) {
+    private static String checkKey(final Object key) {
+        if ( key == null ) {
             throw new NullPointerException("key is null");
         }
-        if (!(key instanceof String)) {
+        if ( ! (key instanceof String) ) {
             throw new ClassCastException("key is NOT String");
         }
-        if (((String)key).length() == 0) {
+        if ( ( (String) key ).isEmpty() ) {
             throw new IllegalArgumentException("key is empty");
         }
+        return (String) key;
     }
 
     /**
      * Returns <tt>true</tt> if this map contains a mapping for the specified
      * key.
-     * 
+     *
      * @param key is a key to be tested its presence
      * @return <tt>true</tt> if this map contains a mapping for the specified key
      */
-    public boolean containsKey(Object key) {
-        if (varNames == null) return false;
-        checkKey(key);
-        return varNames.contains((String)key);
+    @Override
+    public boolean containsKey(final Object key) {
+        if ( varNames == null || key == null ) return false;
+        return varNames.contains( checkKey(key) );
     }
 
     /**
      * Returns <tt>true</tt> if this map maps one or more keys to the
      * specified value.
-     * 
+     *
      * @param value is a Java object to be tested it presence
      * @return Returns <tt>true</tt> if this map maps one or more keys to the
      * specified value.
      */
-    public boolean containsValue(Object value) {
-        Iterator itr = variables.iterator();
-        while (itr.hasNext()) {
-            BiVariable v = (BiVariable)itr.next();
-            if (value == v.getJavaObject()) {
-                return true;
-            }
+    @Override
+    public boolean containsValue(final Object value) {
+        if ( variables == null || value == null ) return false;
+        for ( final BiVariable var : getVariables() ) {
+            if ( value.equals( var.getJavaObject() ) ) return true;
         }
         return false;
     }
@@ -193,7 +202,8 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return the value in simple Java object to which the specified key is mapped, or
      *         {@code null} if this map contains no mapping for the key
      */
-    public V get(Object key) {
+    @Override
+    public Object get(Object key) {
         return get(null, key);
     }
 
@@ -207,33 +217,40 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return the value in simple Java object to which the specified key is mapped, or
      *         {@code null} if this map contains no mapping for the key
      */
-    public V get(Object receiver, Object key) {
+    public Object get(Object receiver, Object key) {
         checkKey(key);
-        RubyObject robj = getReceiverObject(receiver);
+        final RubyObject robj = getReceiverObject(receiver);
         // attemps to retrieve global variables
-        if (lazy) VariableInterceptor.tryLazyRetrieval(provider.getLocalVariableBehavior(), this, robj, key);
-        BiVariable var = getVariable(robj, (String)key);
-        if (var == null) return null;
-        else return (V) var.getJavaObject();
+        if ( isLazy() ) {
+            VariableInterceptor.tryLazyRetrieval(provider.getLocalVariableBehavior(), this, robj, key);
+        }
+        BiVariable var = getVariable(robj, (String) key);
+        return var == null ? null : var.getJavaObject();
     }
 
-    private RubyObject getReceiverObject(Object receiver) {
-        if (receiver == null || !(receiver instanceof IRubyObject)) return (RubyObject)provider.getRuntime().getTopSelf();
-        else if (receiver instanceof RubyObject) return (RubyObject)receiver;
-        else return (RubyObject)((IRubyObject)receiver).getRuntime().getTopSelf();
+    private RubyObject getReceiverObject(final Object receiver) {
+        if ( receiver instanceof RubyObject ) return (RubyObject) receiver;
+        //if ( receiver instanceof IRubyObject ) {
+        //    return (RubyObject) ( (IRubyObject) receiver ).getRuntime().getTopSelf();
+        //}
+        return getTopSelf();
+    }
+
+    private RubyObject getTopSelf() {
+        return (RubyObject) getRuntime().getTopSelf();
     }
 
     /**
      * Returns the value in BiVariable type to which the specified key is mapped,
      * or {@code null} if this map contains no mapping for the key.
-     * 
-     * @param key is the key whose associated BiVariable object is to be returned
+     *
+     * @param name is the key whose associated BiVariable object is to be returned
      * @return the BiVariable type object to which the specified key is mapped, or
      *         {@code null} if this map contains no mapping for the key
      */
-    @Deprecated
-    public BiVariable getVariable(String key) {
-        return getVariable((RubyObject)provider.getRuntime().getTopSelf(), key);
+    //@Deprecated
+    public BiVariable getVariable(final String name) {
+        return getVariable(getTopSelf(), name);
     }
 
     /**
@@ -241,41 +258,40 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * or {@code null} if this map contains no mapping for the key.
      *
      * @param receiver is a receiver object to get key-value pair from
-     * @param key is the key whose associated BiVariable object is to be returned
+     * @param name is the key whose associated BiVariable object is to be returned
      * @return the BiVariable type object to which the specified key is mapped, or
      *         {@code null} if this map contains no mapping for the key
      */
-    public BiVariable getVariable(RubyObject receiver, String key) {
-        if (varNames == null) return null;
-        for (int i=0; i<varNames.size(); i++) {
-            if (key.equals(varNames.get(i))) {
-                BiVariable var = null;
-                while (var == null) {
-                    try {
-                        var = variables.get(i);
-                    } catch (Exception e) {
-                        var = null;
-                    }
-                }
-                if (var.isReceiverIdentical(receiver)) {
+    public BiVariable getVariable(final RubyObject receiver, final String name) {
+        if ( variables == null ) return null;
+
+        for ( int i = 0; i < size(); i++ ) {
+            if ( name.equals( getNames().get(i) ) ) {
+                BiVariable var;
+                //try {
+                    var = getVariables().get(i);
+                //}
+                //catch (RuntimeException e) {
+                //    var = null;
+                //}
+                if ( var != null && var.isReceiverIdentical(receiver) ) {
                     return var;
                 }
             }
         }
+
         return null;
     }
 
-    @Deprecated
     public void setVariable(BiVariable var) {
-        setVariable((RubyObject)provider.getRuntime().getTopSelf(), var);
+        setVariable(getTopSelf(), var);
     }
 
-    public void setVariable(RubyObject receiver, BiVariable var) {
-        if (var == null) {
-            return;
-        }
-        String key = var.getName();
-        BiVariable old = getVariable(receiver, key);
+    public void setVariable(final RubyObject receiver, final BiVariable var) {
+        if ( var == null ) return;
+
+        final String key = var.getName();
+        final BiVariable old = getVariable(receiver, key);
         if (old != null) {
             // updates the value of an existing key-value pair
             old.setJavaObject(receiver.getRuntime(), var.getJavaObject());
@@ -288,13 +304,14 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * Associates the specified value with the specified key in this map.
      * The values is a simple Java object. If the map previously contained a mapping for
      * the key, the old value is replaced by the specified value.
-     * 
+     *
      * @param key the key with which the specified value is to be associated
      * @param value a simple Java object to be associated with the specified key
      * @return the previous value associated with <tt>key</tt>, or
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
      */
-    public V put (K key, V value) {
+    @Override
+    public Object put(String key, Object value) {
         return put(null, key, value);
     }
 
@@ -309,24 +326,21 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return the previous value associated with <tt>key</tt>, or
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
      */
-    public V put (Object receiver, K key, V value) {
+    public Object put(Object receiver, String key, Object value) {
         checkKey(key);
-        RubyObject robj = getReceiverObject(receiver);
-        String name = ((String)key).intern();
-        BiVariable v = getVariable(robj, name);
+        final RubyObject robj = getReceiverObject(receiver);
+        final String name = key.intern();
+        BiVariable var = getVariable(robj, name);
         Object oldValue = null;
-        if (v != null) {
-            // updates
-            oldValue = v.getJavaObject();
-            v.setJavaObject(robj.getRuntime(), value);
-        } else {
-            // creates new value
-            v = VariableInterceptor.getVariableInstance(provider.getLocalVariableBehavior(), robj, name, value);
-            if (v != null) {
-                update(name, v);
-            }
+        if ( var != null ) { // updates
+            oldValue = var.getJavaObject();
+            var.setJavaObject(robj.getRuntime(), value);
         }
-        return (V)oldValue;
+        else { // creates new value
+            var = VariableInterceptor.getVariableInstance(provider.getLocalVariableBehavior(), robj, name, value);
+            if ( var != null ) update(name, var);
+        }
+        return oldValue;
     }
 
     /**
@@ -336,51 +350,47 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return String array of Ruby's local variable names
      */
     public String[] getLocalVarNames() {
-        if (variables == null) return null;
+        if ( variables == null ) return new String[0];
+
         List<String> localVarNames = new ArrayList<String>();
-        for (BiVariable v : variables) {
-            if (v.getType() == BiVariable.Type.LocalVariable) {
-                localVarNames.add(v.getName());
+        for ( final BiVariable var : variables ) {
+            if ( var.getType() == BiVariable.Type.LocalVariable ) {
+                localVarNames.add( var.getName() );
             }
         }
-        if (localVarNames.size() > 0) {
-            return localVarNames.toArray(new String[localVarNames.size()]);
-        }
-        return null;
+        return localVarNames.toArray(new String[localVarNames.size()]);
     }
 
     /**
      * Returns Ruby's local variable values this map has. The returned array is
      * mainly used to inject local variables to Ruby scripts while evaluating.
-     * 
+     *
      * @return IRubyObject array of Ruby's local variable names.
      */
     public IRubyObject[] getLocalVarValues() {
-        if (variables == null) return null;
+        if ( variables == null ) return IRubyObject.NULL_ARRAY;
+
         List<IRubyObject> localVarValues = new ArrayList<IRubyObject>();
-        for (BiVariable v : variables) {
-            if (v.getType() == BiVariable.Type.LocalVariable) {
-                localVarValues.add(v.getRubyObject());
+        for ( final BiVariable var : variables ) {
+            if ( var.getType() == BiVariable.Type.LocalVariable ) {
+                localVarValues.add( var.getRubyObject() );
             }
         }
-        if (localVarValues.size() > 0) {
-            return localVarValues.toArray(new IRubyObject[localVarValues.size()]);
-        }
-        return null;
+        return localVarValues.toArray( new IRubyObject[ localVarValues.size() ] );
     }
 
-    void inject(ManyVarsDynamicScope scope, int depth, IRubyObject receiver) {
+    void inject(final ManyVarsDynamicScope scope, final int depth, final IRubyObject receiver) {
         VariableInterceptor.inject(this, provider.getRuntime(), scope, depth, receiver);
     }
 
-    void retrieve(IRubyObject receiver) {
-        RubyObject robj = getReceiverObject(receiver);
-        VariableInterceptor.retrieve(provider.getLocalVariableBehavior(), this, robj);
+    void retrieve(final IRubyObject receiver) {
+        final RubyObject robj = getReceiverObject(receiver);
+        VariableInterceptor.retrieve(getLocalVariableBehavior(), this, robj);
     }
 
     void terminate() {
-        VariableInterceptor.terminateGlobalVariables(provider.getLocalVariableBehavior(), variables, provider.getRuntime());
-        VariableInterceptor.terminateLocalVariables(provider.getLocalVariableBehavior(), varNames, variables);
+        VariableInterceptor.terminateGlobalVariables(getLocalVariableBehavior(), getVariables(), getRuntime());
+        VariableInterceptor.terminateLocalVariables(getLocalVariableBehavior(), getNames(), getVariables());
     }
 
     /**
@@ -393,8 +403,9 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return the previous value associated with <tt>key</tt>, or
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
      */
-    public V remove(Object key) {
-        return removeFrom(provider.getRuntime().getTopSelf(), key);
+    @Override
+    public Object remove(final Object key) {
+        return removeFrom(getTopSelf(), key);
     }
 
     /**
@@ -408,19 +419,17 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return the previous value associated with <tt>key</tt>, or
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
      */
-    public V removeFrom(Object receiver, Object key) {
-        if (varNames == null) return null;
+    public Object removeFrom(final Object receiver, final Object key) {
+        if ( variables == null ) return null;
         checkKey(key);
-        RubyObject robj = getReceiverObject(receiver);
-        String name = ((String)key).intern();
-        for (int i=0; i<varNames.size(); i++) {
-            if (name.equals(varNames.get(i))) {
-                BiVariable var = variables.get(i);
-                if (var.getReceiver() == robj) {
+        final RubyObject robj = getReceiverObject(receiver);
+        for ( int i = 0; i < size(); i++ ) {
+            if ( ((String) key).equals( varNames.get(i) ) ) {
+                final BiVariable var = variables.get(i);
+                if ( var.isReceiverIdentical(robj) ) {
                     varNames.remove(i);
-                    BiVariable v = variables.remove(i);
-                    v.remove();
-                    return (V)v.getJavaObject();
+                    variables.remove(i);
+                    return var.getJavaObject();
                 }
             }
         }
@@ -432,23 +441,21 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      *
      * @param t mappings to be stored in this map
      */
-    public void putAll(Map<? extends K, ? extends V> t) {
-        if (t == null) {
+
+    @Override
+    public void putAll(final Map<? extends String, ? extends Object> map) {
+        if (map == null) {
             throw new NullPointerException("map is null");
         }
-        if (t.isEmpty()) {
+        if (map.isEmpty()) {
             throw new IllegalArgumentException("map is empty");
         }
-        Set set = t.entrySet();
-        Iterator itr = set.iterator();
-        while (itr.hasNext()) {
-            Map.Entry entry = (Map.Entry)itr.next();
-            if (entry.getKey() instanceof String) {
-                K key = (K)entry.getKey();
-                V value = (V)entry.getValue();
-                put(key, value);
+        for ( final Entry entry : map.entrySet() ) {
+            final Object key = entry.getKey();
+            if (key instanceof String) {
+                put( (String) key, entry.getValue());
             } else {
-                throw new ClassCastException("key is NOT String");
+                throw new ClassCastException("key is not String");
             }
         }
     }
@@ -459,24 +466,22 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * removed from Ruby instance. However, Ruby instance keep having global variable
      * names with null value.
      */
+    @Override
     public void clear() {
-        if (varNames == null) return;
-        boolean argv_presence = false;
-        if (varNames.contains("ARGV")) argv_presence = true;
-        varNames.clear();
-        if (argv_presence) varNames.add("ARGV");
-        BiVariable argv_object = null;
-        for (BiVariable v : variables) {
-            if (v != null) {
-                if ("ARGV".equals(v.getName())) {
-                    argv_object = v;
-                } else {
-                    v.remove();
+        if ( variables == null ) return;
+        BiVariable argv = null;
+        for ( BiVariable var : getVariables() ) {
+            if ( var != null ) {
+                if ( "ARGV".equals(var.getName()) ) {
+                    argv = var;
+                }
+                else {
+                    var.remove();
                 }
             }
         }
-        variables.clear();
-        if (argv_object != null) variables.add(argv_object);
+        getNames().clear(); getVariables().clear();
+        if ( argv != null ) update("ARGV", argv);
     }
 
     /**
@@ -484,16 +489,12 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * The set is backed by the map, so changes to the map should be
      * reflected in the set, and vice-versa. However, the implementation
      * does not reflect changes currently.
-     * 
+     *
      * @return a set view of the keys contained in this map
      */
-    public Set keySet() {
-        if (isEmpty()) return null;
-        Set s = new HashSet();
-        for (String name : varNames) {
-            s.add(name);
-        }
-        return s;
+    @Override
+    public Set<String> keySet() {
+        return new LinkedHashSet<String>( getNames() );
     }
 
     /**
@@ -501,16 +502,12 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * The collection is backed by the map, so changes to the map should be
      * reflected in the collection, and vice-versa. However, the implementation
      * does not reflect changes currently.
-     * 
+     *
      * @return a collection view of the values contained in this map
      */
-    public Collection values() {
-        if (isEmpty()) return null;
-        List l = new ArrayList();
-        for (BiVariable v : variables) {
-            l.add(v.getJavaObject());
-        }
-        return l;
+    @Override
+    public Collection<Object> values() {
+        return getMap().values();
     }
 
     /**
@@ -518,36 +515,82 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * The set is backed by the map, so changes to the map should be
      * reflected in the set, and vice-versa. However, the implementation
      * does not reflect changes currently.
-     * 
+     *
      * @return an entry set of a map
      */
-    public Set entrySet() {
-        if (isEmpty()) return null;
+    @Override
+    public Set<Entry<String, Object>> entrySet() {
         return getMap().entrySet();
     }
 
     /**
      * Adds a key-value pair of Ruby local variable to double array.
-     * 
+     *
      * @param name is a Ruby's local variable name
      * @param value is BiVariable type object corresponding to the name
      */
-    public void update(String name, BiVariable value) {
-        if (varNames == null) {
-            varNames = new ArrayList<String>();
-            variables = new ArrayList<BiVariable>();
+    public void update(final String name, final BiVariable value) {
+        getNames().add(name);
+        getVariables().add(value);
+    }
+
+    public void updateVariable(final RubyObject receiver, final String name,
+        final IRubyObject value, final Class<? extends BiVariable> type) {
+        final BiVariable var = getVariable(receiver, name);
+        if (var != null) {
+            var.setRubyObject(value);
         }
-        varNames.add(name);
-        variables.add(value);
+        else {
+            update(name, newVariable(receiver, name, value, type));
+        }
+    }
+
+    private static BiVariable newVariable(final RubyObject receiver,
+        final String name, final IRubyObject value,
+        final Class<? extends BiVariable> type) {
+        try {
+            // (RubyObject receiver, String name, IRubyObject irubyObject)
+            final Constructor<? extends BiVariable> constructor =
+                type.getDeclaredConstructor(RubyObject.class, String.class, IRubyObject.class);
+            constructor.setAccessible(true);
+            return constructor.newInstance(receiver, name, value);
+        }
+        catch (NoSuchMethodException ex) {
+            throw new RuntimeException(ex);
+        }
+        catch (InvocationTargetException ex) {
+            final Throwable cause = ex.getTargetException();
+            if ( cause instanceof RuntimeException ) throw (RuntimeException) cause;
+            throw new RuntimeException(cause);
+        }
+        catch (InstantiationException ex) { throw new RuntimeException(ex); }
+        catch (IllegalAccessException ex) { throw new RuntimeException(ex); }
     }
 
     /**
-     * Returns true when eager retrieval is requird or false when eager retrieval is
-     * unnecessary.
+     * Returns true when eager retrieval is required or false when eager
+     * retrieval is unnecessary.
      *
      * @return true for eager retrieve, false for on-demand retrieval
      */
     public boolean isLazy() {
         return lazy;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder str = new StringBuilder();
+        str.append( getClass().getName() );
+
+        str.append('{');
+        for ( int i = 0; i < size(); i++ ) {
+            final String name = getNames().get(i);
+            final BiVariable variable = getVariables().get(i);
+            str.append(name).append('=').append(variable.getJavaObject());
+            if ( i == size() - 1 ) break;
+            str.append(',').append(' ');
+        }
+        return str.append('}').toString();
+    }
+
 }

@@ -1056,7 +1056,11 @@ public abstract class KernelNodes {
             final InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(object), name);
 
             if (method == null) {
-                throw new UnsupportedOperationException();
+                throw new RaiseException(
+                    getContext().getCoreLibrary().nameErrorUndefinedMethod(
+                        name,
+                        getContext().getCoreLibrary().getLogicalClass(object).getName(),
+                        this));
             }
 
             return new RubyMethod(getContext().getCoreLibrary().getMethodClass(), object, method);
@@ -1680,14 +1684,7 @@ public abstract class KernelNodes {
                 final String format = args[0].toString();
                 final List<Object> values = Arrays.asList(args).subList(1, args.length);
 
-                final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
-
-                try {
-                    // TODO(CS): this is only safe if values' toString() are pure.
-                    StringFormatter.format(getContext(), printStream, format, values);
-                } finally {
-                    getContext().getThreadManager().enterGlobalLock(runningThread);
-                }
+                StringFormatter.format(getContext(), printStream, format, values);
             }
 
             return getContext().makeString(new ByteList(outputStream.toByteArray()));
