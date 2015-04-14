@@ -64,14 +64,12 @@ public class ArgsNode extends Node {
     // Helpful fields derived from struct fields
     private final int preCount;
     private final int postCount;
-    private final int postIndex;
 
     private final int requiredArgsCount;
     protected final boolean hasOptArgs;
     protected final boolean hasMasgnArgs;
     protected final boolean hasKwargs;
     protected int maxArgsCount;
-    protected final boolean isSimple;
 
     /**
      * Construct a new ArgsNode with no keyword arguments.
@@ -114,8 +112,6 @@ public class ArgsNode extends Node {
         this.preCount = pre == null ? 0 : pre.size();
         this.post = post;
         this.postCount = post == null ? 0 : post.size();
-        int optArgCount = optionalArguments == null ? 0 : optionalArguments.size();
-        this.postIndex = getPostCount(preCount, optArgCount, rest);
         this.optArgs = optionalArguments;
         this.restArgNode = rest;
         this.blockArgNode = blockArgNode;
@@ -126,15 +122,6 @@ public class ArgsNode extends Node {
         this.hasMasgnArgs = hasMasgnArgs();
         this.hasKwargs = keywords != null || keyRest != null;
         this.maxArgsCount = hasRestArg() ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
-
-        this.isSimple = !(hasMasgnArgs || hasOptArgs || hasRestArg() || postCount > 0 || hasKwargs);
-    }
-    
-    private int getPostCount(int preCount, int optArgCount, RestArgNode rest) {
-        // Simple-case: If we have a rest we know where it is
-        if (rest != null) return rest.getIndex() + 1;
-
-        return preCount + optArgCount;
     }
 
     @Override
