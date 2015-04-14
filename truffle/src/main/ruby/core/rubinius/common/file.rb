@@ -121,6 +121,71 @@ class File < IO
     StringValue(obj)
   end
 
+  ##
+  # Returns the last component of the filename given
+  # in file_name, which must be formed using forward
+  # slashes (``/’’) regardless of the separator used
+  # on the local file system. If suffix is given and
+  # present at the end of file_name, it is removed.
+  #
+  #  File.basename("/home/gumby/work/ruby.rb")          #=> "ruby.rb"
+  #  File.basename("/home/gumby/work/ruby.rb", ".rb")   #=> "ruby"
+  def self.basename(path, ext=undefined)
+    path = Rubinius::Type.coerce_to_path(path)
+
+    slash = "/"
+
+    ext_not_present = undefined.equal?(ext)
+
+    if pos = path.find_string_reverse(slash, path.bytesize)
+      # special case. If the string ends with a /, ignore it.
+      if pos == path.bytesize - 1
+
+        # Find the first non-/ from the right
+        data = path.data
+        found = false
+        pos.downto(0) do |i|
+          if data[i] != 47  # ?/
+            path = path.byteslice(0, i+1)
+            found = true
+            break
+          end
+        end
+
+        # edge case, it's all /'s, return "/"
+        return slash unless found
+
+        # Now that we've trimmed the /'s at the end, search again
+        pos = path.find_string_reverse(slash, path.bytesize)
+        if ext_not_present and !pos
+          # No /'s found and ext not present, return path.
+          return path
+        end
+      end
+
+      path = path.byteslice(pos + 1, path.bytesize - pos) if pos
+    end
+
+    return path if ext_not_present
+
+    # special case. if ext is ".*", remove any extension
+
+    ext = StringValue(ext)
+
+    if ext == ".*"
+      if pos = path.find_string_reverse(".", path.bytesize)
+        return path.byteslice(0, pos)
+      end
+    elsif pos = path.find_string_reverse(ext, path.bytesize)
+      # Check that ext is the last thing in the string
+      if pos == path.bytesize - ext.size
+        return path.byteslice(0, pos)
+      end
+    end
+
+    return path
+  end
+
 end
 
 File::Stat = Rubinius::Stat

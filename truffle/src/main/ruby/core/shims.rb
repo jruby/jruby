@@ -209,3 +209,9 @@ class Encoding::Converter
   end
 end
 
+class Rubinius::ByteArray
+
+  alias_method :[], :get_byte
+
+end
+
