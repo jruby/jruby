@@ -233,6 +233,7 @@ public class CoreLibrary {
         defineClass(errnoModule, systemCallErrorClass, "ENXIO");
         defineClass(errnoModule, systemCallErrorClass, "EPERM");
         defineClass(errnoModule, systemCallErrorClass, "EXDEV");
+        defineClass(errnoModule, systemCallErrorClass, "ECHILD");
 
         // ScriptError
         RubyClass scriptErrorClass = defineClass(exceptionClass, "ScriptError");

@@ -27,6 +27,10 @@
 # Only part of Rubinius' process.rb
 
 module Process
+  module Constants
+    WNOHANG = 1
+  end
+  include Constants
 
   FFI = Rubinius::FFI
 
@@ -74,6 +78,152 @@ module Process
       g = p.read_array_of_int(num_groups)
     }
     g
+  end
+
+  #
+  # Wait for all child processes.
+  #
+  # Blocks until all child processes have exited, and returns
+  # an Array of [pid, Process::Status] results, one for each
+  # child.
+  #
+  # Be mindful of the effects of creating new processes while
+  # .waitall has been called (usually in a different thread.)
+  # The .waitall call does not in any way check that it is only
+  # waiting for children that existed at the time it was called.
+  #
+  def self.waitall
+    statuses = []
+
+    begin
+      while true
+        statuses << Process.wait2
+      end
+    rescue Errno::ECHILD
+    end
+
+    statuses
+  end
+
+  #
+  # Wait for the given process to exit.
+  #
+  # The pid may be the specific pid of some previously forked
+  # process, or -1 to indicate to watch for *any* child process
+  # exiting. Other options, such as process groups, may be available
+  # depending on the system.
+  #
+  # With no arguments the default is to block waiting for any
+  # child processes (pid -1.)
+  #
+  # The flag may be Process::WNOHANG, which indicates that
+  # the child should only be quickly checked. If it has not
+  # exited yet, nil is returned immediately instead.
+  #
+  # The return value is the exited pid or nil if Process::WNOHANG
+  # was used and the child had not yet exited.
+  #
+  # If the pid has exited, the global $? is set to a Process::Status
+  # object representing the exit status (and possibly other info) of
+  # the child.
+  #
+  # If there exists no such pid (e.g. never forked or already
+  # waited for), or no children at all, Errno::ECHILD is raised.
+  #
+  # TODO: Support other options such as WUNTRACED? --rue
+  #
+  def self.wait2(input_pid=-1, flags=nil)
+    input_pid = Rubinius::Type.coerce_to input_pid, Integer, :to_int
+
+    if flags and (flags & WNOHANG) == WNOHANG
+      value = wait_pid_prim input_pid, true
+      return if value.nil?
+    else
+      value = wait_pid_prim input_pid, false
+    end
+
+    if value == false
+      raise Errno::ECHILD, "No child process: #{input_pid}"
+    end
+
+    # wait_pid_prim returns a tuple when wait needs to communicate
+    # the pid that was actually detected as stopped (since wait
+    # can wait for all child pids, groups, etc)
+    status, termsig, stopsig, pid = value
+
+    status = Process::Status.new(pid, status, termsig, stopsig)
+    Rubinius::Mirror::Process.set_status_global status
+
+    [pid, status]
+  end
+  
+  #--
+  # TODO: Most of the fields aren't implemented yet.
+  # TODO: Also, these objects should only need to be constructed by
+  # Process.wait and family.
+  #++
+
+  class Status
+
+    attr_reader :exitstatus
+    attr_reader :termsig
+    attr_reader :stopsig
+
+    def initialize(pid, exitstatus, termsig=nil, stopsig=nil)
+      @pid = pid
+      @exitstatus = exitstatus
+      @termsig = termsig
+      @stopsig = stopsig
+    end
+
+    def to_i
+      @exitstatus
+    end
+
+    def to_s
+      @exitstatus.to_s
+    end
+
+    def &(num)
+      @exitstatus & num
+    end
+
+    def ==(other)
+      other = other.to_i if other.kind_of? Process::Status
+      @exitstatus == other
+    end
+
+    def >>(num)
+      @exitstatus >> num
+    end
+
+    def coredump?
+      false
+    end
+
+    def exited?
+      @exitstatus != nil
+    end
+
+    def pid
+      @pid
+    end
+
+    def signaled?
+      @termsig != nil
+    end
+
+    def stopped?
+      @stopsig != nil
+    end
+
+    def success?
+      if exited?
+        @exitstatus == 0
+      else
+        nil
+      end
+    end
   end
 
 end
