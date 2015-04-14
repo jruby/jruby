@@ -32,7 +32,9 @@ package org.jruby.embed.jsr223;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
@@ -41,6 +43,7 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
 import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 import org.jruby.runtime.Constants;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -114,8 +117,6 @@ public class JRubyEngineFactoryTest {
         String expResult = org.jruby.runtime.Constants.VERSION;
         String result = instance.getEngineVersion();
         assertEquals(expResult, result);
-
-        instance = null;
     }
 
     /**
@@ -125,12 +126,8 @@ public class JRubyEngineFactoryTest {
     public void testGetExtensions() {
         logger1.info("getExtensions");
         JRubyEngineFactory instance = new JRubyEngineFactory();
-        List expResult = new ArrayList();
-        expResult.add("rb");
         List result = instance.getExtensions();
-        assertEquals(expResult, result);
-
-        instance = null;
+        assertEquals(Arrays.asList("rb"), result);
     }
 
     /**
@@ -143,8 +140,6 @@ public class JRubyEngineFactoryTest {
         String expResult = "ruby";
         String result = instance.getLanguageName();
         assertEquals(expResult, result);
-
-        instance = null;
     }
 
     /**
@@ -158,8 +153,6 @@ public class JRubyEngineFactoryTest {
         String result = instance.getLanguageVersion();
         assertTrue(result.startsWith(expResult));
         logger1.info(result);
-
-        instance = null;
     }
 
     /**
@@ -175,8 +168,6 @@ public class JRubyEngineFactoryTest {
         String expResult = "receiver.establish_connection(localhost, 1099)";
         String result = instance.getMethodCallSyntax(obj, m, args);
         assertEquals(expResult, result);
-
-        instance = null;
     }
 
     /**
@@ -186,12 +177,8 @@ public class JRubyEngineFactoryTest {
     public void testGetMimeTypes() {
         logger1.info("getMimeTypes");
         JRubyEngineFactory instance = new JRubyEngineFactory();
-        List expResult = new ArrayList();
-        expResult.add("application/x-ruby");
         List result = instance.getMimeTypes();
-        assertEquals(expResult, result);
-
-        instance = null;
+        assertEquals(Arrays.asList("application/x-ruby"), result);
     }
 
     /**
@@ -201,13 +188,7 @@ public class JRubyEngineFactoryTest {
     public void testGetNames() {
         logger1.info("getNames");
         JRubyEngineFactory instance = new JRubyEngineFactory();
-        List expResult = new ArrayList();
-        expResult.add("ruby");
-        expResult.add("jruby");
-        List result = instance.getNames();
-        assertEquals(expResult, result);
-
-        instance = null;
+        assertEquals(Arrays.asList("ruby", "jruby"), instance.getNames());
     }
 
     /**
@@ -219,10 +200,7 @@ public class JRubyEngineFactoryTest {
         String toDisplay = "abc";
         JRubyEngineFactory instance = new JRubyEngineFactory();
         String expResult = "puts abc\nor\nprint abc";
-        String result = instance.getOutputStatement(toDisplay);
-        assertEquals(expResult, result);
-
-        instance = null;
+        assertEquals(expResult, instance.getOutputStatement(toDisplay));
     }
 
     /**
@@ -266,8 +244,6 @@ public class JRubyEngineFactoryTest {
         expResult = "THREAD-ISOLATED";
         result = instance.getParameter(key);
         assertEquals(expResult, result);
-
-        instance = null;
     }
 
     /**
@@ -284,8 +260,6 @@ public class JRubyEngineFactoryTest {
         String expResult = "1.upto(7) {|i| print i, \" \"}\nhh = {\"p\" => 3.14, \"e\" => 2.22}\n";
         String result = instance.getProgram(statements);
         assertEquals(expResult, result);
-
-        instance = null;
     }
 
     /**
@@ -295,12 +269,40 @@ public class JRubyEngineFactoryTest {
     public void testGetScriptEngine() {
         logger1.info("getScriptEngine");
         JRubyEngineFactory instance = new JRubyEngineFactory();
-        Object expResult = instance;
         ScriptEngine engine = instance.getScriptEngine();
-        Object result = engine.getFactory();
-        assertEquals(expResult, result);
+        assertSame(instance, engine.getFactory());
+    }
 
-        instance = null;
+    @Test
+    public void testEmbedIntegration() throws ScriptException {
+        //System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
+
+        JRubyEngineFactory instance = new JRubyEngineFactory();
+        final ScriptEngine engine = instance.getScriptEngine();
+
+        final StringBuilder $this = new StringBuilder();
+        $this.append("first\n");
+        engine.put("this", $this);
+
+        assertSame($this, engine.eval("$this"));
+        engine.eval("$this.append( \"2\n\" )");
+
+        Object command = engine.eval("$command = $this.java_method :append, [java.lang.String]");
+
+        assertTrue( command instanceof org.jruby.RubyMethod );
+        //assertEquals( "append", ((Method) command).getName() );
+        //assertEquals( String.class, ((Method) command).getParameterTypes()[0] );
+
+        Object result = engine.eval(
+            "result = $command.call \"third to pass\n\"; " +
+            "# puts result \n" +
+            "result.to_s.each_line do |line|\n" +
+            "  puts line\n" +
+            "end"
+        );
+
+        //System.out.println(result);
+        //System.out.println(result.getClass());
     }
 
 }

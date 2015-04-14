@@ -189,6 +189,13 @@ public class ConcurrentLocalContextProviderTest {
         } else {
             // no need to test
         }
+
+        ConcurrentLocalContextProviderStub provider = new ConcurrentLocalContextProviderStub(LocalVariableBehavior.TRANSIENT);
+        provider.isGlobalRuntimeReady = false;
+        assertNotNull( provider.getRubyInstanceConfig() );
+        assertFalse( provider.runtimeInitialized ); // make sure we do not call getRuntime()
+
+
     }
 
     /**
@@ -246,7 +253,7 @@ public class ConcurrentLocalContextProviderTest {
         if (Ruby.isGlobalRuntimeReady()) assertTrue(result);
         else assertFalse(result);
     }
-    
+
     //@Test
     public void testTerminate() {
         logger1.info("isTerminate");
@@ -258,4 +265,35 @@ public class ConcurrentLocalContextProviderTest {
             fail();
         }
     }
+
+    private static class ConcurrentLocalContextProviderStub extends ConcurrentLocalContextProvider {
+
+        Boolean isGlobalRuntimeReady = null;
+
+        ConcurrentLocalContextProviderStub(LocalVariableBehavior behavior) {
+            super( behavior );
+        }
+
+        ConcurrentLocalContextProviderStub(LocalVariableBehavior behavior, boolean lazy) {
+            super( behavior, lazy );
+        }
+
+        boolean runtimeInitialized = false;
+
+        @Override
+        public Ruby getRuntime() {
+            runtimeInitialized = true;
+            return super.getRuntime();
+        }
+
+        @Override
+        boolean isGlobalRuntimeReady() {
+            if ( isGlobalRuntimeReady != null ) {
+                return isGlobalRuntimeReady.booleanValue();
+            }
+            return super.isGlobalRuntimeReady();
+        }
+
+    }
+
 }

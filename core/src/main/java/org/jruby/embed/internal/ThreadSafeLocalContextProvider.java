@@ -68,27 +68,36 @@ public class ThreadSafeLocalContextProvider extends AbstractLocalContextProvider
                 }
             };
 
+    public ThreadSafeLocalContextProvider(LocalVariableBehavior behavior) {
+        super(behavior);
+    }
+
     public ThreadSafeLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
-        this.behavior = behavior;
+        super(behavior);
         this.lazy = lazy;
     }
 
+    @Override
     public Ruby getRuntime() {
-        return contextHolder.get().get().getThreadSafeRuntime();
+        return contextHolder.get().get().getRuntime();
     }
 
+    @Override
     public BiVariableMap getVarMap() {
         return contextHolder.get().get().getVarMap(this);
     }
 
+    @Override
     public Map getAttributeMap() {
         return contextHolder.get().get().getAttributeMap();
     }
 
+    @Override
     public boolean isRuntimeInitialized() {
-        return contextHolder.get().get().initialized;
+        return contextHolder.get().get().isInitialized();
     }
 
+    @Override
     public void terminate() {
         ConcurrentLinkedQueue<AtomicReference<LocalContext>> terminated = contextRefs;
         contextRefs = null;
@@ -105,4 +114,5 @@ public class ThreadSafeLocalContextProvider extends AbstractLocalContextProvider
         contextHolder.remove();
         contextHolder.set(null);
     }
+
 }

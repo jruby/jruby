@@ -72,40 +72,41 @@ public class ConcurrentLocalContextProvider extends AbstractLocalContextProvider
                 }
             };
 
+    public ConcurrentLocalContextProvider(LocalVariableBehavior behavior) {
+        super( getGlobalRuntimeConfigOrNew(), behavior );
+    }
+
     public ConcurrentLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
-        // To save startup time, Ruby runtime instantiation should be delayed as mush as possible
-        // so, don't create runtime here.
-        if (Ruby.isGlobalRuntimeReady()) config = Ruby.getGlobalRuntime().getInstanceConfig();
-        else config = new RubyInstanceConfig();
-        this.behavior = behavior;
+        super( getGlobalRuntimeConfigOrNew(), behavior );
         this.lazy = lazy;
     }
 
+    @Override
     public Ruby getRuntime() {
-        if (!Ruby.isGlobalRuntimeReady()) {
-            return Ruby.newInstance(config);
-        }
-        return Ruby.getGlobalRuntime();
+        return getGlobalRuntime(this);
     }
 
     @Override
     public RubyInstanceConfig getRubyInstanceConfig() {
-        if (Ruby.isGlobalRuntimeReady()) return Ruby.getGlobalRuntime().getInstanceConfig();
-        else return config;
+        return getGlobalRuntimeConfig(this);
     }
 
+    @Override
     public BiVariableMap getVarMap() {
         return contextHolder.get().get().getVarMap(this);
     }
 
+    @Override
     public Map getAttributeMap() {
         return contextHolder.get().get().getAttributeMap();
     }
 
+    @Override
     public boolean isRuntimeInitialized() {
         return Ruby.isGlobalRuntimeReady();
     }
 
+    @Override
     public void terminate() {
         ConcurrentLinkedQueue<AtomicReference<LocalContext>> terminated = contextRefs;
         contextRefs = null;
@@ -122,4 +123,5 @@ public class ConcurrentLocalContextProvider extends AbstractLocalContextProvider
         contextHolder.remove();
         contextHolder.set(null);
     }
+
 }
