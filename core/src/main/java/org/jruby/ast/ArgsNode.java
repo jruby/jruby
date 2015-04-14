@@ -36,10 +36,8 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Arity;
 
 /**
  * Represents the argument declarations of a method.  The fields:
@@ -67,8 +65,6 @@ public class ArgsNode extends Node {
     private final int preCount;
     private final int postCount;
     private final int postIndex;
-
-    protected Arity arity;
 
     private final int requiredArgsCount;
     protected final boolean hasOptArgs;
@@ -130,7 +126,6 @@ public class ArgsNode extends Node {
         this.hasMasgnArgs = hasMasgnArgs();
         this.hasKwargs = keywords != null || keyRest != null;
         this.maxArgsCount = hasRestArg() ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
-        this.arity = calculateArity();
 
         this.isSimple = !(hasMasgnArgs || hasOptArgs || hasRestArg() || postCount > 0 || hasKwargs);
     }
@@ -145,12 +140,6 @@ public class ArgsNode extends Node {
     @Override
     public NodeType getNodeType() {
         return NodeType.ARGSNODE;
-    }
-
-    protected Arity calculateArity() {
-        if (getOptArgs() != null || hasRestArg()) return Arity.required(getRequiredArgsCount());
-
-        return Arity.createArity(getRequiredArgsCount());
     }
 
     public boolean hasKwargs() {
@@ -199,10 +188,6 @@ public class ArgsNode extends Node {
         return pre;
     }
 
-    public Arity getArity() {
-        return arity;
-    }
-
     public int getRequiredArgsCount() {
         return requiredArgsCount;
     }
@@ -248,10 +233,6 @@ public class ArgsNode extends Node {
         return postCount;
     }
 
-    public int getPostIndex() {
-        return postIndex;
-    }
-
     public int getPreCount() {
         return preCount;
     }
@@ -266,14 +247,6 @@ public class ArgsNode extends Node {
 
     public boolean hasKeyRest() {
         return keyRest != null;
-    }
-
-    public void checkArgCount(Ruby runtime, int argsLength) {
-        Arity.checkArgumentCount(runtime, argsLength, requiredArgsCount, maxArgsCount, hasKwargs);
-    }
-
-    public void checkArgCount(Ruby runtime, String name, int argsLength) {
-        Arity.checkArgumentCount(runtime, name, argsLength, requiredArgsCount, maxArgsCount, hasKwargs);
     }
 
     // FIXME: This is a hot mess and I think we will still have some extra nulls inserted
