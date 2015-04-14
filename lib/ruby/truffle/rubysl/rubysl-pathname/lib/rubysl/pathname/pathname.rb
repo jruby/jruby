@@ -594,7 +594,6 @@ class Pathname
   end
 
   def plus(path1, path2) # -> path
-    puts "`#{path1}` `#{path2}`"
     prefix2 = path2
     index_list2 = []
     basename_list2 = []
