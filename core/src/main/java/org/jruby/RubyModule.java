@@ -1823,6 +1823,7 @@ public class RubyModule extends RubyObject {
         block.getBinding().getFrame().setName(name);
         block.getBinding().setMethod(name);
 
+        block.type = Block.Type.LAMBDA;
         StaticScope scope = block.getBody().getStaticScope();
 
         // for zsupers in define_method (blech!) we tell the proc scope to act as the "argument" scope
