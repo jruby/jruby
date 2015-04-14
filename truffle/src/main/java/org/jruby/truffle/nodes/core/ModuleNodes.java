@@ -1076,11 +1076,27 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization
-        public Object initializeCopy(RubyModule self, RubyModule other) {
+        @Specialization(guards = { "!isRubyClass(arguments[0])", "!isRubyClass(arguments[1])" })
+        public Object initializeCopy(RubyModule self, RubyModule from) {
             notDesignedForCompilation();
 
-            self.initCopy(other);
+            self.initCopy(from);
+            return nil();
+        }
+
+        @Specialization
+        public Object initializeCopy(RubyClass self, RubyClass from) {
+            notDesignedForCompilation();
+
+            if (from == getContext().getCoreLibrary().getBasicObjectClass()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError("can't copy the root class", this));
+            } else if (from.isSingleton()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError("can't copy singleton class", this));
+            }
+
+            self.initCopy(from);
             return nil();
         }
 

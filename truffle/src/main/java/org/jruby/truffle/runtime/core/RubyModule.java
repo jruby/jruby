@@ -160,12 +160,14 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     @TruffleBoundary
-    public void initCopy(RubyModule other) {
+    public void initCopy(RubyModule from) {
         // Do not copy name, the copy is an anonymous module
-        this.parentModule = other.parentModule;
-        this.methods.putAll(other.methods);
-        this.constants.putAll(other.constants);
-        this.classVariables.putAll(other.classVariables);
+        this.parentModule = from.parentModule;
+        if (parentModule != null)
+            parentModule.getActualModule().addDependent(this);
+        this.methods.putAll(from.methods);
+        this.constants.putAll(from.constants);
+        this.classVariables.putAll(from.classVariables);
     }
 
     /** If this instance is a module and not a class. */
