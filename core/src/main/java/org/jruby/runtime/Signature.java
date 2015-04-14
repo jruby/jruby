@@ -5,6 +5,7 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.IterNode;
+import org.jruby.ast.ListNode;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.Node;
 import org.jruby.ast.PostExeNode;

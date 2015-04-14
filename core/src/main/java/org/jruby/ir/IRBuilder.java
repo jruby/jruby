@@ -1806,7 +1806,6 @@ public class IRBuilder {
 
     protected void receiveNonBlockArgs(final ArgsNode argsNode) {
         final int numPreReqd = argsNode.getPreCount();
-        final int numPostReqd = argsNode.getPostCount();
         final int required = argsNode.getRequiredArgsCount(); // numPreReqd + numPostReqd
         int opt = argsNode.getOptionalArgsCount();
         boolean rest = argsNode.hasRestArg();
@@ -1878,8 +1877,9 @@ public class IRBuilder {
 
         // Post(-opt and rest) required args
         ListNode postArgs = argsNode.getPost();
-        for (int i = 0; i < numPostReqd; i++) {
-            receiveRequiredArg(postArgs.get(i), i, true, numPreReqd, numPostReqd);
+        int postCount = postArgs != null ? postArgs.size() : -1;
+        for (int i = 0; i < postCount; i++) {
+            receiveRequiredArg(postArgs.get(i), i, true, numPreReqd, postCount);
         }
     }
 

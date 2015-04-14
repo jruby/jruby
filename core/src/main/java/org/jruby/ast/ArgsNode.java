@@ -52,7 +52,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * b       = block arg
  */
 public class ArgsNode extends Node {
-    // Basic struct fields
     private final ListNode pre;
     private final ListNode optArgs;
     protected final ArgumentNode restArgNode;
@@ -61,25 +60,8 @@ public class ArgsNode extends Node {
     private final KeywordRestArgNode keyRest;
     private final BlockArgNode blockArgNode;
 
-    // Helpful fields derived from struct fields
-    private final int preCount;
-    private final int postCount;
-
-    private final int requiredArgsCount;
-    protected final boolean hasOptArgs;
-    protected final boolean hasMasgnArgs;
-    protected final boolean hasKwargs;
-    protected int maxArgsCount;
-
     /**
      * Construct a new ArgsNode with no keyword arguments.
-     *
-     * @param position
-     * @param pre
-     * @param optionalArguments
-     * @param rest
-     * @param post
-     * @param blockArgNode
      */
     public ArgsNode(ISourcePosition position, ListNode pre, ListNode optionalArguments,
                     RestArgNode rest, ListNode post, BlockArgNode blockArgNode) {
@@ -88,15 +70,6 @@ public class ArgsNode extends Node {
 
     /**
      * Construct a new ArgsNode with keyword arguments.
-     *
-     * @param position
-     * @param pre
-     * @param optionalArguments
-     * @param rest
-     * @param post
-     * @param keywords
-     * @param keyRest
-     * @param blockArgNode
      */
     public ArgsNode(ISourcePosition position, ListNode pre, ListNode optionalArguments,
             RestArgNode rest, ListNode post, ListNode keywords, KeywordRestArgNode keyRest, BlockArgNode blockArgNode) {
@@ -109,19 +82,12 @@ public class ArgsNode extends Node {
                         blockArgNode != null && blockArgNode.containsVariableAssignment());
 
         this.pre = pre;
-        this.preCount = pre == null ? 0 : pre.size();
         this.post = post;
-        this.postCount = post == null ? 0 : post.size();
         this.optArgs = optionalArguments;
         this.restArgNode = rest;
         this.blockArgNode = blockArgNode;
         this.keywords = keywords;
         this.keyRest = keyRest;
-        this.requiredArgsCount = preCount + postCount;
-        this.hasOptArgs = getOptArgs() != null;
-        this.hasMasgnArgs = hasMasgnArgs();
-        this.hasKwargs = keywords != null || keyRest != null;
-        this.maxArgsCount = hasRestArg() ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
     }
 
     @Override
@@ -130,11 +96,11 @@ public class ArgsNode extends Node {
     }
 
     public boolean hasKwargs() {
-        return hasKwargs;
+        return keywords != null || keyRest != null;
     }
     
     public int countKeywords() {
-        if (hasKwargs) {
+        if (hasKwargs()) {
             if (keywords == null) {
                 // Rest keyword argument
                 return 0;
@@ -147,16 +113,6 @@ public class ArgsNode extends Node {
 
     public boolean hasRestArg() {
         return restArgNode != null;
-    }
-
-    protected boolean hasMasgnArgs() {
-        if (preCount > 0) for (Node node : pre.childNodes()) {
-            if (node instanceof AssignableNode) return true;
-        }
-        if (postCount > 0) for (Node node : post.childNodes()) {
-            if (node instanceof AssignableNode) return true;
-        }
-        return false;
     }
 
     /**
@@ -176,7 +132,7 @@ public class ArgsNode extends Node {
     }
 
     public int getRequiredArgsCount() {
-        return requiredArgsCount;
+        return getPreCount() + getPostCount();
     }
 
     public int getOptionalArgsCount() {
@@ -188,7 +144,7 @@ public class ArgsNode extends Node {
     }
 
     public int getMaxArgumentsCount() {
-        return maxArgsCount;
+        return hasRestArg() ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
     }
 
     /**
@@ -217,11 +173,11 @@ public class ArgsNode extends Node {
     }
 
     public int getPostCount() {
-        return postCount;
+        return post == null ? 0 : post.size();
     }
 
     public int getPreCount() {
-        return preCount;
+        return pre == null ? 0 : pre.size();
     }
 
     public ListNode getKeywords() {
