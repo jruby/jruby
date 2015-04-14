@@ -43,6 +43,7 @@ import org.jruby.ast.ListNode;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -65,6 +66,7 @@ import org.jruby.internal.runtime.methods.MethodArgs2;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.load.Library;
+import org.jruby.util.unsafe.UnsafeHolder;
 
 /**
  * Native part of require 'jruby'. Provides methods for swapping between the
@@ -129,6 +131,105 @@ public class JRubyLibrary implements Library {
     }
 
     /**
+     * @param obj An object to wait on.
+     * @return nil
+     * @see Object#wait()
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        try {
+            context.getThread().wait_timeout(obj, null);
+            return context.nil;
+        } catch (InterruptedException ie) {
+            throw context.runtime.newConcurrencyError(ie.getLocalizedMessage());
+        }
+    }
+
+    /**
+     * @param obj     An object to wait on.
+     * @param timeout Seconds.
+     * @return nil
+     * @see Object#wait(long)
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject obj, IRubyObject timeout) {
+        final double t = timeout.convertToFloat().getDoubleValue();
+        if (t < 0) throw context.runtime.newArgumentError("negative sleep timeout");
+
+        try {
+            context.getThread().wait_timeout(obj, t);
+            return context.nil;
+        } catch (InterruptedException ie) {
+            throw context.runtime.newConcurrencyError(ie.getLocalizedMessage());
+        }
+    }
+
+    /**
+     * @param obj An object to notify on.
+     * @return nil
+     * @see Object#notify()
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject notify(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        obj.notify();
+        return context.nil;
+    }
+
+    /**
+     * @param obj An object to notifyAll on.
+     * @return nil
+     * @see Object#notifyAll()
+     */
+    @JRubyMethod(module = true, name = "notify_all")
+    public static IRubyObject notifyAll(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        obj.notifyAll();
+        return context.nil;
+    }
+
+    /**
+     * Acts as Java synchronize keyword.
+     *
+     * @param obj   An object to lock.
+     * @param block Block to be executed.
+     * @return Result of the block execution
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject synchronize(ThreadContext context, IRubyObject recv, IRubyObject obj, Block block) {
+        return JavaObject.ruby_synchronized(context, obj, block);
+    }
+
+    /**
+     * @param obj An object to lock.
+     * @return nil
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject lock(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        UnsafeHolder.U.monitorEnter(obj);
+        return context.nil;
+    }
+
+    /**
+     * @param obj An object to tryLock.
+     * @return nil
+     */
+    @JRubyMethod(module = true, name = "try_lock")
+    public static IRubyObject tryLock(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        // TODO handle missing U
+        return context.getRuntime().newBoolean(UnsafeHolder.U.tryMonitorEnter(obj));
+    }
+
+    /**
+     * @param obj An object to unlock.
+     * @return nil
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject unlock(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        // TODO handle missing U
+        UnsafeHolder.U.monitorExit(obj);
+        return context.nil;
+    }
+
+    /**
      * Unwrap the given Java-integration-wrapped object, returning the unwrapped
      * object. If the wrapped object is not a Ruby object, an error will raise.
      */
@@ -162,7 +263,7 @@ public class JRubyLibrary implements Library {
     public static IRubyObject identity_hash(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return context.runtime.newFixnum(System.identityHashCode(obj));
     }
-    
+
     public static class MethodExtensions {
         @JRubyMethod(name = "args")
         public static IRubyObject methodArgs(IRubyObject recv) {
@@ -180,7 +281,7 @@ public class JRubyLibrary implements Library {
             } else if (method instanceof MethodArgs) {
                 MethodArgs interpMethod = (MethodArgs)method;
                 ArgsNode args = interpMethod.getArgsNode();
-                
+
                 ListNode requiredArgs = args.getPre();
                 for (int i = 0; requiredArgs != null && i < requiredArgs.size(); i++) {
                     Node argNode = requiredArgs.get(i);
@@ -190,7 +291,7 @@ public class JRubyLibrary implements Library {
                         argsArray.append(RubyArray.newArray(runtime, req, getNameFrom(runtime, (INameNode)argNode)));
                     }
                 }
-                
+
                 ListNode optArgs = args.getOptArgs();
                 for (int i = 0; optArgs != null && i < optArgs.size(); i++) {
                     argsArray.append(RubyArray.newArray(runtime, opt, getNameFrom(runtime, (INameNode) optArgs.get(i))));
@@ -207,7 +308,7 @@ public class JRubyLibrary implements Library {
                         argsArray.append(RubyArray.newArray(runtime, rest, getNameFrom(runtime, args.getRestArgNode())));
                     }
                 }
-                
+
                 ListNode requiredArgsPost = args.getPost();
                 for (int i = 0; requiredArgsPost != null && i < requiredArgsPost.size(); i++) {
                     Node argNode = requiredArgsPost.get(i);
@@ -242,7 +343,7 @@ public class JRubyLibrary implements Library {
 
             return argsArray;
         }
-        
+
         public static String[] methodParameters(Ruby runtime, DynamicMethod method) {
             ArrayList<String> argsArray = new ArrayList<String>();
             method = method.getRealMethod();
@@ -252,7 +353,7 @@ public class JRubyLibrary implements Library {
             } else if (method instanceof MethodArgs) {
                 MethodArgs interpMethod = (MethodArgs)method;
                 ArgsNode args = interpMethod.getArgsNode();
-                
+
                 ListNode requiredArgs = args.getPre();
                 for (int i = 0; requiredArgs != null && i < requiredArgs.size(); i++) {
                     Node argNode = requiredArgs.get(i);
@@ -262,7 +363,7 @@ public class JRubyLibrary implements Library {
                         argsArray.add("q" + getNameFrom(runtime, (INameNode)argNode));
                     }
                 }
-                
+
                 ListNode optArgs = args.getOptArgs();
                 for (int i = 0; optArgs != null && i < optArgs.size(); i++) {
                     argsArray.add("o" + getNameFrom(runtime, (INameNode) optArgs.get(i)));
@@ -279,7 +380,7 @@ public class JRubyLibrary implements Library {
                         argsArray.add("r" + getNameFrom(runtime, args.getRestArgNode()));
                     }
                 }
-                
+
                 ListNode requiredArgsPost = args.getPost();
                 for (int i = 0; requiredArgsPost != null && i < requiredArgsPost.size(); i++) {
                     Node argNode = requiredArgsPost.get(i);
