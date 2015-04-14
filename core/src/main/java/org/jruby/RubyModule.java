@@ -1834,7 +1834,7 @@ public class RubyModule extends RubyObject {
         scope.setRequiredArgs(arity.required());
 
         if(!arity.isFixed()) {
-            scope.setRestArg(arity.required());
+            scope.setHasRest(arity.required() >= 0);
         }
 
         return new ProcMethod(this, proc, visibility);

@@ -67,7 +67,6 @@ public class ArgsNode extends Node {
     private final int preCount;
     private final int postCount;
     private final int postIndex;
-    protected final int restArg;
 
     protected Arity arity;
 
@@ -122,7 +121,6 @@ public class ArgsNode extends Node {
         int optArgCount = optionalArguments == null ? 0 : optionalArguments.size();
         this.postIndex = getPostCount(preCount, optArgCount, rest);
         this.optArgs = optionalArguments;
-        this.restArg = rest == null ? -1 : rest.getIndex();
         this.restArgNode = rest;
         this.blockArgNode = blockArgNode;
         this.keywords = keywords;
@@ -131,10 +129,10 @@ public class ArgsNode extends Node {
         this.hasOptArgs = getOptArgs() != null;
         this.hasMasgnArgs = hasMasgnArgs();
         this.hasKwargs = keywords != null || keyRest != null;
-        this.maxArgsCount = getRestArg() >= 0 ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
+        this.maxArgsCount = hasRestArg() ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
         this.arity = calculateArity();
 
-        this.isSimple = !(hasMasgnArgs || hasOptArgs || restArg >= 0 || postCount > 0 || hasKwargs);
+        this.isSimple = !(hasMasgnArgs || hasOptArgs || hasRestArg() || postCount > 0 || hasKwargs);
     }
     
     private int getPostCount(int preCount, int optArgCount, RestArgNode rest) {
@@ -150,7 +148,7 @@ public class ArgsNode extends Node {
     }
 
     protected Arity calculateArity() {
-        if (getOptArgs() != null || getRestArg() >= 0) return Arity.required(getRequiredArgsCount());
+        if (getOptArgs() != null || hasRestArg()) return Arity.required(getRequiredArgsCount());
 
         return Arity.createArity(getRequiredArgsCount());
     }
@@ -169,6 +167,10 @@ public class ArgsNode extends Node {
         } else {
             return 0;
         }
+    }
+
+    public boolean hasRestArg() {
+        return restArgNode != null;
     }
 
     protected boolean hasMasgnArgs() {
@@ -223,14 +225,6 @@ public class ArgsNode extends Node {
      */
     public ListNode getOptArgs() {
         return optArgs;
-    }
-
-    /**
-     * Gets the restArg.
-     * @return Returns a int
-     */
-    public int getRestArg() {
-        return restArg;
     }
 
     /**

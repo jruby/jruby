@@ -944,17 +944,6 @@ public class Helpers {
         return RubyRegexp.match_last(backref);
     }
 
-    public static IRubyObject[] getArgValues(ThreadContext context) {
-        return context.getCurrentScope().getArgValues();
-    }
-
-    public static IRubyObject callZSuper(Ruby runtime, ThreadContext context, Block block, IRubyObject self) {
-        // Has the method that is calling super received a block argument
-        if (!block.isGiven()) block = context.getCurrentFrame().getBlock();
-
-        return Helpers.invokeSuper(context, self, context.getCurrentScope().getArgValues(), block);
-    }
-
     public static IRubyObject[] appendToObjectArray(IRubyObject[] array, IRubyObject add) {
         IRubyObject[] newArray = new IRubyObject[array.length + 1];
         System.arraycopy(array, 0, newArray, 0, array.length);
@@ -2195,7 +2184,7 @@ public class Helpers {
                 .append(',')
                 .append(scope.getOptionalArgs())
                 .append(',')
-                .append(scope.getRestArg())
+                .append(scope.hasRestArg())
                 .append(',')
                 .append(scope.getScopeType());
 
@@ -2228,7 +2217,7 @@ public class Helpers {
     }
 
     private static void setAritiesFromDecodedScope(StaticScope scope, String[] scopeElements) {
-        scope.setArities(Integer.parseInt(scopeElements[2]), Integer.parseInt(scopeElements[3]), Integer.parseInt(scopeElements[4]));
+        scope.setArities(Integer.parseInt(scopeElements[2]), Integer.parseInt(scopeElements[3]), Boolean.parseBoolean(scopeElements[4]));
     }
 
     public static StaticScope decodeScopeAndDetermineModule(ThreadContext context, StaticScope parent, String scopeString) {
@@ -2692,13 +2681,14 @@ public class Helpers {
             }
         }
 
-        if (argsNode.getRestArg() >= 0) {
+        ArgumentNode restArg = argsNode.getRestArgNode();
+        if (restArg != null) {
             if (added) builder.append(';');
             added = true;
-            if (argsNode.getRestArgNode() instanceof UnnamedRestArgNode) {
-                if (((UnnamedRestArgNode) argsNode.getRestArgNode()).isStar()) builder.append("R");
+            if (restArg instanceof UnnamedRestArgNode) {
+                if (((UnnamedRestArgNode) restArg).isStar()) builder.append("R");
             } else {
-                builder.append("r").append(argsNode.getRestArgNode().getName());
+                builder.append("r").append(restArg.getName());
             }
         }
 
@@ -2983,9 +2973,9 @@ public class Helpers {
         }
     }
 
-    public static void irCheckArgsArrayArity(ThreadContext context, RubyArray args, int required, int opt, int rest) {
+    public static void irCheckArgsArrayArity(ThreadContext context, RubyArray args, int required, int opt, boolean rest) {
         int numArgs = args.size();
-        if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
+        if (numArgs < required || (!rest && numArgs > (required + opt))) {
             Arity.raiseArgumentError(context.runtime, numArgs, required, required + opt);
         }
     }

@@ -62,7 +62,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     private Arity calculateArity() {
         StaticScope s = method.getStaticScope();
-        if (s.getOptionalArgs() > 0 || s.getRestArg() >= 0) return Arity.required(s.getRequiredArgs());
+        if (s.getOptionalArgs() > 0 || s.hasRestArg()) return Arity.required(s.getRequiredArgs());
 
         return Arity.createArity(s.getRequiredArgs());
     }

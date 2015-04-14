@@ -1809,7 +1809,7 @@ public class IRBuilder {
         final int numPostReqd = argsNode.getPostCount();
         final int required = argsNode.getRequiredArgsCount(); // numPreReqd + numPostReqd
         int opt = argsNode.getOptionalArgsCount();
-        int rest = argsNode.getRestArg();
+        boolean rest = argsNode.hasRestArg();
 
         scope.getStaticScope().setArities(required, opt, rest);
         KeywordRestArgNode keyRest = argsNode.getKeyRest();
@@ -1842,7 +1842,6 @@ public class IRBuilder {
 
         // Fixup opt/rest
         opt = opt > 0 ? opt : 0;
-        rest = rest > -1 ? 1 : 0;
 
         // Now for opt args
         if (opt > 0) {
@@ -1863,7 +1862,7 @@ public class IRBuilder {
         }
 
         // Rest arg
-        if (rest > 0) {
+        if (rest) {
             // Consider: def foo(*); .. ; end
             // For this code, there is no argument name available from the ruby code.
             // So, we generate an implicit arg name

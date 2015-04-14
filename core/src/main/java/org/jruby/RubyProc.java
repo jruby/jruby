@@ -252,7 +252,6 @@ public class RubyProc extends RubyObject implements DataType {
             if (blockBody instanceof IRBlockBody) {
                 ((IRBlockBody) blockBody).getSignature().checkArity(context.runtime, args);
             } else {
-                System.out.println("BB: " + blockBody.getClass().getName());
                 arity.checkArity(context.runtime, args.length);
             }
             return args;
