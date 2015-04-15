@@ -205,4 +205,10 @@ public class IncludedModuleWrapper extends IncludedModule {
     public IRubyObject getAutoloadConstant(String name) {
         return origin.getAutoloadConstant(name);
     }
+
+    @Override
+    protected DynamicMethod searchMethodCommon(String name) {
+        // try us and superclasses (from prepend)
+        return origin.searchMethodInner(name);
+    }
 }
