@@ -816,7 +816,8 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "const_defined?", required = 1, optional = 1)
-    public abstract static class ConstDefinedNode extends CoreMethodNode {
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("inherit") })
+    public abstract static class ConstDefinedNode extends RubyNode {
 
         public ConstDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -826,29 +827,55 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization
-        public boolean isConstDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
-            notDesignedForCompilation();
-
-            return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
-        public boolean isConstDefined(RubyModule module, RubyString name, boolean inherit) {
+        public boolean isConstDefined(RubyModule module, String name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
+            return isConstDefined(module, name, true);
+        }
+
+        @Specialization
+        public boolean isConstDefined(RubyModule module, String fullName, boolean inherit) {
             notDesignedForCompilation();
+
+            int start = 0, next;
+            if (fullName.startsWith("::")) {
+                module = getContext().getCoreLibrary().getObjectClass();
+                start += 2;
+            }
+
+            while ((next = fullName.indexOf("::", start)) != -1) {
+                String segment = fullName.substring(start, next);
+                RubyConstant constant = lookup(module, segment, inherit);
+                if (constant == null) {
+                    return false;
+                } else if (constant.getValue() instanceof RubyModule) {
+                    module = (RubyModule) constant.getValue();
+                } else {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().typeError(fullName.substring(0, next) + " does not refer to class/module", this));
+                }
+                start = next + 2;
+            }
+
+            String lastSegment = fullName.substring(start);
+            return lookup(module, lastSegment, inherit) != null;
+        }
+
+        private RubyConstant lookup(RubyModule module, String name, boolean inherit) {
+            if (!IdUtil.isValidConstantName19(name)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), this));
+            }
 
             if (inherit) {
-                return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
+                return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name);
             } else {
-                return module.getConstants().containsKey(name.toString());
+                return module.getConstants().get(name);
             }
-        }
-
-        @Specialization
-        public boolean isConstDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
-            notDesignedForCompilation();
-
-            return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
         }
 
     }
