@@ -62,28 +62,9 @@ public abstract class FixnumPrimitiveNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new long[]{b, a}, 2);
         }
 
-        @Specialization
-        public RubyArray coerce(int a, RubyString b) {
-            try {
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new double[]{Double.parseDouble(b.toString()), a}, 2);
-            } catch (NumberFormatException e) {
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("invalid value for Float", this));
-            }
-        }
-
-        @Specialization(guards = {"!isRubyString(arguments[1])", "!isRubyNilObject(arguments[1])"})
-        public RubyArray coerce(VirtualFrame frame, int a, Object b) {
-            if (toFRespond.doesRespondTo(frame, "to_f", b)) {
-                final Object bFloat = toF.call(frame, b, "to_f", null);
-
-                if (bFloat instanceof Double) {
-                    return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new double[]{(double) bFloat, a}, 2);
-                } else {
-                    throw new RaiseException(getContext().getCoreLibrary().typeError("?", this));
-                }
-            } else {
-                throw new RaiseException(getContext().getCoreLibrary().typeError("?", this));
-            }
+        @Specialization(guards = "!isInteger(arguments[1])")
+        public RubyArray coerce(int a, Object b) {
+            return null; // Primitive failure
         }
 
     }
