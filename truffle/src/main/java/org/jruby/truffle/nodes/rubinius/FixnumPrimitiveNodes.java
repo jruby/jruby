@@ -58,6 +58,11 @@ public abstract class FixnumPrimitiveNodes {
         }
 
         @Specialization
+        public RubyArray coerce(long a, int b) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new long[]{b, a}, 2);
+        }
+
+        @Specialization
         public RubyArray coerce(int a, RubyString b) {
             try {
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new double[]{Double.parseDouble(b.toString()), a}, 2);
