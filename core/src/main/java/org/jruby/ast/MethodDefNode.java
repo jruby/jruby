@@ -53,7 +53,7 @@ public abstract class MethodDefNode extends Node implements INameNode {
             this.bodyNode = bodyNode;
 
             // store argument count information into scope
-            scope.setArities(argsNode.getRequiredArgsCount() + argsNode.getRequiredKeywordCount(), argsNode.getOptionalArgsCount(), argsNode.getRestArg());
+            scope.setArities(argsNode.getRequiredArgsCount() + argsNode.getRequiredKeywordCount(), argsNode.getOptionalArgsCount(), argsNode.hasRestArg());
 	}
 
 

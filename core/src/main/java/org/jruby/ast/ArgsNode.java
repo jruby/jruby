@@ -36,53 +36,32 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Arity;
 
 /**
  * Represents the argument declarations of a method.  The fields:
- * foo(p1, ..., pn, o1 = v1, ..., on = v2, *r, q1, ..., qn)
+ * foo(p1, ..., pn, o1 = v1, ..., on = v2, *r, q1, ..., qn, k1:, ..., kn:, **K, &b)
  *
  * p1...pn = pre arguments
  * o1...on = optional arguments
  * r       = rest argument
  * q1...qn = post arguments (only in 1.9)
+ * k1...kn = keyword arguments
+ * K       = keyword rest argument
+ * b       = block arg
  */
 public class ArgsNode extends Node {
     private final ListNode pre;
-    private final int preCount;
     private final ListNode optArgs;
     protected final ArgumentNode restArgNode;
-    protected final int restArg;
-    private final BlockArgNode blockArgNode;
-    protected Arity arity;
-    private final int requiredArgsCount;
-    protected final boolean hasOptArgs;
-    protected final boolean hasMasgnArgs;
-    protected final boolean hasKwargs;
-    protected int maxArgsCount;
-    protected final boolean isSimple;
-
-    // Only in ruby 1.9 methods
     private final ListNode post;
-    private final int postCount;
-    private final int postIndex;
-
-    // Only in ruby 2.0 methods
     private final ListNode keywords;
     private final KeywordRestArgNode keyRest;
+    private final BlockArgNode blockArgNode;
 
     /**
      * Construct a new ArgsNode with no keyword arguments.
-     *
-     * @param position
-     * @param pre
-     * @param optionalArguments
-     * @param rest
-     * @param post
-     * @param blockArgNode
      */
     public ArgsNode(ISourcePosition position, ListNode pre, ListNode optionalArguments,
                     RestArgNode rest, ListNode post, BlockArgNode blockArgNode) {
@@ -91,15 +70,6 @@ public class ArgsNode extends Node {
 
     /**
      * Construct a new ArgsNode with keyword arguments.
-     *
-     * @param position
-     * @param pre
-     * @param optionalArguments
-     * @param rest
-     * @param post
-     * @param keywords
-     * @param keyRest
-     * @param blockArgNode
      */
     public ArgsNode(ISourcePosition position, ListNode pre, ListNode optionalArguments,
             RestArgNode rest, ListNode post, ListNode keywords, KeywordRestArgNode keyRest, BlockArgNode blockArgNode) {
@@ -112,32 +82,12 @@ public class ArgsNode extends Node {
                         blockArgNode != null && blockArgNode.containsVariableAssignment());
 
         this.pre = pre;
-        this.preCount = pre == null ? 0 : pre.size();
         this.post = post;
-        this.postCount = post == null ? 0 : post.size();
-        int optArgCount = optionalArguments == null ? 0 : optionalArguments.size();
-        this.postIndex = getPostCount(preCount, optArgCount, rest);
         this.optArgs = optionalArguments;
-        this.restArg = rest == null ? -1 : rest.getIndex();
         this.restArgNode = rest;
         this.blockArgNode = blockArgNode;
         this.keywords = keywords;
         this.keyRest = keyRest;
-        this.requiredArgsCount = preCount + postCount;
-        this.hasOptArgs = getOptArgs() != null;
-        this.hasMasgnArgs = hasMasgnArgs();
-        this.hasKwargs = keywords != null || keyRest != null;
-        this.maxArgsCount = getRestArg() >= 0 ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
-        this.arity = calculateArity();
-
-        this.isSimple = !(hasMasgnArgs || hasOptArgs || restArg >= 0 || postCount > 0 || hasKwargs);
-    }
-    
-    private int getPostCount(int preCount, int optArgCount, RestArgNode rest) {
-        // Simple-case: If we have a rest we know where it is
-        if (rest != null) return rest.getIndex() + 1;
-
-        return preCount + optArgCount;
     }
 
     @Override
@@ -145,18 +95,12 @@ public class ArgsNode extends Node {
         return NodeType.ARGSNODE;
     }
 
-    protected Arity calculateArity() {
-        if (getOptArgs() != null || getRestArg() >= 0) return Arity.required(getRequiredArgsCount());
-
-        return Arity.createArity(getRequiredArgsCount());
-    }
-
     public boolean hasKwargs() {
-        return hasKwargs;
+        return keywords != null || keyRest != null;
     }
     
     public int countKeywords() {
-        if (hasKwargs) {
+        if (hasKwargs()) {
             if (keywords == null) {
                 // Rest keyword argument
                 return 0;
@@ -167,14 +111,8 @@ public class ArgsNode extends Node {
         }
     }
 
-    protected boolean hasMasgnArgs() {
-        if (preCount > 0) for (Node node : pre.childNodes()) {
-            if (node instanceof AssignableNode) return true;
-        }
-        if (postCount > 0) for (Node node : post.childNodes()) {
-            if (node instanceof AssignableNode) return true;
-        }
-        return false;
+    public boolean hasRestArg() {
+        return restArgNode != null;
     }
 
     /**
@@ -193,12 +131,8 @@ public class ArgsNode extends Node {
         return pre;
     }
 
-    public Arity getArity() {
-        return arity;
-    }
-
     public int getRequiredArgsCount() {
-        return requiredArgsCount;
+        return getPreCount() + getPostCount();
     }
 
     public int getOptionalArgsCount() {
@@ -210,7 +144,7 @@ public class ArgsNode extends Node {
     }
 
     public int getMaxArgumentsCount() {
-        return maxArgsCount;
+        return hasRestArg() ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
     }
 
     /**
@@ -219,14 +153,6 @@ public class ArgsNode extends Node {
      */
     public ListNode getOptArgs() {
         return optArgs;
-    }
-
-    /**
-     * Gets the restArg.
-     * @return Returns a int
-     */
-    public int getRestArg() {
-        return restArg;
     }
 
     /**
@@ -247,15 +173,11 @@ public class ArgsNode extends Node {
     }
 
     public int getPostCount() {
-        return postCount;
-    }
-
-    public int getPostIndex() {
-        return postIndex;
+        return post == null ? 0 : post.size();
     }
 
     public int getPreCount() {
-        return preCount;
+        return pre == null ? 0 : pre.size();
     }
 
     public ListNode getKeywords() {
@@ -268,14 +190,6 @@ public class ArgsNode extends Node {
 
     public boolean hasKeyRest() {
         return keyRest != null;
-    }
-
-    public void checkArgCount(Ruby runtime, int argsLength) {
-        Arity.checkArgumentCount(runtime, argsLength, requiredArgsCount, maxArgsCount, hasKwargs);
-    }
-
-    public void checkArgCount(Ruby runtime, String name, int argsLength) {
-        Arity.checkArgumentCount(runtime, name, argsLength, requiredArgsCount, maxArgsCount, hasKwargs);
     }
 
     // FIXME: This is a hot mess and I think we will still have some extra nulls inserted

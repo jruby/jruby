@@ -234,7 +234,6 @@ module Commands
   alias ruby run
 
   def test_mri(*args)
-    args.shift
     env_vars = {}
     jruby_args = %w[-X+T]
 
@@ -287,9 +286,9 @@ module Commands
   end
 
   def test(*args)
-    return test_pe if args == ['pe']
+    return test_pe(*args.drop(1)) if args.first == 'pe'
 
-    return test_mri(*args) if args.first == 'mri'
+    return test_mri(*args.drop(1)) if args.first == 'mri'
 
     options = %w[--excl-tag fails]
     if args.first == 'fast'
@@ -299,8 +298,8 @@ module Commands
     mspec 'run', *options, *args
   end
 
-  def test_pe
-    run(*%w[--graal test/truffle/pe/pe.rb])
+  def test_pe(*args)
+    run('--graal', *args, 'test/truffle/pe/pe.rb')
   end
   private :test_pe
 

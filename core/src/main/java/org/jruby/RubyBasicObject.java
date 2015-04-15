@@ -2286,12 +2286,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         Set<String> seen = new HashSet<String>();
 
         if (getMetaClass().isSingleton()) {
-            getMetaClass().populateInstanceMethodNames(seen, methods, PRIVATE, true, useSymbols, false);
+            getMetaClass().populateInstanceMethodNames(seen, methods, PRIVATE, false, true, false);
             if (all) {
-                getMetaClass().getSuperClass().populateInstanceMethodNames(seen, methods, PRIVATE, true, useSymbols, true);
+                getMetaClass().getSuperClass().populateInstanceMethodNames(seen, methods, PRIVATE, false, true, true);
             }
         } else if (all) {
-            getMetaClass().populateInstanceMethodNames(seen, methods, PRIVATE, true, useSymbols, true);
+            getMetaClass().populateInstanceMethodNames(seen, methods, PRIVATE, false, true, true);
         } else {
             // do nothing, leave empty
         }
@@ -2309,11 +2309,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  in the receiver will be listed.
      */
     public IRubyObject public_methods(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().public_instance_methods(trueIfNoArgument(context, args));
+        return getMetaClass().instanceMethods(args, PUBLIC, true, false);
     }
 
     public IRubyObject public_methods19(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().public_instance_methods19(trueIfNoArgument(context, args));
+        return getMetaClass().instanceMethods(args, PUBLIC, true, false);
     }
 
     /** rb_obj_protected_methods
@@ -2329,11 +2329,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  {@link RubyModule#protected_instance_methods} method.
      */
     public IRubyObject protected_methods(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().protected_instance_methods(trueIfNoArgument(context, args));
+        return getMetaClass().instanceMethods(args, PROTECTED, true, false);
     }
 
     public IRubyObject protected_methods19(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().protected_instance_methods19(trueIfNoArgument(context, args));
+        return getMetaClass().instanceMethods(args, PROTECTED, true, false);
     }
 
     /** rb_obj_private_methods
@@ -2349,16 +2349,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  {@link RubyModule#private_instance_methods} method.
      */
     public IRubyObject private_methods(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().private_instance_methods(trueIfNoArgument(context, args));
+        return getMetaClass().instanceMethods(args, PRIVATE, true, false);
     }
 
     public IRubyObject private_methods19(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().private_instance_methods19(trueIfNoArgument(context, args));
-    }
-
-    // FIXME: If true array is common enough we should pre-allocate and stick somewhere
-    private IRubyObject[] trueIfNoArgument(ThreadContext context, IRubyObject[] args) {
-        return args.length == 0 ? new IRubyObject[] { context.runtime.getTrue() } : args;
+        return getMetaClass().instanceMethods(args, PRIVATE, true, false);
     }
 
     /** rb_obj_singleton_methods
@@ -2395,55 +2390,42 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     // TODO: This is almost RubyModule#instance_methods on the metaClass.  Perhaps refactor.
     public RubyArray singleton_methods(ThreadContext context, IRubyObject[] args) {
-        return singletonMethods(context, args, methodsCollector);
-    }
-
-    public RubyArray singleton_methods19(ThreadContext context, IRubyObject[] args) {
-        return singletonMethods(context, args, methodsCollector19);
-    }
-
-    private RubyArray singletonMethods(ThreadContext context, IRubyObject[] args, MethodsCollector collect) {
+        Ruby runtime = context.runtime;
         boolean all = true;
         if(args.length == 1) {
             all = args[0].isTrue();
         }
 
-        if (getMetaClass().isSingleton()) {
-            IRubyObject[] methodsArgs = new IRubyObject[]{context.runtime.getFalse()};
-            RubyArray singletonMethods = collect.instanceMethods(getMetaClass(), methodsArgs);
+        RubyClass klass = metaClass;
+        RubyModule origin = klass.getMethodLocation();
+
+        if (klass.isSingleton()) {
+            Set<RubySymbol> names = new HashSet<>();
+            for (Map.Entry<String, DynamicMethod> entry : klass.getMethods().entrySet()) {
+                if (entry.getValue().getVisibility() == PRIVATE) continue;
+                // TODO: needs to use method_entry_i logic from MRI
+                names.add(runtime.newSymbol(entry.getKey()));
+            }
 
             if (all) {
-                RubyClass superClass = getMetaClass().getSuperClass();
-                while (superClass.isSingleton() || superClass.isIncluded()) {
-                    singletonMethods.concat(collect.instanceMethods(superClass, methodsArgs));
-                    superClass = superClass.getSuperClass();
+                klass = klass.getSuperClass();
+                while (klass != null && (klass.isSingleton() || klass.isIncluded())) {
+                    if (klass != origin) {
+                        for (Map.Entry<String, DynamicMethod> entry : klass.getMethods().entrySet()) {
+                            if (entry.getValue().getVisibility() == PRIVATE) continue;
+                            // TODO: needs to use method_entry_i logic from MRI
+                            names.add(runtime.newSymbol(entry.getKey()));
+                        }
+                    }
+                    klass = klass.getSuperClass();
                 }
             }
 
-            singletonMethods.uniq_bang(context);
-            return singletonMethods;
+            return RubyArray.newArray(runtime, names);
         }
 
         return context.runtime.newEmptyArray();
     }
-
-    private abstract static class MethodsCollector {
-        public abstract RubyArray instanceMethods(RubyClass rubyClass, IRubyObject[] args);
-    };
-
-    private static final MethodsCollector methodsCollector = new MethodsCollector() {
-        @Override
-        public RubyArray instanceMethods(RubyClass rubyClass, IRubyObject[] args) {
-            return rubyClass.instance_methods(args);
-        }
-    };
-
-    private static final MethodsCollector methodsCollector19 = new MethodsCollector() {
-        @Override
-        public RubyArray instanceMethods(RubyClass rubyClass, IRubyObject[] args) {
-            return rubyClass.instance_methods19(args);
-        }
-    };
 
     /** rb_obj_method
      *

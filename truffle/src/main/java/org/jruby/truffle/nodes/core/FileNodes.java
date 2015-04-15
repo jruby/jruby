@@ -58,40 +58,6 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "basename", onSingleton = true, required = 1, optional = 1)
-    public abstract static class BasenameNode extends CoreMethodNode {
-
-        public BasenameNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyString basename(RubyString path, @SuppressWarnings("unused") UndefinedPlaceholder extension) {
-            notDesignedForCompilation();
-
-            return getContext().makeString(new File(path.toString()).getName());
-        }
-
-        @Specialization
-        public RubyString basename(RubyString path, RubyString extension) {
-            notDesignedForCompilation();
-
-            final String extensionAsString = extension.toString();
-            final String name = new File(path.toString()).getName();
-            final String basename;
-
-            if (extensionAsString.equals(".*") && name.indexOf('.') != -1) {
-                basename = name.substring(0, name.lastIndexOf('.'));
-            } else if (name.endsWith(extensionAsString)) {
-                basename = name.substring(0, name.lastIndexOf(extensionAsString));
-            } else {
-                basename = name;
-            }
-
-            return getContext().makeString(basename);
-        }
-    }
-
     @CoreMethod(names = "close")
     public abstract static class CloseNode extends CoreMethodNode {
 

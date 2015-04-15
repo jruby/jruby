@@ -156,7 +156,13 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubySymbol mapBangSymbol;
     @CompilerDirectives.CompilationFinal private RubyHash envHash;
 
-    private boolean loadingCoreLibrary;
+    private static enum State {
+        INITIALIZING,
+        LOADING_RUBY_CORE,
+        LOADED
+    }
+
+    private State state = State.INITIALIZING;
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
@@ -236,6 +242,7 @@ public class CoreLibrary {
         defineClass(errnoModule, systemCallErrorClass, "ENXIO");
         defineClass(errnoModule, systemCallErrorClass, "EPERM");
         defineClass(errnoModule, systemCallErrorClass, "EXDEV");
+        defineClass(errnoModule, systemCallErrorClass, "ECHILD");
 
         // ScriptError
         RubyClass scriptErrorClass = defineClass(exceptionClass, "ScriptError");
@@ -507,7 +514,7 @@ public class CoreLibrary {
 
         if (LOAD_CORE) {
             try {
-                loadingCoreLibrary = true;
+                state = State.LOADING_RUBY_CORE;
                 loadRubyCore("core.rb");
             } catch (RaiseException e) {
                 final RubyException rubyException = e.getRubyException();
@@ -518,7 +525,7 @@ public class CoreLibrary {
 
                 throw new TruffleFatalException("couldn't load the core library", e);
             } finally {
-                loadingCoreLibrary = false;
+                state = State.LOADED;
             }
         }
     }
@@ -1272,7 +1279,15 @@ public class CoreLibrary {
         return mapSymbol;
     }
 
-    public boolean isLoadingCoreLibrary() {
-        return loadingCoreLibrary;
+    public boolean isLoadingRubyCore() {
+        return state == State.LOADING_RUBY_CORE;
+    }
+
+    public boolean isLoaded() {
+        return state == State.LOADED;
+    }
+
+    public RubyClass getEnoentClass() {
+        return enoentClass;
     }
 }

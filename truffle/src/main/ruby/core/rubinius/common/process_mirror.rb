@@ -24,19 +24,14 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-module Process
-  def self.wait_pid_prim(pid, no_hang)
-    Rubinius.primitive :vm_wait_pid
-    raise PrimitiveFailure, "Process.wait_pid primitive failed"
-  end
+# Only part of Rubinius' process_mirror.rb
 
-  def self.time
-    Rubinius.primitive :vm_time
-    raise PrimitiveFailure, "Process.time primitive failed"
-  end
-
-  def self.cpu_times
-    Rubinius.primitive :vm_times
-    raise PrimitiveFailure, "Process.cpu_times primitive failed"
+module Rubinius
+  class Mirror
+    module Process
+      def self.set_status_global(status)
+        ::Thread.current[:$?] = status
+      end
+    end
   end
 end

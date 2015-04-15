@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+ # Copyright (c) 2007-2014, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,19 +24,62 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-module Process
-  def self.wait_pid_prim(pid, no_hang)
-    Rubinius.primitive :vm_wait_pid
-    raise PrimitiveFailure, "Process.wait_pid primitive failed"
+# Only part of Rubinius' dir.rb
+
+class Dir
+
+  def self.[](*patterns)
+    if patterns.size == 1
+      pattern = Rubinius::Type.coerce_to_path(patterns[0])
+      return [] if pattern.empty?
+      patterns = glob_split pattern
+    end
+
+    glob patterns
   end
 
-  def self.time
-    Rubinius.primitive :vm_time
-    raise PrimitiveFailure, "Process.time primitive failed"
+  def self.glob(pattern, flags=0, &block)
+    if pattern.kind_of? Array
+      patterns = pattern
+    else
+      pattern = Rubinius::Type.coerce_to_path pattern
+
+      return [] if pattern.empty?
+
+      patterns = glob_split pattern
+    end
+
+    matches = []
+    index = 0
+
+    patterns.each do |pat|
+      pat = Rubinius::Type.coerce_to_path pat
+      enc = Rubinius::Type.ascii_compatible_encoding pat
+      Dir::Glob.glob pat, flags, matches
+
+      total = matches.size
+      while index < total
+        Rubinius::Type.encode_string matches[index], enc
+        index += 1
+      end
+    end
+
+    if block
+      matches.each(&block)
+      return nil
+    end
+
+    return matches
   end
 
-  def self.cpu_times
-    Rubinius.primitive :vm_times
-    raise PrimitiveFailure, "Process.cpu_times primitive failed"
+  def self.glob_split(pattern)
+    result = []
+    start = 0
+    while idx = pattern.find_string("\0", start)
+      result << pattern.byteslice(start, idx)
+      start = idx + 1
+    end
+    result << pattern.byteslice(start, pattern.bytesize)
   end
+
 end

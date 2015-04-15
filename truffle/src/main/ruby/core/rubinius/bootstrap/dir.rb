@@ -24,19 +24,55 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-module Process
-  def self.wait_pid_prim(pid, no_hang)
-    Rubinius.primitive :vm_wait_pid
-    raise PrimitiveFailure, "Process.wait_pid primitive failed"
+class Dir
+  def self.allocate
+    Rubinius.primitive :dir_allocate
+    raise PrimitiveFailure, "Dir.allocate primitive failed"
   end
 
-  def self.time
-    Rubinius.primitive :vm_time
-    raise PrimitiveFailure, "Process.time primitive failed"
+  def initialize(path, options=undefined)
+    path = Rubinius::Type.coerce_to_path path
+
+    if options.equal? undefined
+      enc = nil
+    else
+      options = Rubinius::Type.coerce_to options, Hash, :to_hash
+      enc = options[:encoding]
+      enc = Rubinius::Type.coerce_to_encoding enc if enc
+    end
+
+    Rubinius.invoke_primitive :dir_open, self, path, enc
   end
 
-  def self.cpu_times
-    Rubinius.primitive :vm_times
-    raise PrimitiveFailure, "Process.cpu_times primitive failed"
+  private :initialize
+
+  def close
+    Rubinius.primitive :dir_close
+    raise PrimitiveFailure, "Dir#close primitive failed"
   end
+
+  def closed?
+    Rubinius.primitive :dir_closed_p
+    raise PrimitiveFailure, "Dir#closed? primitive failed"
+  end
+
+  def read
+    entry = Rubinius.invoke_primitive :dir_read, self
+    return unless entry
+
+    if Encoding.default_external == Encoding::US_ASCII && !entry.valid_encoding?
+      entry.force_encoding Encoding::ASCII_8BIT
+      return entry
+    end
+
+    enc = Encoding.default_internal
+    enc ? entry.encode(enc) : entry
+  end
+
+  def control(kind, pos)
+    Rubinius.primitive :dir_control
+    raise PrimitiveFailure, "Dir#__control__ primitive failed"
+  end
+
+  private :control
 end

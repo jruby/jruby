@@ -182,6 +182,18 @@ public abstract class EncodingNodes {
             }
         }
 
+        @TruffleBoundary
+        @Specialization
+        public Object isCompatible(RubyString first, RubyEncoding second) {
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getByteList().getEncoding(), second.getEncoding());
+
+            if (compatibleEncoding != null) {
+                return RubyEncoding.getEncoding(compatibleEncoding);
+            } else {
+                return nil();
+            }
+        }
+
     }
 
     @RubiniusOnly

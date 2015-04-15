@@ -198,7 +198,7 @@ public class JVMVisitor extends IRVisitor {
             StaticScope argScope = method.getStaticScope();
             if (argScope.isArgumentScope() &&
                     argScope.getOptionalArgs() == 0 &&
-                    argScope.getRestArg() == -1 &&
+                    !argScope.hasRestArg() &&
                     !method.receivesKeywordArgs()) {
                 // we have only required arguments...emit a signature appropriate to that arity
                 String[] args = new String[argScope.getRequiredArgs()];
@@ -833,8 +833,8 @@ public class JVMVisitor extends IRVisitor {
         visit(checkargsarrayarityinstr.getArgsArray());
         jvmAdapter().pushInt(checkargsarrayarityinstr.required);
         jvmAdapter().pushInt(checkargsarrayarityinstr.opt);
-        jvmAdapter().pushInt(checkargsarrayarityinstr.rest);
-        jvmMethod().invokeStatic(Type.getType(Helpers.class), Method.getMethod("void irCheckArgsArrayArity(org.jruby.runtime.ThreadContext, org.jruby.RubyArray, int, int, int)"));
+        jvmAdapter().pushBoolean(checkargsarrayarityinstr.rest);
+        jvmMethod().invokeStatic(Type.getType(Helpers.class), Method.getMethod("void irCheckArgsArrayArity(org.jruby.runtime.ThreadContext, org.jruby.RubyArray, int, int, boolean)"));
     }
 
     @Override
@@ -850,7 +850,7 @@ public class JVMVisitor extends IRVisitor {
             jvmAdapter().ldc(checkarityinstr.receivesKeywords);
             jvmAdapter().ldc(checkarityinstr.restKey);
             jvmMethod().loadBlockType();
-            jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, Object[].class, int.class, int.class, int.class, boolean.class, int.class, Block.Type.class));
+            jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, Object[].class, int.class, int.class, boolean.class, boolean.class, int.class, Block.Type.class));
         }
     }
 

@@ -26,7 +26,6 @@
 
 # Only part of Rubinius' exception.rb
 
-
 class NoMethodError < NameError
   attr_reader :name
   attr_reader :args

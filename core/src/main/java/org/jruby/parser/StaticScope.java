@@ -82,7 +82,7 @@ public class StaticScope implements Serializable {
     private int optionalArgs = 0;
 
     // index of variable that represents a "rest" arg
-    private int restArg = -1;
+    private boolean hasRest = false;
 
     private DynamicScope dummyScope;
 
@@ -492,12 +492,12 @@ public class StaticScope implements Serializable {
         this.requiredArgs = requiredArgs;
     }
 
-    public int getRestArg() {
-        return restArg;
+    public boolean hasRestArg() {
+        return hasRest;
     }
 
-    public void setRestArg(int restArg) {
-        this.restArg = restArg;
+    public void setHasRest(boolean hasRest) {
+        this.hasRest = hasRest;
     }
 
     public boolean isBlockScope() {
@@ -518,22 +518,22 @@ public class StaticScope implements Serializable {
 
     public Arity getArity() {
         if (optionalArgs > 0) {
-            if (restArg >= 0) {
+            if (hasRest) {
                 return Arity.optional();
             }
             return Arity.required(requiredArgs);
         } else {
-            if (restArg >= 0) {
+            if (hasRest) {
                 return Arity.optional();
             }
             return Arity.fixed(requiredArgs);
         }
     }
 
-    public void setArities(int required, int optional, int rest) {
+    public void setArities(int required, int optional, boolean hasRest) {
         this.requiredArgs = required;
         this.optionalArgs = optional;
-        this.restArg = rest;
+        this.hasRest = hasRest;
     }
 
     public DynamicScope getDummyScope() {

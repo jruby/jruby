@@ -209,3 +209,19 @@ class Encoding::Converter
   end
 end
 
+class Rubinius::ByteArray
+
+  alias_method :[], :get_byte
+
+end
+
+# Don't apply any synchronization at the moment
+
+module Rubinius
+
+  def self.synchronize(object)
+    yield
+  end
+
+end
+

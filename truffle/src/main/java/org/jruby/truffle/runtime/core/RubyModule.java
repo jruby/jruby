@@ -160,12 +160,14 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     @TruffleBoundary
-    public void initCopy(RubyModule other) {
+    public void initCopy(RubyModule from) {
         // Do not copy name, the copy is an anonymous module
-        this.parentModule = other.parentModule;
-        this.methods.putAll(other.methods);
-        this.constants.putAll(other.constants);
-        this.classVariables.putAll(other.classVariables);
+        this.parentModule = from.parentModule;
+        if (parentModule != null)
+            parentModule.getActualModule().addDependent(this);
+        this.methods.putAll(from.methods);
+        this.constants.putAll(from.constants);
+        this.classVariables.putAll(from.classVariables);
     }
 
     /** If this instance is a module and not a class. */
@@ -198,7 +200,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      */
     @TruffleBoundary
     public void setConstant(Node currentNode, String name, Object value) {
-        if (getContext().getCoreLibrary().isLoadingCoreLibrary()) {
+        if (getContext().getCoreLibrary().isLoadingRubyCore()) {
             final RubyConstant currentConstant = constants.get(name);
 
             if (currentConstant != null) {
@@ -269,7 +271,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         assert method != null;
 
-        if (getContext().getCoreLibrary().isLoadingCoreLibrary()) {
+        if (getContext().getCoreLibrary().isLoadingRubyCore()) {
             final InternalMethod currentMethod = methods.get(method.getName());
 
             if (currentMethod != null && currentMethod.getSharedMethodInfo().getSourceSection() instanceof CoreSourceSection) {
@@ -280,6 +282,10 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         checkFrozen(currentNode);
         methods.put(method.getName(), method.withDeclaringModule(this));
         newVersion();
+
+        if (context.getCoreLibrary().isLoaded()) {
+            DebugOperations.send(context, this, "method_added", null, context.getSymbolTable().getSymbol(method.getName()));
+        }
     }
 
     @TruffleBoundary

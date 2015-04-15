@@ -1,5 +1,4 @@
 fails:File.open opens the file (basic case)
-fails:File.open opens a file when called with a block
 fails:File.open opens with mode string
 fails:File.open opens a file with mode num
 fails:File.open opens a file with mode and permission as nil
@@ -51,7 +50,6 @@ fails:File.open opens a file for binary write
 fails:File.open opens a file for read-write and truncate the file
 fails:File.open opens a file for binary read-write starting at the beginning of the file
 fails:File.open opens a file for binary read-write and truncate the file
-fails:File.open raises a TypeError if passed a filename that is not a String or Integer type
 fails:File.open raises a SystemCallError if passed an invalid Integer type
 fails:File.open raises an ArgumentError if passed an invalid string for mode
 fails:File.open defaults external_encoding to ASCII-8BIT for binary modes

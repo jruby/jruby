@@ -2,8 +2,10 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.IterNode;
+import org.jruby.ast.ListNode;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.Node;
 import org.jruby.ast.PostExeNode;
@@ -185,14 +187,11 @@ public class Signature {
         // all other iters aggregate ArgsNode
         ArgsNode args = (ArgsNode)var;
 
-        Rest rest = Rest.NONE;
-        if (args.getRestArg() >= 0) {
-            Node restArg = args.getRestArgNode();
-            rest = restFromArg(restArg);
-        }
+        ArgumentNode restArg = args.getRestArgNode();
+        Rest rest = restArg != null ? restFromArg(restArg) : Rest.NONE;
 
-       return Signature.from(args.getPreCount(), args.getOptionalArgsCount(), args.getPostCount(), rest,
-               args.hasKwargs(), hasRequiredKeywordArg(args), args.hasKeyRest());
+        return Signature.from(args.getPreCount(), args.getOptionalArgsCount(), args.getPostCount(), rest,
+                args.hasKwargs(), hasRequiredKeywordArg(args), args.hasKeyRest());
     }
 
     private static boolean hasRequiredKeywordArg(ArgsNode args) {

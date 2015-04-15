@@ -125,7 +125,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             int specificArity = -1;
 
             // acquire handle to the actual method body
-            if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
+            if (scope.hasRestArg()|| scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
                 // variable arity method (has optional, rest, or more args than we can splat)
                 directCall = SmartBinder
                         .from(VARIABLE_ARITY_SIGNATURE.prependArg("script", scriptClass))

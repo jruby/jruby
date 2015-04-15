@@ -30,6 +30,7 @@ import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.control.WhileNode;
+import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
@@ -353,17 +354,40 @@ public abstract class KernelNodes {
 
     }
 
+    public abstract static class CopyNode extends UnaryCoreMethodNode {
+
+        public CopyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public abstract RubyBasicObject executeCopy(VirtualFrame frame, RubyBasicObject self);
+
+        @Specialization
+        public RubyBasicObject copy(VirtualFrame frame, RubyBasicObject self) {
+            // This method is pretty crappy for compilation - it should improve with the OM
+
+            final RubyBasicObject newObject = self.getLogicalClass().allocate(this);
+
+            newObject.getOperations().setInstanceVariables(newObject, self.getOperations().getInstanceVariables(self));
+
+            return newObject;
+        }
+
+    }
+
     @CoreMethod(names = "clone", taintFromSelf = true)
     public abstract static class CloneNode extends CoreMethodNode {
 
         private final ConditionProfile frozenProfile = ConditionProfile.createBinaryProfile();
 
+        @Child private CopyNode copyNode;
         @Child private CallDispatchHeadNode initializeCloneNode;
         @Child private IsFrozenNode isFrozenNode;
         @Child private FreezeNode freezeNode;
 
         public CloneNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            copyNode = CopyNodeFactory.create(context, sourceSection, null);
             // Calls private initialize_clone on the new copy.
             initializeCloneNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.CALL_METHOD_MISSING);
             isFrozenNode = IsFrozenNodeFactory.create(context, sourceSection, null);
@@ -371,17 +395,16 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object clone(VirtualFrame frame, RubyBasicObject self) {
+        public RubyBasicObject clone(VirtualFrame frame, RubyBasicObject self) {
             notDesignedForCompilation();
 
-            final RubyBasicObject newObject = self.getLogicalClass().allocate(this);
+            final RubyBasicObject newObject = copyNode.executeCopy(frame, self);
 
             // Copy the singleton class if any.
             if (self.getMetaClass().isSingleton()) {
                 newObject.getSingletonClass(this).initCopy(self.getMetaClass());
             }
 
-            newObject.getOperations().setInstanceVariables(newObject, self.getOperations().getInstanceVariables(self));
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
 
             if (frozenProfile.profile(isFrozenNode.executeIsFrozen(self))) {
@@ -396,20 +419,20 @@ public abstract class KernelNodes {
     @CoreMethod(names = "dup", taintFromSelf = true)
     public abstract static class DupNode extends CoreMethodNode {
 
+        @Child private CopyNode copyNode;
         @Child private CallDispatchHeadNode initializeDupNode;
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            copyNode = CopyNodeFactory.create(context, sourceSection, null);
             // Calls private initialize_dup on the new copy.
             initializeDupNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.CALL_METHOD_MISSING);
         }
 
         @Specialization
-        public Object dup(VirtualFrame frame, RubyBasicObject self) {
-            // This method is pretty crappy for compilation - it should improve with the OM
+        public RubyBasicObject dup(VirtualFrame frame, RubyBasicObject self) {
+            final RubyBasicObject newObject = copyNode.executeCopy(frame, self);
 
-            final RubyBasicObject newObject = self.getLogicalClass().allocate(this);
-            newObject.getOperations().setInstanceVariables(newObject, self.getOperations().getInstanceVariables(self));
             initializeDupNode.call(frame, newObject, "initialize_dup", null, self);
 
             return newObject;

@@ -24,19 +24,13 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-module Process
-  def self.wait_pid_prim(pid, no_hang)
-    Rubinius.primitive :vm_wait_pid
-    raise PrimitiveFailure, "Process.wait_pid primitive failed"
+# Only part of Rubinius' io.rb
+
+class IO
+
+  def self.fnmatch(pattern, path, flags)
+    Rubinius.primitive :io_fnmatch
+    raise PrimitiveFailure, "IO#fnmatch primitive failed"
   end
 
-  def self.time
-    Rubinius.primitive :vm_time
-    raise PrimitiveFailure, "Process.time primitive failed"
-  end
-
-  def self.cpu_times
-    Rubinius.primitive :vm_times
-    raise PrimitiveFailure, "Process.cpu_times primitive failed"
-  end
 end

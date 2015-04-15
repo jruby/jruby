@@ -91,12 +91,17 @@ class MSpecScript
     "spec/ruby/library/openstruct",
     "spec/ruby/library/matrix",
     "spec/ruby/library/pathname",
+    "spec/ruby/library/prime",
     "spec/ruby/library/set",
     "spec/ruby/library/shellwords",
+    "spec/ruby/library/singleton",
     "spec/ruby/library/strscan",
     "spec/ruby/library/stringio",
     "spec/ruby/library/thread",
-    "spec/ruby/library/uri"
+    "spec/ruby/library/uri",
+
+    # LoadError for `load "prime.rb"`
+    "^spec/ruby/library/prime/each_spec.rb"
   ]
 
   set :tags_patterns, [

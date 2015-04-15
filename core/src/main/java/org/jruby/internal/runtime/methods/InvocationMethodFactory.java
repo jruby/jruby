@@ -353,7 +353,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
         }
 
-        if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
+        if (scope.hasRestArg() || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
             signature = COMPILED_CALL_SIG_BLOCK;
             mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "call", signature, null, null);
         } else {

@@ -144,8 +144,13 @@ public abstract class ClassNodes {
         }
 
         @Specialization
-        public RubyClass getSuperClass(RubyClass rubyClass) {
-            return rubyClass.getSuperClass();
+        public Object getSuperClass(RubyClass rubyClass) {
+            RubyClass superclass = rubyClass.getSuperClass();
+            if (superclass == null) {
+                return nil();
+            } else {
+                return superclass;
+            }
         }
     }
 }

@@ -1990,7 +1990,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "singleton_methods", optional = 1)
     public static RubyArray singleton_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        return ((RubyBasicObject)self).singleton_methods19(context, args);
+        return ((RubyBasicObject)self).singleton_methods(context, args);
     }
 
     @JRubyMethod(name = "method", required = 1)
