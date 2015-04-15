@@ -282,6 +282,10 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         checkFrozen(currentNode);
         methods.put(method.getName(), method.withDeclaringModule(this));
         newVersion();
+
+        if (!context.getCoreLibrary().isLoadingCoreLibrary()) {
+            DebugOperations.send(context, this, "method_added", null, context.getSymbolTable().getSymbol(method.getName()));
+        }
     }
 
     @TruffleBoundary
