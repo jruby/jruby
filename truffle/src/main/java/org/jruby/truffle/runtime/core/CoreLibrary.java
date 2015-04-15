@@ -153,7 +153,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubySymbol mapBangSymbol;
     @CompilerDirectives.CompilationFinal private RubyHash envHash;
 
-    public static enum State {
+    private static enum State {
         INITIALIZING,
         LOADING_RUBY_CORE,
         LOADED
@@ -1279,7 +1279,7 @@ public class CoreLibrary {
         return state == State.LOADING_RUBY_CORE;
     }
 
-    public State getState() {
-        return state;
+    public boolean isLoaded() {
+        return state == State.LOADED;
     }
 }

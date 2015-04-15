@@ -283,7 +283,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         methods.put(method.getName(), method.withDeclaringModule(this));
         newVersion();
 
-        if (context.getCoreLibrary().getState() == CoreLibrary.State.LOADED) {
+        if (context.getCoreLibrary().isLoaded()) {
             DebugOperations.send(context, this, "method_added", null, context.getSymbolTable().getSymbol(method.getName()));
         }
     }
