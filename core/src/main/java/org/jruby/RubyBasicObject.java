@@ -2309,11 +2309,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  in the receiver will be listed.
      */
     public IRubyObject public_methods(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().public_instance_methods(trueIfNoArgument(context, args));
+        return getMetaClass().instanceMethods(args, PUBLIC, true, false);
     }
 
     public IRubyObject public_methods19(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().public_instance_methods19(trueIfNoArgument(context, args));
+        return getMetaClass().instanceMethods(args, PUBLIC, true, false);
     }
 
     /** rb_obj_protected_methods
@@ -2329,11 +2329,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  {@link RubyModule#protected_instance_methods} method.
      */
     public IRubyObject protected_methods(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().protected_instance_methods(trueIfNoArgument(context, args));
+        return getMetaClass().instanceMethods(args, PROTECTED, true, false);
     }
 
     public IRubyObject protected_methods19(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().protected_instance_methods19(trueIfNoArgument(context, args));
+        return getMetaClass().instanceMethods(args, PROTECTED, true, false);
     }
 
     /** rb_obj_private_methods
@@ -2349,16 +2349,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  {@link RubyModule#private_instance_methods} method.
      */
     public IRubyObject private_methods(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().private_instance_methods(trueIfNoArgument(context, args));
+        return getMetaClass().instanceMethods(args, PRIVATE, true, false);
     }
 
     public IRubyObject private_methods19(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().private_instance_methods19(trueIfNoArgument(context, args));
-    }
-
-    // FIXME: If true array is common enough we should pre-allocate and stick somewhere
-    private IRubyObject[] trueIfNoArgument(ThreadContext context, IRubyObject[] args) {
-        return args.length == 0 ? new IRubyObject[] { context.runtime.getTrue() } : args;
+        return getMetaClass().instanceMethods(args, PRIVATE, true, false);
     }
 
     /** rb_obj_singleton_methods

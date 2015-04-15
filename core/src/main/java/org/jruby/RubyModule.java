@@ -2240,12 +2240,17 @@ public class RubyModule extends RubyObject {
      * @param not if true only find methods not matching supplied visibility
      * @return a RubyArray of instance method names
      */
-    private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility, boolean not) {
+    private RubyArray instance_methods(IRubyObject[] args, Visibility visibility, boolean not) {
         boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
-        return instanceMethods(visibility, includeSuper, false, not);
+        return instanceMethods(visibility, includeSuper, true, not);
     }
 
-    public RubyArray instanceMethods(final Visibility visibility, boolean includeSuper, boolean obj, boolean not) {
+    public RubyArray instanceMethods(IRubyObject[] args, Visibility visibility, boolean obj, boolean not) {
+        boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
+        return instanceMethods(visibility, includeSuper, obj, not);
+    }
+
+    public RubyArray instanceMethods(Visibility visibility, boolean includeSuper, boolean obj, boolean not) {
         Ruby runtime = getRuntime();
         RubyArray ary = runtime.newArray();
         Set<String> seen = new HashSet<String>();
@@ -2255,7 +2260,7 @@ public class RubyModule extends RubyObject {
         return ary;
     }
 
-    public void populateInstanceMethodNames(Set<String> seen, RubyArray ary, final Visibility visibility, boolean obj, boolean not, boolean recur) {
+    public void populateInstanceMethodNames(Set<String> seen, RubyArray ary, Visibility visibility, boolean obj, boolean not, boolean recur) {
         Ruby runtime = getRuntime();
         RubyModule mod = this;
         boolean prepended = false;
@@ -2295,7 +2300,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "instance_methods", optional = 1)
     public RubyArray instance_methods19(IRubyObject[] args) {
-        return instance_methods(args, PRIVATE, true);
+        return instanceMethods(args, PRIVATE, false, true);
     }
 
     public RubyArray public_instance_methods(IRubyObject[] args) {
@@ -2304,7 +2309,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "public_instance_methods", optional = 1)
     public RubyArray public_instance_methods19(IRubyObject[] args) {
-        return instance_methods(args, PUBLIC, false);
+        return instanceMethods(args, PUBLIC, false, false);
     }
 
     @JRubyMethod(name = "instance_method", required = 1)
@@ -2326,7 +2331,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "protected_instance_methods", optional = 1)
     public RubyArray protected_instance_methods19(IRubyObject[] args) {
-        return instance_methods(args, PROTECTED, false);
+        return instanceMethods(args, PROTECTED, false, false);
     }
 
     /** rb_class_private_instance_methods
@@ -2338,7 +2343,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "private_instance_methods", optional = 1)
     public RubyArray private_instance_methods19(IRubyObject[] args) {
-        return instance_methods(args, PRIVATE, false);
+        return instanceMethods(args, PRIVATE, false, false);
     }
 
     /** rb_mod_prepend_features
