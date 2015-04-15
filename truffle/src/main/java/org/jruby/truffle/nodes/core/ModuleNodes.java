@@ -1190,6 +1190,33 @@ public abstract class ModuleNodes {
 
     }
 
+    @CoreMethod(names = "included_modules")
+    public abstract static class IncludedModulesNode extends CoreMethodNode {
+
+        public IncludedModulesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IncludedModulesNode(IncludedModulesNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        RubyArray includedModules(RubyModule module) {
+            notDesignedForCompilation();
+
+            final List<RubyModule> modules = new ArrayList<>();
+
+            for (RubyModule included : module.parentAncestors()) {
+                if (included.isOnlyAModule()) {
+                    modules.add(included);
+                }
+            }
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
+        }
+    }
+
     @CoreMethod(names = "method_defined?", required = 1, optional = 1)
     public abstract static class MethodDefinedNode extends CoreMethodNode {
 
