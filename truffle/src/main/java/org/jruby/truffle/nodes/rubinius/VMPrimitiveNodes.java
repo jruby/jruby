@@ -579,31 +579,30 @@ public abstract class VMPrimitiveNodes {
             // Transliterated from Rubinius C++ - not tidied up significantly to make merging changes easier
 
             int options = 0;
-            final int[] statusReference = new int[]{0};
+            final int[] statusReference = new int[] { 0 };
             int pid;
 
-            if(no_hang) {
+            if (no_hang) {
                 options |= WNOHANG.intValue();
             }
 
             final int finalOptions = options;
 
-            retry:
-
+            // retry:
             pid = getContext().getThreadManager().runOnce(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
-
                 @Override
                 public Integer block() throws InterruptedException {
                     return getContext().getRuntime().getPosix().waitpid(input_pid, statusReference, finalOptions);
                 }
-
             });
 
             final int errno = getContext().getRuntime().getPosix().errno();
 
-            if(pid == -1) {
-                if(errno == ECHILD.intValue()) return false;
-                if(errno == EINTR.intValue()) {
+            if (pid == -1) {
+                if (errno == ECHILD.intValue()) {
+                    return false;
+                }
+                if (errno == EINTR.intValue()) {
                     throw new UnsupportedOperationException();
                     //if(!state->check_async(calling_environment)) return NULL;
                     //goto retry;
@@ -613,21 +612,21 @@ public abstract class VMPrimitiveNodes {
                 return false;
             }
 
-            if(no_hang && pid == 0) {
+            if (no_hang && pid == 0) {
                 return nil();
             }
 
-            Object output  = nil();
+            Object output = nil();
             Object termsig = nil();
             Object stopsig = nil();
 
             final int status = statusReference[0];
 
-            if(PosixShim.WAIT_MACROS.WIFEXITED(status)) {
+            if (PosixShim.WAIT_MACROS.WIFEXITED(status)) {
                 output = PosixShim.WAIT_MACROS.WEXITSTATUS(status);
-            } else if(PosixShim.WAIT_MACROS.WIFSIGNALED(status)) {
+            } else if (PosixShim.WAIT_MACROS.WIFSIGNALED(status)) {
                 termsig = PosixShim.WAIT_MACROS.WTERMSIG(status);
-            } else if(PosixShim.WAIT_MACROS.WIFSTOPPED(status)){
+            } else if (PosixShim.WAIT_MACROS.WIFSTOPPED(status)) {
                 stopsig = PosixShim.WAIT_MACROS.WSTOPSIG(status);
             }
 
