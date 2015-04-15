@@ -1,0 +1,2 @@
+fails:Tempfile#_close is protected
+fails:Tempfile#_close closes self

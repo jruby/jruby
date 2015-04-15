@@ -98,6 +98,7 @@ class MSpecScript
     "spec/ruby/library/singleton",
     "spec/ruby/library/strscan",
     "spec/ruby/library/stringio",
+    "spec/ruby/library/tempfile",
     "spec/ruby/library/thread",
     "spec/ruby/library/tmpdir",
     "spec/ruby/library/uri",

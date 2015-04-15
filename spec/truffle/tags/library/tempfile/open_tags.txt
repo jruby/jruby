@@ -1,0 +1,7 @@
+fails:Tempfile#open reopens self
+fails:Tempfile#open reopens self in read and write mode and does not truncate
+fails:Tempfile.open returns a new, open Tempfile instance
+fails:Tempfile.open is passed an array [base, suffix] as first argument
+fails:Tempfile.open when passed a block yields a new, open Tempfile instance to the block
+fails:Tempfile.open when passed a block returns the value of the block
+fails:Tempfile.open when passed a block closes the yielded Tempfile after the block
