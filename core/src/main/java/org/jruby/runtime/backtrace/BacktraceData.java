@@ -1,7 +1,6 @@
 package org.jruby.runtime.backtrace;
 
 import org.jruby.Ruby;
-import org.jruby.compiler.JITCompiler;
 import org.jruby.util.JavaNameMangler;
 
 import java.io.Serializable;
@@ -37,12 +36,12 @@ public class BacktraceData implements Serializable {
 
     public RubyStackTraceElement[] getBacktrace(Ruby runtime) {
         if (backtraceElements == null) {
-            backtraceElements = transformBacktrace(runtime.getBoundMethods());
+            backtraceElements = constructBacktrace(runtime.getBoundMethods());
         }
         return backtraceElements;
     }
 
-    private RubyStackTraceElement[] transformBacktrace(Map<String, Map<String, String>> boundMethods) {
+    private RubyStackTraceElement[] constructBacktrace(Map<String, Map<String, String>> boundMethods) {
         List<RubyStackTraceElement> trace = new ArrayList<RubyStackTraceElement>(javaTrace.length);
 
         // used for duplicating the previous Ruby frame when masking native calls
