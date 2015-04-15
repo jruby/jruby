@@ -84,6 +84,7 @@ class MSpecScript
     "spec/ruby/library/complex",
     "spec/ruby/library/date",
     "spec/ruby/library/datetime",
+    "spec/ruby/library/delegate",
     "spec/ruby/library/erb",
     "spec/ruby/library/getoptlong",
     "spec/ruby/library/observer",
@@ -99,6 +100,10 @@ class MSpecScript
     "spec/ruby/library/stringio",
     "spec/ruby/library/thread",
     "spec/ruby/library/uri",
+
+    # Load issues with 'delegate'.
+    "^spec/ruby/library/delegate/delegate_class/instance_method_spec.rb",
+    "^spec/ruby/library/delegate/delegator/protected_methods_spec.rb",
 
     # LoadError for `load "prime.rb"`
     "^spec/ruby/library/prime/each_spec.rb"

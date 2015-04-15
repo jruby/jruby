@@ -1,0 +1,1 @@
+fails:DelegateClass.private_instance_methods includes private instance methods of the DelegateClass class
