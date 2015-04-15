@@ -99,6 +99,7 @@ class MSpecScript
     "spec/ruby/library/strscan",
     "spec/ruby/library/stringio",
     "spec/ruby/library/thread",
+    "spec/ruby/library/tmpdir",
     "spec/ruby/library/uri",
 
     # Load issues with 'delegate'.
