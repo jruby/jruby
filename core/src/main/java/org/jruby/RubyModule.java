@@ -46,7 +46,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.common.RubyWarnings;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.AliasMethod;
@@ -2241,41 +2240,52 @@ public class RubyModule extends RubyObject {
      * @param not if true only find methods not matching supplied visibility
      * @return a RubyArray of instance method names
      */
-    private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility, boolean not, boolean useSymbols) {
+    private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility, boolean not) {
         boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
+        return instanceMethods(visibility, includeSuper, false, not);
+    }
+
+    public RubyArray instanceMethods(final Visibility visibility, boolean includeSuper, boolean obj, boolean not) {
         Ruby runtime = getRuntime();
         RubyArray ary = runtime.newArray();
         Set<String> seen = new HashSet<String>();
 
-        populateInstanceMethodNames(seen, ary, visibility, not, useSymbols, includeSuper);
+        populateInstanceMethodNames(seen, ary, visibility, obj, not, includeSuper);
 
         return ary;
     }
 
-    public void populateInstanceMethodNames(Set<String> seen, RubyArray ary, final Visibility visibility, boolean not, boolean useSymbols, boolean includeSuper) {
+    public void populateInstanceMethodNames(Set<String> seen, RubyArray ary, final Visibility visibility, boolean obj, boolean not, boolean recur) {
         Ruby runtime = getRuntime();
+        RubyModule mod = this;
+        boolean prepended = false;
 
-        for (RubyModule type = this; type != null; type = type.getSuperClass()) {
-            RubyModule realType = type.getNonIncludedClass();
-            for (Map.Entry entry : type.getMethods().entrySet()) {
+        if (!recur && methodLocation != this) {
+            mod = methodLocation;
+            prepended = true;
+        }
+
+        for (; mod != null; mod = mod.getSuperClass()) {
+            RubyModule realType = mod.getNonIncludedClass();
+            for (Map.Entry entry : mod.getMethods().entrySet()) {
                 String methodName = (String) entry.getKey();
 
                 if (! seen.contains(methodName)) {
                     seen.add(methodName);
 
                     DynamicMethod method = (DynamicMethod) entry.getValue();
-                    if ((method.isImplementedBy(realType) || method.isImplementedBy(type)) &&
+                    if ((method.isImplementedBy(realType) || method.isImplementedBy(mod)) &&
                         (!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility)) &&
                         ! method.isUndefined()) {
 
-                        ary.append(useSymbols ? runtime.newSymbol(methodName) : runtime.newString(methodName));
+                        ary.append(runtime.newSymbol(methodName));
                     }
                 }
             }
 
-            if (!includeSuper && type == methodLocation) {
-                break;
-            }
+            if (mod.isIncluded() && !prepended) continue;
+            if (obj && mod.isSingleton()) continue;
+            if (!recur) break;
         }
     }
 
@@ -2285,7 +2295,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "instance_methods", optional = 1)
     public RubyArray instance_methods19(IRubyObject[] args) {
-        return instance_methods(args, PRIVATE, true, true);
+        return instance_methods(args, PRIVATE, true);
     }
 
     public RubyArray public_instance_methods(IRubyObject[] args) {
@@ -2294,7 +2304,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "public_instance_methods", optional = 1)
     public RubyArray public_instance_methods19(IRubyObject[] args) {
-        return instance_methods(args, PUBLIC, false, true);
+        return instance_methods(args, PUBLIC, false);
     }
 
     @JRubyMethod(name = "instance_method", required = 1)
@@ -2316,7 +2326,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "protected_instance_methods", optional = 1)
     public RubyArray protected_instance_methods19(IRubyObject[] args) {
-        return instance_methods(args, PROTECTED, false, true);
+        return instance_methods(args, PROTECTED, false);
     }
 
     /** rb_class_private_instance_methods
@@ -2328,7 +2338,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "private_instance_methods", optional = 1)
     public RubyArray private_instance_methods19(IRubyObject[] args) {
-        return instance_methods(args, PRIVATE, false, true);
+        return instance_methods(args, PRIVATE, false);
     }
 
     /** rb_mod_prepend_features
