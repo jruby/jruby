@@ -1219,6 +1219,8 @@ public abstract class FixnumNodes {
         public int leftShiftNeg(int a, int b) {
             if (-b >= Integer.SIZE) {
                 return 0;
+            } else if (b == Integer.MIN_VALUE) {
+                return 0;
             } else {
                 return a >> -b;
             }
