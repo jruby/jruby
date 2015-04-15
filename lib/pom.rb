@@ -27,11 +27,11 @@ require 'rexml/xpath'
 # the versions are declared in ../pom.xml
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.7.dev-SNAPSHOT', true ),
+   ImportedGem.new( 'jruby-openssl', '0.9.7', true ),
    ImportedGem.new( 'rake', 'rake.version', true ),
    ImportedGem.new( 'rdoc', 'rdoc.version', true ),
    ImportedGem.new( 'json', 'json.version', true, false ),
-   ImportedGem.new( 'jar-dependencies', '0.1.2', true )
+   ImportedGem.new( 'jar-dependencies', '0.1.12', true )
   ]
 
 project 'JRuby Lib Setup' do
