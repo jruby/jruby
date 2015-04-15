@@ -1607,9 +1607,11 @@ public abstract class ModuleNodes {
         public RubyModule privateConstant(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
-            for (Object ob : args) {
-                if (ob instanceof RubySymbol){
-                    module.changeConstantVisibility(this, (RubySymbol) ob, true);
+            for (Object name : args) {
+                if (name instanceof RubySymbol) {
+                    module.changeConstantVisibility(this, name.toString(), true);
+                } else {
+                    throw new UnsupportedOperationException();
                 }
             }
             return module;
@@ -1631,9 +1633,11 @@ public abstract class ModuleNodes {
         public RubyModule publicConstant(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
-            for (Object ob : args) {
-                if (ob instanceof RubySymbol){
-                    module.changeConstantVisibility(this, (RubySymbol) ob, false);
+            for (Object name : args) {
+                if (name instanceof RubySymbol) {
+                    module.changeConstantVisibility(this, name.toString(), false);
+                } else {
+                    throw new UnsupportedOperationException();
                 }
             }
             return module;

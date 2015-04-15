@@ -346,17 +346,17 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     @TruffleBoundary
-    public void changeConstantVisibility(Node currentNode, RubySymbol constant, boolean isPrivate) {
+    public void changeConstantVisibility(Node currentNode, String name, boolean isPrivate) {
         RubyNode.notDesignedForCompilation();
 
-        RubyConstant rubyConstant = ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, this, constant.toString());
         checkFrozen(currentNode);
+        RubyConstant rubyConstant = constants.get(name);
 
         if (rubyConstant != null) {
             rubyConstant.setPrivate(isPrivate);
             newLexicalVersion();
         } else {
-            throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(this, constant.toString(), currentNode));
+            throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(this, name, currentNode));
         }
     }
 
