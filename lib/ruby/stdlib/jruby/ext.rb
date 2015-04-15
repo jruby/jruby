@@ -5,8 +5,6 @@ module JRuby
   MethodArgs2 = org.jruby.internal.runtime.methods.MethodArgs2
   IRMethodArgs = org.jruby.internal.runtime.methods.IRMethodArgs
   Helpers = org.jruby.runtime.Helpers
-  MultipleAsgn19Node = org.jruby.ast.MultipleAsgn19Node
-  UnnamedRestArgNode = org.jruby.ast.UnnamedRestArgNode
   Arity = org.jruby.runtime.Arity
   
   # Extensions only provides one feature right now: stealing methods from one
