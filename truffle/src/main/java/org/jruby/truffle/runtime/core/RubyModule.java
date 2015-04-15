@@ -200,7 +200,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      */
     @TruffleBoundary
     public void setConstant(Node currentNode, String name, Object value) {
-        if (getContext().getCoreLibrary().isLoadingCoreLibrary()) {
+        if (getContext().getCoreLibrary().isLoadingRubyCore()) {
             final RubyConstant currentConstant = constants.get(name);
 
             if (currentConstant != null) {
@@ -271,7 +271,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         assert method != null;
 
-        if (getContext().getCoreLibrary().isLoadingCoreLibrary()) {
+        if (getContext().getCoreLibrary().isLoadingRubyCore()) {
             final InternalMethod currentMethod = methods.get(method.getName());
 
             if (currentMethod != null && currentMethod.getSharedMethodInfo().getSourceSection() instanceof CoreSourceSection) {
@@ -283,7 +283,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         methods.put(method.getName(), method.withDeclaringModule(this));
         newVersion();
 
-        if (!context.getCoreLibrary().isLoadingCoreLibrary()) {
+        if (context.getCoreLibrary().getState() == CoreLibrary.State.LOADED) {
             DebugOperations.send(context, this, "method_added", null, context.getSymbolTable().getSymbol(method.getName()));
         }
     }
