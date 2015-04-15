@@ -1282,4 +1282,8 @@ public class CoreLibrary {
     public boolean isLoaded() {
         return state == State.LOADED;
     }
+
+    public RubyClass getEnoentClass() {
+        return enoentClass;
+    }
 }

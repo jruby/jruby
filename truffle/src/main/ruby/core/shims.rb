@@ -215,3 +215,13 @@ class Rubinius::ByteArray
 
 end
 
+# Don't apply any synchronization at the moment
+
+module Rubinius
+
+  def self.synchronize(object)
+    yield
+  end
+
+end
+

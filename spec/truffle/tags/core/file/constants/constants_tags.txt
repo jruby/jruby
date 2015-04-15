@@ -1,10 +1,6 @@
 fails:File::Constants::APPEND is defined
 fails:File::Constants::CREAT is defined
 fails:File::Constants::EXCL is defined
-fails:File::Constants::FNM_CASEFOLD is defined
-fails:File::Constants::FNM_DOTMATCH is defined
-fails:File::Constants::FNM_NOESCAPE is defined
-fails:File::Constants::FNM_PATHNAME is defined
 fails:File::Constants::FNM_SYSCASE is defined
 fails:File::Constants::LOCK_EX is defined
 fails:File::Constants::LOCK_NB is defined
@@ -18,4 +14,3 @@ fails:File::Constants::WRONLY is defined
 fails:File::Constants::NOCTTY is defined
 fails:File::Constants::SYNC is defined
 fails(windows):File::Constants::BINARY is defined
-fails:File::Constants::FNM_EXTGLOB is defined

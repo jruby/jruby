@@ -24,23 +24,62 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' exception.rb
+# Only part of Rubinius' dir.rb
 
-class NoMethodError < NameError
-  attr_reader :name
-  attr_reader :args
+class Dir
 
-  def initialize(*arguments)
-    super(arguments.shift)
-    @name = arguments.shift
-    @args = arguments.shift
+  def self.[](*patterns)
+    if patterns.size == 1
+      pattern = Rubinius::Type.coerce_to_path(patterns[0])
+      return [] if pattern.empty?
+      patterns = glob_split pattern
+    end
+
+    glob patterns
   end
-end
 
-class StopIteration < IndexError
-end
+  def self.glob(pattern, flags=0, &block)
+    if pattern.kind_of? Array
+      patterns = pattern
+    else
+      pattern = Rubinius::Type.coerce_to_path pattern
 
-class StopIteration
-  attr_accessor :result
-  private :result=
+      return [] if pattern.empty?
+
+      patterns = glob_split pattern
+    end
+
+    matches = []
+    index = 0
+
+    patterns.each do |pat|
+      pat = Rubinius::Type.coerce_to_path pat
+      enc = Rubinius::Type.ascii_compatible_encoding pat
+      Dir::Glob.glob pat, flags, matches
+
+      total = matches.size
+      while index < total
+        Rubinius::Type.encode_string matches[index], enc
+        index += 1
+      end
+    end
+
+    if block
+      matches.each(&block)
+      return nil
+    end
+
+    return matches
+  end
+
+  def self.glob_split(pattern)
+    result = []
+    start = 0
+    while idx = pattern.find_string("\0", start)
+      result << pattern.byteslice(start, idx)
+      start = idx + 1
+    end
+    result << pattern.byteslice(start, pattern.bytesize)
+  end
+
 end

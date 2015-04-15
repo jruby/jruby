@@ -1,4 +1,4 @@
- # Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2014, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,23 +24,13 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' exception.rb
+# Only part of Rubinius' io.rb
 
-class NoMethodError < NameError
-  attr_reader :name
-  attr_reader :args
+class IO
 
-  def initialize(*arguments)
-    super(arguments.shift)
-    @name = arguments.shift
-    @args = arguments.shift
+  def self.fnmatch(pattern, path, flags)
+    Rubinius.primitive :io_fnmatch
+    raise PrimitiveFailure, "IO#fnmatch primitive failed"
   end
-end
 
-class StopIteration < IndexError
-end
-
-class StopIteration
-  attr_accessor :result
-  private :result=
 end

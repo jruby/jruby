@@ -57,6 +57,40 @@ public abstract class StatPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "stat_lstat")
+    public static abstract class StatLStatPrimitiveNode extends RubiniusPrimitiveNode {
+
+        @Child private WriteHeadObjectFieldNode writeStatNode;
+
+        public StatLStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
+        }
+
+        public StatLStatPrimitiveNode(StatLStatPrimitiveNode prev) {
+            super(prev);
+            writeStatNode = prev.writeStatNode;
+        }
+
+        @Specialization
+        public int lstat(RubyBasicObject rubyStat, RubyString path) {
+            final FileStat stat = getContext().getRuntime().getPosix().allocateStat();
+            final int code = getContext().getRuntime().getPosix().lstat(path.toString(), stat);
+
+            if (code == 0) {
+                writeStatNode.execute(rubyStat, stat);
+            }
+
+            return code;
+        }
+
+        @Specialization(guards = "!isRubyString(arguments[1])")
+        public Object stat(RubyBasicObject rubyStat, Object path) {
+            return null;
+        }
+
+    }
+
     public static abstract class StatReadPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child private ReadHeadObjectFieldNode readStatNode;
