@@ -376,6 +376,7 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
                     } else if (extendedOption.equals("+T")) {
                         checkGraalVersion();
+                        Options.PARSER_WARN_GROUPED_EXPRESSIONS.force(Boolean.FALSE.toString());
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
                         config.setDisableGems(true);
                     } else if (extendedOption.endsWith("...")) {
