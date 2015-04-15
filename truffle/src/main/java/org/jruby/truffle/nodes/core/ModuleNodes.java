@@ -960,6 +960,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
+        public RubySymbol defineMethod(RubyModule module, String name, UndefinedPlaceholder proc, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("needs either proc or block", this));
+        }
+
+        @Specialization
         public RubySymbol defineMethod(RubyModule module, String name, UndefinedPlaceholder proc, RubyProc block) {
             notDesignedForCompilation();
 
@@ -984,8 +990,10 @@ public abstract class ModuleNodes {
         public RubySymbol defineMethod(VirtualFrame frame, RubyModule module, String name, RubyUnboundMethod method, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            if (module instanceof RubyClass && !ModuleOperations.assignableTo((RubyClass) module, method.getOrigin())) {
-                ruby(frame, "raise TypeError, 'bind argument must be a subclass of " + method.getOrigin().getName() + "'");
+            RubyModule origin = method.getOrigin();
+            if (!ModuleOperations.canBindMethodTo(origin, module)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be a subclass of " + origin.getName(), this));
             }
 
             // TODO CS 5-Apr-15 TypeError if the method came from a singleton
