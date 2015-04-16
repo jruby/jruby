@@ -36,20 +36,22 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.ProcMethod;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.CompiledBlockCallback19;
+import org.jruby.runtime.CompiledBlockLight;
 import org.jruby.runtime.CompiledBlockLight19;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.PositionAware;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.DataType;
 
 /** 
  * The RubyMethod class represents a RubyMethod object.
@@ -136,7 +138,14 @@ public class RubyMethod extends AbstractRubyMethod {
      */
     @JRubyMethod
     public RubyFixnum arity() {
-        return getRuntime().newFixnum(method.getArity().getValue());
+        int value;
+        if (method instanceof IRMethodArgs) {
+            value = ((IRMethodArgs) method).getSignature().arityValue();
+        } else {
+            value = method.getArity().getValue();
+        }
+
+        return getRuntime().newFixnum(value);
     }
 
     @JRubyMethod(name = "==", required = 1)
@@ -197,20 +206,28 @@ public class RubyMethod extends AbstractRubyMethod {
                 return RubyMethod.this.getLine();
             }
         };
-        int argumentType;
-        if (method.getArity().isFixed()) {
-            if (method.getArity().required() > 0) {
-                argumentType = BlockBody.MULTIPLE_ASSIGNMENT;
-            } else {
-                argumentType = BlockBody.ZERO_ARGS;
-            }
+
+        BlockBody body;
+        if (method instanceof IRMethodArgs) {
+            Signature signature = ((IRMethodArgs) method).getSignature();
+            int argumentType = resolveArgumentType(signature.isFixed(), signature.required());
+            body = CompiledBlockLight19.newCompiledBlockLight(((IRMethodArgs) method).getSignature(),
+                    runtime.getStaticScopeFactory().getDummyScope(), callback, false, argumentType, JRubyLibrary.MethodExtensions.methodParameters(runtime, method));
         } else {
-            argumentType = BlockBody.MULTIPLE_ASSIGNMENT;
+            Arity arity = method.getArity();
+            int argumentType = resolveArgumentType(arity.isFixed(), arity.required());
+            body = CompiledBlockLight19.newCompiledBlockLight(method.getArity(),
+                    runtime.getStaticScopeFactory().getDummyScope(), callback, false, argumentType, JRubyLibrary.MethodExtensions.methodParameters(runtime, method));
         }
-        BlockBody body = CompiledBlockLight19.newCompiledBlockLight(method.getArity(), runtime.getStaticScopeFactory().getDummyScope(), callback, false, argumentType, JRubyLibrary.MethodExtensions.methodParameters(runtime, method));
         Block b = new Block(body, context.currentBinding(receiver, Visibility.PUBLIC));
         
         return RubyProc.newProc(runtime, b, Block.Type.LAMBDA);
+    }
+
+    private int resolveArgumentType(boolean isFixed, int required) {
+        if (!isFixed) return BlockBody.MULTIPLE_ASSIGNMENT;
+        if (required > 0) return BlockBody.MULTIPLE_ASSIGNMENT;
+        return BlockBody.ZERO_ARGS;
     }
 
     @JRubyMethod

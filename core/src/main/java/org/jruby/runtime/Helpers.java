@@ -238,7 +238,7 @@ public class Helpers {
 
         context.preScopedBody(DynamicScope.newDynamicScope(staticScope, context.getCurrentScope()));
 
-        Block block = CompiledBlock.newCompiledClosure(context, self, Arity.createArity(0), staticScope, callback, false, BlockBody.ZERO_ARGS);
+        Block block = CompiledBlock.newCompiledClosure(context, self, Signature.NO_ARGUMENTS, staticScope, callback, false, BlockBody.ZERO_ARGS);
 
         try {
             block.yield(context, null);
@@ -2168,9 +2168,9 @@ public class Helpers {
     }
 
     public static String encodeScope(StaticScope scope) {
-        StringBuilder namesBuilder = new StringBuilder(scope.getType().name());
+        StringBuilder namesBuilder = new StringBuilder(scope.getType().name()); // 0
 
-        namesBuilder.append(',');
+        namesBuilder.append(',');  // 1
 
         boolean first = true;
         for (String name : scope.getVariables()) {
@@ -2178,35 +2178,30 @@ public class Helpers {
             first = false;
             namesBuilder.append(name);
         }
-        namesBuilder
-                .append(',')
-                .append(scope.getRequiredArgs())
-                .append(',')
-                .append(scope.getOptionalArgs())
-                .append(',')
-                .append(scope.hasRestArg())
-                .append(',')
-                .append(scope.getScopeType());
+        namesBuilder.append(',').append(scope.getSignature().encode()); // 2
+        namesBuilder.append(',').append(scope.getScopeType());          // 3
 
         return namesBuilder.toString();
     }
 
     public static StaticScope decodeScope(ThreadContext context, StaticScope parent, String scopeString) {
         String[][] decodedScope = decodeScopeDescriptor(scopeString);
+        String scopeTypeName = decodedScope[0][0];
+        String[] names = decodedScope[1];
         StaticScope scope = null;
-        switch (StaticScope.Type.valueOf(decodedScope[0][0])) {
+        switch (StaticScope.Type.valueOf(scopeTypeName)) {
             case BLOCK:
-                scope = context.runtime.getStaticScopeFactory().newBlockScope(parent, decodedScope[1]);
+                scope = context.runtime.getStaticScopeFactory().newBlockScope(parent, names);
                 break;
             case EVAL:
-                scope = context.runtime.getStaticScopeFactory().newEvalScope(parent, decodedScope[1]);
+                scope = context.runtime.getStaticScopeFactory().newEvalScope(parent, names);
                 break;
             case LOCAL:
-                scope = context.runtime.getStaticScopeFactory().newLocalScope(parent, decodedScope[1]);
+                scope = context.runtime.getStaticScopeFactory().newLocalScope(parent, names);
                 break;
         }
-        setAritiesFromDecodedScope(scope, decodedScope[0]);
-        scope.setScopeType(IRScopeType.valueOf(decodedScope[0][5]));
+        setAritiesFromDecodedScope(scope, decodedScope[0][2]);
+        scope.setScopeType(IRScopeType.valueOf(decodedScope[0][3]));
         return scope;
     }
 
@@ -2216,8 +2211,8 @@ public class Helpers {
         return new String[][] {scopeElements, scopeNames};
     }
 
-    private static void setAritiesFromDecodedScope(StaticScope scope, String[] scopeElements) {
-        scope.setArities(Integer.parseInt(scopeElements[2]), Integer.parseInt(scopeElements[3]), Boolean.parseBoolean(scopeElements[4]));
+    private static void setAritiesFromDecodedScope(StaticScope scope, String encodedSignature) {
+        scope.setSignature(Signature.decode(Long.parseLong(encodedSignature)));
     }
 
     public static StaticScope decodeScopeAndDetermineModule(ThreadContext context, StaticScope parent, String scopeString) {

@@ -66,6 +66,10 @@ public class NullBlockBody extends BlockBody {
     public void setStaticScope(StaticScope newScope) {
     }
 
+    public Signature getSignature() {
+        return null;
+    }
+
     @Override
     public Arity arity() {
         return null;

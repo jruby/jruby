@@ -49,7 +49,8 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
      * @see Helpers#needsSplat19(int, boolean)
      */
     private final boolean needsSplat;
-    
+
+    @Deprecated
     public static Block newCompiledClosure(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
@@ -68,13 +69,18 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         return new CompiledBlock19(arity, scope, callback, hasMultipleArgsHead, argumentType, parameterList);
     }
 
-    public CompiledBlock19(Arity arity, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {
-        super(scope, arity, argumentType);
-        
+    public CompiledBlock19(Signature signature, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {
+        super(scope, signature, argumentType);
+
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
         this.parameterList = parameterList;
         this.needsSplat = Helpers.needsSplat19(arity().required(), !arity().isFixed());
+    }
+
+    @Deprecated
+    public CompiledBlock19(Arity arity, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {
+        this(Signature.from(arity), scope, callback, hasMultipleArgsHead, argumentType, parameterList);
     }
 
     @Override

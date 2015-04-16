@@ -45,6 +45,7 @@ import org.jruby.ir.IRScopeType;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DummyDynamicScope;
 
@@ -75,14 +76,8 @@ public class StaticScope implements Serializable {
     // Our name holder (offsets are assigned as variables are added
     private String[] variableNames;
 
-    // number of variables in this scope representing required arguments
-    private int requiredArgs = 0;
-
-    // number of variables in this scope representing optional arguments
-    private int optionalArgs = 0;
-
-    // index of variable that represents a "rest" arg
-    private boolean hasRest = false;
+    // Arity of this scope if there is one
+    private Signature signature;
 
     private DynamicScope dummyScope;
 
@@ -481,23 +476,15 @@ public class StaticScope implements Serializable {
     }
 
     public int getOptionalArgs() {
-        return optionalArgs;
+        return signature.opt();
     }
 
     public int getRequiredArgs() {
-        return requiredArgs;
-    }
-
-    public void setRequiredArgs(int requiredArgs) {
-        this.requiredArgs = requiredArgs;
+        return signature.required();
     }
 
     public boolean hasRestArg() {
-        return hasRest;
-    }
-
-    public void setHasRest(boolean hasRest) {
-        this.hasRest = hasRest;
+        return signature.hasRest();
     }
 
     public boolean isBlockScope() {
@@ -517,23 +504,15 @@ public class StaticScope implements Serializable {
     }
 
     public Arity getArity() {
-        if (optionalArgs > 0) {
-            if (hasRest) {
-                return Arity.optional();
-            }
-            return Arity.required(requiredArgs);
-        } else {
-            if (hasRest) {
-                return Arity.optional();
-            }
-            return Arity.fixed(requiredArgs);
-        }
+        return signature.arity();
     }
 
-    public void setArities(int required, int optional, boolean hasRest) {
-        this.requiredArgs = required;
-        this.optionalArgs = optional;
-        this.hasRest = hasRest;
+    public Signature getSignature() {
+        return signature;
+    }
+
+    public void setSignature(Signature signature) {
+        this.signature = signature;
     }
 
     public DynamicScope getDummyScope() {

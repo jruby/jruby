@@ -36,7 +36,6 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.StaticScope;
@@ -45,10 +44,8 @@ import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
-import org.jruby.runtime.InterpretedIRBlockBody;
 import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -249,18 +246,14 @@ public class RubyProc extends RubyObject implements DataType {
         if (args == null) return IRubyObject.NULL_ARRAY;
 
         if (type == Block.Type.LAMBDA) {
-            if (blockBody instanceof IRBlockBody) {
-                ((IRBlockBody) blockBody).getSignature().checkArity(context.runtime, args);
-            } else {
-                arity.checkArity(context.runtime, args.length);
-            }
+            blockBody.getSignature().checkArity(context.runtime, args);
             return args;
         }
 
         boolean isFixed = arity.isFixed();
         int required = arity.required();
         int actual = args.length;
-        boolean restKwargs = blockBody instanceof IRBlockBody && ((IRBlockBody) blockBody).getSignature().kwargs();
+        boolean restKwargs = blockBody instanceof IRBlockBody && ((IRBlockBody) blockBody).getSignature().hasKwargs();
 
         // FIXME: This is a hot mess.  restkwargs factors into destructing a single element array as well.  I just weaved it into this logic.
         // for procs and blocks, single array passed to multi-arg must be spread
@@ -278,8 +271,8 @@ public class RubyProc extends RubyObject implements DataType {
 
         // We add one to our fill and adjust number of incoming args code when there are kwargs.  We subtract one
         // if it happens to be requiredkwargs since required gets a +1.  This is horrible :)
-        int needsKwargs = blockBody instanceof IRBlockBody && ((IRBlockBody) blockBody).getSignature().kwargs() ?
-                1 - ((IRBlockBody) blockBody).getSignature().getRequiredKeywordCount() : 0;
+        int needsKwargs = blockBody instanceof IRBlockBody && ((IRBlockBody) blockBody).getSignature().hasKwargs() ?
+                1 - ((IRBlockBody) blockBody).getSignature().getRequiredKeywordForArityCount() : 0;
 
         // fixed arity > 0 with mismatch needs a new args array
         if (isFixed && required > 0 && required+needsKwargs != actual) {
@@ -328,7 +321,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = "arity")
     public RubyFixnum arity() {
-        return getRuntime().newFixnum(block.arity().getValue());
+        return getRuntime().newFixnum(block.getSignature().arityValue());
     }
     
     @JRubyMethod(name = "to_proc")

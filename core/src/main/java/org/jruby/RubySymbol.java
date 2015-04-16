@@ -52,6 +52,7 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ContextAwareBlockBody;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
@@ -411,7 +412,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
     public IRubyObject to_proc(ThreadContext context) {
         StaticScope scope = context.runtime.getStaticScopeFactory().getDummyScope();
         final CallSite site = new FunctionalCachingCallSite(symbol);
-        BlockBody body = new ContextAwareBlockBody(scope, Arity.OPTIONAL, BlockBody.SINGLE_RESTARG) {
+        BlockBody body = new ContextAwareBlockBody(scope, Signature.OPTIONAL, BlockBody.SINGLE_RESTARG) {
             private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block block) {
                 if (array.isEmpty()) {
                     throw context.runtime.newArgumentError("no receiver given");

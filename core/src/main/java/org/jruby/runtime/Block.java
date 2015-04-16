@@ -208,6 +208,10 @@ public final class Block {
         return body.arity();
     }
 
+    public Signature getSignature() {
+        return body.getSignature();
+    }
+
     /**
      * Retrieve the proc object associated with this block
      * 
