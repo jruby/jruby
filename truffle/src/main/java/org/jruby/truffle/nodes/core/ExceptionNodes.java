@@ -77,13 +77,13 @@ public abstract class ExceptionNodes {
 
     @RubiniusOnly
     @CoreMethod(names = "capture_backtrace!", optional = 1)
-    public abstract static class CapturebacktraceNode extends CoreMethodNode {
+    public abstract static class CaptureBacktraceNode extends CoreMethodNode {
 
-        public CapturebacktraceNode(RubyContext context, SourceSection sourceSection) {
+        public CaptureBacktraceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public CapturebacktraceNode(CapturebacktraceNode prev) {
+        public CaptureBacktraceNode(CaptureBacktraceNode prev) {
             super(prev);
         }
 
