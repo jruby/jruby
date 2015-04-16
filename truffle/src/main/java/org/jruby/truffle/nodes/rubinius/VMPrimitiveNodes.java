@@ -39,6 +39,7 @@ package org.jruby.truffle.nodes.rubinius;
 
 import jnr.constants.platform.Sysconf;
 import jnr.posix.Times;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
@@ -50,13 +51,14 @@ import org.jruby.truffle.nodes.objects.ClassNodeFactory;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThrowException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
-
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.util.io.PosixShim;
+
 import sun.misc.Signal;
 
 import com.oracle.truffle.api.CompilerDirectives;
@@ -335,6 +337,22 @@ public abstract class VMPrimitiveNodes {
             return singletonClassNode.singletonClass(frame, object);
         }
 
+    }
+
+    @RubiniusPrimitive(name = "vm_raise_exception", needsSelf = false)
+    public static abstract class VMRaiseExceptionPrimitiveNode extends RubiniusPrimitiveNode {
+        public VMRaiseExceptionPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public VMRaiseExceptionPrimitiveNode(VMRaiseExceptionPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyNilClass vmRaiseException(RubyException exception) {
+            throw new RaiseException(exception);
+        }
     }
 
     @RubiniusPrimitive(name = "vm_set_module_name", needsSelf = false)

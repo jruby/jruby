@@ -12,8 +12,10 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyNilClass;
@@ -69,6 +71,32 @@ public abstract class ExceptionNodes {
             } else {
                 return exception.asRubyStringArray();
             }
+        }
+
+    }
+
+    @RubiniusOnly
+    @CoreMethod(names = "capture_backtrace!", optional = 1)
+    public abstract static class CapturebacktraceNode extends CoreMethodNode {
+
+        public CapturebacktraceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CapturebacktraceNode(CapturebacktraceNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyNilClass captureBacktrace(RubyException exception, UndefinedPlaceholder offset) {
+            return captureBacktrace(exception, 1);
+        }
+
+        @Specialization
+        public RubyNilClass captureBacktrace(RubyException exception, int offset) {
+            Backtrace backtrace = RubyCallStack.getBacktrace(this, offset);
+            exception.setBacktrace(backtrace);
+            return nil();
         }
 
     }

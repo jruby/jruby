@@ -1,4 +1,4 @@
- # Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2014, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,64 +24,50 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' exception.rb
+# Only part of Rubinius' kernel.rb
 
-class Exception
-
-  # Needed to properly implement #exception, which must clone and call
-  # #initialize again, BUT not a subclasses initialize.
-  alias_method :__initialize__, :initialize
-
-  # Indicates if the Exception has a backtrace set
-  def backtrace?
-    backtrace ? true : false # Truffle: simplified
-  end
-
-  def set_context(ctx)
-    if ctx.kind_of? Exception
-      @parent = ctx
-    else
-      # set_backtrace(ctx) # Truffle: we don't support set_backtrace yet
-    end
-  end
-
-  class << self
-    alias_method :exception, :new
-  end
-
-  def exception(message=nil)
-    if message
-      unless message.equal? self
-        # As strange as this might seem, this IS actually the protocol
-        # that MRI implements for this. The explicit call to
-        # Exception#initialize (via __initialize__) is exactly what MRI
-        # does.
-        e = clone
-        e.__initialize__(message)
-        return e
+module Kernel
+  def raise(exc=undefined, msg=undefined, ctx=nil)
+    skip = false
+    if undefined.equal? exc
+      exc = $!
+      if exc
+        skip = true
+      else
+        exc = RuntimeError.new("No current exception")
       end
+    elsif exc.respond_to? :exception
+      if undefined.equal? msg
+        exc = exc.exception
+      else
+        exc = exc.exception msg
+      end
+      raise ::TypeError, 'exception class/object expected' unless exc.kind_of?(::Exception)
+    elsif exc.kind_of? String
+      exc = ::RuntimeError.exception exc
+    else
+      raise ::TypeError, 'exception class/object expected'
     end
 
-    self
+    unless skip
+      exc.set_context ctx if ctx
+      exc.capture_backtrace!(2) unless exc.backtrace?
+    end
+
+    if $DEBUG and $VERBOSE != nil
+      if loc = exc.locations and loc[1]
+        pos = loc[1].position
+      else
+        pos = Rubinius::VM.backtrace(1)[0].position
+      end
+
+      STDERR.puts "Exception: `#{exc.class}' #{pos} - #{exc.message}"
+    end
+
+    Rubinius.raise_exception exc
   end
+  module_function :raise
 
-end
-
-class NoMethodError < NameError
-  attr_reader :name
-  attr_reader :args
-
-  def initialize(*arguments)
-    super(arguments.shift)
-    @name = arguments.shift
-    @args = arguments.shift
-  end
-end
-
-class StopIteration < IndexError
-end
-
-class StopIteration
-  attr_accessor :result
-  private :result=
+  alias_method :fail, :raise
+  module_function :fail
 end
