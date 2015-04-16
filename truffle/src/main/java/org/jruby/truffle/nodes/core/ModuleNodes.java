@@ -630,7 +630,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, UndefinedPlaceholder file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final Source source = Source.fromText(code.toString(), "(eval)");
@@ -638,7 +638,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final Source source = Source.asPseudoFile(code.toString(), file.toString());
@@ -646,7 +646,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") int line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, int line, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final Source source = Source.asPseudoFile(code.toString(), file.toString());
@@ -665,7 +665,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
+        public Object classEval(VirtualFrame frame, RubyModule self, UndefinedPlaceholder code, UndefinedPlaceholder file, UndefinedPlaceholder line, RubyProc block) {
             notDesignedForCompilation();
 
             return yield.dispatchWithModifiedSelf(frame, block, self);
@@ -833,7 +833,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public boolean isConstDefined(RubyModule module, String name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
+        public boolean isConstDefined(RubyModule module, String name, UndefinedPlaceholder inherit) {
             return isConstDefined(module, name, true);
         }
 
@@ -1264,7 +1264,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public boolean isMethodDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
+        public boolean isMethodDefined(RubyModule module, RubyString name, UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
             return ModuleOperations.lookupMethod(module, name.toString()) != null;
@@ -1282,7 +1282,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public boolean isMethodDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
+        public boolean isMethodDefined(RubyModule module, RubySymbol name, UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
             return ModuleOperations.lookupMethod(module, name.toString()) != null;
