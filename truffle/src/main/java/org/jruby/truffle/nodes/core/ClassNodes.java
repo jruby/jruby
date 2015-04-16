@@ -71,6 +71,8 @@ public abstract class ClassNodes {
             initialize = prev.initialize;
         }
 
+        public abstract RubyBasicObject executeNew(VirtualFrame frame, RubyClass rubyClass, Object[] args, Object block);
+
         @Specialization
         public RubyBasicObject newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             return doNewInstance(frame, rubyClass, args, null);

@@ -30,6 +30,8 @@ import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.control.WhileNode;
+import org.jruby.truffle.nodes.core.ClassNodes.NewNode;
+import org.jruby.truffle.nodes.core.ClassNodesFactory.NewNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -1416,16 +1418,16 @@ public abstract class KernelNodes {
     public abstract static class RaiseNode extends CoreMethodNode {
 
         @Child private ReadInstanceVariableNode getLastExceptionNode;
-        @Child private CallDispatchHeadNode initialize;
+        @Child private NewNode newNode;
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = DispatchHeadNodeFactory.createMethodCall(context, true);
+            newNode = NewNodeFactory.create(context, sourceSection, new RubyNode[] { null, null, null });
         }
 
         public RaiseNode(RaiseNode prev) {
             super(prev);
-            initialize = prev.initialize;
+            newNode = prev.newNode;
         }
 
         @Specialization
@@ -1466,8 +1468,7 @@ public abstract class KernelNodes {
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message, UndefinedPlaceholder undefined1) {
             notDesignedForCompilation();
 
-            final Object exception = exceptionClass.allocate(this);
-            initialize.call(frame, exception, "initialize", null, message);
+            final Object exception = newNode.executeNew(frame, exceptionClass, new Object[] { message }, UndefinedPlaceholder.INSTANCE);
 
             if (!(exception instanceof RubyException)) {
                 CompilerDirectives.transferToInterpreter();
