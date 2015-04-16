@@ -1468,14 +1468,20 @@ public abstract class KernelNodes {
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message, UndefinedPlaceholder undefined1) {
             notDesignedForCompilation();
 
-            final Object exception = newNode.executeNew(frame, exceptionClass, new Object[] { message }, UndefinedPlaceholder.INSTANCE);
+            final Object exceptionObject = newNode.executeNew(frame, exceptionClass, new Object[] { message }, UndefinedPlaceholder.INSTANCE);
 
-            if (!(exception instanceof RubyException)) {
+            if (!(exceptionObject instanceof RubyException)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("exception class/object expected", this));
             }
+            final RubyException exception = (RubyException) exceptionObject;
 
-            throw new RaiseException((RubyException) exception);
+            if (exception.getBacktrace() == null) { // TODO (eregon 16 Apr. 2015): MRI does a dynamic call here (in setup_exception)
+                Backtrace backtrace = RubyCallStack.getBacktrace(this);
+                exception.setBacktrace(backtrace); // and here too
+            }
+
+            throw new RaiseException(exception);
         }
 
         @Specialization
