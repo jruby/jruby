@@ -1253,7 +1253,8 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "method_defined?", required = 1, optional = 1)
-    public abstract static class MethodDefinedNode extends CoreMethodNode {
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("inherit") })
+    public abstract static class MethodDefinedNode extends RubyNode {
 
         public MethodDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1263,30 +1264,30 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization
-        public boolean isMethodDefined(RubyModule module, RubyString name, UndefinedPlaceholder inherit) {
-            notDesignedForCompilation();
-
-            return ModuleOperations.lookupMethod(module, name.toString()) != null;
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
-        public boolean isMethodDefined(RubyModule module, RubyString name, boolean inherit) {
+        public boolean isMethodDefined(RubyModule module, String name, UndefinedPlaceholder inherit) {
+            return isMethodDefined(module, name, true);
+        }
+
+        @Specialization
+        public boolean isMethodDefined(RubyModule module, String name, boolean inherit) {
             notDesignedForCompilation();
 
+            final InternalMethod method;
             if (inherit) {
-                return ModuleOperations.lookupMethod(module, name.toString()) != null;
+                method = ModuleOperations.lookupMethod(module, name);
             } else {
-                return module.getMethods().containsKey(name.toString());
+                method = module.getMethods().get(name);
             }
+
+            return method != null && !method.getVisibility().isPrivate();
         }
 
-        @Specialization
-        public boolean isMethodDefined(RubyModule module, RubySymbol name, UndefinedPlaceholder inherit) {
-            notDesignedForCompilation();
-
-            return ModuleOperations.lookupMethod(module, name.toString()) != null;
-        }
     }
 
     @CoreMethod(names = "module_function", argumentsAsArray = true)
@@ -1487,6 +1488,33 @@ public abstract class ModuleNodes {
         }
     }
 
+    @CoreMethod(names = "private_method_defined?", required = 1)
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+    public abstract static class PrivateMethodDefinedNode extends RubyNode {
+
+        public PrivateMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PrivateMethodDefinedNode(PrivateMethodDefinedNode prev) {
+            super(prev);
+        }
+
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+        }
+
+        @Specialization
+        public boolean isPrivateMethodDefined(RubyModule module, String name) {
+            notDesignedForCompilation();
+
+            InternalMethod method = ModuleOperations.lookupMethod(module, name);
+            return method != null && method.getVisibility().isPrivate();
+        }
+
+    }
+
     @CoreMethod(names = "protected_instance_methods", optional = 1)
     public abstract static class ProtectedInstanceMethodsNode extends CoreMethodNode {
 
@@ -1518,6 +1546,33 @@ public abstract class ModuleNodes {
 
                     }).toArray());
         }
+    }
+
+    @CoreMethod(names = "protected_method_defined?", required = 1)
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+    public abstract static class ProtectedMethodDefinedNode extends RubyNode {
+
+        public ProtectedMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ProtectedMethodDefinedNode(ProtectedMethodDefinedNode prev) {
+            super(prev);
+        }
+
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+        }
+
+        @Specialization
+        public boolean isProtectedMethodDefined(RubyModule module, String name) {
+            notDesignedForCompilation();
+
+            InternalMethod method = ModuleOperations.lookupMethod(module, name);
+            return method != null && method.getVisibility().isProtected();
+        }
+
     }
 
     @CoreMethod(names = "private_instance_methods", optional = 1)
@@ -1582,6 +1637,33 @@ public abstract class ModuleNodes {
 
                     }).toArray());
         }
+    }
+
+    @CoreMethod(names = "public_method_defined?", required = 1)
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+    public abstract static class PublicMethodDefinedNode extends RubyNode {
+
+        public PublicMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PublicMethodDefinedNode(PublicMethodDefinedNode prev) {
+            super(prev);
+        }
+
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+        }
+
+        @Specialization
+        public boolean isPublicMethodDefined(RubyModule module, String name) {
+            notDesignedForCompilation();
+
+            InternalMethod method = ModuleOperations.lookupMethod(module, name);
+            return method != null && method.getVisibility() == Visibility.PUBLIC;
+        }
+
     }
 
     @CoreMethod(names = "instance_methods", optional = 1)
