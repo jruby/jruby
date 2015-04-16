@@ -24,8 +24,7 @@ public class RubyException extends RubyBasicObject {
 
     public RubyException(RubyClass rubyClass) {
         super(rubyClass);
-        message = rubyClass.getContext().makeString("(object uninitialized)");
-        backtrace = null;
+        message = rubyClass.getContext().makeString("");
     }
 
     public RubyException(RubyClass rubyClass, RubyString message, Backtrace backtrace) {
