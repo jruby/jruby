@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
 /**
@@ -393,6 +394,11 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public IRScope decodeScope() {
         return scopes.get(decodeInt());
+    }
+
+    @Override
+    public Signature decodeSignature() {
+        return Signature.decode(decodeLong());
     }
 
     @Override

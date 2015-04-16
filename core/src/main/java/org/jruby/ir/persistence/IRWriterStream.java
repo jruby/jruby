@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
 // FIXME: Make into a base class at some point to play with different formats
@@ -184,6 +185,13 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     @Override
     public void encode(IRScopeType value) {
         encode((byte) value.ordinal());
+    }
+
+    @Override
+    public void encode(Signature signature) {
+        // Non-method/block scopes still have this field so we set it to no-arg by convention.
+        if (signature == null) signature = Signature.NO_ARGUMENTS;
+        encode(signature.encode());
     }
 
     @Override

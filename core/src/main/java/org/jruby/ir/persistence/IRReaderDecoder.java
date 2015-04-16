@@ -20,6 +20,7 @@ import org.jruby.parser.StaticScope;
 
 import java.util.List;
 import java.util.Map;
+import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
 /**
@@ -49,6 +50,7 @@ public interface IRReaderDecoder {
     public double decodeDouble();
     public float decodeFloat();
     public Label decodeLabel();
+    public Signature decodeSignature();
 
     public Variable decodeVariable();
 

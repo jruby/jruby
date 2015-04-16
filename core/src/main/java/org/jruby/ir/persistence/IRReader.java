@@ -120,8 +120,7 @@ public class IRReader {
     private static StaticScope decodeStaticScope(IRReaderDecoder decoder, StaticScope parentScope) {
         StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, decoder.decodeStaticScopeType(), decoder.decodeStringArray());
 
-        // FIXME: Re unbreak persistence.
-        //scope.setRequiredArgs(decoder.decodeInt()); // requiredArgs has no constructor ...
+        scope.setSignature(decoder.decodeSignature());
 
         return scope;
     }
