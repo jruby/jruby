@@ -3032,25 +3032,25 @@ public class RubyModule extends RubyObject {
         String symbol = fullName;
         boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
 
+        int sep = symbol.indexOf("::");
         // symbol form does not allow ::
-        if (args[0] instanceof RubySymbol && symbol.indexOf("::") != -1) {
+        if (args[0] instanceof RubySymbol && sep != -1) {
             throw context.runtime.newNameError("wrong constant name", symbol);
         }
 
         RubyModule mod = this;
 
-        if (symbol.startsWith("::")) {
-          mod = runtime.getObject();
-          symbol = symbol.substring(2);
+        if (sep == 0) { // ::Foo::Bar
+            mod = runtime.getObject();
+            symbol = symbol.substring(2);
         }
 
-        int sep;
-        while((sep = symbol.indexOf("::")) != -1) {
+        while ((sep = symbol.indexOf("::")) != -1) {
             String segment = symbol.substring(0, sep);
             symbol = symbol.substring(sep + 2);
             IRubyObject obj = mod.getConstant(validateConstant(segment, args[0]), inherit, inherit);
-            if(obj instanceof RubyModule) {
-                mod = (RubyModule)obj;
+            if (obj instanceof RubyModule) {
+                mod = (RubyModule) obj;
             } else {
                 throw runtime.newTypeError(segment + " does not refer to class/module");
             }
