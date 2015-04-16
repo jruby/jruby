@@ -56,10 +56,8 @@ public abstract class ModuleOperations {
         // Look in the current module
         constants.putAll(module.getConstants());
 
-        // TODO(eregon): Look in lexical scope?
-
         // Look in ancestors
-        for (RubyModule ancestor : module.parentAncestors()) {
+        for (RubyModule ancestor : module.includedModules()) {
             for (Map.Entry<String, RubyConstant> constant : ancestor.getConstants().entrySet()) {
                 if (!constants.containsKey(constant.getKey())) {
                     constants.put(constant.getKey(), constant.getValue());
