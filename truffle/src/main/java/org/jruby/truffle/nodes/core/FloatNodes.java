@@ -376,11 +376,8 @@ public abstract class FloatNodes {
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
         public boolean less(double a, RubyBasicObject other) {
-            throw new RaiseException(new RubyException(
-                    getContext().getCoreLibrary().getArgumentErrorClass(),
-                    getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
-                    RubyCallStack.getBacktrace(this)
-            ));
+            throw new RaiseException(getContext().getCoreLibrary().argumentError(
+                    String.format("comparison of Float with %s failed", other.getLogicalClass().getName()), this));
         }
     }
 
@@ -417,11 +414,8 @@ public abstract class FloatNodes {
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
         public boolean less(double a, RubyBasicObject other) {
-            throw new RaiseException(new RubyException(
-                    getContext().getCoreLibrary().getArgumentErrorClass(),
-                    getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
-                    RubyCallStack.getBacktrace(this)
-            ));
+            throw new RaiseException(getContext().getCoreLibrary().argumentError(
+                    String.format("comparison of Float with %s failed", other.getLogicalClass().getName()), this));
         }
     }
 
@@ -559,11 +553,8 @@ public abstract class FloatNodes {
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
         public boolean less(double a, RubyBasicObject other) {
-            throw new RaiseException(new RubyException(
-                    getContext().getCoreLibrary().getArgumentErrorClass(),
-                    getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
-                    RubyCallStack.getBacktrace(this)
-            ));
+            throw new RaiseException(getContext().getCoreLibrary().argumentError(
+                    String.format("comparison of Float with %s failed", other.getLogicalClass().getName()), this));
         }
     }
 
@@ -600,11 +591,8 @@ public abstract class FloatNodes {
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
         public boolean less(double a, RubyBasicObject other) {
-            throw new RaiseException(new RubyException(
-                    getContext().getCoreLibrary().getArgumentErrorClass(),
-                    getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
-                    RubyCallStack.getBacktrace(this)
-            ));
+            throw new RaiseException(getContext().getCoreLibrary().argumentError(
+                    String.format("comparison of Float with %s failed", other.getLogicalClass().getName()), this));
         }
     }
 
