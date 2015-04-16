@@ -1420,7 +1420,7 @@ public abstract class KernelNodes {
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = DispatchHeadNodeFactory.createMethodCall(context);
+            initialize = DispatchHeadNodeFactory.createMethodCall(context, true);
         }
 
         public RaiseNode(RaiseNode prev) {
