@@ -58,8 +58,6 @@ public abstract class ClassNodes {
 
         @Child private AllocateNode allocateNode;
         @Child private CallDispatchHeadNode initialize;
-        @CompilerDirectives.CompilationFinal private boolean isCached = true;
-        @CompilerDirectives.CompilationFinal private RubyClass cachedClass;
 
         public NewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
