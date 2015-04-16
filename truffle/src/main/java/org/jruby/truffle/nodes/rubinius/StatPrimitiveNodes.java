@@ -62,11 +62,6 @@ public abstract class StatPrimitiveNodes {
             writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
         }
 
-        public StatLStatPrimitiveNode(StatLStatPrimitiveNode prev) {
-            super(prev);
-            writeStatNode = prev.writeStatNode;
-        }
-
         @Specialization
         public int lstat(RubyBasicObject rubyStat, RubyString path) {
             final FileStat stat = getContext().getRuntime().getPosix().allocateStat();

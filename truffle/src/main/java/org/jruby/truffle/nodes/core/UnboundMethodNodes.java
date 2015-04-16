@@ -67,14 +67,13 @@ public abstract class UnboundMethodNodes {
         public RubyMethod bind(VirtualFrame frame, RubyUnboundMethod unboundMethod, Object object) {
             notDesignedForCompilation();
             RubyModule module = unboundMethod.getMethod().getDeclaringModule();
-            if (module instanceof RubyClass) {
-                if (!ModuleOperations.assignableTo(metaClass(frame, object), module)) {
-                    CompilerDirectives.transferToInterpreter();
-                    if (((RubyClass) module).isSingleton()) {
-                        throw new RaiseException(getContext().getCoreLibrary().typeError("singleton method called for a different object", this));
-                    } else {
-                        throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be an instance of " + module.getName(), this));
-                    }
+            // the (redundant) instanceof is to satisfy FindBugs with the following cast
+            if (module instanceof RubyClass && !ModuleOperations.canBindMethodTo(module, metaClass(frame, object))) {
+                CompilerDirectives.transferToInterpreter();
+                if (((RubyClass) module).isSingleton()) {
+                    throw new RaiseException(getContext().getCoreLibrary().typeError("singleton method called for a different object", this));
+                } else {
+                    throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be an instance of " + module.getName(), this));
                 }
             }
 

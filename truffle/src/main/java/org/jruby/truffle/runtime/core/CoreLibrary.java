@@ -398,6 +398,8 @@ public class CoreLibrary {
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
         globals.getOperations().setInstanceVariable(globals, "$/", defaultRecordSeparator);
+
+        globals.getOperations().setInstanceVariable(globals, "$SAFE", 0);
     }
 
     private void initializeConstants() {
@@ -1285,9 +1287,5 @@ public class CoreLibrary {
 
     public boolean isLoaded() {
         return state == State.LOADED;
-    }
-
-    public RubyClass getEnoentClass() {
-        return enoentClass;
     }
 }

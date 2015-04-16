@@ -11,8 +11,8 @@ package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -37,6 +37,14 @@ public abstract class ModuleOperations {
         RubyNode.notDesignedForCompilation();
 
         return includesModule(thisClass, otherClass);
+    }
+
+    public static boolean canBindMethodTo(RubyModule origin, RubyModule module) {
+        if (!(origin instanceof RubyClass)) {
+            return true;
+        } else {
+            return ((module instanceof RubyClass) && ModuleOperations.assignableTo((RubyClass) module, origin));
+        }
     }
 
     @TruffleBoundary

@@ -90,7 +90,7 @@ public abstract class MethodNodes {
         }
 
         @Specialization
-        public Object call(VirtualFrame frame, RubyMethod method, Object[] arguments, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public Object call(VirtualFrame frame, RubyMethod method, Object[] arguments, UndefinedPlaceholder block) {
             return doCall(frame, method, arguments, null);
         }
 

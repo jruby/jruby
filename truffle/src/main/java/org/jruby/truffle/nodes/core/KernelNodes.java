@@ -30,6 +30,8 @@ import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.control.WhileNode;
+import org.jruby.truffle.nodes.core.ClassNodes.NewNode;
+import org.jruby.truffle.nodes.core.ClassNodesFactory.NewNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -1229,89 +1231,6 @@ public abstract class KernelNodes {
             }
 
             return array;
-        }
-
-    }
-
-    @CoreMethod(names = "raise", isModuleFunction = true, optional = 3)
-    public abstract static class RaiseNode extends CoreMethodNode {
-
-        @Child private ReadInstanceVariableNode getLastExceptionNode;
-        @Child private CallDispatchHeadNode initialize;
-
-        public RaiseNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            initialize = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        @Specialization
-        public Object raise(VirtualFrame frame, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2, UndefinedPlaceholder undefined3) {
-            notDesignedForCompilation();
-
-            if (getLastExceptionNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                getLastExceptionNode = insert(new ReadInstanceVariableNode(getContext(), getSourceSection(), "$!",
-                        new ThreadLocalObjectNode(getContext(), getSourceSection()),
-                        true));
-            }
-
-            final Object lastException = getLastExceptionNode.execute(frame);
-
-            if (lastException == nil()) {
-                return raise(frame, getContext().makeString(""), UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
-            }
-
-            throw new RaiseException((RubyException) lastException);
-        }
-
-        @Specialization
-        public Object raise(VirtualFrame frame, RubyString message, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2) {
-            notDesignedForCompilation();
-
-            return raise(frame, getContext().getCoreLibrary().getRuntimeErrorClass(), message, undefined1);
-        }
-
-        @Specialization
-        public Object raise(VirtualFrame frame, RubyClass exceptionClass, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2) {
-            notDesignedForCompilation();
-
-            return raise(frame, exceptionClass, getContext().makeString(""), undefined1);
-        }
-
-        @Specialization
-        public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message, UndefinedPlaceholder undefined1) {
-            notDesignedForCompilation();
-
-            final Object exception = exceptionClass.allocate(this);
-            initialize.call(frame, exception, "initialize", null, message);
-
-            if (!(exception instanceof RubyException)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeError("exception class/object expected", this));
-            }
-
-            throw new RaiseException((RubyException) exception);
-        }
-
-        @Specialization
-        public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message, RubyArray backtrace) {
-            // TODO (eregon 9 Apr. 2015): handle "backtrace".
-            return raise(frame, exceptionClass, message, UndefinedPlaceholder.INSTANCE);
-        }
-
-        // NOTE (eregon 9 Mar. 2015):
-        // This provokes an error under standard Ruby:
-        //   TypeError: backtrace must be Array of String
-        // but is used in Rubinius in #coerce_to_failed for instance.
-        @Specialization
-        public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message, RubyException backtrace) {
-            // TODO (eregon 9 Mar. 2015): handle "backtrace" as an MRI "cause".
-            return raise(frame, exceptionClass, message, UndefinedPlaceholder.INSTANCE);
-        }
-
-        @Specialization
-        public Object raise(RubyException exception, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2) {
-            throw new RaiseException(exception);
         }
 
     }

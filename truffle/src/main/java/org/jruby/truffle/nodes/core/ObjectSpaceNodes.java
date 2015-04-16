@@ -91,7 +91,7 @@ public abstract class ObjectSpaceNodes {
         }
 
         @Specialization
-        public int eachObject(VirtualFrame frame, @SuppressWarnings("unused") UndefinedPlaceholder ofClass, RubyProc block) {
+        public int eachObject(VirtualFrame frame, UndefinedPlaceholder ofClass, RubyProc block) {
             notDesignedForCompilation();
 
             int count = 0;

@@ -106,7 +106,7 @@ public abstract class ProcNodes {
         }
 
         @Specialization
-        public RubyNilClass initialize(VirtualFrame frame, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public RubyNilClass initialize(VirtualFrame frame, RubyProc proc, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final Memo<Integer> frameCount = new Memo<>(0);

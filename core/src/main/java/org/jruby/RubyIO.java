@@ -4476,29 +4476,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // MRI: check_exec_env, w/ check_exec_env_i body in-line
     public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash) {
-        Ruby runtime = context.runtime;
-        RubyArray env = runtime.newArray();
-        for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)hash.directEntrySet()) {
-            IRubyObject key = entry.getKey();
-            IRubyObject val = entry.getValue();
-            ByteList k;
-
-            k = StringSupport.checkEmbeddedNulls(runtime, key).getByteList();
-            if (k.indexOf('=') != -1)
-                throw runtime.newArgumentError("environment name contains a equal : " + k);
-
-            if (!val.isNil())
-                StringSupport.checkEmbeddedNulls(runtime, val);
-
-            if (Platform.IS_WINDOWS) {
-                key = ((RubyString)key).export(context);
-            }
-            if (!val.isNil()) val = ((RubyString)val).export(context);
-
-            env.push(runtime.newArray(key, val));
-        }
-
-        return env;
+        return PopenExecutor.checkExecEnv(context, hash);
     }
     
     /**

@@ -228,7 +228,7 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public Object methodMissing(Object self, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public Object methodMissing(Object self, Object[] args, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             return methodMissing(self, args, (RubyProc) null);

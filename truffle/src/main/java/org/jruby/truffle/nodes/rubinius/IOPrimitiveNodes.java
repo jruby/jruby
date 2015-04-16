@@ -25,10 +25,6 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public IOFNMatchPrimitiveNode(IOFNMatchPrimitiveNode prev) {
-            super(prev);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public boolean fnmatch(RubyString pattern, RubyString path, int flags) {

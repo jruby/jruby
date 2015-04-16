@@ -1,0 +1,3 @@
+fails:Delegator#method returns a method object for public methods of the delegate object
+fails:Delegator#method returns a method that respond_to_missing?
+fails:Delegator#method raises a NameError if method is no longer valid because object has changed

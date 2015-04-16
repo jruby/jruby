@@ -42,22 +42,13 @@ public abstract class DirPrimitiveNodes {
             writePositionNode = new WriteHeadObjectFieldNode(positionKey);
         }
 
-        public DirOpenPrimitiveNode(DirOpenPrimitiveNode prev) {
-            super(prev);
-            writeContentsNode = prev.writeContentsNode;
-            writePositionNode = prev.writePositionNode;
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyNilClass open(RubyBasicObject dir, RubyString path, RubyNilClass encoding) {
             final String[] contents = new File(path.toString()).list();
 
             if (contents == null) {
-                throw new RaiseException(new RubyException(
-                        getContext().getCoreLibrary().getEnoentClass(),
-                        getContext().makeString("No such file or directory @ dir_initialize - " + path.toString()),
-                        RubyCallStack.getBacktrace(this)));
+                throw new RaiseException(getContext().getCoreLibrary().fileNotFoundError(path.toString(), this));
             }
 
             writeContentsNode.execute(dir, contents);
@@ -80,13 +71,6 @@ public abstract class DirPrimitiveNodes {
             readContentsNode = new ReadHeadObjectFieldNode(contentsKey);
             readPositionNode = new ReadHeadObjectFieldNode(positionKey);
             writePositionNode = new WriteHeadObjectFieldNode(positionKey);
-        }
-
-        public DirReadPrimitiveNode(DirReadPrimitiveNode prev) {
-            super(prev);
-            readContentsNode = prev.readContentsNode;
-            readPositionNode = prev.readPositionNode;
-            writePositionNode = prev.writePositionNode;
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -124,10 +108,6 @@ public abstract class DirPrimitiveNodes {
 
         public DirClosePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DirClosePrimitiveNode(DirClosePrimitiveNode prev) {
-            super(prev);
         }
 
         @CompilerDirectives.TruffleBoundary

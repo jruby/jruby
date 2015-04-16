@@ -567,7 +567,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, UndefinedPlaceholder file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final Source source = Source.fromText(code.toString(), "(eval)");
@@ -575,7 +575,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final Source source = Source.asPseudoFile(code.toString(), file.toString());
@@ -583,7 +583,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") int line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, int line, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final Source source = Source.asPseudoFile(code.toString(), file.toString());
@@ -602,7 +602,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
+        public Object classEval(VirtualFrame frame, RubyModule self, UndefinedPlaceholder code, UndefinedPlaceholder file, UndefinedPlaceholder line, RubyProc block) {
             notDesignedForCompilation();
 
             return yield.dispatchWithModifiedSelf(frame, block, self);
@@ -732,35 +732,62 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "const_defined?", required = 1, optional = 1)
-    public abstract static class ConstDefinedNode extends CoreMethodNode {
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("inherit") })
+    public abstract static class ConstDefinedNode extends RubyNode {
 
         public ConstDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public boolean isConstDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
-            notDesignedForCompilation();
-
-            return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
-        public boolean isConstDefined(RubyModule module, RubyString name, boolean inherit) {
+        public boolean isConstDefined(RubyModule module, String name, UndefinedPlaceholder inherit) {
+            return isConstDefined(module, name, true);
+        }
+
+        @Specialization
+        public boolean isConstDefined(RubyModule module, String fullName, boolean inherit) {
             notDesignedForCompilation();
+
+            int start = 0, next;
+            if (fullName.startsWith("::")) {
+                module = getContext().getCoreLibrary().getObjectClass();
+                start += 2;
+            }
+
+            while ((next = fullName.indexOf("::", start)) != -1) {
+                String segment = fullName.substring(start, next);
+                RubyConstant constant = lookup(module, segment, inherit);
+                if (constant == null) {
+                    return false;
+                } else if (constant.getValue() instanceof RubyModule) {
+                    module = (RubyModule) constant.getValue();
+                } else {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().typeError(fullName.substring(0, next) + " does not refer to class/module", this));
+                }
+                start = next + 2;
+            }
+
+            String lastSegment = fullName.substring(start);
+            return lookup(module, lastSegment, inherit) != null;
+        }
+
+        private RubyConstant lookup(RubyModule module, String name, boolean inherit) {
+            if (!IdUtil.isValidConstantName19(name)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), this));
+            }
 
             if (inherit) {
-                return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
+                return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name);
             } else {
-                return module.getConstants().containsKey(name.toString());
+                return module.getConstants().get(name);
             }
-        }
-
-        @Specialization
-        public boolean isConstDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
-            notDesignedForCompilation();
-
-            return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
         }
 
     }
@@ -855,6 +882,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
+        public RubySymbol defineMethod(RubyModule module, String name, UndefinedPlaceholder proc, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("needs either proc or block", this));
+        }
+
+        @Specialization
         public RubySymbol defineMethod(RubyModule module, String name, UndefinedPlaceholder proc, RubyProc block) {
             notDesignedForCompilation();
 
@@ -879,8 +912,10 @@ public abstract class ModuleNodes {
         public RubySymbol defineMethod(VirtualFrame frame, RubyModule module, String name, RubyUnboundMethod method, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            if (module instanceof RubyClass && !ModuleOperations.assignableTo((RubyClass) module, method.getOrigin())) {
-                ruby(frame, "raise TypeError, 'bind argument must be a subclass of " + method.getOrigin().getName() + "'");
+            RubyModule origin = method.getOrigin();
+            if (!ModuleOperations.canBindMethodTo(origin, module)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be a subclass of " + origin.getName(), this));
             }
 
             // TODO CS 5-Apr-15 TypeError if the method came from a singleton
@@ -957,6 +992,14 @@ public abstract class ModuleNodes {
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+        }
+
+        @Specialization(guards = { "!isRubyClass(self)", "!isRubyClass(from)" })
+        public Object initializeCopy(RubyModule self, RubyModule from) {
+            notDesignedForCompilation();
+
+            self.initCopy(from);
+            return nil();
         }
 
         @Specialization
@@ -1050,6 +1093,29 @@ public abstract class ModuleNodes {
 
     }
 
+    @CoreMethod(names = "included_modules")
+    public abstract static class IncludedModulesNode extends CoreMethodNode {
+
+        public IncludedModulesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        RubyArray includedModules(RubyModule module) {
+            notDesignedForCompilation();
+
+            final List<RubyModule> modules = new ArrayList<>();
+
+            for (RubyModule included : module.parentAncestors()) {
+                if (included.isOnlyAModule()) {
+                    modules.add(included);
+                }
+            }
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
+        }
+    }
+
     @CoreMethod(names = "method_defined?", required = 1, optional = 1)
     public abstract static class MethodDefinedNode extends CoreMethodNode {
 
@@ -1058,7 +1124,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public boolean isMethodDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
+        public boolean isMethodDefined(RubyModule module, RubyString name, UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
             return ModuleOperations.lookupMethod(module, name.toString()) != null;
@@ -1076,7 +1142,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public boolean isMethodDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
+        public boolean isMethodDefined(RubyModule module, RubySymbol name, UndefinedPlaceholder inherit) {
             notDesignedForCompilation();
 
             return ModuleOperations.lookupMethod(module, name.toString()) != null;
@@ -1411,9 +1477,11 @@ public abstract class ModuleNodes {
         public RubyModule privateConstant(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
-            for (Object ob : args) {
-                if (ob instanceof RubySymbol){
-                    module.changeConstantVisibility(this, (RubySymbol) ob, true);
+            for (Object name : args) {
+                if (name instanceof RubySymbol) {
+                    module.changeConstantVisibility(this, name.toString(), true);
+                } else {
+                    throw new UnsupportedOperationException();
                 }
             }
             return module;
@@ -1431,9 +1499,11 @@ public abstract class ModuleNodes {
         public RubyModule publicConstant(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
-            for (Object ob : args) {
-                if (ob instanceof RubySymbol){
-                    module.changeConstantVisibility(this, (RubySymbol) ob, false);
+            for (Object name : args) {
+                if (name instanceof RubySymbol) {
+                    module.changeConstantVisibility(this, name.toString(), false);
+                } else {
+                    throw new UnsupportedOperationException();
                 }
             }
             return module;

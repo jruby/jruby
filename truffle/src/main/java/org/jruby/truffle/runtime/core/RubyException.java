@@ -10,7 +10,6 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -25,22 +24,21 @@ public class RubyException extends RubyBasicObject {
 
     public RubyException(RubyClass rubyClass) {
         super(rubyClass);
-        message = rubyClass.getContext().makeString("(object uninitialized)");
-        backtrace = null;
+        message = rubyClass.getContext().makeString("");
     }
 
     public RubyException(RubyClass rubyClass, RubyString message, Backtrace backtrace) {
         this(rubyClass);
-        initialize(message, backtrace);
-    }
-
-    public void initialize(RubyString message, Backtrace backtrace) {
-        assert message != null;
-        assert backtrace != null;
-        this.message = message;
+        initialize(message);
         this.backtrace = backtrace;
     }
 
+    public void initialize(RubyString message) {
+        assert message != null;
+        this.message = message;
+    }
+
+    // TODO (eregon 16 Apr. 2015): MRI does a dynamic calls to "message"
     public RubyString getMessage() {
         return message;
     }
@@ -49,7 +47,12 @@ public class RubyException extends RubyBasicObject {
         return backtrace;
     }
 
-    public RubyArray asRubyStringArray() {
+    public void setBacktrace(Backtrace backtrace) {
+        this.backtrace = backtrace;
+    }
+
+    public Object asRubyStringArray() {
+        assert backtrace != null;
         final String[] lines = Backtrace.EXCEPTION_FORMATTER.format(getContext(), this, backtrace);
 
         final Object[] array = new Object[lines.length];

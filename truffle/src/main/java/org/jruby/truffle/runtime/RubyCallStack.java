@@ -57,6 +57,10 @@ public abstract class RubyCallStack {
     private static final boolean BACKTRACE_GENERATE = Options.TRUFFLE_BACKTRACE_GENERATE.load();
 
     public static Backtrace getBacktrace(Node currentNode) {
+        return getBacktrace(currentNode, 0);
+    }
+
+    public static Backtrace getBacktrace(Node currentNode, final int omit) {
         CompilerAsserts.neverPartOfCompilation();
 
         final ArrayList<Activation> activations = new ArrayList<>();
@@ -68,20 +72,22 @@ public abstract class RubyCallStack {
              * features beyond what MRI does like printing locals in backtraces.
              */
 
-            if (currentNode != null && Truffle.getRuntime().getCurrentFrame() != null) {
+            if (omit == 0 && currentNode != null && Truffle.getRuntime().getCurrentFrame() != null) {
                 activations.add(new Activation(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
             }
 
             Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<InternalMethod>() {
+                int depth = 1;
 
                 @Override
                 public InternalMethod visitFrame(FrameInstance frameInstance) {
                     // Multiple top level methods (require) introduce null call nodes - ignore them
                     
-                    if (frameInstance.getCallNode() != null) {
+                    if (frameInstance.getCallNode() != null && depth >= omit) {
                         activations.add(new Activation(frameInstance.getCallNode(),
                                 frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
                     }
+                    depth++;
 
                     return null;
                 }

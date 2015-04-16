@@ -31,7 +31,7 @@ public abstract class ProcOrNullNode extends RubyNode {
     }
 
     @Specialization
-    public Object doNil(@SuppressWarnings("unused") RubyNilClass nil) {
+    public Object doNil(RubyNilClass nil) {
         return null;
     }
 

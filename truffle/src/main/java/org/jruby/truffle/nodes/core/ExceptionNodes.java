@@ -11,9 +11,11 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyNilClass;
@@ -33,7 +35,7 @@ public abstract class ExceptionNodes {
         public RubyNilClass initialize(RubyException exception, UndefinedPlaceholder message) {
             notDesignedForCompilation();
 
-            exception.initialize(getContext().makeString(" "), RubyCallStack.getBacktrace(this));
+            exception.initialize(getContext().makeString(" "));
             return nil();
         }
 
@@ -41,7 +43,7 @@ public abstract class ExceptionNodes {
         public RubyNilClass initialize(RubyException exception, RubyString message) {
             notDesignedForCompilation();
 
-            exception.initialize(message, RubyCallStack.getBacktrace(this));
+            exception.initialize(message);
             return nil();
         }
 
@@ -55,8 +57,34 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public RubyArray backtrace(RubyException exception) {
-            return exception.asRubyStringArray();
+        public Object backtrace(RubyException exception) {
+            if (exception.getBacktrace() == null) {
+                return nil();
+            } else {
+                return exception.asRubyStringArray();
+            }
+        }
+
+    }
+
+    @RubiniusOnly
+    @CoreMethod(names = "capture_backtrace!", optional = 1)
+    public abstract static class CaptureBacktraceNode extends CoreMethodNode {
+
+        public CaptureBacktraceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyNilClass captureBacktrace(RubyException exception, UndefinedPlaceholder offset) {
+            return captureBacktrace(exception, 1);
+        }
+
+        @Specialization
+        public RubyNilClass captureBacktrace(RubyException exception, int offset) {
+            Backtrace backtrace = RubyCallStack.getBacktrace(this, offset);
+            exception.setBacktrace(backtrace);
+            return nil();
         }
 
     }

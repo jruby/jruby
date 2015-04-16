@@ -20,12 +20,12 @@ end
 # the versions are declared in ../pom.xml
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.6', true ),
+   ImportedGem.new( 'jruby-openssl', '0.9.7', true ),
    ImportedGem.new( 'jruby-readline', '1.0', false ),
    ImportedGem.new( 'rake', 'rake.version', true ),
    ImportedGem.new( 'rdoc', 'rdoc.version', true ),
    ImportedGem.new( 'json', 'json.version', true ),
-   ImportedGem.new( 'jar-dependencies', '0.1.10', true ),
+   ImportedGem.new( 'jar-dependencies', '0.1.12', true ),
    ImportedGem.new( 'minitest', 'minitest.version', true ),
    ImportedGem.new( 'test-unit', 'test-unit.version', true ),
    ImportedGem.new( 'power_assert', 'power_assert.version', true ),

@@ -26,6 +26,47 @@
 
 # Only part of Rubinius' exception.rb
 
+class Exception
+
+  # Needed to properly implement #exception, which must clone and call
+  # #initialize again, BUT not a subclasses initialize.
+  alias_method :__initialize__, :initialize
+
+  # Indicates if the Exception has a backtrace set
+  def backtrace?
+    backtrace ? true : false # Truffle: simplified
+  end
+
+  def set_context(ctx)
+    if ctx.kind_of? Exception
+      @parent = ctx
+    else
+      # set_backtrace(ctx) # Truffle: we don't support set_backtrace yet
+    end
+  end
+
+  class << self
+    alias_method :exception, :new
+  end
+
+  def exception(message=nil)
+    if message
+      unless message.equal? self
+        # As strange as this might seem, this IS actually the protocol
+        # that MRI implements for this. The explicit call to
+        # Exception#initialize (via __initialize__) is exactly what MRI
+        # does.
+        e = clone
+        e.__initialize__(message)
+        return e
+      end
+    end
+
+    self
+  end
+
+end
+
 class NoMethodError < NameError
   attr_reader :name
   attr_reader :args

@@ -461,13 +461,12 @@ public class LoadService {
     }
 
     protected void warnCircularRequire(String requireName) {
+        StringBuilder sb = new StringBuilder();
+
+        runtime.getCurrentContext().renderCurrentBacktrace(sb);
+
         runtime.getWarnings().warn("loading in progress, circular require considered harmful - " + requireName);
-        // it's a hack for c:rb_backtrace impl.
-        // We should introduce new method to Ruby.TraceType when rb_backtrace is widely used not only for this purpose.
-        RaiseException ex = new RaiseException(runtime, runtime.getRuntimeError(), null, false);
-        String trace = runtime.getInstanceConfig().getTraceType().printBacktrace(ex.getException(), runtime.getPosix().isatty(FileDescriptor.err));
-        // rb_backtrace dumps to stderr directly.
-        System.err.print(trace.replaceFirst("[^\n]*\n", ""));
+        runtime.getErr().print(sb.toString());
     }
 
     /**
