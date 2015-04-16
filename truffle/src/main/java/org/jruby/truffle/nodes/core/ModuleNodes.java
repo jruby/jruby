@@ -52,6 +52,7 @@ import org.jruby.util.IdUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 @CoreClass(name = "Module")
 public abstract class ModuleNodes {
@@ -787,6 +788,8 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "constants", optional = 1)
     public abstract static class ConstantsNode extends CoreMethodNode {
 
+        @Child BooleanCastNode booleanCastNode;
+
         public ConstantsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -795,8 +798,16 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
+        private boolean booleanCast(VirtualFrame frame, Object value) {
+            if (booleanCastNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                booleanCastNode = insert(BooleanCastNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            return booleanCastNode.executeBoolean(frame, value);
+        }
+
         @Specialization
-        public RubyArray constants(RubyModule module, UndefinedPlaceholder unused) {
+        public RubyArray constants(RubyModule module, UndefinedPlaceholder inherit) {
             return constants(module, true);
         }
 
@@ -804,15 +815,29 @@ public abstract class ModuleNodes {
         public RubyArray constants(RubyModule module, boolean inherit) {
             notDesignedForCompilation();
 
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final List<RubySymbol> constantsArray = new ArrayList<>();
 
-            // TODO(cs): handle inherit
-            for (String constant : module.getConstants().keySet()) {
-                array.slowPush(getContext().newSymbol(constant));
+            final Map<String, RubyConstant> constants;
+            if (inherit) {
+                constants = ModuleOperations.getAllConstants(module);
+            } else {
+                constants = module.getConstants();
             }
 
-            return array;
+            for (Entry<String, RubyConstant> constant : constants.entrySet()) {
+                if (!constant.getValue().isPrivate()) {
+                    constantsArray.add(getContext().newSymbol(constant.getKey()));
+                }
+            }
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), constantsArray.toArray(new Object[constantsArray.size()]));
         }
+
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
+        public RubyArray constants(VirtualFrame frame, RubyModule module, Object inherit) {
+            return constants(module, booleanCast(frame, inherit));
+        }
+
     }
 
     @CoreMethod(names = "const_defined?", required = 1, optional = 1)
