@@ -48,9 +48,8 @@ public class NoResultCallInstr extends CallBase {
         }
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
-        boolean isPotentiallyRefined = d.decodeBoolean();
 
-        return NoResultCallInstr.create(CallType.fromOrdinal(callTypeOrdinal), methAddr, receiver, args, closure, isPotentiallyRefined);
+        return NoResultCallInstr.create(CallType.fromOrdinal(callTypeOrdinal), methAddr, receiver, args, closure, d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override
