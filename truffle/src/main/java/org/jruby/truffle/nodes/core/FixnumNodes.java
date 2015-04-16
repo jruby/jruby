@@ -434,7 +434,6 @@ public abstract class FixnumNodes {
 
         @Specialization
         public int div(int a, RubyBignum b) {
-            // TODO(CS): not entirely sure this is correct
             return 0;
         }
 
