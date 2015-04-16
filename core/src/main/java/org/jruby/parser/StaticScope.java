@@ -511,6 +511,9 @@ public class StaticScope implements Serializable {
         return signature;
     }
 
+    /**
+     * This happens in when first defining ArgsNodes or when reifying a method from AOT.
+     */
     public void setSignature(Signature signature) {
         this.signature = signature;
     }
@@ -544,6 +547,7 @@ public class StaticScope implements Serializable {
         dupe.setScopeType(scopeType);
         dupe.setPreviousCRefScope(previousCRefScope);
         dupe.setModule(cref);
+        dupe.setSignature(signature);
 
         return dupe;
     }

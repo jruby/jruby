@@ -1805,9 +1805,7 @@ public class IRBuilder {
     }
 
     protected void receiveNonBlockArgs(final ArgsNode argsNode) {
-        Signature signature = Signature.from(argsNode);
-
-        scope.getStaticScope().setSignature(signature);
+        Signature signature = scope.getStaticScope().getSignature();
         KeywordRestArgNode keyRest = argsNode.getKeyRest();
 
         // For closures, we don't need the check arity call

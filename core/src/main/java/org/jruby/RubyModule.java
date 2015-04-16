@@ -1826,20 +1826,10 @@ public class RubyModule extends RubyObject {
         block.getBinding().setMethod(name);
 
         block.type = Block.Type.LAMBDA;
-        StaticScope scope = block.getBody().getStaticScope();
 
-        // for zsupers in define_method (blech!) we tell the proc scope to act as the "argument" scope
-        scope.makeArgumentScope();
-
-        BlockBody body = block.getBody();
-        Signature signature;
-        if (body instanceof IRBlockBody) {
-            signature = ((IRBlockBody) body).getSignature();
-        } else {
-            signature = Signature.from(block.arity());
-        }
-
-        scope.setSignature(signature);
+        // various instructions can tell this scope is not an ordinary block but a block representing
+        // a method definition.
+        block.getBody().getStaticScope().makeArgumentScope();
 
         return new ProcMethod(this, proc, visibility);
     }

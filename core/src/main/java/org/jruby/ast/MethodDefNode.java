@@ -52,8 +52,6 @@ public abstract class MethodDefNode extends Node implements INameNode {
         this.argsNode = argsNode;
         this.scope = scope;
         this.bodyNode = bodyNode;
-
-        scope.setSignature(Signature.from(argsNode));
 	}
 
 

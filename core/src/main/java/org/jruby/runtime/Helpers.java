@@ -233,22 +233,6 @@ public class Helpers {
                 body);
     }
 
-    public static IRubyObject runBeginBlock(ThreadContext context, IRubyObject self, String scopeString, CompiledBlockCallback callback) {
-        StaticScope staticScope = decodeScope(context, context.getCurrentStaticScope(), scopeString);
-
-        context.preScopedBody(DynamicScope.newDynamicScope(staticScope, context.getCurrentScope()));
-
-        Block block = CompiledBlock.newCompiledClosure(context, self, Signature.NO_ARGUMENTS, staticScope, callback, false, BlockBody.ZERO_ARGS);
-
-        try {
-            block.yield(context, null);
-        } finally {
-            context.postScopedBody();
-        }
-
-        return context.runtime.getNil();
-    }
-
     public static Block createSharedScopeBlock(ThreadContext context, IRubyObject self, int arity,
             CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeType) {
 
@@ -1668,13 +1652,6 @@ public class Helpers {
     public static StaticScope preLoad(ThreadContext context, String[] varNames) {
         StaticScope staticScope = context.runtime.getStaticScopeFactory().newLocalScope(null, varNames);
         preLoadCommon(context, staticScope, false);
-
-        return staticScope;
-    }
-
-    public static StaticScope preLoad(ThreadContext context, String scopeString, boolean wrap) {
-        StaticScope staticScope = decodeScope(context, null, scopeString);
-        preLoadCommon(context, staticScope, wrap);
 
         return staticScope;
     }
@@ -3107,26 +3084,6 @@ public class Helpers {
             if (ary[i + start] == find) return i + start;
         }
         return -1;
-    }
-
-    @Deprecated
-    public static StaticScope decodeRootScope(ThreadContext context, String scopeString) {
-        return decodeScope(context, null, scopeString);
-    }
-
-    @Deprecated
-    public static StaticScope decodeLocalScope(ThreadContext context, String scopeString) {
-        return decodeScope(context, context.getCurrentStaticScope(), scopeString);
-    }
-
-    @Deprecated
-    public static StaticScope decodeLocalScope(ThreadContext context, StaticScope parent, String scopeString) {
-        return decodeScope(context, parent, scopeString);
-    }
-
-    @Deprecated
-    public static StaticScope decodeBlockScope(ThreadContext context, String scopeString) {
-        return decodeScope(context, context.getCurrentStaticScope(), scopeString);
     }
 
     private static boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
