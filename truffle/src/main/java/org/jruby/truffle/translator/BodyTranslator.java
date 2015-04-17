@@ -826,8 +826,8 @@ public class BodyTranslator extends Translator {
         try {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, newLexicalScope, Arity.NO_ARGUMENTS, name, false, bodyNode, false);
 
-            final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(),
-                    environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, name, false);
+            final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParseEnvironment(),
+                    environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, name, false);
 
             final ModuleTranslator classTranslator = new ModuleTranslator(currentNode, context, this, newEnvironment, source);
 
@@ -1090,7 +1090,7 @@ public class BodyTranslator extends Translator {
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), methodName, false, parseTree, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, methodName, false);
+                context, environment, environment.getParseEnvironment(), environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, methodName, false);
 
         // ownScopeForAssignments is the same for the defined method as the current one.
 
@@ -1661,7 +1661,7 @@ public class BodyTranslator extends Translator {
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), currentCallMethodName, true, node, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getReturnID(), hasOwnScope, false, sharedMethodInfo, environment.getNamedMethodName(), true);
+                context, environment, environment.getParseEnvironment(), environment.getReturnID(), hasOwnScope, false, sharedMethodInfo, environment.getNamedMethodName(), true);
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source);
         methodCompiler.translatingForStatement = translatingForStatement;
 
@@ -2753,7 +2753,7 @@ public class BodyTranslator extends Translator {
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true, node, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getReturnID(), false, false, sharedMethodInfo, sharedMethodInfo.getName(), true);
+                context, environment, environment.getParseEnvironment(), environment.getReturnID(), false, false, sharedMethodInfo, sharedMethodInfo.getName(), true);
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source);
 
         final RubyNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), sharedMethodInfo);

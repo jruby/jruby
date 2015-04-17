@@ -47,14 +47,18 @@ public class TranslatorDriver {
         TOP_LEVEL, SHELL, MODULE, EVAL
     }
 
-    private long nextReturnID = 0;
+    private final ParseEnvironment parseEnvironment;
+
+    public TranslatorDriver(RubyContext context) {
+        parseEnvironment = new ParseEnvironment(context);
+    }
 
     public RubyNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, Node currentNode) {
         final LexicalScope lexicalScope = context.getRootLexicalScope(); // TODO(eregon): figure out how to get the lexical scope from JRuby
         final SharedMethodInfo sharedMethod = new SharedMethodInfo(null, lexicalScope, Arity.NO_ARGUMENTS, "(unknown)", false, parseTree, false);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(
-                context, environmentForFrame(context, null), this, allocateReturnID(), true, true, sharedMethod, sharedMethod.getName(), false);
+                context, environmentForFrame(context, null), parseEnvironment, parseEnvironment.allocateReturnID(), true, true, sharedMethod, sharedMethod.getName(), false);
 
         // Translate to Ruby Truffle nodes
 
@@ -127,7 +131,8 @@ public class TranslatorDriver {
         // TODO (10 Feb. 2015): name should be "<top (required)> for the require-d/load-ed files.
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "<main>", false, rootNode, false);
 
-        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), ownScopeForAssignments, false, sharedMethodInfo, sharedMethodInfo.getName(), false);
+        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame),
+                parseEnvironment, parseEnvironment.allocateReturnID(), ownScopeForAssignments, false, sharedMethodInfo, sharedMethodInfo.getName(), false);
 
         // Get the DATA constant
 
@@ -220,16 +225,6 @@ public class TranslatorDriver {
         return truffleFile;
     }
 
-    public long allocateReturnID() {
-        if (nextReturnID == Long.MAX_VALUE) {
-            throw new RuntimeException("Return IDs exhausted");
-        }
-
-        final long allocated = nextReturnID;
-        nextReturnID++;
-        return allocated;
-    }
-
     private TranslatorEnvironment environmentForFrame(RubyContext context, MaterializedFrame frame) {
         if (frame == null) {
             return null;
@@ -238,7 +233,8 @@ public class TranslatorDriver {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "(unknown)", false, null, false);
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame.getArguments());
             // TODO(CS): how do we know if the frame is a block or not?
-            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);
+            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(),
+                    parseEnvironment, parseEnvironment.allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);
         }
     }
 

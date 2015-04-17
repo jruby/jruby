@@ -94,8 +94,6 @@ public class RubyContext extends ExecutionContext {
         safepointManager = new SafepointManager(this);
 
         this.runtime = runtime;
-        translator = new TranslatorDriver();
-
         warnings = new Warnings(this);
 
         // Object space manager needs to come early before we create any objects
@@ -104,7 +102,10 @@ public class RubyContext extends ExecutionContext {
         emptyShape = RubyBasicObject.LAYOUT.createShape(new RubyOperations(this));
 
         coreLibrary = new CoreLibrary(this);
+        rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
         coreLibrary.initialize();
+
+        translator = new TranslatorDriver(this);
 
         featureManager = new FeatureManager(this);
         traceManager = new TraceManager();
@@ -114,8 +115,6 @@ public class RubyContext extends ExecutionContext {
 
         threadManager = new ThreadManager(this);
         fiberManager = new FiberManager(this);
-
-        rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
 
         rubiniusPrimitiveManager = RubiniusPrimitiveManager.create();
 
