@@ -35,8 +35,11 @@ class Object
       @__mspec_saved_argv__ = ARGV
       ARGV.replace args
       if block_given?
-        yield
-        argv :restore
+        begin
+          yield
+        ensure
+          argv :restore
+        end
       end
     end
   end
