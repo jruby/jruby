@@ -98,14 +98,5 @@ public abstract class ToIntNode extends RubyNode {
         }
     }
 
-    @Override
-    public abstract int executeIntegerFixnum(VirtualFrame frame);
-
-    public abstract int executeIntegerFixnum(VirtualFrame frame, Object object);
-
-    @Override
-    public abstract long executeLongFixnum(VirtualFrame frame);
-
-    @Override
-    public abstract RubyBignum executeBignum(VirtualFrame frame);
+    public abstract int executeInt(VirtualFrame frame, Object object);
 }

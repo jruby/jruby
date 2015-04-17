@@ -21,7 +21,6 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 
-import org.jruby.RubyObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.CoreSourceSection;
@@ -52,7 +51,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 
 import java.util.Arrays;
-import java.util.Comparator;
 
 @CoreClass(name = "Array")
 public abstract class ArrayNodes {
@@ -291,7 +289,7 @@ public abstract class ArrayNodes {
                     CompilerDirectives.transferToInterpreter();
                     toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
                 }
-                final int count = toIntNode.executeIntegerFixnum(frame, object);
+                final int count = toIntNode.executeInt(frame, object);
                 if (count < 0) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
@@ -433,7 +431,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int index = toIntNode.executeIntegerFixnum(frame, indexObject);
+            final int index = toIntNode.executeInt(frame, indexObject);
             return set(frame, array, index, value, unused);
         }
 
@@ -458,7 +456,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            int length = toIntNode.executeIntegerFixnum(frame, lengthObject);
+            int length = toIntNode.executeInt(frame, lengthObject);
             return setObject(frame, array, start, length, value);
         }
 
@@ -468,7 +466,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            int start = toIntNode.executeIntegerFixnum(frame, startObject);
+            int start = toIntNode.executeInt(frame, startObject);
             return setObject(frame, array, start, length, value);
         }
 
@@ -478,8 +476,8 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            int length = toIntNode.executeIntegerFixnum(frame, lengthObject);
-            int start = toIntNode.executeIntegerFixnum(frame, startObject);
+            int length = toIntNode.executeInt(frame, lengthObject);
+            int start = toIntNode.executeInt(frame, startObject);
             return setObject(frame, array, start, length, value);
         }
 
@@ -549,7 +547,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            int start = toIntNode.executeIntegerFixnum(frame, startObject);
+            int start = toIntNode.executeInt(frame, startObject);
             return setOtherArray(frame, array, start, length, value);
         }
 
@@ -559,7 +557,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            int length = toIntNode.executeIntegerFixnum(frame, lengthObject);
+            int length = toIntNode.executeInt(frame, lengthObject);
             return setOtherArray(frame, array, start, length, value);
         }
 
@@ -569,8 +567,8 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            int start = toIntNode.executeIntegerFixnum(frame, startObject);
-            int length = toIntNode.executeIntegerFixnum(frame, lengthObject);
+            int start = toIntNode.executeInt(frame, startObject);
+            int length = toIntNode.executeInt(frame, lengthObject);
             return setOtherArray(frame, array, start, length, value);
         }
 
@@ -741,7 +739,7 @@ public abstract class ArrayNodes {
         }
 
         @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
-            return ToIntNodeFactory.create(getContext(), getSourceSection(), index);
+            return new FixnumLowerNode(ToIntNodeFactory.create(getContext(), getSourceSection(), index));
         }
 
         @Specialization
@@ -1786,7 +1784,7 @@ public abstract class ArrayNodes {
                     CompilerDirectives.transferToInterpreter();
                     toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
                 }
-                int size = toIntNode.executeIntegerFixnum(frame, object);
+                int size = toIntNode.executeInt(frame, object);
                 if (size < 0) {
                     return initializeNegative(array, size, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
                 } else {
@@ -1895,7 +1893,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            int size = toIntNode.executeIntegerFixnum(frame, sizeObject);
+            int size = toIntNode.executeInt(frame, sizeObject);
             if (size < 0) {
                 return initializeNegative(array, size, defaultValue, UndefinedPlaceholder.INSTANCE);
             } else {
@@ -2236,7 +2234,7 @@ public abstract class ArrayNodes {
                     CompilerDirectives.transferToInterpreter();
                     toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
                 }
-                index = toIntNode.executeIntegerFixnum(frame, values[0]);
+                index = toIntNode.executeInt(frame, values[0]);
             }
 
             final int valuesLength = values.length - 1;
@@ -3063,7 +3061,7 @@ public abstract class ArrayNodes {
                     CompilerDirectives.transferToInterpreter();
                     toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
                 }
-                final int n = toIntNode.executeIntegerFixnum(frame, object);
+                final int n = toIntNode.executeInt(frame, object);
                 if (n < 0) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -3208,7 +3206,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -3232,7 +3230,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -3256,7 +3254,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -3280,7 +3278,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -3303,7 +3301,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -3326,7 +3324,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -3349,7 +3347,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4228,7 +4226,7 @@ public abstract class ArrayNodes {
                     CompilerDirectives.transferToInterpreter();
                     toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
                 }
-                final int n = toIntNode.executeIntegerFixnum(frame, object);
+                final int n = toIntNode.executeInt(frame, object);
                 if (n < 0) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4383,7 +4381,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4408,7 +4406,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4433,7 +4431,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4458,7 +4456,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4482,7 +4480,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4507,7 +4505,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4532,7 +4530,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));

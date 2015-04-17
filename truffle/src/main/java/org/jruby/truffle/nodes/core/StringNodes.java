@@ -65,7 +65,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
-import org.jruby.util.CodeRangeSupport;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.Pack;
@@ -171,7 +170,7 @@ public abstract class StringNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
 
-            return multiply(string, toIntNode.executeIntegerFixnum(frame, times));
+            return multiply(string, toIntNode.executeInt(frame, times));
         }
     }
 
@@ -498,7 +497,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])", "!isRubyString(arguments[1])" })
         public Object getIndex(VirtualFrame frame, RubyString string, Object index, UndefinedPlaceholder undefined) {
-            return getIndex(frame, string, getToIntNode().executeIntegerFixnum(frame, index), undefined);
+            return getIndex(frame, string, getToIntNode().executeInt(frame, index), undefined);
         }
 
         @Specialization
@@ -515,8 +514,8 @@ public abstract class StringNodes {
         @Specialization
         public Object sliceObjectRange(VirtualFrame frame, RubyString string, RubyRange.ObjectRange range, UndefinedPlaceholder undefined) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values may return Fixnums beyond int boundaries and we should handle that -- Bignums are always errors.
-            final int coercedBegin = getToIntNode().executeIntegerFixnum(frame, range.getBegin());
-            final int coercedEnd = getToIntNode().executeIntegerFixnum(frame, range.getEnd());
+            final int coercedBegin = getToIntNode().executeInt(frame, range.getBegin());
+            final int coercedEnd = getToIntNode().executeInt(frame, range.getEnd());
 
             return sliceRange(frame, string, coercedBegin, coercedEnd, range.doesExcludeEnd());
         }
@@ -563,12 +562,12 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
         public Object slice(VirtualFrame frame, RubyString string, int start, Object length) {
-            return slice(frame, string, start, getToIntNode().executeIntegerFixnum(frame, length));
+            return slice(frame, string, start, getToIntNode().executeInt(frame, length));
         }
 
         @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])", "!isRubyString(arguments[1])", "!isUndefinedPlaceholder(arguments[2])" })
         public Object slice(VirtualFrame frame, RubyString string, Object start, Object length) {
-            return slice(frame, string, getToIntNode().executeIntegerFixnum(frame, start), getToIntNode().executeIntegerFixnum(frame, length));
+            return slice(frame, string, getToIntNode().executeInt(frame, start), getToIntNode().executeInt(frame, length));
         }
 
         @Specialization
