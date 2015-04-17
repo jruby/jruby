@@ -478,6 +478,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return new RubyString(runtime, runtime.getString(), bytes);
     }
 
+    public static RubyString newString(Ruby runtime, ByteList bytes, int coderange) {
+        return new RubyString(runtime, runtime.getString(), bytes, coderange);
+    }
+
     public static RubyString newString(Ruby runtime, ByteList bytes, Encoding encoding) {
         return new RubyString(runtime, runtime.getString(), bytes, encoding);
     }
