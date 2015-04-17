@@ -169,4 +169,22 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "mkdir", isModuleFunction = true, required = 2)
+    public abstract static class MkdirNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+
+        public MkdirNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public MkdirNode(MkdirNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int mkdir(RubyString path, int mode) {
+            return getContext().getRuntime().getPosix().mkdir(path.toString(), mode);
+        }
+
+    }
+
 }

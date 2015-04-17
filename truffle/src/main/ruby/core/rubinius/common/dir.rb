@@ -28,6 +28,8 @@
 
 class Dir
 
+  FFI = Rubinius::FFI
+
   def self.[](*patterns)
     if patterns.size == 1
       pattern = Rubinius::Type.coerce_to_path(patterns[0])
@@ -80,6 +82,12 @@ class Dir
       start = idx + 1
     end
     result << pattern.byteslice(start, pattern.bytesize)
+  end
+
+  def self.mkdir(path, mode = 0777)
+    error = FFI::Platform::POSIX.mkdir(Rubinius::Type.coerce_to_path(path), mode)
+    Errno.handle path if error != 0
+    error
   end
 
 end

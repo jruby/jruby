@@ -338,11 +338,36 @@ class File < IO
     brace_match || super(pattern, path, flags)
   end
 
-end
+  ##
+  # Returns a File::Stat object for the named file (see File::Stat).
+  #
+  #  File.stat("testfile").mtime   #=> Tue Apr 08 12:58:04 CDT 2003
+  def self.stat(path)
+    Stat.new path
+  end
 
-File::Stat = Rubinius::Stat
+end
 
 # Inject the constants into IO
 class IO
   include File::Constants
+end
+
+File::Stat = Rubinius::Stat
+class File::Stat
+  @module_name = :"File::Stat"
+
+  def world_readable?
+    if mode & S_IROTH == S_IROTH
+      tmp = mode & (S_IRUGO | S_IWUGO | S_IXUGO)
+      return Rubinius::Type.coerce_to tmp, Fixnum, :to_int
+    end
+  end
+
+  def world_writable?
+    if mode & S_IWOTH == S_IWOTH
+      tmp = mode & (S_IRUGO | S_IWUGO | S_IXUGO)
+      return Rubinius::Type.coerce_to tmp, Fixnum, :to_int
+    end
+  end
 end
