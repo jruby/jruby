@@ -119,7 +119,7 @@ public abstract class StringPrimitiveNodes {
 
         public StringAwkSplitPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(context, sourceSection, true, -1);
+            taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
         public StringAwkSplitPrimitiveNode(StringAwkSplitPrimitiveNode prev) {
@@ -203,7 +203,7 @@ public abstract class StringPrimitiveNodes {
 
         public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(context, sourceSection, true, -1);
+            taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
         public StringByteSubstringPrimitiveNode(StringByteSubstringPrimitiveNode prev) {
@@ -490,11 +490,7 @@ public abstract class StringPrimitiveNodes {
 
             final RubyString ret = getContext().makeString(string.getLogicalClass(), new ByteList(string.getByteList().unsafeBytes(), offset, 1));
 
-            ret.getByteList().setEncoding(string.getByteList().getEncoding());
-            ret.setCodeRange(string.getCodeRange());
-            getTaintResultNode().maybeTaint(string, ret);
-
-            return ret;
+            return propagate(string, ret);
         }
 
         @Specialization(guards = "!isSingleByte")
@@ -520,20 +516,21 @@ public abstract class StringPrimitiveNodes {
                 ret = getContext().makeString(string.getLogicalClass(), new ByteList(string.getByteList().unsafeBytes(), offset, 1));
             }
 
-            ret.getByteList().setEncoding(string.getByteList().getEncoding());
-            ret.setCodeRange(string.getCodeRange());
-            getTaintResultNode().maybeTaint(string, ret);
-
-            return ret;
+            return propagate(string, ret);
         }
 
-        private TaintResultNode getTaintResultNode() {
+        private Object propagate(RubyString string, RubyString ret) {
+            ret.getByteList().setEncoding(string.getByteList().getEncoding());
+            ret.setCodeRange(string.getCodeRange());
+            return maybeTaint(string, ret);
+        }
+
+        private Object maybeTaint(RubyString source, RubyString value) {
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, -1));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
-
-            return taintResultNode;
+            return taintResultNode.maybeTaint(source, value);
         }
 
     }
@@ -1313,7 +1310,7 @@ public abstract class StringPrimitiveNodes {
         private RubyString makeSubstring(RubyString string, int beg, int len) {
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, -1));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
             final RubyString ret = getContext().makeString(string.getLogicalClass(), new ByteList(string.getByteList(), beg, len));

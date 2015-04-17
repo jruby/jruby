@@ -13,7 +13,6 @@ package org.jruby.truffle.nodes.cast;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -44,10 +43,10 @@ public class TaintResultNode extends RubyNode {
         this.isTaintedNode = IsTaintedNodeFactory.create(getContext(), getSourceSection(), null);
     }
 
-    public TaintResultNode(RubyContext context, SourceSection sourceSection, boolean taintFromSelf, int taintFromParameter) {
+    public TaintResultNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        this.taintFromSelf = taintFromSelf;
-        this.taintFromParameter = taintFromParameter;
+        this.taintFromSelf = false;
+        this.taintFromParameter = -1;
         this.isTaintedNode = IsTaintedNodeFactory.create(getContext(), getSourceSection(), null);
     }
 

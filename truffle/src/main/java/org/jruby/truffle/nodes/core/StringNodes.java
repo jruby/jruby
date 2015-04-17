@@ -107,7 +107,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), false, -1));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
             ret.getByteList().setEncoding(enc);
@@ -1172,7 +1172,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, -1));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
             final RubyString ret = getContext().makeString(string.getLogicalClass(), substringBytes);
@@ -1417,7 +1417,7 @@ public abstract class StringNodes {
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             concatNode = DispatchHeadNodeFactory.createMethodCall(context);
-            taintResultNode = new TaintResultNode(context, sourceSection, false, -1);
+            taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
         public InsertNode(InsertNode prev) {
