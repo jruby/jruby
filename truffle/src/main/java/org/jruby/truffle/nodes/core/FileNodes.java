@@ -83,32 +83,6 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "dirname", onSingleton = true, required = 1)
-    public abstract static class DirnameNode extends CoreMethodNode {
-
-        public DirnameNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public DirnameNode(DirnameNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString dirname(RubyString path) {
-            notDesignedForCompilation();
-
-            final String parent = new File(path.toString()).getParent();
-
-            if (parent == null) {
-                return getContext().makeString(".");
-            } else {
-                return getContext().makeString(parent);
-            }
-        }
-
-    }
-
     @CoreMethod(names = "each_line", needsBlock = true)
     public abstract static class EachLineNode extends YieldingCoreMethodNode {
 
