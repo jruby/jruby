@@ -55,13 +55,12 @@ public abstract class ToIntNode extends RubyNode {
     }
 
     @Specialization
-    public Object coerceDouble(double value) {
+    public Object coerceDouble(VirtualFrame frame, double value) {
         if (floatToIntNode == null) {
             CompilerDirectives.transferToInterpreter();
             floatToIntNode = insert(FloatNodesFactory.ToINodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
         }
-
-        return floatToIntNode.toI(value);
+        return floatToIntNode.executeToI(frame, value);
     }
 
     @Specialization(guards = "!isRubyBignum")
@@ -92,9 +91,7 @@ public abstract class ToIntNode extends RubyNode {
             return coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
-
-            throw new RaiseException(
-                    getContext().getCoreLibrary().typeErrorBadCoercion(object, "Integer", "to_int", coerced, this));
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "Integer", "to_int", coerced, this));
         }
     }
 
