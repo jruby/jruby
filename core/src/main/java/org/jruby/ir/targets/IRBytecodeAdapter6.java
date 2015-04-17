@@ -106,7 +106,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             @Override
             public void run() {
                 loadRuntime();
-                pushByteList(bl);
+                adapter.ldc(bl.toString());
+                adapter.ldc(bl.getEncoding().toString());
                 adapter.ldc(cr);
                 invokeIRHelper("newFrozenStringFromRaw", sig(RubyString.class, Ruby.class, String.class, String.class, int.class));
             }
