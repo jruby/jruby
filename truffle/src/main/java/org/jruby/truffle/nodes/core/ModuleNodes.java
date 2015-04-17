@@ -1632,6 +1632,43 @@ public abstract class ModuleNodes {
         }
     }
 
+    @CoreMethod(names = "public_instance_method", required = 1)
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+    public abstract static class PublicInstanceMethodNode extends RubyNode {
+
+        public PublicInstanceMethodNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PublicInstanceMethodNode(PublicInstanceMethodNode prev) {
+            super(prev);
+        }
+
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+        }
+
+        @Specialization
+        public RubyUnboundMethod publicInstanceMethod(RubyModule module, String name) {
+            notDesignedForCompilation();
+
+            // TODO(CS, 11-Jan-15) cache this lookup
+            final InternalMethod method = ModuleOperations.lookupMethod(module, name);
+
+            if (method == null || method.isUndefined()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(name, module, this));
+            } else if (method.getVisibility() != Visibility.PUBLIC) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateMethod(name, module, this));
+            }
+
+            return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), module, method);
+        }
+
+    }
+
     @CoreMethod(names = "public_instance_methods", optional = 1)
     public abstract static class PublicInstanceMethodsNode extends CoreMethodNode {
 
@@ -1734,7 +1771,8 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "instance_method", required = 1)
-    public abstract static class InstanceMethodNode extends CoreMethodNode {
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+    public abstract static class InstanceMethodNode extends RubyNode {
 
         public InstanceMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1744,16 +1782,21 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+        }
+
         @Specialization
-        public RubyUnboundMethod instanceMethod(RubyModule module, RubySymbol name) {
+        public RubyUnboundMethod instanceMethod(RubyModule module, String name) {
             notDesignedForCompilation();
 
             // TODO(CS, 11-Jan-15) cache this lookup
+            final InternalMethod method = ModuleOperations.lookupMethod(module, name);
 
-            final InternalMethod method = ModuleOperations.lookupMethod(module, name.toString());
-
-            if (method == null) {
-                throw new UnsupportedOperationException();
+            if (method == null || method.isUndefined()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(name, module, this));
             }
 
             return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), module, method);

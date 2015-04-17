@@ -879,9 +879,14 @@ public class CoreLibrary {
         return nameError(String.format("undefined local variable or method `%s' for %s", name, object), currentNode);
     }
 
-    public RubyException nameErrorUndefinedMethod(String name, String object, Node currentNode) {
+    public RubyException nameErrorUndefinedMethod(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("undefined method `%s' for %s", name, object), currentNode);
+        return nameError(String.format("undefined method `%s' for %s", name, module.getName()), currentNode);
+    }
+
+    public RubyException nameErrorPrivateMethod(String name, RubyModule module, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return nameError(String.format("method `%s' for %s is private", name, module.getName()), currentNode);
     }
 
     public RubyException noMethodError(String message, Node currentNode) {

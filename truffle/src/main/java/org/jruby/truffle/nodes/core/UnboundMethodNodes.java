@@ -32,6 +32,24 @@ import org.jruby.truffle.runtime.core.RubyUnboundMethod;
 @CoreClass(name = "UnboundMethod")
 public abstract class UnboundMethodNodes {
 
+    @CoreMethod(names = "==", required = 1)
+    public abstract static class EqualNode extends CoreMethodNode {
+
+        public EqualNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EqualNode(EqualNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        boolean equal(RubyUnboundMethod self, RubyUnboundMethod other) {
+            return self.getMethod() == other.getMethod() && self.getOrigin() == other.getOrigin();
+        }
+
+    }
+
     @CoreMethod(names = "arity")
     public abstract static class ArityNode extends CoreMethodNode {
 
