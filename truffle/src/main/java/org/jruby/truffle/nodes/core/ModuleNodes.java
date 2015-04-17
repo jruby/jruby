@@ -865,48 +865,14 @@ public abstract class ModuleNodes {
         @Specialization
         public boolean isConstDefined(RubyModule module, String fullName, boolean inherit) {
             notDesignedForCompilation();
-
-            int start = 0, next;
-            if (fullName.startsWith("::")) {
-                module = getContext().getCoreLibrary().getObjectClass();
-                start += 2;
-            }
-
-            while ((next = fullName.indexOf("::", start)) != -1) {
-                String segment = fullName.substring(start, next);
-                RubyConstant constant = lookup(module, segment, inherit);
-                if (constant == null) {
-                    return false;
-                } else if (constant.getValue() instanceof RubyModule) {
-                    module = (RubyModule) constant.getValue();
-                } else {
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().typeError(fullName.substring(0, next) + " does not refer to class/module", this));
-                }
-                start = next + 2;
-            }
-
-            String lastSegment = fullName.substring(start);
-            return lookup(module, lastSegment, inherit) != null;
-        }
-
-        private RubyConstant lookup(RubyModule module, String name, boolean inherit) {
-            if (!IdUtil.isValidConstantName19(name)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
-            }
-
-            if (inherit) {
-                return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name);
-            } else {
-                return module.getConstants().get(name);
-            }
+            return ModuleOperations.lookupScopedConstant(getContext(), module, fullName, inherit, this) != null;
         }
 
     }
 
-    @CoreMethod(names = "const_get", required = 1)
-    public abstract static class ConstGetNode extends CoreMethodNode {
+    @CoreMethod(names = "const_get", required = 1, optional = 1)
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("inherit") })
+    public abstract static class ConstGetNode extends RubyNode {
 
         @Child private DispatchHeadNode dispatch;
 
@@ -920,29 +886,62 @@ public abstract class ModuleNodes {
             dispatch = prev.dispatch;
         }
 
-        @Specialization
-        public Object getConstant(VirtualFrame frame, RubyModule module, RubyString name) {
-            notDesignedForCompilation();
-
-            return dispatch.dispatch(
-                    frame,
-                    module,
-                    name,
-                    null,
-                    new Object[]{});
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
         }
 
-        @Specialization
-        public Object getConstant(VirtualFrame frame, RubyModule module, RubySymbol name) {
+        @Specialization(guards = "!isScoped(name)")
+        public Object getConstant(VirtualFrame frame, RubyModule module, String name, UndefinedPlaceholder inherit) {
+            return getConstant(frame, module, name, true);
+        }
+
+        @Specialization(guards = "isScoped(name)")
+        public Object getConstantScoped(VirtualFrame frame, RubyModule module, String name, UndefinedPlaceholder inherit) {
+            return getConstantScoped(frame, module, name, true);
+        }
+
+        @Specialization(guards = { "isTrue(inherit)", "!isScoped(name)" })
+        public Object getConstant(VirtualFrame frame, RubyModule module, String name, boolean inherit) {
+            return dispatch.dispatch(frame, module, name, null, new Object[] {});
+        }
+
+        @Specialization(guards = { "!isTrue(inherit)", "!isScoped(name)" })
+        public Object getConstantNoInherit(VirtualFrame frame, RubyModule module, String name, boolean inherit) {
             notDesignedForCompilation();
 
-            return dispatch.dispatch(
-                    frame,
-                    module,
-                    name,
-                    null,
-                    new Object[]{});
+            RubyConstant constant = module.getConstants().get(name);
+            if (constant == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(module, name, this));
+            } else {
+                return constant.getValue();
+            }
         }
+
+        @Specialization(guards = "isScoped(name)")
+        public Object getConstantScoped(VirtualFrame frame, RubyModule module, String fullName, boolean inherit) {
+            notDesignedForCompilation();
+
+            Object fullNameObject = RubyArguments.getUserArgument(frame.getArguments(), 0);
+            if (fullNameObject instanceof RubySymbol && !IdUtil.isValidConstantName19(fullName)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", fullName), fullName, this));
+            }
+
+            RubyConstant constant = ModuleOperations.lookupScopedConstant(getContext(), module, fullName, inherit, this);
+            if (constant == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(module, fullName, this));
+            } else {
+                return constant.getValue();
+            }
+        }
+
+        boolean isScoped(String name) {
+            return name.contains("::");
+        }
+
     }
 
     @CoreMethod(names = "const_missing", required = 1)
