@@ -23,6 +23,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
 @NodeChild(value = "child", type = RubyNode.class)
@@ -63,10 +64,18 @@ public abstract class ToIntNode extends RubyNode {
         return floatToIntNode.executeToI(frame, value);
     }
 
-    @Specialization(guards = "!isRubyBignum")
-    public Object coerceObject(VirtualFrame frame, Object object) {
-        notDesignedForCompilation();
+    @Specialization
+    public Object coerceBoolean(VirtualFrame frame, boolean value) {
+        return coerceObject(frame, value);
+    }
 
+    @Specialization(guards = "!isRubyBignum")
+    public Object coerceBasicObject(VirtualFrame frame, RubyBasicObject object) {
+        return coerceObject(frame, object);
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private Object coerceObject(VirtualFrame frame, Object object) {
         if (toIntNode == null) {
             CompilerDirectives.transferToInterpreter();
             toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
