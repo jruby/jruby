@@ -197,11 +197,10 @@ public class JVMVisitor extends IRVisitor {
         if (aritySplit) {
             StaticScope argScope = method.getStaticScope();
             if (argScope.isArgumentScope() &&
-                    argScope.getOptionalArgs() == 0 &&
-                    !argScope.hasRestArg() &&
-                    !method.receivesKeywordArgs()) {
+                    argScope.getSignature().isFixed() &&
+                    !argScope.getSignature().hasKwargs()) {
                 // we have only required arguments...emit a signature appropriate to that arity
-                String[] args = new String[argScope.getRequiredArgs()];
+                String[] args = new String[argScope.getSignature().required()];
                 Class[] types = Helpers.arrayOf(Class.class, args.length, IRubyObject.class);
                 for (int i = 0; i < args.length; i++) {
                     args[i] = "arg" + i;
@@ -259,7 +258,7 @@ public class JVMVisitor extends IRVisitor {
         Signature specificSig = signatureFor(method, true);
         if (specificSig != null) {
             emitScope(method, name, specificSig, true);
-            method.addNativeSignature(method.getStaticScope().getRequiredArgs(), specificSig.type());
+            method.addNativeSignature(method.getStaticScope().getSignature().required(), specificSig.type());
         }
     }
 

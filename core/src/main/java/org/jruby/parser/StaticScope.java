@@ -43,7 +43,6 @@ import org.jruby.ast.VCallNode;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -475,18 +474,6 @@ public class StaticScope implements Serializable {
         return cref;
     }
 
-    public int getOptionalArgs() {
-        return signature.opt();
-    }
-
-    public int getRequiredArgs() {
-        return signature.required();
-    }
-
-    public boolean hasRestArg() {
-        return signature.hasRest();
-    }
-
     public boolean isBlockScope() {
         return isBlockOrEval;
     }
@@ -503,10 +490,10 @@ public class StaticScope implements Serializable {
         this.isArgumentScope = true;
     }
 
-    public Arity getArity() {
-        return signature.arity();
-    }
-
+    /**
+     * For all block or method associated with static scopes this will return the signature for that
+     * signature-providing scope.  module bodies and other non-arity specific code will return null.
+     */
     public Signature getSignature() {
         return signature;
     }

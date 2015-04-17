@@ -240,77 +240,6 @@ public class Helpers {
                 context.getCurrentScope(), callback, hasMultipleArgsHead, argsNodeType);
     }
 
-    public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String rubyName, String javaName, StaticScope scope,
-                                  int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
-        // TODO: Need to have access to AST for recompilation. See #1395
-        final MethodNodes methodNodes = MethodNodes.lookup(javaName);
-        return def(context, self, scriptObject, rubyName, javaName, scope, arity, filename, line, callConfig, parameterDesc, methodNodes);
-    }
-
-    public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String rubyName, String javaName, StaticScope scope,
-                                  int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc, MethodNodes methodNodes) {
-        Class compiledClass = scriptObject.getClass();
-        Ruby runtime = context.runtime;
-
-        Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = performNormalMethodChecksAndDetermineVisibility(runtime, null, rubyName, currVisibility);
-
-        MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
-        DynamicMethod method = constructNormalMethod(
-                factory, javaName,
-                rubyName, null, new SimpleSourcePosition(filename, line), arity, scope, newVisibility, scriptObject,
-                callConfig,
-                parameterDesc,
-                methodNodes);
-
-        // TODO(CS): The MethodNodes don't pass through to the method object correctly - bypass.
-
-        if (method instanceof CompiledMethod) {
-            ((CompiledMethod) method).unsafeSetMethodNodes(methodNodes);
-        }
-
-        return addInstanceMethod(null, rubyName, method, currVisibility, context, runtime);
-    }
-
-    public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String rubyName, String javaName, StaticScope scope,
-                                   int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
-        // TODO: Need to have access to AST for recompilation. See #1395
-        final MethodNodes methodNodes = MethodNodes.lookup(javaName);
-        return defs(context, self, receiver, scriptObject, rubyName, javaName, scope, arity, filename, line, callConfig, parameterDesc, methodNodes);
-    }
-
-    public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String rubyName, String javaName, StaticScope scope,
-            int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc, MethodNodes methodNodes) {
-        Class compiledClass = scriptObject.getClass();
-        Ruby runtime = context.runtime;
-
-        RubyClass rubyClass = performSingletonMethodChecks(runtime, receiver, rubyName);
-
-        MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
-        DynamicMethod method = constructSingletonMethod(
-                factory, rubyName, javaName, rubyClass,
-                new SimpleSourcePosition(filename, line), arity, scope,
-                scriptObject, callConfig, parameterDesc, methodNodes);
-
-        // TODO(CS): The MethodNodes don't pass through to the method object correctly - bypass.
-
-        if (method instanceof CompiledMethod) {
-            ((CompiledMethod) method).unsafeSetMethodNodes(methodNodes);
-        }
-
-        rubyClass.addMethod(rubyName, method);
-
-        callSingletonMethodHook(receiver,context, runtime.fastNewSymbol(rubyName));
-        return runtime.newSymbol(rubyName);
-    }
-
-    public static byte[] defOffline(String rubyName, String javaName, String classPath, String invokerName, Arity arity, StaticScope scope, CallConfiguration callConfig, String filename, int line, MethodNodes methodNodes) {
-        MethodFactory factory = MethodFactory.createFactory(Helpers.class.getClassLoader());
-        byte[] methodBytes = factory.getCompiledMethodOffline(rubyName, javaName, classPath, invokerName, arity, scope, callConfig, filename, line, methodNodes);
-
-        return methodBytes;
-    }
-
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
             throw runtime.newTypeError("can't define singleton");
@@ -2076,7 +2005,6 @@ public class Helpers {
                     containingClass,
                     name,
                     javaName,
-                    Arity.createArity(arity),
                     visibility,
                     scope,
                     scriptObject,
@@ -2089,7 +2017,6 @@ public class Helpers {
                     containingClass,
                     name,
                     javaName,
-                    Arity.createArity(arity),
                     visibility,
                     scope,
                     scriptObject,
@@ -2108,7 +2035,6 @@ public class Helpers {
             String javaName,
             RubyClass rubyClass,
             ISourcePosition position,
-            int arity,
             StaticScope scope,
             Object scriptObject,
             CallConfiguration callConfig,
@@ -2120,7 +2046,6 @@ public class Helpers {
                     rubyClass,
                     rubyName,
                     javaName,
-                    Arity.createArity(arity),
                     Visibility.PUBLIC,
                     scope,
                     scriptObject,
@@ -2133,7 +2058,6 @@ public class Helpers {
                     rubyClass,
                     rubyName,
                     javaName,
-                    Arity.createArity(arity),
                     Visibility.PUBLIC,
                     scope,
                     scriptObject,

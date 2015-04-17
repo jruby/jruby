@@ -38,6 +38,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyKernel;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Signature;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -221,7 +222,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             RubyModule implementationClass,
             String rubyName,
             String javaName,
-            Arity arity,
             Visibility visibility,
             StaticScope scope,
             Object scriptObject,
@@ -234,7 +234,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 implementationClass,
                 rubyName,
                 javaName,
-                arity,
                 visibility,
                 scope,
                 scriptObject,
@@ -258,7 +257,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             RubyModule implementationClass,
             String rubyName,
             String javaName,
-            Arity arity,
             Visibility visibility,
             StaticScope scope,
             Object scriptObject,
@@ -279,7 +277,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     javaName,
                     typePath,
                     invokerPath,
-                    arity,
                     scope,
                     callConfig,
                     position.getFile(),
@@ -308,11 +305,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
 
-        compiledMethod.init(implementationClass, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
+        compiledMethod.init(implementationClass, visibility, scope, scriptObject, callConfig, position, parameterDesc);
 
         Class[] params;
-        if (arity.isFixed() && scope.getRequiredArgs() < 4) {
-            params = Helpers.getStaticMethodParams(scriptClass, scope.getRequiredArgs());
+        // FIXME: This passes in Arity but then gets info from static scope?
+        if (safeFixedSignature(scope.getSignature())) {
+            params = Helpers.getStaticMethodParams(scriptClass, scope.getSignature().required());
         } else {
             params = Helpers.getStaticMethodParams(scriptClass, 4);
         }
@@ -321,6 +319,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return compiledMethod;
     }
 
+    protected boolean safeFixedSignature(Signature signature) {
+        return signature.isFixed() && signature.required() <= 3;
+    }
     /**
      * Use code generation to provide a method handle for a compiled Ruby method.
      *
@@ -328,7 +329,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      */
     @Override
     public byte[] getCompiledMethodOffline(
-            String RubyName, String method, String className, String invokerPath, Arity arity,
+            String RubyName, String method, String className, String invokerPath,
             StaticScope scope, CallConfiguration callConfig, String filename, int line,
             MethodNodes methodNodes) {
         String sup = COMPILED_SUPER_CLASS_NAME;
@@ -353,7 +354,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
         }
 
-        if (scope.hasRestArg() || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
+        int required = scope.getSignature().required();
+
+        // FIXME: This passes in Arity but then gets info from static scope?
+        if (!safeFixedSignature(scope.getSignature())) {
             signature = COMPILED_CALL_SIG_BLOCK;
             mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "call", signature, null, null);
         } else {
@@ -364,18 +368,18 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
             // check arity
             mv.aloadMany(0, 1, 4, 5); // method, context, name, args, required
-            mv.pushInt(scope.getRequiredArgs());
+            mv.pushInt(scope.getSignature().required());
             mv.invokestatic(p(JavaMethod.class), "checkArgumentCount", sig(void.class, JavaMethod.class, ThreadContext.class, String.class, IRubyObject[].class, int.class));
 
             mv.aloadMany(0, 1, 2, 3, 4);
-            for (int i = 0; i < scope.getRequiredArgs(); i++) {
+            for (int i = 0; i < required; i++) {
                 mv.aload(5);
                 mv.ldc(i);
                 mv.arrayload();
             }
             mv.aload(6);
 
-            switch (scope.getRequiredArgs()) {
+            switch (required) {
             case 0:
                 signature = COMPILED_CALL_SIG_ZERO_BLOCK;
                 break;
@@ -395,7 +399,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             mv.end();
 
             // Define a second version that doesn't take a block, so we have unique code paths for both cases.
-            switch (scope.getRequiredArgs()) {
+            switch (required) {
             case 0:
                 signature = COMPILED_CALL_SIG_ZERO;
                 break;
@@ -413,12 +417,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             mv.start();
 
             mv.aloadMany(0, 1, 2, 3, 4);
-            for (int i = 1; i <= scope.getRequiredArgs(); i++) {
+            for (int i = 1; i <= required; i++) {
                 mv.aload(4 + i);
             }
             mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
 
-            switch (scope.getRequiredArgs()) {
+            switch (required) {
             case 0:
                 signature = COMPILED_CALL_SIG_ZERO_BLOCK;
                 break;
@@ -451,7 +455,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             mv.aload(1);
             mv.getfield(p(ThreadContext.class), "callNumber", ci(int.class));
             if (specificArity) {
-                switch (scope.getRequiredArgs()) {
+                switch (required) {
                 case -1:
                     callNumberIndex = ARGS_INDEX + 1/*args*/ + 1/*block*/ + 1;
                     break;
@@ -459,7 +463,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     callNumberIndex = ARGS_INDEX + 1/*block*/ + 1;
                     break;
                 default:
-                    callNumberIndex = ARGS_INDEX + scope.getRequiredArgs() + 1/*block*/ + 1;
+                    callNumberIndex = ARGS_INDEX + required + 1/*block*/ + 1;
                 }
             } else {
                 callNumberIndex = ARGS_INDEX + 1/*block*/ + 1;
@@ -470,7 +474,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         // invoke pre method stuff
         if (!callConfig.isNoop() || RubyInstanceConfig.FULL_TRACE_ENABLED) {
             if (specificArity) {
-                invokeCallConfigPre(mv, COMPILED_SUPER_CLASS_NAME, scope.getRequiredArgs(), true, callConfig);
+                invokeCallConfigPre(mv, COMPILED_SUPER_CLASS_NAME, required, true, callConfig);
             } else {
                 invokeCallConfigPre(mv, COMPILED_SUPER_CLASS_NAME, -1, true, callConfig);
             }
@@ -481,7 +485,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // load and store trace enabled flag
             if (specificArity) {
-                switch (scope.getRequiredArgs()) {
+                switch (required) {
                 case -1:
                     traceBoolIndex = ARGS_INDEX + 1/*args*/ + 1/*block*/ + 2;
                     break;
@@ -489,7 +493,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     traceBoolIndex = ARGS_INDEX + 1/*block*/ + 2;
                     break;
                 default:
-                    traceBoolIndex = ARGS_INDEX + scope.getRequiredArgs() + 1/*block*/ + 2;
+                    traceBoolIndex = ARGS_INDEX + required + 1/*block*/ + 2;
                 }
             } else {
                 traceBoolIndex = ARGS_INDEX + 1/*block*/ + 2;
@@ -526,11 +530,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             mv.checkcast(className);
             mv.aloadMany(THREADCONTEXT_INDEX, RECEIVER_INDEX);
             if (specificArity) {
-                for (int i = 0; i < scope.getRequiredArgs(); i++) {
+                for (int i = 0; i < required; i++) {
                     mv.aload(ARGS_INDEX + i);
                 }
-                mv.aload(ARGS_INDEX + scope.getRequiredArgs());
-                mv.invokestatic(className, method, Helpers.getStaticMethodSignature(className, scope.getRequiredArgs()));
+                mv.aload(ARGS_INDEX + required);
+                mv.invokestatic(className, method, Helpers.getStaticMethodSignature(className, required));
             } else {
                 mv.aloadMany(ARGS_INDEX, BLOCK_INDEX);
                 mv.invokestatic(className, method, Helpers.getStaticMethodSignature(className, 4));
