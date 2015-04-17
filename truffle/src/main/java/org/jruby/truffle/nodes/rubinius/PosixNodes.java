@@ -25,6 +25,8 @@ import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.unsafe.UnsafeHolder;
 import sun.misc.Unsafe;
 
+import java.nio.charset.StandardCharsets;
+
 @CoreClass(name = "Rubinius::FFI::Platform::POSIX")
 public abstract class PosixNodes {
 
@@ -227,6 +229,28 @@ public abstract class PosixNodes {
         @Specialization
         public int rmdir(RubyString path) {
             return getContext().getRuntime().getPosix().rmdir(path.toString());
+        }
+
+    }
+
+    @CoreMethod(names = "getcwd", isModuleFunction = true, required = 2)
+    public abstract static class GetcwdNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+
+        public GetcwdNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public GetcwdNode(GetcwdNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString getcwd(RubyString resultPath, int maxSize) {
+            // We just ignore maxSize - I think this is ok
+
+            final String path = getContext().getRuntime().getCurrentDirectory();
+            resultPath.getByteList().replace(path.getBytes(StandardCharsets.UTF_8));
+            return resultPath;
         }
 
     }

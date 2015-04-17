@@ -123,8 +123,15 @@ class Dir
     error
   end
 
+  def self.getwd
+    buf = String.pattern Rubinius::PATH_MAX, 0
+    wd = FFI::Platform::POSIX.getcwd(buf, buf.length)
+    Errno.handle unless wd
+    Rubinius::Type.external_string wd
+  end
+
   class << self
-    #alias_method :pwd, :getwd
+    alias_method :pwd, :getwd
     alias_method :delete, :rmdir
     alias_method :unlink, :rmdir
   end

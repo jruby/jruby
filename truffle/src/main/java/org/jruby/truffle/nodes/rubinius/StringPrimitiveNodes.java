@@ -1115,6 +1115,18 @@ public abstract class StringPrimitiveNodes {
             super(prev);
         }
 
+        @Specialization(guards = "isZero(arguments[1]))")
+        public RubyString stringPatternZero(RubyClass stringClass, int size, int value) {
+            return new RubyString(stringClass, new ByteList(new byte[size]));
+        }
+
+        @Specialization(guards = "!isZero(arguments[1]))")
+        public RubyString stringPattern(RubyClass stringClass, int size, int value) {
+            final byte[] bytes = new byte[size];
+            Arrays.fill(bytes, (byte) value);
+            return new RubyString(stringClass, new ByteList(bytes));
+        }
+
         @Specialization
         public RubyString stringPattern(RubyClass stringClass, int size, RubyString string) {
             final byte[] bytes = new byte[size];
@@ -1127,6 +1139,10 @@ public abstract class StringPrimitiveNodes {
             }
             
             return new RubyString(stringClass, new ByteList(bytes));
+        }
+
+        protected boolean isZero(int value) {
+            return value == 0;
         }
 
     }
