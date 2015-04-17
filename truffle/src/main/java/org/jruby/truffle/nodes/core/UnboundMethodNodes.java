@@ -48,6 +48,11 @@ public abstract class UnboundMethodNodes {
             return self.getMethod() == other.getMethod() && self.getOrigin() == other.getOrigin();
         }
 
+        @Specialization(guards = "!isRubyUnboundMethod(arguments[1])")
+        boolean equal(RubyUnboundMethod self, Object other) {
+            return false;
+        }
+
     }
 
     @CoreMethod(names = "arity")
