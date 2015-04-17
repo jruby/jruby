@@ -30,26 +30,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 @CoreClass(name = "Dir")
 public abstract class DirNodes {
 
-    @CoreMethod(names = {"exist?", "exists?"}, onSingleton = true, optional = 1)
-    public abstract static class ExistsNode extends CoreMethodNode {
-
-        public ExistsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ExistsNode(ExistsNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean exists(RubyString path) {
-            notDesignedForCompilation();
-
-            return new File(path.toString()).isDirectory();
-        }
-
-    }
-
     @CoreMethod(names = {"pwd", "getwd"}, onSingleton = true)
     public abstract static class PwdNode extends CoreMethodNode {
 

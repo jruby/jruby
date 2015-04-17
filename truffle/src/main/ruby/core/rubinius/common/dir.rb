@@ -28,6 +28,10 @@
 
 class Dir
 
+  # This seems silly, I know. But we do this to make Dir more resistent to people
+  # screwing with ::File later (ie, fakefs)
+  PrivateFile = ::File
+
   FFI = Rubinius::FFI
 
   def self.[](*patterns)
@@ -123,6 +127,14 @@ class Dir
     #alias_method :pwd, :getwd
     alias_method :delete, :rmdir
     alias_method :unlink, :rmdir
+  end
+
+  def self.exist?(path)
+    PrivateFile.directory?(path)
+  end
+
+  class << self
+    alias_method :exists?, :exist?
   end
 
 end
