@@ -560,7 +560,7 @@ public abstract class ModuleNodes {
         private RubyNilClass autoload(RubyModule module, String name, RubyString filename) {
             if (invalidConstantName.profile(!IdUtil.isValidConstantName19(name))) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("autoload must be constant name: %s", name), this));
+                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("autoload must be constant name: %s", name), name, this));
             }
 
             if (emptyFilename.profile(emptyNode.empty(filename))) {
@@ -893,7 +893,7 @@ public abstract class ModuleNodes {
         private RubyConstant lookup(RubyModule module, String name, boolean inherit) {
             if (!IdUtil.isValidConstantName19(name)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), this));
+                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
             }
 
             if (inherit) {
@@ -985,7 +985,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             if (!IdUtil.isValidConstantName19(name)) {
-                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), this));
+                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
             }
 
             module.setConstant(this, name, value);

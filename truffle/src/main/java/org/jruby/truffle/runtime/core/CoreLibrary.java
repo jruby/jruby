@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.Source;
 
 import jnr.constants.platform.Errno;
 import jnr.posix.FileStat;
+
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConvFlags;
@@ -844,49 +845,51 @@ public class CoreLibrary {
         return typeError(String.format("%s can't be coerced into %s", from, to), currentNode);
     }
 
-    public RubyException nameError(String message, Node currentNode) {
+    public RubyException nameError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(nameErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+        RubyException nameError = new RubyException(nameErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+        nameError.getOperations().setInstanceVariable(nameError, "@name", context.getSymbolTable().getSymbol(name));
+        return nameError;
     }
 
     public RubyException nameErrorConstantNotDefined(RubyModule module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("constant %s::%s not defined", module.getName(), name), currentNode);
+        return nameError(String.format("constant %s::%s not defined", module.getName(), name), name, currentNode);
     }
 
     public RubyException nameErrorUninitializedConstant(RubyModule module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("uninitialized constant %s::%s", module.getName(), name), currentNode);
+        return nameError(String.format("uninitialized constant %s::%s", module.getName(), name), name, currentNode);
     }
 
     public RubyException nameErrorPrivateConstant(RubyModule module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("private constant %s::%s referenced", module.getName(), name), currentNode);
+        return nameError(String.format("private constant %s::%s referenced", module.getName(), name), name, currentNode);
     }
 
     public RubyException nameErrorInstanceNameNotAllowable(String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("`%s' is not allowable as an instance variable name", name), currentNode);
+        return nameError(String.format("`%s' is not allowable as an instance variable name", name), name, currentNode);
     }
 
     public RubyException nameErrorReadOnly(String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("%s is a read-only variable", name), currentNode);
+        return nameError(String.format("%s is a read-only variable", name), name, currentNode);
     }
 
     public RubyException nameErrorUndefinedLocalVariableOrMethod(String name, String object, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("undefined local variable or method `%s' for %s", name, object), currentNode);
+        return nameError(String.format("undefined local variable or method `%s' for %s", name, object), name, currentNode);
     }
 
     public RubyException nameErrorUndefinedMethod(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("undefined method `%s' for %s", name, module.getName()), currentNode);
+        return nameError(String.format("undefined method `%s' for %s", name, module.getName()), name, currentNode);
     }
 
     public RubyException nameErrorPrivateMethod(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("method `%s' for %s is private", name, module.getName()), currentNode);
+        return nameError(String.format("method `%s' for %s is private", name, module.getName()), name, currentNode);
     }
 
     public RubyException noMethodError(String message, Node currentNode) {

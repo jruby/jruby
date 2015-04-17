@@ -67,6 +67,15 @@ class Exception
 
 end
 
+class NameError < StandardError
+  attr_reader :name
+
+  def initialize(*args)
+    super(args.shift)
+    @name = args.shift
+  end
+end
+
 class NoMethodError < NameError
   attr_reader :name
   attr_reader :args
