@@ -1569,7 +1569,7 @@ public abstract class StringNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(names = "num_bytes=", required = 1)
+    @CoreMethod(names = "num_bytes=", lowerFixnumParameters = 0, required = 1)
     public abstract static class SetNumBytesNode extends CoreMethodNode {
 
         public SetNumBytesNode(RubyContext context, SourceSection sourceSection) {
