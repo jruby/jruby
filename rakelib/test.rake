@@ -58,7 +58,7 @@ namespace :test do
   compile_flags = {
     :default => :int,
     :int => ["-X-C"],
-    :jit => ["-Xjit.threshold=0", "-Xjit.background=false" "-J-XX:MaxPermSize=512M"],
+    :jit => ["-Xjit.threshold=0", "-Xjit.background=false", "-J-XX:MaxPermSize=512M"],
     :aot => ["-X+C", "-J-XX:MaxPermSize=512M"],
     :all => [:int, :jit, :aot]
   }
