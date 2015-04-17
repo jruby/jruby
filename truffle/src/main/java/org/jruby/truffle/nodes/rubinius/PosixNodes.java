@@ -213,6 +213,22 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "rmdir", isModuleFunction = true, required = 1)
+    public abstract static class RmdirNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
 
+        public RmdirNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RmdirNode(RmdirNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int rmdir(RubyString path) {
+            return getContext().getRuntime().getPosix().rmdir(path.toString());
+        }
+
+    }
 
 }

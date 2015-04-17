@@ -30,36 +30,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 @CoreClass(name = "Dir")
 public abstract class DirNodes {
 
-    @CoreMethod(names = { "delete", "rmdir", "unlink" }, onSingleton = true, optional = 1)
-    public abstract static class DeleteNode extends CoreMethodNode {
-
-        public DeleteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public DeleteNode(DeleteNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public int delete(RubyString path) {
-            notDesignedForCompilation();
-
-            File dir = new File(path.toString());
-            if (!dir.isDirectory()) {
-                throw new UnsupportedOperationException(path.toString());
-            }
-
-            if (!dir.delete()) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().dirNotEmptyError(path.toString(), this));
-            }
-
-            return 0;
-        }
-
-    }
-
     @CoreMethod(names = {"exist?", "exists?"}, onSingleton = true, optional = 1)
     public abstract static class ExistsNode extends CoreMethodNode {
 

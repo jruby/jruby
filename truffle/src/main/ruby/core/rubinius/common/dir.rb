@@ -113,4 +113,16 @@ class Dir
     end
   end
 
+  def self.rmdir(path)
+    error = FFI::Platform::POSIX.rmdir(Rubinius::Type.coerce_to_path(path))
+    Errno.handle path if error != 0
+    error
+  end
+
+  class << self
+    #alias_method :pwd, :getwd
+    alias_method :delete, :rmdir
+    alias_method :unlink, :rmdir
+  end
+
 end
