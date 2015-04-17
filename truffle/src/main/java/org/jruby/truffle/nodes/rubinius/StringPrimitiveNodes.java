@@ -119,7 +119,7 @@ public abstract class StringPrimitiveNodes {
 
         public StringAwkSplitPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(context, sourceSection, true, new int[]{});
+            taintResultNode = new TaintResultNode(context, sourceSection, true, -1);
         }
 
         public StringAwkSplitPrimitiveNode(StringAwkSplitPrimitiveNode prev) {
@@ -203,7 +203,7 @@ public abstract class StringPrimitiveNodes {
 
         public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(context, sourceSection, true, new int[]{});
+            taintResultNode = new TaintResultNode(context, sourceSection, true, -1);
         }
 
         public StringByteSubstringPrimitiveNode(StringByteSubstringPrimitiveNode prev) {
@@ -530,7 +530,7 @@ public abstract class StringPrimitiveNodes {
         private TaintResultNode getTaintResultNode() {
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, new int[]{}));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, -1));
             }
 
             return taintResultNode;
@@ -1313,7 +1313,7 @@ public abstract class StringPrimitiveNodes {
         private RubyString makeSubstring(RubyString string, int beg, int len) {
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, new int[]{}));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, -1));
             }
 
             final RubyString ret = getContext().makeString(string.getLogicalClass(), new ByteList(string.getByteList(), beg, len));

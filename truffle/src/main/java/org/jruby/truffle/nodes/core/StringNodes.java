@@ -107,7 +107,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), false, new int[]{}));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), false, -1));
             }
 
             ret.getByteList().setEncoding(enc);
@@ -308,7 +308,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = { "<<", "concat" }, required = 1, taintFromParameters = 0, raiseIfFrozenSelf = true)
+    @CoreMethod(names = { "<<", "concat" }, required = 1, taintFromParameter = 0, raiseIfFrozenSelf = true)
     @NodeChildren({
             @NodeChild(value = "string"),
             @NodeChild(value = "other")
@@ -886,7 +886,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "crypt", required = 1, taintFromSelf = true, taintFromParameters = 0)
+    @CoreMethod(names = "crypt", required = 1, taintFromSelf = true, taintFromParameter = 0)
     @NodeChildren({
             @NodeChild(value = "string"),
             @NodeChild(value = "salt")
@@ -1172,7 +1172,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, new int[]{}));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, -1));
             }
 
             final RubyString ret = getContext().makeString(string.getLogicalClass(), substringBytes);
@@ -1325,7 +1325,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "initialize", optional = 1, taintFromParameters = 0)
+    @CoreMethod(names = "initialize", optional = 1, taintFromParameter = 0)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         @Child private IsFrozenNode isFrozenNode;
@@ -1417,7 +1417,7 @@ public abstract class StringNodes {
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             concatNode = DispatchHeadNodeFactory.createMethodCall(context);
-            taintResultNode = new TaintResultNode(context, sourceSection, false, new int[] {});
+            taintResultNode = new TaintResultNode(context, sourceSection, false, -1);
         }
 
         public InsertNode(InsertNode prev) {
@@ -1605,7 +1605,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true, taintFromParameters = 0)
+    @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true, taintFromParameter = 0)
     @NodeChildren({
         @NodeChild(value = "string"),
         @NodeChild(value = "other")
@@ -1820,7 +1820,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "scan", required = 1, needsBlock = true, taintFromParameters = 0)
+    @CoreMethod(names = "scan", required = 1, needsBlock = true, taintFromParameter = 0)
     public abstract static class ScanNode extends YieldingCoreMethodNode {
 
         public ScanNode(RubyContext context, SourceSection sourceSection) {
