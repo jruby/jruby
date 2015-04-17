@@ -892,14 +892,16 @@ public class CoreLibrary {
         return nameError(String.format("method `%s' for %s is private", name, module.getName()), name, currentNode);
     }
 
-    public RubyException noMethodError(String message, Node currentNode) {
+    public RubyException noMethodError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+        RubyException noMethodError = new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+        noMethodError.getOperations().setInstanceVariable(noMethodError, "@name", context.getSymbolTable().getSymbol(name));
+        return noMethodError;
     }
 
     public RubyException noMethodErrorOnModule(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return noMethodError(String.format("undefined method `%s' for %s", name, module.getName()), currentNode);
+        return noMethodError(String.format("undefined method `%s' for %s", name, module.getName()), name, currentNode);
     }
 
     public RubyException noMethodErrorOnReceiver(String name, Object receiver, Node currentNode) {
@@ -909,12 +911,12 @@ public class CoreLibrary {
         if (receiver instanceof RubyModule) {
             repr = ((RubyModule) receiver).getName() + ":" + repr;
         }
-        return noMethodError(String.format("undefined method `%s' for %s", name, repr), currentNode);
+        return noMethodError(String.format("undefined method `%s' for %s", name, repr), name, currentNode);
     }
 
     public RubyException privateMethodError(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return noMethodError(String.format("private method `%s' called for %s", name, module.toString()), currentNode);
+        return noMethodError(String.format("private method `%s' called for %s", name, module.toString()), name, currentNode);
     }
 
     public RubyException loadError(String message, Node currentNode) {
