@@ -69,14 +69,14 @@ public class RubyCallNode extends RubyNode {
     @CompilerDirectives.CompilationFinal private boolean cannotOptimize;
 
     public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
-        this(context, section, methodName, receiver, block, isSplatted, false, false, arguments);
+        this(context, section, methodName, receiver, block, isSplatted, false, arguments);
     }
 
-    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, boolean ignoreVisibility, boolean rubiniusPrimitive, RubyNode... arguments) {
-        this(context, section, methodName, receiver, block, isSplatted, false, ignoreVisibility, rubiniusPrimitive, arguments);
+    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, boolean ignoreVisibility, RubyNode... arguments) {
+        this(context, section, methodName, receiver, block, isSplatted, ignoreVisibility, false, arguments);
     }
 
-    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, boolean isVCall, boolean ignoreVisibility, boolean rubiniusPrimitive, RubyNode... arguments) {
+    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, boolean ignoreVisibility, boolean isVCall, RubyNode... arguments) {
         super(context, section);
 
         this.methodName = methodName;

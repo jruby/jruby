@@ -558,7 +558,7 @@ public class BodyTranslator extends Translator {
                 null, false,
                 new StringLiteralNode(context, sourceSection, ByteList.create("FrozenError: can't modify frozen TODO"), StringSupport.CR_UNKNOWN));
 
-        final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, true, false, constructException);
+        final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, true, constructException);
 
         return new IfNode(context, sourceSection,
                 frozen,
@@ -584,7 +584,9 @@ public class BodyTranslator extends Translator {
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, block, args, extraArgument, node.getName());
 
-        RubyNode translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), isVCall, privately || ignoreVisibility, false, argumentsAndBlock.getArguments());
+        RubyNode translated = new RubyCallNode(context, sourceSection,
+                node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(),
+                privately || ignoreVisibility, isVCall, argumentsAndBlock.getArguments());
 
         // return instrumenter.instrumentAsCall(translated, node.getName());
         return translated;
@@ -2375,8 +2377,7 @@ public class BodyTranslator extends Translator {
         return new RubyCallNode(
                 context, sourceSection, "convert",
                 new ReadConstantNode(context, sourceSection, name, moduleNode, lexicalScope),
-                null, false, true, false,
-                new RubyNode[]{a, b});
+                null, false, true, new RubyNode[]{a, b});
     }
 
     @Override
