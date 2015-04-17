@@ -3709,7 +3709,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     
     private static RubyArray readlinesCommon19(ThreadContext context, RubyIO file, IRubyObject[] newArguments) {
         try {
-            return (RubyArray) file.callMethod(context, "readlines", newArguments);
+            return file.readlines(context, newArguments);
         } finally {
             file.close();
         }
