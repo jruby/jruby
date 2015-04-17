@@ -52,7 +52,7 @@ public class Bootstrap {
         MutableCallSite site = new MutableCallSite(type);
         Binder binder = Binder
                 .from(RubyString.class, ThreadContext.class)
-                .insert(0, arrayOf(MutableCallSite.class, ByteList.class), site, byteList, cr);
+                .insert(0, arrayOf(MutableCallSite.class, ByteList.class, int.class), site, byteList, cr);
         if (name.equals("frozen")) {
             site.setTarget(binder.invokeStaticQuiet(lookup, Bootstrap.class, "frozenString"));
         } else {
