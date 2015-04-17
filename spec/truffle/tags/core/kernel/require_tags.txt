@@ -90,3 +90,5 @@ fails:Kernel#require (concurrently) allows a 2nd require if the 1st raised an ex
 fails:Kernel.require (concurrently) allows a 2nd require if the 1st raised an exception
 fails:Kernel#require (concurrently) blocks a 3rd require if the 1st raises an exception and the 2nd is still running
 fails:Kernel.require (concurrently) blocks a 3rd require if the 1st raises an exception and the 2nd is still running
+slow:Kernel#require (concurrently) blocks based on the path
+slow:Kernel.require (concurrently) blocks based on the path
