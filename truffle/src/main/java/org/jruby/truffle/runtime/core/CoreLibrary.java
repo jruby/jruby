@@ -241,6 +241,7 @@ public class CoreLibrary {
         defineClass(errnoModule, systemCallErrorClass, "EPERM");
         defineClass(errnoModule, systemCallErrorClass, "EXDEV");
         defineClass(errnoModule, systemCallErrorClass, "ECHILD");
+        defineClass(errnoModule, systemCallErrorClass, "ENODIR");
 
         // ScriptError
         RubyClass scriptErrorClass = defineClass(exceptionClass, "ScriptError");

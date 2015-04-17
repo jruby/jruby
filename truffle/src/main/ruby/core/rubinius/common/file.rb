@@ -401,6 +401,213 @@ class File < IO
     return "."
   end
 
+  def self.absolute_path(obj, dir = nil)
+    obj = path(obj)
+    if obj[0] == "~"
+      File.join Dir.getwd, dir.to_s, obj
+    else
+      expand_path(obj, dir)
+    end
+  end
+
+  # Pull a constant for Dir local to File so that we don't have to depend
+  # on the global Dir constant working. This sounds silly, I know, but it's a
+  # little bit of defensive coding so Rubinius can run things like fakefs better.
+  PrivateDir = ::Dir
+
+  ##
+  # Converts a pathname to an absolute pathname. Relative
+  # paths are referenced from the current working directory
+  # of the process unless dir_string is given, in which case
+  # it will be used as the starting point. The given pathname
+  # may start with a ``~’’, which expands to the process owner‘s
+  # home directory (the environment variable HOME must be set
+  # correctly). "~user" expands to the named user‘s home directory.
+  #
+  #  File.expand_path("~oracle/bin")           #=> "/home/oracle/bin"
+  #  File.expand_path("../../bin", "/tmp/x")   #=> "/bin"
+  def self.expand_path(path, dir=nil)
+    path = Rubinius::Type.coerce_to_path(path)
+    str = "".force_encoding path.encoding
+    first = path[0]
+    if first == ?~
+      case path[1]
+      when ?/
+        unless home = ENV["HOME"]
+          raise ArgumentError, "couldn't find HOME environment variable when expanding '~'"
+        end
+
+        path = ENV["HOME"] + path.byteslice(1, path.bytesize - 1)
+      when nil
+        unless home = ENV["HOME"]
+          raise ArgumentError, "couldn't find HOME environment variable when expanding '~'"
+        end
+
+        if home.empty?
+          raise ArgumentError, "HOME environment variable is empty expanding '~'"
+        end
+
+        return home.dup
+      else
+        unless length = path.find_string("/", 1)
+          length = path.bytesize
+        end
+
+        name = path.byteslice 1, length - 1
+        unless dir = Rubinius.get_user_home(name)
+          raise ArgumentError, "user #{name} does not exist"
+        end
+
+        path = dir + path.byteslice(length, path.bytesize - length)
+      end
+    elsif first != ?/
+      if dir
+        dir = expand_path dir
+      else
+        dir = PrivateDir.pwd
+      end
+
+      path = "#{dir}/#{path}"
+    end
+
+    items = []
+    start = 0
+    size = path.bytesize
+
+    while index = path.find_string("/", start) or (start < size and index = size)
+      length = index - start
+
+      if length > 0
+        item = path.byteslice start, length
+
+        if item == ".."
+          items.pop
+        elsif item != "."
+          items << item
+        end
+      end
+
+      start = index + 1
+    end
+
+    if items.empty?
+      str << "/"
+    else
+      items.each { |x| str.append "/#{x}" }
+    end
+
+    str
+  end
+
+  ##
+  # Returns a new string formed by joining the strings using File::SEPARATOR.
+  #
+  #  File.join("usr", "mail", "gumby")   #=> "usr/mail/gumby"
+  def self.join(*args)
+    return '' if args.empty?
+
+    sep = SEPARATOR
+
+    # The first one is unrolled out of the loop to remove a condition
+    # from the loop. It seems needless, but you'd be surprised how much hinges
+    # on the performance of File.join
+    #
+    first = args.shift
+    case first
+    when String
+      first = first.dup
+    when Array
+      recursion = Thread.detect_recursion(first) do
+        first = join(*first)
+      end
+
+      raise ArgumentError, "recursive array" if recursion
+    else
+      # We need to use dup here, since it's possible that
+      # StringValue gives us a direct object we shouldn't mutate
+      first = Rubinius::Type.coerce_to_path(first).dup
+    end
+
+    ret = first
+
+    args.each do |el|
+      value = nil
+
+      case el
+      when String
+        value = el
+      when Array
+        recursion = Thread.detect_recursion(el) do
+          value = join(*el)
+        end
+
+        raise ArgumentError, "recursive array" if recursion
+      else
+        value = Rubinius::Type.coerce_to_path(el)
+      end
+
+      if value.prefix? sep
+        ret.gsub!(/#{SEPARATOR}+$/, '')
+      elsif not ret.suffix? sep
+        ret << sep
+      end
+
+      ret << value
+    end
+    ret
+  end
+
+  def self.realpath(path, basedir = nil)
+    real = basic_realpath path, basedir
+
+    unless exist? real
+      raise Errno::ENOENT, real
+    end
+
+    real
+  end
+
+  def self.basic_realpath(path, basedir = nil)
+    path = expand_path(path, basedir || Dir.pwd)
+    real = ''
+    symlinks = {}
+
+    while !path.empty?
+      pos = path.index(SEPARATOR, 1)
+
+      if pos
+        name = path[0...pos]
+        path = path[pos..-1]
+      else
+        name = path
+        path = ''
+      end
+
+      real = join(real, name)
+      if symlink?(real)
+        raise Errno::ELOOP if symlinks[real]
+        symlinks[real] = true
+        if path.empty?
+          path = expand_path(readlink(real), dirname(real))
+        else
+          path = expand_path(join(readlink(real), path), dirname(real))
+        end
+        real = ''
+      end
+    end
+
+    real
+  end
+  private_class_method :basic_realpath
+
+  ##
+  # Returns true if the named file is a symbolic link.
+  def self.symlink?(path)
+    Stat.lstat(path).symlink?
+  rescue Errno::ENOENT, Errno::ENODIR
+    false
+  end
+
 end
 
 # Inject the constants into IO

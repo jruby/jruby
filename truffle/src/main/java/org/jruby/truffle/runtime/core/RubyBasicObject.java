@@ -66,6 +66,10 @@ public class RubyBasicObject {
 
     protected void unsafeSetLogicalClass(RubyClass newLogicalClass) {
         assert logicalClass == null;
+        unsafeChangeLogicalClass(newLogicalClass);
+    }
+
+    public void unsafeChangeLogicalClass(RubyClass newLogicalClass) {
         logicalClass = newLogicalClass;
         metaClass = newLogicalClass;
     }

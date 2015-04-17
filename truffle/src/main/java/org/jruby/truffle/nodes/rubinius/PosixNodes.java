@@ -43,7 +43,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int getEGID() {
-            return getContext().getRuntime().getPosix().getegid();
+            return getContext().getPosix().getegid();
         }
 
     }
@@ -61,7 +61,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int getEUID() {
-            return getContext().getRuntime().getPosix().geteuid();
+            return getContext().getPosix().geteuid();
         }
 
     }
@@ -79,7 +79,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int getGID() {
-            return getContext().getRuntime().getPosix().getgid();
+            return getContext().getPosix().getgid();
         }
 
     }
@@ -123,7 +123,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int getUID() {
-            return getContext().getRuntime().getPosix().getuid();
+            return getContext().getPosix().getuid();
         }
 
     }
@@ -166,7 +166,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int unlink(RubyString path) {
-            return getContext().getRuntime().getPosix().unlink(path.toString());
+            return getContext().getPosix().unlink(path.toString());
         }
 
     }
@@ -184,7 +184,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int mkdir(RubyString path, int mode) {
-            return getContext().getRuntime().getPosix().mkdir(path.toString(), mode);
+            return getContext().getPosix().mkdir(path.toString(), mode);
         }
 
     }
@@ -204,7 +204,7 @@ public abstract class PosixNodes {
         public int chdir(RubyString path) {
             final String pathString = path.toString();
 
-            final int result = getContext().getRuntime().getPosix().chdir(pathString);
+            final int result = getContext().getPosix().chdir(pathString);
 
             if (result == 0) {
                 getContext().getRuntime().setCurrentDirectory(pathString);
@@ -228,7 +228,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int rmdir(RubyString path) {
-            return getContext().getRuntime().getPosix().rmdir(path.toString());
+            return getContext().getPosix().rmdir(path.toString());
         }
 
     }
@@ -251,6 +251,24 @@ public abstract class PosixNodes {
             final String path = getContext().getRuntime().getCurrentDirectory();
             resultPath.getByteList().replace(path.getBytes(StandardCharsets.UTF_8));
             return resultPath;
+        }
+
+    }
+
+    @CoreMethod(names = "errno", isModuleFunction = true)
+    public abstract static class ErrnoNode extends CoreMethodNode {
+
+        public ErrnoNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ErrnoNode(ErrnoNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int errno() {
+            return getContext().getPosix().errno();
         }
 
     }

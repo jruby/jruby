@@ -18,6 +18,8 @@ import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 
+import jnr.posix.POSIX;
+import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -43,9 +45,7 @@ import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.math.BigInteger;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -55,6 +55,9 @@ import java.util.concurrent.atomic.AtomicLong;
 public class RubyContext extends ExecutionContext {
 
     private final Ruby runtime;
+
+    private final POSIX posix;
+
     private final TranslatorDriver translator;
     private final CoreLibrary coreLibrary;
     private final FeatureManager featureManager;
@@ -94,6 +97,10 @@ public class RubyContext extends ExecutionContext {
         safepointManager = new SafepointManager(this);
 
         this.runtime = runtime;
+
+        // JRuby+Truffle uses POSIX for all IO - we need the native version
+        posix = POSIXFactory.getPOSIX(new TrufflePOSIXHandler(this), true);
+
         warnings = new Warnings(this);
 
         // Object space manager needs to come early before we create any objects
@@ -517,5 +524,9 @@ public class RubyContext extends ExecutionContext {
 
     public RubiniusConfiguration getRubiniusConfiguration() {
         return rubiniusConfiguration;
+    }
+
+    public POSIX getPosix() {
+        return posix;
     }
 }
