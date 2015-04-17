@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
@@ -139,8 +140,12 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void encode(String value) {
-        encode(value.length());
-        buf.put(value.getBytes());
+        if (value == null) {
+            encode(NULL_STRING);
+        } else {
+            encode(value.length());
+            buf.put(value.getBytes());
+        }
     }
 
     // This cannot tell difference between null and [] which is ok.  Possibly we should even allow
@@ -192,6 +197,11 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
         // Non-method/block scopes still have this field so we set it to no-arg by convention.
         if (signature == null) signature = Signature.NO_ARGUMENTS;
         encode(signature.encode());
+    }
+
+    @Override
+    public void encode(RubyEvent event) {
+        encode((byte) event.ordinal());
     }
 
     @Override

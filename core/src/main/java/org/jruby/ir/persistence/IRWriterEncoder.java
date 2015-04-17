@@ -8,6 +8,7 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.parser.StaticScope.Type;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
@@ -27,6 +28,7 @@ public interface IRWriterEncoder {
     public void encode(IRScope scope);
     public void encode(IRScopeType value);
     public void encode(Signature signature);
+    public void encode(RubyEvent event);
     public void encode(Type value);
     public void encode(Operation value);
     public void encode(Operand value);
