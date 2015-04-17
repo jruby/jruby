@@ -30,39 +30,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 @CoreClass(name = "Dir")
 public abstract class DirNodes {
 
-    @CoreMethod(names = "chdir", onSingleton = true, needsBlock = true, required = 1)
-    public abstract static class ChdirNode extends YieldingCoreMethodNode {
-
-        public ChdirNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ChdirNode(ChdirNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object chdir(VirtualFrame frame, RubyString path, RubyProc block) {
-            notDesignedForCompilation();
-
-            final RubyContext context = getContext();
-
-            final String previous = context.getRuntime().getCurrentDirectory();
-            context.getRuntime().setCurrentDirectory(path.toString());
-
-            if (block != null) {
-                try {
-                    return yield(frame, block, path);
-                } finally {
-                    context.getRuntime().setCurrentDirectory(previous);
-                }
-            } else {
-                return 0;
-            }
-        }
-
-    }
-
     @CoreMethod(names = { "delete", "rmdir", "unlink" }, onSingleton = true, optional = 1)
     public abstract static class DeleteNode extends CoreMethodNode {
 

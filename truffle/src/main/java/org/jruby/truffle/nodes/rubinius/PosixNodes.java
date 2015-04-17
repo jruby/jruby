@@ -187,4 +187,32 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "chdir", isModuleFunction = true, required = 1)
+    public abstract static class ChdirNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+
+        public ChdirNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ChdirNode(ChdirNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int chdir(RubyString path) {
+            final String pathString = path.toString();
+
+            final int result = getContext().getRuntime().getPosix().chdir(pathString);
+
+            if (result == 0) {
+                getContext().getRuntime().setCurrentDirectory(pathString);
+            }
+
+            return result;
+        }
+
+    }
+
+
+
 }

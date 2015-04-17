@@ -90,4 +90,27 @@ class Dir
     error
   end
 
+  def self.chdir(path = ENV['HOME'])
+    path = Rubinius::Type.coerce_to_path path
+
+    if block_given?
+      original_path = self.getwd
+      error = FFI::Platform::POSIX.chdir path
+      Errno.handle(path) if error != 0
+
+      begin
+        value = yield path
+      ensure
+        error = FFI::Platform::POSIX.chdir original_path
+        Errno.handle(original_path) if error != 0
+      end
+
+      return value
+    else
+      error = FFI::Platform::POSIX.chdir path
+      Errno.handle path if error != 0
+      error
+    end
+  end
+
 end
