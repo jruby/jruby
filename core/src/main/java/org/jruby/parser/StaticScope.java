@@ -86,9 +86,8 @@ public class StaticScope implements Serializable {
 
     private Type type;
     private boolean isBlockOrEval;
-    private boolean isArgumentScope; // Is this block and argument scope of a define_method (for the purposes of zsuper).
+    private boolean isArgumentScope; // Is this block and argument scope of a define_method.
 
-    private int scopeId;
     private IRScope irScope; // Method/Closure that this static scope corresponds to
 
     public enum Type {
@@ -134,10 +133,6 @@ public class StaticScope implements Serializable {
         return irScope;
     }
 
-    public int getScopeId() {
-        return scopeId;
-    }
-
     public IRScopeType getScopeType() {
         return scopeType;
     }
@@ -146,16 +141,9 @@ public class StaticScope implements Serializable {
         this.scopeType = scopeType;
     }
 
-    public void setIRScope(IRScope irScope, boolean isForLoopBody) {
-        if (!isForLoopBody) {
-            this.irScope = irScope;
-        }
-        this.scopeId = irScope.getScopeId();
-        this.scopeType = irScope.getScopeType();
-    }
-
     public void setIRScope(IRScope irScope) {
-        setIRScope(irScope, false);
+        this.irScope = irScope;
+        this.scopeType = irScope.getScopeType();
     }
 
     /**
@@ -233,18 +221,6 @@ public class StaticScope implements Serializable {
         System.arraycopy(names, 0, variableNames, 0, names.length);
     }
 
-    /* Note: Only used by compiler until it can use getConstant again or use some other refactoring */
-    public IRubyObject getConstantWithConstMissing(String internedName) {
-        IRubyObject result = getConstantInner(internedName);
-
-        // If we could not find the constant from cref..then try getting from inheritence hierarchy
-        return result == null ? cref.getConstant(internedName) : result;
-    }
-
-    public boolean isConstantDefined(String internedName) {
-        return getConstant(internedName) != null;
-    }
-
     public IRubyObject getConstant(String internedName) {
         IRubyObject result = getConstantInner(internedName);
 
@@ -266,18 +242,6 @@ public class StaticScope implements Serializable {
         if (previousCRefScope == null) return null;
 
         return getConstantInner(internedName);
-    }
-
-    public IRubyObject setConstant(String internedName, IRubyObject result) {
-        RubyModule module;
-
-        if ((module = getModule()) != null) {
-            module.setConstant(internedName, result);
-            return result;
-        }
-
-        // TODO: wire into new exception handling mechanism
-        throw result.getRuntime().newTypeError("no class/module to define constant");
     }
 
     /**

@@ -656,12 +656,6 @@ public class Helpers {
         return rubyClass.getClassVar(name);
     }
 
-    public static IRubyObject getConstant(ThreadContext context, String internedName) {
-        Ruby runtime = context.runtime;
-
-        return context.getCurrentScope().getStaticScope().getConstantWithConstMissing(internedName);
-    }
-
     public static IRubyObject nullToNil(IRubyObject value, ThreadContext context) {
         return value != null ? value : context.nil;
     }
@@ -1195,13 +1189,9 @@ public class Helpers {
         if (!(module instanceof RubyModule)) {
             throw context.runtime.newTypeError(module.toString() + " is not a class/module");
         }
-        ((RubyModule)module).setConstant(name, value);
+        ((RubyModule) module).setConstant(name, value);
 
         return value;
-    }
-
-    public static IRubyObject setConstantInCurrent(IRubyObject value, ThreadContext context, String name) {
-        return context.getCurrentStaticScope().setConstant(name, value);
     }
 
     public static final int MAX_SPECIFIC_ARITY_OBJECT_ARRAY = 10;
