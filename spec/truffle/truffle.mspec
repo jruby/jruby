@@ -100,6 +100,7 @@ class MSpecScript
     "spec/ruby/library/stringio",
     "spec/ruby/library/tempfile",
     "spec/ruby/library/thread",
+    "spec/ruby/library/time",
     "spec/ruby/library/tmpdir",
     "spec/ruby/library/uri",
 
