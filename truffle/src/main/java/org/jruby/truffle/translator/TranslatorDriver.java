@@ -208,7 +208,8 @@ public class TranslatorDriver {
     }
 
     private Object getData(RubyContext context) {
-        throw new UnsupportedOperationException();
+        // TODO CS 18-Apr-15 restore the DATA functionality
+        return null;
     }
 
     private TranslatorEnvironment environmentForFrame(RubyContext context, MaterializedFrame frame) {
