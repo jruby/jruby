@@ -216,3 +216,10 @@ module Rubinius
 
 end
 
+module Errno
+
+  # TODO CS 18-Apr-15 this should be a separate class
+  DomainError = EDOM
+
+end
+
