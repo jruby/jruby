@@ -69,14 +69,12 @@ public class CoreLibrary {
     private final RubyClass exceptionClass;
     private final RubyClass falseClass;
     private final RubyClass fiberClass;
-    private final RubyClass fileClass;
     private final RubyClass fixnumClass;
     private final RubyClass floatClass;
     private final RubyClass floatDomainErrorClass;
     private final RubyClass hashClass;
     private final RubyClass integerClass;
     private final RubyClass indexErrorClass;
-    private final RubyClass ioClass;
     private final RubyClass ioErrorClass;
     private final RubyClass keyErrorClass;
     private final RubyClass loadErrorClass;
@@ -272,9 +270,6 @@ public class CoreLibrary {
         bignumClass = defineClass(integerClass, "Bignum", new RubyBignum.BignumAllocator());
         rationalClass = defineClass(numericClass, "Rational");
 
-        ioClass = defineClass("IO");
-        fileClass = defineClass(ioClass, "File");
-
         // Classes defined in Object
 
         arrayClass = defineClass("Array", new RubyArray.ArrayAllocator());
@@ -357,7 +352,6 @@ public class CoreLibrary {
         arrayClass.include(null, enumerableModule);
         dirClass.include(null, enumerableModule);
         hashClass.include(null, enumerableModule);
-        ioClass.include(null, enumerableModule);
         rangeClass.include(null, enumerableModule);
     }
 
@@ -420,24 +414,6 @@ public class CoreLibrary {
         objectClass.setConstant(null, "ARGV", argv);
 
         rubiniusModule.setConstant(null, "UNDEFINED", rubiniusUndefined);
-
-        final RubyString separator = RubyString.fromJavaString(stringClass, "/");
-        separator.freeze();
-
-        fileClass.setConstant(null, "SEPARATOR", separator);
-        fileClass.setConstant(null, "Separator", separator);
-
-        if (File.separatorChar == '\\') {
-            final RubyString altSeparator = RubyString.fromJavaString(stringClass, "\\");
-            altSeparator.freeze();
-
-            fileClass.setConstant(null, "ALT_SEPARATOR", altSeparator);
-        } else {
-            fileClass.setConstant(null, "ALT_SEPARATOR", nilObject);
-        }
-
-        fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
-        fileClass.setConstant(null, "FNM_SYSCASE", 0);
 
         processModule.setConstant(null, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
         processModule.setConstant(null, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
@@ -1070,10 +1046,6 @@ public class CoreLibrary {
 
     public RubyClass getFiberClass() {
         return fiberClass;
-    }
-
-    public RubyClass getFileClass() {
-        return fileClass;
     }
 
     public RubyClass getFixnumClass() {

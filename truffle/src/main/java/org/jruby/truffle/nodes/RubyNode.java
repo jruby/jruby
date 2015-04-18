@@ -129,10 +129,6 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         return RubyTypesGen.RUBYTYPES.expectRubyFiber(execute(frame));
     }
 
-    public RubyFile executeRubyFile(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyFile(execute(frame));
-    }
-
     public RubyHash executeRubyHash(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectRubyHash(execute(frame));
     }
@@ -357,11 +353,6 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
     @SuppressWarnings("static-method")
     public boolean isRubyFiber(Object value) {
         return value instanceof RubyFiber;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyFile(Object value) {
-        return value instanceof RubyFile;
     }
 
     @SuppressWarnings("static-method")
