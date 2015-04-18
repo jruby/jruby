@@ -233,4 +233,32 @@ public abstract class MethodNodes {
 
     }
 
+    @CoreMethod(names = "to_proc")
+    public abstract static class ToProcNode extends CoreMethodNode {
+
+        public ToProcNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToProcNode(ToProcNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyProc toProc(RubyMethod method) {
+            return new RubyProc(
+                    getContext().getCoreLibrary().getProcClass(),
+                    RubyProc.Type.LAMBDA,
+                    method.getMethod().getSharedMethodInfo(),
+                    method.getMethod().getCallTarget(),
+                    method.getMethod().getCallTarget(),
+                    method.getMethod().getCallTarget(),
+                    method.getMethod().getDeclarationFrame(),
+                    method.getMethod(),
+                    method.getReceiver(),
+                    null);
+        }
+
+    }
+
 }
