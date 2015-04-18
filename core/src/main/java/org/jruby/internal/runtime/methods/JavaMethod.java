@@ -37,7 +37,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  */
 public abstract class JavaMethod extends DynamicMethod implements Cloneable, MethodArgs2 {
-    protected int arityValue;
     protected Arity arity = Arity.OPTIONAL;
     private String javaName;
     private boolean isSingleton;
@@ -96,7 +95,6 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     public void init(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, CallConfiguration callConfig) {
         this.staticScope = staticScope;
         this.arity = arity;
-        this.arityValue = arity.getValue();
         super.init(implementationClass, visibility, callConfig);
     }
     
@@ -191,7 +189,6 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     
     public void setArity(Arity arity) {
         this.arity = arity;
-        this.arityValue = arity.getValue();
     }
 
     @Override

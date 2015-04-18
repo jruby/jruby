@@ -42,6 +42,9 @@ module Rubinius
     end
   end
 
+  # jnr-posix hard codes this value
+  PATH_MAX = 1024
+
 end
 
 class PrimitiveFailure < StandardError

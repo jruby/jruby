@@ -13,7 +13,6 @@ package org.jruby.truffle.nodes.cast;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -29,25 +28,25 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 public class TaintResultNode extends RubyNode {
 
     private final boolean taintFromSelf;
-    private final int[] taintFromParameters;
+    private final int taintFromParameter;
     private final ConditionProfile taintProfile = ConditionProfile.createBinaryProfile();
 
     @Child private RubyNode method;
     @Child private IsTaintedNode isTaintedNode;
     @Child private TaintNode taintNode;
 
-    public TaintResultNode(boolean taintFromSelf, int[] taintFromParameters, RubyNode method) {
+    public TaintResultNode(boolean taintFromSelf, int taintFromParameter, RubyNode method) {
         super(method.getContext(), method.getEncapsulatingSourceSection());
         this.taintFromSelf = taintFromSelf;
-        this.taintFromParameters = taintFromParameters;
+        this.taintFromParameter = taintFromParameter;
         this.method = method;
         this.isTaintedNode = IsTaintedNodeFactory.create(getContext(), getSourceSection(), null);
     }
 
-    public TaintResultNode(RubyContext context, SourceSection sourceSection, boolean taintFromSelf, int[] taintFromParameters) {
+    public TaintResultNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        this.taintFromSelf = taintFromSelf;
-        this.taintFromParameters = taintFromParameters;
+        this.taintFromSelf = false;
+        this.taintFromParameter = -1;
         this.isTaintedNode = IsTaintedNodeFactory.create(getContext(), getSourceSection(), null);
     }
 
@@ -64,7 +63,6 @@ public class TaintResultNode extends RubyNode {
         return result;
     }
 
-    @ExplodeLoop
     @Override
     public Object execute(VirtualFrame frame) {
         final RubyBasicObject result;
@@ -82,18 +80,15 @@ public class TaintResultNode extends RubyNode {
                 maybeTaint((RubyBasicObject) RubyArguments.getSelf(frame.getArguments()), result);
             }
 
-            // TODO (nirvdrum 05-Mar-15) If we never pass more than one value in practice, we should change the annotation to be int rather than int[].
-            for (int i = 0; i < taintFromParameters.length; i++) {
-                // It's possible the taintFromParamaters value was misconfigured by the user, but the far more likely
-                // scenario is that the argument at that position is an UndefinedPlaceholder, which doesn't take up
-                // a space in the frame.
-                if (taintFromParameters[i] < RubyArguments.getUserArgumentsCount(frame.getArguments())) {
-                    final Object argument = RubyArguments.getUserArgument(frame.getArguments(), taintFromParameters[i]);
+            // It's possible the taintFromParameter value was misconfigured by the user, but the far more likely
+            // scenario is that the argument at that position is an UndefinedPlaceholder, which doesn't take up
+            // a space in the frame.
+            if (taintFromParameter < RubyArguments.getUserArgumentsCount(frame.getArguments())) {
+                final Object argument = RubyArguments.getUserArgument(frame.getArguments(), taintFromParameter);
 
-                    if (argument instanceof RubyBasicObject) {
-                        final RubyBasicObject taintSource = (RubyBasicObject) argument;
-                        maybeTaint(taintSource, result);
-                    }
+                if (argument instanceof RubyBasicObject) {
+                    final RubyBasicObject taintSource = (RubyBasicObject) argument;
+                    maybeTaint(taintSource, result);
                 }
             }
         }

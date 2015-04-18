@@ -210,9 +210,9 @@ public abstract class CoreMethodNodeManager {
             sequence = new ReturnEnumeratorIfNoBlockNode(methodDetails.getMethodAnnotation().names()[0], sequence);
         }
 
-        if (methodDetails.getMethodAnnotation().taintFromSelf() || methodDetails.getMethodAnnotation().taintFromParameters().length > 0) {
+        if (methodDetails.getMethodAnnotation().taintFromSelf() || methodDetails.getMethodAnnotation().taintFromParameter() != -1) {
             sequence = new TaintResultNode(methodDetails.getMethodAnnotation().taintFromSelf(),
-                                           methodDetails.getMethodAnnotation().taintFromParameters(),
+                                           methodDetails.getMethodAnnotation().taintFromParameter(),
                                            sequence);
         }
 

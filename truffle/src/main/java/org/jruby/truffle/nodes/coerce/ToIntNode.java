@@ -23,6 +23,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
 @NodeChild(value = "child", type = RubyNode.class)
@@ -51,19 +52,26 @@ public abstract class ToIntNode extends RubyNode {
     }
 
     @Specialization
-    public Object coerceDouble(double value) {
+    public Object coerceDouble(VirtualFrame frame, double value) {
         if (floatToIntNode == null) {
             CompilerDirectives.transferToInterpreter();
-            floatToIntNode = insert(FloatNodesFactory.ToINodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+            floatToIntNode = insert(FloatNodesFactory.ToINodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null }));
         }
+        return floatToIntNode.executeToI(frame, value);
+    }
 
-        return floatToIntNode.toI(value);
+    @Specialization
+    public Object coerceBoolean(VirtualFrame frame, boolean value) {
+        return coerceObject(frame, value);
     }
 
     @Specialization(guards = "!isRubyBignum(object)")
-    public Object coerceObject(VirtualFrame frame, Object object) {
-        notDesignedForCompilation();
+    public Object coerceBasicObject(VirtualFrame frame, RubyBasicObject object) {
+        return coerceObject(frame, object);
+    }
 
+    @CompilerDirectives.TruffleBoundary
+    private Object coerceObject(VirtualFrame frame, Object object) {
         if (toIntNode == null) {
             CompilerDirectives.transferToInterpreter();
             toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -88,20 +96,9 @@ public abstract class ToIntNode extends RubyNode {
             return coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
-
-            throw new RaiseException(
-                    getContext().getCoreLibrary().typeErrorBadCoercion(object, "Integer", "to_int", coerced, this));
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "Integer", "to_int", coerced, this));
         }
     }
 
-    @Override
-    public abstract int executeIntegerFixnum(VirtualFrame frame);
-
-    public abstract int executeIntegerFixnum(VirtualFrame frame, Object object);
-
-    @Override
-    public abstract long executeLongFixnum(VirtualFrame frame);
-
-    @Override
-    public abstract RubyBignum executeBignum(VirtualFrame frame);
+    public abstract int executeInt(VirtualFrame frame, Object object);
 }

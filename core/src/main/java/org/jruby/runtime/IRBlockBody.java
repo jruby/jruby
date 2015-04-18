@@ -14,24 +14,18 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     protected final String fileName;
     protected final int lineNumber;
     protected ThreadLocal<EvalType> evalType;
-    protected final Signature signature;
 
     public IRBlockBody(StaticScope staticScope, String[] parameterList, String fileName, int lineNumber, Signature signature) {
-        super(staticScope, signature.arity(), -1);
+        super(staticScope, signature, -1);
         this.parameterList = parameterList;
         this.fileName = fileName;
         this.lineNumber = lineNumber;
         this.evalType = new ThreadLocal();
         this.evalType.set(EvalType.NONE);
-        this.signature = signature;
     }
 
     public void setEvalType(EvalType evalType) {
         this.evalType.set(evalType);
-    }
-
-    public Signature getSignature() {
-        return signature;
     }
 
     @Override
@@ -87,7 +81,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Type type) {
         if (arg0 instanceof RubyArray) {
 		    // Unwrap the array arg
-            IRubyObject[] args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, arity, true);
+            IRubyObject[] args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature.arity(), true);
 
             // FIXME: arity error is aginst new args but actual error shows arity of original args.
             if (type == Type.LAMBDA) signature.checkArity(context.runtime, args);
@@ -129,7 +123,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
         // For lambdas, independent of whether there is a REST arg or not, if # required args is 1,
         // the value is passed through unmodified even when it is an array!
-        if ((type == Type.LAMBDA && arity().required() == 1) || (blockArity >= -1 && blockArity <= 1)) {
+        if ((type == Type.LAMBDA && signature.required() == 1) || (blockArity >= -1 && blockArity <= 1)) {
             args = new IRubyObject[] { value };
         } else {
             IRubyObject val0 = Helpers.aryToAry(value);
@@ -169,7 +163,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
             // I thought only procs & lambdas can be called, and blocks are yielded to.
             if (args.length == 1) {
                 // Convert value to arg-array, unwrapping where necessary
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], arity, (type == Type.NORMAL) && (args[0] instanceof RubyArray));
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], signature.arity(), (type == Type.NORMAL) && (args[0] instanceof RubyArray));
             } else if (arity().getValue() == 1 && !getSignature().restKwargs()) {
                // discard excess arguments
                 args = (args.length == 0) ? context.runtime.getSingleNilArray() : new IRubyObject[] { args[0] };

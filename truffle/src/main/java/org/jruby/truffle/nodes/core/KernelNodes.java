@@ -1083,9 +1083,7 @@ public abstract class KernelNodes {
             if (method == null) {
                 throw new RaiseException(
                     getContext().getCoreLibrary().nameErrorUndefinedMethod(
-                        name,
-                        getContext().getCoreLibrary().getLogicalClass(object).getName(),
-                        this));
+                        name, getContext().getCoreLibrary().getLogicalClass(object), this));
             }
 
             return new RubyMethod(getContext().getCoreLibrary().getMethodClass(), object, method);

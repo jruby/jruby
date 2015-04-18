@@ -15,10 +15,13 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBignum;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubySymbol;
 
 @NodeChild(value = "child")
@@ -53,11 +56,21 @@ public abstract class IsFrozenNode extends RubyNode {
     }
 
     @Specialization
+    public boolean isFrozen(RubyNilClass object) {
+        return true;
+    }
+
+    @Specialization
+    public boolean isFrozen(RubyBignum object) {
+        return true;
+    }
+
+    @Specialization
     public boolean isFrozen(RubySymbol object) {
         return true;
     }
 
-    @Specialization(guards = "!isRubySymbol(object)")
+    @Specialization(guards = { "!isRubyNilClass(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
     public boolean isFrozen(RubyBasicObject object) {
         if (readFrozenNode == null) {
             CompilerDirectives.transferToInterpreter();

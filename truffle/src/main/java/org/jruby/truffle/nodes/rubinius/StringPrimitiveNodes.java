@@ -115,7 +115,7 @@ public abstract class StringPrimitiveNodes {
 
         public StringAwkSplitPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(context, sourceSection, true, new int[]{});
+            taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
         @Specialization
@@ -194,7 +194,7 @@ public abstract class StringPrimitiveNodes {
 
         public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(context, sourceSection, true, new int[]{});
+            taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
         @Specialization
@@ -453,11 +453,7 @@ public abstract class StringPrimitiveNodes {
 
             final RubyString ret = getContext().makeString(string.getLogicalClass(), new ByteList(string.getByteList().unsafeBytes(), offset, 1));
 
-            ret.getByteList().setEncoding(string.getByteList().getEncoding());
-            ret.setCodeRange(string.getCodeRange());
-            getTaintResultNode().maybeTaint(string, ret);
-
-            return ret;
+            return propagate(string, ret);
         }
 
         @Specialization(guards = "!isSingleByte(string)")
@@ -483,20 +479,21 @@ public abstract class StringPrimitiveNodes {
                 ret = getContext().makeString(string.getLogicalClass(), new ByteList(string.getByteList().unsafeBytes(), offset, 1));
             }
 
-            ret.getByteList().setEncoding(string.getByteList().getEncoding());
-            ret.setCodeRange(string.getCodeRange());
-            getTaintResultNode().maybeTaint(string, ret);
-
-            return ret;
+            return propagate(string, ret);
         }
 
-        private TaintResultNode getTaintResultNode() {
+        private Object propagate(RubyString string, RubyString ret) {
+            ret.getByteList().setEncoding(string.getByteList().getEncoding());
+            ret.setCodeRange(string.getCodeRange());
+            return maybeTaint(string, ret);
+        }
+
+        private Object maybeTaint(RubyString source, RubyString value) {
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, new int[]{}));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
-
-            return taintResultNode;
+            return taintResultNode.maybeTaint(source, value);
         }
 
     }
@@ -1033,6 +1030,19 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
+
+        @Specialization(guards = "value == 0")
+        public RubyString stringPatternZero(RubyClass stringClass, int size, int value) {
+            return new RubyString(stringClass, new ByteList(new byte[size]));
+        }
+
+        @Specialization(guards = "value != 0")
+        public RubyString stringPattern(RubyClass stringClass, int size, int value) {
+            final byte[] bytes = new byte[size];
+            Arrays.fill(bytes, (byte) value);
+            return new RubyString(stringClass, new ByteList(bytes));
+        }
+
         @Specialization
         public RubyString stringPattern(RubyClass stringClass, int size, RubyString string) {
             final byte[] bytes = new byte[size];
@@ -1215,7 +1225,7 @@ public abstract class StringPrimitiveNodes {
         private RubyString makeSubstring(RubyString string, int beg, int len) {
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, new int[]{}));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
             final RubyString ret = getContext().makeString(string.getLogicalClass(), new ByteList(string.getByteList(), beg, len));

@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.Operation;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -58,10 +59,14 @@ public class TraceInstr extends Instr {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getEvent().ordinal());
+        e.encode(getEvent());
         e.encode(getName());
         e.encode(getFilename());
         e.encode(getLinenumber());
+    }
+
+    public static TraceInstr decode(IRReaderDecoder d) {
+        return new TraceInstr(d.decodeRubyEvent(), d.decodeString(), d.decodeString(), d.decodeInt());
     }
 
     @Override

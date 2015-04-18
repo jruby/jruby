@@ -1350,7 +1350,7 @@ public class RubyHash extends RubyObject implements Map {
         return each19(context, block);
     }
 
-    @JRubyMethod(name = "each")
+    @JRubyMethod(name = {"each", "each_pair"})
     public IRubyObject each19(final ThreadContext context, final Block block) {
         return block.isGiven() ? each_pairCommon(context, block, true) : enumeratorizeWithSize(context, this, "each", enumSizeFn());
     }
@@ -1374,11 +1374,6 @@ public class RubyHash extends RubyObject implements Map {
         });
 
         return this;	
-    }
-
-    @JRubyMethod
-    public IRubyObject each_pair(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_pairCommon(context, block, true) : enumeratorizeWithSize(context, this, "each_pair", enumSizeFn());
     }
 
     /** rb_hash_each_value
@@ -2420,5 +2415,10 @@ public class RubyHash extends RubyObject implements Map {
     @Deprecated
     public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
         return op_aset(getRuntime().getCurrentContext(), key, value);
+    }
+
+    @Deprecated
+    public IRubyObject each_pair(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each_pairCommon(context, block, true) : enumeratorizeWithSize(context, this, "each_pair", enumSizeFn());
     }
 }

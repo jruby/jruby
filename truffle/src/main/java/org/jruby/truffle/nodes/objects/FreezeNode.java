@@ -14,10 +14,13 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBignum;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubySymbol;
 
 @NodeChild(value = "child")
@@ -52,11 +55,21 @@ public abstract class FreezeNode extends RubyNode {
     }
 
     @Specialization
+    public Object freeze(RubyNilClass object) {
+        return object;
+    }
+
+    @Specialization
+    public Object freeze(RubyBignum object) {
+        return object;
+    }
+
+    @Specialization
     public Object freeze(RubySymbol object) {
         return object;
     }
 
-    @Specialization(guards = "!isRubySymbol(object)")
+    @Specialization(guards = { "!isRubyNilClass(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
     public Object freeze(RubyBasicObject object) {
         if (writeFrozenNode == null) {
             CompilerDirectives.transferToInterpreter();

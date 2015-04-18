@@ -1,3 +1,1 @@
 fails:Module#private_instance_methods default list should be the same as passing true as an argument
-fails:Module#private_instance_methods when passed true returns a unique list for a class including a module
-fails:Module#private_instance_methods when passed true returns a unique list for a subclass

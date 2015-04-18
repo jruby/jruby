@@ -36,7 +36,6 @@ import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -79,7 +78,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
 
     /**
      * Use code generation to provide a method handle for a compiled Ruby method.
-     * 
+     *
      * @see org.jruby.runtime.MethodFactory#getCompiledMethod
      */
     @Override
@@ -87,7 +86,6 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             RubyModule implementationClass,
             String rubyName,
             String javaName,
-            Arity arity,
             Visibility visibility,
             StaticScope scope,
             Object scriptObject,
@@ -96,7 +94,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             String parameterDesc,
             MethodNodes methodNodes) {
 
-        return getCompiledMethod(implementationClass, rubyName, javaName, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc, methodNodes);
+        return getCompiledMethod(implementationClass, rubyName, javaName, visibility, scope, scriptObject, callConfig, position, parameterDesc, methodNodes);
     }
 
     /**
@@ -109,7 +107,6 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             RubyModule implementationClass,
             String rubyName,
             String javaName,
-            Arity arity,
             Visibility visibility,
             StaticScope scope,
             Object scriptObject,
@@ -125,7 +122,8 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             int specificArity = -1;
 
             // acquire handle to the actual method body
-            if (scope.hasRestArg()|| scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
+            // FIXME: This passes in Arity but then gets info from static scope?
+            if (!safeFixedSignature(scope.getSignature())) {
                 // variable arity method (has optional, rest, or more args than we can splat)
                 directCall = SmartBinder
                         .from(VARIABLE_ARITY_SIGNATURE.prependArg("script", scriptClass))
@@ -133,7 +131,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                         .bindTo(scriptObject);
             } else {
                 // specific arity method (less than 4 required args only)
-                specificArity = scope.getRequiredArgs();
+                specificArity = scope.getSignature().required();
 
                 directCall = SmartBinder
                         .from(SPECIFIC_ARITY_SIGNATURES[specificArity].prependArg("script", scriptClass))
@@ -189,7 +187,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
 
     @Override
     public byte[] getCompiledMethodOffline(
-            String rubyName, String javaName, String className, String invokerPath, Arity arity,
+            String rubyName, String javaName, String className, String invokerPath,
             StaticScope scope, CallConfiguration callConfig, String filename, int line,
             MethodNodes methodNodes) {
         throw new RuntimeException("no offline support for invokedynamic handles");

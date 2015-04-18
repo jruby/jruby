@@ -20,6 +20,8 @@ import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.tools.CoverageTracker;
 
+import jnr.posix.POSIX;
+import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -46,9 +48,7 @@ import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.math.BigInteger;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -61,6 +61,9 @@ public class RubyContext extends ExecutionContext {
     private static final int INSTRUMENTATION_SERVER_PORT = Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load();
 
     private final Ruby runtime;
+
+    private final POSIX posix;
+
     private final TranslatorDriver translator;
     private final CoreLibrary coreLibrary;
     private final FeatureManager featureManager;
@@ -114,7 +117,9 @@ public class RubyContext extends ExecutionContext {
         safepointManager = new SafepointManager(this);
 
         this.runtime = runtime;
-        translator = new TranslatorDriver();
+
+        // JRuby+Truffle uses POSIX for all IO - we need the native version
+        posix = POSIXFactory.getPOSIX(new TrufflePOSIXHandler(this), true);
 
         warnings = new Warnings(this);
 
@@ -124,7 +129,10 @@ public class RubyContext extends ExecutionContext {
         emptyShape = RubyBasicObject.LAYOUT.createShape(new RubyOperations(this));
 
         coreLibrary = new CoreLibrary(this);
+        rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
         coreLibrary.initialize();
+
+        translator = new TranslatorDriver(this);
 
         featureManager = new FeatureManager(this);
         traceManager = new TraceManager();
@@ -134,8 +142,6 @@ public class RubyContext extends ExecutionContext {
 
         threadManager = new ThreadManager(this);
         fiberManager = new FiberManager(this);
-
-        rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
 
         rubiniusPrimitiveManager = RubiniusPrimitiveManager.create();
 
@@ -550,5 +556,9 @@ public class RubyContext extends ExecutionContext {
 
     public RubiniusConfiguration getRubiniusConfiguration() {
         return rubiniusConfiguration;
+    }
+
+    public POSIX getPosix() {
+        return posix;
     }
 }

@@ -8,6 +8,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.PositionAware;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -16,14 +17,13 @@ import java.lang.invoke.MethodHandle;
 
 import org.jruby.runtime.Helpers;
 
-public class CompiledIRMethod extends JavaMethod implements MethodArgs2, PositionAware {
+public class CompiledIRMethod extends JavaMethod implements IRMethodArgs, MethodArgs2, PositionAware {
     protected final MethodHandle variable;
 
     protected final MethodHandle specific;
     protected final int specificArity;
 
     protected final IRScope method;
-    private final Arity arity;
     private String[] parameterList;
     private final StaticScope staticScope;
     private final boolean hasExplicitCallProtocol;
@@ -44,7 +44,6 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         this.specificArity = hasKwargs ? -1 : specificArity;
         this.method = method;
         this.method.getStaticScope().determineModule();
-        this.arity = calculateArity();
         this.staticScope = method.getStaticScope();
         this.hasExplicitCallProtocol = method.hasExplicitCallProtocol();
         this.hasKwargs = hasKwargs;
@@ -68,22 +67,20 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         return null;
     }
 
+    @Override
+    public Signature getSignature() {
+        return staticScope.getSignature();
+    }
+
     public String[] getParameterList() {
         if (parameterList != null) return parameterList;
 
         return parameterList = Helpers.irMethodArgsToParameters(((IRMethod)method).getArgDesc());
     }
 
-    private Arity calculateArity() {
-        StaticScope s = getStaticScope();
-        if (s.getOptionalArgs() > 0 || s.hasRestArg()) return Arity.required(s.getRequiredArgs());
-
-        return Arity.createArity(s.getRequiredArgs());
-    }
-
     @Override
     public Arity getArity() {
-        return this.arity;
+        return getSignature().arity();
     }
 
     protected void post(ThreadContext context) {
@@ -100,9 +97,9 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         try {
-            if (!hasExplicitCallProtocol) return callNoProtocol(context, self, clazz, name, args, block);
+            if (!hasExplicitCallProtocol) return callNoProtocol(context, self, name, args, block);
 
-            if (hasKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, arity.required(), args);
+            if (hasKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, getSignature().required(), args);
 
             return (IRubyObject)this.variable.invokeExact(context, staticScope, self, args, block, implementationClass, name);
         } catch (Throwable t) {
@@ -172,12 +169,12 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         }
     }
 
-    private IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) throws Throwable {
+    private IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, String name, IRubyObject[] args, Block block) throws Throwable {
         StaticScope staticScope = this.staticScope;
         RubyModule implementationClass = this.implementationClass;
         pre(context, staticScope, implementationClass, self, name, block);
 
-        if (hasKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, arity.required(), args);
+        if (hasKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, getSignature().required(), args);
 
         try {
             return (IRubyObject)this.variable.invokeExact(context, staticScope, self, args, block, implementationClass, name);

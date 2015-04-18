@@ -56,11 +56,10 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("before result");
-        boolean isPotentiallyRefined = d.decodeBoolean();
         Variable result = d.decodeVariable();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  " + result);
 
-        return new ZSuperInstr(result, receiver, args, closure, isPotentiallyRefined);
+        return new ZSuperInstr(result, receiver, args, closure, d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override

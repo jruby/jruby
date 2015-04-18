@@ -76,6 +76,7 @@ public class RubyBignum extends RubyInteger {
     public RubyBignum(Ruby runtime, BigInteger value) {
         super(runtime, runtime.getBignum());
         this.value = value;
+        setFrozen(true);
     }
 
     @Override

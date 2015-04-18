@@ -35,6 +35,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.runtime.Block;
@@ -81,7 +82,14 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
      */
     @JRubyMethod(name = "arity")
     public RubyFixnum arity() {
-        return getRuntime().newFixnum(method.getArity().getValue());
+        int value;
+        if (method instanceof IRMethodArgs) {
+            value = ((IRMethodArgs) method).getSignature().arityValue();
+        } else {
+            value = method.getArity().getValue();
+        }
+
+        return getRuntime().newFixnum(value);
     }
 
     @JRubyMethod(name = "eql?", required = 1)

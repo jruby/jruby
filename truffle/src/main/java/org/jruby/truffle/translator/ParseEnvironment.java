@@ -18,9 +18,11 @@ import org.jruby.truffle.runtime.RubyContext;
 public class ParseEnvironment {
 
     private LexicalScope lexicalScope;
+    private long nextReturnID;
 
     public ParseEnvironment(RubyContext context) {
         lexicalScope = context.getRootLexicalScope();
+        nextReturnID = 0;
     }
 
     public LexicalScope getLexicalScope() {
@@ -33,6 +35,16 @@ public class ParseEnvironment {
 
     public void popLexicalScope() {
         lexicalScope = lexicalScope.getParent();
+    }
+
+    public long allocateReturnID() {
+        if (nextReturnID == Long.MAX_VALUE) {
+            throw new RuntimeException("Return IDs exhausted");
+        }
+
+        final long allocated = nextReturnID;
+        nextReturnID++;
+        return allocated;
     }
 
 }

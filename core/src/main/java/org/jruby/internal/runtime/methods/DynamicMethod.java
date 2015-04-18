@@ -153,7 +153,7 @@ public abstract class DynamicMethod {
      *
      * @param context The thread context for the currently executing thread
      * @param self The 'self' or 'receiver' object to use for this call
-     * @param klazz The Ruby class against which this method is binding
+     * @param clazz The Ruby class against which this method is binding
      * @param name The incoming name used to invoke this method
      * @param args The argument list to this invocation
      * @param block The block passed to this invocation
@@ -169,10 +169,9 @@ public abstract class DynamicMethod {
      *
      * @param context The thread context for the currently executing thread
      * @param self The 'self' or 'receiver' object to use for this call
-     * @param klazz The Ruby class against which this method is binding
+     * @param clazz The Ruby class against which this method is binding
      * @param name The incoming name used to invoke this method
-     * @param arg1 The first argument to this invocation
-     * @param arg2 The second argument to this invocation
+     * @param args The first argument to this invocation
      * @return The result of the call
      */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz,

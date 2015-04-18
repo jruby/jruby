@@ -53,6 +53,7 @@ import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
@@ -1058,10 +1059,17 @@ public class ParserSupport {
 
     public Node new_args(ISourcePosition position, ListNode pre, ListNode optional, RestArgNode rest,
             ListNode post, ArgsTailHolder tail) {
-        if (tail == null) return new ArgsNode(position, pre, optional, rest, post, (BlockArgNode) null);
+        ArgsNode argsNode;
+        if (tail == null) {
+            argsNode = new ArgsNode(position, pre, optional, rest, post, null);
+        } else {
+            argsNode = new ArgsNode(position, pre, optional, rest, post,
+                    tail.getKeywordArgs(), tail.getKeywordRestArgNode(), tail.getBlockArg());
+        }
 
-        return new ArgsNode(position, pre, optional, rest, post, 
-                tail.getKeywordArgs(), tail.getKeywordRestArgNode(), tail.getBlockArg());
+        getCurrentScope().setSignature(Signature.from(argsNode));
+
+        return argsNode;
     }
     
     public ArgsTailHolder new_args_tail(ISourcePosition position, ListNode keywordArg, 

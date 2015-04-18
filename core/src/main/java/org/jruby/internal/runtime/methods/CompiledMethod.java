@@ -48,7 +48,6 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
     public static class LazyCompiledMethod extends DynamicMethod implements Cloneable, PositionAware, MethodArgs2 {
         private final String rubyName;
         private final String javaName;
-        private final Arity arity;
         private final StaticScope scope;
         private final Object scriptObject;
         private MethodFactory factory;
@@ -62,7 +61,6 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
                 RubyModule implementationClass,
                 String rubyName,
                 String javaName,
-                Arity arity,
                 Visibility visibility,
                 StaticScope scope,
                 Object scriptObject,
@@ -75,7 +73,6 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
             super(implementationClass, visibility, callConfig);
             this.rubyName = rubyName;
             this.javaName = javaName;
-            this.arity = arity;
             this.scope = scope;
             this.scriptObject = scriptObject;
             this.factory = factory;
@@ -87,7 +84,7 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
         
         private synchronized void initializeMethod() {
             if (compiledMethod != null) return;
-            compiledMethod = factory.getCompiledMethod(implementationClass, rubyName, javaName, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc, methodNodes);
+            compiledMethod = factory.getCompiledMethod(implementationClass, rubyName, javaName, visibility, scope, scriptObject, callConfig, position, parameterDesc, methodNodes);
             factory = null;
         }
         
@@ -258,7 +255,6 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
     
     protected void init(
             RubyModule implementationClass,
-            Arity arity,
             Visibility visibility,
             StaticScope staticScope,
             Object scriptObject,
@@ -269,7 +265,7 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
         this.$scriptObject = scriptObject;
         this.position = position;
         setParameterDesc(parameterDesc);
-        super.init(implementationClass, arity, visibility, staticScope, callConfig);
+        super.init(implementationClass, null, visibility, staticScope, callConfig);
     }
         
     @Override

@@ -76,8 +76,16 @@ public class JRubyFile extends JavaSecuredFile {
         FileResource jarResource = JarResource.create(pathname);
         if (jarResource != null) return jarResource;
 
+        if (Platform.IS_WINDOWS &&
+                (pathname.equalsIgnoreCase("nul") || pathname.equalsIgnoreCase("nul:"))) {
+            return new NullDeviceResource(runtime.getPosix());
+        }
+
         if (pathname.contains(":")) { // scheme-oriented resources
-            pathname = pathname.replace("classpath:/", "uri:classloader:/");
+            if (pathname.startsWith("classpath:")) {
+                pathname = pathname.replace("classpath:/", "uri:classloader:/");
+            }
+
             // replace is needed for maven/jruby-complete/src/it/app_using_classpath_uri to work
             if (pathname.startsWith("uri:")) return URLResource.create(runtime, pathname);
 

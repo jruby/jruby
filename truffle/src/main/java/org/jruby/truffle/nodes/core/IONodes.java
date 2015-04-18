@@ -235,7 +235,7 @@ public abstract class IONodes {
             // TODO (eregon 8-Apr-15) get the actual fd
             final FileDescriptor fd = FileDescriptor.out;
 
-            return getContext().getRuntime().getPosix().isatty(fd);
+            return getContext().getPosix().isatty(fd);
         }
 
     }

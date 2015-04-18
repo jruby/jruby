@@ -25,10 +25,6 @@ public abstract class WriteLocalVariableNode extends FrameSlotNode implements Wr
         super(context, sourceSection, frameSlot);
     }
 
-    protected WriteLocalVariableNode(WriteLocalVariableNode prev) {
-        this(prev.getContext(), prev.getSourceSection(), prev.frameSlot);
-    }
-
     @Specialization(guards = "isBooleanKind(frame)")
     public boolean doFixnum(VirtualFrame frame, boolean value) {
         setBoolean(frame, value);

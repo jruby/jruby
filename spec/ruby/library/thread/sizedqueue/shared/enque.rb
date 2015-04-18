@@ -22,10 +22,9 @@ describe :sizedqueue_enq, :shared => true do
   ruby_version_is "2.2" do
     it "raises a ThreadError if queued elements exceed size when not blocking" do
       q = @object.new(2)
-      method = @method
 
       non_blocking = true
-      add_to_queue = lambda { q.send(method, Object.new, non_blocking) }
+      add_to_queue = lambda { q.send(@method, Object.new, non_blocking) }
 
       q.size.should == 0
       add_to_queue.call

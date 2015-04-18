@@ -1805,12 +1805,7 @@ public class IRBuilder {
     }
 
     protected void receiveNonBlockArgs(final ArgsNode argsNode) {
-        final int numPreReqd = argsNode.getPreCount();
-        final int required = argsNode.getRequiredArgsCount(); // numPreReqd + numPostReqd
-        int opt = argsNode.getOptionalArgsCount();
-        boolean rest = argsNode.hasRestArg();
-
-        scope.getStaticScope().setArities(required, opt, rest);
+        Signature signature = scope.getStaticScope().getSignature();
         KeywordRestArgNode keyRest = argsNode.getKeyRest();
 
         // For closures, we don't need the check arity call
@@ -1821,12 +1816,12 @@ public class IRBuilder {
             // For now, we are going explicit instruction route.
             // But later, perhaps can make this implicit in the method setup preamble?
 
-            addInstr(new CheckArityInstr(required, opt, rest, argsNode.hasKwargs(),
+            addInstr(new CheckArityInstr(signature.required(), signature.opt(), signature.hasRest(), argsNode.hasKwargs(),
                     keyRest == null ? -1 : keyRest.getIndex()));
         } else if (scope instanceof IRClosure && argsNode.hasKwargs()) {
             // FIXME: This is added to check for kwargs correctness but bypass regular correctness.
             // Any other arity checking currently happens within Java code somewhere (RubyProc.call?)
-            addInstr(new CheckArityInstr(required, opt, rest, argsNode.hasKwargs(),
+            addInstr(new CheckArityInstr(signature.required(), signature.opt(), signature.hasRest(), argsNode.hasKwargs(),
                     keyRest == null ? -1 : keyRest.getIndex()));
         }
 
@@ -1835,12 +1830,13 @@ public class IRBuilder {
 
         // Pre(-opt and rest) required args
         ListNode preArgs = argsNode.getPre();
-        for (int i = 0; i < numPreReqd; i++, argIndex++) {
+        int preCount = signature.pre();
+        for (int i = 0; i < preCount; i++, argIndex++) {
             receiveRequiredArg(preArgs.get(i), argIndex, false, -1, -1);
         }
 
         // Fixup opt/rest
-        opt = opt > 0 ? opt : 0;
+        int opt = signature.opt() > 0 ? signature.opt() : 0;
 
         // Now for opt args
         if (opt > 0) {
@@ -1853,7 +1849,7 @@ public class IRBuilder {
                 Variable av = getNewLocalVariable(argName, 0);
                 if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
-                addInstr(new ReceiveOptArgInstr(av, required, numPreReqd, j));
+                addInstr(new ReceiveOptArgInstr(av, signature.required(), signature.pre(), j));
                 addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, go to default
                 build(n.getValue());
                 addInstr(new LabelInstr(l));
@@ -1861,7 +1857,7 @@ public class IRBuilder {
         }
 
         // Rest arg
-        if (rest) {
+        if (signature.hasRest()) {
             // Consider: def foo(*); .. ; end
             // For this code, there is no argument name available from the ruby code.
             // So, we generate an implicit arg name
@@ -1872,14 +1868,14 @@ public class IRBuilder {
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
             // because they have been accounted for already.
-            addInstr(new ReceiveRestArgInstr(getNewLocalVariable(argName, 0), required + opt, argIndex));
+            addInstr(new ReceiveRestArgInstr(getNewLocalVariable(argName, 0), signature.required() + opt, argIndex));
         }
 
         // Post(-opt and rest) required args
         ListNode postArgs = argsNode.getPost();
         int postCount = postArgs != null ? postArgs.size() : -1;
         for (int i = 0; i < postCount; i++) {
-            receiveRequiredArg(postArgs.get(i), i, true, numPreReqd, postCount);
+            receiveRequiredArg(postArgs.get(i), i, true, signature.pre(), postCount);
         }
     }
 

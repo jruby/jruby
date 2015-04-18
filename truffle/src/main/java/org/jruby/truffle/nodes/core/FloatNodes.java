@@ -689,8 +689,10 @@ public abstract class FloatNodes {
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
         }
 
+        public abstract Object executeToI(VirtualFrame frame, double value);
+
         @Specialization
-        public Object toI(double value) {
+        Object toI(double value) {
             if (Double.isInfinite(value)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Infinity", this));

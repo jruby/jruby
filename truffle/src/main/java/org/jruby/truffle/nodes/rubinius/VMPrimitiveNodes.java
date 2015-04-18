@@ -384,7 +384,7 @@ public abstract class VMPrimitiveNodes {
         public RubyArray times() {
             // Copied from org/jruby/RubyProcess.java - see copyright and license information there
 
-            Times tms = getContext().getRuntime().getPosix().times();
+            Times tms = getContext().getPosix().times();
             double utime = 0.0d, stime = 0.0d, cutime = 0.0d, cstime = 0.0d;
             if (tms == null) {
                 ThreadMXBean bean = ManagementFactory.getThreadMXBean();
@@ -399,7 +399,7 @@ public abstract class VMPrimitiveNodes {
                 cstime = (double)tms.cstime();
             }
 
-            long hz = getContext().getRuntime().getPosix().sysconf(Sysconf._SC_CLK_TCK);
+            long hz = getContext().getPosix().sysconf(Sysconf._SC_CLK_TCK);
             if (hz == -1) {
                 hz = 60; //https://github.com/ruby/ruby/blob/trunk/process.c#L6616
             }
@@ -533,11 +533,11 @@ public abstract class VMPrimitiveNodes {
             pid = getContext().getThreadManager().runOnce(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
-                    return getContext().getRuntime().getPosix().waitpid(input_pid, statusReference, finalOptions);
+                    return getContext().getPosix().waitpid(input_pid, statusReference, finalOptions);
                 }
             });
 
-            final int errno = getContext().getRuntime().getPosix().errno();
+            final int errno = getContext().getPosix().errno();
 
             if (pid == -1) {
                 if (errno == ECHILD.intValue()) {
@@ -572,6 +572,23 @@ public abstract class VMPrimitiveNodes {
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), output, termsig, stopsig, pid);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "vm_set_class", needsSelf = false)
+    public abstract static class VMSetClassPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public VMSetClassPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject setClass(RubyBasicObject object, RubyClass newClass) {
+            // TODO CS 17-Apr-15 - what about the @CompilationFinals on the class in RubyBasicObject?
+            CompilerDirectives.bailout("We're not sure how vm_set_class (Rubinius::Unsafe.set_class) will interact with compilation");
+            object.unsafeChangeLogicalClass(newClass);
+            return object;
         }
 
     }

@@ -25,6 +25,8 @@ import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.unsafe.UnsafeHolder;
 import sun.misc.Unsafe;
 
+import java.nio.charset.StandardCharsets;
+
 @CoreClass(name = "Rubinius::FFI::Platform::POSIX")
 public abstract class PosixNodes {
 
@@ -37,7 +39,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int getEGID() {
-            return getContext().getRuntime().getPosix().getegid();
+            return getContext().getPosix().getegid();
         }
 
     }
@@ -51,7 +53,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int getEUID() {
-            return getContext().getRuntime().getPosix().geteuid();
+            return getContext().getPosix().geteuid();
         }
 
     }
@@ -65,7 +67,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int getGID() {
-            return getContext().getRuntime().getPosix().getgid();
+            return getContext().getPosix().getgid();
         }
 
     }
@@ -101,7 +103,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int getUID() {
-            return getContext().getRuntime().getPosix().getuid();
+            return getContext().getPosix().getuid();
         }
 
     }
@@ -136,7 +138,89 @@ public abstract class PosixNodes {
 
         @Specialization
         public int unlink(RubyString path) {
-            return getContext().getRuntime().getPosix().unlink(path.toString());
+            return getContext().getPosix().unlink(path.toString());
+        }
+
+    }
+
+    @CoreMethod(names = "mkdir", isModuleFunction = true, required = 2)
+    public abstract static class MkdirNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+
+        public MkdirNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int mkdir(RubyString path, int mode) {
+            return getContext().getPosix().mkdir(path.toString(), mode);
+        }
+
+    }
+
+    @CoreMethod(names = "chdir", isModuleFunction = true, required = 1)
+    public abstract static class ChdirNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+
+        public ChdirNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int chdir(RubyString path) {
+            final String pathString = path.toString();
+
+            final int result = getContext().getPosix().chdir(pathString);
+
+            if (result == 0) {
+                getContext().getRuntime().setCurrentDirectory(pathString);
+            }
+
+            return result;
+        }
+
+    }
+
+    @CoreMethod(names = "rmdir", isModuleFunction = true, required = 1)
+    public abstract static class RmdirNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+
+        public RmdirNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int rmdir(RubyString path) {
+            return getContext().getPosix().rmdir(path.toString());
+        }
+
+    }
+
+    @CoreMethod(names = "getcwd", isModuleFunction = true, required = 2)
+    public abstract static class GetcwdNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+
+        public GetcwdNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyString getcwd(RubyString resultPath, int maxSize) {
+            // We just ignore maxSize - I think this is ok
+
+            final String path = getContext().getRuntime().getCurrentDirectory();
+            resultPath.getByteList().replace(path.getBytes(StandardCharsets.UTF_8));
+            return resultPath;
+        }
+
+    }
+
+    @CoreMethod(names = "errno", isModuleFunction = true)
+    public abstract static class ErrnoNode extends CoreMethodNode {
+
+        public ErrnoNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int errno() {
+            return getContext().getPosix().errno();
         }
 
     }

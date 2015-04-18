@@ -24,38 +24,22 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' rubinius.rb
+##
+# Interface to the C errno integer.
 
-module Rubinius
-  def self.watch_signal(sig, ignored)
-    Rubinius.primitive :vm_watch_signal
-    raise PrimitiveFailure, "Rubinius.vm_watch_signal primitive failed" # Truffle: simplified failure
-  end
+module Errno
+  FFI = Rubinius::FFI
 
-  def self.raise_exception(exc)
-    Rubinius.primitive :vm_raise_exception
-    raise PrimitiveFailure, "Rubinius.vm_raise_exception primitive failed"
-  end
+  ##
+  # Raises the appropriate SystemCallError exception with +additional+ as the
+  # message.  Equivalent to MRI's rb_sys_fail().
+  #
+  # Unlike rb_sys_fail(), handle does not raise an exception if errno is 0.
 
-  def self.throw(dest, obj)
-    Rubinius.primitive :vm_throw
-    raise PrimitiveFailure, "Rubinius.throw primitive failed"
-  end
+  def self.handle(additional = nil)
+    err = FFI::Platform::POSIX.errno
+    return if err == 0
 
-  def self.catch(dest, obj)
-    Rubinius.primitive :vm_catch
-    raise PrimitiveFailure, "Rubinius.catch primitive failed"
-  end
-
-  module Unsafe
-    def self.set_class(obj, cls)
-      Rubinius.primitive :vm_set_class
-
-      if obj.kind_of? ImmediateValue
-        raise TypeError, "Can not change the class of an immediate"
-      end
-
-      raise ArgumentError, "Class #{cls} is not compatible with #{obj.inspect}"
-    end
+    raise SystemCallError.new(additional, err)
   end
 end

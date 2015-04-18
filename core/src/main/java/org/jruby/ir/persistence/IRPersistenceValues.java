@@ -30,4 +30,6 @@ interface IRPersistenceValues {
     public final static byte FULL = (byte) 255;
 
     public final static int PROLOGUE_LENGTH = 2 * 4; // 2 ints at front
+
+    public final static int NULL_STRING = -1;
 }

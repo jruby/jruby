@@ -1,7 +1,5 @@
 package org.jruby.internal.runtime.methods;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;

@@ -65,7 +65,7 @@ public class BuildCompoundStringInstr extends ResultBaseInstr {
         for (Operand p : operands) {
             if ((p instanceof StringLiteral) && (isSameEncodingAndCodeRange(str, (StringLiteral)p))) {
                 str.getByteList().append(((StringLiteral)p).bytelist);
-                str.setCodeRange(str.scanForCodeRange());
+                str.setCodeRange(((StringLiteral)p).getCodeRange());
             } else {
                 IRubyObject pval = (IRubyObject)p.retrieve(context, self, currScope, currDynScope, temp);
                 str.append19(pval);

@@ -10,7 +10,7 @@
   <artifactId>jruby-core</artifactId>
   <name>JRuby Core</name>
   <properties>
-    <version.ruby>2.2.1</version.ruby>
+    <version.ruby>2.2.2</version.ruby>
     <prawn.dir>${test.dir}/prawn</prawn.dir>
     <spec.tags.dir>${spec.dir}/tags</spec.tags.dir>
     <pkg.dir>${build.dir}/pkg</pkg.dir>

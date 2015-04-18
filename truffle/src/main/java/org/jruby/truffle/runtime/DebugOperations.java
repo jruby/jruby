@@ -22,8 +22,11 @@ import com.oracle.truffle.api.object.IncompatibleLocationException;
 import com.oracle.truffle.api.object.Location;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
+
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBignum;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -136,7 +139,9 @@ public abstract class DebugOperations {
                 (o instanceof Integer) ||
                 (o instanceof Long) ||
                 (o instanceof Double) ||
-                (o instanceof RubySymbol)) {
+                (o instanceof RubyNilClass) ||
+                (o instanceof RubySymbol) ||
+                (o instanceof RubyBignum)) {
             return o;
         }
 
@@ -152,7 +157,9 @@ public abstract class DebugOperations {
                 (o instanceof Integer) ||
                 (o instanceof Long) ||
                 (o instanceof Double) ||
-                (o instanceof RubySymbol)) {
+                (o instanceof RubyNilClass) ||
+                (o instanceof RubySymbol) ||
+                (o instanceof RubyBignum)) {
             return true;
         }
 

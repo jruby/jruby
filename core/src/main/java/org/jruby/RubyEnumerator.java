@@ -37,6 +37,7 @@ import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -759,7 +760,7 @@ public class RubyEnumerator extends RubyObject {
                 IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
                 final TerminateEnumeration terminateEnumeration = new TerminateEnumeration();
                 try {
-                    object.callMethod(context, method, methodArgs, CallBlock.newCallClosure(object, object.getMetaClass(), Arity.OPTIONAL, new BlockCallback() {
+                    object.callMethod(context, method, methodArgs, CallBlock.newCallClosure(object, object.getMetaClass(), Signature.OPTIONAL, new BlockCallback() {
                         @Override
                         public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
                             try {
