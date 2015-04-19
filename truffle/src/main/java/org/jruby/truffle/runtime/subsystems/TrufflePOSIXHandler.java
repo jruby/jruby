@@ -44,7 +44,8 @@ public class TrufflePOSIXHandler implements POSIXHandler {
 
     @Override
     public boolean isVerbose() {
-        return context.getRuntime().isVerbose();
+        // Even if we are running in verbose mode we don't want jnr-posix's version of verbose
+        return false;
     }
 
     @Override
