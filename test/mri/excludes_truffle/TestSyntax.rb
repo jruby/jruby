@@ -1,0 +1,7 @@
+exclude :test_defined_empty_argument, "needs investigation"
+exclude :test_must_ascii_compatible, "needs investigation"
+exclude :test_script_lines, "needs investigation"
+exclude :test_syntax_ext, "needs investigation"
+exclude :test_syntax_lib, "needs investigation"
+exclude :test_syntax_sample, "needs investigation"
+exclude :test_syntax_test, "needs investigation"

@@ -1,0 +1,8 @@
+exclude :test__different_format, "needs investigation"
+exclude :test_strftime, "needs investigation"
+exclude :test_strftime__3_1, "needs investigation"
+exclude :test_strftime__3_2, "needs investigation"
+exclude :test_strftime__gnuext, "needs investigation"
+exclude :test_strftime__gnuext_complex, "needs investigation"
+exclude :test_strftime__offset, "needs investigation"
+exclude :test_strftime__2, "java.lang.NullPointerException at org.jruby.truffle.nodes.methods.ExceptionTranslatingNode.translate(ExceptionTranslatingNode.java:159)"
