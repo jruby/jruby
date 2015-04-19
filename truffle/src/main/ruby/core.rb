@@ -191,7 +191,7 @@ require_relative 'core/rubinius/common/gc'
 
 #require_relative 'core/rubinius/delta/ctype'
 #require_relative 'core/rubinius/delta/exception'
-#require_relative 'core/rubinius/delta/file'
+require_relative 'core/rubinius/delta/file'
 #require_relative 'core/rubinius/delta/rubinius'
 #require_relative 'core/rubinius/delta/runtime'
 #require_relative 'core/rubinius/delta/module'
