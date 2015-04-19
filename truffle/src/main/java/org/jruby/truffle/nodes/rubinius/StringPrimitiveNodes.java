@@ -22,7 +22,6 @@
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
  *
- *
  * Some of the code in this class is transliterated from C++ code in Rubinius.
  * 
  * Copyright (c) 2007-2014, Evan Phoenix and contributors
@@ -73,6 +72,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
@@ -1334,6 +1334,24 @@ public abstract class StringPrimitiveNodes {
             taintResultNode.maybeTaint(string, ret);
 
             return ret;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_from_bytearray", needsSelf = false)
+    public static abstract class StringFromByteArrayPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringFromByteArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringFromByteArrayPrimitiveNode(StringFromByteArrayPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString stringFromByteArray(RubiniusByteArray bytes, int start, int count) {
+            return getContext().makeString(Arrays.copyOfRange(bytes.getBytes().unsafeBytes(), start, count));
         }
 
     }

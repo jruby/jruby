@@ -6,8 +6,6 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# TODO(CS): isn't this vulnerable to naming conflicts?
-
 module Rubinius
   class LookupTable < Hash
     alias_method :lookup_orig, :[]

@@ -1296,13 +1296,17 @@ public abstract class ArrayNodes {
         private final BranchProfile nextProfile = BranchProfile.create();
         private final BranchProfile redoProfile = BranchProfile.create();
 
+        private final RubySymbol eachSymbol;
+
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            eachSymbol = getContext().getSymbolTable().getSymbol("each");
         }
 
         public EachNode(EachNode prev) {
             super(prev);
             toEnumNode = prev.toEnumNode;
+            eachSymbol = prev.eachSymbol;
         }
 
         @Specialization
@@ -1312,7 +1316,7 @@ public abstract class ArrayNodes {
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return toEnumNode.call(frame, array, "to_enum", null, getContext().getCoreLibrary().getEachSymbol());
+            return toEnumNode.call(frame, array, "to_enum", null, eachSymbol);
         }
 
         @Specialization(guards = "isNull")

@@ -24,50 +24,13 @@ class IO
   end
 end
 
-STDIN = IO.new
+STDIN = File.new(0)
+STDOUT = File.new(1)
+STDERR = File.new(2)
 
-class << STDIN
-  def external_encoding
-    super || Encoding.default_external
-  end
-end
-
-STDOUT = IO.new
+$stdin = STDIN
 $stdout = STDOUT
-
-class << STDOUT
-  def puts(*values)
-    Kernel.send(:puts, *values)
-  end
-
-  def print(*values)
-    Kernel.send(:print, *values)
-  end
-
-  def printf(*values)
-    Kernel.send(:printf, *values)
-  end
-
-  def flush
-    Truffle::Primitive.flush_stdout
-  end
-
-  def sync
-    false
-  end
-
-  def sync=(value)
-  end
-end
-
-STDERR = IO.new
 $stderr = STDERR
-
-class << STDERR
-  def puts(*values)
-    Kernel.send(:puts, *values)
-  end
-end
 
 ARGF = Object.new
 

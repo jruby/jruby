@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
+import jnr.constants.platform.Fcntl;
 import org.jruby.platform.Platform;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
@@ -20,6 +21,7 @@ import org.jruby.truffle.nodes.core.CoreMethodNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -269,6 +271,29 @@ public abstract class PosixNodes {
         @Specialization
         public int errno() {
             return getContext().getPosix().errno();
+        }
+
+    }
+
+    @CoreMethod(names = "fcntl", isModuleFunction = true, required = 3)
+    public abstract static class FcntlNode extends CoreMethodNode {
+
+        public FcntlNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public FcntlNode(FcntlNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int fcntl(int fd, int fcntl, RubyNilClass nil) {
+            return getContext().getPosix().fcntl(fd, Fcntl.valueOf(fcntl));
+        }
+
+        @Specialization
+        public int fcntl(int fd, int fcntl, int arg) {
+            return getContext().getPosix().fcntlInt(fd, Fcntl.valueOf(fcntl), arg);
         }
 
     }

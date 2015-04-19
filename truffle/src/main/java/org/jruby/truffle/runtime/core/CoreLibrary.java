@@ -111,7 +111,6 @@ public class CoreLibrary {
     private final RubyModule enumerableModule;
     private final RubyModule errnoModule;
     private final RubyModule kernelModule;
-    private final RubyModule mathModule;
     private final RubyModule rubiniusModule;
     private final RubyModule rubiniusFFIModule;
     private final RubyModule signalModule;
@@ -136,11 +135,9 @@ public class CoreLibrary {
     private final Map<Errno, RubyClass> errnoClasses = new HashMap<>();
 
     @CompilerDirectives.CompilationFinal private RubySymbol eachSymbol;
-    @CompilerDirectives.CompilationFinal private RubySymbol mapSymbol;
-    @CompilerDirectives.CompilationFinal private RubySymbol mapBangSymbol;
     @CompilerDirectives.CompilationFinal private RubyHash envHash;
 
-    private static enum State {
+    private enum State {
         INITIALIZING,
         LOADING_RUBY_CORE,
         LOADED
@@ -286,7 +283,7 @@ public class CoreLibrary {
         enumerableModule = defineModule("Enumerable");
         defineModule("GC");
         kernelModule = defineModule("Kernel");
-        mathModule = defineModule("Math");
+        defineModule("Math");
         defineModule("ObjectSpace");
         signalModule = defineModule("Signal");
 
@@ -347,11 +344,6 @@ public class CoreLibrary {
         initializeConstants();
         initializeEncodingConstants();
         initializeSignalConstants();
-
-        // Common symbols
-        eachSymbol = getContext().getSymbolTable().getSymbol("each");
-        mapBangSymbol = getContext().getSymbolTable().getSymbol("map!");
-        mapSymbol = getContext().getSymbolTable().getSymbol("map");
     }
 
     private void initializeGlobalVariables() {
@@ -1019,8 +1011,6 @@ public class CoreLibrary {
         return classClass;
     }
 
-    public RubyClass getExceptionClass() { return exceptionClass; }
-
     public RubyClass getFalseClass() {
         return falseClass;
     }
@@ -1057,10 +1047,6 @@ public class CoreLibrary {
         return nameErrorClass;
     }
 
-    public RubyClass getNilClass() {
-        return nilClass;
-    }
-
     public RubyClass getNoMethodErrorClass() {
         return noMethodErrorClass;
     }
@@ -1095,16 +1081,6 @@ public class CoreLibrary {
 
     public RubyClass getStringClass() {
         return stringClass;
-    }
-
-    public RubyClass getEncodingClass(){ return encodingClass; }
-
-    public RubyClass getSymbolClass() {
-        return symbolClass;
-    }
-
-    public RubyClass getSyntaxErrorClass() {
-        return syntaxErrorClass;
     }
 
     public RubyClass getThreadClass() {
@@ -1157,8 +1133,6 @@ public class CoreLibrary {
         return envHash;
     }
 
-    public RubyEncoding getDefaultEncoding() { return RubyEncoding.getEncoding("US-ASCII"); }
-
     private RubyHash getSystemEnv() {
         final List<KeyValue> entries = new ArrayList<>();
 
@@ -1183,10 +1157,6 @@ public class CoreLibrary {
 
     public RubyClass getIntegerClass() {
         return integerClass;
-    }
-
-    public RubyClass getArgumentErrorClass() {
-        return argumentErrorClass;
     }
 
     public RubyClass getEncodingConverterClass() {
@@ -1229,18 +1199,6 @@ public class CoreLibrary {
         return rubiniusUndefined;
     }
 
-    public RubySymbol getEachSymbol() {
-        return eachSymbol;
-    }
-
-    public RubySymbol getMapBangSymbol() {
-        return mapBangSymbol;
-    }
-
-    public RubySymbol getMapSymbol() {
-        return mapSymbol;
-    }
-
     public boolean isLoadingRubyCore() {
         return state == State.LOADING_RUBY_CORE;
     }
@@ -1252,4 +1210,9 @@ public class CoreLibrary {
     public RubyClass getErrnoClass(Errno errno) {
         return errnoClasses.get(errno);
     }
+
+    public RubyClass getSymbolClass() {
+        return symbolClass;
+    }
+
 }

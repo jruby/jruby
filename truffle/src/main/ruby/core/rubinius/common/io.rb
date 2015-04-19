@@ -24,6 +24,9 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# IO#setup modified to not refer to STDOUT and STDERR if they aren't defined,
+# as we create those as files using normal File.new.
+
 class IO
   FFI = Rubinius::FFI
 
@@ -995,11 +998,11 @@ class IO
     io.mode       = mode || cur_mode
     io.sync       = !!sync
 
-    if STDOUT.respond_to?(:fileno) and not STDOUT.closed?
+    if defined? STDOUT and STDOUT.respond_to?(:fileno) and not STDOUT.closed?
       io.sync ||= STDOUT.fileno == fd
     end
 
-    if STDERR.respond_to?(:fileno) and not STDERR.closed?
+    if defined? STDERR and STDERR.respond_to?(:fileno) and not STDERR.closed?
       io.sync ||= STDERR.fileno == fd
     end
   end

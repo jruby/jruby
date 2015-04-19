@@ -454,6 +454,10 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
     }
 
     protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
+        return rubyWithSelf(frame, RubyArguments.getSelf(frame.getArguments()), expression, arguments);
+    }
+
+    protected Object rubyWithSelf(VirtualFrame frame, Object self, String expression, Object... arguments) {
         notDesignedForCompilation();
         
         final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
@@ -469,7 +473,7 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
 
         final RubyBinding binding = new RubyBinding(
                 getContext().getCoreLibrary().getBindingClass(),
-                RubyArguments.getSelf(frame.getArguments()),
+                self,
                 evalFrame);
 
         return getContext().eval(ByteList.create(expression), binding, true, "inline-ruby", this);
