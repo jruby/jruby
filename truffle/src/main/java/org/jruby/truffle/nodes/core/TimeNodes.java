@@ -48,8 +48,14 @@ public abstract class TimeNodes {
         }
 
         @Specialization
-        public boolean internalSetGMT(RubyTime time, Object setGMT) {
-            throw new UnsupportedOperationException("_set_gmt" + setGMT.getClass());
+        public boolean internalSetGMT(RubyTime time, boolean isGMT) {
+            if (isGMT) {
+                time.setDateTime(time.getDateTime().withZone(DateTimeZone.UTC));
+            } else {
+                // Do nothing I guess - we can't change it to another zone, as what zone would that be?
+            }
+
+            return isGMT;
         }
     }
 

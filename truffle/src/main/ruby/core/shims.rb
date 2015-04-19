@@ -114,15 +114,6 @@ end
 
 ENV['TZ'] = 'UTC'
 
-class Method
-  def to_proc
-    meth = self
-    proc { |*args|
-      meth.call(*args)
-    }
-  end
-end
-
 class MatchData
   def full
     @cached_full ||= begin

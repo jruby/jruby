@@ -1247,6 +1247,28 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
+        public Object rightShift(VirtualFrame frame, int a, long b) {
+            if (b > 0) {
+                if (b >= BITS - 1) {
+                    if (a < 0) {
+                        return -1;
+                    } else {
+                        return 0;
+                    }
+                } else {
+                    return a >> b;
+                }
+            } else {
+                if (leftShiftNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
+                }
+
+                return leftShiftNode.executeLeftShift(frame, a, -b);
+            }
+        }
+
+        @Specialization
         public Object rightShift(VirtualFrame frame, long a, int b) {
             if (b > 0) {
                 if (b >= BITS - 1) {

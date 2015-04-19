@@ -181,7 +181,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "%", required = 1)
+    @CoreMethod(names = {"%", "modulo"}, required = 1)
     public abstract static class ModNode extends BignumCoreMethodNode {
 
         public ModNode(RubyContext context, SourceSection sourceSection) {
@@ -190,17 +190,44 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object mod(RubyBignum a, int b) {
+            if (b == 0) {
+                throw new ArithmeticException("divide by zero");
+            } else if (b < 0) {
+                final BigInteger bigint = BigInteger.valueOf(b);
+                final BigInteger mod = a.bigIntegerValue().mod(bigint.negate());
+                return fixnumOrBignum(mod.add(bigint));
+            }
             return fixnumOrBignum(a.bigIntegerValue().mod(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object mod(RubyBignum a, long b) {
+            if (b == 0) {
+                throw new ArithmeticException("divide by zero");
+            } else if (b < 0) {
+                final BigInteger bigint = BigInteger.valueOf(b);
+                final BigInteger mod = a.bigIntegerValue().mod(bigint.negate());
+                return fixnumOrBignum(mod.add(bigint));
+            }
             return fixnumOrBignum(a.bigIntegerValue().mod(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object mod(RubyBignum a, RubyBignum b) {
+            final BigInteger bigint = b.bigIntegerValue();
+            final int compare = bigint.compareTo(BigInteger.ZERO);
+            if (compare == 0) {
+                throw new ArithmeticException("divide by zero");
+            } else if (compare < 0) {
+                final BigInteger mod = a.bigIntegerValue().mod(bigint.negate());
+                return fixnumOrBignum(mod.add(bigint));
+            }
             return fixnumOrBignum(a.bigIntegerValue().mod(b.bigIntegerValue()));
+        }
+
+        @Specialization(guards = {"!isInteger(b)", "!isLong(b)", "!isRubyBignum(b)"})
+        public Object mod(VirtualFrame frame, RubyBignum a, Object b) {
+            return ruby(frame, "redo_coerced :%, other", "other", b);
         }
 
     }

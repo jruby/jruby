@@ -52,27 +52,27 @@ public abstract class ClassNodes {
     @CoreMethod(names = "new", needsBlock = true, argumentsAsArray = true)
     public abstract static class NewNode extends CoreMethodNode {
 
-        @Child private AllocateNode allocateNode;
+        @Child private CallDispatchHeadNode allocateNode;
         @Child private CallDispatchHeadNode initialize;
 
         public NewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateNode = ClassNodesFactory.AllocateNodeFactory.create(context, sourceSection, new RubyNode[]{null});
+            allocateNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
             initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
         @Specialization
-        public RubyBasicObject newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, UndefinedPlaceholder block) {
+        public Object newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, UndefinedPlaceholder block) {
             return doNewInstance(frame, rubyClass, args, null);
         }
 
         @Specialization
-        public RubyBasicObject newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
+        public Object newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
             return doNewInstance(frame, rubyClass, args, block);
         }
 
-        private RubyBasicObject doNewInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
-            final RubyBasicObject instance = allocateNode.executeAllocate(frame, rubyClass);
+        private Object doNewInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
+            final Object instance = allocateNode.call(frame, rubyClass, "allocate", null);
             initialize.call(frame, instance, "initialize", block, args);
             return instance;
         }

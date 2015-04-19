@@ -18,7 +18,7 @@ public class BouncyCastleTestCase {
 
     @Test
     public void java() {
-        assertEquals("BouncyCastle Security Provider v1.49", new BouncyCastleProvider().getInfo());
+        assertEquals("BouncyCastle Security Provider v1.50", new BouncyCastleProvider().getInfo());
     }
 
     @Test

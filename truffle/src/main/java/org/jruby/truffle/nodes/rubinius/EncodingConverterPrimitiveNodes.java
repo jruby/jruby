@@ -25,14 +25,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyEncoding;
-import org.jruby.truffle.runtime.core.RubyEncodingConverter;
-import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 
@@ -49,8 +42,8 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
 
         @Specialization
-        public Object encodingConverterAllocate(RubyEncoding fromEncoding, RubyEncoding toEncoding, RubyHash options) {
-            return new RubyEncodingConverter(getContext().getCoreLibrary().getEncodingConverterClass(), null);
+        public Object encodingConverterAllocate(RubyClass encodingConverterClass, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2) {
+            return new RubyEncodingConverter(encodingConverterClass, null);
         }
 
     }

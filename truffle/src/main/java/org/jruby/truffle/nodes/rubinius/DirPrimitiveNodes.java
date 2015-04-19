@@ -30,6 +30,20 @@ public abstract class DirPrimitiveNodes {
     private static final HiddenKey contentsKey = new HiddenKey("contents");
     private static final HiddenKey positionKey = new HiddenKey("position");
 
+    @RubiniusPrimitive(name = "dir_allocate")
+    public static abstract class DirAllocatePrimitiveNode extends RubiniusPrimitiveNode {
+
+        public DirAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject allocate(RubyClass dirClass) {
+            return new RubyBasicObject(dirClass);
+        }
+
+    }
+
     @RubiniusPrimitive(name = "dir_open")
     public static abstract class DirOpenPrimitiveNode extends RubiniusPrimitiveNode {
 
