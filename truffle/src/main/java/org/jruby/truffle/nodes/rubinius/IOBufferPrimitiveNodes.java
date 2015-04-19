@@ -102,7 +102,9 @@ public abstract class IOBufferPrimitiveNodes {
 
             ByteList storage = ((RubiniusByteArray) rubyWithSelf(frame, ioBuffer, "@storage")).getBytes();
 
+            // Data is copied here - can we do something COW?
             System.arraycopy(string.getByteList().unsafeBytes(), start_pos_native, storage.getUnsafeBytes(), used_native, total_sz);
+
             rubyWithSelf(frame, ioBuffer, "@used = used", "used", used_native + total_sz);
 
             return total_sz;

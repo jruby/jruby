@@ -103,6 +103,8 @@ public abstract class IOPrimitiveNodes {
         public int write(VirtualFrame frame, RubyBasicObject file, RubyString string) {
             final int fd = (int) rubyWithSelf(frame, file, "@descriptor");
 
+            // We have to copy here as write starts at byte[0], and the ByteList may not
+
             byte[] bytes = string.getByteList().bytes();
 
             while (bytes.length > 0) {
@@ -113,6 +115,8 @@ public abstract class IOPrimitiveNodes {
                 }
 
                 if (written < bytes.length) {
+                    // Have to copy here again for the same reason!
+
                     bytes = Arrays.copyOfRange(bytes, written, bytes.length);
                 }
             }

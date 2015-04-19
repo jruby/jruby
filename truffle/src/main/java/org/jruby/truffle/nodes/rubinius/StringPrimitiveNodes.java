@@ -1351,6 +1351,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public RubyString stringFromByteArray(RubiniusByteArray bytes, int start, int count) {
+            // Data is copied here - can we do something COW?
             return getContext().makeString(Arrays.copyOfRange(bytes.getBytes().unsafeBytes(), start, count));
         }
 
