@@ -65,7 +65,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
-import org.jruby.util.CodeRangeSupport;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.Pack;
@@ -108,7 +107,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), false, new int[]{}));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
             ret.getByteList().setEncoding(enc);
@@ -171,7 +170,7 @@ public abstract class StringNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
 
-            return multiply(string, toIntNode.executeIntegerFixnum(frame, times));
+            return multiply(string, toIntNode.executeInt(frame, times));
         }
     }
 
@@ -309,7 +308,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = { "<<", "concat" }, required = 1, taintFromParameters = 0, raiseIfFrozenSelf = true)
+    @CoreMethod(names = { "<<", "concat" }, required = 1, taintFromParameter = 0, raiseIfFrozenSelf = true)
     @NodeChildren({
             @NodeChild(value = "string"),
             @NodeChild(value = "other")
@@ -498,7 +497,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])", "!isRubyString(arguments[1])" })
         public Object getIndex(VirtualFrame frame, RubyString string, Object index, UndefinedPlaceholder undefined) {
-            return getIndex(frame, string, getToIntNode().executeIntegerFixnum(frame, index), undefined);
+            return getIndex(frame, string, getToIntNode().executeInt(frame, index), undefined);
         }
 
         @Specialization
@@ -515,8 +514,8 @@ public abstract class StringNodes {
         @Specialization
         public Object sliceObjectRange(VirtualFrame frame, RubyString string, RubyRange.ObjectRange range, UndefinedPlaceholder undefined) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values may return Fixnums beyond int boundaries and we should handle that -- Bignums are always errors.
-            final int coercedBegin = getToIntNode().executeIntegerFixnum(frame, range.getBegin());
-            final int coercedEnd = getToIntNode().executeIntegerFixnum(frame, range.getEnd());
+            final int coercedBegin = getToIntNode().executeInt(frame, range.getBegin());
+            final int coercedEnd = getToIntNode().executeInt(frame, range.getEnd());
 
             return sliceRange(frame, string, coercedBegin, coercedEnd, range.doesExcludeEnd());
         }
@@ -563,12 +562,12 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
         public Object slice(VirtualFrame frame, RubyString string, int start, Object length) {
-            return slice(frame, string, start, getToIntNode().executeIntegerFixnum(frame, length));
+            return slice(frame, string, start, getToIntNode().executeInt(frame, length));
         }
 
         @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])", "!isRubyString(arguments[1])", "!isUndefinedPlaceholder(arguments[2])" })
         public Object slice(VirtualFrame frame, RubyString string, Object start, Object length) {
-            return slice(frame, string, getToIntNode().executeIntegerFixnum(frame, start), getToIntNode().executeIntegerFixnum(frame, length));
+            return slice(frame, string, getToIntNode().executeInt(frame, start), getToIntNode().executeInt(frame, length));
         }
 
         @Specialization
@@ -887,7 +886,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "crypt", required = 1, taintFromSelf = true, taintFromParameters = 0)
+    @CoreMethod(names = "crypt", required = 1, taintFromSelf = true, taintFromParameter = 0)
     @NodeChildren({
             @NodeChild(value = "string"),
             @NodeChild(value = "salt")
@@ -924,7 +923,7 @@ public abstract class StringNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("salt too short (need >= 2 bytes)", this));
             }
 
-            final POSIX posix = getContext().getRuntime().getPosix();
+            final POSIX posix = getContext().getPosix();
             final byte[] keyBytes = Arrays.copyOfRange(value.unsafeBytes(), value.begin(), value.realSize());
             final byte[] saltBytes = Arrays.copyOfRange(otherBL.unsafeBytes(), otherBL.begin(), otherBL.realSize());
 
@@ -1173,7 +1172,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, new int[]{}));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
             final RubyString ret = getContext().makeString(string.getLogicalClass(), substringBytes);
@@ -1326,7 +1325,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "initialize", optional = 1, taintFromParameters = 0)
+    @CoreMethod(names = "initialize", optional = 1, taintFromParameter = 0)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         @Child private IsFrozenNode isFrozenNode;
@@ -1418,7 +1417,7 @@ public abstract class StringNodes {
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             concatNode = DispatchHeadNodeFactory.createMethodCall(context);
-            taintResultNode = new TaintResultNode(context, sourceSection, false, new int[] {});
+            taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
         public InsertNode(InsertNode prev) {
@@ -1570,7 +1569,7 @@ public abstract class StringNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(names = "num_bytes=", required = 1)
+    @CoreMethod(names = "num_bytes=", lowerFixnumParameters = 0, required = 1)
     public abstract static class SetNumBytesNode extends CoreMethodNode {
 
         public SetNumBytesNode(RubyContext context, SourceSection sourceSection) {
@@ -1606,7 +1605,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true, taintFromParameters = 0)
+    @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true, taintFromParameter = 0)
     @NodeChildren({
         @NodeChild(value = "string"),
         @NodeChild(value = "other")
@@ -1821,7 +1820,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "scan", required = 1, needsBlock = true, taintFromParameters = 0)
+    @CoreMethod(names = "scan", required = 1, needsBlock = true, taintFromParameter = 0)
     public abstract static class ScanNode extends YieldingCoreMethodNode {
 
         public ScanNode(RubyContext context, SourceSection sourceSection) {

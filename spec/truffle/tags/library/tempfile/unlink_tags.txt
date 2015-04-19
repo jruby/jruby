@@ -1,0 +1,1 @@
+fails:Tempfile#unlink unlinks self

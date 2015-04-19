@@ -47,9 +47,8 @@ public class ClassSuperInstr extends CallInstr {
         }
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
-        boolean isPotentiallyRefined = d.decodeBoolean();
 
-        return new ClassSuperInstr(d.decodeVariable(), receiver, methAddr, args, closure, isPotentiallyRefined);
+        return new ClassSuperInstr(d.decodeVariable(), receiver, methAddr, args, closure, d.getCurrentScope().maybeUsingRefinements());
     }
     // We cannot convert this into a NoCallResultInstr
     @Override

@@ -28,6 +28,12 @@
 
 class Dir
 
+  # This seems silly, I know. But we do this to make Dir more resistent to people
+  # screwing with ::File later (ie, fakefs)
+  PrivateFile = ::File
+
+  FFI = Rubinius::FFI
+
   def self.[](*patterns)
     if patterns.size == 1
       pattern = Rubinius::Type.coerce_to_path(patterns[0])
@@ -80,6 +86,62 @@ class Dir
       start = idx + 1
     end
     result << pattern.byteslice(start, pattern.bytesize)
+  end
+
+  def self.mkdir(path, mode = 0777)
+    error = FFI::Platform::POSIX.mkdir(Rubinius::Type.coerce_to_path(path), mode)
+    Errno.handle path if error != 0
+    error
+  end
+
+  def self.chdir(path = ENV['HOME'])
+    path = Rubinius::Type.coerce_to_path path
+
+    if block_given?
+      original_path = self.getwd
+      error = FFI::Platform::POSIX.chdir path
+      Errno.handle(path) if error != 0
+
+      begin
+        value = yield path
+      ensure
+        error = FFI::Platform::POSIX.chdir original_path
+        Errno.handle(original_path) if error != 0
+      end
+
+      return value
+    else
+      error = FFI::Platform::POSIX.chdir path
+      Errno.handle path if error != 0
+      error
+    end
+  end
+
+  def self.rmdir(path)
+    error = FFI::Platform::POSIX.rmdir(Rubinius::Type.coerce_to_path(path))
+    Errno.handle path if error != 0
+    error
+  end
+
+  def self.getwd
+    buf = String.pattern Rubinius::PATH_MAX, 0
+    wd = FFI::Platform::POSIX.getcwd(buf, buf.length)
+    Errno.handle unless wd
+    Rubinius::Type.external_string wd
+  end
+
+  class << self
+    alias_method :pwd, :getwd
+    alias_method :delete, :rmdir
+    alias_method :unlink, :rmdir
+  end
+
+  def self.exist?(path)
+    PrivateFile.directory?(path)
+  end
+
+  class << self
+    alias_method :exists?, :exist?
   end
 
 end

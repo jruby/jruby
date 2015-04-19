@@ -13,10 +13,13 @@ import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.nodes.CoreSourceSection;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.core.RubyString;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +38,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
                     lines.add(String.format("%s (%s)", exception.getMessage(), exception.getLogicalClass().getName()));
                 }
             } else {
-                lines.add(formatInLine(activations, exception));
+                lines.add(formatInLine(context, activations, exception));
 
                 for (int n = 1; n < activations.size(); n++) {
                     lines.add(formatFromLine(activations, n));
@@ -48,7 +51,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         }
     }
 
-    private static String formatInLine(List<Activation> activations, RubyException exception) {
+    private static String formatInLine(RubyContext context, List<Activation> activations, RubyException exception) {
         final StringBuilder builder = new StringBuilder();
 
         final Activation activation = activations.get(0);
@@ -80,8 +83,20 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         builder.append("'");
 
         if (exception != null) {
+            String message;
+            try {
+                Object messageObject = DebugOperations.send(context, exception, "message", null);
+                if (messageObject instanceof RubyString) {
+                    message = messageObject.toString();
+                } else {
+                    message = exception.getMessage().toString();
+                }
+            } catch (RaiseException e) {
+                message = exception.getMessage().toString();
+            }
+
             builder.append(": ");
-            builder.append(exception.getMessage());
+            builder.append(message);
             builder.append(" (");
             builder.append(exception.getLogicalClass().getName());
             builder.append(")");

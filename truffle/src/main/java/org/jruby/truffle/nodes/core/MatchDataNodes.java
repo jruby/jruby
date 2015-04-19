@@ -17,7 +17,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.joni.exception.ValueException;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
@@ -104,7 +103,7 @@ public abstract class MatchDataNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
 
-            return getIndex(matchData, toIntNode.executeIntegerFixnum(frame, index));
+            return getIndex(matchData, toIntNode.executeInt(frame, index));
         }
 
         @Specialization(guards = {"!isRubySymbol(arguments[1])", "!isRubyString(arguments[1])"})

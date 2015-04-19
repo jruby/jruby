@@ -43,8 +43,8 @@ import org.jruby.ast.VCallNode;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DummyDynamicScope;
 
@@ -75,14 +75,8 @@ public class StaticScope implements Serializable {
     // Our name holder (offsets are assigned as variables are added
     private String[] variableNames;
 
-    // number of variables in this scope representing required arguments
-    private int requiredArgs = 0;
-
-    // number of variables in this scope representing optional arguments
-    private int optionalArgs = 0;
-
-    // index of variable that represents a "rest" arg
-    private boolean hasRest = false;
+    // Arity of this scope if there is one
+    private Signature signature;
 
     private DynamicScope dummyScope;
 
@@ -92,9 +86,8 @@ public class StaticScope implements Serializable {
 
     private Type type;
     private boolean isBlockOrEval;
-    private boolean isArgumentScope; // Is this block and argument scope of a define_method (for the purposes of zsuper).
+    private boolean isArgumentScope; // Is this block and argument scope of a define_method.
 
-    private int scopeId;
     private IRScope irScope; // Method/Closure that this static scope corresponds to
 
     public enum Type {
@@ -140,10 +133,6 @@ public class StaticScope implements Serializable {
         return irScope;
     }
 
-    public int getScopeId() {
-        return scopeId;
-    }
-
     public IRScopeType getScopeType() {
         return scopeType;
     }
@@ -152,16 +141,9 @@ public class StaticScope implements Serializable {
         this.scopeType = scopeType;
     }
 
-    public void setIRScope(IRScope irScope, boolean isForLoopBody) {
-        if (!isForLoopBody) {
-            this.irScope = irScope;
-        }
-        this.scopeId = irScope.getScopeId();
-        this.scopeType = irScope.getScopeType();
-    }
-
     public void setIRScope(IRScope irScope) {
-        setIRScope(irScope, false);
+        this.irScope = irScope;
+        this.scopeType = irScope.getScopeType();
     }
 
     /**
@@ -239,18 +221,6 @@ public class StaticScope implements Serializable {
         System.arraycopy(names, 0, variableNames, 0, names.length);
     }
 
-    /* Note: Only used by compiler until it can use getConstant again or use some other refactoring */
-    public IRubyObject getConstantWithConstMissing(String internedName) {
-        IRubyObject result = getConstantInner(internedName);
-
-        // If we could not find the constant from cref..then try getting from inheritence hierarchy
-        return result == null ? cref.getConstant(internedName) : result;
-    }
-
-    public boolean isConstantDefined(String internedName) {
-        return getConstant(internedName) != null;
-    }
-
     public IRubyObject getConstant(String internedName) {
         IRubyObject result = getConstantInner(internedName);
 
@@ -272,18 +242,6 @@ public class StaticScope implements Serializable {
         if (previousCRefScope == null) return null;
 
         return getConstantInner(internedName);
-    }
-
-    public IRubyObject setConstant(String internedName, IRubyObject result) {
-        RubyModule module;
-
-        if ((module = getModule()) != null) {
-            module.setConstant(internedName, result);
-            return result;
-        }
-
-        // TODO: wire into new exception handling mechanism
-        throw result.getRuntime().newTypeError("no class/module to define constant");
     }
 
     /**
@@ -480,26 +438,6 @@ public class StaticScope implements Serializable {
         return cref;
     }
 
-    public int getOptionalArgs() {
-        return optionalArgs;
-    }
-
-    public int getRequiredArgs() {
-        return requiredArgs;
-    }
-
-    public void setRequiredArgs(int requiredArgs) {
-        this.requiredArgs = requiredArgs;
-    }
-
-    public boolean hasRestArg() {
-        return hasRest;
-    }
-
-    public void setHasRest(boolean hasRest) {
-        this.hasRest = hasRest;
-    }
-
     public boolean isBlockScope() {
         return isBlockOrEval;
     }
@@ -516,24 +454,19 @@ public class StaticScope implements Serializable {
         this.isArgumentScope = true;
     }
 
-    public Arity getArity() {
-        if (optionalArgs > 0) {
-            if (hasRest) {
-                return Arity.optional();
-            }
-            return Arity.required(requiredArgs);
-        } else {
-            if (hasRest) {
-                return Arity.optional();
-            }
-            return Arity.fixed(requiredArgs);
-        }
+    /**
+     * For all block or method associated with static scopes this will return the signature for that
+     * signature-providing scope.  module bodies and other non-arity specific code will return null.
+     */
+    public Signature getSignature() {
+        return signature;
     }
 
-    public void setArities(int required, int optional, boolean hasRest) {
-        this.requiredArgs = required;
-        this.optionalArgs = optional;
-        this.hasRest = hasRest;
+    /**
+     * This happens in when first defining ArgsNodes or when reifying a method from AOT.
+     */
+    public void setSignature(Signature signature) {
+        this.signature = signature;
     }
 
     public DynamicScope getDummyScope() {
@@ -565,6 +498,7 @@ public class StaticScope implements Serializable {
         dupe.setScopeType(scopeType);
         dupe.setPreviousCRefScope(previousCRefScope);
         dupe.setModule(cref);
+        dupe.setSignature(signature);
 
         return dupe;
     }

@@ -77,7 +77,7 @@ public class InterpreterContext {
     }
 
     public int getRequiredArgsCount() {
-        return getStaticScope().getRequiredArgs();
+        return getStaticScope().getSignature().required();
     }
 
     public IRScope getScope() {

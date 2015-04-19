@@ -23,7 +23,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
@@ -314,10 +313,11 @@ public class PopenExecutor {
     }
 
     static void execargSetenv(ThreadContext context, Ruby runtime, ExecArg eargp, IRubyObject env) {
-        eargp.env_modification = !env.isNil() ? checkExecEnv(context, runtime, (RubyHash)env) : null;
+        eargp.env_modification = !env.isNil() ? checkExecEnv(context, (RubyHash)env) : null;
     }
 
-    static RubyArray checkExecEnv(ThreadContext context, Ruby runtime, RubyHash hash) {
+    public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash) {
+        Ruby runtime = context.runtime;
         RubyArray env;
 
         env = runtime.newArray();
@@ -1769,7 +1769,7 @@ public class PopenExecutor {
         }
 
         if (!env.isNil()) {
-            eargp.env_modification = RubyIO.checkExecEnv(context, (RubyHash)env);
+            eargp.env_modification = checkExecEnv(context, (RubyHash) env);
         }
 
         prog = prog.export(context);

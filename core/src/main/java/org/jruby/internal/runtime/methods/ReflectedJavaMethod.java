@@ -51,6 +51,7 @@ public class ReflectedJavaMethod extends JavaMethod {
     private final int optional;
     private final boolean rest;
     private final int max;
+    protected final int arityValue;
     
     private final boolean argsAsIs;
 
@@ -68,6 +69,7 @@ public class ReflectedJavaMethod extends JavaMethod {
         
         Arity arity = Arity.fromAnnotation(annotation, params, this.isStatic);
         setArity(arity);
+        arityValue = arity.getValue();
 
         this.required = arity.getValue() >= 0 ? arity.getValue() : Math.abs(arity.getValue())-1;
         this.optional = annotation.optional();

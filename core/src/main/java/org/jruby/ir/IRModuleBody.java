@@ -15,10 +15,7 @@ public class IRModuleBody extends IRScope {
 
         if (!getManager().isDryRun()) {
             updateVersion();
-            if (staticScope != null) {
-                staticScope.setIRScope(this);
-                staticScope.setScopeType(this.getScopeType());
-            }
+            if (staticScope != null) staticScope.setIRScope(this);
         }
     }
 

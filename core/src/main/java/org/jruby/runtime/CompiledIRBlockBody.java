@@ -62,7 +62,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
         }
         this.evalType.set(EvalType.NONE);
 
-        if (usesKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, arity.required(), args);
+        if (usesKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, getSignature().required(), args);
 
         try {
             return (IRubyObject)handle.invokeExact(context, getStaticScope(), self, args, block, binding.getMethod(), type);

@@ -1,3 +1,2 @@
-fails:Method#to_proc returns a Proc object with the correct arity
 fails:Method#to_proc returns a proc that can be used by define_method
-fails:Method#to_proc returns a proc that can receive a block
+fails:Method#to_proc returns a Proc which does not depends on the value of self

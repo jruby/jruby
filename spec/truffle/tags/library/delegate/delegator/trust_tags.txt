@@ -1,0 +1,1 @@
+fails:Delegator#trust raises an ArgumentError for obsolete $SAFE=4

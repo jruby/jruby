@@ -48,6 +48,7 @@ import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
@@ -635,11 +636,18 @@ public final class ThreadContext {
         return getCurrentStaticScope().getConstant(internedName);
     }
 
-    private static void addBackTraceElement(Ruby runtime, RubyArray backtrace, RubyStackTraceElement element) {
-        RubyString str = RubyString.newString(runtime, element.mriStyleString());
-        backtrace.append(str);
+    /**
+     * Render the current backtrace as a string to the given StringBuilder. This will honor the currently-configured
+     * backtrace format and content.
+     *
+     * @param sb the StringBuilder to which to render the backtrace
+     */
+    public void renderCurrentBacktrace(StringBuilder sb) {
+        TraceType traceType = runtime.getInstanceConfig().getTraceType();
+        BacktraceData backtraceData = traceType.getBacktrace(this, false);
+        traceType.getFormat().renderBacktrace(backtraceData.getBacktrace(runtime), sb, false);
     }
-    
+
     /**
      * Create an Array with backtrace information for Kernel#caller
      * @param level
@@ -656,7 +664,8 @@ public final class ThreadContext {
         RubyArray newTrace = runtime.newArray(trace.length);
 
         for (int i = level; i - level < trace.length; i++) {
-            addBackTraceElement(runtime, newTrace, trace[i - level]);
+            RubyString str = RubyString.newString(runtime, trace[i - level].mriStyleString());
+            newTrace.append(str);
         }
         
         if (RubyInstanceConfig.LOG_CALLERS) TraceType.dumpCaller(newTrace);

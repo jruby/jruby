@@ -10,6 +10,24 @@ describe "Kernel#frozen?" do
     p.frozen?.should == true
   end
 
+  describe "on true, false and nil" do
+    ruby_version_is ""..."2.2" do
+      it "returns false" do
+        true.frozen?.should be_false
+        false.frozen?.should be_false
+        nil.frozen?.should be_false
+      end
+    end
+
+    ruby_version_is "2.2" do
+      it "returns true" do
+        true.frozen?.should be_true
+        false.frozen?.should be_true
+        nil.frozen?.should be_true
+      end
+    end
+  end
+
   describe "on integers" do
     before(:each) do
       @fixnum = 1

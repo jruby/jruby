@@ -52,6 +52,7 @@ import org.jruby.util.IdUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 @CoreClass(name = "Module")
 public abstract class ModuleNodes {
@@ -559,7 +560,7 @@ public abstract class ModuleNodes {
         private RubyNilClass autoload(RubyModule module, String name, RubyString filename) {
             if (invalidConstantName.profile(!IdUtil.isValidConstantName19(name))) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("autoload must be constant name: %s", name), this));
+                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("autoload must be constant name: %s", name), name, this));
             }
 
             if (emptyFilename.profile(emptyNode.empty(filename))) {
@@ -630,7 +631,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, UndefinedPlaceholder file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final Source source = Source.fromText(code.toString(), "(eval)");
@@ -638,7 +639,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final Source source = Source.asPseudoFile(code.toString(), file.toString());
@@ -646,7 +647,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") int line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, int line, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final Source source = Source.asPseudoFile(code.toString(), file.toString());
@@ -665,7 +666,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
+        public Object classEval(VirtualFrame frame, RubyModule self, UndefinedPlaceholder code, UndefinedPlaceholder file, UndefinedPlaceholder line, RubyProc block) {
             notDesignedForCompilation();
 
             return yield.dispatchWithModifiedSelf(frame, block, self);
@@ -787,6 +788,8 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "constants", optional = 1)
     public abstract static class ConstantsNode extends CoreMethodNode {
 
+        @Child BooleanCastNode booleanCastNode;
+
         public ConstantsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -795,8 +798,16 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
+        private boolean booleanCast(VirtualFrame frame, Object value) {
+            if (booleanCastNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                booleanCastNode = insert(BooleanCastNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            return booleanCastNode.executeBoolean(frame, value);
+        }
+
         @Specialization
-        public RubyArray constants(RubyModule module, UndefinedPlaceholder unused) {
+        public RubyArray constants(RubyModule module, UndefinedPlaceholder inherit) {
             return constants(module, true);
         }
 
@@ -804,19 +815,34 @@ public abstract class ModuleNodes {
         public RubyArray constants(RubyModule module, boolean inherit) {
             notDesignedForCompilation();
 
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final List<RubySymbol> constantsArray = new ArrayList<>();
 
-            // TODO(cs): handle inherit
-            for (String constant : module.getConstants().keySet()) {
-                array.slowPush(getContext().newSymbol(constant));
+            final Map<String, RubyConstant> constants;
+            if (inherit) {
+                constants = ModuleOperations.getAllConstants(module);
+            } else {
+                constants = module.getConstants();
             }
 
-            return array;
+            for (Entry<String, RubyConstant> constant : constants.entrySet()) {
+                if (!constant.getValue().isPrivate()) {
+                    constantsArray.add(getContext().newSymbol(constant.getKey()));
+                }
+            }
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), constantsArray.toArray(new Object[constantsArray.size()]));
         }
+
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
+        public RubyArray constants(VirtualFrame frame, RubyModule module, Object inherit) {
+            return constants(module, booleanCast(frame, inherit));
+        }
+
     }
 
     @CoreMethod(names = "const_defined?", required = 1, optional = 1)
-    public abstract static class ConstDefinedNode extends CoreMethodNode {
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("inherit") })
+    public abstract static class ConstDefinedNode extends RubyNode {
 
         public ConstDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -826,35 +852,27 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization
-        public boolean isConstDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
-            notDesignedForCompilation();
-
-            return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
-        public boolean isConstDefined(RubyModule module, RubyString name, boolean inherit) {
-            notDesignedForCompilation();
-
-            if (inherit) {
-                return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
-            } else {
-                return module.getConstants().containsKey(name.toString());
-            }
+        public boolean isConstDefined(RubyModule module, String name, UndefinedPlaceholder inherit) {
+            return isConstDefined(module, name, true);
         }
 
         @Specialization
-        public boolean isConstDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
+        public boolean isConstDefined(RubyModule module, String fullName, boolean inherit) {
             notDesignedForCompilation();
-
-            return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
+            return ModuleOperations.lookupScopedConstant(getContext(), module, fullName, inherit, this) != null;
         }
 
     }
 
-    @CoreMethod(names = "const_get", required = 1)
-    public abstract static class ConstGetNode extends CoreMethodNode {
+    @CoreMethod(names = "const_get", required = 1, optional = 1)
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("inherit") })
+    public abstract static class ConstGetNode extends RubyNode {
 
         @Child private DispatchHeadNode dispatch;
 
@@ -868,29 +886,62 @@ public abstract class ModuleNodes {
             dispatch = prev.dispatch;
         }
 
-        @Specialization
-        public Object getConstant(VirtualFrame frame, RubyModule module, RubyString name) {
-            notDesignedForCompilation();
-
-            return dispatch.dispatch(
-                    frame,
-                    module,
-                    name,
-                    null,
-                    new Object[]{});
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
         }
 
-        @Specialization
-        public Object getConstant(VirtualFrame frame, RubyModule module, RubySymbol name) {
+        @Specialization(guards = "!isScoped(name)")
+        public Object getConstant(VirtualFrame frame, RubyModule module, String name, UndefinedPlaceholder inherit) {
+            return getConstant(frame, module, name, true);
+        }
+
+        @Specialization(guards = "isScoped(name)")
+        public Object getConstantScoped(VirtualFrame frame, RubyModule module, String name, UndefinedPlaceholder inherit) {
+            return getConstantScoped(frame, module, name, true);
+        }
+
+        @Specialization(guards = { "isTrue(inherit)", "!isScoped(name)" })
+        public Object getConstant(VirtualFrame frame, RubyModule module, String name, boolean inherit) {
+            return dispatch.dispatch(frame, module, name, null, new Object[] {});
+        }
+
+        @Specialization(guards = { "!isTrue(inherit)", "!isScoped(name)" })
+        public Object getConstantNoInherit(VirtualFrame frame, RubyModule module, String name, boolean inherit) {
             notDesignedForCompilation();
 
-            return dispatch.dispatch(
-                    frame,
-                    module,
-                    name,
-                    null,
-                    new Object[]{});
+            RubyConstant constant = module.getConstants().get(name);
+            if (constant == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(module, name, this));
+            } else {
+                return constant.getValue();
+            }
         }
+
+        @Specialization(guards = "isScoped(name)")
+        public Object getConstantScoped(VirtualFrame frame, RubyModule module, String fullName, boolean inherit) {
+            notDesignedForCompilation();
+
+            Object fullNameObject = RubyArguments.getUserArgument(frame.getArguments(), 0);
+            if (fullNameObject instanceof RubySymbol && !IdUtil.isValidConstantName19(fullName)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", fullName), fullName, this));
+            }
+
+            RubyConstant constant = ModuleOperations.lookupScopedConstant(getContext(), module, fullName, inherit, this);
+            if (constant == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(module, fullName, this));
+            } else {
+                return constant.getValue();
+            }
+        }
+
+        boolean isScoped(String name) {
+            return name.contains("::");
+        }
+
     }
 
     @CoreMethod(names = "const_missing", required = 1)
@@ -933,7 +984,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             if (!IdUtil.isValidConstantName19(name)) {
-                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), this));
+                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
             }
 
             module.setConstant(this, name, value);
@@ -957,6 +1008,12 @@ public abstract class ModuleNodes {
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
             return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+        }
+
+        @Specialization
+        public RubySymbol defineMethod(RubyModule module, String name, UndefinedPlaceholder proc, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("needs either proc or block", this));
         }
 
         @Specialization
@@ -984,8 +1041,10 @@ public abstract class ModuleNodes {
         public RubySymbol defineMethod(VirtualFrame frame, RubyModule module, String name, RubyUnboundMethod method, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            if (module instanceof RubyClass && !ModuleOperations.assignableTo((RubyClass) module, method.getOrigin())) {
-                ruby(frame, "raise TypeError, 'bind argument must be a subclass of " + method.getOrigin().getName() + "'");
+            RubyModule origin = method.getOrigin();
+            if (!ModuleOperations.canBindMethodTo(origin, module)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be a subclass of " + origin.getName(), this));
             }
 
             // TODO CS 5-Apr-15 TypeError if the method came from a singleton
@@ -1190,8 +1249,36 @@ public abstract class ModuleNodes {
 
     }
 
+    @CoreMethod(names = "included_modules")
+    public abstract static class IncludedModulesNode extends CoreMethodNode {
+
+        public IncludedModulesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IncludedModulesNode(IncludedModulesNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        RubyArray includedModules(RubyModule module) {
+            notDesignedForCompilation();
+
+            final List<RubyModule> modules = new ArrayList<>();
+
+            for (RubyModule included : module.parentAncestors()) {
+                if (included.isOnlyAModule()) {
+                    modules.add(included);
+                }
+            }
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
+        }
+    }
+
     @CoreMethod(names = "method_defined?", required = 1, optional = 1)
-    public abstract static class MethodDefinedNode extends CoreMethodNode {
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("inherit") })
+    public abstract static class MethodDefinedNode extends RubyNode {
 
         public MethodDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1201,30 +1288,30 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization
-        public boolean isMethodDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
-            notDesignedForCompilation();
-
-            return ModuleOperations.lookupMethod(module, name.toString()) != null;
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
-        public boolean isMethodDefined(RubyModule module, RubyString name, boolean inherit) {
+        public boolean isMethodDefined(RubyModule module, String name, UndefinedPlaceholder inherit) {
+            return isMethodDefined(module, name, true);
+        }
+
+        @Specialization
+        public boolean isMethodDefined(RubyModule module, String name, boolean inherit) {
             notDesignedForCompilation();
 
+            final InternalMethod method;
             if (inherit) {
-                return ModuleOperations.lookupMethod(module, name.toString()) != null;
+                method = ModuleOperations.lookupMethod(module, name);
             } else {
-                return module.getMethods().containsKey(name.toString());
+                method = module.getMethods().get(name);
             }
+
+            return method != null && !method.getVisibility().isPrivate();
         }
 
-        @Specialization
-        public boolean isMethodDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
-            notDesignedForCompilation();
-
-            return ModuleOperations.lookupMethod(module, name.toString()) != null;
-        }
     }
 
     @CoreMethod(names = "module_function", argumentsAsArray = true)
@@ -1425,6 +1512,33 @@ public abstract class ModuleNodes {
         }
     }
 
+    @CoreMethod(names = "private_method_defined?", required = 1)
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+    public abstract static class PrivateMethodDefinedNode extends RubyNode {
+
+        public PrivateMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PrivateMethodDefinedNode(PrivateMethodDefinedNode prev) {
+            super(prev);
+        }
+
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+        }
+
+        @Specialization
+        public boolean isPrivateMethodDefined(RubyModule module, String name) {
+            notDesignedForCompilation();
+
+            InternalMethod method = ModuleOperations.lookupMethod(module, name);
+            return method != null && method.getVisibility().isPrivate();
+        }
+
+    }
+
     @CoreMethod(names = "protected_instance_methods", optional = 1)
     public abstract static class ProtectedInstanceMethodsNode extends CoreMethodNode {
 
@@ -1456,6 +1570,33 @@ public abstract class ModuleNodes {
 
                     }).toArray());
         }
+    }
+
+    @CoreMethod(names = "protected_method_defined?", required = 1)
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+    public abstract static class ProtectedMethodDefinedNode extends RubyNode {
+
+        public ProtectedMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ProtectedMethodDefinedNode(ProtectedMethodDefinedNode prev) {
+            super(prev);
+        }
+
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+        }
+
+        @Specialization
+        public boolean isProtectedMethodDefined(RubyModule module, String name) {
+            notDesignedForCompilation();
+
+            InternalMethod method = ModuleOperations.lookupMethod(module, name);
+            return method != null && method.getVisibility().isProtected();
+        }
+
     }
 
     @CoreMethod(names = "private_instance_methods", optional = 1)
@@ -1490,6 +1631,43 @@ public abstract class ModuleNodes {
         }
     }
 
+    @CoreMethod(names = "public_instance_method", required = 1)
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+    public abstract static class PublicInstanceMethodNode extends RubyNode {
+
+        public PublicInstanceMethodNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PublicInstanceMethodNode(PublicInstanceMethodNode prev) {
+            super(prev);
+        }
+
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+        }
+
+        @Specialization
+        public RubyUnboundMethod publicInstanceMethod(RubyModule module, String name) {
+            notDesignedForCompilation();
+
+            // TODO(CS, 11-Jan-15) cache this lookup
+            final InternalMethod method = ModuleOperations.lookupMethod(module, name);
+
+            if (method == null || method.isUndefined()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(name, module, this));
+            } else if (method.getVisibility() != Visibility.PUBLIC) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateMethod(name, module, this));
+            }
+
+            return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), module, method);
+        }
+
+    }
+
     @CoreMethod(names = "public_instance_methods", optional = 1)
     public abstract static class PublicInstanceMethodsNode extends CoreMethodNode {
 
@@ -1520,6 +1698,33 @@ public abstract class ModuleNodes {
 
                     }).toArray());
         }
+    }
+
+    @CoreMethod(names = "public_method_defined?", required = 1)
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+    public abstract static class PublicMethodDefinedNode extends RubyNode {
+
+        public PublicMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PublicMethodDefinedNode(PublicMethodDefinedNode prev) {
+            super(prev);
+        }
+
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+        }
+
+        @Specialization
+        public boolean isPublicMethodDefined(RubyModule module, String name) {
+            notDesignedForCompilation();
+
+            InternalMethod method = ModuleOperations.lookupMethod(module, name);
+            return method != null && method.getVisibility() == Visibility.PUBLIC;
+        }
+
     }
 
     @CoreMethod(names = "instance_methods", optional = 1)
@@ -1565,7 +1770,8 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "instance_method", required = 1)
-    public abstract static class InstanceMethodNode extends CoreMethodNode {
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+    public abstract static class InstanceMethodNode extends RubyNode {
 
         public InstanceMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1575,16 +1781,21 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+        }
+
         @Specialization
-        public RubyUnboundMethod instanceMethod(RubyModule module, RubySymbol name) {
+        public RubyUnboundMethod instanceMethod(RubyModule module, String name) {
             notDesignedForCompilation();
 
             // TODO(CS, 11-Jan-15) cache this lookup
+            final InternalMethod method = ModuleOperations.lookupMethod(module, name);
 
-            final InternalMethod method = ModuleOperations.lookupMethod(module, name.toString());
-
-            if (method == null) {
-                throw new UnsupportedOperationException();
+            if (method == null || method.isUndefined()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(name, module, this));
             }
 
             return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), module, method);

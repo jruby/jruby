@@ -28,6 +28,14 @@ public class TraceType {
         this.format = format;
     }
 
+    public Gather getGather() {
+        return gather;
+    }
+
+    public Format getFormat() {
+        return format;
+    }
+
     /**
      * Get a normal Ruby backtrace, using the current Gather type.
      *
@@ -214,6 +222,10 @@ public class TraceType {
             public String printBacktrace(RubyException exception, boolean console) {
                 return printBacktraceMRI(exception, console);
             }
+
+            public void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color) {
+                renderBacktraceMRI(elts, buffer, color);
+            }
         },
 
         /**
@@ -223,9 +235,14 @@ public class TraceType {
             public String printBacktrace(RubyException exception, boolean console) {
                 return printBacktraceJRuby(exception, console);
             }
+
+            public void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color) {
+                renderBacktraceJRuby(elts, buffer, color);
+            }
         };
 
         public abstract String printBacktrace(RubyException exception, boolean console);
+        public abstract void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color);
     }
 
     protected static String printBacktraceMRI(RubyException exception, boolean console) {
@@ -304,16 +321,9 @@ public class TraceType {
 
     protected static String printBacktraceJRuby(RubyException exception, boolean console) {
         Ruby runtime = exception.getRuntime();
-        RubyStackTraceElement[] frames = exception.getBacktraceElements();
-        if (frames == null) frames = new RubyStackTraceElement[0];
-
-        // find longest method name
-        int longestMethod = 0;
-        for (RubyStackTraceElement frame : frames) {
-            longestMethod = Math.max(longestMethod, frame.getMethodName().length());
-        }
 
         StringBuilder buffer = new StringBuilder();
+        boolean color = console && runtime.getInstanceConfig().getBacktraceColor();
 
         // exception line
         String message = exception.message(runtime.getCurrentContext()).toString();
@@ -325,8 +335,21 @@ public class TraceType {
                 .append(": ")
                 .append(message)
                 .append('\n');
-        
-        boolean color = console && runtime.getInstanceConfig().getBacktraceColor();
+
+        RubyStackTraceElement[] frames = exception.getBacktraceElements();
+        if (frames == null) frames = RubyStackTraceElement.EMPTY_ARRAY;
+        renderBacktraceJRuby(frames, buffer, color);
+
+
+        return buffer.toString();
+    }
+
+    private static void renderBacktraceJRuby(RubyStackTraceElement[] frames, StringBuilder buffer, boolean color) {
+        // find longest method name
+        int longestMethod = 0;
+        for (RubyStackTraceElement frame : frames) {
+            longestMethod = Math.max(longestMethod, frame.getMethodName().length());
+        }
 
         // backtrace lines
         boolean first = true;
@@ -341,7 +364,7 @@ public class TraceType {
                 }
                 first = false;
             }
-            
+
             buffer.append("  ");
 
             // method name
@@ -355,16 +378,28 @@ public class TraceType {
                     .append(frame.getFileName())
                     .append(':')
                     .append(frame.getLineNumber());
-            
+
             if (color) {
                 buffer.append(CLEAR_COLOR);
             }
-            
+
             buffer
                     .append('\n');
         }
+    }
 
-        return buffer.toString();
+    private static void renderBacktraceMRI(RubyStackTraceElement[] trace, StringBuilder buffer, boolean color) {
+        for (int i = 0; i < trace.length; i++) {
+            RubyStackTraceElement element = trace[i];
+
+            buffer
+                    .append(element.getFileName())
+                    .append(':')
+                    .append(element.getLineNumber())
+                    .append(":in `")
+                    .append(element.getMethodName())
+                    .append("'\n");
+        }
     }
 
     public static IRubyObject generateMRIBacktrace(Ruby runtime, RubyStackTraceElement[] trace) {

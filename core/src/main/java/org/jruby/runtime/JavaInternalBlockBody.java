@@ -13,27 +13,25 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Represents a special Java implementation of a block.
  */
 public abstract class JavaInternalBlockBody extends BlockBody {
-    private final Arity arity;
+    private final Signature signature;
     private final ThreadContext originalContext;
     private final String methodName;
     private final StaticScope dummyScope;
-    
+
     /**
      * For blocks which can be executed in any thread concurrently.
      */
-    public JavaInternalBlockBody(Ruby runtime, Arity arity) {
-        this(runtime, null, null, arity);
+    public JavaInternalBlockBody(Ruby runtime, Signature signature) {
+        this(runtime, null, null, signature);
     }
 
     /**
      * For blocks which cannot be executed in parallel.
-     * @param methodName
-     * @param arity 
      */
-    public JavaInternalBlockBody(Ruby runtime, ThreadContext originalContext, String methodName, Arity arity) {
+    public JavaInternalBlockBody(Ruby runtime, ThreadContext originalContext, String methodName, Signature signature) {
         super(BlockBody.SINGLE_RESTARG);
         
-        this.arity = arity;
+        this.signature = signature;
         this.originalContext = originalContext;
         this.methodName = methodName;
         this.dummyScope = runtime.getStaticScopeFactory().getDummyScope();
@@ -82,9 +80,13 @@ public abstract class JavaInternalBlockBody extends BlockBody {
     public void setStaticScope(StaticScope newScope) {
     }
 
+    public Signature getSignature() {
+        return signature;
+    }
+
     @Override
     public Arity arity() {
-        return arity;
+        return signature.arity();
     }
 
     @Override

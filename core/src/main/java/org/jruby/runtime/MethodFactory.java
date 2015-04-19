@@ -134,7 +134,6 @@ public abstract class MethodFactory {
      * @param implementationClass The class to which the method will be bound.
      * @param rubyName The Ruby method name to which the method will bind
      * @param javaName The name of the method
-     * @param arity The Arity of the method
      * @param visibility The method's visibility on the target type.
      * @param scope The methods static scoping information.
      * @param scriptObject An instace of the target compiled method class.
@@ -144,7 +143,7 @@ public abstract class MethodFactory {
      */
     public abstract DynamicMethod getCompiledMethod(
             RubyModule implementationClass, String rubyName, String javaName,
-            Arity arity, Visibility visibility, StaticScope scope,
+            Visibility visibility, StaticScope scope,
             Object scriptObject, CallConfiguration callConfig,
             ISourcePosition position, String parameterDesc,
             MethodNodes methodNodes);
@@ -159,15 +158,15 @@ public abstract class MethodFactory {
      * @param javaName The name of the method
      * @param classPath The path-like (with / instead of .) name of the class
      * @param invokerPath The path-line name of the invoker to generate
-     * @param arity The Arity of the method
      * @param scope The methods static scoping information.
      * @param callConfig The call configuration to use for this method.
-     * @param position The position to use when generating traceable handles.
+     * @param filename The position to use when generating traceable handles.
+     * @param line The position to use when generating traceable handles.
      * @return
      */
     public byte[] getCompiledMethodOffline(
             String rubyName, String javaName, String classPath, String invokerPath,
-            Arity arity, StaticScope scope,
+            StaticScope scope,
             CallConfiguration callConfig, String filename, int line,
             MethodNodes methodNodes) {
         return null;
@@ -183,7 +182,6 @@ public abstract class MethodFactory {
      * @param implementationClass The class to which the method will be bound.
      * @param rubyName The Ruby method name to which the method will bind
      * @param javaName The name of the method
-     * @param arity The Arity of the method
      * @param visibility The method's visibility on the target type.
      * @param scope The methods static scoping information.
      * @param scriptObject An instace of the target compiled method class.
@@ -192,7 +190,7 @@ public abstract class MethodFactory {
      */
     public abstract DynamicMethod getCompiledMethodLazily(
             RubyModule implementationClass, String rubyName, String javaName,
-            Arity arity, Visibility visibility, StaticScope scope,
+            Visibility visibility, StaticScope scope,
             Object scriptObject, CallConfiguration callConfig,
             ISourcePosition position, String parameterDesc, MethodNodes methodNodes);
 
@@ -205,7 +203,6 @@ public abstract class MethodFactory {
      *
      * @param implementationClass The target class or module on which the method
      * will be bound.
-     * @param descs A list of JavaMethodDescriptors describing the target methods
      * @return A method handle for the target object.
      */
     public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> desc);

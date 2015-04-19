@@ -61,6 +61,9 @@ public abstract class BlockBody {
         this.argumentType = argumentType;
     }
 
+    // FIXME: Push all impls down so this is single concrete impl
+    public abstract Signature getSignature();
+
     public void setEvalType(EvalType evalType) {
         System.err.println("setEvalType unimplemented in " + this.getClass().getName());
     }

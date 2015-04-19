@@ -54,10 +54,7 @@ public abstract class DirPrimitiveNodes {
             final String[] contents = new File(path.toString()).list();
 
             if (contents == null) {
-                throw new RaiseException(new RubyException(
-                        getContext().getCoreLibrary().getEnoentClass(),
-                        getContext().makeString("No such file or directory @ dir_initialize - " + path.toString()),
-                        RubyCallStack.getBacktrace(this)));
+                throw new RaiseException(getContext().getCoreLibrary().fileNotFoundError(path.toString(), this));
             }
 
             writeContentsNode.execute(dir, contents);

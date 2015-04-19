@@ -3,3 +3,4 @@ windows:Encoding.default_external with command line options returns the encoding
 slow:Encoding.default_external with command line options is not changed by the -U option
 slow:Encoding.default_external with command line options returns the encoding specified by '-E external'
 slow:Encoding.default_external with command line options returns the encoding specified by '-E external:'
+fails:Encoding.default_external with command line options is not changed by the -U option

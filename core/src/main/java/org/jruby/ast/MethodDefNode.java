@@ -34,6 +34,7 @@ package org.jruby.ast;
 import org.jruby.ast.types.INameNode;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Signature;
 
 public abstract class MethodDefNode extends Node implements INameNode {
 	protected final ArgumentNode nameNode;
@@ -43,17 +44,14 @@ public abstract class MethodDefNode extends Node implements INameNode {
 
 	public MethodDefNode(ISourcePosition position, ArgumentNode nameNode, ArgsNode argsNode, 
 	        StaticScope scope, Node bodyNode) {
-            super(position, argsNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
+        super(position, argsNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
 
-            assert bodyNode != null : "bodyNode must not be null";
+        assert bodyNode != null : "bodyNode must not be null";
             
-            this.nameNode = nameNode;
-            this.argsNode = argsNode;
-            this.scope = scope;
-            this.bodyNode = bodyNode;
-
-            // store argument count information into scope
-            scope.setArities(argsNode.getRequiredArgsCount() + argsNode.getRequiredKeywordCount(), argsNode.getOptionalArgsCount(), argsNode.hasRestArg());
+        this.nameNode = nameNode;
+        this.argsNode = argsNode;
+        this.scope = scope;
+        this.bodyNode = bodyNode;
 	}
 
 

@@ -57,7 +57,7 @@ import org.jruby.util.log.LoggerFactory;
  * typically slower than code-generated handles, but it does provide a simple
  * mechanism for binding in environments where code-generation isn't supported.
  * 
- * @see org.jruby.internal.runtime.methods.MethodFactory
+ * @see org.jruby.runtime.MethodFactory
  */
 public class ReflectionMethodFactory extends MethodFactory {
     private static final Logger LOG = LoggerFactory.getLogger("ReflectionMethodFactory");
@@ -65,10 +65,10 @@ public class ReflectionMethodFactory extends MethodFactory {
     /**
      * Use reflection to provide a method handle for a compiled Ruby method.
      * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
+     * @see org.jruby.runtime.MethodFactory#getCompiledMethod
      */
     public DynamicMethod getCompiledMethodLazily(RubyModule implementationClass,
-            String rubyName, String javaName, Arity arity, Visibility visibility, 
+            String rubyName, String javaName, Visibility visibility,
             StaticScope scope, Object scriptObject, CallConfiguration callConfig,
             ISourcePosition position, String parameterDesc,
             MethodNodes methodNodes) {
@@ -77,7 +77,6 @@ public class ReflectionMethodFactory extends MethodFactory {
                 implementationClass,
                 rubyName,
                 javaName,
-                arity,
                 visibility,
                 scope,
                 scriptObject,
@@ -90,10 +89,10 @@ public class ReflectionMethodFactory extends MethodFactory {
     /**
      * Use reflection to provide a method handle for a compiled Ruby method.
      * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
+     * @see org.jruby.runtime.MethodFactory#getCompiledMethod
      */
     public DynamicMethod getCompiledMethod(RubyModule implementationClass,
-            String rubyName, String javaName, Arity arity, Visibility visibility, 
+            String rubyName, String javaName, Visibility visibility,
             StaticScope scope, Object scriptObject, CallConfiguration callConfig,
             ISourcePosition position, String parameterDesc,
             MethodNodes methodNodes) {
@@ -102,7 +101,6 @@ public class ReflectionMethodFactory extends MethodFactory {
             Method method = scriptClass.getMethod(javaName, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
             return new ReflectedCompiledMethod(
                     implementationClass,
-                    arity,
                     visibility,
                     scope,
                     scriptObject,
@@ -119,7 +117,7 @@ public class ReflectionMethodFactory extends MethodFactory {
      * Use reflection to provide a method handle based on an annotated Java
      * method.
      * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
+     * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
         try {
@@ -148,7 +146,7 @@ public class ReflectionMethodFactory extends MethodFactory {
      * Use reflection to provide a method handle based on an annotated Java
      * method.
      * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
+     * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> descs) {
         try {

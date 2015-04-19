@@ -18,7 +18,6 @@ public class IRScriptBody extends IRScope {
         this.toplevelScope = null;
         if (!getManager().isDryRun() && staticScope != null) {
             staticScope.setIRScope(this);
-            staticScope.setScopeType(this.getScopeType());
         }
     }
 

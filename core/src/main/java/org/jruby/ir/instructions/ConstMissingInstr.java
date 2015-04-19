@@ -48,7 +48,7 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
     }
 
     public static ConstMissingInstr decode(IRReaderDecoder d) {
-        return new ConstMissingInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.decodeBoolean());
+        return new ConstMissingInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override

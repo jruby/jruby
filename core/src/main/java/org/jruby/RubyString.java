@@ -240,18 +240,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private void copyCodeRangeForSubstr(RubyString from, Encoding enc) {
-        int fromCr = from.getCodeRange();
-        if (fromCr == CR_7BIT) {
-            setCodeRange(fromCr);
-        } else if (fromCr == CR_VALID) {
-            if (!enc.isAsciiCompatible() || searchNonAscii(value) != -1) {
-                setCodeRange(CR_VALID);
+
+        if (value.getRealSize() == 0) {
+            setCodeRange(!enc.isAsciiCompatible() ? CR_VALID : CR_7BIT);
+        } else {
+            int fromCr = from.getCodeRange();
+            if (fromCr == CR_7BIT) {
+                setCodeRange(fromCr);
             } else {
-                setCodeRange(CR_7BIT);
-            }
-        } else{
-            if (value.getRealSize() == 0) {
-                setCodeRange(!enc.isAsciiCompatible() ? CR_VALID : CR_7BIT);
+                setCodeRange(CR_UNKNOWN);
             }
         }
     }
@@ -476,6 +473,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     public static RubyString newString(Ruby runtime, ByteList bytes) {
         return new RubyString(runtime, runtime.getString(), bytes);
+    }
+
+    public static RubyString newString(Ruby runtime, ByteList bytes, int coderange) {
+        return new RubyString(runtime, runtime.getString(), bytes, coderange);
     }
 
     public static RubyString newString(Ruby runtime, ByteList bytes, Encoding encoding) {

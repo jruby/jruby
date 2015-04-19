@@ -1,0 +1,2 @@
+fails:Time.rfc822 parses RFC-822 strings
+fails:Time.rfc822 parses RFC-2822 strings

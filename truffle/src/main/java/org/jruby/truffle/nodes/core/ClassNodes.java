@@ -58,8 +58,6 @@ public abstract class ClassNodes {
 
         @Child private AllocateNode allocateNode;
         @Child private CallDispatchHeadNode initialize;
-        @CompilerDirectives.CompilationFinal private boolean isCached = true;
-        @CompilerDirectives.CompilationFinal private RubyClass cachedClass;
 
         public NewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -73,8 +71,10 @@ public abstract class ClassNodes {
             initialize = prev.initialize;
         }
 
+        public abstract RubyBasicObject executeNew(VirtualFrame frame, RubyClass rubyClass, Object[] args, Object block);
+
         @Specialization
-        public RubyBasicObject newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public RubyBasicObject newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, UndefinedPlaceholder block) {
             return doNewInstance(frame, rubyClass, args, null);
         }
 

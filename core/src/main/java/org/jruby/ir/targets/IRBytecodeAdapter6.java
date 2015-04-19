@@ -85,10 +85,11 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         });
     }
 
-    public void pushString(ByteList bl) {
+    public void pushString(ByteList bl, int cr) {
         loadRuntime();
         pushByteList(bl);
-        adapter.invokestatic(p(RubyString.class), "newStringShared", sig(RubyString.class, Ruby.class, ByteList.class));
+        adapter.ldc(cr);
+        adapter.invokestatic(p(RubyString.class), "newStringShared", sig(RubyString.class, Ruby.class, ByteList.class, int.class));
     }
 
     private String newFieldName(String baseName) {
@@ -100,14 +101,15 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
      *
      * @param bl ByteList for the String to push
      */
-    public void pushFrozenString(final ByteList bl) {
+    public void pushFrozenString(final ByteList bl, final int cr) {
         cacheValuePermanently("fstring", RubyString.class, keyFor("fstring", bl), new Runnable() {
             @Override
             public void run() {
                 loadRuntime();
                 adapter.ldc(bl.toString());
                 adapter.ldc(bl.getEncoding().toString());
-                invokeIRHelper("newFrozenStringFromRaw", sig(RubyString.class, Ruby.class, String.class, String.class));
+                adapter.ldc(cr);
+                invokeIRHelper("newFrozenStringFromRaw", sig(RubyString.class, Ruby.class, String.class, String.class, int.class));
             }
         });
     }

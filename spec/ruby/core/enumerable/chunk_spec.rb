@@ -51,22 +51,24 @@ describe "Enumerable#chunk" do
     lambda { e.chunk { |x| :_arbitrary }.to_a }.should raise_error(RuntimeError)
   end
 
-  describe "with [initial_state]" do
-    it "yields an element and an object value-equal but not identical to the object passed to #chunk" do
-      e = EnumerableSpecs::Numerous.new(1)
-      value = "value"
+  ruby_version_is ""..."2.3" do
+    describe "with [initial_state]" do
+      it "yields an element and an object value-equal but not identical to the object passed to #chunk" do
+        e = EnumerableSpecs::Numerous.new(1)
+        value = "value"
 
-      e.chunk(value) do |x, v|
-        x.should == 1
-        v.should == value
-        v.should_not equal(value)
-      end.to_a
-    end
+        e.chunk(value) do |x, v|
+          x.should == 1
+          v.should == value
+          v.should_not equal(value)
+        end.to_a
+      end
 
-    it "does not yield the object passed to #chunk if it is nil" do
-      e = EnumerableSpecs::Numerous.new(1)
-      e.chunk(nil) { |*x| ScratchPad << x }.to_a
-      ScratchPad.recorded.should == [[1]]
+      it "does not yield the object passed to #chunk if it is nil" do
+        e = EnumerableSpecs::Numerous.new(1)
+        e.chunk(nil) { |*x| ScratchPad << x }.to_a
+        ScratchPad.recorded.should == [[1]]
+      end
     end
   end
 end

@@ -433,8 +433,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public int div(@SuppressWarnings("unused") int a, @SuppressWarnings("unused") RubyBignum b) {
-            // TODO(CS): not entirely sure this is correct
+        public int div(int a, RubyBignum b) {
             return 0;
         }
 
@@ -517,7 +516,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public int div(@SuppressWarnings("unused") long a, @SuppressWarnings("unused") RubyBignum b) {
+        public int div(long a, RubyBignum b) {
             // TODO(CS): not entirely sure this is correct
             return 0;
         }

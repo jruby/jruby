@@ -103,7 +103,7 @@ public abstract class MethodNodes {
         }
 
         @Specialization
-        public Object call(VirtualFrame frame, RubyMethod method, Object[] arguments, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public Object call(VirtualFrame frame, RubyMethod method, Object[] arguments, UndefinedPlaceholder block) {
             return doCall(frame, method, arguments, null);
         }
 
@@ -229,6 +229,34 @@ public abstract class MethodNodes {
 
             RubyClass receiverClass = classNode.executeGetClass(method.getReceiver());
             return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), receiverClass, method.getMethod());
+        }
+
+    }
+
+    @CoreMethod(names = "to_proc")
+    public abstract static class ToProcNode extends CoreMethodNode {
+
+        public ToProcNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToProcNode(ToProcNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyProc toProc(RubyMethod method) {
+            return new RubyProc(
+                    getContext().getCoreLibrary().getProcClass(),
+                    RubyProc.Type.LAMBDA,
+                    method.getMethod().getSharedMethodInfo(),
+                    method.getMethod().getCallTarget(),
+                    method.getMethod().getCallTarget(),
+                    method.getMethod().getCallTarget(),
+                    method.getMethod().getDeclarationFrame(),
+                    method.getMethod(),
+                    method.getReceiver(),
+                    null);
         }
 
     }

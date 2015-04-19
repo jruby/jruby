@@ -64,13 +64,15 @@ module JRuby
 
     def compile_ir(content = nil, filename = (default_filename = true; '-'), extra_position_info = false, &block)
       runtime = JRuby.runtime
+      manager = org.jruby.ir.IRManager.new(runtime.instance_config)
+      manager.dry_run = true
       node = if default_filename
                parse(content, &block)
              else
                parse(content, filename, extra_position_info, &block)
              end
 
-      scope = org.jruby.ir.IRBuilder.build_root(runtime.getIRManager(), node).scope
+      scope = org.jruby.ir.IRBuilder.build_root(manager, node).scope
       scope.top_level_binding_scope = node.scope
 
       scope

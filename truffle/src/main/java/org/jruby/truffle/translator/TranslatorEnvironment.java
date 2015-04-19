@@ -37,7 +37,6 @@ public class TranslatorEnvironment {
 
     private final List<FrameSlot> flipFlopStates = new ArrayList<>();
 
-    private TranslatorDriver parser;
     private final long returnID;
     private final boolean isBlock;
 
@@ -55,24 +54,29 @@ public class TranslatorEnvironment {
 
     public boolean hasRestParameter = false;
 
-    public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, FrameDescriptor frameDescriptor, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments,
+    public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, FrameDescriptor frameDescriptor, ParseEnvironment parseEnvironment, long returnID, boolean ownScopeForAssignments,
                     boolean neverAssignInParentScope, SharedMethodInfo sharedMethodInfo, String namedMethodName, boolean isBlock) {
         this.context = context;
         this.parent = parent;
         this.frameDescriptor = frameDescriptor;
-        this.parser = parser;
+        this.parseEnvironment = parseEnvironment;
         this.returnID = returnID;
         this.ownScopeForAssignments = ownScopeForAssignments;
         this.neverAssignInParentScope = neverAssignInParentScope;
         this.sharedMethodInfo = sharedMethodInfo;
         this.namedMethodName = namedMethodName;
         this.isBlock = isBlock;
-        this.parseEnvironment = (parent != null ? parent.parseEnvironment : new ParseEnvironment(context));
     }
 
-    public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
+    public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, ParseEnvironment parseEnvironment, long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
                     SharedMethodInfo methodIdentifier, String namedMethodName, boolean isBlock) {
-        this(context, parent, new FrameDescriptor(context.getCoreLibrary().getNilObject()), parser, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName, isBlock);
+        this(context, parent, new FrameDescriptor(context.getCoreLibrary().getNilObject()), parseEnvironment, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier,
+                namedMethodName, isBlock);
+    }
+
+    public static TranslatorEnvironment newRootEnvironment(RubyContext context, FrameDescriptor frameDescriptor, ParseEnvironment parseEnvironment, long returnID, boolean ownScopeForAssignments,
+            boolean neverAssignInParentScope, SharedMethodInfo sharedMethodInfo, String namedMethodName, boolean isBlock) {
+        return new TranslatorEnvironment(context, null, frameDescriptor, parseEnvironment, returnID, ownScopeForAssignments, neverAssignInParentScope, sharedMethodInfo, namedMethodName, isBlock);
     }
 
     public LexicalScope getLexicalScope() {
@@ -189,8 +193,8 @@ public class TranslatorEnvironment {
         return returnID;
     }
 
-    public TranslatorDriver getParser() {
-        return parser;
+    public ParseEnvironment getParseEnvironment() {
+        return parseEnvironment;
     }
 
     public boolean hasOwnScopeForAssignments() {

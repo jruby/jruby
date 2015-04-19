@@ -32,6 +32,11 @@ module Rubinius
     raise PrimitiveFailure, "Rubinius.vm_watch_signal primitive failed" # Truffle: simplified failure
   end
 
+  def self.raise_exception(exc)
+    Rubinius.primitive :vm_raise_exception
+    raise PrimitiveFailure, "Rubinius.vm_raise_exception primitive failed"
+  end
+
   def self.throw(dest, obj)
     Rubinius.primitive :vm_throw
     raise PrimitiveFailure, "Rubinius.throw primitive failed"
@@ -40,5 +45,17 @@ module Rubinius
   def self.catch(dest, obj)
     Rubinius.primitive :vm_catch
     raise PrimitiveFailure, "Rubinius.catch primitive failed"
+  end
+
+  module Unsafe
+    def self.set_class(obj, cls)
+      Rubinius.primitive :vm_set_class
+
+      if obj.kind_of? ImmediateValue
+        raise TypeError, "Can not change the class of an immediate"
+      end
+
+      raise ArgumentError, "Class #{cls} is not compatible with #{obj.inspect}"
+    end
   end
 end

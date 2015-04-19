@@ -214,22 +214,23 @@ public class ArgsNode extends Node {
         return Node.createList(pre, optArgs, restArgNode, blockArgNode);
     }
 
-    public int getRequiredKeywordCount() {
-        if (hasRequiredKeywordArg()) return 1;
-        return 0;
+    public int getKeywordCount() {
+        return keywords == null ? 0 : keywords.size();
     }
 
-    private boolean hasRequiredKeywordArg() {
-        if (getKeywords() == null) return false;
+    /**
+     * How many of the keywords listed happen to be required keyword args.  Note: total kwargs - req kwarg = opt kwargs.
+     */
+    public int getRequiredKeywordCount() {
+        if (keywords == null) return 0;
 
+        int count = 0;
         for (Node keyWordNode :getKeywords().childNodes()) {
             for (Node asgnNode : keyWordNode.childNodes()) {
-                if (isRequiredKeywordArgumentValueNode(asgnNode)) {
-                    return true;
-                }
+                if (isRequiredKeywordArgumentValueNode(asgnNode)) count++;
             }
         }
-        return false;
+        return count;
     }
 
     private boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {

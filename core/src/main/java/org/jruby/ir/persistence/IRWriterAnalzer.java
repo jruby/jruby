@@ -17,6 +17,8 @@ import org.jruby.parser.StaticScope;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.runtime.RubyEvent;
+import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
 /**
@@ -113,6 +115,14 @@ public class IRWriterAnalzer implements IRWriterEncoder {
 
     @Override
     public void encode(double value) {
+    }
+
+    @Override
+    public void encode(Signature value) {
+    }
+
+    @Override
+    public void encode(RubyEvent event) {
     }
 
     @Override
