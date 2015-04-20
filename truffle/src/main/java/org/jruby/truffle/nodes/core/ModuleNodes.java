@@ -914,30 +914,28 @@ public abstract class ModuleNodes {
             return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubySymbol defineMethod(RubyModule module, String name, UndefinedPlaceholder proc, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("needs either proc or block", this));
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubySymbol defineMethod(RubyModule module, String name, UndefinedPlaceholder proc, RubyProc block) {
-            notDesignedForCompilation();
-
             return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubySymbol defineMethod(RubyModule module, String name, RubyProc proc, UndefinedPlaceholder block) {
             return defineMethod(module, name, proc);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubySymbol defineMethod(RubyModule module, String name, RubyMethod method, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
             module.addMethod(this, method.getMethod().withNewName(name));
-
             return getContext().getSymbolTable().getSymbol(name);
         }
 
@@ -1665,10 +1663,9 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyModule removeMethod(RubyModule module, Object[] args) {
-            notDesignedForCompilation();
-
             for (Object arg : args) {
                 final String name;
 
