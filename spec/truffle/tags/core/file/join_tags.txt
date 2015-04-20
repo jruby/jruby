@@ -1,13 +1,1 @@
-fails:File.join changes only boundaries separators
-fails:File.join respects the given separator if only one part has a boundary separator
-fails:File.join prefers the separator of the right part if both parts have separators
-fails:File.join does not treat \ as a separator on non-Windows
-fails:File.join handles leading parts edge cases
-fails:File.join handles trailing parts edge cases
-fails:File.join handles middle parts edge cases
-fails:File.join raises an ArgumentError if passed a recursive array
-fails:File.join raises a TypeError exception when args are nil
-fails:File.join calls #to_str
-fails:File.join doesn't mutate the object when calling #to_str
-fails:File.join calls #to_path
 fails(windows):File.join respects given separator if only one part has a boundary separator

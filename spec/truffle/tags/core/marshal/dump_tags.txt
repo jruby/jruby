@@ -1,11 +1,6 @@
 fails:Marshal.dump dumps an extended_object
 fails:Marshal.dump dumps an object that has had an ivar added and removed as though the ivar never was set
-fails:Marshal.dump raises a TypeError if dumping a IO/File instance
-fails:Marshal.dump with a Fixnum dumps a positive Fixnum > 31 bits as a Bignum
-fails:Marshal.dump with a Fixnum dumps a negative Fixnum > 31 bits as a Bignum
-fails:Marshal.dump with a Symbol dumps an encoded Symbol
 fails:Marshal.dump with a Float dumps a Float
-fails:Marshal.dump with a Bignum dumps a Bignum
 fails:Marshal.dump with a String dumps a String extended with a Module
 fails:Marshal.dump with a String dumps a String with instance variables
 fails:Marshal.dump with a Regexp dumps a Regexp
@@ -13,15 +8,10 @@ fails:Marshal.dump with a Regexp dumps a Regexp with flags
 fails:Marshal.dump with a Regexp dumps a Regexp with instance variables
 fails:Marshal.dump with a Regexp dumps an extended Regexp
 fails:Marshal.dump with a Regexp dumps a Regexp subclass
-fails:Marshal.dump with a Regexp dumps a binary Regexp
 fails:Marshal.dump with a Regexp dumps a UTF-8 Regexp
 fails:Marshal.dump with a Regexp dumps a Regexp in another encoding
 fails:Marshal.dump with an Array dumps an Array with instance variables
 fails:Marshal.dump with an Array dumps an extended Array
-fails:Marshal.dump with a Hash dumps a Hash
-fails:Marshal.dump with a Hash dumps a Hash subclass
-fails:Marshal.dump with a Hash dumps a Hash with a default value
-fails:Marshal.dump with a Hash dumps a Hash with instance variables
 fails:Marshal.dump with a Hash dumps an extended Hash
 fails:Marshal.dump with a Hash dumps an Hash subclass with a parameter to initialize
 fails:Marshal.dump with a Struct dumps an extended Struct
@@ -31,6 +21,5 @@ fails:Marshal.dump with a Range dumps a Range inclusive of end (with indetermina
 fails:Marshal.dump with a Range dumps a Range exclusive of end (with indeterminant order)
 fails:Marshal.dump with a Time dumps the zone and the offset
 fails:Marshal.dump with a Time dumps the zone, but not the offset if zone is UTC
-fails:Marshal.dump with an Exception dumps an empty Exception
 fails:Marshal.dump with an Exception dumps the message for the exception
 fails:Marshal.dump with an Exception contains the filename in the backtrace

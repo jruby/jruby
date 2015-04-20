@@ -1,2 +1,0 @@
-fails:FileTest.owned? accepts an object that has a #to_path method
-fails:FileTest.owned? needs to be reviewed for spec completeness

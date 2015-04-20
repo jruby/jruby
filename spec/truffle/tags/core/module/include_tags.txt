@@ -1,5 +1,4 @@
 fails:Module#include raises a TypeError when the argument is not a Module
-fails:Module#include imports constants to modules and classes
 fails:Module#include doesn't include module if it is included in a super class
 fails:Module#include preserves ancestor order
 fails:Module#include detects cyclic includes

@@ -1,6 +1,3 @@
-fails:Thread#kill kills sleeping thread
-fails:Thread#kill kills current thread
-fails:Thread#kill runs ensure clause
 fails:Thread#kill runs nested ensure clauses
 fails:Thread#kill does not set $!
 fails:Thread#kill cannot be rescued

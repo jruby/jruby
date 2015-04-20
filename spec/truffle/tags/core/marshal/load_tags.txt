@@ -18,7 +18,6 @@ fails:Marshal.load loads a Struct
 fails:Marshal.load loads a String extended
 fails:Marshal.load loads a String subclass
 fails:Marshal.load loads a String subclass extended
-fails:Marshal.load loads a Bignum -2**63
 fails:Marshal.load loads a Fixnum -2**24
 fails:Marshal.load loads a Fixnum -4516727
 fails:Marshal.load loads a Fixnum -2**16
@@ -31,14 +30,12 @@ fails:Marshal.load loads a Module nested
 fails:Marshal.load loads a _dump object
 fails:Marshal.load loads a _dump object extended
 fails:Marshal.load loads a marshal_dump object
-fails:Marshal.load loads a Float 8323434.342
 fails:Marshal.load loads a Random
 fails:Marshal.load raises an ArgumentError with full constant name when the dumped constant is missing
 fails:Marshal.load when source is tainted returns a tainted object
 fails:Marshal.load for an Array loads an array containing the same objects
 fails:Marshal.load for a Hash loads an extended_user_hash with a parameter to initialize
 fails:Marshal.load for a Hash preserves hash ivars when hash contains a string having ivar
-fails:Marshal.load for a String loads a string through StringIO stream
 fails:Marshal.load for a String loads a String subclass with custom constructor
 fails:Marshal.load for a Struct loads a extended_struct having fields with same objects
 fails:Marshal.load for a Struct loads a struct having ivar
@@ -56,13 +53,9 @@ fails:Marshal.load for a user Class loads an object having ivar
 fails:Marshal.load for a user Class that extends a core type other than Object or BasicObject raises ArgumentError if the resulting class does not extend the same type
 fails:Marshal.load for a Regexp loads an extended Regexp
 fails:Marshal.load for a Regexp loads a extended_user_regexp having ivar
-fails:Marshal.load for a Float loads a Float 1.3
-fails:Marshal.load for a Float loads a Float -5.1867345e-22
-fails:Marshal.load for a Float loads a Float 1.1867345e+22
 fails:Marshal.load for a Integer loads and Integer -8
 fails:Marshal.load for a Integer loads an Integer 1234
 fails:Marshal.load for a Integer loads an Integer -1234
-fails:Marshal.load for a Integer loads an Integer 4611686018427387903
 fails:Marshal.load for a Integer loads an Integer -4611686018427387903
 fails:Marshal.load for a Integer loads an Integer 2361183241434822606847
 fails:Marshal.load for a Integer loads an Integer -2361183241434822606847

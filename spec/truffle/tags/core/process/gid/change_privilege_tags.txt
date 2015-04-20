@@ -1,1 +1,0 @@
-fails:Process::GID.change_privilege needs to be reviewed for spec completeness

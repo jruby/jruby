@@ -1,3 +1,0 @@
-fails:Enumerator#each_with_index passes on the given block's return value
-fails:Enumerator#each_with_index returns the iterator's return value
-fails:Enumerator#each_with_index returns the correct value if chained with itself
