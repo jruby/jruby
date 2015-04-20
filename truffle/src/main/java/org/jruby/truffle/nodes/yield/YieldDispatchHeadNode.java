@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.yield;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameSlot;
@@ -17,6 +18,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -44,7 +46,7 @@ public class YieldDispatchHeadNode extends Node {
         Frame frame = block.getDeclarationFrame();
 
         if (frame != null) {
-            FrameSlot slot = frame.getFrameDescriptor().findOrAddFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID, "dynamic visibility for def", FrameSlotKind.Object);
+            FrameSlot slot = getVisibilitySlot(frame);
             Object oldVisibility = frame.getValue(slot);
 
             try {
@@ -57,6 +59,11 @@ public class YieldDispatchHeadNode extends Node {
         } else {
             return dispatch.dispatchWithSelfAndBlock(currentFrame, block, self, block.getBlockCapturedInScope(), argumentsObjects);
         }
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private FrameSlot getVisibilitySlot(Frame frame) {
+        return frame.getFrameDescriptor().findOrAddFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID, "dynamic visibility for def", FrameSlotKind.Object);
     }
 
     public YieldDispatchNode getDispatch() {

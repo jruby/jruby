@@ -604,8 +604,6 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object classEval(VirtualFrame frame, RubyModule self, UndefinedPlaceholder code, UndefinedPlaceholder file, UndefinedPlaceholder line, RubyProc block) {
-            notDesignedForCompilation();
-
             return yield.dispatchWithModifiedSelf(frame, block, self);
         }
 
