@@ -3206,7 +3206,6 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"!isNull(array)", "isEmpty(array)"})
         public RubyArray pushEmptySingleIntegerFixnum(RubyArray array, Object... values) {
-            notDesignedForCompilation();
             // TODO CS 20-Apr-15 in reality might be better reusing any current storage, but won't worry about that for now
             array.setStore(values, values.length);
             return array;
