@@ -109,7 +109,10 @@ class MSpecScript
     "^spec/ruby/library/delegate/delegator/protected_methods_spec.rb",
 
     # LoadError for `load "prime.rb"`
-    "^spec/ruby/library/prime/each_spec.rb"
+    "^spec/ruby/library/prime/each_spec.rb",
+
+    # Spec sporadically fails and cannot be tagged.
+    "^spec/ruby/library/thread/queue/num_waiting_spec.rb"
   ]
 
   set :tags_patterns, [
