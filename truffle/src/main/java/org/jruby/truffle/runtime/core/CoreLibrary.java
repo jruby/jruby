@@ -867,6 +867,11 @@ public class CoreLibrary {
         return nameError(String.format("uninitialized constant %s::%s", module.getName(), name), name, currentNode);
     }
 
+    public RubyException nameErrorUninitializedClassVariable(RubyModule module, String name, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return nameError(String.format("uninitialized class variable %s in %s", name, module.getName()), name, currentNode);
+    }
+
     public RubyException nameErrorPrivateConstant(RubyModule module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("private constant %s::%s referenced", module.getName(), name), name, currentNode);

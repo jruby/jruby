@@ -737,7 +737,8 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "class_variable_get", required = 1)
-    public abstract static class ClassVariableGetNode extends CoreMethodNode {
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+    public abstract static class ClassVariableGetNode extends RubyNode {
 
         public ClassVariableGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -747,16 +748,24 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization
-        public Object getClassVariable(RubyModule module, RubyString name) {
-            notDesignedForCompilation();
-            return ModuleOperations.lookupClassVariable(module, RubyContext.checkClassVariableName(getContext(), name.toString(), this));
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
-        public Object getClassVariable(RubyModule module, RubySymbol name) {
+        public Object getClassVariable(RubyModule module, String name) {
             notDesignedForCompilation();
-            return ModuleOperations.lookupClassVariable(module, RubyContext.checkClassVariableName(getContext(), name.toString(), this));
+
+            RubyContext.checkClassVariableName(getContext(), name, this);
+            Object value = ModuleOperations.lookupClassVariable(module, name);
+
+            if (value == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedClassVariable(module, name, this));
+            } else {
+                return value;
+            }
         }
 
     }
