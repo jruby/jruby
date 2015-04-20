@@ -58,7 +58,7 @@ public class TranslatorDriver {
         final SharedMethodInfo sharedMethod = new SharedMethodInfo(null, lexicalScope, Arity.NO_ARGUMENTS, "(unknown)", false, parseTree, false);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(
-                context, environmentForFrame(context, null), parseEnvironment, parseEnvironment.allocateReturnID(), true, true, sharedMethod, sharedMethod.getName(), false);
+                context, environmentForFrame(context, null), parseEnvironment, parseEnvironment.allocateReturnID(), true, true, sharedMethod, sharedMethod.getName(), false, null);
 
         // Translate to Ruby Truffle nodes
 
@@ -132,7 +132,7 @@ public class TranslatorDriver {
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "<main>", false, rootNode, false);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame),
-                parseEnvironment, parseEnvironment.allocateReturnID(), ownScopeForAssignments, false, sharedMethodInfo, sharedMethodInfo.getName(), false);
+                parseEnvironment, parseEnvironment.allocateReturnID(), ownScopeForAssignments, false, sharedMethodInfo, sharedMethodInfo.getName(), false, null);
 
         // Get the DATA constant
 
@@ -233,8 +233,8 @@ public class TranslatorDriver {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "(unknown)", false, null, false);
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame.getArguments());
             // TODO(CS): how do we know if the frame is a block or not?
-            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(),
-                    parseEnvironment, parseEnvironment.allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);
+            return new TranslatorEnvironment(context, environmentForFrame(context, parent), parseEnvironment,
+                    parseEnvironment.allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false, null, frame.getFrameDescriptor());
         }
     }
 

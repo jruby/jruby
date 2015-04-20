@@ -11,6 +11,7 @@ package org.jruby.truffle.translator;
 
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.translator.TranslatorEnvironment.BlockID;
 
 /**
  * Translator environment, unique per parse/translation.
@@ -45,6 +46,10 @@ public class ParseEnvironment {
         final long allocated = nextReturnID;
         nextReturnID++;
         return allocated;
+    }
+
+    public BlockID allocateBlockID() {
+        return new BlockID();
     }
 
 }
