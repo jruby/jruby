@@ -960,8 +960,6 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyProc proc(RubyProc block) {
-            notDesignedForCompilation();
-
             return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA,
                     block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
                     block.getCallTargetForMethods(), block.getDeclarationFrame(), block.getMethod(),
