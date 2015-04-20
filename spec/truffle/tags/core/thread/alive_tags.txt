@@ -1,9 +1,1 @@
-fails:Thread#alive? describes a running thread
-fails:Thread#alive? describes a sleeping thread
-fails:Thread#alive? describes a blocked thread
-fails:Thread#alive? describes a completed thread
-fails:Thread#alive? describes a killed thread
-fails:Thread#alive? describes a thread with an uncaught exception
-fails:Thread#alive? describes a dying running thread
 fails:Thread#alive? describes a dying sleeping thread
-fails:Thread#alive? returns true for a killed but still running thread

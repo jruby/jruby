@@ -1,2 +1,1 @@
-fails:Bignum#| raises a TypeError when passed a Float
 fails:Bignum#| returns self bitwise OR other when one operand is negative

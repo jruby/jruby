@@ -43,7 +43,7 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "regexp_search_region")
+    @RubiniusPrimitive(name = "regexp_search_region", lowerFixnumParameters = {1, 2})
     public static abstract class RegexpSearchRegionPrimitiveNode extends RubiniusPrimitiveNode {
 
         public RegexpSearchRegionPrimitiveNode(RubyContext context, SourceSection sourceSection) {

@@ -665,22 +665,31 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "class_variable_get", required = 1)
-    public abstract static class ClassVariableGetNode extends CoreMethodNode {
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+    public abstract static class ClassVariableGetNode extends RubyNode {
 
         public ClassVariableGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object getClassVariable(RubyModule module, RubyString name) {
-            notDesignedForCompilation();
-            return ModuleOperations.lookupClassVariable(module, RubyContext.checkClassVariableName(getContext(), name.toString(), this));
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
-        public Object getClassVariable(RubyModule module, RubySymbol name) {
+        public Object getClassVariable(RubyModule module, String name) {
             notDesignedForCompilation();
-            return ModuleOperations.lookupClassVariable(module, RubyContext.checkClassVariableName(getContext(), name.toString(), this));
+
+            RubyContext.checkClassVariableName(getContext(), name, this);
+            Object value = ModuleOperations.lookupClassVariable(module, name);
+
+            if (value == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedClassVariable(module, name, this));
+            } else {
+                return value;
+            }
         }
 
     }
@@ -1042,65 +1051,6 @@ public abstract class ModuleNodes {
             return nil();
         }
 
-    }
-
-    @CoreMethod(names = "include", argumentsAsArray = true, required = 1)
-    public abstract static class IncludeNode extends CoreMethodNode {
-
-        @Child private CallDispatchHeadNode appendFeaturesNode;
-        @Child private CallDispatchHeadNode includedNode;
-
-        public IncludeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            appendFeaturesNode = DispatchHeadNodeFactory.createMethodCall(context, true);
-            includedNode = DispatchHeadNodeFactory.createMethodCall(context, true);
-        }
-
-        @Specialization
-        public RubyNilClass include(VirtualFrame frame, RubyModule module, Object[] args) {
-            notDesignedForCompilation();
-
-            // Note that we traverse the arguments backwards
-
-            for (int n = args.length - 1; n >= 0; n--) {
-                if (args[n] instanceof RubyModule) {
-                    final RubyModule included = (RubyModule) args[n];
-
-                    appendFeaturesNode.call(frame, included, "append_features", null, module);
-                    includedNode.call(frame, included, "included", null, module);
-                }
-            }
-
-            return nil();
-        }
-    }
-
-    @CoreMethod(names = "include?", required = 1)
-    public abstract static class IncludePNode extends CoreMethodNode {
-
-        @Child private DispatchHeadNode appendFeaturesNode;
-
-        public IncludePNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            appendFeaturesNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        @Specialization
-        public boolean include(RubyModule module, RubyModule included) {
-            notDesignedForCompilation();
-
-            ModuleChain ancestor = module.getParentModule();
-
-            while (ancestor != null) {
-                if (ancestor.getActualModule() == included) {
-                    return true;
-                }
-
-                ancestor = ancestor.getParentModule();
-            }
-
-            return false;
-        }
     }
 
     @CoreMethod(names = "included", required = 1, visibility = Visibility.PRIVATE)
@@ -1489,7 +1439,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyArray publicInstanceMethods(RubyModule module, UndefinedPlaceholder argument) {
-            return publicInstanceMethods(module, false);
+            return publicInstanceMethods(module, true);
         }
 
         @Specialization
@@ -1498,12 +1448,10 @@ public abstract class ModuleNodes {
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     module.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
-
                         @Override
                         public boolean filter(InternalMethod method) {
                             return method.getVisibility() == Visibility.PUBLIC;
                         }
-
                     }).toArray());
         }
     }

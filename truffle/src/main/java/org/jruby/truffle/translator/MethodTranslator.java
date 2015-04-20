@@ -16,10 +16,12 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.ast.ArgsNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
+import org.jruby.truffle.nodes.control.BreakNode;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
@@ -160,7 +162,6 @@ class MethodTranslator extends BodyTranslator {
                     new CatchBreakAsProcErrorNode(context, sourceSection, body),
                     NodeUtil.cloneNode(body));
         } else {
-            body = new CatchBreakAsReturnNode(context, sourceSection, body);
             body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID());
         }
 
@@ -186,6 +187,7 @@ class MethodTranslator extends BodyTranslator {
         }
 
         if (isBlock) {
+            // Blocks
             final RubyRootNode newRootNodeForBlocks = rootNode.cloneRubyRootNode();
 
             for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForBlocks, BehaveAsBlockNode.class)) {
@@ -196,6 +198,9 @@ class MethodTranslator extends BodyTranslator {
                 behaveAsProcNode.replace(behaveAsProcNode.getNotAsProc());
             }
 
+            final CallTarget callTargetAsBlock = Truffle.getRuntime().createCallTarget(newRootNodeForBlocks);
+
+            // Procs
             final RubyRootNode newRootNodeForProcs = rootNode.cloneRubyRootNode();
 
             for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForProcs, BehaveAsBlockNode.class)) {
@@ -208,8 +213,7 @@ class MethodTranslator extends BodyTranslator {
 
             final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
 
-            final CallTarget callTargetAsBlock = Truffle.getRuntime().createCallTarget(newRootNodeForBlocks);
-
+            // Methods
             final RubyRootNode newRootNodeForMethods = rootNode.cloneRubyRootNode();
 
             for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForMethods, BehaveAsBlockNode.class)) {
@@ -231,7 +235,7 @@ class MethodTranslator extends BodyTranslator {
             final CallTarget callTargetAsMethod = Truffle.getRuntime().createCallTarget(newRootNodeWithCatchReturn);
 
             return new BlockDefinitionNode(context, sourceSection, environment.getSharedMethodInfo(),
-                    environment.needsDeclarationFrame(), callTargetAsBlock, callTargetAsProc, callTargetAsMethod);
+                    environment.needsDeclarationFrame(), callTargetAsBlock, callTargetAsProc, callTargetAsMethod, environment.getBlockID());
         } else {
             return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(),
                     environment.needsDeclarationFrame(), Truffle.getRuntime().createCallTarget(rootNode));

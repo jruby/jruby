@@ -328,9 +328,13 @@ public class CoreLibrary {
         truffleDebugModule = defineModule(truffleModule, "Debug");
         defineModule(truffleModule, "Primitive");
 
+        // Rubinius
+
         rubiniusModule = defineModule("Rubinius");
+
         rubiniusFFIModule = defineModule(rubiniusModule, "FFI");
         defineModule(defineModule(rubiniusFFIModule, "Platform"), "POSIX");
+        defineModule(rubiniusModule, "Type");
 
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
         lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
@@ -873,6 +877,11 @@ public class CoreLibrary {
     public RubyException nameErrorUninitializedConstant(RubyModule module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("uninitialized constant %s::%s", module.getName(), name), name, currentNode);
+    }
+
+    public RubyException nameErrorUninitializedClassVariable(RubyModule module, String name, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return nameError(String.format("uninitialized class variable %s in %s", name, module.getName()), name, currentNode);
     }
 
     public RubyException nameErrorPrivateConstant(RubyModule module, String name, Node currentNode) {

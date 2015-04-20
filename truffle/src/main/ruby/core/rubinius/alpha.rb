@@ -24,40 +24,22 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' module.rb
-
-##
-# Some terminology notes:
-#
-# [Encloser] The Class or Module inside which this one is defined or, in the
-#            event we are at top-level, Object.
-#
-# [Direct superclass] Whatever is next in the chain of superclass invocations.
-#                     This may be either an included Module, a Class or nil.
-#
-# [Superclass] The real semantic superclass and thus only applies to Class
-#              objects.
+# Only part of Rubinius' alpha.rb
 
 class Module
 
-  def include?(mod)
-    if !mod.kind_of?(Module) or mod.kind_of?(Class)
-      raise TypeError, "wrong argument type #{mod.class} (expected Module)"
+  # :internal:
+  #
+  # Basic version of .include used in kernel code.
+  #
+  # Redefined in kernel/delta/module.rb.
+  #
+  def include(mod)
+    Rubinius.privately do
+      mod.append_features self # Truffle: moved the append_features inside the privately
+      mod.included self
     end
-
-    return false if self.equal?(mod)
-
-    Rubinius::Type.each_ancestor(self) { |m| return true if mod.equal?(m) }
-
-    false
+    self
   end
-
-  def extended(name)
-  end
-  private :extended
-
-  def method_added(name)
-  end
-  private :method_added
 
 end

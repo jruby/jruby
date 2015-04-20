@@ -56,9 +56,6 @@ public abstract class IntegerNodes {
                         try {
                             yield(frame, block, i);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -124,9 +121,6 @@ public abstract class IntegerNodes {
                         try {
                             yield(frame, block, i);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -158,9 +152,6 @@ public abstract class IntegerNodes {
                         try {
                             yield(frame, block, i);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -192,9 +183,6 @@ public abstract class IntegerNodes {
                     try {
                         yield(frame, block, fixnumOrBignum.fixnumOrBignum(i));
                         continue outer;
-                    } catch (BreakException e) {
-                        breakProfile.enter();
-                        return e.getResult();
                     } catch (NextException e) {
                         nextProfile.enter();
                         continue outer;
@@ -259,9 +247,6 @@ public abstract class IntegerNodes {
                         try {
                             yield(frame, block, i);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -302,9 +287,6 @@ public abstract class IntegerNodes {
                         try {
                             yield(frame, block, i);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;

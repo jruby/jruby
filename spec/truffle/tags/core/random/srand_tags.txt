@@ -1,6 +1,2 @@
-fails:Random.srand returns an arbitrary seed if .srand wasn't called previously with an argument and no argument is supplied this time
-fails:Random.srand returns the previous argument to .srand if one was given and no argument is supplied
-fails:Random.srand returns an arbitrary seed if .srand wasn't called previously with an argument and 0 is supplied this time
-fails:Random.srand returns the previous argument to .srand if one was given and 0 is supplied
 fails:Random.srand seeds Random.rand such that its return value is deterministic
 fails:Random.srand seeds Kernel.rand such that its return value is deterministic

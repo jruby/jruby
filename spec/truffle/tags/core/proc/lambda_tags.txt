@@ -1,6 +1,5 @@
 fails:Proc#lambda? is preserved when passing a Proc with & to the lambda keyword
 fails:Proc#lambda? is preserved when passing a Proc with & to the proc keyword
 fails:Proc#lambda? is preserved when passing a Proc with & to Proc.new
-fails:Proc#lambda? returns true for a Method converted to a Proc
 fails:Proc#lambda? is preserved when a Proc is curried
 fails:Proc#lambda? is preserved when a curried Proc is called without enough arguments

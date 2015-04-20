@@ -26,38 +26,26 @@
 
 # Only part of Rubinius' module.rb
 
-##
-# Some terminology notes:
-#
-# [Encloser] The Class or Module inside which this one is defined or, in the
-#            event we are at top-level, Object.
-#
-# [Direct superclass] Whatever is next in the chain of superclass invocations.
-#                     This may be either an included Module, a Class or nil.
-#
-# [Superclass] The real semantic superclass and thus only applies to Class
-#              objects.
-
 class Module
 
-  def include?(mod)
-    if !mod.kind_of?(Module) or mod.kind_of?(Class)
-      raise TypeError, "wrong argument type #{mod.class} (expected Module)"
+  # Invokes <code>Module#append_features</code> and
+  # <code>Module#included</code> on each argument, passing in self.
+  #
+  def include(*modules)
+    modules.reverse_each do |mod|
+      if !mod.kind_of?(Module) or mod.kind_of?(Class)
+        raise TypeError, "wrong argument type #{mod.class} (expected Module)"
+      end
+
+      Rubinius.privately do
+        mod.append_features self
+      end
+
+      Rubinius.privately do
+        mod.included self
+      end
     end
-
-    return false if self.equal?(mod)
-
-    Rubinius::Type.each_ancestor(self) { |m| return true if mod.equal?(m) }
-
-    false
+    self
   end
-
-  def extended(name)
-  end
-  private :extended
-
-  def method_added(name)
-  end
-  private :method_added
 
 end

@@ -1,3 +1,2 @@
-fails:IO::SEEK_SET is defined
 fails:IO::SEEK_CUR is defined
 fails:IO::SEEK_END is defined

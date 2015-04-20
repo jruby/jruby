@@ -252,6 +252,27 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
+        public Object stringByteSubstring(RubyString string, long index, int length) {
+            return stringByteSubstring(string, index, (long) length);
+        }
+
+        @Specialization
+        public Object stringByteSubstring(RubyString string, int index, long length) {
+            return stringByteSubstring(string, (long) index, length);
+        }
+
+        @Specialization
+        public Object stringByteSubstring(RubyString string, long index, long length) {
+            if (index > Integer.MAX_VALUE || index < Integer.MIN_VALUE) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("index out of int range", this));
+            }
+            if (length > Integer.MAX_VALUE || length < Integer.MIN_VALUE) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("length out of int range", this));
+            }
+            return stringByteSubstring(string, (int) index, (int) length);
+        }
+
+        @Specialization
         public Object stringByteSubstring(RubyString string, double index, double length) {
             return stringByteSubstring(string, (int) index, (int) length);
         }
