@@ -1161,43 +1161,6 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "include", argumentsAsArray = true, required = 1)
-    public abstract static class IncludeNode extends CoreMethodNode {
-
-        @Child private CallDispatchHeadNode appendFeaturesNode;
-        @Child private CallDispatchHeadNode includedNode;
-
-        public IncludeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            appendFeaturesNode = DispatchHeadNodeFactory.createMethodCall(context, true);
-            includedNode = DispatchHeadNodeFactory.createMethodCall(context, true);
-        }
-
-        public IncludeNode(IncludeNode prev) {
-            super(prev);
-            appendFeaturesNode = prev.appendFeaturesNode;
-            includedNode = prev.includedNode;
-        }
-
-        @Specialization
-        public RubyNilClass include(VirtualFrame frame, RubyModule module, Object[] args) {
-            notDesignedForCompilation();
-
-            // Note that we traverse the arguments backwards
-
-            for (int n = args.length - 1; n >= 0; n--) {
-                if (args[n] instanceof RubyModule) {
-                    final RubyModule included = (RubyModule) args[n];
-
-                    appendFeaturesNode.call(frame, included, "append_features", null, module);
-                    includedNode.call(frame, included, "included", null, module);
-                }
-            }
-
-            return nil();
-        }
-    }
-
     @CoreMethod(names = "include?", required = 1)
     public abstract static class IncludePNode extends CoreMethodNode {
 
