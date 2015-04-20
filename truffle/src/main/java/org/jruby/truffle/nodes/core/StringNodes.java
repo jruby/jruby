@@ -945,11 +945,10 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString downcase(RubyString string) {
-            notDesignedForCompilation();
             final ByteList newByteList = StringNodesHelper.downcase(getContext().getRuntime(), string.getByteList());
-
             return string.getContext().makeString(string.getLogicalClass(), newByteList);
         }
     }
@@ -1097,10 +1096,9 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyEncoding encoding(RubyString string) {
-            notDesignedForCompilation();
-
             return RubyEncoding.getEncoding(string.getBytes().getEncoding());
         }
     }
