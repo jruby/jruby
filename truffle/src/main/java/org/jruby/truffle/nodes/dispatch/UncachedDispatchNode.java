@@ -19,6 +19,8 @@ import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNodeFactory;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
 import org.jruby.truffle.nodes.conversion.ToSymbolNodeFactory;
+import org.jruby.truffle.nodes.objects.MetaClassNode;
+import org.jruby.truffle.nodes.objects.MetaClassNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -37,6 +39,7 @@ public class UncachedDispatchNode extends DispatchNode {
     @Child private IndirectCallNode callNode;
     @Child private ToSymbolNode toSymbolNode;
     @Child private ToJavaStringNode toJavaStringNode;
+    @Child private MetaClassNode metaClassNode;
 
     private final BranchProfile constantMissingProfile = BranchProfile.create();
     private final BranchProfile methodMissingProfile = BranchProfile.create();
@@ -48,6 +51,7 @@ public class UncachedDispatchNode extends DispatchNode {
         callNode = Truffle.getRuntime().createIndirectCallNode();
         toSymbolNode = ToSymbolNodeFactory.create(context, null, null);
         toJavaStringNode = ToJavaStringNodeFactory.create(context, null, null);
+        metaClassNode = MetaClassNodeFactory.create(context, null, null);
     }
 
     @Override
@@ -74,7 +78,7 @@ public class UncachedDispatchNode extends DispatchNode {
 
             constantMissingProfile.enter();
 
-            final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
+            final RubyClass callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(frame, RubyArguments.getSelf(frame.getArguments()));
 
             final InternalMethod missingMethod = lookup(callerClass, receiverObject, "const_missing", ignoreVisibility);
 
@@ -94,7 +98,7 @@ public class UncachedDispatchNode extends DispatchNode {
                             null,
                             new Object[]{toSymbolNode.executeRubySymbol(frame, name)}));
         } else {
-            final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
+            final RubyClass callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(frame, RubyArguments.getSelf(frame.getArguments()));
 
             final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, name),
                     ignoreVisibility);
