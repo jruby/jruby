@@ -960,10 +960,9 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject downcase(RubyString string) {
-            notDesignedForCompilation();
-
             final ByteList newByteList = StringNodesHelper.downcase(getContext().getRuntime(), string.getByteList());
 
             if (newByteList.equal(string.getBytes())) {
@@ -2234,11 +2233,10 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString upcase(RubyString string) {
-            notDesignedForCompilation();
             final ByteList byteListString = StringNodesHelper.upcase(getContext().getRuntime(), string.getByteList());
-
             return string.getContext().makeString(string.getLogicalClass(), byteListString);
         }
 
@@ -2251,10 +2249,9 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject upcaseBang(RubyString string) {
-            notDesignedForCompilation();
-
             final ByteList byteListString = StringNodesHelper.upcase(getContext().getRuntime(), string.getByteList());
 
             if (byteListString.equal(string.getByteList())) {
