@@ -1611,7 +1611,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyArray publicInstanceMethods(RubyModule module, UndefinedPlaceholder argument) {
-            return publicInstanceMethods(module, false);
+            return publicInstanceMethods(module, true);
         }
 
         @Specialization
@@ -1620,12 +1620,10 @@ public abstract class ModuleNodes {
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     module.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
-
                         @Override
                         public boolean filter(InternalMethod method) {
                             return method.getVisibility() == Visibility.PUBLIC;
                         }
-
                     }).toArray());
         }
     }

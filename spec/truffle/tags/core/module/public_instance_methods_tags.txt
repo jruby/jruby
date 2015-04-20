@@ -1,2 +1,0 @@
-fails:Module#public_instance_methods returns a list of public methods in module and its ancestors
-fails:Module#public_instance_methods default list should be the same as passing true as an argument
