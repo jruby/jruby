@@ -17,6 +17,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
+import org.jruby.truffle.pack.nodes.type.ToDoubleNode;
+import org.jruby.truffle.pack.nodes.type.ToDoubleNodeGen;
+import org.jruby.truffle.pack.nodes.type.ToLongNode;
+import org.jruby.truffle.pack.nodes.type.ToLongNodeGen;
+import org.jruby.truffle.pack.nodes.write.NullNode;
 import org.jruby.truffle.pack.runtime.exceptions.WrongArgumentTypeException;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -29,6 +34,8 @@ import org.jruby.truffle.runtime.RubyContext;
 public abstract class ReadDoubleNode extends PackNode {
 
     private final RubyContext context;
+
+    @Child private ToDoubleNode toDoubleNode;
 
     public ReadDoubleNode(RubyContext context) {
         this.context = context;
@@ -57,6 +64,16 @@ public abstract class ReadDoubleNode extends PackNode {
     @Specialization
     public double read(VirtualFrame frame, double[] source) {
         return source[advanceSourcePosition(frame)];
+    }
+
+    @Specialization
+    public double read(VirtualFrame frame, Object[] source) {
+        if (toDoubleNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            toDoubleNode = insert(ToDoubleNodeGen.create(new NullNode()));
+        }
+
+        return toDoubleNode.executeToDouble(frame, source[advanceSourcePosition(frame)]);
     }
 
 }
