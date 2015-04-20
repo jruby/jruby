@@ -29,95 +29,106 @@
  */
 package org.jruby.embed.internal;
 
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.embed.AttributeName;
 import org.jruby.embed.LocalVariableBehavior;
 
 /**
  * Singleton type local context provider.
  * As of JRuby 1.5.0 Ruby runtime returned from the getRuntime() method is a
  * classloader-global runtime.
- * 
+ *
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class SingletonLocalContextProvider extends AbstractLocalContextProvider {
-    private static LocalContext localContext = null;
-    private static BiVariableMap varMap = null;
-    private static HashMap attribute = null;
-    
+
+    private static volatile LocalContext localContext;
+
+    public static SingletonLocalContextProvider getProvider(final LocalVariableBehavior behavior, final boolean lazy) {
+        if (localContext == null) initLocalContext(behavior, lazy);
+        return new SingletonLocalContextProvider(localContext.getLocalVariableBehavior(), lazy);
+    }
+
+    private static void initLocalContext(final LocalVariableBehavior behavior, final boolean lazy) {
+        synchronized( SingletonLocalContextProvider.class ) {
+            if (localContext == null) {
+                localContext = new LocalContext(getGlobalRuntimeConfigOrNew(), behavior, lazy);
+            }
+        }
+    }
+
+    private LocalContext sharedLocalContext() {
+        if (localContext == null) initLocalContext(behavior, lazy);
+        return localContext;
+    }
+
+    @Deprecated // no longer used
     public static LocalContext getLocalContextInstance(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
         if (localContext == null) {
-            synchronized (LocalContext.class) {
-                localContext = new LocalContext(config, behavior, lazy);
+            synchronized( SingletonLocalContextProvider.class ) {
+                if (localContext == null) {
+                    localContext = new LocalContext(config, behavior, lazy);
+                }
             }
         }
         return localContext;
     }
-    
-    private static BiVariableMap getBiVariableInstance(LocalContextProvider provider, boolean lazy) {
-        if (varMap == null) {
-            synchronized (BiVariableMap.class) {
-                varMap = new BiVariableMap(provider, lazy);
-            }
-        }
-        return varMap;
-    }
-    
-    private static HashMap getAttributeInstance() {
-        if (attribute == null) {
-            synchronized (HashMap.class) {
-                attribute = new HashMap();
-                attribute.put(AttributeName.READER, new InputStreamReader(System.in));
-                attribute.put(AttributeName.WRITER, new PrintWriter(System.out, true));
-                attribute.put(AttributeName.ERROR_WRITER, new PrintWriter(System.err, true));
-            }
-        }
-        return attribute;
-    }
-    
+
+    @Deprecated // no longer used
     public static LocalVariableBehavior getLocalVariableBehaviorOrNull() {
         if (localContext == null) return null;
-        else return localContext.getLocalVariableBehavior();
+        return localContext.getLocalVariableBehavior();
+    }
+
+    public SingletonLocalContextProvider(LocalVariableBehavior behavior) {
+        super( getGlobalRuntimeConfigOrNew(), behavior );
     }
 
     public SingletonLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
-        this.behavior = behavior;
+        this( getGlobalRuntimeConfigOrNew(), behavior, lazy );
+    }
+
+    private SingletonLocalContextProvider(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
+        super( config, behavior );
         this.lazy = lazy;
     }
-    
+
+    @Override
     public Ruby getRuntime() {
-        if (!Ruby.isGlobalRuntimeReady()) {
-            return Ruby.newInstance(config);
-        }
-        return Ruby.getGlobalRuntime();
+        return getGlobalRuntime(this);
     }
 
     @Override
     public RubyInstanceConfig getRubyInstanceConfig() {
-        if (Ruby.isGlobalRuntimeReady()) return Ruby.getGlobalRuntime().getInstanceConfig();
-        else return config;
+        return getGlobalRuntimeConfig(this);
     }
 
-    public BiVariableMap getVarMap() {
-        return SingletonLocalContextProvider.getBiVariableInstance(this, lazy);
-    }
-
-    public Map getAttributeMap() {
-        return SingletonLocalContextProvider.getAttributeInstance();
-    }
-
+    @Override
     public boolean isRuntimeInitialized() {
         return Ruby.isGlobalRuntimeReady();
     }
-    
-    public void terminate() {
-        LocalContext context = SingletonLocalContextProvider.getLocalContextInstance(config, behavior, lazy);
-        context.remove();
-        context = null;
+
+    @Override
+    public BiVariableMap getVarMap() {
+        return sharedLocalContext().getVarMap(this);
     }
+
+    @Override
+    public Map getAttributeMap() {
+        return sharedLocalContext().getAttributeMap();
+    }
+
+    @Override
+    public void terminate() {
+        if (localContext != null) {
+            synchronized( SingletonLocalContextProvider.class ) {
+                if (localContext != null) {
+                    localContext.remove();
+                    localContext = null;
+                }
+            }
+        }
+    }
+
 }

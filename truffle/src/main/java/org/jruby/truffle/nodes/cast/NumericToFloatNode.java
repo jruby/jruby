@@ -43,12 +43,6 @@ public abstract class NumericToFloatNode extends RubyNode {
         this.method = method;
     }
 
-    public NumericToFloatNode(NumericToFloatNode prev) {
-        super(prev.getContext(), prev.getSourceSection());
-        isANode = prev.isANode;
-        method = prev.method;
-    }
-
     public abstract double executeFloat(VirtualFrame frame, RubyBasicObject value);
 
     private Object callToFloat(VirtualFrame frame, RubyBasicObject value) {

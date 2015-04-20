@@ -41,10 +41,6 @@ public abstract class IntegerNodes {
             super(context, sourceSection);
         }
 
-        public DownToNode(DownToNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object downto(VirtualFrame frame, int from, int to, RubyProc block) {
             int count = 0;
@@ -60,9 +56,6 @@ public abstract class IntegerNodes {
                         try {
                             yield(frame, block, i);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -101,11 +94,6 @@ public abstract class IntegerNodes {
             super(context, sourceSection);
         }
 
-        public TimesNode(TimesNode prev) {
-            super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
-        }
-
         @Specialization
         public RubyArray times(VirtualFrame frame, int n, UndefinedPlaceholder block) {
             notDesignedForCompilation();
@@ -133,9 +121,6 @@ public abstract class IntegerNodes {
                         try {
                             yield(frame, block, i);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -167,9 +152,6 @@ public abstract class IntegerNodes {
                         try {
                             yield(frame, block, i);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -201,9 +183,6 @@ public abstract class IntegerNodes {
                     try {
                         yield(frame, block, fixnumOrBignum.fixnumOrBignum(i));
                         continue outer;
-                    } catch (BreakException e) {
-                        breakProfile.enter();
-                        return e.getResult();
                     } catch (NextException e) {
                         nextProfile.enter();
                         continue outer;
@@ -223,10 +202,6 @@ public abstract class IntegerNodes {
 
         public ToINode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToINode(ToINode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -257,10 +232,6 @@ public abstract class IntegerNodes {
             super(context, sourceSection);
         }
 
-        public UpToNode(UpToNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object upto(VirtualFrame frame, int from, int to, RubyProc block) {
             int count = 0;
@@ -276,9 +247,6 @@ public abstract class IntegerNodes {
                         try {
                             yield(frame, block, i);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -319,9 +287,6 @@ public abstract class IntegerNodes {
                         try {
                             yield(frame, block, i);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;

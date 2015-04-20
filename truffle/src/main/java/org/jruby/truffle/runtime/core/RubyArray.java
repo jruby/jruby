@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayAllocationSite;
@@ -252,10 +253,6 @@ public final class RubyArray extends RubyBasicObject {
         // Then promote it at random
 
         if (canonicalStore instanceof int[]) {
-            if (((int[]) canonicalStore).length == 0 && random.nextBoolean()) {
-                return null;
-            }
-
             switch (random.nextInt(3)) {
                 case 0:
                     return boxedStore;
@@ -267,30 +264,18 @@ public final class RubyArray extends RubyBasicObject {
                     throw new IllegalStateException();
             }
         } else if (canonicalStore instanceof long[]) {
-            if (((long[]) canonicalStore).length == 0 && random.nextBoolean()) {
-                return null;
-            }
-
             if (random.nextBoolean()) {
                 return boxedStore;
             } else {
                 return canonicalStore;
             }
         } else if (canonicalStore instanceof double[]) {
-            if (((double[]) canonicalStore).length == 0 && random.nextBoolean()) {
-                return null;
-            }
-
             if (random.nextBoolean()) {
                 return boxedStore;
             } else {
                 return canonicalStore;
             }
         } else if (canonicalStore instanceof Object[]) {
-            if (((Object[]) canonicalStore).length == 0 && random.nextBoolean()) {
-                return null;
-            }
-
             return canonicalStore;
         } else {
             throw new UnsupportedOperationException();
@@ -345,4 +330,10 @@ public final class RubyArray extends RubyBasicObject {
         }
 
     }
+
+    @Override
+    public ForeignAccessFactory getForeignAccessFactory() {
+        return new ArrayForeignAccessFactory(getContext());
+    }
+
 }

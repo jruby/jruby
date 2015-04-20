@@ -36,10 +36,6 @@ public abstract class FiberNodes {
             super(context, sourceSection);
         }
 
-        public FiberTransferNode(FiberTransferNode prev) {
-            super(prev);
-        }
-
         protected Object singleValue(VirtualFrame frame, Object[] args) {
             if (singleValueCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -77,10 +73,6 @@ public abstract class FiberNodes {
             super(context, sourceSection);
         }
 
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass initialize(RubyFiber fiber, RubyProc block) {
             notDesignedForCompilation();
@@ -101,11 +93,6 @@ public abstract class FiberNodes {
             fiberTransferNode = FiberTransferNodeFactory.create(context, sourceSection, new RubyNode[] { null, null, null });
         }
 
-        public ResumeNode(ResumeNode prev) {
-            super(prev);
-            fiberTransferNode = prev.fiberTransferNode;
-        }
-
         @Specialization
         public Object resume(VirtualFrame frame, RubyFiber fiberBeingResumed, Object[] args) {
             return fiberTransferNode.executeTransferControlTo(frame, fiberBeingResumed, false, args);
@@ -121,11 +108,6 @@ public abstract class FiberNodes {
         public YieldNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             fiberTransferNode = FiberTransferNodeFactory.create(context, sourceSection, new RubyNode[] { null, null, null });
-        }
-
-        public YieldNode(YieldNode prev) {
-            super(prev);
-            fiberTransferNode = prev.fiberTransferNode;
         }
 
         @Specialization

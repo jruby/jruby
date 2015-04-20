@@ -42,12 +42,6 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         generalizeNode = GeneralizeArrayNodeFactory.create(context, sourceSection, null, null);
     }
 
-    public ArrayWriteNormalizedNode(ArrayWriteNormalizedNode prev) {
-        super(prev);
-        ensureCapacityNode = prev.ensureCapacityNode;
-        generalizeNode = prev.generalizeNode;
-    }
-
     public abstract Object executeWrite(VirtualFrame frame, RubyArray array, int index, Object value);
 
     // Writing at index 0 into a null array creates a new array of the most specific type

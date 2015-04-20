@@ -1,4 +1,3 @@
-fails:File::Constants matches mode constants
 fails:File::Constants lock mode constants
 fails:File::Constants File::LOCK_EX
 fails:File::Constants File::LOCK_NB

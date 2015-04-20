@@ -25,14 +25,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyEncoding;
-import org.jruby.truffle.runtime.core.RubyEncodingConverter;
-import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 
@@ -48,13 +41,9 @@ public abstract class EncodingConverterPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public EncodingConverterAllocateNode(EncodingConverterAllocateNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public Object encodingConverterAllocate(RubyEncoding fromEncoding, RubyEncoding toEncoding, RubyHash options) {
-            return new RubyEncodingConverter(getContext().getCoreLibrary().getEncodingConverterClass(), null);
+        public Object encodingConverterAllocate(RubyClass encodingConverterClass, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2) {
+            return new RubyEncodingConverter(encodingConverterClass, null);
         }
 
     }
@@ -64,10 +53,6 @@ public abstract class EncodingConverterPrimitiveNodes {
 
         public PrimitiveConvertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public PrimitiveConvertNode(PrimitiveConvertNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -167,10 +152,6 @@ public abstract class EncodingConverterPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public EncodingConverterPutbackNode(EncodingConverterPutbackNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString encodingConverterPutback(RubyEncodingConverter encodingConverter, int maxBytes) {
             // Taken from org.jruby.RubyConverter#putback.
@@ -217,12 +198,6 @@ public abstract class EncodingConverterPrimitiveNodes {
             super(context, sourceSection);
             newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public EncodingConverterLastErrorNode(EncodingConverterLastErrorNode prev) {
-            super(prev);
-            newLookupTableNode = prev.newLookupTableNode;
-            lookupTableWriteNode = prev.lookupTableWriteNode;
         }
 
         @Specialization
@@ -273,10 +248,6 @@ public abstract class EncodingConverterPrimitiveNodes {
 
         public EncodingConverterErrinfoNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EncodingConverterErrinfoNode(EncodingConverterErrinfoNode prev) {
-            super(prev);
         }
 
         @Specialization

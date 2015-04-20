@@ -31,10 +31,6 @@ public abstract class GetFromThreadLocalNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public GetFromThreadLocalNode(GetFromThreadLocalNode prev) {
-        super(prev);
-    }
-
     @Specialization
     public Object get(ThreadLocal<?> threadLocal) {
         return threadLocal.get();

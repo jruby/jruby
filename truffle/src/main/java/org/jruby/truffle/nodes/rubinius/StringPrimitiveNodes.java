@@ -93,10 +93,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public CharacterAsciiPrimitiveNode(CharacterAsciiPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean isCharacterAscii(RubyString character) {
             final ByteList bytes = character.getByteList();
@@ -119,12 +115,7 @@ public abstract class StringPrimitiveNodes {
 
         public StringAwkSplitPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(context, sourceSection, true, new int[]{});
-        }
-
-        public StringAwkSplitPrimitiveNode(StringAwkSplitPrimitiveNode prev) {
-            super(prev);
-            taintResultNode = prev.taintResultNode;
+            taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
         @Specialization
@@ -203,12 +194,7 @@ public abstract class StringPrimitiveNodes {
 
         public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(context, sourceSection, true, new int[]{});
-        }
-
-        public StringByteSubstringPrimitiveNode(StringByteSubstringPrimitiveNode prev) {
-            super(prev);
-            taintResultNode = prev.taintResultNode;
+            taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
         @Specialization
@@ -266,6 +252,27 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
+        public Object stringByteSubstring(RubyString string, long index, int length) {
+            return stringByteSubstring(string, index, (long) length);
+        }
+
+        @Specialization
+        public Object stringByteSubstring(RubyString string, int index, long length) {
+            return stringByteSubstring(string, (long) index, length);
+        }
+
+        @Specialization
+        public Object stringByteSubstring(RubyString string, long index, long length) {
+            if (index > Integer.MAX_VALUE || index < Integer.MIN_VALUE) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("index out of int range", this));
+            }
+            if (length > Integer.MAX_VALUE || length < Integer.MIN_VALUE) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("length out of int range", this));
+            }
+            return stringByteSubstring(string, (int) index, (int) length);
+        }
+
+        @Specialization
         public Object stringByteSubstring(RubyString string, double index, double length) {
             return stringByteSubstring(string, (int) index, (int) length);
         }
@@ -296,10 +303,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringCheckNullSafePrimitiveNode(StringCheckNullSafePrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean stringCheckNullSafe(RubyString string) {
             for (byte b : string.getBytes().unsafeBytes()) {
@@ -320,11 +323,6 @@ public abstract class StringPrimitiveNodes {
 
         public StringChrAtPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StringChrAtPrimitiveNode(StringChrAtPrimitiveNode prev) {
-            super(prev);
-            stringByteSubstringNode = prev.stringByteSubstringNode;
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -378,11 +376,6 @@ public abstract class StringPrimitiveNodes {
         public StringCompareSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { null });
-        }
-
-        public StringCompareSubstringPrimitiveNode(StringCompareSubstringPrimitiveNode prev) {
-            super(prev);
-            sizeNode = prev.sizeNode;
         }
 
         @Specialization
@@ -442,10 +435,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringEqualPrimitiveNode(StringEqualPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean stringEqual(RubyString string, RubyString other) {
             final ByteList a = string.getBytes();
@@ -471,11 +460,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringFindCharacterPrimitiveNode(StringFindCharacterPrimitiveNode prev) {
-            super(prev);
-            taintResultNode = prev.taintResultNode;
-        }
-
         @Specialization(guards = "isSingleByte(string)")
         public Object stringFindCharacterSingleByte(RubyString string, int offset) {
             // Taken from Rubinius's String::find_character.
@@ -490,11 +474,7 @@ public abstract class StringPrimitiveNodes {
 
             final RubyString ret = getContext().makeString(string.getLogicalClass(), new ByteList(string.getByteList().unsafeBytes(), offset, 1));
 
-            ret.getByteList().setEncoding(string.getByteList().getEncoding());
-            ret.setCodeRange(string.getCodeRange());
-            getTaintResultNode().maybeTaint(string, ret);
-
-            return ret;
+            return propagate(string, ret);
         }
 
         @Specialization(guards = "!isSingleByte(string)")
@@ -520,20 +500,21 @@ public abstract class StringPrimitiveNodes {
                 ret = getContext().makeString(string.getLogicalClass(), new ByteList(string.getByteList().unsafeBytes(), offset, 1));
             }
 
-            ret.getByteList().setEncoding(string.getByteList().getEncoding());
-            ret.setCodeRange(string.getCodeRange());
-            getTaintResultNode().maybeTaint(string, ret);
-
-            return ret;
+            return propagate(string, ret);
         }
 
-        private TaintResultNode getTaintResultNode() {
+        private Object propagate(RubyString string, RubyString ret) {
+            ret.getByteList().setEncoding(string.getByteList().getEncoding());
+            ret.setCodeRange(string.getCodeRange());
+            return maybeTaint(string, ret);
+        }
+
+        private Object maybeTaint(RubyString source, RubyString value) {
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, new int[]{}));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
-
-            return taintResultNode;
+            return taintResultNode.maybeTaint(source, value);
         }
 
     }
@@ -543,10 +524,6 @@ public abstract class StringPrimitiveNodes {
 
         public StringFromCodepointPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StringFromCodepointPrimitiveNode(StringFromCodepointPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "isSimple(code, encoding)")
@@ -613,10 +590,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringToFPrimitiveNode(StringToFPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object stringToF(RubyString string) {
             notDesignedForCompilation();
@@ -636,10 +609,6 @@ public abstract class StringPrimitiveNodes {
         public StringIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
 
             super(context, sourceSection);
-        }
-
-        public StringIndexPrimitiveNode(StringIndexPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -665,10 +634,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public CharacterByteIndexNode(CharacterByteIndexNode prev) {
-            super(prev);
-        }
-
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public int stringCharacterByteIndex(RubyString string, int index, int start) {
             return start + index;
@@ -691,11 +656,7 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringByteCharacterIndexPrimitiveNode(StringByteCharacterIndexPrimitiveNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = { "isSingleByteOptimizableOrAsciiCompatible(string)", "!isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
+        @Specialization(guards = "isSingleByteOptimizableOrAsciiCompatible(string)")
         public int stringByteCharacterIndexSingleByte(RubyString string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index.
             return index;
@@ -742,10 +703,6 @@ public abstract class StringPrimitiveNodes {
 
         public StringCharacterIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StringCharacterIndexPrimitiveNode(StringCharacterIndexPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -849,10 +806,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringByteIndexPrimitiveNode(StringByteIndexPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object stringByteIndex(RubyString string, int index, int start) {
             // Taken from Rubinius's String::byte_index.
@@ -949,10 +902,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringPreviousByteIndexPrimitiveNode(StringPreviousByteIndexPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object stringPreviousByteIndex(RubyString string, int index) {
             // Port of Rubinius's String::previous_byte_index.
@@ -982,10 +931,6 @@ public abstract class StringPrimitiveNodes {
 
         public StringCopyFromPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StringCopyFromPrimitiveNode(StringCopyFromPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1024,10 +969,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringResizeCapacityPrimitiveNode(StringResizeCapacityPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString stringResizeCapacity(RubyString string, int capacity) {
             string.getByteList().ensure(capacity);
@@ -1041,10 +982,6 @@ public abstract class StringPrimitiveNodes {
 
         public StringRindexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StringRindexPrimitiveNode(StringRindexPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1114,8 +1051,17 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringPatternPrimitiveNode(StringPatternPrimitiveNode prev) {
-            super(prev);
+
+        @Specialization(guards = "value == 0")
+        public RubyString stringPatternZero(RubyClass stringClass, int size, int value) {
+            return new RubyString(stringClass, new ByteList(new byte[size]));
+        }
+
+        @Specialization(guards = "value != 0")
+        public RubyString stringPattern(RubyClass stringClass, int size, int value) {
+            final byte[] bytes = new byte[size];
+            Arrays.fill(bytes, (byte) value);
+            return new RubyString(stringClass, new ByteList(bytes));
         }
 
         @Specialization
@@ -1139,10 +1085,6 @@ public abstract class StringPrimitiveNodes {
 
         public StringToInumPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StringToInumPrimitiveNode(StringToInumPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1171,10 +1113,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringByteAppendPrimitiveNode(StringByteAppendPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString stringByteAppend(RubyString string, RubyString other) {
             notDesignedForCompilation();
@@ -1192,11 +1130,6 @@ public abstract class StringPrimitiveNodes {
 
         public StringSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StringSubstringPrimitiveNode(StringSubstringPrimitiveNode prev) {
-            super(prev);
-            taintResultNode = prev.taintResultNode;
         }
 
         public abstract Object execute(VirtualFrame frame, RubyString string, int beg, int len);
@@ -1313,7 +1246,7 @@ public abstract class StringPrimitiveNodes {
         private RubyString makeSubstring(RubyString string, int beg, int len) {
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, new int[]{}));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
             final RubyString ret = getContext().makeString(string.getLogicalClass(), new ByteList(string.getByteList(), beg, len));

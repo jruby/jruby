@@ -77,10 +77,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public AddNode(AddNode prev) {
-            super(prev);
-        }
-
         @CreateCast("b") public RubyNode coerceOtherToAry(RubyNode other) {
             return ToAryNodeFactory.create(getContext(), getSourceSection(), other);
         }
@@ -191,12 +187,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public MulNode(MulNode prev) {
-            super(prev);
-            respondToToStrNode = prev.respondToToStrNode;
-            toIntNode = prev.toIntNode;
-        }
-
         @Specialization(guards = "isNull(array)")
         public RubyArray mulEmpty(RubyArray array, int count) {
             if (count < 0) {
@@ -298,7 +288,7 @@ public abstract class ArrayNodes {
                     CompilerDirectives.transferToInterpreter();
                     toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
                 }
-                final int count = toIntNode.executeIntegerFixnum(frame, object);
+                final int count = toIntNode.executeInt(frame, object);
                 if (count < 0) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
@@ -330,14 +320,6 @@ public abstract class ArrayNodes {
 
         public IndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public IndexNode(IndexNode prev) {
-            super(prev);
-            readNode = prev.readNode;
-            readSliceNode = prev.readSliceNode;
-            readNormalizedSliceNode = prev.readNormalizedSliceNode;
-            fallbackNode = prev.fallbackNode;
         }
 
         @Specialization
@@ -426,21 +408,13 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public IndexSetNode(IndexSetNode prev) {
-            super(prev);
-            writeNode = prev.writeNode;
-            readSliceNode = prev.readSliceNode;
-            popNode = prev.popNode;
-            toIntNode = prev.toIntNode;
-        }
-
         @Specialization(guards = {"!isInteger(indexObject)", "!isIntegerFixnumRange(indexObject)"})
         public Object set(VirtualFrame frame, RubyArray array, Object indexObject, Object value, UndefinedPlaceholder unused) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int index = toIntNode.executeIntegerFixnum(frame, indexObject);
+            final int index = toIntNode.executeInt(frame, indexObject);
             return set(frame, array, index, value, unused);
         }
 
@@ -465,7 +439,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            int length = toIntNode.executeIntegerFixnum(frame, lengthObject);
+            int length = toIntNode.executeInt(frame, lengthObject);
             return setObject(frame, array, start, length, value);
         }
 
@@ -475,7 +449,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            int start = toIntNode.executeIntegerFixnum(frame, startObject);
+            int start = toIntNode.executeInt(frame, startObject);
             return setObject(frame, array, start, length, value);
         }
 
@@ -485,8 +459,8 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            int length = toIntNode.executeIntegerFixnum(frame, lengthObject);
-            int start = toIntNode.executeIntegerFixnum(frame, startObject);
+            int length = toIntNode.executeInt(frame, lengthObject);
+            int start = toIntNode.executeInt(frame, startObject);
             return setObject(frame, array, start, length, value);
         }
 
@@ -556,7 +530,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            int start = toIntNode.executeIntegerFixnum(frame, startObject);
+            int start = toIntNode.executeInt(frame, startObject);
             return setOtherArray(frame, array, start, length, value);
         }
 
@@ -566,7 +540,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            int length = toIntNode.executeIntegerFixnum(frame, lengthObject);
+            int length = toIntNode.executeInt(frame, lengthObject);
             return setOtherArray(frame, array, start, length, value);
         }
 
@@ -576,8 +550,8 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            int start = toIntNode.executeIntegerFixnum(frame, startObject);
-            int length = toIntNode.executeIntegerFixnum(frame, lengthObject);
+            int start = toIntNode.executeInt(frame, startObject);
+            int length = toIntNode.executeInt(frame, lengthObject);
             return setOtherArray(frame, array, start, length, value);
         }
 
@@ -742,13 +716,8 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public AtNode(AtNode prev) {
-            super(prev);
-            readNode = prev.readNode;
-        }
-
         @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
-            return ToIntNodeFactory.create(getContext(), getSourceSection(), index);
+            return new FixnumLowerNode(ToIntNodeFactory.create(getContext(), getSourceSection(), index));
         }
 
         @Specialization
@@ -770,10 +739,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public ClearNode(ClearNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyArray clear(RubyArray array) {
             array.setStore(array.getStore(), 0);
@@ -788,10 +753,6 @@ public abstract class ArrayNodes {
 
         public CompactNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CompactNode(CompactNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "isIntArray(array)")
@@ -846,10 +807,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public CompactBangNode(CompactBangNode prev) {
-            super(prev);
-        }
-
         @Specialization(guards = "!isObject(array)")
         public RubyNilClass compactNotObjects(RubyArray array) {
             return nil();
@@ -890,10 +847,6 @@ public abstract class ArrayNodes {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ConcatNode(ConcatNode prev) {
-            super(prev);
         }
 
         public abstract RubyArray executeConcat(RubyArray array, RubyArray other);
@@ -1008,12 +961,6 @@ public abstract class ArrayNodes {
             equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null,null});
         }
 
-        public DeleteNode(DeleteNode prev) {
-            super(prev);
-            equalNode = prev.equalNode;
-            isFrozenNode = prev.isFrozenNode;
-        }
-
         @Specialization(guards = "isIntegerFixnum(array)")
         public Object deleteIntegerFixnum(VirtualFrame frame, RubyArray array, Object value) {
             final int[] store = (int[]) array.getStore();
@@ -1109,10 +1056,6 @@ public abstract class ArrayNodes {
 
         public DeleteAtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DeleteAtNode(DeleteAtNode prev) {
-            super(prev);
         }
 
         @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
@@ -1309,11 +1252,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public EachNode(EachNode prev) {
-            super(prev);
-            toEnumNode = prev.toEnumNode;
-        }
-
         @Specialization
         public Object eachEnumerator(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
             if (toEnumNode == null) {
@@ -1346,9 +1284,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n]);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1383,9 +1318,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n]);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1420,9 +1352,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n]);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1457,9 +1386,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n]);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1491,10 +1417,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public EachWithIndexNode(EachWithIndexNode prev) {
-            super(prev);
-        }
-
         @Specialization(guards = "isNull(array)")
         public RubyArray eachWithEmpty(VirtualFrame frame, RubyArray array, RubyProc block) {
             return array;
@@ -1517,9 +1439,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n], n);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1554,9 +1473,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n], n);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1591,9 +1507,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n], n);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1628,9 +1541,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n], n);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1663,11 +1573,6 @@ public abstract class ArrayNodes {
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null,null});
-        }
-
-        public IncludeNode(IncludeNode prev) {
-            super(prev);
-            equalNode = prev.equalNode;
         }
 
         @Specialization(guards = "isNull(array)")
@@ -1752,18 +1657,9 @@ public abstract class ArrayNodes {
         @Child private KernelNodes.RespondToNode respondToToAryNode;
         @Child private ArrayBuilderNode arrayBuilder;
 
-        private final BranchProfile breakProfile = BranchProfile.create();
-
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
-        }
-
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-            arrayBuilder = prev.arrayBuilder;
-            toIntNode = prev.toIntNode;
-            respondToToAryNode = prev.respondToToAryNode;
         }
 
         @Specialization(guards = {"!isInteger(object)", "!isLong(object)", "!isUndefinedPlaceholder(object)", "!isRubyArray(object)"})
@@ -1793,7 +1689,7 @@ public abstract class ArrayNodes {
                     CompilerDirectives.transferToInterpreter();
                     toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
                 }
-                int size = toIntNode.executeIntegerFixnum(frame, object);
+                int size = toIntNode.executeInt(frame, object);
                 if (size < 0) {
                     return initializeNegative(array, size, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
                 } else {
@@ -1902,7 +1798,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            int size = toIntNode.executeIntegerFixnum(frame, sizeObject);
+            int size = toIntNode.executeInt(frame, sizeObject);
             if (size < 0) {
                 return initializeNegative(array, size, defaultValue, UndefinedPlaceholder.INSTANCE);
             } else {
@@ -1927,29 +1823,24 @@ public abstract class ArrayNodes {
             Object store = arrayBuilder.start();
 
             int count = 0;
+            int n = 0;
             try {
-                for (int n = 0; n < size; n++) {
+                for (; n < size; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
 
-                    try {
-                        arrayBuilder.ensure(store, n + 1);
-                        store = arrayBuilder.append(store, n, yield(frame, block, n));
-                    } catch (BreakException e) {
-                        breakProfile.enter();
-                        array.setStore(arrayBuilder.finish(store, n), n);
-                        return e.getResult();
-                    }
-
+                    arrayBuilder.ensure(store, n + 1);
+                    store = arrayBuilder.append(store, n, yield(frame, block, n));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
                     getRootNode().reportLoopCount(count);
                 }
+
+                array.setStore(arrayBuilder.finish(store, n), n);
             }
 
-            array.setStore(arrayBuilder.finish(store, size), size);
             return array;
         }
 
@@ -1987,10 +1878,6 @@ public abstract class ArrayNodes {
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InitializeCopyNode(InitializeCopyNode prev) {
-            super(prev);
         }
 
         @CreateCast("from") public RubyNode coerceOtherToAry(RubyNode other) {
@@ -2053,11 +1940,6 @@ public abstract class ArrayNodes {
         public InjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             dispatch = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.CALL_METHOD_MISSING);
-        }
-
-        public InjectNode(InjectNode prev) {
-            super(prev);
-            dispatch = prev.dispatch;
         }
 
         @Specialization(guards = "isIntegerFixnum(array)")
@@ -2160,6 +2042,11 @@ public abstract class ArrayNodes {
             return accumulator;
         }
 
+        @Specialization(guards = "isNullArray(array)")
+        public Object injectNull(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+            return initial;
+        }
+
         @Specialization
         public Object inject(VirtualFrame frame, RubyArray array, RubySymbol symbol, UndefinedPlaceholder unused) {
             notDesignedForCompilation();
@@ -2193,11 +2080,6 @@ public abstract class ArrayNodes {
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InsertNode(InsertNode prev) {
-            super(prev);
-            this.toIntNode = prev.toIntNode;
         }
 
         @Specialization(guards = {"isNull(array)", "isIntIndexAndOtherSingleObjectArg(array, values)"})
@@ -2242,7 +2124,7 @@ public abstract class ArrayNodes {
                     CompilerDirectives.transferToInterpreter();
                     toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
                 }
-                index = toIntNode.executeIntegerFixnum(frame, values[0]);
+                index = toIntNode.executeInt(frame, values[0]);
             }
 
             final int valuesLength = values.length - 1;
@@ -2289,11 +2171,6 @@ public abstract class ArrayNodes {
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
-        public MapNode(MapNode prev) {
-            super(prev);
-            arrayBuilder = prev.arrayBuilder;
-        }
-
         @Specialization(guards = "isNull(array)")
         public RubyArray mapNull(RubyArray array, RubyProc block) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
@@ -2317,9 +2194,6 @@ public abstract class ArrayNodes {
                         try {
                             mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -2355,9 +2229,6 @@ public abstract class ArrayNodes {
                         try {
                             mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -2393,9 +2264,6 @@ public abstract class ArrayNodes {
                         try {
                             mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -2431,9 +2299,6 @@ public abstract class ArrayNodes {
                         try {
                             mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -2466,11 +2331,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public MapInPlaceNode(MapInPlaceNode prev) {
-            super(prev);
-            writeNode = prev.writeNode;
-        }
-
         @Specialization(guards = "isNull(array)")
         public RubyArray mapInPlaceNull(RubyArray array, RubyProc block) {
             return array;
@@ -2498,9 +2358,6 @@ public abstract class ArrayNodes {
                         try {
                             writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -2541,9 +2398,6 @@ public abstract class ArrayNodes {
                         try {
                             writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -2577,12 +2431,6 @@ public abstract class ArrayNodes {
             maxBlock = context.getCoreLibrary().getArrayMaxBlock();
         }
 
-        public MaxNode(MaxNode prev) {
-            super(prev);
-            eachNode = prev.eachNode;
-            maxBlock = prev.maxBlock;
-        }
-
         @Specialization
         public Object max(VirtualFrame frame, RubyArray array) {
             // TODO: can we just write to the frame instead of having this indirect object?
@@ -2614,11 +2462,6 @@ public abstract class ArrayNodes {
         public MaxBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             compareNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public MaxBlockNode(MaxBlockNode prev) {
-            super(prev);
-            compareNode = prev.compareNode;
         }
 
         @Specialization
@@ -2690,12 +2533,6 @@ public abstract class ArrayNodes {
             minBlock = context.getCoreLibrary().getArrayMinBlock();
         }
 
-        public MinNode(MinNode prev) {
-            super(prev);
-            eachNode = prev.eachNode;
-            minBlock = prev.minBlock;
-        }
-
         @Specialization
         public Object min(VirtualFrame frame, RubyArray array) {
             // TODO: can we just write to the frame instead of having this indirect object?
@@ -2727,11 +2564,6 @@ public abstract class ArrayNodes {
         public MinBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             compareNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public MinBlockNode(MinBlockNode prev) {
-            super(prev);
-            compareNode = prev.compareNode;
         }
 
         @Specialization
@@ -2791,7 +2623,7 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(names = "pack", required = 1, taintFromParameters = 0)
+    @CoreMethod(names = "pack", required = 1, taintFromParameter = 0)
     public abstract static class PackNode extends ArrayCoreMethodNode {
 
         @Child private TaintNode taintNode;
@@ -2940,11 +2772,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public PopNode(PopNode prev) {
-            super(prev);
-            this.toIntNode = prev.toIntNode;
-        }
-
         public abstract Object executePop(VirtualFrame frame, RubyArray array, Object n);
 
         @Specialization(guards = "isNullOrEmpty(array)")
@@ -3047,7 +2874,7 @@ public abstract class ArrayNodes {
                     CompilerDirectives.transferToInterpreter();
                     toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
                 }
-                final int n = toIntNode.executeIntegerFixnum(frame, object);
+                final int n = toIntNode.executeInt(frame, object);
                 if (n < 0) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -3192,7 +3019,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -3216,7 +3043,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -3240,7 +3067,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -3264,7 +3091,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -3287,7 +3114,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -3310,7 +3137,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -3333,7 +3160,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -3363,24 +3190,28 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public PushNode(PushNode prev) {
-            super(prev);
-        }
-
         @Specialization(guards = {"isNull(array)", "isSingleIntegerFixnum(array, values)"})
-        public RubyArray pushEmptySingleIntegerFixnum(RubyArray array, Object... values) {
+        public RubyArray pushNullEmptySingleIntegerFixnum(RubyArray array, Object... values) {
             array.setStore(new int[]{(int) values[0]}, 1);
             return array;
         }
 
         @Specialization(guards = {"isNull(array)", "isSingleLongFixnum(array, values)"})
-        public RubyArray pushEmptySingleIntegerLong(RubyArray array, Object... values) {
+        public RubyArray pushNullEmptySingleIntegerLong(RubyArray array, Object... values) {
             array.setStore(new long[]{(long) values[0]}, 1);
             return array;
         }
 
         @Specialization(guards = "isNull(array)")
-        public RubyArray pushEmptyObjects(RubyArray array, Object... values) {
+        public RubyArray pushNullEmptyObjects(RubyArray array, Object... values) {
+            array.setStore(values, values.length);
+            return array;
+        }
+
+        @Specialization(guards = {"!isNull(array)", "isEmpty(array)"})
+        public RubyArray pushEmptySingleIntegerFixnum(RubyArray array, Object... values) {
+            notDesignedForCompilation();
+            // TODO CS 20-Apr-15 in reality might be better reusing any current storage, but won't worry about that for now
             array.setStore(values, values.length);
             return array;
         }
@@ -3459,18 +3290,6 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isLongFixnum(array)")
-        public RubyArray pushLongFixnum(RubyArray array, Object... values) {
-            // TODO CS 5-Feb-15 hack to get things working with empty long[] store
-
-            if (array.getSize() != 0) {
-                throw new UnsupportedOperationException();
-            }
-
-            array.setStore(values, values.length);
-            return array;
-        }
-
         @Specialization(guards = "isFloat(array)")
         public RubyArray pushFloat(RubyArray array, Object... values) {
             // TODO CS 5-Feb-15 hack to get things working with empty double[] store
@@ -3521,10 +3340,6 @@ public abstract class ArrayNodes {
 
         public PushOneNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public PushOneNode(PushOneNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "isNull(array)")
@@ -3598,11 +3413,6 @@ public abstract class ArrayNodes {
         public RejectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
-        }
-
-        public RejectNode(RejectNode prev) {
-            super(prev);
-            arrayBuilder = prev.arrayBuilder;
         }
 
         @Specialization(guards = "isNull(array)")
@@ -3684,10 +3494,6 @@ public abstract class ArrayNodes {
 
         public DeleteIfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DeleteIfNode(DeleteIfNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -3804,10 +3610,6 @@ public abstract class ArrayNodes {
 
         public RejectInPlaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public RejectInPlaceNode(RejectInPlaceNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -3937,10 +3739,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public ReplaceNode(ReplaceNode prev) {
-            super(prev);
-        }
-
         @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode index) {
             return ToAryNodeFactory.create(getContext(), getSourceSection(), index);
         }
@@ -3996,11 +3794,6 @@ public abstract class ArrayNodes {
         public SelectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
-        }
-
-        public SelectNode(SelectNode prev) {
-            super(prev);
-            arrayBuilder = prev.arrayBuilder;
         }
 
         @Specialization(guards = "isNull(array)")
@@ -4083,10 +3876,6 @@ public abstract class ArrayNodes {
 
         public ShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ShiftNode(ShiftNode prev) {
-            super(prev);
         }
 
         public abstract Object executeShift(VirtualFrame frame, RubyArray array, Object n);
@@ -4211,7 +4000,7 @@ public abstract class ArrayNodes {
                     CompilerDirectives.transferToInterpreter();
                     toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
                 }
-                final int n = toIntNode.executeIntegerFixnum(frame, object);
+                final int n = toIntNode.executeInt(frame, object);
                 if (n < 0) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4366,7 +4155,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4391,7 +4180,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4416,7 +4205,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4441,7 +4230,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4465,7 +4254,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4490,7 +4279,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4515,7 +4304,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            final int num = toIntNode.executeInt(frame, object);
             if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -4542,10 +4331,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public SizeNode(SizeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int size(RubyArray array) {
             return array.getSize();
@@ -4563,12 +4348,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
             compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(context);
             yieldNode = new YieldDispatchHeadNode(context);
-        }
-
-        public SortNode(SortNode prev) {
-            super(prev);
-            compareDispatchNode = prev.compareDispatchNode;
-            yieldNode = prev.yieldNode;
         }
 
         @Specialization(guards = "isNull(array)")
@@ -4693,10 +4472,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public UnshiftNode(UnshiftNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyArray unshift(RubyArray array, Object... args) {
             notDesignedForCompilation();
@@ -4712,10 +4487,6 @@ public abstract class ArrayNodes {
 
         public ZipNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ZipNode(ZipNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = {"isObject(array)", "isOtherSingleIntegerFixnumArray(array, others)"})

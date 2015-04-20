@@ -205,4 +205,20 @@ public class IncludedModuleWrapper extends IncludedModule {
     public IRubyObject getAutoloadConstant(String name) {
         return origin.getAutoloadConstant(name);
     }
+
+    @Override
+    protected DynamicMethod searchMethodCommon(String name) {
+        // IncludedModuleWrapper needs to search prepended modules too, but not included ones.
+        RubyModule module = this;
+        for (; module.isPrepended(); module = module.getSuperClass()) {
+            DynamicMethod method = module.getMethods().get(name);
+            if (method != null) return method.isNull() ? null : method;
+        }
+
+        // Last non-prepended module should be our regular module, do one last search.
+        DynamicMethod method = module.getMethods().get(name);
+        if (method != null) return method.isNull() ? null : method;
+
+        return null;
+    }
 }

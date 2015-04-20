@@ -24,10 +24,6 @@ public abstract class AssertNotCompiledNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public AssertNotCompiledNode(AssertNotCompiledNode prev) {
-        super(prev);
-    }
-
     private static volatile boolean[] sideEffect;
 
     @Specialization

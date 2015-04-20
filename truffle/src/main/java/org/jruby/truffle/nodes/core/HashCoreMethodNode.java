@@ -20,8 +20,4 @@ public abstract class HashCoreMethodNode extends CoreMethodNode {
         super(context, sourceSection);
     }
 
-    public HashCoreMethodNode(HashCoreMethodNode prev) {
-        super(prev);
-    }
-
 }

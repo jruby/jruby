@@ -37,12 +37,6 @@ public abstract class ArraySliceNode extends RubyNode {
         this.to = to;
     }
 
-    public ArraySliceNode(ArraySliceNode prev) {
-        super(prev);
-        from = prev.from;
-        to = prev.to;
-    }
-
     @Specialization(guards = "isNull(array)")
     public RubyArray sliceNull(RubyArray array) {
         notDesignedForCompilation();

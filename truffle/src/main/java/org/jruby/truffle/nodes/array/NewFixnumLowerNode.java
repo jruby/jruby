@@ -29,10 +29,6 @@ public abstract class NewFixnumLowerNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public NewFixnumLowerNode(NewFixnumLowerNode prev) {
-        super(prev);
-    }
-
     @Specialization
     public int lower(int value) {
         return value;

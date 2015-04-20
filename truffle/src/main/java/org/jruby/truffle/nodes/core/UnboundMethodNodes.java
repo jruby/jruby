@@ -32,15 +32,30 @@ import org.jruby.truffle.runtime.core.RubyUnboundMethod;
 @CoreClass(name = "UnboundMethod")
 public abstract class UnboundMethodNodes {
 
+    @CoreMethod(names = "==", required = 1)
+    public abstract static class EqualNode extends CoreMethodNode {
+
+        public EqualNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        boolean equal(RubyUnboundMethod self, RubyUnboundMethod other) {
+            return self.getMethod() == other.getMethod() && self.getOrigin() == other.getOrigin();
+        }
+
+        @Specialization(guards = "!isRubyUnboundMethod(other)")
+        boolean equal(RubyUnboundMethod self, Object other) {
+            return false;
+        }
+
+    }
+
     @CoreMethod(names = "arity")
     public abstract static class ArityNode extends CoreMethodNode {
 
         public ArityNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ArityNode(ArityNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -59,11 +74,6 @@ public abstract class UnboundMethodNodes {
             super(context, sourceSection);
         }
 
-        public BindNode(BindNode prev) {
-            super(prev);
-            metaClassNode = prev.metaClassNode;
-        }
-
         private RubyClass metaClass(VirtualFrame frame, Object object) {
             if (metaClassNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -76,14 +86,13 @@ public abstract class UnboundMethodNodes {
         public RubyMethod bind(VirtualFrame frame, RubyUnboundMethod unboundMethod, Object object) {
             notDesignedForCompilation();
             RubyModule module = unboundMethod.getMethod().getDeclaringModule();
-            if (module instanceof RubyClass) {
-                if (!ModuleOperations.assignableTo(metaClass(frame, object), module)) {
-                    CompilerDirectives.transferToInterpreter();
-                    if (((RubyClass) module).isSingleton()) {
-                        throw new RaiseException(getContext().getCoreLibrary().typeError("singleton method called for a different object", this));
-                    } else {
-                        throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be an instance of " + module.getName(), this));
-                    }
+            // the (redundant) instanceof is to satisfy FindBugs with the following cast
+            if (module instanceof RubyClass && !ModuleOperations.canBindMethodTo(module, metaClass(frame, object))) {
+                CompilerDirectives.transferToInterpreter();
+                if (((RubyClass) module).isSingleton()) {
+                    throw new RaiseException(getContext().getCoreLibrary().typeError("singleton method called for a different object", this));
+                } else {
+                    throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be an instance of " + module.getName(), this));
                 }
             }
 
@@ -97,10 +106,6 @@ public abstract class UnboundMethodNodes {
 
         public NameNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public NameNode(NameNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -120,10 +125,6 @@ public abstract class UnboundMethodNodes {
             super(context, sourceSection);
         }
 
-        public OriginNode(OriginNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyModule origin(RubyUnboundMethod unboundMethod) {
             return unboundMethod.getOrigin();
@@ -138,10 +139,6 @@ public abstract class UnboundMethodNodes {
             super(context, sourceSection);
         }
 
-        public OwnerNode(OwnerNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyModule owner(RubyUnboundMethod unboundMethod) {
             return unboundMethod.getMethod().getDeclaringModule();
@@ -154,10 +151,6 @@ public abstract class UnboundMethodNodes {
 
         public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SourceLocationNode(SourceLocationNode prev) {
-            super(prev);
         }
 
         @Specialization

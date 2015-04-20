@@ -1,1 +1,0 @@
-fails:Matrix#inv raises a ErrDimensionMismatch if the Matrix is not square

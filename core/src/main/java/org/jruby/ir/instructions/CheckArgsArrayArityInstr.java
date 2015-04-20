@@ -16,9 +16,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class CheckArgsArrayArityInstr extends Instr implements FixedArityInstr {
     public final int required;
     public final int opt;
-    public final int rest;
+    public final boolean rest;
 
-    public CheckArgsArrayArityInstr(Operand argsArray, int required, int opt, int rest) {
+    public CheckArgsArrayArityInstr(Operand argsArray, int required, int opt, boolean rest) {
         super(Operation.CHECK_ARGS_ARRAY_ARITY, new Operand[] { argsArray });
 
         this.required = required;
@@ -41,7 +41,7 @@ public class CheckArgsArrayArityInstr extends Instr implements FixedArityInstr {
     }
 
     public static CheckArgsArrayArityInstr decode(IRReaderDecoder d) {
-        return new CheckArgsArrayArityInstr(d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
+        return new CheckArgsArrayArityInstr(d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeBoolean());
     }
 
     @Override

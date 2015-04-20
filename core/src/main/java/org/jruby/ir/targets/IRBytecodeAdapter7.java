@@ -54,14 +54,14 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         adapter.invokedynamic("flote", sig(JVM.OBJECT, ThreadContext.class), FloatObjectSite.BOOTSTRAP, d);
     }
 
-    public void pushString(ByteList bl) {
+    public void pushString(ByteList bl, int cr) {
         loadContext();
-        adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString());
+        adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr);
     }
 
-    public void pushFrozenString(ByteList bl) {
+    public void pushFrozenString(ByteList bl, int cr) {
         loadContext();
-        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString());
+        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr);
     }
 
     public void pushByteList(ByteList bl) {

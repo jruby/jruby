@@ -25,6 +25,8 @@ import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodesFactory;
 import org.jruby.truffle.pack.parser.PackParser;
 import org.jruby.truffle.nodes.rubinius.PosixNodesFactory;
+import org.jruby.truffle.nodes.rubinius.RubiniusTypeNodes;
+import org.jruby.truffle.nodes.rubinius.RubiniusTypeNodesFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -74,7 +76,6 @@ public class TruffleBridgeImpl implements TruffleBridge {
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, BindingNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, BignumNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ClassNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, DirNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ExceptionNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, FalseClassNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, FiberNodesFactory.getFactories());
@@ -102,11 +103,13 @@ public class TruffleBridgeImpl implements TruffleBridge {
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, TrufflePrimitiveNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, EncodingNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, EncodingConverterNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, TruffleInteropNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, MethodNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, UnboundMethodNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ByteArrayNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, TimeNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, PosixNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, RubiniusTypeNodesFactory.getFactories());
 
         // Give the core library manager a chance to tweak some of those methods
 
@@ -148,7 +151,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
         loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/truffle").toString()));
 
         // Libraries from RubySL
-        for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio","rubysl-complex","rubysl-date")) {
+        for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio", "rubysl-complex", "rubysl-date", "rubysl-pathname", "rubysl-tempfile")) {
             loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
         }
 
@@ -162,12 +165,6 @@ public class TruffleBridgeImpl implements TruffleBridge {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }
-
-        // Hook
-
-        if (truffleContext.getHooks() != null) {
-            truffleContext.getHooks().afterInit(truffleContext);
         }
     }
 

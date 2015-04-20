@@ -30,10 +30,6 @@ public abstract class WriteLevelVariableNode extends FrameSlotNode implements Wr
         this.varLevel = level;
     }
 
-    protected WriteLevelVariableNode(WriteLevelVariableNode prev) {
-        this(prev.getContext(), prev.getSourceSection(), prev.frameSlot, prev.varLevel);
-    }
-
     @Specialization(guards = "isBooleanKind(frame)")
     public boolean doBoolean(VirtualFrame frame, boolean value) {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);

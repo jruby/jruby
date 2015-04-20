@@ -1,2 +1,1 @@
-fails:Exception#backtrace returns nil if no backtrace was set
 fails:Exception#backtrace when redefined does not affect the behaviour of Exception#message

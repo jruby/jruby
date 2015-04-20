@@ -51,10 +51,6 @@ public abstract class HashNodes {
             super(context, sourceSection);
         }
 
-        public ConstructNode(ConstructNode prev) {
-            super(prev);
-        }
-
         @ExplodeLoop
         @Specialization(guards = "isSmallArrayOfPairs(hashClass, args)")
         public Object construct(VirtualFrame frame, RubyClass hashClass, Object[] args) {
@@ -148,16 +144,6 @@ public abstract class HashNodes {
             findEntryNode = new FindEntryNode(context, sourceSection);
         }
 
-        public GetIndexNode(GetIndexNode prev) {
-            super(prev);
-            hashNode = prev.hashNode;
-            eqlNode = prev.eqlNode;
-            equalNode = prev.equalNode;
-            callDefaultNode = prev.callDefaultNode;
-            findEntryNode = prev.findEntryNode;
-            undefinedValue = prev.undefinedValue;
-        }
-        
         public abstract Object executeGet(VirtualFrame frame, RubyHash hash, Object key);
 
         @Specialization(guards = "isNull(hash)")
@@ -243,11 +229,6 @@ public abstract class HashNodes {
             getIndexNode.setUndefinedValue(context.getCoreLibrary().getRubiniusUndefined());
         }
 
-        public GetOrUndefinedNode(GetOrUndefinedNode prev) {
-            super(prev);
-            getIndexNode = prev.getIndexNode;
-        }
-
         @Specialization
         public Object getOrUndefined(VirtualFrame frame, RubyHash hash, Object key) {
             return getIndexNode.executeGet(frame, hash, key);
@@ -271,13 +252,6 @@ public abstract class HashNodes {
             hashNode = DispatchHeadNodeFactory.createMethodCall(context, true);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
             equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
-        }
-
-        public SetIndexNode(SetIndexNode prev) {
-            super(prev);
-            hashNode = prev.hashNode;
-            eqlNode = prev.eqlNode;
-            equalNode = prev.equalNode;
         }
 
         @Specialization(guards = { "isNull(hash)", "!isRubyString(key)" })
@@ -394,10 +368,6 @@ public abstract class HashNodes {
             super(context, sourceSection);
         }
 
-        public ClearNode(ClearNode prev) {
-            super(prev);
-        }
-
         @Specialization(guards = "isNull(hash)")
         public RubyHash emptyNull(RubyHash hash) {
             return hash;
@@ -418,10 +388,6 @@ public abstract class HashNodes {
             super(context, sourceSection);
         }
 
-        public CompareByIdentityNode(CompareByIdentityNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyHash compareByIdentity(RubyHash hash) {
             hash.setCompareByIdentity(true);
@@ -439,10 +405,6 @@ public abstract class HashNodes {
             super(context, sourceSection);
         }
 
-        public IsCompareByIdentityNode(IsCompareByIdentityNode prev) {
-            super(prev);
-        }
-        
         @Specialization
         public boolean compareByIdentity(RubyHash hash) {
             return profile.profile(hash.isCompareByIdentity());
@@ -455,10 +417,6 @@ public abstract class HashNodes {
 
         public DefaultProcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DefaultProcNode(DefaultProcNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -484,13 +442,6 @@ public abstract class HashNodes {
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
             findEntryNode = new FindEntryNode(context, sourceSection);
             yieldNode = new YieldDispatchHeadNode(context);
-        }
-
-        public DeleteNode(DeleteNode prev) {
-            super(prev);
-            eqlNode = prev.eqlNode;
-            findEntryNode = prev.findEntryNode;
-            yieldNode = prev.yieldNode;
         }
 
         @Specialization(guards = "isNull(hash)")
@@ -583,11 +534,6 @@ public abstract class HashNodes {
             super(context, sourceSection);
         }
 
-        public EachNode(EachNode prev) {
-            super(prev);
-            toEnumNode = prev.toEnumNode;
-        }
-
         @Specialization(guards = "isNull(hash)")
         public RubyHash eachNull(RubyHash hash, RubyProc block) {
             return hash;
@@ -653,10 +599,6 @@ public abstract class HashNodes {
             super(context, sourceSection);
         }
 
-        public EmptyNode(EmptyNode prev) {
-            super(prev);
-        }
-
         @Specialization(guards = "isNull(hash)")
         public boolean emptyNull(RubyHash hash) {
             return true;
@@ -674,10 +616,6 @@ public abstract class HashNodes {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -718,10 +656,6 @@ public abstract class HashNodes {
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InitializeCopyNode(InitializeCopyNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "isNull(from)")
@@ -788,10 +722,6 @@ public abstract class HashNodes {
 
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public MapNode(MapNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "isNull(hash)")
@@ -863,12 +793,6 @@ public abstract class HashNodes {
         public MergeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
-        }
-
-        public MergeNode(MergeNode prev) {
-            super(prev);
-            eqlNode = prev.eqlNode;
-            fallbackCallNode = prev.fallbackCallNode;
         }
 
         @Specialization(guards = {"!isNull(hash)", "!isBuckets(hash)", "isNull(other)", "!isCompareByIdentity(hash)"})
@@ -1049,10 +973,6 @@ public abstract class HashNodes {
             super(context, sourceSection);
         }
 
-        public SetDefaultNode(SetDefaultNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object setDefault(VirtualFrame frame, RubyHash hash, Object defaultValue) {
             notDesignedForCompilation();
@@ -1070,10 +990,6 @@ public abstract class HashNodes {
 
         public ShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ShiftNode(ShiftNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = {"isEmpty(hash)", "!hasDefaultValue(hash)", "!hasDefaultBlock(hash)"})
@@ -1176,10 +1092,6 @@ public abstract class HashNodes {
             super(context, sourceSection);
         }
 
-        public SizeNode(SizeNode prev) {
-            super(prev);
-        }
-
         @Specialization(guards = "isNull(hash)")
         public int sizeNull(RubyHash hash) {
             return 0;
@@ -1197,10 +1109,6 @@ public abstract class HashNodes {
 
         public RehashNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public RehashNode(RehashNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "isNull(hash)")
@@ -1233,10 +1141,6 @@ public abstract class HashNodes {
             super(context, sourceSection);
         }
 
-        public DefaultValueNode(DefaultValueNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object defaultValue(RubyHash hash) {
             final Object value = hash.getDefaultValue();
@@ -1257,10 +1161,6 @@ public abstract class HashNodes {
             super(context, sourceSection);
         }
 
-        public SetDefaultValueNode(SetDefaultValueNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object setDefaultValue(RubyHash hash, Object defaultValue) {
             hash.setDefaultValue(defaultValue);
@@ -1275,10 +1175,6 @@ public abstract class HashNodes {
 
         public SetDefaultProcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SetDefaultProcNode(SetDefaultProcNode prev) {
-            super(prev);
         }
 
         @Specialization

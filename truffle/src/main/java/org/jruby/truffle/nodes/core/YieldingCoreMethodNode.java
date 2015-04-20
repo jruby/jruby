@@ -28,11 +28,6 @@ public abstract class YieldingCoreMethodNode extends CoreMethodNode {
         dispatchNode = new YieldDispatchHeadNode(context);
     }
 
-    public YieldingCoreMethodNode(YieldingCoreMethodNode prev) {
-        super(prev);
-        dispatchNode = prev.dispatchNode;
-    }
-
     private boolean booleanCast(VirtualFrame frame, Object value) {
         if (booleanCastNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();

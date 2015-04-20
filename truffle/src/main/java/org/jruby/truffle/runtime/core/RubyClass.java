@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 
 import org.jruby.truffle.nodes.RubyNode;
@@ -32,7 +33,6 @@ public class RubyClass extends RubyModule {
     @CompilationFinal Allocator allocator;
 
     private final boolean isSingleton;
-    private final Set<RubyClass> subClasses = Collections.newSetFromMap(new WeakHashMap<RubyClass, Boolean>());
     private final RubyModule attached;
 
     /**
@@ -87,15 +87,15 @@ public class RubyClass extends RubyModule {
 
         parentModule = superClass;
         superClass.addDependent(this);
-        superClass.subClasses.add(this);
 
         newVersion();
     }
 
-    @Override
-    public void initCopy(RubyModule other) {
-        super.initCopy(other);
-        assert other instanceof RubyClass;
+    public void initCopy(RubyClass from) {
+        super.initCopy(from);
+        this.allocator = ((RubyClass) from).allocator;
+        // isSingleton is false as we cannot copy a singleton class.
+        // and therefore attached is null.
     }
 
     private RubyClass ensureSingletonConsistency() {

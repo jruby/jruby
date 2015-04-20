@@ -29,10 +29,6 @@ public abstract class ReadLocalVariableNode extends FrameSlotNode implements Rea
         super(context, sourceSection, slot);
     }
 
-    public ReadLocalVariableNode(ReadLocalVariableNode prev) {
-        this(prev.getContext(), prev.getSourceSection(), prev.frameSlot);
-    }
-
     @Specialization(rewriteOn = {FrameSlotTypeException.class})
     public boolean doBoolean(VirtualFrame frame) throws FrameSlotTypeException {
         return getBoolean(frame);

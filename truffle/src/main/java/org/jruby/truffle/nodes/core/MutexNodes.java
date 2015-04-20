@@ -67,10 +67,6 @@ public abstract class MutexNodes {
             super(context, sourceSection);
         }
 
-        public LockNode(LockNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyBasicObject lock(RubyBasicObject mutex) {
             final ReentrantLock lock = getLock(mutex);
@@ -103,10 +99,6 @@ public abstract class MutexNodes {
             super(context, sourceSection);
         }
 
-        public IsLockedNode(IsLockedNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean isLocked(RubyBasicObject mutex) {
             return getLock(mutex).isLocked();
@@ -121,10 +113,6 @@ public abstract class MutexNodes {
             super(context, sourceSection);
         }
 
-        public IsOwnedNode(IsOwnedNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean isOwned(RubyBasicObject mutex) {
             return getLock(mutex).isHeldByCurrentThread();
@@ -137,10 +125,6 @@ public abstract class MutexNodes {
 
         public TryLockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public TryLockNode(TryLockNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -167,10 +151,6 @@ public abstract class MutexNodes {
 
         public UnlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public UnlockNode(UnlockNode prev) {
-            super(prev);
         }
 
         @Specialization

@@ -33,12 +33,6 @@ public abstract class AliasNode extends RubyNode {
         this.oldName = oldName;
     }
 
-    public AliasNode(AliasNode prev) {
-        super(prev);
-        newName = prev.newName;
-        oldName = prev.oldName;
-    }
-
     public Object noClass() {
         CompilerDirectives.transferToInterpreter();
         throw new RaiseException(getContext().getCoreLibrary().typeErrorNoClassToMakeAlias(this));

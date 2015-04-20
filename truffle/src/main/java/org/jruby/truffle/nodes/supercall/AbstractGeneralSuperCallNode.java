@@ -80,7 +80,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
                 return;
             }
             // TODO: should add " for #{receiver.inspect}" in error message
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError(String.format("super: no superclass method `%s'", name), this));
+            throw new RaiseException(getContext().getCoreLibrary().noMethodError(String.format("super: no superclass method `%s'", name), name, this));
         }
 
         unmodifiedAssumption = declaringModule.getUnmodifiedAssumption();

@@ -9,6 +9,9 @@
  */
 package org.jruby.truffle.runtime.control;
 
+import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.translator.TranslatorEnvironment.BlockID;
+
 import com.oracle.truffle.api.nodes.ControlFlowException;
 
 /**
@@ -16,10 +19,16 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
  */
 public final class BreakException extends ControlFlowException {
 
+    private final BlockID blockID;
     private final Object result;
 
-    public BreakException(Object result) {
+    public BreakException(BlockID blockID, Object result) {
+        this.blockID = blockID;
         this.result = result;
+    }
+
+    public BlockID getBlockID() {
+        return blockID;
     }
 
     public Object getResult() {

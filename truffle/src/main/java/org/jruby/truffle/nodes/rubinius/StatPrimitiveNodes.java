@@ -33,20 +33,44 @@ public abstract class StatPrimitiveNodes {
             writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
         }
 
-        public StatStatPrimitiveNode(StatStatPrimitiveNode prev) {
-            super(prev);
-            writeStatNode = prev.writeStatNode;
-        }
-
         @Specialization
         public int stat(RubyBasicObject rubyStat, RubyString path) {
-            final FileStat stat = getContext().getRuntime().getPosix().allocateStat();
-            final int code = getContext().getRuntime().getPosix().stat(path.toString(), stat);
+            final FileStat stat = getContext().getPosix().allocateStat();
+            final int code = getContext().getPosix().stat(path.toString(), stat);
 
             if (code == 0) {
                 writeStatNode.execute(rubyStat, stat);
             }
             
+            return code;
+        }
+
+        @Specialization(guards = "!isRubyString(path)")
+        public Object stat(RubyBasicObject rubyStat, Object path) {
+            return null;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_lstat")
+    public static abstract class StatLStatPrimitiveNode extends RubiniusPrimitiveNode {
+
+        @Child private WriteHeadObjectFieldNode writeStatNode;
+
+        public StatLStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
+        }
+
+        @Specialization
+        public int lstat(RubyBasicObject rubyStat, RubyString path) {
+            final FileStat stat = getContext().getPosix().allocateStat();
+            final int code = getContext().getPosix().lstat(path.toString(), stat);
+
+            if (code == 0) {
+                writeStatNode.execute(rubyStat, stat);
+            }
+
             return code;
         }
 
@@ -66,11 +90,6 @@ public abstract class StatPrimitiveNodes {
             readStatNode = new ReadHeadObjectFieldNode(STAT_IDENTIFIER);
         }
 
-        public StatReadPrimitiveNode(StatReadPrimitiveNode prev) {
-            super(prev);
-            readStatNode = prev.readStatNode;
-        }
-
         public FileStat getStat(RubyBasicObject rubyStat) {
             return (FileStat) readStatNode.execute(rubyStat);
         }
@@ -82,10 +101,6 @@ public abstract class StatPrimitiveNodes {
 
         public StatSizePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StatSizePrimitiveNode(StatSizePrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -102,10 +117,6 @@ public abstract class StatPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StatModePrimitiveNode(StatModePrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int mode(RubyBasicObject rubyStat) {
             return getStat(rubyStat).mode();
@@ -120,10 +131,6 @@ public abstract class StatPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StatGIDPrimitiveNode(StatGIDPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int gid(RubyBasicObject rubyStat) {
             return getStat(rubyStat).gid();
@@ -136,10 +143,6 @@ public abstract class StatPrimitiveNodes {
 
         public StatUIDPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StatUIDPrimitiveNode(StatUIDPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization

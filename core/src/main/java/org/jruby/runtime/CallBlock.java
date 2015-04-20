@@ -36,20 +36,28 @@ import org.jruby.runtime.builtin.IRubyObject;
  * lightweight block logic within Java code.
  */
 public class CallBlock extends BlockBody {
-    private final Arity arity;
+    private final Signature signature;
     private final BlockCallback callback;
     private final StaticScope dummyScope;
-    
-    public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
+
+    public static Block newCallClosure(IRubyObject self, RubyModule imClass, Signature signature, BlockCallback callback, ThreadContext context) {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
-        BlockBody body = new CallBlock(arity, callback, context);
-        
+        BlockBody body = new CallBlock(signature, callback, context);
+
         return new Block(body, binding);
     }
 
-    private CallBlock(Arity arity, BlockCallback callback, ThreadContext context) {
+    @Deprecated
+    public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
+        Binding binding = context.currentBinding(self, Visibility.PUBLIC);
+        BlockBody body = new CallBlock(Signature.from(arity), callback, context);
+
+        return new Block(body, binding);
+    }
+
+    private CallBlock(Signature signature, BlockCallback callback, ThreadContext context) {
         super(BlockBody.SINGLE_RESTARG);
-        this.arity = arity;
+        this.signature = signature;
         this.callback = callback;
         this.dummyScope = context.runtime.getStaticScopeFactory().getDummyScope();
     }
@@ -94,8 +102,12 @@ public class CallBlock extends BlockBody {
         // ignore
     }
 
+    public Signature getSignature() {
+        return signature;
+    }
+
     public Arity arity() {
-        return arity;
+        return signature.arity();
     }
 
     public String getFile() {

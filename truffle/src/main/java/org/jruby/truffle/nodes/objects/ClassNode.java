@@ -29,10 +29,6 @@ public abstract class ClassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ClassNode(ClassNode prev) {
-        super(prev);
-    }
-
     public abstract RubyClass executeGetClass(VirtualFrame frame, Object value);
 
     @Specialization(guards = "isTrue(value)")

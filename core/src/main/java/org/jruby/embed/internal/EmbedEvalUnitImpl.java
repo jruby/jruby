@@ -54,10 +54,11 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class EmbedEvalUnitImpl implements EmbedEvalUnit {
-    private ScriptingContainer container;
-    private Node node;
-    private ManyVarsDynamicScope scope;
-    private Script script;
+
+    private final ScriptingContainer container;
+    private final Node node;
+    private final ManyVarsDynamicScope scope;
+    private final Script script;
 
     public EmbedEvalUnitImpl(ScriptingContainer container, Node node, ManyVarsDynamicScope scope) {
         this(container, node, scope, null);
@@ -82,7 +83,7 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
     /**
      * Returns a ManyVarsDynamicScope used to parse a script. A returned value
      * is used to inject Ruby's local variable when script is evaluated.
-     * 
+     *
      * @return a scope to refer local variables
      */
     public ManyVarsDynamicScope getScope() {
@@ -91,29 +92,25 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
 
     /**
      * Evaluates a Ruby script, which has been parsed before.
-     * 
+     *
      * @return results of executing this evaluation unit
      */
     public IRubyObject run() {
         if (node == null && script == null) {
             return null;
         }
-        Ruby runtime = container.getProvider().getRuntime();
-        BiVariableMap vars = container.getVarMap();
-        boolean sharing_variables = true;
-        Object obj = container.getAttribute(AttributeName.SHARING_VARIABLES);
-        if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
-            sharing_variables = false;
-        }
+        final Ruby runtime = container.getProvider().getRuntime();
+        final BiVariableMap vars = container.getVarMap();
+        final boolean sharing_variables = isSharingVariables();
 
         // Keep reference to current context to prevent it being collected.
-        ThreadContext threadContext = runtime.getCurrentContext();
+        final ThreadContext threadContext = runtime.getCurrentContext();
         if (sharing_variables) {
             vars.inject(scope, 0, null);
             threadContext.pushScope(scope);
         }
         try {
-            IRubyObject ret;
+            final IRubyObject ret;
             CompileMode mode = runtime.getInstanceConfig().getCompileMode();
             if (mode == CompileMode.FORCE) {
                 ret = runtime.runScriptBody(script);
@@ -124,18 +121,22 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
                 vars.retrieve(ret);
             }
             return ret;
-        } catch (RaiseException e) {
+        }
+        catch (RaiseException e) {
             // handle exits as simple script termination
-            if (e.getException() instanceof RubySystemExit) {
-                return ((RubySystemExit)e.getException()).status();
+            if ( e.getException() instanceof RubySystemExit ) {
+                return ((RubySystemExit) e.getException()).status();
             }
             runtime.printError(e.getException());
             throw new EvalFailedException(e.getMessage(), e);
-        } catch (StackOverflowError soe) {
+        }
+        catch (StackOverflowError soe) {
             throw runtime.newSystemStackError("stack level too deep", soe);
-        } catch (Throwable e) {
+        }
+        catch (Throwable e) {
             throw new EvalFailedException(e);
-        } finally {
+        }
+        finally {
             if (sharing_variables) {
                 threadContext.popScope();
             }
@@ -146,4 +147,14 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             */
         }
     }
+
+    private boolean isSharingVariables() {
+        final Object sharing = container.getAttribute(AttributeName.SHARING_VARIABLES);
+        if ( sharing != null && sharing instanceof Boolean &&
+                ((Boolean) sharing).booleanValue() == false ) {
+            return false;
+        }
+        return true;
+    }
+
 }

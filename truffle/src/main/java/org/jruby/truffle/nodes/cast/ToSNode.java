@@ -44,12 +44,6 @@ public abstract class ToSNode extends RubyNode {
         return kernelToSNode.executeToS(frame, object);
     }
 
-
-    public ToSNode(ToSNode prev) {
-        super(prev);
-        callToSNode = prev.callToSNode;
-    }
-
     @Override
     public abstract RubyString executeRubyString(VirtualFrame frame);
 

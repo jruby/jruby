@@ -34,11 +34,6 @@ public abstract class SymbolOrToStrNode extends RubyNode {
         toStr = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    public SymbolOrToStrNode(SymbolOrToStrNode prev) {
-        super(prev);
-        toStr = prev.toStr;
-    }
-
     @Specialization
     public String coerceRubySymbol(RubySymbol symbol) {
         return symbol.toString();

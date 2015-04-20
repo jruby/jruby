@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jruby.runtime.RubyEvent;
+import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
 /**
@@ -101,8 +103,16 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     }
 
     @Override
+    public RubyEvent decodeRubyEvent() {
+        return RubyEvent.fromOrdinal(decodeInt());
+    }
+
+    @Override
     public String decodeString() {
         int strLength = decodeInt();
+
+        if (strLength == NULL_STRING) return null;
+
         byte[] bytes = new byte[strLength]; // FIXME: This seems really innefficient
         buf.get(bytes);
 
@@ -260,7 +270,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case RUNTIME_HELPER: return RuntimeHelperCall.decode(this);
             case SEARCH_CONST: return SearchConstInstr.decode(this);
             case SET_CAPTURED_VAR: return SetCapturedVarInstr.decode(this);
-            // FIXME: case TRACE: ...
+            case TRACE: return TraceInstr.decode(this);
             case THREAD_POLL: return ThreadPollInstr.decode(this);
             case THROW: return ThrowExceptionInstr.decode(this);
             case TO_ARY: return ToAryInstr.decode(this);
@@ -393,6 +403,11 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public IRScope decodeScope() {
         return scopes.get(decodeInt());
+    }
+
+    @Override
+    public Signature decodeSignature() {
+        return Signature.decode(decodeLong());
     }
 
     @Override

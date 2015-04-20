@@ -29,11 +29,6 @@ public abstract class TaintNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public TaintNode(TaintNode prev) {
-        super(prev);
-        writeTaintNode = prev.writeTaintNode;
-    }
-
     public abstract Object executeTaint(Object object);
 
     @Specialization

@@ -66,6 +66,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;
@@ -376,7 +377,7 @@ public class BodyTranslator extends Translator {
             resultNode = node.getValueNode().accept(this);
         }
 
-        return new BreakNode(context, sourceSection, resultNode);
+        return new BreakNode(context, sourceSection, environment.getBlockID(), resultNode);
     }
 
     @Override
@@ -448,7 +449,13 @@ public class BodyTranslator extends Translator {
         }
 
         for (int n = 0; n < argumentsCount; n++) {
-            arguments.add(new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED));
+            RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
+
+            if (ArrayUtils.contains(primitive.getAnnotation().lowerFixnumParameters(), n)) {
+                readArgumentNode = new FixnumLowerNode(readArgumentNode);
+            }
+
+            arguments.add(readArgumentNode);
         }
 
         return new CallRubiniusPrimitiveNode(context, sourceSection,
@@ -560,7 +567,7 @@ public class BodyTranslator extends Translator {
                 null, false,
                 new StringLiteralNode(context, sourceSection, ByteList.create("FrozenError: can't modify frozen TODO"), StringSupport.CR_UNKNOWN));
 
-        final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, true, false, constructException);
+        final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, true, constructException);
 
         return new IfNode(context, sourceSection,
                 frozen,
@@ -586,7 +593,14 @@ public class BodyTranslator extends Translator {
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, block, args, extraArgument, node.getName());
 
-        RubyNode translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), isVCall, privately || ignoreVisibility, false, argumentsAndBlock.getArguments());
+        RubyNode translated = new RubyCallNode(context, sourceSection,
+                node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(),
+                privately || ignoreVisibility, isVCall, argumentsAndBlock.getArguments());
+
+        if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
+            BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();
+            translated = new CatchBreakFromCallNode(context, sourceSection, translated, blockDef.getBlockID());
+        }
 
         // return instrumenter.instrumentAsCall(translated, node.getName());
         return translated;
@@ -828,8 +842,8 @@ public class BodyTranslator extends Translator {
         try {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, newLexicalScope, Arity.NO_ARGUMENTS, name, false, bodyNode, false);
 
-            final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(),
-                    environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, name, false);
+            final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParseEnvironment(),
+                    environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, name, false, null);
 
             final ModuleTranslator classTranslator = new ModuleTranslator(currentNode, context, this, newEnvironment, source);
 
@@ -1092,7 +1106,7 @@ public class BodyTranslator extends Translator {
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), methodName, false, parseTree, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, methodName, false);
+                context, environment, environment.getParseEnvironment(), environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, methodName, false, null);
 
         // ownScopeForAssignments is the same for the defined method as the current one.
 
@@ -1277,9 +1291,11 @@ public class BodyTranslator extends Translator {
         final CallNode callNode = new CallNode(node.getPosition(), receiver, "each", null, block);
 
         translatingForStatement = true;
-        final RubyCallNode translated = (RubyCallNode) callNode.accept(this);
+        final RubyNode translated = callNode.accept(this);
         translatingForStatement = false;
 
+        // TODO (eregon, 20 Apr. 2015): We could just get rid of ForNode here since it seems useless.
+        // isDefined() should work anyway since the callNode has a block and that is always defined as "expression".
         return new ForNode(context, translated.getSourceSection(), translated);
     }
 
@@ -1663,7 +1679,8 @@ public class BodyTranslator extends Translator {
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), currentCallMethodName, true, node, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getReturnID(), hasOwnScope, false, sharedMethodInfo, environment.getNamedMethodName(), true);
+                context, environment, environment.getParseEnvironment(), environment.getReturnID(), hasOwnScope, false,
+                sharedMethodInfo, environment.getNamedMethodName(), true, environment.getParseEnvironment().allocateBlockID());
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source);
         methodCompiler.translatingForStatement = translatingForStatement;
 
@@ -2379,8 +2396,7 @@ public class BodyTranslator extends Translator {
         return new RubyCallNode(
                 context, sourceSection, "convert",
                 new ReadConstantNode(context, sourceSection, name, moduleNode, lexicalScope),
-                null, false, true, false,
-                new RubyNode[]{a, b});
+                null, false, true, new RubyNode[]{a, b});
     }
 
     @Override
@@ -2761,7 +2777,8 @@ public class BodyTranslator extends Translator {
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true, node, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getReturnID(), false, false, sharedMethodInfo, sharedMethodInfo.getName(), true);
+                context, environment, environment.getParseEnvironment(), environment.getReturnID(), false, false,
+                sharedMethodInfo, sharedMethodInfo.getName(), true, environment.getParseEnvironment().allocateBlockID());
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source);
 
         final RubyNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), sharedMethodInfo);

@@ -65,7 +65,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
-import org.jruby.util.CodeRangeSupport;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.Pack;
@@ -91,11 +90,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public AddNode(AddNode prev) {
-            super(prev);
-            taintResultNode = prev.taintResultNode;
-        }
-
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
             return ToStrNodeFactory.create(getContext(), getSourceSection(), other);
         }
@@ -108,7 +102,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), false, new int[]{}));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
             ret.getByteList().setEncoding(enc);
@@ -128,11 +122,6 @@ public abstract class StringNodes {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public MulNode(MulNode prev) {
-            super(prev);
-            toIntNode = prev.toIntNode;
         }
 
         @Specialization
@@ -171,7 +160,7 @@ public abstract class StringNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
 
-            return multiply(string, toIntNode.executeIntegerFixnum(frame, times));
+            return multiply(string, toIntNode.executeInt(frame, times));
         }
     }
 
@@ -185,11 +174,6 @@ public abstract class StringNodes {
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             stringEqualNode = StringPrimitiveNodesFactory.StringEqualPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[]{});
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
-            stringEqualNode = prev.stringEqualNode;
         }
 
         @Specialization
@@ -228,15 +212,6 @@ public abstract class StringNodes {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CompareNode(CompareNode prev) {
-            super(prev);
-            cmpNode = prev.cmpNode;
-            cmpIntNode = prev.cmpIntNode;
-            respondToCmpNode = prev.respondToCmpNode;
-            respondToToStrNode = prev.respondToToStrNode;
-            toStrNode = prev.toStrNode;
         }
 
         @Specialization
@@ -309,7 +284,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = { "<<", "concat" }, required = 1, taintFromParameters = 0, raiseIfFrozenSelf = true)
+    @CoreMethod(names = { "<<", "concat" }, required = 1, taintFromParameter = 0, raiseIfFrozenSelf = true)
     @NodeChildren({
             @NodeChild(value = "string"),
             @NodeChild(value = "other")
@@ -318,10 +293,6 @@ public abstract class StringNodes {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ConcatNode(ConcatNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -433,10 +404,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public FormatNode(FormatNode prev) {
-            super(prev);
-        }
-
         private final BranchProfile singleArrayProfile = BranchProfile.create();
         private final BranchProfile multipleArgumentsProfile = BranchProfile.create();
 
@@ -474,15 +441,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public GetIndexNode(GetIndexNode prev) {
-            super(prev);
-            toIntNode = prev.toIntNode;
-            includeNode = prev.includeNode;
-            dupNode = prev.dupNode;
-            sizeNode = prev.sizeNode;
-            substringNode = prev.substringNode;
-        }
-
         @Specialization
         public Object getIndex(VirtualFrame frame, RubyString string, int index, UndefinedPlaceholder undefined) {
             int normalizedIndex = string.normalizeIndex(index);
@@ -498,7 +456,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!isRubyRange(index)", "!isRubyRegexp(index)", "!isRubyString(index)" })
         public Object getIndex(VirtualFrame frame, RubyString string, Object index, UndefinedPlaceholder undefined) {
-            return getIndex(frame, string, getToIntNode().executeIntegerFixnum(frame, index), undefined);
+            return getIndex(frame, string, getToIntNode().executeInt(frame, index), undefined);
         }
 
         @Specialization
@@ -515,8 +473,8 @@ public abstract class StringNodes {
         @Specialization
         public Object sliceObjectRange(VirtualFrame frame, RubyString string, RubyRange.ObjectRange range, UndefinedPlaceholder undefined) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values may return Fixnums beyond int boundaries and we should handle that -- Bignums are always errors.
-            final int coercedBegin = getToIntNode().executeIntegerFixnum(frame, range.getBegin());
-            final int coercedEnd = getToIntNode().executeIntegerFixnum(frame, range.getEnd());
+            final int coercedBegin = getToIntNode().executeInt(frame, range.getBegin());
+            final int coercedEnd = getToIntNode().executeInt(frame, range.getEnd());
 
             return sliceRange(frame, string, coercedBegin, coercedEnd, range.doesExcludeEnd());
         }
@@ -563,12 +521,12 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isUndefinedPlaceholder(length)")
         public Object slice(VirtualFrame frame, RubyString string, int start, Object length) {
-            return slice(frame, string, start, getToIntNode().executeIntegerFixnum(frame, length));
+            return slice(frame, string, start, getToIntNode().executeInt(frame, length));
         }
 
         @Specialization(guards = { "!isRubyRange(start)", "!isRubyRegexp(start)", "!isRubyString(start)", "!isUndefinedPlaceholder(length)" })
         public Object slice(VirtualFrame frame, RubyString string, Object start, Object length) {
-            return slice(frame, string, getToIntNode().executeIntegerFixnum(frame, start), getToIntNode().executeIntegerFixnum(frame, length));
+            return slice(frame, string, getToIntNode().executeInt(frame, start), getToIntNode().executeInt(frame, length));
         }
 
         @Specialization
@@ -633,10 +591,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public MatchOperatorNode(MatchOperatorNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object match(RubyString string, RubyRegexp regexp) {
             return regexp.matchCommon(string, true, false);
@@ -648,10 +602,6 @@ public abstract class StringNodes {
 
         public ASCIIOnlyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ASCIIOnlyNode(ASCIIOnlyNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -679,10 +629,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public BNode(BNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString b(RubyString string) {
             final ByteList bytes = string.getBytes().dup();
@@ -697,10 +643,6 @@ public abstract class StringNodes {
 
         public BytesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public BytesNode(BytesNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -725,10 +667,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public ByteSizeNode(ByteSizeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int byteSize(RubyString string) {
             return string.getBytes().length();
@@ -745,10 +683,6 @@ public abstract class StringNodes {
 
         public CaseCmpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CaseCmpNode(CaseCmpNode prev) {
-            super(prev);
         }
 
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
@@ -802,11 +736,6 @@ public abstract class StringNodes {
             sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { null });
         }
 
-        public ChopBangNode(ChopBangNode prev) {
-            super(prev);
-            sizeNode = prev.sizeNode;
-        }
-
         @Specialization
         public Object chopBang(VirtualFrame frame, RubyString string) {
             notDesignedForCompilation();
@@ -840,11 +769,6 @@ public abstract class StringNodes {
         public CountNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             toStr = ToStrNodeFactory.create(context, sourceSection, null);
-        }
-
-        public CountNode(CountNode prev) {
-            super(prev);
-            toStr = prev.toStr;
         }
 
         @Specialization
@@ -888,7 +812,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "crypt", required = 1, taintFromSelf = true, taintFromParameters = 0)
+    @CoreMethod(names = "crypt", required = 1, taintFromSelf = true, taintFromParameter = 0)
     @NodeChildren({
             @NodeChild(value = "string"),
             @NodeChild(value = "salt")
@@ -897,10 +821,6 @@ public abstract class StringNodes {
 
         public CryptNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CryptNode(CryptNode prev) {
-            super(prev);
         }
 
         @CreateCast("salt") public RubyNode coerceSaltToString(RubyNode other) {
@@ -925,7 +845,7 @@ public abstract class StringNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("salt too short (need >= 2 bytes)", this));
             }
 
-            final POSIX posix = getContext().getRuntime().getPosix();
+            final POSIX posix = getContext().getPosix();
             final byte[] keyBytes = Arrays.copyOfRange(value.unsafeBytes(), value.begin(), value.realSize());
             final byte[] saltBytes = Arrays.copyOfRange(otherBL.unsafeBytes(), otherBL.begin(), otherBL.realSize());
 
@@ -959,10 +879,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public DataNode(DataNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubiniusByteArray data(RubyString string) {
             return new RubiniusByteArray(getContext().getCoreLibrary().getByteArrayClass(), string.getBytes());
@@ -977,11 +893,6 @@ public abstract class StringNodes {
         public DeleteBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             toStr = ToStrNodeFactory.create(context, sourceSection, null);
-        }
-
-        public DeleteBangNode(DeleteBangNode prev) {
-            super(prev);
-            toStr = prev.toStr;
         }
 
         @Specialization
@@ -1034,10 +945,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public DowncaseNode(DowncaseNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString downcase(RubyString string) {
             notDesignedForCompilation();
@@ -1052,10 +959,6 @@ public abstract class StringNodes {
 
         public DowncaseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DowncaseBangNode(DowncaseBangNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1080,10 +983,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public EachByteNode(EachByteNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString eachByte(VirtualFrame frame, RubyString string, RubyProc block) {
             final ByteList bytes = string.getBytes();
@@ -1105,11 +1004,6 @@ public abstract class StringNodes {
 
         public EachCharNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EachCharNode(EachCharNode prev) {
-            super(prev);
-            taintResultNode = prev.taintResultNode;
         }
 
         @Specialization(guards = "isValidOr7BitEncoding(string)")
@@ -1174,7 +1068,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, new int[]{}));
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
             final RubyString ret = getContext().makeString(string.getLogicalClass(), substringBytes);
@@ -1190,10 +1084,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public EmptyNode(EmptyNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean empty(RubyString string) {
             return string.getBytes().length() == 0;
@@ -1205,10 +1095,6 @@ public abstract class StringNodes {
 
         public EncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EncodingNode(EncodingNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1226,11 +1112,6 @@ public abstract class StringNodes {
 
         public ForceEncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ForceEncodingNode(ForceEncodingNode prev) {
-            super(prev);
-            toStrNode = prev.toStrNode;
         }
 
         @TruffleBoundary
@@ -1268,10 +1149,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public GetByteNode(GetByteNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object getByte(RubyString string, int index) {
             final ByteList bytes = string.getByteList();
@@ -1295,10 +1172,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public HashNode(HashNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int hash(RubyString string) {
             return string.getBytes().hashCode();
@@ -1313,10 +1186,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public InspectNode(InspectNode prev) {
-            super(prev);
-        }
-
         @TruffleBoundary
         @Specialization
         public RubyString inspect(RubyString string) {
@@ -1327,7 +1196,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "initialize", optional = 1, taintFromParameters = 0)
+    @CoreMethod(names = "initialize", optional = 1, taintFromParameter = 0)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         @Child private IsFrozenNode isFrozenNode;
@@ -1335,12 +1204,6 @@ public abstract class StringNodes {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-            isFrozenNode = prev.isFrozenNode;
-            toStrNode = prev.toStrNode;
         }
 
         @Specialization
@@ -1386,10 +1249,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public InitializeCopyNode(InitializeCopyNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object initializeCopy(RubyString self, RubyString from) {
             if (self == from) {
@@ -1419,13 +1278,7 @@ public abstract class StringNodes {
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             concatNode = DispatchHeadNodeFactory.createMethodCall(context);
-            taintResultNode = new TaintResultNode(context, sourceSection, false, new int[] {});
-        }
-
-        public InsertNode(InsertNode prev) {
-            super(prev);
-            concatNode = prev.concatNode;
-            taintResultNode = prev.taintResultNode;
+            taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
@@ -1459,10 +1312,6 @@ public abstract class StringNodes {
 
         public LstripBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public LstripBangNode(LstripBangNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
@@ -1531,11 +1380,6 @@ public abstract class StringNodes {
             regexpMatchNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        public MatchNode(MatchNode prev) {
-            super(prev);
-            regexpMatchNode = prev.regexpMatchNode;
-        }
-
         @Specialization
         public Object match(VirtualFrame frame, RubyString string, RubyString regexpString) {
             notDesignedForCompilation();
@@ -1559,10 +1403,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public ModifyBangNode(ModifyBangNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString modifyBang(RubyString string) {
             string.modify();
@@ -1571,15 +1411,11 @@ public abstract class StringNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(names = "num_bytes=", required = 1)
+    @CoreMethod(names = "num_bytes=", lowerFixnumParameters = 0, required = 1)
     public abstract static class SetNumBytesNode extends CoreMethodNode {
 
         public SetNumBytesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SetNumBytesNode(SetNumBytesNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1596,10 +1432,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public OrdNode(OrdNode prev) {
-            super(prev);
-        }
-
         @TruffleBoundary
         @Specialization
         public int ord(RubyString string) {
@@ -1607,7 +1439,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true, taintFromParameters = 0)
+    @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true, taintFromParameter = 0)
     @NodeChildren({
         @NodeChild(value = "string"),
         @NodeChild(value = "other")
@@ -1616,10 +1448,6 @@ public abstract class StringNodes {
 
         public ReplaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ReplaceNode(ReplaceNode prev) {
-            super(prev);
         }
 
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
@@ -1647,10 +1475,6 @@ public abstract class StringNodes {
 
         public RstripBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public RstripBangNode(RstripBangNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
@@ -1725,10 +1549,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public SwapcaseBangNode(SwapcaseBangNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyBasicObject swapcaseSingleByte(RubyString string) {
             // Taken from org.jruby.RubyString#swapcase_bang19.
@@ -1768,16 +1588,30 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "strip")
+    public abstract static class StripNode extends CoreMethodNode {
+
+        public StripNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyString strip(RubyString string) {
+            notDesignedForCompilation();
+
+            // Hacky implementation to get something working
+
+            return getContext().makeString(string.toString().trim());
+        }
+
+    }
+
     @CoreMethod(names = "dump", taintFromSelf = true)
     @ImportStatic(StringGuards.class)
     public abstract static class DumpNode extends CoreMethodNode {
 
         public DumpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DumpNode(DumpNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "isAsciiCompatible(string)")
@@ -1822,15 +1656,11 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "scan", required = 1, needsBlock = true, taintFromParameters = 0)
+    @CoreMethod(names = "scan", required = 1, needsBlock = true, taintFromParameter = 0)
     public abstract static class ScanNode extends YieldingCoreMethodNode {
 
         public ScanNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ScanNode(ScanNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1928,10 +1758,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public SetByteNode(SetByteNode prev) {
-            super(prev);
-        }
-
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
             return new FixnumLowerNode(ToIntNodeFactory.create(getContext(), getSourceSection(), index));
         }
@@ -1960,10 +1786,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public SizeNode(SizeNode prev) {
-            super(prev);
-        }
-
         public abstract int executeIntegerFixnum(VirtualFrame frame, RubyString string);
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
@@ -1986,11 +1808,6 @@ public abstract class StringNodes {
 
         public SqueezeBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SqueezeBangNode(SqueezeBangNode prev) {
-            super(prev);
-            toStrNode = prev.toStrNode;
         }
 
         @Specialization(guards = "zeroArgs(string, args)")
@@ -2084,10 +1901,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public SuccNode(SuccNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString succ(RubyString string) {
             notDesignedForCompilation();
@@ -2105,10 +1918,6 @@ public abstract class StringNodes {
 
         public SuccBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SuccBangNode(SuccBangNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -2139,14 +1948,6 @@ public abstract class StringNodes {
             subNode = DispatchHeadNodeFactory.createMethodCall(context);
             shiftNode = DispatchHeadNodeFactory.createMethodCall(context);
             andNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public SumNode(SumNode prev) {
-            super(prev);
-            addNode = prev.addNode;
-            subNode = prev.subNode;
-            shiftNode = prev.shiftNode;
-            andNode = prev.andNode;
         }
 
         @Specialization
@@ -2203,10 +2004,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public ToFNode(ToFNode prev) {
-            super(prev);
-        }
-
         @Specialization
         @TruffleBoundary
         public double toF(RubyString string) {
@@ -2228,10 +2025,6 @@ public abstract class StringNodes {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToSNode(ToSNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "!isStringSubclass(string)")
@@ -2257,10 +2050,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public ToSymNode(ToSymNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubySymbol toSym(RubyString string) {
             notDesignedForCompilation();
@@ -2275,10 +2064,6 @@ public abstract class StringNodes {
 
         public ReverseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ReverseBangNode(ReverseBangNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "reverseIsEqualToSelf(string)")
@@ -2360,11 +2145,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public TrBangNode(TrBangNode prev) {
-            super(prev);
-            deleteBangNode = prev.deleteBangNode;
-        }
-
         @CreateCast("fromStr") public RubyNode coerceFromStrToString(RubyNode fromStr) {
             return ToStrNodeFactory.create(getContext(), getSourceSection(), fromStr);
         }
@@ -2406,11 +2186,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public TrSBangNode(TrSBangNode prev) {
-            super(prev);
-            deleteBangNode = prev.deleteBangNode;
-        }
-
         @CreateCast("fromStr") public RubyNode coerceFromStrToString(RubyNode fromStr) {
             return ToStrNodeFactory.create(getContext(), getSourceSection(), fromStr);
         }
@@ -2445,10 +2220,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public UnpackNode(UnpackNode prev) {
-            super(prev);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyArray unpack(RubyString string, RubyString format) {
@@ -2463,10 +2234,6 @@ public abstract class StringNodes {
 
         public UpcaseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public UpcaseNode(UpcaseNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -2484,10 +2251,6 @@ public abstract class StringNodes {
 
         public UpcaseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public UpcaseBangNode(UpcaseBangNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -2512,10 +2275,6 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public ValidEncodingQueryNode(ValidEncodingQueryNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean validEncodingQuery(RubyString string) {
             return string.scanForCodeRange() != StringSupport.CR_BROKEN;
@@ -2530,10 +2289,6 @@ public abstract class StringNodes {
 
         public CapitalizeBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CapitalizeBangNode(CapitalizeBangNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -2595,12 +2350,6 @@ public abstract class StringNodes {
             dupNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        public CapitalizeNode(CapitalizeNode prev) {
-            super(prev);
-            capitalizeBangNode = prev.capitalizeBangNode;
-            dupNode = prev.dupNode;
-        }
-
         @Specialization
         public Object capitalize(VirtualFrame frame, RubyString string) {
             final Object duped = dupNode.call(frame, string, "dup", null);
@@ -2616,10 +2365,6 @@ public abstract class StringNodes {
 
         public ClearNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ClearNode(ClearNode prev) {
-            super(prev);
         }
 
         @Specialization

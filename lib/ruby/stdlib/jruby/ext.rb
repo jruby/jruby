@@ -2,12 +2,9 @@ require 'java'
 require 'jruby'
 
 module JRuby
-  MethodArgs = org.jruby.internal.runtime.methods.MethodArgs
   MethodArgs2 = org.jruby.internal.runtime.methods.MethodArgs2
   IRMethodArgs = org.jruby.internal.runtime.methods.IRMethodArgs
   Helpers = org.jruby.runtime.Helpers
-  MultipleAsgn19Node = org.jruby.ast.MultipleAsgn19Node
-  UnnamedRestArgNode = org.jruby.ast.UnnamedRestArgNode
   Arity = org.jruby.runtime.Arity
   
   # Extensions only provides one feature right now: stealing methods from one
@@ -62,59 +59,6 @@ module JRuby
         a = method.parameter_list
         (0...(a.size)).step(2) do |i|
           args_ary << (a[i+1] == "" ? [a[i].to_sym] : [a[i].to_sym, a[i+1].to_sym])
-        end
-      when MethodArgs
-        args_node = method.args_node
-        
-        # "pre" required args
-        required_pre = args_node.pre
-        if required_pre
-          for req_pre_arg in required_pre.child_nodes
-            if req_pre_arg.kind_of? MultipleAsgn19Node
-              args_ary << [:req]
-            else
-              args_ary << [:req, req_pre_arg ? req_pre_arg.name.intern : nil]
-            end
-          end
-        end
-        
-        # optional args in middle
-        optional = args_node.opt_args
-        if optional
-          for opt_arg in optional.child_nodes
-            args_ary << [:opt, opt_arg ? opt_arg.name.intern : nil]
-          end
-        end
-        
-        # rest arg
-        if args_node.rest_arg >= 0
-          rest = args_node.rest_arg_node
-          
-          if rest.kind_of? UnnamedRestArgNode
-            if rest.star?
-              args_ary << [:rest]
-            end
-          else
-            args_ary << [:rest, rest ? rest.name.intern : nil]
-          end
-        end
-        
-        # "post" required args
-        required_post = args_node.post
-        if required_post
-          for req_post_arg in required_post.child_nodes
-            if req_post_arg.kind_of? MultipleAsgn19Node
-              args_ary << [:req]
-            else
-              args_ary << [:req, req_post_arg ? req_post_arg.name.intern : nil]
-            end
-          end
-        end
-        
-        # block arg
-        block = args_node.block
-        if block
-          args_ary << [:block, block.name.intern]
         end
       else
         if method.arity == Arity::OPTIONAL

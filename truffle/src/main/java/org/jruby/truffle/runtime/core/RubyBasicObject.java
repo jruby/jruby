@@ -68,6 +68,10 @@ public class RubyBasicObject implements TruffleObject {
 
     protected void unsafeSetLogicalClass(RubyClass newLogicalClass) {
         assert logicalClass == null;
+        unsafeChangeLogicalClass(newLogicalClass);
+    }
+
+    public void unsafeChangeLogicalClass(RubyClass newLogicalClass) {
         logicalClass = newLogicalClass;
         metaClass = newLogicalClass;
     }
@@ -159,11 +163,6 @@ public class RubyBasicObject implements TruffleObject {
         return getOperations().getFieldNames(this);
     }
 
-    public void extend(RubyModule module, Node currentNode) {
-        RubyNode.notDesignedForCompilation();
-        getSingletonClass(currentNode).include(currentNode, module);
-    }
-
     public Object getInstanceVariable(String name) {
         RubyNode.notDesignedForCompilation();
 
@@ -182,7 +181,7 @@ public class RubyBasicObject implements TruffleObject {
 
     @Override
     public ForeignAccessFactory getForeignAccessFactory() {
-        throw new UnsupportedOperationException();
+        return new BasicForeignAccessFactory(getContext());
     }
 
     public final void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {

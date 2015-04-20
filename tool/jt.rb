@@ -149,6 +149,7 @@ module Commands
     puts '    --asm          show assembly (implies --graal)'
     puts '    --server       run an instrumentation server on port 8080'
     puts '    --igv          make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
+    puts 'jt test mri                                  run mri tests'
     puts 'jt test                                      run all specs'
     puts 'jt test fast                                 run all specs except sub-processes, GC, sleep, ...'
     puts 'jt test spec/ruby/language                   run specs in this directory'
@@ -232,8 +233,23 @@ module Commands
   end
   alias ruby run
 
+  def test_mri(*args)
+    env_vars = {}
+    jruby_args = %w[-X+T]
+
+    if args.empty?
+      args = File.readlines("#{JRUBY_DIR}/test/mri.index").grep(/^[^#]\w+/).map(&:chomp)
+    end
+
+    command = %w[test/mri/runner.rb -v --color=never --tty=no -q --]
+    args.unshift(*command)
+    raw_sh(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args)
+  end
+
   def test(*args)
-    return test_pe if args == ['pe']
+    return test_pe(*args.drop(1)) if args.first == 'pe'
+
+    return test_mri(*args.drop(1)) if args.first == 'mri'
 
     options = %w[--excl-tag fails]
     if args.first == 'fast'
@@ -243,8 +259,8 @@ module Commands
     mspec 'run', *options, *args
   end
 
-  def test_pe
-    run(*%w[--graal test/truffle/pe/pe.rb])
+  def test_pe(*args)
+    run('--graal', *args, 'test/truffle/pe/pe.rb')
   end
   private :test_pe
 
@@ -261,7 +277,7 @@ module Commands
 
   def untag(path, *args)
     puts
-    puts "WARNING: untag is currently not very reliable - run `jt test #{path} #{args * ' '}` after and manually annotate any new failures"
+    puts "WARNING: untag is currently not very reliable - run `jt test #{[path,*args] * ' '}` after and manually annotate any new failures"
     puts
     mspec 'tag', '--del', 'fails', '--pass', path, *args
   end

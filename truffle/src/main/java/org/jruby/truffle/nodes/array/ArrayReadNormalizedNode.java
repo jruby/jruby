@@ -33,10 +33,6 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ArrayReadNormalizedNode(ArrayReadNormalizedNode prev) {
-        super(prev);
-    }
-
     public abstract Object executeRead(VirtualFrame frame, RubyArray array, int index);
 
     // Anything from a null array is nil

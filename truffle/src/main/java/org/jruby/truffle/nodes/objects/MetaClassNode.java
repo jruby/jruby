@@ -28,10 +28,6 @@ public abstract class MetaClassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public MetaClassNode(MetaClassNode prev) {
-        super(prev);
-    }
-
     public abstract RubyClass executeMetaClass(VirtualFrame frame, Object value);
 
     @Specialization(guards = "isTrue(value)")

@@ -53,11 +53,10 @@ public class AttrAssignInstr extends NoResultCallInstr {
         e.encode(getReceiver());
         e.encode(getName());
         e.encode(getCallArgs());
-        e.encode(isPotentiallyRefined());
     }
 
     public static AttrAssignInstr decode(IRReaderDecoder d) {
-        return create(d.decodeOperand(), d.decodeString(), d.decodeOperandArray(), d.decodeBoolean());
+        return create(d.decodeOperand(), d.decodeString(), d.decodeOperandArray(), d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override

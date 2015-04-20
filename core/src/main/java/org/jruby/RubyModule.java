@@ -46,7 +46,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.common.RubyWarnings;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.AliasMethod;
@@ -66,12 +65,15 @@ import org.jruby.ir.IRMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1823,18 +1825,11 @@ public class RubyModule extends RubyObject {
         block.getBinding().getFrame().setName(name);
         block.getBinding().setMethod(name);
 
-        StaticScope scope = block.getBody().getStaticScope();
+        block.type = Block.Type.LAMBDA;
 
-        // for zsupers in define_method (blech!) we tell the proc scope to act as the "argument" scope
-        scope.makeArgumentScope();
-
-        Arity arity = block.arity();
-        // just using required is broken...but no more broken than before zsuper refactoring
-        scope.setRequiredArgs(arity.required());
-
-        if(!arity.isFixed()) {
-            scope.setRestArg(arity.required());
-        }
+        // various instructions can tell this scope is not an ordinary block but a block representing
+        // a method definition.
+        block.getBody().getStaticScope().makeArgumentScope();
 
         return new ProcMethod(this, proc, visibility);
     }
@@ -2240,41 +2235,57 @@ public class RubyModule extends RubyObject {
      * @param not if true only find methods not matching supplied visibility
      * @return a RubyArray of instance method names
      */
-    private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility, boolean not, boolean useSymbols) {
+    private RubyArray instance_methods(IRubyObject[] args, Visibility visibility, boolean not) {
         boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
+        return instanceMethods(visibility, includeSuper, true, not);
+    }
+
+    public RubyArray instanceMethods(IRubyObject[] args, Visibility visibility, boolean obj, boolean not) {
+        boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
+        return instanceMethods(visibility, includeSuper, obj, not);
+    }
+
+    public RubyArray instanceMethods(Visibility visibility, boolean includeSuper, boolean obj, boolean not) {
         Ruby runtime = getRuntime();
         RubyArray ary = runtime.newArray();
         Set<String> seen = new HashSet<String>();
 
-        populateInstanceMethodNames(seen, ary, visibility, not, useSymbols, includeSuper);
+        populateInstanceMethodNames(seen, ary, visibility, obj, not, includeSuper);
 
         return ary;
     }
 
-    public void populateInstanceMethodNames(Set<String> seen, RubyArray ary, final Visibility visibility, boolean not, boolean useSymbols, boolean includeSuper) {
+    public void populateInstanceMethodNames(Set<String> seen, RubyArray ary, Visibility visibility, boolean obj, boolean not, boolean recur) {
         Ruby runtime = getRuntime();
+        RubyModule mod = this;
+        boolean prepended = false;
 
-        for (RubyModule type = this; type != null; type = type.getSuperClass()) {
-            RubyModule realType = type.getNonIncludedClass();
-            for (Map.Entry entry : type.getMethods().entrySet()) {
+        if (!recur && methodLocation != this) {
+            mod = methodLocation;
+            prepended = true;
+        }
+
+        for (; mod != null; mod = mod.getSuperClass()) {
+            RubyModule realType = mod.getNonIncludedClass();
+            for (Map.Entry entry : mod.getMethods().entrySet()) {
                 String methodName = (String) entry.getKey();
 
                 if (! seen.contains(methodName)) {
                     seen.add(methodName);
 
                     DynamicMethod method = (DynamicMethod) entry.getValue();
-                    if ((method.isImplementedBy(realType) || method.isImplementedBy(type)) &&
+                    if ((method.isImplementedBy(realType) || method.isImplementedBy(mod)) &&
                         (!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility)) &&
                         ! method.isUndefined()) {
 
-                        ary.append(useSymbols ? runtime.newSymbol(methodName) : runtime.newString(methodName));
+                        ary.append(runtime.newSymbol(methodName));
                     }
                 }
             }
 
-            if (!includeSuper && type == methodLocation) {
-                break;
-            }
+            if (mod.isIncluded() && !prepended) continue;
+            if (obj && mod.isSingleton()) continue;
+            if (!recur) break;
         }
     }
 
@@ -2284,7 +2295,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "instance_methods", optional = 1)
     public RubyArray instance_methods19(IRubyObject[] args) {
-        return instance_methods(args, PRIVATE, true, true);
+        return instanceMethods(args, PRIVATE, false, true);
     }
 
     public RubyArray public_instance_methods(IRubyObject[] args) {
@@ -2293,7 +2304,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "public_instance_methods", optional = 1)
     public RubyArray public_instance_methods19(IRubyObject[] args) {
-        return instance_methods(args, PUBLIC, false, true);
+        return instanceMethods(args, PUBLIC, false, false);
     }
 
     @JRubyMethod(name = "instance_method", required = 1)
@@ -2315,7 +2326,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "protected_instance_methods", optional = 1)
     public RubyArray protected_instance_methods19(IRubyObject[] args) {
-        return instance_methods(args, PROTECTED, false, true);
+        return instanceMethods(args, PROTECTED, false, false);
     }
 
     /** rb_class_private_instance_methods
@@ -2327,7 +2338,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "private_instance_methods", optional = 1)
     public RubyArray private_instance_methods19(IRubyObject[] args) {
-        return instance_methods(args, PRIVATE, false, true);
+        return instanceMethods(args, PRIVATE, false, false);
     }
 
     /** rb_mod_prepend_features
@@ -3016,22 +3027,25 @@ public class RubyModule extends RubyObject {
         String symbol = fullName;
         boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
 
+        int sep = symbol.indexOf("::");
         // symbol form does not allow ::
-        if (args[0] instanceof RubySymbol && symbol.indexOf("::") != -1) {
+        if (args[0] instanceof RubySymbol && sep != -1) {
             throw context.runtime.newNameError("wrong constant name", symbol);
         }
 
         RubyModule mod = this;
 
-        if (symbol.startsWith("::")) mod = runtime.getObject();
+        if (sep == 0) { // ::Foo::Bar
+            mod = runtime.getObject();
+            symbol = symbol.substring(2);
+        }
 
-        int sep;
-        while((sep = symbol.indexOf("::")) != -1) {
+        while ((sep = symbol.indexOf("::")) != -1) {
             String segment = symbol.substring(0, sep);
             symbol = symbol.substring(sep + 2);
             IRubyObject obj = mod.getConstant(validateConstant(segment, args[0]), inherit, inherit);
-            if(obj instanceof RubyModule) {
-                mod = (RubyModule)obj;
+            if (obj instanceof RubyModule) {
+                mod = (RubyModule) obj;
             } else {
                 throw runtime.newTypeError(segment + " does not refer to class/module");
             }

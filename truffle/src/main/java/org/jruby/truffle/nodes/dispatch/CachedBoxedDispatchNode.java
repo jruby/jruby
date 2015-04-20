@@ -85,7 +85,10 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
             } else {
                 callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
-                if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit()) {
+                if ((callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit())
+                        || (method.getDeclaringModule() != null
+                            && method.getDeclaringModule().getName() != null
+                        && method.getDeclaringModule().getName().equals("TruffleInterop"))) {
                     insert(callNode);
                     callNode.cloneCallTarget();
                 }
@@ -175,7 +178,8 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     }
 
     public boolean couldOptimizeKeywordArguments() {
-        return method.getSharedMethodInfo().getArity().getKeywordArguments() != null && next instanceof UnresolvedDispatchNode;
+        // TODO CS 18-Apr-15 doesn't seem to work with Truffle?
+        return false; //method.getSharedMethodInfo().getArity().getKeywordArguments() != null && next instanceof UnresolvedDispatchNode;
     }
 
     public InternalMethod getMethod() {

@@ -1,4 +1,2 @@
-fails:Thread#[]= raises a RuntimeError if the thread is frozen
 fails:Thread#[]= raises exceptions on the wrong type of keys
 fails:Thread#[]= is not shared across fibers
-fails:Thread#[]= stores a local in another thread when in a fiber

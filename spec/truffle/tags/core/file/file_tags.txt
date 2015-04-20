@@ -1,4 +1,3 @@
-fails:File includes File::Constants
 windows:File.file? returns true if the named file exists and is a regular file.
 windows:File.file? raises an ArgumentError if not passed one argument
 windows:File.file? raises a TypeError if not passed a String type

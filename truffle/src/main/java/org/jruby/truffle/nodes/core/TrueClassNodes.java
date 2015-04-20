@@ -27,10 +27,6 @@ public abstract class TrueClassNodes {
             super(context, sourceSection);
         }
 
-        public AndNode(AndNode prev) {
-            super(prev);
-        }
-
         @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
             return BooleanCastNodeFactory.create(getContext(), getSourceSection(), operand);
         }
@@ -48,10 +44,6 @@ public abstract class TrueClassNodes {
             super(context, sourceSection);
         }
 
-        public OrNode(OrNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean or(Object other) {
             return true;
@@ -63,10 +55,6 @@ public abstract class TrueClassNodes {
 
         public XorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public XorNode(XorNode prev) {
-            super(prev);
         }
 
         @CreateCast("operand") public RubyNode createCast(RubyNode operand) {

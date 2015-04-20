@@ -33,7 +33,6 @@ import java.io.UnsupportedEncodingException;
 import org.jruby.embed.internal.LocalContextProvider;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URISyntaxException;
@@ -60,6 +59,7 @@ import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
 import org.jruby.embed.io.ReaderInputStream;
 import org.jruby.embed.io.WriterOutputStream;
 import org.jruby.embed.util.SystemPropertyCatcher;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Block;
@@ -74,12 +74,12 @@ import org.jruby.util.cli.Options;
  * for embedding Ruby in Java. Using this class, users can run Ruby scripts from
  * Java programs easily. Also, users can use methods defined or implemented by Ruby.
  *
- * ScriptingContainer allows users to set various configuration parameters. 
+ * ScriptingContainer allows users to set various configuration parameters.
  * Some of them are per-container properties, while others are per-evaluation attributes.
- * For example, a local context scope, local variable behavior, load paths are 
+ * For example, a local context scope, local variable behavior, load paths are
  * per-container properties. Please see {@link PropertyName} and {@link AttributeName}
  * for more details. Be aware that the per-container properties should be set prior to
- * get Ruby runtime be instantiated; otherwise, default values are applied to. 
+ * get Ruby runtime be instantiated; otherwise, default values are applied to.
  * ScriptingContainer delays Ruby runtime initialization as much as possible to
  * improve startup time. When values are put into the ScriptingContainer, or runScriptlet
  * method gets run Ruby runtime is created internally. However, the default, singleton
@@ -97,7 +97,7 @@ import org.jruby.util.cli.Options;
  *
  * Produces:
  * Hello World!</pre>
- * 
+ *
  * The second example shows how to share variables between Java and Ruby.
  * In this example, a local variable "x" is shared. To make this happen, a local variable
  * behavior should be transient or persistent. As for JSR223 JRuby engine, set these
@@ -106,7 +106,7 @@ import org.jruby.util.cli.Options;
  * Ruby's local, instance, global variables and constants are available to share
  * between Java and Ruby. (A class variable sharing does not work on current version)
  * Thus, "x" in Java is also "x" in Ruby.
- * 
+ *
  * <pre>Example 2:
  *
  *         ScriptingContainer container = new ScriptingContainer();
@@ -123,7 +123,7 @@ import org.jruby.util.cli.Options;
  * when the container is instantiated.
  *
  * <pre>Example 3:
- * 
+ *
  *         ScriptingContainer container = new ScriptingContainer(LocalVariableBehavior.PERSISTENT);
  *         container.runScriptlet("p=9.0");
  *         container.runScriptlet("q = Math.sqrt p");
@@ -134,7 +134,7 @@ import org.jruby.util.cli.Options;
  * Produces:
  * square root of 9.0 is 3.0
  * Ruby used values: p = 9.0, q = 3.0</pre>
- * 
+ *
  * Also, ScriptingContainer provides better i18n support. For example,
  * Unicode Escape Sequence can be included in Ruby scripts.
  *
@@ -159,24 +159,24 @@ import org.jruby.util.cli.Options;
  *         container.put("@message", "That's the way you are.");
  *         ret = unit.run();
  *         System.out.println(JavaEmbedUtils.rubyToJava(ret));
- * 
+ *
  * Produces:
  *     message: What's up?
  *     message: Fabulous!
  *     message: That's the way you are.</pre>
  *
- * See more details at project's 
+ * See more details at project's
  * {@see <a href="https://github.com/jruby/jruby/wiki/RedBridge">Wiki</a>}
- * 
+ *
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
-    private Map basicProperties = null;
+    private final Map<String, String[]> basicProperties;
     private final LocalContextScope scope;
-    private LocalContextProvider provider = null;
-    private EmbedRubyRuntimeAdapter runtimeAdapter = new EmbedRubyRuntimeAdapterImpl(this);
-    private EmbedRubyObjectAdapter objectAdapter = new EmbedRubyObjectAdapterImpl(this);
-    private EmbedRubyInterfaceAdapter interfaceAdapter = new EmbedRubyInterfaceAdapterImpl(this);
+    private final LocalContextProvider provider;
+    private final EmbedRubyRuntimeAdapter runtimeAdapter = new EmbedRubyRuntimeAdapterImpl(this);
+    private final EmbedRubyObjectAdapter objectAdapter = new EmbedRubyObjectAdapterImpl(this);
+    private final EmbedRubyInterfaceAdapter interfaceAdapter = new EmbedRubyInterfaceAdapterImpl(this);
 
     /**
      * Constructs a ScriptingContainer with a default values.
@@ -228,14 +228,16 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         this.provider = getProviderInstance(scope, behavior, lazy);
         this.scope = scope;
         try {
-            initConfig();
-        } catch (Exception ex) {
+            initRubyInstanceConfig();
+        }
+        catch (RaiseException ex) {
+            // TODO this seems useless - except that we get a Java stack trace
             throw new RuntimeException(ex);
         }
-        setBasicProperties();
+        basicProperties = getBasicProperties();
     }
 
-    private LocalContextProvider getProviderInstance(LocalContextScope scope, LocalVariableBehavior behavior, boolean lazy) {
+    static LocalContextProvider getProviderInstance(LocalContextScope scope, LocalVariableBehavior behavior, boolean lazy) {
         switch(scope) {
             case THREADSAFE :
                 return new ThreadSafeLocalContextProvider(behavior, lazy);
@@ -245,13 +247,11 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
                 return new SingleThreadLocalContextProvider(behavior, lazy);
             case SINGLETON :
             default :
-                LocalVariableBehavior b = SingletonLocalContextProvider.getLocalVariableBehaviorOrNull();
-                if (b == null) return new SingletonLocalContextProvider(behavior, lazy);
-                else return new SingletonLocalContextProvider(b, lazy);
+                return SingletonLocalContextProvider.getProvider(behavior, lazy);
         }
     }
-
-    private void initConfig() throws URISyntaxException, UnsupportedEncodingException {
+    
+    private void initRubyInstanceConfig() throws RaiseException {
         String home = SystemPropertyCatcher.findJRubyHome(this);
         if (home != null) {
         	provider.getRubyInstanceConfig().setJRubyHome(home);
@@ -260,12 +260,13 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     // maybe these properties are not used at all?
-    private void setBasicProperties() {
-        basicProperties = new HashMap();
-        basicProperties.put("container.ids", new String[]{"ruby", "jruby"});
-        basicProperties.put("language.extension", new String[]{"rb"});
-        basicProperties.put("language.name", new String[]{"ruby"});
-        basicProperties.put("language.mimetypes", new String[]{"application/x-ruby"});
+    private static Map<String, String[]> getBasicProperties() {
+        Map<String, String[]> properties = new HashMap<String, String[]>();
+        properties.put("container.ids", new String[]{"ruby", "jruby"});
+        properties.put("language.extension", new String[]{"rb"});
+        properties.put("language.name", new String[]{"ruby"});
+        properties.put("language.mimetypes", new String[]{"application/x-ruby"});
+        return properties;
     }
 
     /**
@@ -707,7 +708,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * initial configurations will work.
      *
      * ProfilingMode allows you to change profiling style.
-     * 
+     *
      * Profiling.OFF - default. profiling off.
      * Profiling.API - activates Ruby profiler API. equivalent to --profile.api command line option
      * Profiling.FLAT - synonym for --profile command line option equivalent to --profile.flat command line option
@@ -1019,18 +1020,17 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      */
     public String[] getProperty(String key) {
         if (basicProperties.containsKey(key)) {
-            return (String[]) basicProperties.get(key);
-        } else {
-            return null;
+            return basicProperties.get(key);
         }
+        return null;
     }
 
     /**
-     * Returns a provider instance of {@link LocalContextProvider}. When users 
+     * Returns a provider instance of {@link LocalContextProvider}. When users
      * want to configure Ruby runtime, they can do by setting class loading paths,
      * {@link org.jruby.RubyInstanceConfig} to the provider before they get Ruby
      * runtime.
-     * 
+     *
      * @return a provider of {@link LocalContextProvider}
      */
     public LocalContextProvider getProvider() {
@@ -1053,7 +1053,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Returns a variable map in one of {@link LocalContextScope}. Variables
      * in this map is used to share between Java and Ruby. Map keys are Ruby's
      * variable names, thus they must be valid Ruby names.
-     * 
+     *
      * @return a variable map specific to the current thread
      */
     public BiVariableMap getVarMap() {
@@ -1064,7 +1064,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Returns a attribute map in one of {@link LocalContextScope}. Attributes
      * in this map accept any key value pair, types of which are java.lang.Object.
      * Ruby scripts do not look up this map.
-     * 
+     *
      * @return an attribute map specific to the current thread
      */
     public Map getAttributeMap() {
@@ -1075,7 +1075,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Returns an attribute value associated with the specified key in
      * a attribute map. This is a short cut method of
      * ScriptingContainer#getAttributeMap().get(key).
-     * 
+     *
      * @param key is the attribute key
      * @return value is a value associated to the specified key
      */
@@ -1088,10 +1088,10 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * attribute map. If the map previously contained a mapping for the key,
      * the old value is replaced. This is a short cut method of
      * ScriptingContainer#getAttributeMap().put(key, value).
-     * 
+     *
      * @param key is a key that the specified value is to be associated with
      * @param value is a value to be associated with the specified key
-     * @return the previous value associated with key, or null if there was no mapping for key. 
+     * @return the previous value associated with key, or null if there was no mapping for key.
      */
     public Object setAttribute(Object key, Object value) {
         return provider.getAttributeMap().put(key, value);
@@ -1114,7 +1114,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Returns a value of the specified key in a top level of runtime or null
      * if this map doesn't have a mapping for the key. The key
      * must be a valid Ruby variable or constant name.
-     * 
+     *
      * @param key is a key whose associated value is to be returned
      * @return a value to which the specified key is mapped, or null if this
      *         map contains no mapping for the key
@@ -1142,9 +1142,9 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Associates the specified value with the specified key in a
      * variable map. This key-value pair is injected to a top level of runtime
      * during evaluation. If the map previously contained a mapping for the key,
-     * the old value is replaced. The key must be a valid Ruby variable or 
-     * constant name. It will be a top level variable or constant. 
-     * 
+     * the old value is replaced. The key must be a valid Ruby variable or
+     * constant name. It will be a top level variable or constant.
+     *
      * @param key is a key that the specified value is to be associated with
      * @param value is a value to be associated with the specified key
      * @return a previous value associated with a key, or null if there was
@@ -1158,7 +1158,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Associates the specified value with the specified key in a variable map.
      * This key-value pair is injected to a given receiver during evaluation.
      * If the map previously contained a mapping for the key,
-     * the old value is replaced. The key must be a valid Ruby variable or 
+     * the old value is replaced. The key must be a valid Ruby variable or
      * constant name. A given receiver limits the scope of a variable or constant.
      * However, a global variable is accessible globally always.
      *
@@ -1215,7 +1215,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     /**
      * Parses a script and return an object which can be run(). This allows
      * the script to be parsed once and evaluated many times.
-     * 
+     *
      * @param script is a Ruby script to be parsed
      * @param lines are linenumbers to display for parse errors and backtraces.
      *        This field is optional. Only the first argument is used for parsing.
@@ -1229,7 +1229,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     /**
      * Parses a script given by a reader and return an object which can be run().
      * This allows the script to be parsed once and evaluated many times.
-     * 
+     *
      * @param reader is used to read a script from
      * @param filename is used as in information, for example, appears in a stack trace
      *        of an exception
@@ -1245,7 +1245,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     /**
      * Parses a script read from a specified path and return an object which can be run().
      * This allows the script to be parsed once and evaluated many times.
-     * 
+     *
      * @param type is one of the types {@link PathType} defines
      * @param filename is used as in information, for example, appears in a stack trace
      *        of an exception
@@ -1261,7 +1261,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     /**
      * Parses a script given by a input stream and return an object which can be run().
      * This allows the script to be parsed once and evaluated many times.
-     * 
+     *
      * @param istream is an input stream to get a script from
      * @param filename filename is used as in information, for example, appears in a stack trace
      *        of an exception
@@ -1299,7 +1299,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Evaluates a script read from a reader under the current scope
      * (perhaps the top-level scope) and returns a result only if a script
      * returns a value. Right after the parsing, the script is evaluated once.
-     * 
+     *
      * @param reader is used to read a script from
      * @param filename is used as in information, for example, appears in a stack trace
      *        of an exception
@@ -1329,7 +1329,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Reads a script file from specified path and evaluates it under the current
      * scope (perhaps the top-level scope) and returns a result only if a script
      * returns a value. Right after the parsing, the script is evaluated once.
-     * 
+     *
      * @param type is one of the types {@link PathType} defines
      * @param filename is used to read the script from and an information
      * @return an evaluated result converted to a Java object
@@ -1342,7 +1342,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     /**
      * Returns an instance of {@link EmbedRubyRuntimeAdapter} for embedders to parse
      * scripts.
-     * 
+     *
      * @return an instance of {@link EmbedRubyRuntimeAdapter}.
      */
     public EmbedRubyRuntimeAdapter newRuntimeAdapter() {
@@ -1377,7 +1377,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Outputs:
      *     next year: 2010
      *     2009-05-19T17:46:44-04:00</pre>
-     * 
+     *
      * @return an instance of {@link EmbedRubyObjectAdapter}
      */
     public EmbedRubyObjectAdapter newObjectAdapter() {
@@ -1414,7 +1414,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     public Object callMethod(Object receiver, String methodName, Block block, Object... args) {
         return objectAdapter.callMethod(receiver, methodName, block, args);
     }
-    
+
     /**
      * Executes a method defined in Ruby script. This method is used when a Ruby
      * method does not have any argument.
@@ -1559,7 +1559,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     public <T> T callSuper(Object receiver, Object[] args, Block block, Class<T> returnType) {
         return objectAdapter.callSuper(receiver, args, block, returnType);
     }
-    
+
     /**
      * Executes a method defined in Ruby script. This method is used when a Ruby
      * method does not have any argument.
@@ -1639,10 +1639,10 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *     }
      *
      * Output
-     *     -2.7416573867739413, 4.741657386773941, 
+     *     -2.7416573867739413, 4.741657386773941,
      * </pre>
      *
-     * 
+     *
      * @param receiver is an instance that implements the interface
      * @param clazz is a requested interface
      * @return an instance of a requested interface type
@@ -1653,7 +1653,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     /**
      * Replaces a standard input by a specified reader
-     * 
+     *
      * @param reader is a reader to be set
      */
     public void setReader(Reader reader) {
@@ -1694,7 +1694,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Ruby runtime is initialized.
      *
      * @deprecated As of JRuby 1.5.0, replaced by getInput().
-     * 
+     *
      * @return an input stream that Ruby runtime has.
      */
     @Deprecated
@@ -1743,7 +1743,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     /**
      * Returns a writer set in an attribute map.
-     * 
+     *
      * @return a writer in a attribute map
      */
     public Writer getWriter() {
@@ -1759,7 +1759,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Ruby runtime is initialized.
      *
      * @deprecated As of JRuby 1.5.0, replaced by getOutput().
-     * 
+     *
      * @return an output stream that Ruby runtime has
      */
     @Deprecated
@@ -1769,7 +1769,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     /**
      * Replaces a standard error by a specified writer.
-     * 
+     *
      * @param errorWriter is a writer to be set
      */
     public void setErrorWriter(Writer errorWriter) {
@@ -1823,7 +1823,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Ruby runtime is initialized.
      *
      * @deprecated As of JRuby 1.5.0, Replaced by getError()
-     * 
+     *
      * @return an error output stream that Ruby runtime has
      */
     @Deprecated
@@ -1848,9 +1848,9 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * references to it (and GC wants to reclaim it).
      *
      * Note that {@link org.jruby.embed.LocalContextScope::SINGLETON} containers will not terminate on GC.
-     * 
+     *
      * @throws Throwable
-     * 
+     *
      * @since JRuby 1.6.0
      */
     public void finalize() throws Throwable {
@@ -1870,7 +1870,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * classloader and the JRuby classloader, those classess would be incompatible
      * with each other and with other library objects from the opposing classloader.
      *
-     * @param classloaderDelegate set whether prefer the JRuby classloader to delegate first 
+     * @param classloaderDelegate set whether prefer the JRuby classloader to delegate first
      *                            to the parent classloader when dynamically loading classes
      * @since JRuby 9.0.0.0
      */

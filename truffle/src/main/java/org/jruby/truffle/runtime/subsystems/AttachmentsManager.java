@@ -39,7 +39,7 @@ public class AttachmentsManager {
     }
 
     public synchronized void attach(String file, int line, final RubyProc block) {
-        final Instrument instrument = Instrument.create(new ASTInstrumentListener() {
+        final Instrument instrument = Instrument.create(new StandardInstrumentListener() {
 
             @Override
             public void enter(Probe probe, Node node, VirtualFrame frame) {

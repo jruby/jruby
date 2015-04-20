@@ -33,6 +33,7 @@ import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -197,11 +198,10 @@ public class JVMVisitor extends IRVisitor {
         if (aritySplit) {
             StaticScope argScope = method.getStaticScope();
             if (argScope.isArgumentScope() &&
-                    argScope.getOptionalArgs() == 0 &&
-                    argScope.getRestArg() == -1 &&
-                    !method.receivesKeywordArgs()) {
+                    argScope.getSignature().isFixed() &&
+                    !argScope.getSignature().hasKwargs()) {
                 // we have only required arguments...emit a signature appropriate to that arity
-                String[] args = new String[argScope.getRequiredArgs()];
+                String[] args = new String[argScope.getSignature().required()];
                 Class[] types = Helpers.arrayOf(Class.class, args.length, IRubyObject.class);
                 for (int i = 0; i < args.length; i++) {
                     args[i] = "arg" + i;
@@ -259,7 +259,7 @@ public class JVMVisitor extends IRVisitor {
         Signature specificSig = signatureFor(method, true);
         if (specificSig != null) {
             emitScope(method, name, specificSig, true);
-            method.addNativeSignature(method.getStaticScope().getRequiredArgs(), specificSig.type());
+            method.addNativeSignature(method.getStaticScope().getSignature().required(), specificSig.type());
         }
     }
 
@@ -626,7 +626,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelf();
 
         ByteList csByteList = new ByteList();
-        jvmMethod().pushString(csByteList);
+        jvmMethod().pushString(csByteList, StringSupport.CR_BROKEN);
 
         for (Operand p : instr.getOperands()) {
             // visit piece and ensure it's a string
@@ -713,7 +713,7 @@ public class JVMVisitor extends IRVisitor {
     public void BuildCompoundStringInstr(BuildCompoundStringInstr compoundstring) {
         ByteList csByteList = new ByteList();
         csByteList.setEncoding(compoundstring.getEncoding());
-        jvmMethod().pushString(csByteList);
+        jvmMethod().pushString(csByteList, StringSupport.CR_UNKNOWN);
         for (Operand p : compoundstring.getPieces()) {
 //            if ((p instanceof StringLiteral) && (compoundstring.isSameEncodingAndCodeRange((StringLiteral)p))) {
 //                jvmMethod().pushByteList(((StringLiteral)p).bytelist);
@@ -833,8 +833,8 @@ public class JVMVisitor extends IRVisitor {
         visit(checkargsarrayarityinstr.getArgsArray());
         jvmAdapter().pushInt(checkargsarrayarityinstr.required);
         jvmAdapter().pushInt(checkargsarrayarityinstr.opt);
-        jvmAdapter().pushInt(checkargsarrayarityinstr.rest);
-        jvmMethod().invokeStatic(Type.getType(Helpers.class), Method.getMethod("void irCheckArgsArrayArity(org.jruby.runtime.ThreadContext, org.jruby.RubyArray, int, int, int)"));
+        jvmAdapter().pushBoolean(checkargsarrayarityinstr.rest);
+        jvmMethod().invokeStatic(Type.getType(Helpers.class), Method.getMethod("void irCheckArgsArrayArity(org.jruby.runtime.ThreadContext, org.jruby.RubyArray, int, int, boolean)"));
     }
 
     @Override
@@ -850,7 +850,7 @@ public class JVMVisitor extends IRVisitor {
             jvmAdapter().ldc(checkarityinstr.receivesKeywords);
             jvmAdapter().ldc(checkarityinstr.restKey);
             jvmMethod().loadBlockType();
-            jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, Object[].class, int.class, int.class, int.class, boolean.class, int.class, Block.Type.class));
+            jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, Object[].class, int.class, int.class, boolean.class, boolean.class, int.class, Block.Type.class));
         }
     }
 
@@ -1546,12 +1546,13 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ReceivePostReqdArgInstr(ReceivePostReqdArgInstr instr) {
+        jvmMethod().loadContext();
         jvmMethod().loadArgs();
         jvmAdapter().pushInt(instr.preReqdArgsCount);
         jvmAdapter().pushInt(instr.postReqdArgsCount);
         jvmAdapter().pushInt(instr.getArgIndex());
         jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
-        jvmMethod().invokeIRHelper("receivePostReqdArg", sig(IRubyObject.class, IRubyObject[].class, int.class, int.class, int.class, boolean.class));
+        jvmMethod().invokeIRHelper("receivePostReqdArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class, int.class, int.class, boolean.class));
         jvmStoreLocal(instr.getResult());
     }
 
@@ -2013,7 +2014,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void FrozenString(FrozenString frozen) {
-        jvmMethod().pushFrozenString(frozen.getByteList());
+        jvmMethod().pushFrozenString(frozen.getByteList(), frozen.getCodeRange());
     }
 
     @Override
@@ -2142,7 +2143,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void StringLiteral(StringLiteral stringliteral) {
-        jvmMethod().pushString(stringliteral.getByteList());
+        jvmMethod().pushString(stringliteral.getByteList(), stringliteral.getCodeRange());
     }
 
     @Override

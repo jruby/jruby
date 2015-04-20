@@ -64,10 +64,9 @@ public class UnresolvedSuperInstr extends CallInstr {
         }
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
-        boolean isPotentiallyRefined = d.decodeBoolean();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("before result");
 
-        return new UnresolvedSuperInstr(d.decodeVariable(), receiver, args, closure, isPotentiallyRefined);
+        return new UnresolvedSuperInstr(d.decodeVariable(), receiver, args, closure, d.getCurrentScope().maybeUsingRefinements());
     }
 
     // We cannot convert this into a NoCallResultInstr

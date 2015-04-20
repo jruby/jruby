@@ -26,10 +26,6 @@ public abstract class AssertConstantNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public AssertConstantNode(AssertConstantNode prev) {
-        super(prev);
-    }
-
     private static volatile boolean[] sideEffect;
 
     @Specialization

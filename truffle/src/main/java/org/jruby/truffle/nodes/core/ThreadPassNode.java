@@ -22,10 +22,6 @@ public class ThreadPassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ThreadPassNode(ThreadPassNode prev) {
-        super(prev);
-    }
-
     @Override
     public void executeVoid(VirtualFrame frame) {
         final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();

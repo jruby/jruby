@@ -43,11 +43,6 @@ public abstract class RangeNodes {
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
-        public CollectNode(CollectNode prev) {
-            super(prev);
-            arrayBuilder = prev.arrayBuilder;
-        }
-
         @Specialization
         public RubyArray collect(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyProc block) {
             final int begin = range.getBegin();
@@ -88,10 +83,6 @@ public abstract class RangeNodes {
             super(context, sourceSection);
         }
 
-        public EachNode(EachNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object each(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyProc block) {
             final int exclusiveEnd = range.getExclusiveEnd();
@@ -109,9 +100,6 @@ public abstract class RangeNodes {
                         try {
                             yield(frame, block, n);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -146,9 +134,6 @@ public abstract class RangeNodes {
                         try {
                             yield(frame, block, n);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -190,10 +175,6 @@ public abstract class RangeNodes {
             super(context, sourceSection);
         }
 
-        public ExcludeEndNode(ExcludeEndNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean excludeEnd(RubyRange range) {
             return range.doesExcludeEnd();
@@ -206,10 +187,6 @@ public abstract class RangeNodes {
 
         public BeginNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public BeginNode(BeginNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -236,10 +213,6 @@ public abstract class RangeNodes {
             super(context, sourceSection);
         }
 
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyRange.ObjectRange initialize(RubyRange.ObjectRange range, Object begin, Object end, UndefinedPlaceholder undefined) {
             return initialize(range, begin, end, false);
@@ -258,10 +231,6 @@ public abstract class RangeNodes {
 
         public EndNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EndNode(EndNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -292,10 +261,6 @@ public abstract class RangeNodes {
             super(context, sourceSection);
         }
 
-        public StepNode(StepNode prev) {
-            super(prev);
-        }
-
         @Specialization(guards = "isStepValid(range, step, block)")
         public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, int step, RubyProc block) {
             int count = 0;
@@ -311,9 +276,6 @@ public abstract class RangeNodes {
                         try {
                             yield(frame, block, n);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -346,9 +308,6 @@ public abstract class RangeNodes {
                         try {
                             yield(frame, block, n);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -450,10 +409,6 @@ public abstract class RangeNodes {
 
         public ToANode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToANode(ToANode prev) {
-            super(prev);
         }
 
         @Specialization

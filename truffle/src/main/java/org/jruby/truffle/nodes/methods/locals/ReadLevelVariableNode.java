@@ -30,10 +30,6 @@ public abstract class ReadLevelVariableNode extends FrameSlotNode implements Rea
         this.varLevel = level;
     }
 
-    public ReadLevelVariableNode(ReadLevelVariableNode prev) {
-        this(prev.getContext(), prev.getSourceSection(), prev.frameSlot, prev.varLevel);
-    }
-
     @Specialization(rewriteOn = {FrameSlotTypeException.class})
     public boolean doBoolean(VirtualFrame frame) throws FrameSlotTypeException {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);

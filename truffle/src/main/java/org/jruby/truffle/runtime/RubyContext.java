@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
@@ -20,6 +21,8 @@ import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.tools.CoverageTracker;
 
+import jnr.posix.POSIX;
+import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -27,7 +30,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyNil;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
@@ -55,10 +57,15 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class RubyContext extends ExecutionContext {
 
+    private static RubyContext latestInstance;
+
     private static final boolean TRUFFLE_COVERAGE = Options.TRUFFLE_COVERAGE.load();
     private static final int INSTRUMENTATION_SERVER_PORT = Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load();
 
     private final Ruby runtime;
+
+    private final POSIX posix;
+
     private final TranslatorDriver translator;
     private final CoreLibrary coreLibrary;
     private final FeatureManager featureManager;
@@ -79,12 +86,15 @@ public class RubyContext extends ExecutionContext {
     private final InstrumentationServerManager instrumentationServerManager;
     private final AttachmentsManager attachmentsManager;
     private final SourceManager sourceManager;
+    private final RubiniusConfiguration rubiniusConfiguration = new RubiniusConfiguration();
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
     private final boolean runningOnWindows;
 
     public RubyContext(Ruby runtime) {
+        latestInstance = this;
+
         assert runtime != null;
 
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
@@ -111,7 +121,9 @@ public class RubyContext extends ExecutionContext {
         safepointManager = new SafepointManager(this);
 
         this.runtime = runtime;
-        translator = new TranslatorDriver();
+
+        // JRuby+Truffle uses POSIX for all IO - we need the native version
+        posix = POSIXFactory.getPOSIX(new TrufflePOSIXHandler(this), true);
 
         warnings = new Warnings(this);
 
@@ -121,7 +133,10 @@ public class RubyContext extends ExecutionContext {
         emptyShape = RubyBasicObject.LAYOUT.createShape(new RubyOperations(this));
 
         coreLibrary = new CoreLibrary(this);
+        rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
         coreLibrary.initialize();
+
+        translator = new TranslatorDriver(this);
 
         featureManager = new FeatureManager(this);
         traceManager = new TraceManager();
@@ -131,8 +146,6 @@ public class RubyContext extends ExecutionContext {
 
         threadManager = new ThreadManager(this);
         fiberManager = new FiberManager(this);
-
-        rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
 
         rubiniusPrimitiveManager = RubiniusPrimitiveManager.create();
 
@@ -505,10 +518,6 @@ public class RubyContext extends ExecutionContext {
         return "ruby";
     }
 
-    public TruffleHooks getHooks() {
-        return (TruffleHooks) runtime.getInstanceConfig().getTruffleHooks();
-    }
-
     public TraceManager getTraceManager() {
         return traceManager;
     }
@@ -537,8 +546,23 @@ public class RubyContext extends ExecutionContext {
         return rubiniusPrimitiveManager;
     }
 
+    // TODO(mg): we need to find a better place for this:
+    private TruffleObject multilanguageObject;
+
+    public TruffleObject getMultilanguageObject() {
+        return multilanguageObject;
+    }
+
+    public void setMultilanguageObject(TruffleObject multilanguageObject) {
+        this.multilanguageObject = multilanguageObject;
+    }
+
     public CoverageTracker getCoverageTracker() {
         return coverageTracker;
+    }
+
+    public static RubyContext getLatestInstance() {
+        return latestInstance;
     }
 
     public AttachmentsManager getAttachmentsManager() {
@@ -547,5 +571,13 @@ public class RubyContext extends ExecutionContext {
 
     public SourceManager getSourceManager() {
         return sourceManager;
+    }
+
+    public RubiniusConfiguration getRubiniusConfiguration() {
+        return rubiniusConfiguration;
+    }
+
+    public POSIX getPosix() {
+        return posix;
     }
 }

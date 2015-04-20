@@ -52,10 +52,6 @@ public abstract class IONodes {
             super(context, sourceSection);
         }
 
-        public ReadLinesNode(ReadLinesNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyArray readLines(RubyString file) {
             notDesignedForCompilation();
@@ -87,10 +83,6 @@ public abstract class IONodes {
 
         public BinReadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public BinReadNode(BinReadNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -187,10 +179,6 @@ public abstract class IONodes {
             super(context, sourceSection);
         }
 
-        public WriteNode(WriteNode prev) {
-            super(prev);
-        }
-
         @CreateCast("string") public RubyNode callToS(RubyNode other) {
             return ToSNodeFactory.create(getContext(), getSourceSection(), other);
         }
@@ -235,10 +223,6 @@ public abstract class IONodes {
             super(context, sourceSection);
         }
 
-        public IsATTYNode(IsATTYNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean isatty(Object self) {
             notDesignedForCompilation();
@@ -251,7 +235,7 @@ public abstract class IONodes {
             // TODO (eregon 8-Apr-15) get the actual fd
             final FileDescriptor fd = FileDescriptor.out;
 
-            return getContext().getRuntime().getPosix().isatty(fd);
+            return getContext().getPosix().isatty(fd);
         }
 
     }

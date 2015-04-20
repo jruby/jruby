@@ -14,11 +14,11 @@ import org.jruby.runtime.ThreadContext;
 public class CheckArityInstr extends Instr implements FixedArityInstr {
     public final int required;
     public final int opt;
-    public final int rest;
+    public final boolean rest;
     public final boolean receivesKeywords;
     public final int restKey;
 
-    public CheckArityInstr(int required, int opt, int rest, boolean receivesKeywords, int restKey) {
+    public CheckArityInstr(int required, int opt, boolean rest, boolean receivesKeywords, int restKey) {
         super(Operation.CHECK_ARITY, EMPTY_OPERANDS);
 
         this.required = required;
@@ -41,8 +41,8 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
         if (ii.canMapArgsStatically()) { // we can error on bad arity or remove check_arity
             int numArgs = ii.getArgsCount();
 
-            if (numArgs < required || (rest == -1 && numArgs > (required + opt))) {
-                return new RaiseArgumentErrorInstr(required, opt, rest, rest);
+            if (numArgs < required || (!rest && numArgs > (required + opt))) {
+                return new RaiseArgumentErrorInstr(required, opt, rest, numArgs);
             }
 
             return null;
@@ -62,7 +62,7 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
     }
 
     public static CheckArityInstr decode(IRReaderDecoder d) {
-        return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt());
+        return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeBoolean(), d.decodeInt());
     }
 
     public void checkArity(ThreadContext context, Object[] args, Block.Type blockType) {

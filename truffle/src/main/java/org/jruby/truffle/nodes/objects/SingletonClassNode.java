@@ -30,10 +30,6 @@ public abstract class SingletonClassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public SingletonClassNode(SingletonClassNode prev) {
-        super(prev);
-    }
-
     public abstract RubyClass executeSingletonClass(VirtualFrame frame, Object value);
 
     @Specialization(guards = "isTrue(value)")

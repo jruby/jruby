@@ -44,7 +44,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class CompiledBlock extends ContextAwareBlockBody {
     protected final CompiledBlockCallback callback;
     protected final boolean hasMultipleArgsHead;
-    
+
+    @Deprecated
     public static Block newCompiledClosure(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
@@ -52,7 +53,15 @@ public class CompiledBlock extends ContextAwareBlockBody {
 
         return new Block(body, binding);
     }
-    
+
+    public static Block newCompiledClosure(ThreadContext context, IRubyObject self, Signature signature,
+                                           StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
+        Binding binding = context.currentBinding(self, Visibility.PUBLIC);
+        BlockBody body = new CompiledBlock(signature, scope, callback, hasMultipleArgsHead, argumentType);
+
+        return new Block(body, binding);
+    }
+
     public static Block newCompiledClosure(ThreadContext context, IRubyObject self, BlockBody body) {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
         return new Block(body, binding);
@@ -63,11 +72,15 @@ public class CompiledBlock extends ContextAwareBlockBody {
         return new CompiledBlock(arity, scope, callback, hasMultipleArgsHead, argumentType);
     }
 
-    public CompiledBlock(Arity arity, StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        super(scope, arity, argumentType);
-        
+    public CompiledBlock(Signature signature, StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
+        super(scope, signature, argumentType);
+
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
+    }
+
+    public CompiledBlock(Arity arity, StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
+        this(Signature.from(arity), scope, callback, hasMultipleArgsHead, argumentType);
     }
 
     @Override

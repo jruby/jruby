@@ -45,13 +45,22 @@ public class CompiledBlockLight19 extends CompiledBlock19 {
 
         return new Block(body, binding);
     }
-    
+
+    public static BlockBody newCompiledBlockLight(Signature signature,
+                                                  StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {
+        return new CompiledBlockLight19(signature, scope, callback, hasMultipleArgsHead, argumentType, parameterList);
+    }
+
     public static BlockBody newCompiledBlockLight(Arity arity,
             StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {
         return new CompiledBlockLight19(arity, scope, callback, hasMultipleArgsHead, argumentType, parameterList);
     }
 
     public void setEvalType(EvalType evalType) {
+    }
+
+    protected CompiledBlockLight19(Signature signature, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {
+        super(signature, scope, callback, hasMultipleArgsHead, argumentType, parameterList);
     }
 
     protected CompiledBlockLight19(Arity arity, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {

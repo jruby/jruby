@@ -38,12 +38,6 @@ public abstract class ProcessNodes {
             nanosecondSymbol = context.newSymbol("nanosecond");
         }
 
-        public ClockGetTimeNode(ClockGetTimeNode prev) {
-            super(prev);
-            floatSecondSymbol = prev.floatSecondSymbol;
-            nanosecondSymbol = prev.nanosecondSymbol;
-        }
-
         @Specialization(guards = "isMonotonic(clock_id)")
         Object clock_gettime_monotonic(int clock_id, UndefinedPlaceholder unit) {
             return clock_gettime_monotonic(CLOCK_MONOTONIC, floatSecondSymbol);
@@ -93,15 +87,11 @@ public abstract class ProcessNodes {
             super(context, sourceSection);
         }
 
-        public KillNode(KillNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int kill(RubySymbol signalName, int pid) {
             notDesignedForCompilation();
 
-            int self = getContext().getRuntime().getPosix().getpid();
+            int self = getContext().getPosix().getpid();
 
             if (self == pid) {
                 Signal signal = new Signal(signalName.toString());
@@ -122,15 +112,11 @@ public abstract class ProcessNodes {
             super(context, sourceSection);
         }
 
-        public PidNode(PidNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int pid() {
             notDesignedForCompilation();
 
-            return getContext().getRuntime().getPosix().getpid();
+            return getContext().getPosix().getpid();
         }
 
     }

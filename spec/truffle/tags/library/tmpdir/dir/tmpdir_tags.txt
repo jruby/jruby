@@ -1,0 +1,1 @@
+fails:Dir.tmpdir returns the path to a writable and readable directory

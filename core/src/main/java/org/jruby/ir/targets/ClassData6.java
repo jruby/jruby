@@ -35,7 +35,7 @@ class ClassData6 extends ClassData {
                         new IRBytecodeAdapter6(adapter, signature, this),
                         scope,
                         signature,
-                        specificArity ? scope.getStaticScope().getRequiredArgs() : -1)
+                        specificArity ? scope.getStaticScope().getSignature().required() : -1)
         );
     }
 }

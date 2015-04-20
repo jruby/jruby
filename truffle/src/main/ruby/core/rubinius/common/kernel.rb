@@ -170,6 +170,22 @@ module Kernel
     singleton_class.send(:define_method, *args, &block)
   end
 
+  def extend(*modules)
+    raise ArgumentError, "wrong number of arguments (0 for 1+)" if modules.empty?
+    Rubinius.check_frozen
+
+    modules.reverse_each do |mod|
+      Rubinius.privately do
+        mod.extend_object self
+      end
+
+      Rubinius.privately do
+        mod.extended self
+      end
+    end
+    self
+  end
+
   def itself
     self
   end

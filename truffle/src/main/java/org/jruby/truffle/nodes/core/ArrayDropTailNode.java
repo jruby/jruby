@@ -33,11 +33,6 @@ public abstract class ArrayDropTailNode extends RubyNode {
         this.index = index;
     }
 
-    public ArrayDropTailNode(ArrayDropTailNode prev) {
-        super(prev);
-        index = prev.index;
-    }
-
     @Specialization(guards = "isNull(array)")
     public RubyArray getHeadNull(RubyArray array) {
         notDesignedForCompilation();

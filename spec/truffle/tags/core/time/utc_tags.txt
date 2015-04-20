@@ -5,4 +5,3 @@ fails:Time.utc handles fractional microseconds as a Float
 fails:Time.utc handles fractional microseconds as a Rational
 fails:Time.utc ignores fractional seconds if a passed whole number of microseconds
 fails:Time.utc ignores fractional seconds if a passed fractional number of microseconds
-fails:Time#utc returns the utc representation of time

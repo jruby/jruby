@@ -517,7 +517,7 @@ public class Main {
      * @param rj
      * @return
      */
-    private static int handleRaiseException(RaiseException rj) {
+    protected static int handleRaiseException(RaiseException rj) {
         RubyException raisedException = rj.getException();
         Ruby runtime = raisedException.getRuntime();
         if (runtime.getSystemExit().isInstance(raisedException)) {

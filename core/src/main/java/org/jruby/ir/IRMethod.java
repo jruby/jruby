@@ -35,7 +35,6 @@ public class IRMethod extends IRScope {
 
         if (!getManager().isDryRun() && staticScope != null) {
             staticScope.setIRScope(this);
-            staticScope.setScopeType(this.getScopeType());
         }
     }
 

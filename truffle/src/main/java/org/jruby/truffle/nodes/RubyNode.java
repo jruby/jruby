@@ -61,10 +61,6 @@ public abstract class RubyNode extends Node {
         this.context = context;
     }
 
-    public RubyNode(RubyNode prev) {
-        this(prev.context, prev.getSourceSection());
-    }
-
     @Override
     public boolean isInstrumentable() {
         return true;

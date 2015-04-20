@@ -20,8 +20,4 @@ public abstract class ArrayCoreMethodNode extends CoreMethodNode {
         super(context, sourceSection);
     }
 
-    public ArrayCoreMethodNode(ArrayCoreMethodNode prev) {
-        super(prev);
-    }
-
 }

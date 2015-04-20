@@ -42,11 +42,6 @@ public abstract class TimePrimitiveNodes {
             readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
-        public TimeSNowPrimitiveNode(TimeSNowPrimitiveNode prev) {
-            super(prev);
-            readTimeZoneNode = prev.readTimeZoneNode;
-        }
-
         @Specialization
         public RubyTime timeSNow(VirtualFrame frame, RubyClass timeClass) {
             // TODO CS 4-Mar-15 whenever we get time we have to convert lookup and time zone to a string and look it up - need to cache somehow...
@@ -67,10 +62,6 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TimeSDupPrimitiveNode(TimeSDupPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyTime timeSDup(RubyTime other) {
             final RubyTime time = new RubyTime(getContext().getCoreLibrary().getTimeClass(), other.getDateTime(), other.getOffset());
@@ -87,11 +78,6 @@ public abstract class TimePrimitiveNodes {
         public TimeSSpecificPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
-        }
-
-        public TimeSSpecificPrimitiveNode(TimeSSpecificPrimitiveNode prev) {
-            super(prev);
-            readTimeZoneNode = prev.readTimeZoneNode;
         }
 
         @Specialization(guards = "isTrue(isUTC)")
@@ -148,10 +134,6 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TimeSecondsPrimitiveNode(TimeSecondsPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public long timeSeconds(RubyTime time) {
             return time.getDateTime().getMillis() / 1_000;
@@ -166,10 +148,6 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TimeUSecondsPrimitiveNode(TimeUSecondsPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public long timeUSeconds(RubyTime time) {
             return time.getDateTime().getMillisOfSecond() * 1_000L;
@@ -182,10 +160,6 @@ public abstract class TimePrimitiveNodes {
 
         public TimeDecomposePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public TimeDecomposePrimitiveNode(TimeDecomposePrimitiveNode prev) {
-            super(prev);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -231,10 +205,6 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TimeStrftimePrimitiveNode(TimeStrftimePrimitiveNode prev) {
-            super(prev);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString timeStrftime(RubyTime time, RubyString format) {
@@ -250,10 +220,6 @@ public abstract class TimePrimitiveNodes {
 
         public TimeSFromArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public TimeSFromArrayPrimitiveNode(TimeSFromArrayPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -370,10 +336,6 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TimeNSecondsPrimitiveNode(TimeNSecondsPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public long timeNSeconds(RubyTime time) {
             return time.getDateTime().getMillisOfSecond() * 1_000_000L;
@@ -386,10 +348,6 @@ public abstract class TimePrimitiveNodes {
 
         public TimeSetNSecondsPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public TimeSetNSecondsPrimitiveNode(TimeSetNSecondsPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -407,10 +365,6 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TimeEnvZonePrimitiveNode(TimeEnvZonePrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object timeEnvZone(RubyTime time) {
             throw new UnsupportedOperationException("time_env_zone");
@@ -423,10 +377,6 @@ public abstract class TimePrimitiveNodes {
 
         public TimeUTCOffsetPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public TimeUTCOffsetPrimitiveNode(TimeUTCOffsetPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization

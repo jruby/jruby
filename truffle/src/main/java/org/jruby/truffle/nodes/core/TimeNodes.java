@@ -31,10 +31,6 @@ public abstract class TimeNodes {
             super(context, sourceSection);
         }
 
-        public InternalGMTNode(InternalGMTNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean internalGMT(RubyTime time) {
             return time.getOffset() == nil() &&
@@ -51,13 +47,15 @@ public abstract class TimeNodes {
             super(context, sourceSection);
         }
 
-        public InternalSetGMTNode(InternalSetGMTNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public boolean internalSetGMT(RubyTime time, Object setGMT) {
-            throw new UnsupportedOperationException("_set_gmt" + setGMT.getClass());
+        public boolean internalSetGMT(RubyTime time, boolean isGMT) {
+            if (isGMT) {
+                time.setDateTime(time.getDateTime().withZone(DateTimeZone.UTC));
+            } else {
+                // Do nothing I guess - we can't change it to another zone, as what zone would that be?
+            }
+
+            return isGMT;
         }
     }
 
@@ -67,10 +65,6 @@ public abstract class TimeNodes {
 
         public InternalOffsetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InternalOffsetNode(InternalOffsetNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -85,10 +79,6 @@ public abstract class TimeNodes {
 
         public InternalSetOffsetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InternalSetOffsetNode(InternalSetOffsetNode prev) {
-            super(prev);
         }
 
         @Specialization

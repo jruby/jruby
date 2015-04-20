@@ -42,10 +42,6 @@ public abstract class EncodingConverterNodes {
             super(context, sourceSection);
         }
 
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-        }
-
         @TruffleBoundary
         @Specialization
         public RubyNilClass initialize(RubyEncodingConverter self, Object source, Object destination, Object options) {
@@ -129,15 +125,6 @@ public abstract class EncodingConverterNodes {
             newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
             newTranscodingNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public TranscodingMapNode(TranscodingMapNode prev) {
-            super(prev);
-            upcaseNode = prev.upcaseNode;
-            toSymNode = prev.toSymNode;
-            newLookupTableNode = prev.newLookupTableNode;
-            lookupTableWriteNode = prev.lookupTableWriteNode;
-            newTranscodingNode = prev.newTranscodingNode;
         }
 
         @Specialization

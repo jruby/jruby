@@ -25,6 +25,8 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.cext.CExtManager;
+import org.jruby.truffle.runtime.cext.CExtSubsystem;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
@@ -46,10 +48,6 @@ public abstract class TrufflePrimitiveNodes {
 
         public BindingOfCallerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public BindingOfCallerNode(BindingOfCallerNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -92,10 +90,6 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public GCCountNode(GCCountNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int gcCount() {
             return RubyGC.getCollectionCount();
@@ -108,10 +102,6 @@ public abstract class TrufflePrimitiveNodes {
 
         public GCTimeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public GCTimeNode(GCTimeNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -128,10 +118,6 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public AssertConstantNode(AssertConstantNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass assertConstant(Object value) {
             throw new RaiseException(getContext().getCoreLibrary().runtimeError("Truffle::Primitive.assert_constant can only be called lexically", this));
@@ -146,10 +132,6 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public AssertNotCompiledNode(AssertNotCompiledNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass assertNotCompiled() {
             throw new RaiseException(getContext().getCoreLibrary().runtimeError("Truffle::Primitive.assert_not_compiled can only be called lexically", this));
@@ -162,10 +144,6 @@ public abstract class TrufflePrimitiveNodes {
 
         public DumpCallStackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DumpCallStackNode(DumpCallStackNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -188,10 +166,6 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public FlushStdoutNode(FlushStdoutNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass flush() {
             getContext().getRuntime().getOut().flush();
@@ -205,10 +179,6 @@ public abstract class TrufflePrimitiveNodes {
 
         public FullTreeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public FullTreeNode(FullTreeNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -227,10 +197,6 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public JavaClassOfNode(JavaClassOfNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString javaClassOf(Object value) {
             notDesignedForCompilation();
@@ -245,10 +211,6 @@ public abstract class TrufflePrimitiveNodes {
 
         public DumpStringNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DumpStringNode(DumpStringNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -276,10 +238,6 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public SourceAttributionTreeNode(SourceAttributionTreeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString sourceAttributionTree() {
             notDesignedForCompilation();
@@ -294,10 +252,6 @@ public abstract class TrufflePrimitiveNodes {
 
         public StorageClassNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StorageClassNode(StorageClassNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -331,10 +285,6 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public PanicNode(PanicNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass doPanic() {
             DebugOperations.panic(getContext(), this, null);
@@ -348,10 +298,6 @@ public abstract class TrufflePrimitiveNodes {
 
         public ParseTreeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ParseTreeNode(ParseTreeNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -376,10 +322,6 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TreeNode(TreeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString tree() {
             notDesignedForCompilation();
@@ -396,10 +338,6 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public GraalNode(GraalNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean graal() {
             return Truffle.getRuntime().getName().toLowerCase(Locale.ENGLISH).contains("graal");
@@ -412,10 +350,6 @@ public abstract class TrufflePrimitiveNodes {
 
         public SubstrateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SubstrateNode(SubstrateNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -432,10 +366,6 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public GraalVersionNode(GraalVersionNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString graalVersion() {
             return getContext().makeString(System.getProperty("graal.version", "unknown"));
@@ -448,10 +378,6 @@ public abstract class TrufflePrimitiveNodes {
 
         public SimpleShellNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SimpleShellNode(SimpleShellNode prev) {
-            super(prev);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -468,10 +394,6 @@ public abstract class TrufflePrimitiveNodes {
 
         public CoverageResultNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CoverageResultNode(CoverageResultNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -514,10 +436,6 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public CoverageStartNode(CoverageStartNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass coverageStart() {
             if (getContext().getCoverageTracker() == null) {
@@ -537,10 +455,6 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public AttachNode(AttachNode prev) {
-            super(prev);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyNilClass attach(RubyString file, int line, RubyProc block) {
@@ -557,15 +471,69 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public DetachNode(DetachNode prev) {
-            super(prev);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyNilClass detach(RubyString file, int line) {
             getContext().getAttachmentsManager().detach(file.toString(), line);
             return getContext().getCoreLibrary().getNilObject();
+        }
+
+    }
+
+    @CoreMethod(names = "cext_load", onSingleton = true, needsSelf = false, required = 3)
+    public abstract static class CExtLoadNode extends CoreMethodNode {
+
+        public CExtLoadNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public boolean cExtLoad(RubyArray initFunctions, RubyArray cFlags, RubyArray files) {
+            final CExtSubsystem subsystem = CExtManager.getSubsystem();
+
+            if (subsystem == null) {
+                throw new UnsupportedOperationException();
+            }
+
+            subsystem.load(toStrings(initFunctions), toStrings(cFlags), toStrings(files));
+
+            return true;
+        }
+
+        private String[] toStrings(RubyArray array) {
+            final String[] strings = new String[array.getSize()];
+
+            int n = 0;
+
+            for (Object object : array.slowToArray()) {
+                if (object instanceof RubyString || object instanceof RubySymbol) {
+                    strings[n] = object.toString();
+                    n++;
+                } else {
+                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
+                            getContext().getCoreLibrary().getLogicalClass(object),
+                            getContext().getCoreLibrary().getStringClass(),
+                            this));
+                }
+            }
+
+            return strings;
+        }
+
+    }
+
+    @CoreMethod(names = "cext_supported?", needsSelf = false, onSingleton = true)
+    public abstract static class CExtSupportedNode extends CoreMethodNode {
+
+        public CExtSupportedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public boolean cExtSupported() {
+            return CExtManager.getSubsystem() != null;
         }
 
     }

@@ -60,7 +60,7 @@ public @interface CoreMethod {
 
     boolean taintFromSelf() default false;
 
-    int[] taintFromParameters() default {};
+    int taintFromParameter() default -1;
 
     boolean raiseIfFrozenSelf() default false;
 

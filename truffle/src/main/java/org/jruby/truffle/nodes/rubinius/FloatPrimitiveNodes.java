@@ -32,10 +32,6 @@ public abstract class FloatPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public FloatDToAPrimitiveNode(FloatDToAPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyArray dToA(double value) {
             notDesignedForCompilation();
@@ -78,10 +74,6 @@ public abstract class FloatPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public FloatNegativePrimitiveNode(FloatNegativePrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean floatNegative(double value) {
             // Edge-cases: 0, NaN and infinity can all be negative
@@ -101,11 +93,6 @@ public abstract class FloatPrimitiveNodes {
         public FloatRoundPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
-        }
-
-        public FloatRoundPrimitiveNode(FloatRoundPrimitiveNode prev) {
-            super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization

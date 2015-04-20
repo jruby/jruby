@@ -37,10 +37,6 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public EnsureCapacityArrayNode(EnsureCapacityArrayNode prev) {
-        super(prev);
-    }
-
     public abstract Object executeEnsureCapacity(VirtualFrame frame, RubyArray array, int requiredCapacity);
 
     @Specialization(

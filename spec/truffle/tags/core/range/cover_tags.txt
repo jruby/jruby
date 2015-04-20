@@ -1,1 +1,0 @@
-fails:Range#cover? compares values using <=>

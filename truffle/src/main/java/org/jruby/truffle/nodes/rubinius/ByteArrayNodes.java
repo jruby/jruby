@@ -27,10 +27,6 @@ public abstract class ByteArrayNodes {
             super(context, sourceSection);
         }
 
-        public GetByteNode(GetByteNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int getByte(RubiniusByteArray bytes, int index) {
             return bytes.getBytes().get(index);

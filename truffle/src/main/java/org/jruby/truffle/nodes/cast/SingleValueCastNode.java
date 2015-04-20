@@ -26,10 +26,6 @@ public abstract class SingleValueCastNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public SingleValueCastNode(SingleValueCastNode prev) {
-        super(prev);
-    }
-
     public abstract Object executeSingleValue(VirtualFrame frame, Object[] args);
 
     @Specialization(guards = "noArguments(args)")

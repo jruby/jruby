@@ -36,79 +36,11 @@ import java.nio.file.Paths;
 @CoreClass(name = "File")
 public abstract class FileNodes {
 
-    @CoreMethod(names = "absolute_path", onSingleton = true, required = 1)
-    public abstract static class AbsolutePathNode extends CoreMethodNode {
-
-        public AbsolutePathNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public AbsolutePathNode(AbsolutePathNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString absolutePath(RubyString path) {
-            notDesignedForCompilation();
-
-            String absolute = new File(path.toString()).getAbsolutePath();
-
-            if (getContext().isRunningOnWindows()) {
-                absolute = absolute.replace('\\', '/');
-            }
-
-            return getContext().makeString(absolute);
-        }
-
-    }
-
-    @CoreMethod(names = "basename", onSingleton = true, required = 1, optional = 1)
-    public abstract static class BasenameNode extends CoreMethodNode {
-
-        public BasenameNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public BasenameNode(BasenameNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString basename(RubyString path, @SuppressWarnings("unused") UndefinedPlaceholder extension) {
-            notDesignedForCompilation();
-
-            return getContext().makeString(new File(path.toString()).getName());
-        }
-
-        @Specialization
-        public RubyString basename(RubyString path, RubyString extension) {
-            notDesignedForCompilation();
-
-            final String extensionAsString = extension.toString();
-            final String name = new File(path.toString()).getName();
-            final String basename;
-
-            if (extensionAsString.equals(".*") && name.indexOf('.') != -1) {
-                basename = name.substring(0, name.lastIndexOf('.'));
-            } else if (name.endsWith(extensionAsString)) {
-                basename = name.substring(0, name.lastIndexOf(extensionAsString));
-            } else {
-                basename = name;
-            }
-
-            return getContext().makeString(basename);
-        }
-    }
-
     @CoreMethod(names = "close")
     public abstract static class CloseNode extends CoreMethodNode {
 
         public CloseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CloseNode(CloseNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -121,41 +53,11 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "dirname", onSingleton = true, required = 1)
-    public abstract static class DirnameNode extends CoreMethodNode {
-
-        public DirnameNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public DirnameNode(DirnameNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString dirname(RubyString path) {
-            notDesignedForCompilation();
-
-            final String parent = new File(path.toString()).getParent();
-
-            if (parent == null) {
-                return getContext().makeString(".");
-            } else {
-                return getContext().makeString(parent);
-            }
-        }
-
-    }
-
     @CoreMethod(names = "each_line", needsBlock = true)
     public abstract static class EachLineNode extends YieldingCoreMethodNode {
 
         public EachLineNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EachLineNode(EachLineNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -189,78 +91,11 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "expand_path", onSingleton = true, required = 1, optional = 1)
-    public abstract static class ExpandPathNode extends CoreMethodNode {
-
-        public ExpandPathNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ExpandPathNode(ExpandPathNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString expandPath(RubyString path, @SuppressWarnings("unused") UndefinedPlaceholder dir) {
-            return getContext().makeString(RubyFile.expandPath(getContext(), path.toString()));
-        }
-
-        @Specialization
-        public RubyString expandPath(RubyString path, RubyString dir) {
-            notDesignedForCompilation();
-
-            return getContext().makeString(RubyFile.expandPath(path.toString(), dir.toString()));
-        }
-
-    }
-
-    @CoreMethod(names = "join", onSingleton = true, argumentsAsArray = true)
-    public abstract static class JoinNode extends CoreMethodNode {
-
-        public JoinNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public JoinNode(JoinNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString join(Object[] parts) {
-            notDesignedForCompilation();
-
-            final StringBuilder builder = new StringBuilder();
-            join(builder, parts);
-            return getContext().makeString(builder.toString());
-        }
-
-        @TruffleBoundary
-        public static void join(StringBuilder builder, Object[] parts) {
-            notDesignedForCompilation();
-
-            for (int n = 0; n < parts.length; n++) {
-                if (n > 0) {
-                    builder.append("/");
-                }
-
-                if (parts[n] instanceof RubyArray) {
-                    join(builder, ((RubyArray) parts[n]).slowToArray());
-                } else {
-                    builder.append(parts[n].toString());
-                }
-            }
-        }
-    }
-
     @CoreMethod(names = "open", onSingleton = true, needsBlock = true, required = 1, optional = 1)
     public abstract static class OpenNode extends YieldingCoreMethodNode {
 
         public OpenNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public OpenNode(OpenNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -306,10 +141,6 @@ public abstract class FileNodes {
             super(context, sourceSection);
         }
 
-        public PutsNode(PutsNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass puts(RubyFile file, RubyString string) {
             notDesignedForCompilation();
@@ -335,10 +166,6 @@ public abstract class FileNodes {
             super(context, sourceSection);
         }
 
-        public ReadFunctionNode(ReadFunctionNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString read(RubyString file) {
             notDesignedForCompilation();
@@ -354,10 +181,6 @@ public abstract class FileNodes {
 
         public ReadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ReadNode(ReadNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -387,84 +210,11 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "realpath", onSingleton = true, required = 1, optional = 1)
-    public abstract static class RealpathNode extends CoreMethodNode {
-
-        public RealpathNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public RealpathNode(RealpathNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString realpath(RubyString path, UndefinedPlaceholder dir) {
-            return getContext().makeString(realpath(path.toString(), null));
-        }
-
-        @Specialization
-        public RubyString realpath(RubyString path, RubyString dir) {
-            return getContext().makeString(realpath(path.toString(), dir.toString()));
-        }
-
-        private String realpath(String path, String dir) {
-            notDesignedForCompilation();
-
-            File file = new File(dir, path);
-
-            try {
-                return file.getCanonicalPath();
-            } catch (IOException e) {
-                throw new UnsupportedOperationException("realpath - " + file);
-            }
-        }
-
-    }
-
-    @CoreMethod(names = "symlink?", onSingleton = true, required = 1)
-    public abstract static class SymlinkQueryNode extends CoreMethodNode {
-
-        public SymlinkQueryNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SymlinkQueryNode(SymlinkQueryNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean symlinkQuery(RubyString fileName) {
-            notDesignedForCompilation();
-
-            try {
-                // Note: We can't use file.exists() to check whether the symlink
-                // exists or not, because that method returns false for existing
-                // but broken symlink. So, we try without the existence check,
-                // but in the try-catch block.
-                // MRI behavior: symlink? on broken symlink should return true.
-                FileStat stat = getContext().getRuntime().getPosix().allocateStat();
-
-                if (getContext().getRuntime().getPosix().lstat(fileName.toString(), stat) < 0) {
-                    stat = null;
-                }
-
-                return (stat != null && stat.isSymlink());
-            } catch (SecurityException re) {
-                return false;
-            }
-        }
-    }
-
     @CoreMethod(names = "write", required = 1)
     public abstract static class WriteNode extends CoreMethodNode {
 
         public WriteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public WriteNode(WriteNode prev) {
-            super(prev);
         }
 
         @Specialization

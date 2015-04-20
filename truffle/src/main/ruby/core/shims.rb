@@ -114,15 +114,6 @@ end
 
 ENV['TZ'] = 'UTC'
 
-class Method
-  def to_proc
-    meth = self
-    proc { |*args|
-      meth.call(*args)
-    }
-  end
-end
-
 class MatchData
   def full
     @cached_full ||= begin
@@ -207,5 +198,21 @@ class Encoding::Converter
     initialize_rubinius(*args)
     initialize_jruby(*args)
   end
+end
+
+class Rubinius::ByteArray
+
+  alias_method :[], :get_byte
+
+end
+
+# Don't apply any synchronization at the moment
+
+module Rubinius
+
+  def self.synchronize(object)
+    yield
+  end
+
 end
 
