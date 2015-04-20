@@ -59,6 +59,7 @@ import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
@@ -264,9 +265,11 @@ public abstract class StringPrimitiveNodes {
         @Specialization
         public Object stringByteSubstring(RubyString string, long index, long length) {
             if (index > Integer.MAX_VALUE || index < Integer.MIN_VALUE) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("index out of int range", this));
             }
             if (length > Integer.MAX_VALUE || length < Integer.MIN_VALUE) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("length out of int range", this));
             }
             return stringByteSubstring(string, (int) index, (int) length);
