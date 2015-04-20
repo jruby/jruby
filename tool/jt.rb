@@ -131,8 +131,13 @@ module ShellUtils
     sh 'mvn', *args
   end
 
-  def mspec(command, *args)
-    sh 'ruby', 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
+  def mspec(env, command, *args)
+    env_vars = {}
+    mspec_env env_vars, command, *args
+  end
+
+  def mspec_env(env, command, *args)
+    sh env, 'ruby', 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
   end
 end
 
@@ -152,7 +157,7 @@ module Commands
     puts 'jt test mri                                  run mri tests'
     puts 'jt test                                      run all specs'
     puts 'jt test fast                                 run all specs except sub-processes, GC, sleep, ...'
-    puts 'jt test spec/ruby/language                   run specs in this directory'
+    puts 'jt test [--graal] spec/ruby/language         run specs in this directory'
     puts 'jt test spec/ruby/language/while_spec.rb     run specs in this file'
     puts 'jt test pe                                   run partial evaluation tests'
     puts 'jt tag spec/ruby/language                    tag failing specs in this directory'
@@ -229,7 +234,7 @@ module Commands
       jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
     end
 
-    raw_sh(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args)
+    raw_sh env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args
   end
   alias ruby run
 
@@ -248,15 +253,23 @@ module Commands
 
   def test(*args)
     return test_pe(*args.drop(1)) if args.first == 'pe'
-
     return test_mri(*args.drop(1)) if args.first == 'mri'
 
+    env_vars = {}
     options = %w[--excl-tag fails]
+    
     if args.first == 'fast'
       args.shift
       options += %w[--excl-tag slow]
     end
-    mspec 'run', *options, *args
+
+    if args.first == '--graal'
+      args.shift
+      env_vars["JAVACMD"] = Utilities.find_graal
+      options << '-T-J-server'
+    end
+
+    mspec_env env_vars, 'run', *options, *args
   end
 
   def test_pe(*args)
@@ -271,7 +284,7 @@ module Commands
 
   # Add tags to all given examples without running them. Useful to avoid file exclusions.
   def tag_all(*args)
-    mspec('tag', *%w[--unguarded --all --dry-run --add fails], *args)
+    mspec 'tag', *%w[--unguarded --all --dry-run --add fails], *args
   end
   private :tag_all
 
