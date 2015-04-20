@@ -39,6 +39,7 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 @CoreClass(name = "Hash")
@@ -568,13 +569,16 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isBuckets(hash)")
         public RubyHash eachBuckets(VirtualFrame frame, RubyHash hash, RubyProc block) {
-            notDesignedForCompilation();
-
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
-                yield(frame, block, RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), keyValue.getKey(), keyValue.getValue()));
+            for (KeyValue keyValue : verySlowToKeyValues(hash)) {
+                yield(frame, block, new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{keyValue.getKey(), keyValue.getValue()}, 2));
             }
 
             return hash;
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        private Collection<KeyValue> verySlowToKeyValues(RubyHash hash) {
+            return HashOperations.verySlowToKeyValues(hash);
         }
 
         @Specialization
