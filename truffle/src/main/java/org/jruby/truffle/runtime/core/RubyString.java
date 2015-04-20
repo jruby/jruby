@@ -101,7 +101,7 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
 
     @Override
     public ForeignAccessFactory getForeignAccessFactory() {
-        throw new UnsupportedOperationException();
+        return new StringForeignAccessFactory(getContext());
     }
 
     @Override

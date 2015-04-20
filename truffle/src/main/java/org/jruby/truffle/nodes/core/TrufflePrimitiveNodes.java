@@ -25,6 +25,8 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.cext.CExtManager;
+import org.jruby.truffle.runtime.cext.CExtSubsystem;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
@@ -474,6 +476,64 @@ public abstract class TrufflePrimitiveNodes {
         public RubyNilClass detach(RubyString file, int line) {
             getContext().getAttachmentsManager().detach(file.toString(), line);
             return getContext().getCoreLibrary().getNilObject();
+        }
+
+    }
+
+    @CoreMethod(names = "cext_load", onSingleton = true, needsSelf = false, required = 3)
+    public abstract static class CExtLoadNode extends CoreMethodNode {
+
+        public CExtLoadNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public boolean cExtLoad(RubyArray initFunctions, RubyArray cFlags, RubyArray files) {
+            final CExtSubsystem subsystem = CExtManager.getSubsystem();
+
+            if (subsystem == null) {
+                throw new UnsupportedOperationException();
+            }
+
+            subsystem.load(toStrings(initFunctions), toStrings(cFlags), toStrings(files));
+
+            return true;
+        }
+
+        private String[] toStrings(RubyArray array) {
+            final String[] strings = new String[array.getSize()];
+
+            int n = 0;
+
+            for (Object object : array.slowToArray()) {
+                if (object instanceof RubyString || object instanceof RubySymbol) {
+                    strings[n] = object.toString();
+                    n++;
+                } else {
+                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
+                            getContext().getCoreLibrary().getLogicalClass(object),
+                            getContext().getCoreLibrary().getStringClass(),
+                            this));
+                }
+            }
+
+            return strings;
+        }
+
+    }
+
+    @CoreMethod(names = "cext_supported?", needsSelf = false, onSingleton = true)
+    public abstract static class CExtSupportedNode extends CoreMethodNode {
+
+        public CExtSupportedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public boolean cExtSupported() {
+            return CExtManager.getSubsystem() != null;
         }
 
     }

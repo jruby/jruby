@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 
@@ -151,6 +152,8 @@ public class CoreLibrary {
 
     private final ArrayNodes.MinBlock arrayMinBlock;
     private final ArrayNodes.MaxBlock arrayMaxBlock;
+
+    private final RubyClass rubyInternalMethod;
 
     @CompilerDirectives.CompilationFinal private RubySymbol eachSymbol;
     @CompilerDirectives.CompilationFinal private RubySymbol mapSymbol;
@@ -321,6 +324,7 @@ public class CoreLibrary {
         encodingConverterClass = defineClass(encodingClass, objectClass, "Converter", new RubyEncodingConverter.EncodingConverterAllocator());
 
         truffleModule = defineModule("Truffle");
+        defineModule(truffleModule, "Interop");
         truffleDebugModule = defineModule(truffleModule, "Debug");
         defineModule(truffleModule, "Primitive");
 
@@ -333,6 +337,10 @@ public class CoreLibrary {
         stringDataClass = defineClass(rubiniusModule, objectClass, "StringData");
         transcodingClass = defineClass(encodingClass, objectClass, "Transcoding");
         tupleClass = defineClass(rubiniusModule, arrayClass, "Tuple");
+
+        // Interop
+
+        rubyInternalMethod = null;
 
         // Include the core modules
 
@@ -1110,6 +1118,10 @@ public class CoreLibrary {
 
     public RubyClass getNilClass() {
         return nilClass;
+    }
+
+    public RubyClass getRubyInternalMethod() {
+        return rubyInternalMethod;
     }
 
     public RubyClass getNoMethodErrorClass() {

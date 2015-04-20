@@ -56,6 +56,11 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
                 indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
             } else {
                 callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+
+                if (method.getDeclaringModule().getName().equals("TruffleInterop")) {
+                    insert(callNode);
+                    callNode.cloneCallTarget();
+                }
             }
         }
     }

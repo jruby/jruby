@@ -227,6 +227,7 @@ require_relative 'core/string'
 require_relative 'core/thread'
 require_relative 'core/unbound_method'
 
+# Dirty fixes we'd like to get rid of soon
 require_relative 'core/shims'
 
 # Load JRuby+Truffle specific classes
@@ -238,3 +239,8 @@ require_relative 'core/truffle/debug'
 
 require_relative 'core/config'
 require_relative 'core/main'
+
+# JRuby+Truffle C extension support
+require_relative 'core/truffle/cext/cext'
+require_relative 'core/truffle/cext/mkmf'
+require_relative 'core/truffle/cext/require'

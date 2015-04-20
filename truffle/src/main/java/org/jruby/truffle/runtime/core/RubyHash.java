@@ -144,7 +144,7 @@ public class RubyHash extends RubyBasicObject {
 
     @Override
     public ForeignAccessFactory getForeignAccessFactory() {
-        throw new UnsupportedOperationException();
+        return new HashForeignAccessFactory(getContext());
     }
 
     public void setFirstInSequence(Entry firstInSequence) {

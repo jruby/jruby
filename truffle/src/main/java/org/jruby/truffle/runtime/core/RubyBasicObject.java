@@ -181,7 +181,7 @@ public class RubyBasicObject implements TruffleObject {
 
     @Override
     public ForeignAccessFactory getForeignAccessFactory() {
-        throw new UnsupportedOperationException();
+        return new BasicForeignAccessFactory(getContext());
     }
 
     public final void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {

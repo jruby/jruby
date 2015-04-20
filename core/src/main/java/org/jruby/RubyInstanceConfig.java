@@ -1809,8 +1809,6 @@ public class RubyInstanceConfig {
     public static String IR_JIT_PASSES = Options.IR_JIT_PASSES.load();
     public static String IR_INLINE_COMPILER_PASSES = Options.IR_INLINE_COMPILER_PASSES.load();
 
-    private TruffleHooksStub truffleHooks = null;
-
     public static final boolean COROUTINE_FIBERS = Options.FIBER_COROUTINES.load();
 
     /**
@@ -1842,13 +1840,6 @@ public class RubyInstanceConfig {
             System.err.println("unsupported Java version \"" + specVersion + "\", defaulting to 1.5");
             return Opcodes.V1_5;
         }
-    }
-    public void setTruffleHooks(TruffleHooksStub truffleHooks) {
-        this.truffleHooks = truffleHooks;
-    }
-
-    public TruffleHooksStub getTruffleHooks() {
-        return truffleHooks;
     }
 
     @Deprecated

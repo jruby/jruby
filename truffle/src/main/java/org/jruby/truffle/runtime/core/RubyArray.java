@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayAllocationSite;
@@ -329,4 +330,10 @@ public final class RubyArray extends RubyBasicObject {
         }
 
     }
+
+    @Override
+    public ForeignAccessFactory getForeignAccessFactory() {
+        return new ArrayForeignAccessFactory(getContext());
+    }
+
 }

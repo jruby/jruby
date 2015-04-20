@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
@@ -29,7 +30,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyNil;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
@@ -56,6 +56,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * The global state of a running Ruby system.
  */
 public class RubyContext extends ExecutionContext {
+
+    private static RubyContext latestInstance;
 
     private static final boolean TRUFFLE_COVERAGE = Options.TRUFFLE_COVERAGE.load();
     private static final int INSTRUMENTATION_SERVER_PORT = Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load();
@@ -91,6 +93,8 @@ public class RubyContext extends ExecutionContext {
     private final boolean runningOnWindows;
 
     public RubyContext(Ruby runtime) {
+        latestInstance = this;
+
         assert runtime != null;
 
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
@@ -510,10 +514,6 @@ public class RubyContext extends ExecutionContext {
         return "ruby";
     }
 
-    public TruffleHooks getHooks() {
-        return (TruffleHooks) runtime.getInstanceConfig().getTruffleHooks();
-    }
-
     public TraceManager getTraceManager() {
         return traceManager;
     }
@@ -542,8 +542,23 @@ public class RubyContext extends ExecutionContext {
         return rubiniusPrimitiveManager;
     }
 
+    // TODO(mg): we need to find a better place for this:
+    private TruffleObject multilanguageObject;
+
+    public TruffleObject getMultilanguageObject() {
+        return multilanguageObject;
+    }
+
+    public void setMultilanguageObject(TruffleObject multilanguageObject) {
+        this.multilanguageObject = multilanguageObject;
+    }
+
     public CoverageTracker getCoverageTracker() {
         return coverageTracker;
+    }
+
+    public static RubyContext getLatestInstance() {
+        return latestInstance;
     }
 
     public AttachmentsManager getAttachmentsManager() {

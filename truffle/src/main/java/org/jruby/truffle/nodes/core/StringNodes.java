@@ -1588,6 +1588,24 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "strip")
+    public abstract static class StripNode extends CoreMethodNode {
+
+        public StripNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyString strip(RubyString string) {
+            notDesignedForCompilation();
+
+            // Hacky implementation to get something working
+
+            return getContext().makeString(string.toString().trim());
+        }
+
+    }
+
     @CoreMethod(names = "dump", taintFromSelf = true)
     @ImportStatic(StringGuards.class)
     public abstract static class DumpNode extends CoreMethodNode {
