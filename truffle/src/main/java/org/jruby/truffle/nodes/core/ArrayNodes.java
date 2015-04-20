@@ -20,6 +20,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
@@ -2649,11 +2650,12 @@ public abstract class ArrayNodes {
         public RubyString packUncached(
                 VirtualFrame frame,
                 RubyArray array,
-                RubyString format) {
+                RubyString format,
+                @Cached("create()") IndirectCallNode callPackNode) {
             final PackResult result;
 
             try {
-                result = (PackResult) compileFormat(format).call(array.getStore(), array.getSize());
+                result = (PackResult) callPackNode.call(frame, compileFormat(format), new Object[]{array.getStore(), array.getSize()});
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
