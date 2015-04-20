@@ -66,6 +66,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;
@@ -446,7 +447,13 @@ public class BodyTranslator extends Translator {
         }
 
         for (int n = 0; n < argumentsCount; n++) {
-            arguments.add(new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED));
+            RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
+
+            if (ArrayUtils.contains(primitive.getAnnotation().lowerFixnumParameters(), n)) {
+                readArgumentNode = new FixnumLowerNode(readArgumentNode);
+            }
+
+            arguments.add(readArgumentNode);
         }
 
         return new CallRubiniusPrimitiveNode(context, sourceSection,
