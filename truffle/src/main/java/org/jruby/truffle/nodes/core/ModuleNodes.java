@@ -1161,39 +1161,6 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "include?", required = 1)
-    public abstract static class IncludePNode extends CoreMethodNode {
-
-        @Child private DispatchHeadNode appendFeaturesNode;
-
-        public IncludePNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            appendFeaturesNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public IncludePNode(IncludePNode prev) {
-            super(prev);
-            appendFeaturesNode = prev.appendFeaturesNode;
-        }
-
-        @Specialization
-        public boolean include(RubyModule module, RubyModule included) {
-            notDesignedForCompilation();
-
-            ModuleChain ancestor = module.getParentModule();
-
-            while (ancestor != null) {
-                if (ancestor.getActualModule() == included) {
-                    return true;
-                }
-
-                ancestor = ancestor.getParentModule();
-            }
-
-            return false;
-        }
-    }
-
     @CoreMethod(names = "included", required = 1, visibility = Visibility.PRIVATE)
     public abstract static class IncludedNode extends CoreMethodNode {
 

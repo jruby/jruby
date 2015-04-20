@@ -1,4 +1,3 @@
 fails:Module#include doesn't include module if it is included in a super class
 fails:Module#include preserves ancestor order
 fails:Module#include detects cyclic includes
-fails:Module#include? raises a TypeError when no module was given
