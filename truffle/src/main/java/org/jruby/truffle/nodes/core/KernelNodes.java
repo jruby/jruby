@@ -856,19 +856,19 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object instanceVariableGet(RubyBasicObject object, RubyString name) {
             return instanceVariableGet(object, name.toString());
         }
 
+        @TruffleBoundary
         @Specialization
         public Object instanceVariableGet(RubyBasicObject object, RubySymbol name) {
             return instanceVariableGet(object, name.toString());
         }
 
         private Object instanceVariableGet(RubyBasicObject object, String name) {
-            notDesignedForCompilation();
-
             return object.getInstanceVariable(RubyContext.checkInstanceVariableName(getContext(), name, this));
         }
 
