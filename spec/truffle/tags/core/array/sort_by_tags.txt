@@ -1,2 +1,0 @@
-fails:Array#sort_by! returns the specified value when it would break in the given block
-fails:Array#sort_by! makes some modification even if finished sorting when it would break in the given block

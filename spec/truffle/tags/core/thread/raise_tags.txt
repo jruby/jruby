@@ -1,14 +1,8 @@
-fails:Thread#raise ignores dead threads
 fails:Thread#raise on a sleeping thread raises a RuntimeError if no exception class is given
-fails:Thread#raise on a sleeping thread raises the given exception
-fails:Thread#raise on a sleeping thread raises the given exception with the given message
 fails:Thread#raise on a sleeping thread is captured and raised by Thread#value
 fails:Thread#raise on a sleeping thread raises a RuntimeError when called with no arguments inside rescue
 fails:Thread#raise on a running thread raises a RuntimeError if no exception class is given
-fails:Thread#raise on a running thread raises the given exception
-fails:Thread#raise on a running thread raises the given exception with the given message
 fails:Thread#raise on a running thread can go unhandled
-fails:Thread#raise on a running thread raises the given argument even when there is an active exception
 fails:Thread#raise on a running thread raises a RuntimeError when called with no arguments inside rescue
 fails:Thread#raise on same thread aborts execution
 fails:Thread#raise on same thread raises RuntimeError if no exception class is given
