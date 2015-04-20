@@ -190,8 +190,6 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object instanceEval(VirtualFrame frame, Object receiver, UndefinedPlaceholder string, RubyProc block) {
-            notDesignedForCompilation();
-
             return yield.dispatchWithModifiedSelf(frame, block, receiver, receiver);
         }
 
