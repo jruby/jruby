@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.HiddenKey;
@@ -27,6 +28,7 @@ import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.unsafe.UnsafeHolder;
 import sun.misc.Unsafe;
 
+import java.io.FileDescriptor;
 import java.nio.charset.StandardCharsets;
 
 @CoreClass(name = "Rubinius::FFI::Platform::POSIX")
@@ -294,6 +296,24 @@ public abstract class PosixNodes {
         @Specialization
         public int fcntl(int fd, int fcntl, int arg) {
             return getContext().getPosix().fcntlInt(fd, Fcntl.valueOf(fcntl), arg);
+        }
+
+    }
+
+    @CoreMethod(names = "isatty", isModuleFunction = true, required = 1)
+    public abstract static class IsATTYNode extends CoreMethodNode {
+
+        public IsATTYNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IsATTYNode(IsATTYNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int isATTY(int fd) {
+            return getContext().getPosix().libc().isatty(fd);
         }
 
     }

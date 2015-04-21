@@ -32,6 +32,14 @@ $stdin = STDIN
 $stdout = STDOUT
 $stderr = STDERR
 
+if STDOUT.tty?
+  STDOUT.sync = true
+end
+
+if STDERR.tty?
+  STDERR.sync = true
+end
+
 ARGF = Object.new
 
 class Regexp

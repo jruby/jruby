@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -114,11 +115,9 @@ public abstract class IOPrimitiveNodes {
                     throw new UnsupportedOperationException();
                 }
 
-                if (written < bytes.length) {
-                    // Have to copy here again for the same reason!
+                // Have to copy here again for the same reason!
 
-                    bytes = Arrays.copyOfRange(bytes, written, bytes.length);
-                }
+                bytes = Arrays.copyOfRange(bytes, written, bytes.length);
             }
 
             return bytes.length;
