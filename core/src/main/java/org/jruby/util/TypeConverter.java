@@ -281,7 +281,7 @@ public class TypeConverter {
 
     // rb_check_string_type
     public static IRubyObject checkStringType(Ruby runtime, IRubyObject obj) {
-        return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_str");
+        return TypeConverter.convertToTypeWithCheck(obj, runtime.getString(), "to_str");
     }
 
     // MRI: rb_check_array_type
