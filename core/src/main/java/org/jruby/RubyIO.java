@@ -4099,13 +4099,24 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
 
         IRubyObject cmdObj;
+        int firstArg = 0;
+        int argc = args.length;
+
+        IRubyObject envHash = null;
+
+        if (argc > 0 && !(envHash = TypeConverter.checkHashType(runtime, args[0])).isNil()) {
+            if (argc < 2) throw runtime.newArgumentError(1, 2);
+            firstArg++;
+            argc--;
+        }
+
         if (Platform.IS_WINDOWS) {
-            String[] tokens = args[0].convertToString().toString().split(" ", 2);
+            String[] tokens = args[firstArg].convertToString().toString().split(" ", 2);
             String commandString = tokens[0].replace('/', '\\') +
                     (tokens.length > 1 ? ' ' + tokens[1] : "");
             cmdObj = runtime.newString(commandString);
         } else {
-            cmdObj = args[0].convertToString();
+            cmdObj = args[firstArg].convertToString();
         }
 
         if ("-".equals(cmdObj.toString())) {
@@ -4114,15 +4125,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         try {
             IOOptions ioOptions;
-            if (args.length == 1) {
+            if (argc == 1) {
                 ioOptions = newIOOptions(runtime, ModeFlags.RDONLY);
             } else if (args[1] instanceof RubyFixnum) {
-                ioOptions = newIOOptions(runtime, RubyFixnum.num2int(args[1]));
+                ioOptions = newIOOptions(runtime, RubyFixnum.num2int(args[firstArg + 1]));
             } else {
-                ioOptions = newIOOptions(runtime, args[1].convertToString().toString());
+                ioOptions = newIOOptions(runtime, args[firstArg + 1].convertToString().toString());
             }
 
-            ShellLauncher.POpenProcess process = ShellLauncher.popen(runtime, cmdObj, ioOptions.getModeFlags());
+            ShellLauncher.POpenProcess process = ShellLauncher.popen(runtime, new IRubyObject[]{cmdObj}, (RubyHash)envHash, ioOptions.getModeFlags());
 
             // Yes, this is gross. java.lang.Process does not appear to be guaranteed
             // "ready" when we get it back from Runtime#exec, so we try to give it a
@@ -4207,61 +4218,53 @@ public class RubyIO extends RubyObject implements IOEncodable {
         
         public Ruby19POpen(Ruby runtime, IRubyObject[] args) {
             IRubyObject[] _cmdPlusArgs = null;
-            RubyHash _env = null;
+            IRubyObject _env = null;
             IRubyObject _cmd;
-            IRubyObject arg0 = args[0].checkArrayType();
 
-            if (args[0] instanceof RubyHash) {
-                // use leading hash as env
-                if (args.length > 1) {
-                    _env = (RubyHash)args[0];
-                } else {
-                    Arity.raiseArgumentError(runtime, 0, 1, 2);
-                }
+            int firstArg = 0;
+            int argc = args.length;
 
-                if (Platform.IS_WINDOWS) {
-                    String[] tokens = args[1].convertToString().toString().split(" ", 2);
-                    String commandString = tokens[0].replace('/', '\\') +
-                            (tokens.length > 1 ? ' ' + tokens[1] : "");
-                    _cmd = runtime.newString(commandString);
-                } else {
-                    _cmd = args[1].convertToString();
+            if (argc > 0 && !(_env = TypeConverter.checkHashType(runtime, args[0])).isNil()) {
+                if (argc < 2) throw runtime.newArgumentError(1, 2);
+                firstArg++;
+                argc--;
+            } else {
+                _env = null;
+            }
+
+            IRubyObject arg0 = args[firstArg].checkArrayType();
+
+            if (arg0.isNil()) {
+                if ((arg0 = TypeConverter.checkStringType(runtime, args[firstArg])).isNil()) {
+                    throw runtime.newTypeError(args[firstArg], runtime.getString());
                 }
-            } else if (args[0] instanceof RubyArray) {
-                RubyArray arg0Ary = (RubyArray)arg0;
+                _cmdPlusArgs = new IRubyObject[]{arg0};
+            } else {
+                RubyArray arg0Ary = (RubyArray) arg0;
                 if (arg0Ary.isEmpty()) throw runtime.newArgumentError("wrong number of arguments");
                 if (arg0Ary.eltOk(0) instanceof RubyHash) {
                     // leading hash, use for env
-                    _env = (RubyHash)arg0Ary.delete_at(0);
+                    _env = arg0Ary.delete_at(0);
                 }
                 if (arg0Ary.isEmpty()) throw runtime.newArgumentError("wrong number of arguments");
                 if (arg0Ary.size() > 1 && arg0Ary.eltOk(arg0Ary.size() - 1) instanceof RubyHash) {
                     // trailing hash, use for opts
-                    _env = (RubyHash)arg0Ary.eltOk(arg0Ary.size() - 1);
+                    _env = arg0Ary.eltOk(arg0Ary.size() - 1);
                 }
-                _cmdPlusArgs = (IRubyObject[])arg0Ary.toJavaArray();
-
-                if (Platform.IS_WINDOWS) {
-                    String commandString = _cmdPlusArgs[0].convertToString().toString().replace('/', '\\');
-                    _cmdPlusArgs[0] = runtime.newString(commandString);
-                } else {
-                    _cmdPlusArgs[0] = _cmdPlusArgs[0].convertToString();
-                }
-                _cmd = _cmdPlusArgs[0];
-            } else {
-                if (Platform.IS_WINDOWS) {
-                    String[] tokens = args[0].convertToString().toString().split(" ", 2);
-                    String commandString = tokens[0].replace('/', '\\') +
-                            (tokens.length > 1 ? ' ' + tokens[1] : "");
-                    _cmd = runtime.newString(commandString);
-                } else {
-                    _cmd = args[0].convertToString();
-                }
+                _cmdPlusArgs = arg0Ary.toJavaArray();
             }
+
+            if (Platform.IS_WINDOWS) {
+                String commandString = _cmdPlusArgs[0].convertToString().toString().replace('/', '\\');
+                _cmdPlusArgs[0] = runtime.newString(commandString);
+            } else {
+                _cmdPlusArgs[0] = _cmdPlusArgs[0].convertToString();
+            }
+            _cmd = _cmdPlusArgs[0];
 
             this.cmd = (RubyString)_cmd;
             this.cmdPlusArgs = _cmdPlusArgs;
-            this.env = _env;
+            this.env = (RubyHash)_env;
         }
     }
 
@@ -4271,21 +4274,23 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         IRubyObject pmode = null;
         RubyHash options = null;
-        
-        switch(args.length) {
-            case 1:
-                break;
-            case 2:
-                if (args[1] instanceof RubyHash) {
-                    options = (RubyHash) args[1];
-                } else {
-                    pmode = args[1];
-                }
-                break;
-            case 3:
-                options = args[2].convertToHash();
-                pmode = args[1];
-                break;
+        IRubyObject tmp;
+
+        int firstArg = 0;
+        int argc = args.length;
+
+        if (argc > 0 && !TypeConverter.checkHashType(runtime, args[0]).isNil()) {
+            firstArg++;
+            argc--;
+        }
+
+        if (argc > 0 && !(tmp = TypeConverter.checkHashType(runtime, args[args.length - 1])).isNil()) {
+            options = (RubyHash)tmp;
+            argc--;
+        }
+
+        if (argc > 1) {
+            pmode = args[firstArg + 1];
         }
         
         RubyIO io = new RubyIO(runtime, (RubyClass) recv);
