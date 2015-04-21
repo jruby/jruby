@@ -1491,7 +1491,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyArray protectedInstanceMethods(RubyModule module, UndefinedPlaceholder argument) {
-            return protectedInstanceMethods(module, false);
+            return protectedInstanceMethods(module, true);
         }
 
         @Specialization
@@ -1501,12 +1501,10 @@ public abstract class ModuleNodes {
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     module.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
-
                         @Override
                         public boolean filter(InternalMethod method) {
                             return method.getVisibility() == Visibility.PROTECTED;
                         }
-
                     }).toArray());
         }
     }
@@ -1551,7 +1549,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyArray privateInstanceMethods(RubyModule module, UndefinedPlaceholder argument) {
-            return privateInstanceMethods(module, false);
+            return privateInstanceMethods(module, true);
         }
 
         @Specialization
@@ -1560,12 +1558,10 @@ public abstract class ModuleNodes {
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     module.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
-
                         @Override
                         public boolean filter(InternalMethod method) {
                             return method.getVisibility() == Visibility.PRIVATE;
                         }
-
                     }).toArray());
         }
     }

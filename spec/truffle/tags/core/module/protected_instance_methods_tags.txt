@@ -1,2 +1,0 @@
-fails:Module#protected_instance_methods returns a list of protected methods in module and its ancestors
-fails:Module#protected_instance_methods default list should be the same as passing true as an argument
