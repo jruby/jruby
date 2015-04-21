@@ -1,12 +1,5 @@
-fails:Thread#kill kills sleeping thread
-fails:Thread#kill kills current thread
-fails:Thread#kill runs ensure clause
 fails:Thread#kill runs nested ensure clauses
-fails:Thread#kill does not set $!
-fails:Thread#kill cannot be rescued
-fails:Thread#kill kills the entire thread when a fiber is active
 fails:Thread#kill can be rescued by outer rescue clause when inner ensure clause raises exception
 fails:Thread#kill is deferred if ensure clause does Thread.stop
 fails:Thread#kill does not deadlock when called from within the thread while being joined from without
-fails:Thread#kill! needs to be reviewed for spec completeness
 fails:Thread.kill causes the given thread to exit

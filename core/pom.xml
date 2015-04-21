@@ -41,7 +41,7 @@
     <parser.dir>core/src/main/java/org/jruby/parser</parser.dir>
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <rubyspec.dir>${spec.dir}/ruby</rubyspec.dir>
-    <version.ruby.revision>49761</version.ruby.revision>
+    <version.ruby.revision>50293</version.ruby.revision>
     <jruby.test.memory>3G</jruby.test.memory>
     <mspec.dir>${spec.dir}/mspec</mspec.dir>
     <build.date>${maven.build.timestamp}</build.date>

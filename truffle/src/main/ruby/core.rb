@@ -19,9 +19,12 @@ require_relative 'core/rubinius/api/shims/array'
 require_relative 'core/rubinius/api/shims/rubinius'
 require_relative 'core/rubinius/api/shims/thread'
 require_relative 'core/rubinius/api/shims/tuple'
-require_relative 'core/rubinius/api/shims/undefined'
 require_relative 'core/rubinius/api/shims/metrics'
 require_relative 'core/rubinius/api/shims/module'
+
+# Load alpha.rb
+
+require_relative 'core/rubinius/alpha'
 
 # Load bootstrap (ordered according to Rubinius' load_order.txt)
 
@@ -194,7 +197,7 @@ require_relative 'core/rubinius/common/gc'
 require_relative 'core/rubinius/delta/file'
 #require_relative 'core/rubinius/delta/rubinius'
 #require_relative 'core/rubinius/delta/runtime'
-#require_relative 'core/rubinius/delta/module'
+require_relative 'core/rubinius/delta/module'
 require_relative 'core/rubinius/delta/class'
 #require_relative 'core/rubinius/delta/file_test'
 require_relative 'core/rubinius/delta/kernel'

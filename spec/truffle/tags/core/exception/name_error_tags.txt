@@ -1,1 +1,0 @@
-fails:NameError.new NameError.new should take optional name argument

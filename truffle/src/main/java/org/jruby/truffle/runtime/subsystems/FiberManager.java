@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FiberManager {
 
     private final RubyFiber rootFiber;
+    // FIXME (eregon): per ruby thread
     private RubyFiber currentFiber;
 
     private final Set<RubyFiber> runningFibers = Collections.newSetFromMap(new ConcurrentHashMap<RubyFiber, Boolean>());

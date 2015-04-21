@@ -1341,9 +1341,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n]);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1378,9 +1375,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n]);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1415,9 +1409,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n]);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1452,9 +1443,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n]);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1512,9 +1500,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n], n);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1549,9 +1534,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n], n);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1586,9 +1568,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n], n);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1623,9 +1602,6 @@ public abstract class ArrayNodes {
                         try {
                             yield(frame, block, store[n], n);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -1746,8 +1722,6 @@ public abstract class ArrayNodes {
         @Child private CallDispatchHeadNode toAryNode;
         @Child private KernelNodes.RespondToNode respondToToAryNode;
         @Child private ArrayBuilderNode arrayBuilder;
-
-        private final BranchProfile breakProfile = BranchProfile.create();
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1922,29 +1896,24 @@ public abstract class ArrayNodes {
             Object store = arrayBuilder.start();
 
             int count = 0;
+            int n = 0;
             try {
-                for (int n = 0; n < size; n++) {
+                for (; n < size; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
 
-                    try {
-                        arrayBuilder.ensure(store, n + 1);
-                        store = arrayBuilder.append(store, n, yield(frame, block, n));
-                    } catch (BreakException e) {
-                        breakProfile.enter();
-                        array.setStore(arrayBuilder.finish(store, n), n);
-                        return e.getResult();
-                    }
-
+                    arrayBuilder.ensure(store, n + 1);
+                    store = arrayBuilder.append(store, n, yield(frame, block, n));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
                     getRootNode().reportLoopCount(count);
                 }
+
+                array.setStore(arrayBuilder.finish(store, n), n);
             }
 
-            array.setStore(arrayBuilder.finish(store, size), size);
             return array;
         }
 
@@ -2313,9 +2282,6 @@ public abstract class ArrayNodes {
                         try {
                             mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -2351,9 +2317,6 @@ public abstract class ArrayNodes {
                         try {
                             mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -2389,9 +2352,6 @@ public abstract class ArrayNodes {
                         try {
                             mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -2427,9 +2387,6 @@ public abstract class ArrayNodes {
                         try {
                             mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -2494,9 +2451,6 @@ public abstract class ArrayNodes {
                         try {
                             writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -2537,9 +2491,6 @@ public abstract class ArrayNodes {
                         try {
                             writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -3386,19 +3337,26 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = {"isNull", "isSingleIntegerFixnum"})
-        public RubyArray pushEmptySingleIntegerFixnum(RubyArray array, Object... values) {
+        public RubyArray pushNullEmptySingleIntegerFixnum(RubyArray array, Object... values) {
             array.setStore(new int[]{(int) values[0]}, 1);
             return array;
         }
 
         @Specialization(guards = {"isNull", "isSingleLongFixnum"})
-        public RubyArray pushEmptySingleIntegerLong(RubyArray array, Object... values) {
+        public RubyArray pushNullEmptySingleIntegerLong(RubyArray array, Object... values) {
             array.setStore(new long[]{(long) values[0]}, 1);
             return array;
         }
 
         @Specialization(guards = "isNull")
-        public RubyArray pushEmptyObjects(RubyArray array, Object... values) {
+        public RubyArray pushNullEmptyObjects(RubyArray array, Object... values) {
+            array.setStore(values, values.length);
+            return array;
+        }
+
+        @Specialization(guards = {"!isNull", "isEmpty"})
+        public RubyArray pushEmptySingleIntegerFixnum(RubyArray array, Object... values) {
+            // TODO CS 20-Apr-15 in reality might be better reusing any current storage, but won't worry about that for now
             array.setStore(values, values.length);
             return array;
         }
@@ -3474,18 +3432,6 @@ public abstract class ArrayNodes {
 
             store[oldSize] = (long) values[0];
             array.setStore(store, newSize);
-            return array;
-        }
-
-        @Specialization(guards = "isLongFixnum")
-        public RubyArray pushLongFixnum(RubyArray array, Object... values) {
-            // TODO CS 5-Feb-15 hack to get things working with empty long[] store
-
-            if (array.getSize() != 0) {
-                throw new UnsupportedOperationException();
-            }
-
-            array.setStore(values, values.length);
             return array;
         }
 

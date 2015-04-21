@@ -61,13 +61,14 @@ public abstract class CoreMethodNodeManager {
         final RubyContext context = rubyObjectClass.getContext();
 
         RubyModule module;
+        String fullName = methodDetails.getClassAnnotation().name();
 
-        if (methodDetails.getClassAnnotation().name().equals("main")) {
+        if (fullName.equals("main")) {
             module = context.getCoreLibrary().getMainObject().getSingletonClass(null);
         } else {
             module = rubyObjectClass;
 
-            for (String moduleName : methodDetails.getClassAnnotation().name().split("::")) {
+            for (String moduleName : fullName.split("::")) {
                 final RubyConstant constant = ModuleOperations.lookupConstant(context, LexicalScope.NONE, module, moduleName);
 
                 if (constant == null) {
@@ -78,7 +79,7 @@ public abstract class CoreMethodNodeManager {
             }
         }
 
-        assert module != null : methodDetails.getClassAnnotation().name();
+        assert module != null : fullName;
 
         final CoreMethod anno = methodDetails.getMethodAnnotation();
 

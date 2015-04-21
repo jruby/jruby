@@ -1,5 +1,4 @@
 fails:Regexp#=~ returns the index too, when argument is a Symbol
-fails:Regexp#match returns nil if the object is nil
 fails:Regexp#match resets $~ if passed nil
 fails:Regexp#match with [string, position] when given a positive position matches the input at a given position
 fails:Regexp#match with [string, position] when given a positive position uses the start as a character offset

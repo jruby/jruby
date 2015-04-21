@@ -1,1 +1,0 @@
-fails:Array.new with (size, object=nil) returns the value passed to break

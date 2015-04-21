@@ -1370,10 +1370,8 @@ module MiniTest
             excludes = {}
             klass.send :instance_variable_set, :@excludes, excludes
 
-            klass.instance_eval do
-              def exclude(name, reason)
-                @excludes[name] = reason
-              end
+            def klass.exclude(name, reason)
+              @excludes[name] = reason
             end
 
             klass.class_eval exclude_src

@@ -117,7 +117,7 @@ public class SelectExecutor {
                     pendingReadFDs.add(fptr.fd());
                 }
             }
-            if (pendingReadFDs != null) {		/* no blocking if there's buffered data */
+            if (pendingReadFDs != null || unselectableReadFDs != null) {/* ready to go if there's buffered data or we can't select */
                 timeout = (long) 0;
             }
         }
@@ -129,6 +129,9 @@ public class SelectExecutor {
                 RubyIO write_io = TypeConverter.ioGetIO(runtime, writeAry.eltOk(i)).GetWriteIO();
                 fptr = write_io.getOpenFileChecked();
                 fdSetWrite(context, fptr.fd(), writeAry.size());
+            }
+            if (unselectableWriteFDs != null) {/* ready to go if we can't select */
+                timeout = (long) 0;
             }
         }
 
@@ -240,8 +243,8 @@ public class SelectExecutor {
     }
 
     private void fdSetRead(ThreadContext context, ChannelFD fd, int maxSize) throws IOException {
-        if (fd.chFile != null || fd.isNativeFile) {
-            // files are not selectable, so we treat them as ready
+        if (fd.chSelect == null) {
+            // channels that are not selectable are treated as always ready, like files
             if (unselectableReadFDs == null) unselectableReadFDs = new ArrayList(1);
             unselectableReadFDs.add(fd);
             return;
@@ -253,8 +256,8 @@ public class SelectExecutor {
     }
 
     private void fdSetWrite(ThreadContext context, ChannelFD fd, int maxSize) throws IOException {
-        if (fd.chFile != null || fd.isNativeFile) {
-            // files are not selectable, so we treat them as ready
+        if (fd.chSelect == null) {
+            // channels that are not selectable are treated as always ready, like files
             if (unselectableWriteFDs == null) unselectableWriteFDs = new ArrayList(1);
             unselectableWriteFDs.add(fd);
             return;

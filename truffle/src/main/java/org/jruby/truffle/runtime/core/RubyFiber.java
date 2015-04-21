@@ -10,14 +10,15 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
-
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
+import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
@@ -123,7 +124,7 @@ public class RubyFiber extends RubyBasicObject {
                     final Object[] args = finalFiber.waitForResume();
                     final Object result = finalBlock.rootCall(args);
                     finalFiber.resume(finalFiber.lastResumedByFiber, true, result);
-                } catch (FiberExitException e) {
+                } catch (FiberExitException | ThreadExitException e) { // TODO (eregon, 21 Apr. 2015): The thread should cleanly kill its fibers when dying.
                     // Naturally exit the thread on catching this
                 } catch (ReturnException e) {
                     sendMessageTo(finalFiber.lastResumedByFiber, new FiberExceptionMessage(finalFiber.getContext().getCoreLibrary().unexpectedReturn(null)));

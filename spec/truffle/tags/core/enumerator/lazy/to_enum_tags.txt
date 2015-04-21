@@ -1,4 +1,1 @@
-fails:Enumerator::Lazy#to_enum requires multiple arguments
-fails:Enumerator::Lazy#to_enum generates a lazy enumerator from the given name
 fails:Enumerator::Lazy#to_enum passes given arguments to wrapped method
-fails:Enumerator::Lazy#to_enum used by some parent's methods though returning Lazy

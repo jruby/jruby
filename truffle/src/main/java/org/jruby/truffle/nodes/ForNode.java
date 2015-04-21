@@ -15,9 +15,9 @@ import org.jruby.truffle.runtime.RubyContext;
 
 public class ForNode extends RubyNode {
 
-    @Child private RubyCallNode callNode;
+    @Child private RubyNode callNode;
 
-    public ForNode(RubyContext context, SourceSection sourceSection, RubyCallNode callNode) {
+    public ForNode(RubyContext context, SourceSection sourceSection, RubyNode callNode) {
         super(context, sourceSection);
         this.callNode = callNode;
     }

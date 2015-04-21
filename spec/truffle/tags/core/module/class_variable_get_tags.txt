@@ -1,9 +1,6 @@
 fails:Module#class_variable_get returns the value of the class variable with the given name
-fails:Module#class_variable_get raises a NameError for a class variable named '@@'
-fails:Module#class_variable_get raises a NameError for a class variables with the given name defined in an extended module
 fails:Module#class_variable_get returns class variables defined in the metaclass and accessed by class methods
 fails:Module#class_variable_get returns class variables defined in the metaclass and accessed by instance methods
 fails:Module#class_variable_get returns a class variable defined in a metaclass
-fails:Module#class_variable_get raises a NameError when an uninitialized class variable is accessed
 fails:Module#class_variable_get converts a non string/symbol/fixnum name to string using to_str
 fails:Module#class_variable_get raises a TypeError when the given names can't be converted to strings using to_str

@@ -1,8 +1,2 @@
 fails:Module#extend_object is a private method
-fails:Module#extend_object is called when #extend is called on an object
-fails:Module#extend_object extends the given object with its constants and methods by default
-fails:Module#extend_object is called even when private
-fails:Module#extend_object does not copy own tainted status to the given object
-fails:Module#extend_object does not copy own untrusted status to the given object
 fails:Module#extend_object on Class raises a TypeError if calling after rebinded to Class
-fails:Module#extend_object when given a frozen object raises a RuntimeError before extending the object
