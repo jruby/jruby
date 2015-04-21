@@ -1377,7 +1377,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
+    @CoreMethod(names = "initialize_copy", required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodNode {
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {

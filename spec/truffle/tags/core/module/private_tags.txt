@@ -1,6 +1,3 @@
-fails:Module#private is a private method
-fails:Module#private makes a public Object instance method private in Kernel
-fails:Module#private raises a NameError when given an undefined name
 fails:Module#private without arguments sets visibility to following method definitions
 fails:Module#private without arguments stops setting visibility if the body encounters other visibility setters without arguments
 fails:Module#private without arguments continues setting visibility if the body encounters other visibility setters with arguments

@@ -848,6 +848,12 @@ public class CoreLibrary {
         return typeError(String.format("%s can't be coerced into %s", from, to), currentNode);
     }
 
+    public RubyException typeErrorWrongArgumentType(Object object, String expectedType, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        String badClassName = getLogicalClass(object).getName();
+        return typeError(String.format("wrong argument type %s (expected %s)", badClassName, expectedType), currentNode);
+    }
+
     public RubyException nameError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         RubyException nameError = new RubyException(nameErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));

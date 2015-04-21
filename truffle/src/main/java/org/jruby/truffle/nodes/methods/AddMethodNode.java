@@ -22,6 +22,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeFactory;
+import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
@@ -75,7 +76,7 @@ public class AddMethodNode extends RubyNode {
     private static Visibility getVisibility(Frame frame, String name) {
         notDesignedForCompilation();
 
-        if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?")) {
+        if (ModuleOperations.isMethodPrivateFromName(name)) {
             return Visibility.PRIVATE;
         } else {
             return getVisibility(frame);

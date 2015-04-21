@@ -1936,11 +1936,8 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1, raiseIfFrozenSelf = true)
-    @NodeChildren({
-        @NodeChild(value = "self"),
-        @NodeChild(value = "from")
-    })
+    @CoreMethod(names = "initialize_copy", required = 1, raiseIfFrozenSelf = true)
+    @NodeChildren({ @NodeChild(value = "self"), @NodeChild(value = "from") })
     @ImportGuards(ArrayGuards.class)
     public abstract static class InitializeCopyNode extends RubyNode {
         // TODO(cs): what about allocationSite ?

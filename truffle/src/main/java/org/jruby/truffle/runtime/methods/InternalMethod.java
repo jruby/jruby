@@ -81,8 +81,12 @@ public class InternalMethod {
         }
     }
 
-    public InternalMethod withNewName(String newName) {
-        return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
+    public InternalMethod withName(String newName) {
+        if (newName.equals(name)) {
+            return this;
+        } else {
+            return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
+        }
     }
 
     public InternalMethod withVisibility(Visibility newVisibility) {

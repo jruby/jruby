@@ -232,7 +232,7 @@ public abstract class ThreadNodes {
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = DispatchHeadNodeFactory.createMethodCall(context);
+            initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
         public RaiseNode(RaiseNode prev) {
