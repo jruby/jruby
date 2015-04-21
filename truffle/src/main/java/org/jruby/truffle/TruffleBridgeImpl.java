@@ -155,6 +155,13 @@ public class TruffleBridgeImpl implements TruffleBridge {
                 truffleContext.getFeatureManager().require(requiredLibrary, null);
             } catch (IOException e) {
                 throw new RuntimeException(e);
+            } catch (RaiseException e) {
+                // Translate LoadErrors for JRuby since we're outside an ExceptionTranslatingNode.
+                if (e.getRubyException().getLogicalClass() == truffleContext.getCoreLibrary().getLoadErrorClass()) {
+                    throw truffleContext.getRuntime().newLoadError(e.getRubyException().getMessage().toString(), requiredLibrary);
+                } else {
+                    throw e;
+                }
             }
         }
 
