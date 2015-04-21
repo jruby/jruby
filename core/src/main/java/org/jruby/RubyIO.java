@@ -2802,7 +2802,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             throw getRuntime().newIOError("unread stream");
         }
 
-        ungetcCommon((int)number.convertToInteger().getLongValue());
+        ungetcCommon((int) number.convertToInteger().getLongValue());
 
         return getRuntime().getNil();
     }
@@ -3798,7 +3798,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         IRubyObject path, v;
         
         path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, argv[0]));
-        failIfDirectory(runtime, (RubyString)path); // only in JRuby
+        failIfDirectory(runtime, (RubyString) path); // only in JRuby
         // MRI increments args past 0 now, so remaining uses of args only see non-path args
         
         if (opt.isNil()) {
