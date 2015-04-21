@@ -735,7 +735,14 @@ public class IRRuntimeHelpers {
         for (DynamicScope ds = currDynScope; ds != null; ) {
             IRScopeType scopeType = ds.getStaticScope().getScopeType();
             switch (ds.getEvalType()) {
-                case MODULE_EVAL  : return (RubyModule) self;
+                // The most common use case here is where :
+                // - a method is defined inside a closure
+                //   that is nested inside a module_eval.
+                //   here self = the module
+                // - in the rare case where it is not (looks like it can
+                //   happen in some testing frameworks), we have to add
+                //   the method to self itself => its metaclass.
+                case MODULE_EVAL  : return self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
                 case INSTANCE_EVAL: return self.getSingletonClass();
                 case BINDING_EVAL : ds = ds.getParentScope(); break;
                 case NONE:
