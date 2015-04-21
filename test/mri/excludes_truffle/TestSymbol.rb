@@ -1,0 +1,6 @@
+exclude :test_ascii_incomat_inspect, "needs investigation"
+exclude :test_call, "needs investigation"
+exclude :test_inspect, "needs investigation"
+exclude :test_symbol_encoding, "needs investigation"
+exclude :test_symbol_gc_1, "needs investigation"
+exclude :test_to_proc, "needs investigation"

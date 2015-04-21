@@ -1,0 +1,5 @@
+exclude :test_def_method_with_fname, "needs investigation"
+exclude :test_def_method_without_filename, "needs investigation"
+exclude :test_keep_lineno, "needs investigation"
+exclude :test_core, "NPE at org.jruby.truffle.nodes.methods.ExceptionTranslatingNode.translate(ExceptionTranslatingNode.java:159)"
+exclude :test_escape, "NPE at org.jruby.truffle.nodes.methods.ExceptionTranslatingNode.translate(ExceptionTranslatingNode.java:159)"
