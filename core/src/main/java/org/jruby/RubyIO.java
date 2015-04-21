@@ -4102,12 +4102,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
         int firstArg = 0;
         int argc = args.length;
 
-        IRubyObject envHash = null;
+        IRubyObject envHash;
 
         if (argc > 0 && !(envHash = TypeConverter.checkHashType(runtime, args[0])).isNil()) {
             if (argc < 2) throw runtime.newArgumentError(1, 2);
             firstArg++;
             argc--;
+        } else {
+            envHash = null;
         }
 
         if (Platform.IS_WINDOWS) {
