@@ -76,11 +76,4 @@ public abstract class SymbolOrToStrNode extends RubyNode {
         }
     }
 
-    @Override
-    public abstract String executeString(VirtualFrame frame);
-
-    @Override
-    public final Object execute(VirtualFrame frame) {
-        return executeString(frame);
-    }
 }

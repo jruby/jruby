@@ -40,6 +40,8 @@ public abstract class ToIntNode extends RubyNode {
         super(prev);
     }
 
+    public abstract int executeInt(VirtualFrame frame, Object object);
+
     @Specialization
     public int coerceInt(int value) {
         return value;
@@ -104,5 +106,4 @@ public abstract class ToIntNode extends RubyNode {
         }
     }
 
-    public abstract int executeInt(VirtualFrame frame, Object object);
 }

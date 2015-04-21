@@ -58,6 +58,8 @@ public abstract class CmpIntNode extends RubyNode {
         ltNode = prev.ltNode;
     }
 
+    public abstract int executeCmpInt(VirtualFrame frame, Object value, Object receiver, Object other);
+
     @Specialization
     public int cmpInt(int value, Object receiver, Object other) {
         if (value > 0) {
@@ -126,5 +128,4 @@ public abstract class CmpIntNode extends RubyNode {
         return 0;
     }
 
-    public abstract int executeIntegerFixnum(VirtualFrame frame, Object value, Object receiver, Object other);
 }

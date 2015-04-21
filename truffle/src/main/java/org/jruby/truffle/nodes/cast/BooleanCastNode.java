@@ -32,6 +32,8 @@ public abstract class BooleanCastNode extends RubyNode {
         super(copy.getContext(), copy.getSourceSection());
     }
 
+    public abstract boolean executeBoolean(VirtualFrame frame, Object value);
+
     @Specialization
     public boolean doNil(RubyNilClass nil) {
         return false;
@@ -60,16 +62,6 @@ public abstract class BooleanCastNode extends RubyNode {
     @Specialization(guards = "!isRubyNilClass")
     public boolean doBasicObject(RubyBasicObject object) {
         return true;
-    }
-
-    @Override
-    public abstract boolean executeBoolean(VirtualFrame frame);
-
-    public abstract boolean executeBoolean(VirtualFrame frame, Object value);
-
-    @Override
-    public final Object execute(VirtualFrame frame) {
-        return executeBoolean(frame);
     }
 
 }

@@ -301,7 +301,7 @@ public abstract class StringNodes {
                     cmpIntNode = insert(CmpIntNodeFactory.create(getContext(), getSourceSection(), null, null, null));
                 }
 
-                return -(cmpIntNode.executeIntegerFixnum(frame, cmpResult, a, b));
+                return -(cmpIntNode.executeCmpInt(frame, cmpResult, a, b));
             }
 
             return nil();
