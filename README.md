@@ -1,6 +1,6 @@
 # JRuby - an implementation of the Ruby language on the JVM
 
-Master: [![Build Status](https://travis-ci.org/jruby/jruby.png?branch=master)](https://travis-ci.org/jruby/jruby) 
+Master: [![Build Status](https://travis-ci.org/jruby/jruby.png?branch=master)](https://travis-ci.org/jruby/jruby)
 1.7 branch: [![Build Status](https://travis-ci.org/jruby/jruby.png?branch=jruby-1_7)](https://travis-ci.org/jruby/jruby/branches)
 
 ## About
@@ -40,7 +40,7 @@ For [`rbenv`](https://github.com/sstephenson/rbenv) you will need the
 package manager can provide these. Then you can run:
 
 ```
-$ rbenv install rbenv install jruby-9.0.0.0-dev
+$ rbenv install jruby-9.0.0.0-dev
 ```
 
 For [`rvm`](https://rvm.io) you can simply do:
@@ -69,7 +69,7 @@ Stefan Matthias Aust, Anders Bengtsson, Geert Bevin, Ola Bini,
  Daiki Ueno, Matthias Veit, Jason Voegele, Sergey Yevtushenko, Robert Yokota,
    and many gracious contributors from the community.
 
-JRuby uses code generously shared by the creator of the Ruby language, 
+JRuby uses code generously shared by the creator of the Ruby language,
 Yukihiro Matsumoto <matz@netlab.co.jp>.
 
 Project Contact: Thomas E Enebo <tom.enebo@gmail.com>
