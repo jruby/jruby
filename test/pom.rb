@@ -333,4 +333,29 @@ project 'JRuby Integration Tests' do
 
   end
 
+
+  profile 'truffle-mri-tests' do
+
+      mri_test_files = File.readlines("test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
+      files = mri_test_files.collect { |filename| "<arg value='#{filename}'/>" }.join('')
+      command = %w[test/mri/runner.rb -v --color=never --tty=no -q --].collect { |arg| "<arg value='#{arg}'/>" }.join('')
+
+      plugin :antrun do
+        execute_goals('run',
+                      :id => 'rake',
+                      :phase => 'test',
+                      :configuration => [xml(
+                                             '<target>' +
+                                                 '<exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">' +
+                                                 '<env key="EXCLUDES" value="test/mri/excludes_truffle"/>' +
+                                                 '<arg value="-J-server" />' +
+                                                 '<arg value="-X+T" />' +
+                                                 command +
+                                                 files +
+                                                 '</exec>' +
+                                                 '</target>')])
+    end
+
+  end
+
 end
