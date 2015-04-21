@@ -19,7 +19,6 @@ require_relative 'core/rubinius/api/shims/array'
 require_relative 'core/rubinius/api/shims/rubinius'
 require_relative 'core/rubinius/api/shims/thread'
 require_relative 'core/rubinius/api/shims/tuple'
-require_relative 'core/rubinius/api/shims/undefined'
 require_relative 'core/rubinius/api/shims/metrics'
 require_relative 'core/rubinius/api/shims/module'
 

@@ -423,8 +423,6 @@ public class CoreLibrary {
 
         objectClass.setConstant(null, "ARGV", argv);
 
-        rubiniusModule.setConstant(null, "UNDEFINED", rubiniusUndefined);
-
         final RubyString separator = RubyString.fromJavaString(stringClass, "/");
         separator.freeze();
 
