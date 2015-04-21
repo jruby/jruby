@@ -1023,5 +1023,160 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>truffle-mri-tests</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>rake</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                      <env value="test/mri/excludes_truffle" key="EXCLUDES" />
+                      <arg value="-J-server" />
+                      <arg value="-X+T" />
+                      <arg value="test/mri/runner.rb" />
+                      <arg value="-v" />
+                      <arg value="--color=never" />
+                      <arg value="--tty=no" />
+                      <arg value="-q" />
+                      <arg value="--" />
+                      <arg value="base64/test_base64.rb" />
+                      <arg value="date/test_date.rb" />
+                      <arg value="date/test_date_arith.rb" />
+                      <arg value="date/test_date_attr.rb" />
+                      <arg value="date/test_date_base.rb" />
+                      <arg value="date/test_date_compat.rb" />
+                      <arg value="date/test_date_conv.rb" />
+                      <arg value="date/test_date_marshal.rb" />
+                      <arg value="date/test_date_new.rb" />
+                      <arg value="date/test_switch_hitter.rb" />
+                      <arg value="erb/test_erb_m17n.rb" />
+                      <arg value="fileutils/test_dryrun.rb" />
+                      <arg value="fileutils/test_nowrite.rb" />
+                      <arg value="fileutils/test_verbose.rb" />
+                      <arg value="io/console/test_io_console.rb" />
+                      <arg value="matrix/test_matrix.rb" />
+                      <arg value="matrix/test_vector.rb" />
+                      <arg value="optparse/test_bash_completion.rb" />
+                      <arg value="optparse/test_getopts.rb" />
+                      <arg value="optparse/test_optarg.rb" />
+                      <arg value="optparse/test_optparse.rb" />
+                      <arg value="optparse/test_placearg.rb" />
+                      <arg value="optparse/test_summary.rb" />
+                      <arg value="optparse/test_zsh_completion.rb" />
+                      <arg value="ostruct/test_ostruct.rb" />
+                      <arg value="pathname/test_pathname.rb" />
+                      <arg value="ripper/test_files.rb" />
+                      <arg value="ruby/enc/test_big5.rb" />
+                      <arg value="ruby/enc/test_cp949.rb" />
+                      <arg value="ruby/enc/test_emoji.rb" />
+                      <arg value="ruby/enc/test_euc_kr.rb" />
+                      <arg value="ruby/enc/test_euc_tw.rb" />
+                      <arg value="ruby/enc/test_gb18030.rb" />
+                      <arg value="ruby/enc/test_gbk.rb" />
+                      <arg value="ruby/enc/test_iso_8859.rb" />
+                      <arg value="ruby/enc/test_koi8.rb" />
+                      <arg value="ruby/enc/test_shift_jis.rb" />
+                      <arg value="ruby/enc/test_utf16.rb" />
+                      <arg value="ruby/enc/test_utf32.rb" />
+                      <arg value="ruby/test_alias.rb" />
+                      <arg value="ruby/test_assignment.rb" />
+                      <arg value="ruby/test_autoload.rb" />
+                      <arg value="ruby/test_basicinstructions.rb" />
+                      <arg value="ruby/test_beginendblock.rb" />
+                      <arg value="ruby/test_call.rb" />
+                      <arg value="ruby/test_case.rb" />
+                      <arg value="ruby/test_clone.rb" />
+                      <arg value="ruby/test_comparable.rb" />
+                      <arg value="ruby/test_complex.rb" />
+                      <arg value="ruby/test_complex2.rb" />
+                      <arg value="ruby/test_complexrational.rb" />
+                      <arg value="ruby/test_condition.rb" />
+                      <arg value="ruby/test_const.rb" />
+                      <arg value="ruby/test_defined.rb" />
+                      <arg value="ruby/test_dir.rb" />
+                      <arg value="ruby/test_dir_m17n.rb" />
+                      <arg value="ruby/test_econv.rb" />
+                      <arg value="ruby/test_encoding.rb" />
+                      <arg value="ruby/test_enumerator.rb" />
+                      <arg value="ruby/test_eval.rb" />
+                      <arg value="ruby/test_file_exhaustive.rb" />
+                      <arg value="ruby/test_fixnum.rb" />
+                      <arg value="ruby/test_flip.rb" />
+                      <arg value="ruby/test_float.rb" />
+                      <arg value="ruby/test_fnmatch.rb" />
+                      <arg value="ruby/test_gc.rb" />
+                      <arg value="ruby/test_ifunless.rb" />
+                      <arg value="ruby/test_integer.rb" />
+                      <arg value="ruby/test_integer_comb.rb" />
+                      <arg value="ruby/test_io_m17n.rb" />
+                      <arg value="ruby/test_iterator.rb" />
+                      <arg value="ruby/test_lambda.rb" />
+                      <arg value="ruby/test_literal.rb" />
+                      <arg value="ruby/test_math.rb" />
+                      <arg value="ruby/test_metaclass.rb" />
+                      <arg value="ruby/test_method.rb" />
+                      <arg value="ruby/test_mixed_unicode_escapes.rb" />
+                      <arg value="ruby/test_notimp.rb" />
+                      <arg value="ruby/test_numeric.rb" />
+                      <arg value="ruby/test_object.rb" />
+                      <arg value="ruby/test_objectspace.rb" />
+                      <arg value="ruby/test_optimization.rb" />
+                      <arg value="ruby/test_pack.rb" />
+                      <arg value="ruby/test_parse.rb" />
+                      <arg value="ruby/test_path.rb" />
+                      <arg value="ruby/test_primitive.rb" />
+                      <arg value="ruby/test_rand.rb" />
+                      <arg value="ruby/test_rational.rb" />
+                      <arg value="ruby/test_rational2.rb" />
+                      <arg value="ruby/test_require.rb" />
+                      <arg value="ruby/test_rubyoptions.rb" />
+                      <arg value="ruby/test_signal.rb" />
+                      <arg value="ruby/test_sprintf.rb" />
+                      <arg value="ruby/test_string.rb" />
+                      <arg value="ruby/test_stringchar.rb" />
+                      <arg value="ruby/test_struct.rb" />
+                      <arg value="ruby/test_super.rb" />
+                      <arg value="ruby/test_symbol.rb" />
+                      <arg value="ruby/test_system.rb" />
+                      <arg value="ruby/test_thread.rb" />
+                      <arg value="ruby/test_time.rb" />
+                      <arg value="ruby/test_time_tz.rb" />
+                      <arg value="ruby/test_trace.rb" />
+                      <arg value="ruby/test_undef.rb" />
+                      <arg value="ruby/test_unicode_escape.rb" />
+                      <arg value="ruby/test_variable.rb" />
+                      <arg value="ruby/test_whileuntil.rb" />
+                      <arg value="ruby/test_yield.rb" />
+                      <arg value="strscan/test_stringscanner.rb" />
+                      <arg value="test_cmath.rb" />
+                      <arg value="test_open3.rb" />
+                      <arg value="test_pp.rb" />
+                      <arg value="test_prime.rb" />
+                      <arg value="test_set.rb" />
+                      <arg value="test_shellwords.rb" />
+                      <arg value="test_singleton.rb" />
+                      <arg value="test_tempfile.rb" />
+                      <arg value="test_time.rb" />
+                      <arg value="test_timeout.rb" />
+                      <arg value="test_tsort.rb" />
+                      <arg value="thread/test_queue.rb" />
+                    </exec>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>

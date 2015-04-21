@@ -607,6 +607,15 @@
       </modules>
     </profile>
     <profile>
+      <id>truffle-mri-tests</id>
+      <build>
+        <defaultGoal>package</defaultGoal>
+      </build>
+      <modules>
+        <module>test</module>
+      </modules>
+    </profile>
+    <profile>
       <id>bootstrap</id>
       <modules>
         <module>test</module>
