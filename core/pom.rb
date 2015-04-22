@@ -41,17 +41,17 @@ project 'JRuby Core' do
   jar 'org.ow2.asm:asm-util:${asm.version}'
 
   jar 'com.github.jnr:jnr-netdb:1.1.4'
-  jar 'com.github.jnr:jnr-enxio:0.8-SNAPSHOT'
+  jar 'com.github.jnr:jnr-enxio:0.8'
   jar 'com.github.jnr:jnr-x86asm:1.0.2'
-  jar 'com.github.jnr:jnr-unixsocket:0.7-SNAPSHOT'
-  jar 'com.github.jnr:jnr-posix:3.0.11-SNAPSHOT'
+  jar 'com.github.jnr:jnr-unixsocket:0.7'
+  jar 'com.github.jnr:jnr-posix:3.0.11'
   jar 'com.github.jnr:jnr-constants:0.8.6'
   jar 'com.github.jnr:jnr-ffi:2.0.2'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.6-SNAPSHOT'
-  jar 'org.jruby.extras:bytelist:1.0.13-SNAPSHOT'
+  jar 'org.jruby.joni:joni:2.1.6'
+  jar 'org.jruby.extras:bytelist:1.0.13'
   jar 'org.jruby.jcodings:jcodings:1.0.13'
   jar 'org.jruby:dirgra:0.2'
 
