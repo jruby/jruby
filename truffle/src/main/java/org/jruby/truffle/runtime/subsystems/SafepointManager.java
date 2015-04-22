@@ -14,15 +14,13 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
-
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Phaser;
@@ -38,6 +36,7 @@ public class SafepointManager {
     private final ReentrantLock lock = new ReentrantLock();
     private final Phaser phaser = new Phaser();
     private volatile SafepointAction action;
+    private volatile boolean deferred;
 
     public SafepointManager(RubyContext context) {
         this.context = context;
@@ -93,13 +92,8 @@ public class SafepointManager {
 
         // We're now running again normally, with the global lock, and can run deferred actions
 
-        if (thread != null) {
-            final List<Runnable> deferredActions = new ArrayList<>(thread.getDeferredSafepointActions());
-            thread.getDeferredSafepointActions().clear();
-
-            for (Runnable action : deferredActions) {
-                action.run();
-            }
+        if (deferred && holdsGlobalLock && thread != null) {
+            action.run(thread, currentNode);
         }
     }
 
@@ -115,7 +109,7 @@ public class SafepointManager {
         phaser.arriveAndAwaitAdvance();
 
         try {
-            if (thread != null && thread.getStatus() != Status.ABORTING) {
+            if (!deferred && thread != null && thread.getStatus() != Status.ABORTING) {
                 action.run(thread, currentNode);
             }
         } finally {
@@ -124,7 +118,7 @@ public class SafepointManager {
         }
     }
 
-    public void pauseAllThreadsAndExecute(Node currentNode, SafepointAction action) {
+    public void pauseAllThreadsAndExecute(Node currentNode, boolean deferred, SafepointAction action) {
         if (lock.isHeldByCurrentThread()) {
             throw new IllegalStateException("Re-entered SafepointManager");
         }
@@ -140,13 +134,13 @@ public class SafepointManager {
         }
 
         try {
-            pauseAllThreadsAndExecute(currentNode, true, action);
+            pauseAllThreadsAndExecute(currentNode, true, action, deferred);
         } finally {
             lock.unlock();
         }
     }
 
-    public void pauseAllThreadsAndExecuteFromNonRubyThread(Node currentNode, SafepointAction action) {
+    public void pauseAllThreadsAndExecuteFromNonRubyThread(boolean deferred, SafepointAction action) {
         if (lock.isHeldByCurrentThread()) {
             throw new IllegalStateException("Re-entered SafepointManager");
         }
@@ -157,7 +151,7 @@ public class SafepointManager {
         try {
             enterThread();
             try {
-                pauseAllThreadsAndExecute(currentNode, false, action);
+                pauseAllThreadsAndExecute(null, false, action, deferred);
             } finally {
                 leaveThread();
             }
@@ -166,8 +160,9 @@ public class SafepointManager {
         }
     }
 
-    private void pauseAllThreadsAndExecute(Node currentNode, boolean holdsGlobalLock, SafepointAction action) {
+    private void pauseAllThreadsAndExecute(Node currentNode, boolean holdsGlobalLock, SafepointAction action, boolean deferred) {
         this.action = action;
+        this.deferred = deferred;
 
         /* this is a potential cause for race conditions,
          * but we need to invalidate first so the interrupted threads
@@ -177,6 +172,28 @@ public class SafepointManager {
         interruptOtherThreads();
 
         assumptionInvalidated(currentNode, holdsGlobalLock, true);
+    }
+
+    public void pauseThreadAndExecuteLater(final Thread thread, Node currentNode, final SafepointAction action) {
+        pauseAllThreadsAndExecute(currentNode, true, new SafepointAction() {
+            @Override
+            public void run(RubyThread rubyThread, Node currentNode) {
+                if (Thread.currentThread() == thread) {
+                    action.run(rubyThread, currentNode);
+                }
+            }
+        });
+    }
+
+    public void pauseMainThreadAndExecuteLaterFromNonRubyThread(final Thread thread, final SafepointAction action) {
+        pauseAllThreadsAndExecuteFromNonRubyThread(true, new SafepointAction() {
+            @Override
+            public void run(RubyThread rubyThread, Node currentNode) {
+                if (Thread.currentThread() == thread) {
+                    action.run(rubyThread, currentNode);
+                }
+            }
+        });
     }
 
     private void interruptOtherThreads() {

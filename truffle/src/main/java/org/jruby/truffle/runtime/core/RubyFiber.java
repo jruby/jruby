@@ -96,7 +96,7 @@ public class RubyFiber extends RubyBasicObject {
     private RubyFiber lastResumedByFiber = null;
     private boolean alive = true;
 
-    protected volatile Thread thread;
+    private volatile Thread thread;
 
     public RubyFiber(RubyThread parent, RubyClass rubyClass, String name) {
         this(parent, parent.getFiberManager(), parent.getThreadManager(), rubyClass, name, false);
@@ -176,6 +176,10 @@ public class RubyFiber extends RubyBasicObject {
         getContext().getSafepointManager().leaveThread();
         fiberManager.unregisterFiber(this);
         thread = null;
+    }
+
+    public Thread getJavaThread() {
+        return thread;
     }
 
     public RubyThread getRubyThread() {

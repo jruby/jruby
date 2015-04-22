@@ -19,6 +19,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
+import org.jruby.truffle.runtime.subsystems.SafepointAction;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager.ObjectGraphVisitor;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
@@ -30,7 +31,9 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
@@ -60,8 +63,6 @@ public class RubyThread extends RubyBasicObject {
     private final RubyBasicObject threadLocals;
 
     private final List<Lock> ownedLocks = new ArrayList<>(); // Always accessed by the same underlying Java thread.
-
-    private final List<Runnable> deferredSafepointActions = new ArrayList<>();
 
     public RubyThread(RubyClass rubyClass, ThreadManager manager) {
         super(rubyClass);
@@ -131,12 +132,12 @@ public class RubyThread extends RubyBasicObject {
         exit();
     }
 
-    public boolean isCurrentJavaThreadRootFiber() {
-        return Thread.currentThread() == thread;
+    public Thread getRootFiberJavaThread() {
+        return thread;
     }
 
-    public boolean isCurrentJavaThreadCurrentFiber() {
-        return Thread.currentThread() == fiberManager.getCurrentFiber().thread;
+    public Thread getCurrentFiberJavaThread() {
+        return fiberManager.getCurrentFiber().getJavaThread();
     }
 
     public void join() {
@@ -234,10 +235,6 @@ public class RubyThread extends RubyBasicObject {
 
     public RubyFiber getRootFiber() {
         return fiberManager.getRootFiber();
-    }
-
-    public List<Runnable> getDeferredSafepointActions() {
-        return deferredSafepointActions;
     }
 
     public static class ThreadAllocator implements Allocator {
