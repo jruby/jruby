@@ -94,11 +94,11 @@ public class SafepointManager {
         // We're now running again normally, with the global lock, and can run deferred actions
 
         if (thread != null) {
-            final List<Runnable> deferredActions = new ArrayList<>(thread.getDeferredSafepointActions());
+            final List<SafepointAction> deferredActions = new ArrayList<>(thread.getDeferredSafepointActions());
             thread.getDeferredSafepointActions().clear();
 
-            for (Runnable action : deferredActions) {
-                action.run();
+            for (SafepointAction action : deferredActions) {
+                action.run(thread, currentNode);
             }
         }
     }

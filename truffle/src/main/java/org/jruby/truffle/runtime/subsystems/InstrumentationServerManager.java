@@ -109,10 +109,10 @@ public class InstrumentationServerManager {
                         @Override
                         public void run(RubyThread thread, final Node currentNode) {
                             if (thread == context.getThreadManager().getRootThread() && thread.isCurrentJavaThreadCurrentFiber()) {
-                                thread.getDeferredSafepointActions().add(new Runnable() {
+                                thread.getDeferredSafepointActions().add(new SafepointAction() {
 
                                     @Override
-                                    public void run() {
+                                    public void run(RubyThread thread, Node currentNode) {
                                         new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
                                                 .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), currentNode);
                                     }

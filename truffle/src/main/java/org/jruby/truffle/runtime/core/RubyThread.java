@@ -19,6 +19,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
+import org.jruby.truffle.runtime.subsystems.SafepointAction;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager.ObjectGraphVisitor;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
@@ -61,7 +62,7 @@ public class RubyThread extends RubyBasicObject {
 
     private final List<Lock> ownedLocks = new ArrayList<>(); // Always accessed by the same underlying Java thread.
 
-    private final List<Runnable> deferredSafepointActions = new ArrayList<>();
+    private final List<SafepointAction> deferredSafepointActions = new ArrayList<>();
 
     public RubyThread(RubyClass rubyClass, ThreadManager manager) {
         super(rubyClass);
@@ -236,7 +237,7 @@ public class RubyThread extends RubyBasicObject {
         return fiberManager.getRootFiber();
     }
 
-    public List<Runnable> getDeferredSafepointActions() {
+    public List<SafepointAction> getDeferredSafepointActions() {
         return deferredSafepointActions;
     }
 
