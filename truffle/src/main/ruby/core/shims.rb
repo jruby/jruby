@@ -32,6 +32,12 @@ $stdin = STDIN
 $stdout = STDOUT
 $stderr = STDERR
 
+class << STDIN
+  def external_encoding
+    super || Encoding.default_external
+  end
+end
+
 if STDOUT.tty?
   STDOUT.sync = true
 end
