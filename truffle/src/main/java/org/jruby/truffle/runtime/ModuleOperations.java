@@ -25,6 +25,7 @@ import org.jruby.util.IdUtil;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public abstract class ModuleOperations {
 
@@ -200,10 +201,9 @@ public abstract class ModuleOperations {
     @TruffleBoundary
     public static Map<String, InternalMethod> withoutUndefinedMethods(Map<String, InternalMethod> methods) {
         Map<String, InternalMethod> definedMethods = new HashMap<>();
-        for (String name : methods.keySet()) {
-            InternalMethod method = methods.get(name);
-            if (!method.isUndefined()) {
-                definedMethods.put(name, method);
+        for (Entry<String, InternalMethod> method : methods.entrySet()) {
+            if (!method.getValue().isUndefined()) {
+                definedMethods.put(method.getKey(), method.getValue());
             }
         }
         return definedMethods;
