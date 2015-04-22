@@ -1,23 +1,2 @@
-fails:File.fnmatch? matches entire strings
-fails:File.fnmatch? does not match partial strings
-fails:File.fnmatch? does not support { } patterns by default
-fails:File.fnmatch? supports some { } patterns when File::FNM_EXTGLOB is passed
-fails:File.fnmatch? matches a single character for each ? character
-fails:File.fnmatch? matches zero or more characters for each * character
-fails:File.fnmatch? matches ranges of characters using bracket expresions (e.g. [a-z])
-fails:File.fnmatch? matches ranges of characters using bracket expresions, taking case into account
-fails:File.fnmatch? does not match characters outside of the range of the bracket expresion
-fails:File.fnmatch? matches ranges of characters using exclusive bracket expresions (e.g. [^t] or [!t])
-fails:File.fnmatch? matches characters with a case sensitive comparison
-fails:File.fnmatch? matches literal ? or * in path when pattern includes \? or \*
-fails:File.fnmatch? matches literal character (e.g. 'a') in path when pattern includes escaped character (e.g. \a)
-fails:File.fnmatch? escapes special characters inside bracket expression
-fails:File.fnmatch? does not match leading periods in filenames with wildcards by default
-fails:File.fnmatch? matches patterns with leading periods to dotfiles by default
-fails:File.fnmatch? matches multiple directories with ** and *
-fails:File.fnmatch? matches multiple directories with ** when flags includes File::FNM_PATHNAME
-fails:File.fnmatch? accepts an object that has a #to_path method
-fails:File.fnmatch? raises a TypeError if the first and second arguments are not string-like
-fails:File.fnmatch? does not raise a TypeError if the third argument can be coerced to an Integer
 fails(windows):File.fnmatch matches case sensitive characters on platfroms with case insensitive paths, when flags include FNM_SYSCASE
 fails(windows):File.fnmatch? matches case sensitive characters on platfroms with case insensitive paths, when flags include FNM_SYSCASE

@@ -1,5 +1,0 @@
-fails:File::Constants lock mode constants
-fails:File::Constants File::LOCK_EX
-fails:File::Constants File::LOCK_NB
-fails:File::Constants File::LOCK_SH
-fails:File::Constants File::LOCK_UN

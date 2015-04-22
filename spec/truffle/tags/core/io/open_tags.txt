@@ -1,58 +1,21 @@
-fails:IO.open creates an IO instance from a Fixnum argument
-fails:IO.open calls #to_int on an object to convert to a Fixnum
-fails:IO.open accepts a :mode option
-fails:IO.open accepts a mode argument set to nil with a valid :mode option
-fails:IO.open accepts a mode argument with a :mode option set to nil
-fails:IO.open raises an error if passed modes two ways
 fails:IO.open uses the external encoding specified in the mode argument
 fails:IO.open uses the external and the internal encoding specified in the mode argument
 fails:IO.open uses the external encoding specified via the :external_encoding option
 fails:IO.open uses the internal encoding specified via the :internal_encoding option
 fails:IO.open uses the colon-separated encodings specified via the :encoding option
-fails:IO.open uses the :encoding option as the external encoding when only one is given
-fails:IO.open uses the :encoding options as the external encoding when it's an Encoding object
 fails:IO.open ingores the :encoding option when the :external_encoding option is present
 fails:IO.open ingores the :encoding option when the :internal_encoding option is present
 fails:IO.open uses the encoding specified via the :mode option hash
 fails:IO.open ignores the :internal_encoding option when the same as the external encoding
 fails:IO.open sets internal encoding to nil when passed '-'
-fails:IO.open raises an error if passed encodings two ways
-fails:IO.open sets binmode from mode string
-fails:IO.open does not set binmode without being asked
-fails:IO.open sets binmode from :binmode option
-fails:IO.open does not set binmode from false :binmode
-fails:IO.open raises an error if passed binary/text mode two ways
-fails:IO.open raises an error when trying to set both binmode and textmode
-fails:IO.open sets external encoding to binary with binmode in mode string
-fails:IO.open sets external encoding to binary with :binmode option
 fails:IO.open does not use binary encoding when mode encoding is specified
 fails:IO.open does not use binary encoding when :encoding option is specified
 fails:IO.open does not use binary encoding when :external_encoding option is specified
 fails:IO.open does not use binary encoding when :internal_encoding option is specified
-fails:IO.open accepts nil options
-fails:IO.open coerces mode with #to_str
-fails:IO.open coerces mode with #to_int
-fails:IO.open coerces mode with #to_str when passed in options
-fails:IO.open coerces mode with #to_int when passed in options
-fails:IO.open coerces :encoding option with #to_str
 fails:IO.open coerces :external_encoding option with #to_str
 fails:IO.open coerces :internal_encoding option with #to_str
-fails:IO.open coerces options as third argument with #to_hash
-fails:IO.open coerces options as second argument with #to_hash
-fails:IO.open raises ArgumentError if not passed a hash or nil for options
-fails:IO.open raises TypeError if passed a hash for mode and nil for options
-fails:IO.open accepts an :autoclose option
-fails:IO.open accepts any truthy option :autoclose
 fails:IO.open raises an Errno::EBADF if the file descriptor is not valid
 fails:IO.open raises an IOError if passed a closed stream
-fails:IO.open raises an Errno::EINVAL if the new mode is not compatible with the descriptor's current mode
-fails:IO.open raises ArgumentError if passed an empty mode string
-fails:IO.open calls #close after yielding to the block
-fails:IO.open propagates an exception raised by #close that is not a StandardError
 fails:IO.open does not propagate a StandardError raised by #close
 fails:IO.open does not set last error when a StandardError raised by #close
-fails:IO.open creates an IO instance when STDOUT is closed
-fails:IO.open creates an IO instance when STDERR is closed
 fails:IO.open propagates an exception raised by #close that is a StandardError
-fails:IO.open does not propagate a IOError with 'closed stream' message raised by #close
-fails:IO.open does not set last error when a IOError with 'closed stream' raised by #close

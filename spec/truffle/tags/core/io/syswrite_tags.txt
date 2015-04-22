@@ -2,12 +2,5 @@ fails:IO#syswrite on a file writes all of the string's bytes but does not buffer
 fails:IO#syswrite on a file warns if called immediately after a buffered IO#write
 fails:IO#syswrite on a file does not warn if called after IO#write with intervening IO#sysread
 fails:IO#syswrite on a file writes to the actual file position when called after buffered IO#read
-fails:IO#syswrite coerces the argument to a string using to_s
-fails:IO#syswrite checks if the file is writable if writing more than zero bytes
 fails:IO#syswrite returns the number of bytes written
-fails:IO#syswrite invokes to_s on non-String argument
 fails:IO#syswrite writes all of the string's bytes without buffering if mode is sync
-fails:IO#syswrite does not warn if called after IO#read
-fails:IO#syswrite writes to the current position after IO#read
-fails:IO#syswrite advances the file position by the count of given bytes
-fails:IO#syswrite raises IOError on closed stream
