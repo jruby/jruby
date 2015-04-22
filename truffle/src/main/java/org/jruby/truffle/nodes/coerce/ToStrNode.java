@@ -37,6 +37,8 @@ public abstract class ToStrNode extends RubyNode {
         toStrNode = prev.toStrNode;
     }
 
+    public abstract RubyString executeRubyString(VirtualFrame frame, Object object);
+
     @Specialization
     public RubyString coerceRubyString(RubyString string) {
         return string;
@@ -71,13 +73,4 @@ public abstract class ToStrNode extends RubyNode {
         }
     }
 
-    @Override
-    public abstract RubyString executeRubyString(VirtualFrame frame);
-
-    public abstract RubyString executeRubyString(VirtualFrame frame, Object object);
-
-    @Override
-    public final Object execute(VirtualFrame frame) {
-        return executeRubyString(frame);
-    }
 }

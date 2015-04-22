@@ -97,7 +97,7 @@ project 'JRuby Lib Setup' do
 
   # TODO no hardcoded group-ids
   plugin :dependency, :useRepositoryLayout => true, :outputDirectory => 'ruby/stdlib', :excludeGroupIds => 'rubygems', :includeScope => :provided do
-    execute_goal 'copy-dependencies', :phase => 'package'
+    execute_goal 'copy-dependencies', :phase => 'generate-resources'
   end
 
   execute :install_gems, :'initialize' do |ctx|

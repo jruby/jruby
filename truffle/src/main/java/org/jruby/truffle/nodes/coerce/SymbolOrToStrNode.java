@@ -39,6 +39,8 @@ public abstract class SymbolOrToStrNode extends RubyNode {
         toStr = prev.toStr;
     }
 
+    public abstract String executeToJavaString(VirtualFrame frame, Object object);
+
     @Specialization
     public String coerceRubySymbol(RubySymbol symbol) {
         return symbol.toString();
@@ -74,11 +76,4 @@ public abstract class SymbolOrToStrNode extends RubyNode {
         }
     }
 
-    @Override
-    public abstract String executeString(VirtualFrame frame);
-
-    @Override
-    public final Object execute(VirtualFrame frame) {
-        return executeString(frame);
-    }
 }

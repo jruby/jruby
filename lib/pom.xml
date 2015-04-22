@@ -79,32 +79,6 @@
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>json</artifactId>
-      <version>${json.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>jar-dependencies</artifactId>
-          <groupId>rubygems</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>jar-dependencies</artifactId>
-      <version>0.1.13</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>jar-dependencies</artifactId>
-          <groupId>rubygems</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>minitest</artifactId>
       <version>${minitest.version}</version>
       <type>gem</type>
@@ -146,6 +120,32 @@
       <groupId>rubygems</groupId>
       <artifactId>psych</artifactId>
       <version>2.0.9.2</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>json</artifactId>
+      <version>${json.version}</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>jar-dependencies</artifactId>
+      <version>0.1.13</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -230,7 +230,7 @@
         <artifactId>maven-dependency-plugin</artifactId>
         <executions>
           <execution>
-            <phase>package</phase>
+            <phase>generate-resources</phase>
             <goals>
               <goal>copy-dependencies</goal>
             </goals>

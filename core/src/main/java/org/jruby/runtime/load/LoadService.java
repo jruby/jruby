@@ -393,19 +393,32 @@ public class LoadService {
         LOADED, ALREADY_LOADED, CIRCULAR
     };
 
-    private RequireState requireCommon(String requireName, boolean circularRequireWarning) {
-        // check for requiredName without extension.
-        if (featureAlreadyLoaded(requireName)) {
+    private RequireState requireCommon(String file, boolean circularRequireWarning) {
+        checkEmptyLoad(file);
+
+        // check with short name
+        if (featureAlreadyLoaded(file)) {
             return RequireState.ALREADY_LOADED;
         }
 
-        if (!runtime.getProfile().allowRequire(requireName)) {
-            throw runtime.newLoadError("no such file to load -- " + requireName, requireName);
+        SearchState state = findFileForLoad(file);
+
+        if (state.library == null) {
+            throw runtime.newLoadError("no such file to load -- " + state.searchFile, state.searchFile);
         }
 
-        return smartLoadInternal(requireName, circularRequireWarning);
+        // check with long name
+        if (featureAlreadyLoaded(state.loadName)) {
+            return RequireState.ALREADY_LOADED;
+        }
+
+        if (!runtime.getProfile().allowRequire(file)) {
+            throw runtime.newLoadError("no such file to load -- " + file, file);
+        }
+
+        return smartLoadInternal(file, circularRequireWarning);
     }
-    
+
     protected final RequireLocks requireLocks = new RequireLocks();
 
     private class RequireLocks {
@@ -422,7 +435,7 @@ public class LoadService {
          * Get exclusive lock for the specified requireName. Acquire sync object
          * for the requireName from the pool, then try to lock it. NOTE: This
          * lock is not fair for now.
-         * 
+         *
          * @param requireName
          *            just a name for the lock.
          * @return If the sync object already locked by current thread, it just
@@ -446,7 +459,7 @@ public class LoadService {
 
         /**
          * Unlock the lock for the specified requireName.
-         * 
+         *
          * @param requireName
          *            name of the lock to be unlocked.
          */
