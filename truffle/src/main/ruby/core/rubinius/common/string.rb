@@ -45,14 +45,6 @@ class String
     Rubinius::Type.try_convert obj, String, :to_str
   end
 
-  class << self
-    def clone
-      raise TypeError, "Unable to clone/dup String class"
-    end
-
-    alias_method :dup, :clone
-  end
-
   def initialize(arg = undefined)
     replace arg unless undefined.equal?(arg)
     self
