@@ -166,4 +166,23 @@ public abstract class IOPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "io_seek")
+    public static abstract class IOSeekPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public IOSeekPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IOSeekPrimitiveNode(IOSeekPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int seek(VirtualFrame frame, RubyBasicObject io, int amount, int whence) {
+            final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
+            return getContext().getPosix().lseek(fd, amount, whence);
+        }
+
+    }
+
 }
