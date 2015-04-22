@@ -21,13 +21,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FiberManager {
 
-    private final RubyThread rubyThread;
     private final RubyFiber rootFiber;
     private RubyFiber currentFiber;
     private final Set<RubyFiber> runningFibers = Collections.newSetFromMap(new ConcurrentHashMap<RubyFiber, Boolean>());
 
     public FiberManager(RubyThread rubyThread, ThreadManager threadManager) {
-        this.rubyThread = rubyThread;
         this.rootFiber = RubyFiber.newRootFiber(rubyThread, this, threadManager);
         this.currentFiber = rootFiber;
     }

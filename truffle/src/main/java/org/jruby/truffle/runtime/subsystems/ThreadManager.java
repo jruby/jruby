@@ -150,10 +150,10 @@ public class ThreadManager {
 
     public void shutdown() {
         // kill all threads except main
-        context.getSafepointManager().pauseAllThreadsAndExecute(null, new SafepointAction() {
+        context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
             @Override
             public synchronized void run(RubyThread thread, Node currentNode) {
-                if (thread != rootThread && thread.isCurrentJavaThreadRootFiber()) {
+                if (thread != rootThread && Thread.currentThread() == thread.getRootFiberJavaThread()) {
                     thread.shutdown();
                 }
             }
