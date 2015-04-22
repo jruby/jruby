@@ -702,8 +702,7 @@ public class CoreLibrary {
             return systemCallError(String.format("Unknown Error (%s)", errno), currentNode);
         }
 
-        // TODO (nirvdrum 03-Apr-15): This should return the correct errno exception class.
-        return systemCallError(errnoObj.description(), currentNode);
+        return new RubyException(getErrnoClass(errnoObj), context.makeString(errnoObj.description()), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException indexError(String message, Node currentNode) {
