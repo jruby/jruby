@@ -1163,30 +1163,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "loop", isModuleFunction = true, returnsEnumeratorIfNoBlock = true)
-    public abstract static class LoopNode extends CoreMethodNode {
-
-        @Child private WhileNode whileNode;
-
-        public LoopNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            whileNode = WhileNode.createWhile(context, sourceSection,
-                    new BooleanLiteralNode(context, sourceSection, true),
-                    new YieldNode(context, getSourceSection(), new RubyNode[]{}, false)
-            );
-        }
-
-        public LoopNode(LoopNode prev) {
-            super(prev);
-            whileNode = prev.whileNode;
-        }
-
-        @Specialization
-        public Object loop(VirtualFrame frame) {
-            return whileNode.execute(frame);
-        }
-    }
-
     @CoreMethod(names = "__method__", needsSelf = false)
     public abstract static class MethodNameNode extends CoreMethodNode {
 

@@ -228,4 +228,16 @@ module Kernel
     self
   end
 
+  def loop
+    return to_enum(:loop) unless block_given?
+
+    begin
+      while true
+        yield
+      end
+    rescue StopIteration
+    end
+  end
+  module_function :loop
+
 end
