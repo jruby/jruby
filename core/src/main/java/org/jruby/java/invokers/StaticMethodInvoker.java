@@ -21,6 +21,10 @@ public final class StaticMethodInvoker extends MethodInvoker {
         super(host, method);
     }
 
+    public StaticMethodInvoker(RubyModule host, Method method) {
+        super(host, method);
+    }
+
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
         JavaMethod method = (JavaMethod) findCallable(self, name, args, args.length);
