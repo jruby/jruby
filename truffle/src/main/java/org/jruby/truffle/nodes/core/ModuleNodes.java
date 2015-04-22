@@ -509,8 +509,10 @@ public abstract class ModuleNodes {
 
                 if (arg instanceof RubySymbol) {
                     accessorName = ((RubySymbol) arg).toString();
+                } else if (arg instanceof RubyString) {
+                    accessorName = ((RubyString) arg).toString();
                 } else {
-                    throw new UnsupportedOperationException();
+                    throw new RaiseException(getContext().getCoreLibrary().typeError(" is not a symbol or string", this));
                 }
 
                 attrAccessor(this, getContext(), sourceSection, module, accessorName);
