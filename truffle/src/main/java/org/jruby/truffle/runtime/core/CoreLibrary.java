@@ -390,6 +390,7 @@ public class CoreLibrary {
         globals.getOperations().setInstanceVariable(globals, "$:", globals.getInstanceVariable("$LOAD_PATH"));
         globals.getOperations().setInstanceVariable(globals, "$\"", globals.getInstanceVariable("$LOADED_FEATURES"));
         globals.getOperations().setInstanceVariable(globals, "$,", nilObject);
+        globals.getOperations().setInstanceVariable(globals, "$0", context.toTruffle(context.getRuntime().getGlobalVariables().get("$0")));
 
         globals.getOperations().setInstanceVariable(globals, "$DEBUG", context.getRuntime().isDebug());
 

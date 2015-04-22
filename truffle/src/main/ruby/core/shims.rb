@@ -216,3 +216,5 @@ module Rubinius
 
 end
 
+$PROGRAM_NAME = $0
+
