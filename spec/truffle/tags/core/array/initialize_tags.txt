@@ -1,1 +1,0 @@
-fails:Array#initialize calls #to_ary to convert the value to an array, even if it's private
