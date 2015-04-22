@@ -37,17 +37,23 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import jnr.constants.platform.Errno;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
 
+import java.util.Arrays;
+
 public abstract class IOBufferPrimitiveNodes {
 
     private static final int IOBUFFER_SIZE = 32768;
+    private static final int STACK_BUF_SZ = 8192;
 
     @RubiniusPrimitive(name = "iobuffer_allocate")
     public static abstract class IOBufferAllocatePrimitiveNode extends RubiniusPrimitiveNode {
@@ -108,6 +114,78 @@ public abstract class IOBufferPrimitiveNodes {
             rubyWithSelf(frame, ioBuffer, "@used = used", "used", used_native + total_sz);
 
             return total_sz;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "iobuffer_fill")
+    public static abstract class IOBufferFillPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public IOBufferFillPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IOBufferFillPrimitiveNode(IOBufferFillPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int fill(VirtualFrame frame, RubyBasicObject ioBuffer, RubyBasicObject io) {
+            int bytes_read = 0;
+            int fd = (int) rubyWithSelf(frame, io, "@descriptor");
+
+            // TODO CS 21-Apr-15 allocating this buffer for each read is crazy
+            byte[] temp_buffer = new byte[STACK_BUF_SZ];
+            int count = STACK_BUF_SZ;
+
+            if(left(frame, ioBuffer) < count) count = left(frame, ioBuffer);
+
+            while (true) {
+                bytes_read = getContext().getPosix().read(fd, temp_buffer, count);
+
+                if (bytes_read == -1) {
+                    final int errno = getContext().getPosix().errno();
+
+                    if (errno == Errno.ECONNRESET.intValue() || errno == Errno.ETIMEDOUT.intValue()) {
+                        // Treat as seeing eof
+                        bytes_read = 0;
+                        break;
+                    } else if (errno == Errno.EAGAIN.intValue() || errno == Errno.EINTR.intValue()) {
+                        //if (!state -> check_async(calling_environment))
+                        //    return NULL;
+                        //io -> ensure_open(state);
+                        getContext().getSafepointManager().poll(this);
+                        continue;
+                    } else {
+                        CompilerDirectives.transferToInterpreter();
+                        throw new RaiseException(new RubyException(getContext().getCoreLibrary().getErrnoClass(Errno.valueOf(errno))));
+                    }
+                } else {
+                    break;
+                }
+            }
+
+            if(bytes_read > 0) {
+                // Detect if another thread has updated the buffer
+                // and now there isn't enough room for this data.
+                if(bytes_read > left(frame, ioBuffer)) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().internalError("IO buffer overrun", this));
+                }
+                int used = (int) rubyWithSelf(frame, ioBuffer, "@used");
+                ByteList storage = ((RubiniusByteArray) rubyWithSelf(frame, ioBuffer, "@storage")).getBytes();
+                System.arraycopy(temp_buffer, 0, storage.getUnsafeBytes(), storage.getBegin() + used, bytes_read);
+                storage.setRealSize(used + bytes_read);
+                rubyWithSelf(frame, ioBuffer, "@used = used", "used", used + bytes_read);
+            }
+
+            return bytes_read;
+        }
+
+        private int left(VirtualFrame frame, RubyBasicObject ioBuffer) {
+            final int total = (int) rubyWithSelf(frame, ioBuffer, "@total");
+            final int used = (int) rubyWithSelf(frame, ioBuffer, "@used");
+            return total - used;
         }
 
     }

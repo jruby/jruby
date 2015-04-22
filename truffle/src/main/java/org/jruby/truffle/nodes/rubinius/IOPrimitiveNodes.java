@@ -40,7 +40,26 @@ public abstract class IOPrimitiveNodes {
         public RubyBasicObject allocate(VirtualFrame frame, RubyClass classToAllocate) {
             final RubyBasicObject object = new RubyBasicObject(classToAllocate);
             rubyWithSelf(frame, object, "@ibuffer = IO::InternalBuffer.new");
+            rubyWithSelf(frame, object, "@lineno = 0");
             return object;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "io_open", needsSelf = false)
+    public static abstract class IOOpenPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public IOOpenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IOOpenPrimitiveNode(IOOpenPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int open(VirtualFrame frame, RubyString path, int mode, int permission) {
+            return getContext().getPosix().open(path.getByteList(), mode, permission);
         }
 
     }
@@ -109,6 +128,8 @@ public abstract class IOPrimitiveNodes {
             byte[] bytes = string.getByteList().bytes();
 
             while (bytes.length > 0) {
+                getContext().getSafepointManager().poll(this);
+
                 int written = getContext().getPosix().write(fd, bytes, bytes.length);
 
                 if (written == -1) {
@@ -121,6 +142,26 @@ public abstract class IOPrimitiveNodes {
             }
 
             return bytes.length;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "io_close")
+    public static abstract class IOClosePrimitiveNode extends RubiniusPrimitiveNode {
+
+        public IOClosePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IOClosePrimitiveNode(IOClosePrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int close(VirtualFrame frame, RubyBasicObject io) {
+            // In Rubinius this does a lot more, but we'll stick with this for now
+            final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
+            return getContext().getPosix().close(fd);
         }
 
     }
