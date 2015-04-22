@@ -58,7 +58,7 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public int open(VirtualFrame frame, RubyString path, int mode, int permission) {
+        public int open(RubyString path, int mode, int permission) {
             return getContext().getPosix().open(path.getByteList(), mode, permission);
         }
 
