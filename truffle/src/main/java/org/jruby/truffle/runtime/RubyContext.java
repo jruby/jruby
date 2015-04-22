@@ -20,6 +20,7 @@ import com.oracle.truffle.api.source.Source;
 
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -64,7 +65,6 @@ public class RubyContext extends ExecutionContext {
     private final TraceManager traceManager;
     private final ObjectSpaceManager objectSpaceManager;
     private final ThreadManager threadManager;
-    private final FiberManager fiberManager;
     private final AtExitManager atExitManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
     private final Shape emptyShape;
@@ -118,10 +118,8 @@ public class RubyContext extends ExecutionContext {
         traceManager = new TraceManager();
         atExitManager = new AtExitManager();
 
-        // Must initialize threads before fibers
-
         threadManager = new ThreadManager(this);
-        fiberManager = new FiberManager(this);
+        threadManager.initialize();
 
         rubiniusPrimitiveManager = RubiniusPrimitiveManager.create();
 
@@ -279,8 +277,6 @@ public class RubyContext extends ExecutionContext {
         if (instrumentationServerManager != null) {
             instrumentationServerManager.shutdown();
         }
-
-        fiberManager.shutdown();
 
         threadManager.shutdown();
     }
@@ -467,10 +463,6 @@ public class RubyContext extends ExecutionContext {
 
     public ObjectSpaceManager getObjectSpaceManager() {
         return objectSpaceManager;
-    }
-
-    public FiberManager getFiberManager() {
-        return fiberManager;
     }
 
     public ThreadManager getThreadManager() {

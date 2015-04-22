@@ -41,8 +41,6 @@ public class SafepointManager {
 
     public SafepointManager(RubyContext context) {
         this.context = context;
-
-        enterThread();
     }
 
     public void enterThread() {

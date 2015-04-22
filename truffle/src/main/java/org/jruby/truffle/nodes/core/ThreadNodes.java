@@ -80,7 +80,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyNilClass exit() {
-            getContext().getThreadManager().getCurrentThread().exit();
+            getContext().getThreadManager().getCurrentThread().shutdown();
             return nil();
         }
 
@@ -100,14 +100,12 @@ public abstract class ThreadNodes {
         @Specialization
         public RubyThread kill(final RubyThread thread) {
             getContext().getSafepointManager().pauseAllThreadsAndExecute(this, new SafepointAction() {
-
                 @Override
                 public void run(RubyThread currentThread, Node currentNode) {
-                    if (currentThread == thread) {
-                        currentThread.exit();
+                    if (currentThread == thread && thread.isCurrentJavaThreadRootFiber()) {
+                        thread.shutdown();
                     }
                 }
-
             });
 
             return thread;
@@ -266,7 +264,7 @@ public abstract class ThreadNodes {
 
                 @Override
                 public void run(RubyThread currentThread, Node currentNode) {
-                    if (currentThread == thread) {
+                    if (currentThread == thread && thread.isCurrentJavaThreadCurrentFiber()) {
                         throw exceptionWrapper;
                     }
                 }

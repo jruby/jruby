@@ -108,7 +108,7 @@ public class InstrumentationServerManager {
 
                         @Override
                         public void run(RubyThread thread, final Node currentNode) {
-                            if (thread.getName().equals("main")) {
+                            if (thread == context.getThreadManager().getRootThread() && thread.isCurrentJavaThreadCurrentFiber()) {
                                 thread.getDeferredSafepointActions().add(new Runnable() {
 
                                     @Override
