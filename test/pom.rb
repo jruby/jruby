@@ -317,4 +317,23 @@ project 'JRuby Integration Tests' do
 
   end
 
+
+  profile 'truffle-mri-tests' do
+
+    plugin :antrun do
+      execute_goals('run',
+                    :id => 'rake',
+                    :phase => 'test',
+                    :configuration => [xml(
+                                           '<target>' +
+                                               '<exec dir="${jruby.home}" executable="ruby" failonerror="true">' +
+                                               '<arg value="tool/jt.rb" />' +
+                                               '<arg value="test" />' +
+                                               '<arg value="mri" />' +
+                                               '</exec>' +
+                                               '</target>')])
+    end
+
+  end
+
 end

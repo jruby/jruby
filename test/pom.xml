@@ -1020,5 +1020,33 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>truffle-mri-tests</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>rake</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <exec dir="${jruby.home}" executable="ruby" failonerror="true">
+                      <arg value="tool/jt.rb" />
+                      <arg value="test" />
+                      <arg value="mri" />
+                    </exec>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>
