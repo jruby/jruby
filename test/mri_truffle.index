@@ -155,7 +155,7 @@ ruby/test_beginendblock.rb
 ruby/test_bignum.rb
 ruby/test_call.rb
 ruby/test_case.rb
-# ruby/test_class.rb # core:/core/rubinius/common/string.rb:50:in `initialize': Unable to clone/dup String class (TypeError)
+ruby/test_class.rb
 ruby/test_clone.rb
 ruby/test_comparable.rb
 ruby/test_complex.rb
@@ -192,7 +192,7 @@ ruby/test_lambda.rb
 ruby/test_literal.rb
 # ruby/test_m17n.rb
 # ruby/test_m17n_comb.rb # cannot load such file -- etc
-# ruby/test_marshal.rb # core:/core/rubinius/common/string.rb:50:in `initialize': Unable to clone/dup String class (TypeError)
+# ruby/test_marshal.rb # including this causes error in test_objectspace.rb
 ruby/test_math.rb
 ruby/test_metaclass.rb
 ruby/test_method.rb
