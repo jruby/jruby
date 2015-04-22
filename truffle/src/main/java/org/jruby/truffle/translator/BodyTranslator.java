@@ -2641,11 +2641,15 @@ public class BodyTranslator extends Translator {
             translatingWhile = oldTranslatingWhile;
         }
 
+        final RubyNode loop;
+
         if (node.evaluateAtStart()) {
-            return WhileNode.createWhile(context, sourceSection, conditionInversed, body);
+            loop = WhileNode.createWhile(context, sourceSection, conditionInversed, body);
         } else {
-            return WhileNode.createDoWhile(context, sourceSection, conditionInversed, body);
+            loop = WhileNode.createDoWhile(context, sourceSection, conditionInversed, body);
         }
+
+        return new CatchBreakFromCallNode(context, sourceSection, loop, environment.getBlockID());
     }
 
     @Override
@@ -2677,11 +2681,15 @@ public class BodyTranslator extends Translator {
             translatingWhile = oldTranslatingWhile;
         }
 
+        final RubyNode loop;
+
         if (node.evaluateAtStart()) {
-            return WhileNode.createWhile(context, sourceSection, condition, body);
+            loop = WhileNode.createWhile(context, sourceSection, condition, body);
         } else {
-            return WhileNode.createDoWhile(context, sourceSection, condition, body);
+            loop = WhileNode.createDoWhile(context, sourceSection, condition, body);
         }
+
+        return new CatchBreakFromCallNode(context, sourceSection, loop, environment.getBlockID());
     }
 
     @Override

@@ -28,7 +28,6 @@ import org.jruby.truffle.runtime.control.RedoException;
 public final class WhileNode extends RubyNode {
 
     @Child private LoopNode loopNode;
-    private final BranchProfile breakUsed = BranchProfile.create();
 
     private WhileNode(RubyContext context, SourceSection sourceSection, RepeatingNode repeatingNode) {
         super(context, sourceSection);
@@ -47,13 +46,7 @@ public final class WhileNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        try {
-            loopNode.executeLoop(frame);
-        } catch (BreakException e) {
-            breakUsed.enter();
-            return e.getResult();
-        }
-
+        loopNode.executeLoop(frame);
         return nil();
     }
     
