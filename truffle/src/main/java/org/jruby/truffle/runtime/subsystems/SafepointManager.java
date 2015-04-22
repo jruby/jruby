@@ -14,8 +14,8 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
-
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
@@ -23,6 +23,7 @@ import org.jruby.truffle.runtime.core.RubyThread;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Phaser;
@@ -93,11 +94,10 @@ public class SafepointManager {
 
         // We're now running again normally, with the global lock, and can run deferred actions
 
-        if (thread != null) {
-            final List<SafepointAction> deferredActions = new ArrayList<>(thread.getDeferredSafepointActions());
-            thread.getDeferredSafepointActions().clear();
-
-            for (SafepointAction action : deferredActions) {
+        if (holdsGlobalLock && thread != null) {
+            Queue<SafepointAction> deferredActions = thread.getDeferredSafepointActions();
+            while (!deferredActions.isEmpty()) {
+                SafepointAction action = deferredActions.remove();
                 action.run(thread, currentNode);
             }
         }

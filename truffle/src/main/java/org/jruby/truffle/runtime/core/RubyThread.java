@@ -31,7 +31,9 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
@@ -62,7 +64,7 @@ public class RubyThread extends RubyBasicObject {
 
     private final List<Lock> ownedLocks = new ArrayList<>(); // Always accessed by the same underlying Java thread.
 
-    private final List<SafepointAction> deferredSafepointActions = new ArrayList<>();
+    private final Queue<SafepointAction> deferredSafepointActions = new LinkedBlockingQueue<>();
 
     public RubyThread(RubyClass rubyClass, ThreadManager manager) {
         super(rubyClass);
@@ -237,7 +239,7 @@ public class RubyThread extends RubyBasicObject {
         return fiberManager.getRootFiber();
     }
 
-    public List<SafepointAction> getDeferredSafepointActions() {
+    public Queue<SafepointAction> getDeferredSafepointActions() {
         return deferredSafepointActions;
     }
 
