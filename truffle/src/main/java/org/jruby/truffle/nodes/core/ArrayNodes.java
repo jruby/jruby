@@ -1743,10 +1743,10 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null, null}));
             }
-            if (respondToToAryNode.doesRespondTo(frame, object, getContext().makeString("to_ary"), false)) {
+            if (respondToToAryNode.doesRespondTo(frame, object, getContext().makeString("to_ary"), true)) {
                 if (toAryNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), false));
+                    toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
                 }
                 Object toAryResult = toAryNode.call(frame, object, "to_ary", null);
                 if (toAryResult instanceof RubyArray) {

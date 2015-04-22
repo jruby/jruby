@@ -204,3 +204,4 @@ module Math
   DomainError = Errno::EDOM
 end
 
+$PROGRAM_NAME = $0

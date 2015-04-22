@@ -568,7 +568,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         EXCLUDE_METHODS.add("java_class");
         EXCLUDE_METHODS.add("java_object");
         EXCLUDE_METHODS.add("__jcreate!");
-        EXCLUDE_METHODS.add("__jsend!");
     }
 
     @JRubyMethod(meta = true)

@@ -381,28 +381,6 @@ public abstract class Initializer {
 
     public abstract RubyModule initialize(RubyModule proxy);
 
-    public void initializeBase(RubyModule proxy) {
-        proxy.addMethod("__jsend!", new org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock(proxy, PUBLIC) {
-            @Override
-            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                String callName = args[0].asJavaString();
-
-                DynamicMethod method = self.getMetaClass().searchMethod(callName);
-                int v = method.getArity().getValue();
-
-                IRubyObject[] newArgs = new IRubyObject[args.length - 1];
-                System.arraycopy(args, 1, newArgs, 0, newArgs.length);
-
-                if(v < 0 || v == (newArgs.length)) {
-                    return Helpers.invoke(context, self, callName, newArgs, Block.NULL_BLOCK);
-                } else {
-                    RubyClass superClass = self.getMetaClass().getSuperClass();
-                    return Helpers.invokeAs(context, superClass, self, callName, newArgs, Block.NULL_BLOCK);
-                }
-            }
-        });
-    }
-
     public static class State {
 
         final Map<String, AssignedName> staticNames;
