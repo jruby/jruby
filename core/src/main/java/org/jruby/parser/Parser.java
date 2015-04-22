@@ -83,7 +83,7 @@ public class Parser {
     public Node parse(String file, byte[] content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         RubyArray list = getLines(configuration, runtime, file);
-        ByteList in = new ByteList(content, runtime.getDefaultExternalEncoding());
+        ByteList in = new ByteList(content, configuration.getDefaultEncoding());
         LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), in,  list);
         return parse(file, lexerSource, blockScope, configuration);
     }
@@ -96,7 +96,7 @@ public class Parser {
         } else {
             RubyArray list = getLines(configuration, runtime, file);
             RubyIO io = RubyIO.newIO(runtime, Channels.newChannel(content));
-            LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), io, list);
+            LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), io, list, configuration.getDefaultEncoding());
             return parse(file, lexerSource, blockScope, configuration);
         }
     }
