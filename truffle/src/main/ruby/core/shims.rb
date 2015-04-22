@@ -194,3 +194,7 @@ module Errno
 
 end
 
+module Math
+  DomainError = Errno::EDOM
+end
+
