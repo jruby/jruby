@@ -1,2 +1,0 @@
-fails:Array#sort returns the specified value when it would break in the given block
-fails:Array#sort! returns the specified value when it would break in the given block
