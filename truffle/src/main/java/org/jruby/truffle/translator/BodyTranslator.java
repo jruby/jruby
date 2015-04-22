@@ -2625,31 +2625,8 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitUntilNode(org.jruby.ast.UntilNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
-
-        RubyNode condition = node.getConditionNode().accept(this);
-        RubyNode conditionInversed = new NotNode(context, sourceSection, condition);
-        
-        final boolean oldTranslatingWhile = translatingWhile;
-        translatingWhile = true;
-
-        final RubyNode body;
-
-        try {
-            body = node.getBodyNode().accept(this);
-        } finally {
-            translatingWhile = oldTranslatingWhile;
-        }
-
-        final RubyNode loop;
-
-        if (node.evaluateAtStart()) {
-            loop = WhileNode.createWhile(context, sourceSection, conditionInversed, body);
-        } else {
-            loop = WhileNode.createDoWhile(context, sourceSection, conditionInversed, body);
-        }
-
-        return new CatchBreakFromCallNode(context, sourceSection, loop, environment.getBlockID());
+        org.jruby.ast.WhileNode whileNode = new org.jruby.ast.WhileNode(node.getPosition(), node.getConditionNode(), node.getBodyNode(), node.evaluateAtStart());
+        return visitWhileNode(whileNode, true);
     }
 
     @Override
@@ -2666,15 +2643,20 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitWhileNode(org.jruby.ast.WhileNode node) {
+        return visitWhileNode(node, false);
+    }
+
+    private RubyNode visitWhileNode(org.jruby.ast.WhileNode node, boolean conditionInversed) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode condition = node.getConditionNode().accept(this);
-
-        final boolean oldTranslatingWhile = translatingWhile;
-        translatingWhile = true;
+        if (conditionInversed) {
+            condition = new NotNode(context, sourceSection, condition);
+        }
 
         final RubyNode body;
-
+        final boolean oldTranslatingWhile = translatingWhile;
+        translatingWhile = true;
         try {
             body = node.getBodyNode().accept(this);
         } finally {
@@ -2682,7 +2664,6 @@ public class BodyTranslator extends Translator {
         }
 
         final RubyNode loop;
-
         if (node.evaluateAtStart()) {
             loop = WhileNode.createWhile(context, sourceSection, condition, body);
         } else {
