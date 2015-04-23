@@ -49,7 +49,7 @@ public abstract class PackNode extends Node {
     }
 
     /**
-     * Set the current position we are reading from in the source array.
+     * Get the current position we are reading from in the source array.
      */
     protected int getSourcePosition(VirtualFrame frame) {
         try {
