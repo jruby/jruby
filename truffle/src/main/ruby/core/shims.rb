@@ -205,3 +205,4 @@ module Math
 end
 
 $PROGRAM_NAME = $0
+$$ = Process.pid
