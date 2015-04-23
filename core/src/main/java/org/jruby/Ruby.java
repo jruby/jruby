@@ -149,6 +149,7 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.BindException;
 import java.net.MalformedURLException;
@@ -1255,6 +1256,20 @@ public final class Ruby {
         
         if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks) {
             loadService.require("jruby");
+        }
+
+        // attempt to enable unlimited-strength crypto on OpenJDK
+        try {
+            Class jceSecurity = Class.forName("javax.crypto.JceSecurity");
+            Field isRestricted = jceSecurity.getField("isRestricted");
+            isRestricted.setAccessible(true);
+            isRestricted.set(null, false);
+            isRestricted.setAccessible(false);
+        } catch (Exception e) {
+            if (isDebug()) {
+                System.err.println("unable to enable unlimited-strength crypto");
+                e.printStackTrace();
+            }
         }
 
         // out of base boot mode
