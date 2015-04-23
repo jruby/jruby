@@ -3151,11 +3151,10 @@ public class RubyModule extends RubyObject {
         return constantsCommon(runtime, replaceModule, allConstants, true);
     }
 
-
     public Collection<String> constantsCommon(Ruby runtime, boolean replaceModule, boolean allConstants, boolean includePrivate) {
-        RubyModule objectClass = runtime.getObject();
+        final RubyModule objectClass = runtime.getObject();
 
-        Collection<String> constantNames = new HashSet<String>();
+        final Collection<String> constantNames;
         if (allConstants) {
             if ((replaceModule && runtime.getModule() == this) || objectClass == this) {
                 constantNames = objectClass.getConstantNames(includePrivate);

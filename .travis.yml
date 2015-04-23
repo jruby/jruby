@@ -2,9 +2,9 @@ language: java
 
 sudo: false
 
-cache:
-  directories:
-    - $HOME/.m2
+#cache:
+#  directories:
+#    - $HOME/.m2
 
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
@@ -21,6 +21,7 @@ os:
 env:
   global:
     - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+    - MALLOC_ARENA_MAX=2
   matrix:
     - PHASE='-Ptest'
     - PHASE='-Prake -Dtask=test:jruby'

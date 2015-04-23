@@ -56,10 +56,6 @@ fails:Marshal.load for a Regexp loads a extended_user_regexp having ivar
 fails:Marshal.load for a Integer loads and Integer -8
 fails:Marshal.load for a Integer loads an Integer 1234
 fails:Marshal.load for a Integer loads an Integer -1234
-fails:Marshal.load for a Integer loads an Integer -4611686018427387903
-fails:Marshal.load for a Integer loads an Integer 2361183241434822606847
-fails:Marshal.load for a Integer loads an Integer -2361183241434822606847
-fails:Marshal.load for a Integer roundtrips 4611686018427387903 from dump/load correctly
 fails:Marshal.load for a Rational loads
 fails:Marshal.load for a Complex loads
 fails:Marshal.load for a Time loads

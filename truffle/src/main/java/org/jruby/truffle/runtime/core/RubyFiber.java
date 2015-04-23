@@ -10,20 +10,23 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
-
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
+import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Represents the Ruby {@code Fiber} class. The current implementation uses Java threads and message
@@ -79,9 +82,7 @@ public class RubyFiber extends RubyBasicObject {
     }
 
     public static class FiberExitException extends ControlFlowException {
-
         private static final long serialVersionUID = 1522270454305076317L;
-
     }
 
     private final FiberManager fiberManager;
@@ -89,57 +90,96 @@ public class RubyFiber extends RubyBasicObject {
     private final RubyThread rubyThread;
 
     private String name;
-    private final boolean topLevel;
-    private final BlockingQueue<FiberMessage> messageQueue = new ArrayBlockingQueue<>(1);
+    private final boolean isRootFiber;
+    // we need 2 slots when the safepoint manager sends the kill message and there is another message unprocessed
+    private final BlockingQueue<FiberMessage> messageQueue = new LinkedBlockingQueue<>(2);
     private RubyFiber lastResumedByFiber = null;
     private boolean alive = true;
 
-    public RubyFiber(RubyClass rubyClass, FiberManager fiberManager, ThreadManager threadManager, String name, boolean topLevel) {
+    private volatile Thread thread;
+
+    public RubyFiber(RubyThread parent, RubyClass rubyClass, String name) {
+        this(parent, parent.getFiberManager(), parent.getThreadManager(), rubyClass, name, false);
+    }
+
+    public static RubyFiber newRootFiber(RubyThread thread, FiberManager fiberManager, ThreadManager threadManager) {
+        RubyContext context = thread.getContext();
+        return new RubyFiber(thread, fiberManager, threadManager, context.getCoreLibrary().getFiberClass(), "root Fiber for Thread", true);
+    }
+
+    private RubyFiber(RubyThread parent, FiberManager fiberManager, ThreadManager threadManager, RubyClass rubyClass, String name, boolean isRootFiber) {
         super(rubyClass);
+        this.rubyThread = parent;
         this.fiberManager = fiberManager;
         this.threadManager = threadManager;
         this.name = name;
-        this.topLevel = topLevel;
-        this.rubyThread = threadManager.getCurrentThread();
+        this.isRootFiber = isRootFiber;
     }
 
-    public void initialize(RubyProc block) {
+    public void initialize(final RubyProc block) {
         RubyNode.notDesignedForCompilation();
 
         name = "Ruby Fiber@" + block.getSharedMethodInfo().getSourceSection().getShortDescription();
-
-        final RubyFiber finalFiber = this;
-        final RubyProc finalBlock = block;
-
         final Thread thread = new Thread(new Runnable() {
-
             @Override
             public void run() {
-                fiberManager.registerFiber(finalFiber);
-                finalFiber.getContext().getSafepointManager().enterThread();
-                threadManager.enterGlobalLock(rubyThread);
-
-                try {
-                    final Object[] args = finalFiber.waitForResume();
-                    final Object result = finalBlock.rootCall(args);
-                    finalFiber.resume(finalFiber.lastResumedByFiber, true, result);
-                } catch (FiberExitException e) {
-                    // Naturally exit the thread on catching this
-                } catch (ReturnException e) {
-                    sendMessageTo(finalFiber.lastResumedByFiber, new FiberExceptionMessage(finalFiber.getContext().getCoreLibrary().unexpectedReturn(null)));
-                } catch (RaiseException e) {
-                    sendMessageTo(finalFiber.lastResumedByFiber, new FiberExceptionMessage(e.getRubyException()));
-                } finally {
-                    alive = false;
-                    threadManager.leaveGlobalLock();
-                    finalFiber.getContext().getSafepointManager().leaveThread();
-                    fiberManager.unregisterFiber(finalFiber);
-                }
+                handleFiberExceptions(block);
             }
-
         });
         thread.setName(name);
         thread.start();
+    }
+
+    private void handleFiberExceptions(final RubyProc block) {
+        run(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final Object[] args = waitForResume();
+                    final Object result = block.rootCall(args);
+                    resume(lastResumedByFiber, true, result);
+                } catch (FiberExitException e) {
+                    assert !isRootFiber;
+                    // Naturally exit the Java thread on catching this
+                } catch (ReturnException e) {
+                    sendMessageTo(lastResumedByFiber, new FiberExceptionMessage(getContext().getCoreLibrary().unexpectedReturn(null)));
+                } catch (RaiseException e) {
+                    sendMessageTo(lastResumedByFiber, new FiberExceptionMessage(e.getRubyException()));
+                }
+            }
+        });
+    }
+
+    protected void run(final Runnable task) {
+        RubyNode.notDesignedForCompilation();
+
+        start();
+        try {
+            task.run();
+        } finally {
+            cleanup();
+        }
+    }
+
+    // Only used by the main thread which cannot easily wrap everything inside a try/finally.
+    public void start() {
+        thread = Thread.currentThread();
+        fiberManager.registerFiber(this);
+        getContext().getSafepointManager().enterThread();
+        threadManager.enterGlobalLock(rubyThread);
+    }
+
+    // Only used by the main thread which cannot easily wrap everything inside a try/finally.
+    public void cleanup() {
+        alive = false;
+        threadManager.leaveGlobalLock();
+        getContext().getSafepointManager().leaveThread();
+        fiberManager.unregisterFiber(this);
+        thread = null;
+    }
+
+    public Thread getJavaThread() {
+        return thread;
     }
 
     public RubyThread getRubyThread() {
@@ -200,6 +240,7 @@ public class RubyFiber extends RubyBasicObject {
     }
 
     public void shutdown() {
+        assert !isRootFiber;
         RubyNode.notDesignedForCompilation();
 
         sendMessageTo(this, new FiberExitMessage());
@@ -215,8 +256,8 @@ public class RubyFiber extends RubyBasicObject {
         return lastResumedByFiber;
     }
 
-    public boolean isTopLevel() {
-        return topLevel;
+    public boolean isRootFiber() {
+        return isRootFiber;
     }
 
     public String getName() {
@@ -227,7 +268,8 @@ public class RubyFiber extends RubyBasicObject {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyFiber(rubyClass, context.getFiberManager(), context.getThreadManager(), null, false);
+            RubyThread parent = context.getThreadManager().getCurrentThread();
+            return new RubyFiber(parent, rubyClass, null);
         }
 
     }

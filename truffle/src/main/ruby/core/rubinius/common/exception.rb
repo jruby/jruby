@@ -57,7 +57,9 @@ class Exception
         # Exception#initialize (via __initialize__) is exactly what MRI
         # does.
         e = clone
-        e.__initialize__(message)
+        Rubinius.privately do # Truffle: added the privately block as Exception#initialize (and its alias) should be private
+          e.__initialize__(message)
+        end
         return e
       end
     end

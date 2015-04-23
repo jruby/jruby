@@ -25,5 +25,13 @@ if (ENV_JAVA['java.specification.version'] >= '1.8')
     it "binds those methods on the proxy module" do
       expect(Java::Java8Interface.message).to eq("hello")
     end
+
+    it "exposes those methods via java_send" do
+      expect(Java::Java8Interface.java_send(:message)).to eq("hello")
+    end
+
+    it "exposes those methods via java_method" do
+      expect(Java::Java8Interface.java_method(:message).call).to eq("hello")
+    end
   end
 end

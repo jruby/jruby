@@ -23,10 +23,6 @@ public abstract class RubyToIndexLabelNode extends TargetableRubyNode {
         super(context, sourceSection);
     }
 
-    public RubyToIndexLabelNode(RubyToIndexLabelNode prev) {
-        super(prev.getContext(), prev.getSourceSection());
-    }
-
     @Specialization
     public Object doRubyString(VirtualFrame frame, RubyString index) {
         return toString(index);

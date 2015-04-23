@@ -68,20 +68,20 @@ public class TraceType {
             LOG.info("  " + element.getFileName() + ":" + element.getLineNumber() + " in " + element.getMethodName());
         }
     }
-    
+
     public static void dumpException(RubyException exception) {
         LOG.info("Exception raised: {} : {}", exception.getMetaClass(), exception);
     }
-    
+
     public static void dumpBacktrace(RubyException exception) {
         Ruby runtime = exception.getRuntime();
         System.err.println("Backtrace generated:\n" + Format.JRUBY.printBacktrace(exception, runtime.getPosix().isatty(FileDescriptor.err)));
     }
-    
+
     public static void dumpCaller(RubyArray trace) {
         LOG.info("Caller backtrace generated:\n" + trace);
     }
-    
+
     public static void dumpCaller(RubyStackTraceElement[] trace) {
         LOG.info("Caller backtrace generated:\n" + Arrays.toString(trace));
     }
@@ -94,13 +94,13 @@ public class TraceType {
         if (style.equalsIgnoreCase("raw")) return new TraceType(Gather.RAW, Format.JRUBY);
         else if (style.equalsIgnoreCase("ruby_framed")) return new TraceType(Gather.NORMAL, Format.JRUBY);
         else if (style.equalsIgnoreCase("normal")) return new TraceType(Gather.NORMAL, Format.JRUBY);
-        // deprecated, just uses jruby format now
+            // deprecated, just uses jruby format now
         else if (style.equalsIgnoreCase("rubinius")) return new TraceType(Gather.NORMAL, Format.JRUBY);
         else if (style.equalsIgnoreCase("full")) return new TraceType(Gather.FULL, Format.JRUBY);
         else if (style.equalsIgnoreCase("mri")) return new TraceType(Gather.NORMAL, Format.MRI);
         else return new TraceType(Gather.NORMAL, Format.JRUBY);
     }
-    
+
     public enum Gather {
         /**
          * Full raw backtraces with all Java frames included.
@@ -121,7 +121,7 @@ public class TraceType {
          */
         FULL {
             public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
-        return new BacktraceData(
+                return new BacktraceData(
                         javaTrace,
                         context.createBacktrace2(0, nativeException),
                         true,
@@ -191,7 +191,7 @@ public class TraceType {
         /**
          * Gather backtrace data for an integrated trace if the current gather type is "NORMAL", otherwise use the
          * current gather type.
-         * 
+         *
          * @param context
          * @param javaTrace
          * @return
@@ -202,7 +202,7 @@ public class TraceType {
             if (useGather == NORMAL) {
                 useGather = INTEGRATED;
             }
-            
+
             BacktraceData data = useGather.getBacktraceData(context, javaTrace, false);
 
             context.runtime.incrementBacktraceCount();
@@ -213,7 +213,7 @@ public class TraceType {
 
         public abstract BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException);
     }
-    
+
     public enum Format {
         /**
          * Formatting like C Ruby

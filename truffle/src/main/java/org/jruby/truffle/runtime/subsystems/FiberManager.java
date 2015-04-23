@@ -9,26 +9,29 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
-import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyFiber;
+import org.jruby.truffle.runtime.core.RubyThread;
 
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages Ruby {@code Fiber} objects.
+ * Manages Ruby {@code Fiber} objects for a given Ruby thread.
  */
 public class FiberManager {
 
     private final RubyFiber rootFiber;
     private RubyFiber currentFiber;
-
     private final Set<RubyFiber> runningFibers = Collections.newSetFromMap(new ConcurrentHashMap<RubyFiber, Boolean>());
 
-    public FiberManager(RubyContext context) {
-        rootFiber = new RubyFiber(context.getCoreLibrary().getFiberClass(), this, context.getThreadManager(), "root", true);
-        currentFiber = rootFiber;
+    public FiberManager(RubyThread rubyThread, ThreadManager threadManager) {
+        this.rootFiber = RubyFiber.newRootFiber(rubyThread, this, threadManager);
+        this.currentFiber = rootFiber;
+    }
+
+    public RubyFiber getRootFiber() {
+        return rootFiber;
     }
 
     public RubyFiber getCurrentFiber() {
@@ -49,7 +52,9 @@ public class FiberManager {
 
     public void shutdown() {
         for (RubyFiber fiber : runningFibers) {
-            fiber.shutdown();
+            if (!fiber.isRootFiber()) {
+                fiber.shutdown();
+            }
         }
     }
 

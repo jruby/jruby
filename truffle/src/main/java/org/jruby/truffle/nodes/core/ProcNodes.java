@@ -67,7 +67,7 @@ public abstract class ProcNodes {
 
     }
 
-    @CoreMethod(names = {"call", "[]"}, argumentsAsArray = true, needsBlock = true)
+    @CoreMethod(names = {"call", "[]", "yield"}, argumentsAsArray = true, needsBlock = true)
     public abstract static class CallNode extends CoreMethodNode {
 
         @Child private YieldDispatchHeadNode yieldNode;

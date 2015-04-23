@@ -1,4 +1,2 @@
 fails:IO#getc returns the next character from the stream
-fails:IO#getc returns nil when invoked at the end of the stream
 fails:IO#getc raises IOError on closed stream
-fails:IO#getc returns nil on empty stream

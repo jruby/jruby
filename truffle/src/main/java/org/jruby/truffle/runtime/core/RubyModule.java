@@ -320,15 +320,22 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      * Used for alias_method, visibility changes, etc.
      */
     @TruffleBoundary
-    private InternalMethod deepMethodSearch(String name) {
+    public InternalMethod deepMethodSearch(String name) {
         InternalMethod method = ModuleOperations.lookupMethod(this, name);
-
-        // Also search on Object if we are a Module. JRuby calls it deepMethodSearch().
-        if (method == null && isOnlyAModule()) { // TODO: handle undefined methods
-            method = ModuleOperations.lookupMethod(context.getCoreLibrary().getObjectClass(), name);
+        if (method != null && !method.isUndefined()) {
+            return method;
         }
 
-        return method;
+        // Also search on Object if we are a Module. JRuby calls it deepMethodSearch().
+        if (isOnlyAModule()) { // TODO: handle undefined methods
+            method = ModuleOperations.lookupMethod(context.getCoreLibrary().getObjectClass(), name);
+
+            if (method != null && !method.isUndefined()) {
+                return method;
+            }
+        }
+
+        return null;
     }
 
     @TruffleBoundary
@@ -342,7 +349,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
             throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnModule(oldName, this, currentNode));
         }
 
-        addMethod(currentNode, method.withNewName(newName));
+        addMethod(currentNode, method.withName(newName));
     }
 
     @TruffleBoundary
@@ -437,59 +444,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         RubyNode.notDesignedForCompilation();
 
         return unmodifiedAssumption.getAssumption();
-    }
-
-    public static void setCurrentVisibility(Visibility visibility) {
-        RubyNode.notDesignedForCompilation();
-
-        final Frame callerFrame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
-
-        assert callerFrame != null;
-        assert callerFrame.getFrameDescriptor() != null;
-
-        final FrameSlot visibilitySlot = callerFrame.getFrameDescriptor().findOrAddFrameSlot(
-                RubyModule.VISIBILITY_FRAME_SLOT_ID, "visibility for frame", FrameSlotKind.Object);
-
-        callerFrame.setObject(visibilitySlot, visibility);
-    }
-
-    public void visibilityMethod(Node currentNode, Object[] arguments, Visibility visibility) {
-        RubyNode.notDesignedForCompilation();
-
-        if (arguments.length == 0) {
-            setCurrentVisibility(visibility);
-        } else {
-            for (Object arg : arguments) {
-                final String methodName;
-
-                if (arg instanceof RubySymbol) {
-                    methodName = ((RubySymbol) arg).toString();
-                } else if (arg instanceof RubyString) {
-                    methodName = ((RubyString) arg).toString();
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-
-                final InternalMethod method = deepMethodSearch(methodName);
-
-                if (method == null) {
-                    throw new RuntimeException("Couldn't find method " + arg.toString());
-                }
-
-                /*
-                 * If the method was already defined in this class, that's fine
-                 * {@link addMethod} will overwrite it, otherwise we do actually
-                 * want to add a copy of the method with a different visibility
-                 * to this module.
-                 */
-                if (visibility == Visibility.MODULE_FUNCTION) {
-                    addMethod(currentNode, method.withVisibility(Visibility.PRIVATE));
-                    getSingletonClass(currentNode).addMethod(currentNode, method.withVisibility(Visibility.PUBLIC));
-                } else {
-                    addMethod(currentNode, method.withVisibility(visibility));
-                }
-            }
-        }
     }
 
     public Map<String, RubyConstant> getConstants() {
@@ -613,31 +567,22 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     public Collection<RubySymbol> filterMethods(boolean includeAncestors, MethodFilter filter) {
-        final Set<RubySymbol> filtered = new HashSet<>();
-
+        final Map<String, InternalMethod> allMethods;
         if (includeAncestors) {
-            for (RubyModule parent : parentAncestors()) {
-                for (InternalMethod method : parent.methods.values()) {
-                    doFilterMethod(method, filter, filtered);
-                }
+            allMethods = ModuleOperations.getAllMethods(this);
+        } else {
+            allMethods = getMethods();
+        }
+        final Map<String, InternalMethod> methods = ModuleOperations.withoutUndefinedMethods(allMethods);
+
+        final Set<RubySymbol> filtered = new HashSet<>();
+        for (InternalMethod method : methods.values()) {
+            if (filter.filter(method)) {
+                filtered.add(getContext().getSymbolTable().getSymbol(method.getName()));
             }
         }
 
-        for (InternalMethod method : methods.values()) {
-            doFilterMethod(method, filter, filtered);
-        }
-
         return filtered;
-    }
-
-    private void doFilterMethod(InternalMethod method, MethodFilter filter, Set<RubySymbol> filtered) {
-        final RubySymbol symbol = getContext().getSymbolTable().getSymbol(method.getName());
-
-        if (method.isUndefined()) {
-            filtered.remove(symbol);
-        } else if (filter.filter(method)){
-            filtered.add(symbol);
-        }
     }
 
     public static class ModuleAllocator implements Allocator {

@@ -23,6 +23,7 @@ import com.oracle.truffle.api.tools.CoverageTracker;
 
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -72,7 +73,6 @@ public class RubyContext extends ExecutionContext {
     private final TraceManager traceManager;
     private final ObjectSpaceManager objectSpaceManager;
     private final ThreadManager threadManager;
-    private final FiberManager fiberManager;
     private final AtExitManager atExitManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
     private final Shape emptyShape;
@@ -86,7 +86,7 @@ public class RubyContext extends ExecutionContext {
     private final InstrumentationServerManager instrumentationServerManager;
     private final AttachmentsManager attachmentsManager;
     private final SourceManager sourceManager;
-    private final RubiniusConfiguration rubiniusConfiguration = new RubiniusConfiguration();
+    private final RubiniusConfiguration rubiniusConfiguration;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
@@ -142,10 +142,8 @@ public class RubyContext extends ExecutionContext {
         traceManager = new TraceManager();
         atExitManager = new AtExitManager();
 
-        // Must initialize threads before fibers
-
         threadManager = new ThreadManager(this);
-        fiberManager = new FiberManager(this);
+        threadManager.initialize();
 
         rubiniusPrimitiveManager = RubiniusPrimitiveManager.create();
 
@@ -159,8 +157,8 @@ public class RubyContext extends ExecutionContext {
         runningOnWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).indexOf("win") >= 0;
 
         attachmentsManager = new AttachmentsManager(this);
-
         sourceManager = new SourceManager(this);
+        rubiniusConfiguration = new RubiniusConfiguration(this);
     }
 
     public Shape getEmptyShape() {
@@ -303,8 +301,6 @@ public class RubyContext extends ExecutionContext {
         if (instrumentationServerManager != null) {
             instrumentationServerManager.shutdown();
         }
-
-        fiberManager.shutdown();
 
         threadManager.shutdown();
     }
@@ -495,10 +491,6 @@ public class RubyContext extends ExecutionContext {
 
     public ObjectSpaceManager getObjectSpaceManager() {
         return objectSpaceManager;
-    }
-
-    public FiberManager getFiberManager() {
-        return fiberManager;
     }
 
     public ThreadManager getThreadManager() {

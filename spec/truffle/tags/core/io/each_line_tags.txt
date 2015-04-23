@@ -1,14 +1,1 @@
-fails:IO#each_line with no separator yields each line to the passed block
-fails:IO#each_line with no separator yields each line starting from the current position
-fails:IO#each_line with no separator returns self
-fails:IO#each_line with no separator does not change $_
 fails:IO#each_line with no separator raises an IOError when self is not readable
-fails:IO#each_line with no separator makes line count accessible via lineno
-fails:IO#each_line with no separator makes line count accessible via $.
-fails:IO#each_line with no separator returns an Enumerator when passed no block
-fails:IO#each_line when passed a String containing one space as a separator uses the passed argument as the line separator
-fails:IO#each_line when passed a String containing one space as a separator does not change $_
-fails:IO#each_line when passed a String containing one space as a separator tries to convert the passed separator to a String using #to_str
-fails:IO#each_line when passed nil as a separator yields self's content starting from the current position when the passed separator is nil
-fails:IO#each_line when passed an empty String as a separator yields each paragraph
-fails:IO#each_line uses $/ as the default line separator

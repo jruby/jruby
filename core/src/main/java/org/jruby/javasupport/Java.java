@@ -677,10 +677,10 @@ public class Java implements Library {
 
     private static IRubyObject getRubyMethod(ThreadContext context, IRubyObject clazz, String name, Class... argTypesClasses) {
         final Ruby runtime = context.runtime;
-        if ( ! ( clazz instanceof RubyClass ) ) {
+        if ( ! ( clazz instanceof RubyModule ) ) {
             throw runtime.newTypeError(clazz, runtime.getModule());
         }
-        final RubyClass proxyClass = (RubyClass) clazz;
+        final RubyModule proxyClass = (RubyModule) clazz;
 
         final Method method = getMethodFromClass(context, clazz, name, argTypesClasses);
         final String prettyName = name + CodegenUtils.prettyParams(argTypesClasses);

@@ -157,7 +157,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsSelf = false, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "initialize", needsSelf = false)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {

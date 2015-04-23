@@ -508,11 +508,7 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "!isRubyBinding(badBinding)")
         public Object eval(RubyString source, RubyBasicObject badBinding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
-            throw new RaiseException(
-                    getContext().getCoreLibrary().typeError(
-                            String.format("wrong argument type %s (expected binding)",
-                                    badBinding.getLogicalClass().getName()),
-                            this));
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(badBinding, "binding", this));
         }
     }
 
@@ -771,7 +767,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
+    @CoreMethod(names = "initialize_copy", required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodNode {
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
@@ -792,7 +788,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"initialize_dup", "initialize_clone"}, visibility = Visibility.PRIVATE, required = 1)
+    @CoreMethod(names = { "initialize_dup", "initialize_clone" }, required = 1)
     public abstract static class InitializeDupCloneNode extends CoreMethodNode {
 
         @Child private CallDispatchHeadNode initializeCopyNode;
@@ -1017,25 +1013,6 @@ public abstract class KernelNodes {
             return array;
         }
 
-    }
-
-    @CoreMethod(names = "loop", isModuleFunction = true, returnsEnumeratorIfNoBlock = true)
-    public abstract static class LoopNode extends CoreMethodNode {
-
-        @Child private WhileNode whileNode;
-
-        public LoopNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            whileNode = WhileNode.createWhile(context, sourceSection,
-                    new BooleanLiteralNode(context, sourceSection, true),
-                    new YieldNode(context, getSourceSection(), new RubyNode[]{}, false)
-            );
-        }
-
-        @Specialization
-        public Object loop(VirtualFrame frame) {
-            return whileNode.execute(frame);
-        }
     }
 
     @CoreMethod(names = "__method__", needsSelf = false)
@@ -1377,7 +1354,12 @@ public abstract class KernelNodes {
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, UndefinedPlaceholder checkVisibility) {
-            return dispatch.doesRespondTo(frame, name, object);
+            return doesRespondTo(frame, object, name, false);
+        }
+
+        @Specialization
+        public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, RubyBasicObject checkVisibility) {
+            return doesRespondTo(frame, object, name, false);
         }
 
         @Specialization
@@ -1391,7 +1373,12 @@ public abstract class KernelNodes {
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, UndefinedPlaceholder checkVisibility) {
-            return dispatch.doesRespondTo(frame, name, object);
+            return doesRespondTo(frame, object, name, false);
+        }
+
+        @Specialization
+        public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, RubyBasicObject checkVisibility) {
+            return doesRespondTo(frame, object, name, false);
         }
 
         @Specialization
@@ -1402,9 +1389,10 @@ public abstract class KernelNodes {
                 return dispatch.doesRespondTo(frame, name, object);
             }
         }
+
     }
 
-    @CoreMethod(names = "respond_to_missing?", required = 1, optional = 1, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "respond_to_missing?", required = 1, optional = 1)
     public abstract static class RespondToMissingNode extends CoreMethodNode {
 
         public RespondToMissingNode(RubyContext context, SourceSection sourceSection) {

@@ -21,7 +21,7 @@
     <installer.gems>${jruby.win32ole.gem}</installer.gems>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <prawn.git.repo>git://github.com/sandal/prawn.git</prawn.git.repo>
-    <version.ruby.minor>0</version.ruby.minor>
+    <version.ruby.minor>2</version.ruby.minor>
     <tzdata.version>2013d</tzdata.version>
     <install4j.executable>/Applications/install4j 4/bin/install4jc</install4j.executable>
     <jay.bin>jay</jay.bin>
@@ -90,8 +90,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
-      <version>0.8-SNAPSHOT</version>
-      <type>jar</type>
+      <version>0.8</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -101,13 +100,12 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
-      <version>0.7-SNAPSHOT</version>
-      <type>jar</type>
+      <version>0.7</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.11-SNAPSHOT</version>
+      <version>3.0.11</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -133,17 +131,17 @@
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>2.1.6-SNAPSHOT</version>
+      <version>2.1.6</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>bytelist</artifactId>
-      <version>1.0.13-SNAPSHOT</version>
+      <version>1.0.13</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.13-SNAPSHOT</version>
+      <version>1.0.13</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>

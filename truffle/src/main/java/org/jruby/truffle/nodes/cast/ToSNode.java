@@ -68,9 +68,4 @@ public abstract class ToSNode extends RubyNode {
         }
     }
 
-    @Override
-    public final Object execute(VirtualFrame frame) {
-        return executeRubyString(frame);
-    }
-
 }

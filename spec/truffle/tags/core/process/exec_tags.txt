@@ -36,3 +36,4 @@ slow:Process.exec with a command array uses the first element as the command nam
 slow:Process.exec with a command array coerces the argument using to_ary
 slow:Process.exec with a command array raises an ArgumentError if the Array does not have exactly two elements
 slow:Process.exec with an options Hash with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
+fails:Process.exec flushes STDOUT upon exit when it's not set to sync

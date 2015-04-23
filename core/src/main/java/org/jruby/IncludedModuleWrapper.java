@@ -208,14 +208,16 @@ public class IncludedModuleWrapper extends IncludedModule {
 
     @Override
     protected DynamicMethod searchMethodCommon(String name) {
-        // IncludedModuleWrapper needs to search prepended modules too, but not included ones.
-        RubyModule module = this;
-        for (; module.isPrepended(); module = module.getSuperClass()) {
+        // IncludedModuleWrapper needs to search prepended modules too, so search until we find methodLocation
+        RubyModule module = origin;
+        RubyModule methodLoc = origin.getMethodLocation();
+
+        for (; module != methodLoc; module = module.getSuperClass()) {
             DynamicMethod method = module.getMethods().get(name);
             if (method != null) return method.isNull() ? null : method;
         }
 
-        // Last non-prepended module should be our regular module, do one last search.
+        // one last search for method location
         DynamicMethod method = module.getMethods().get(name);
         if (method != null) return method.isNull() ? null : method;
 

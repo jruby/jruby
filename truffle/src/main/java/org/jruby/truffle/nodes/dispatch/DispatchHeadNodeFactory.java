@@ -60,12 +60,7 @@ public class DispatchHeadNodeFactory {
     }
 
     public static CallDispatchHeadNode createMethodCallOnSelf(RubyContext context) {
-        return new CallDispatchHeadNode(
-                context,
-                true,
-                false,
-                MissingBehavior.CALL_METHOD_MISSING,
-                null);
+        return createMethodCall(context, true);
     }
 
 }

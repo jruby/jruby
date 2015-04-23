@@ -1,32 +1,5 @@
-fails:IO.foreach updates $. with each yield
 fails:IO.foreach when the filename starts with | gets data from the standard out of the subprocess
 fails:IO.foreach when the filename starts with | gets data from a fork when passed -
 fails:IO.foreach sets $_ to nil
-fails:IO.foreach returns an Enumerator when called without a block
-fails:IO.foreach raises TypeError if the first parameter is nil
-fails:IO.foreach raises an Errno::ENOENT if the file does not exist
-fails:IO.foreach yields a single string with entire content when the separator is nil
-fails:IO.foreach yields a sequence of paragraphs when the separator is an empty string
-fails:IO.foreach when passed name calls #to_path to convert the name
-fails:IO.foreach when passed name defaults to $/ as the separator
-fails:IO.foreach when passed name, object calls #to_str to convert the object to a separator
-fails:IO.foreach when passed name, object when the object is a Fixnum defaults to $/ as the separator
 fails:IO.foreach when passed name, object when the object is a Fixnum uses the object as a limit if it is a Fixnum
-fails:IO.foreach when passed name, object when the object is a String uses the value as the separator
 fails:IO.foreach when passed name, object when the object is a String accepts non-ASCII data as separator
-fails:IO.foreach when passed name, object when the object is a Hash uses the value as the options hash
-fails:IO.foreach when passed name, object, object when the first object is a Fixnum uses the second object as an options Hash
-fails:IO.foreach when passed name, object, object when the first object is a Fixnum calls #to_hash to convert the second object to a Hash
-fails:IO.foreach when passed name, object, object when the first object is a String uses the second object as a limit if it is a Fixnum
-fails:IO.foreach when passed name, object, object when the first object is a String calls #to_int to convert the second object
-fails:IO.foreach when passed name, object, object when the first object is a String uses the second object as an options Hash
-fails:IO.foreach when passed name, object, object when the first object is a String calls #to_hash to convert the second object to a Hash
-fails:IO.foreach when passed name, object, object when the first object is not a String or Fixnum calls #to_str to convert the object to a String
-fails:IO.foreach when passed name, object, object when the first object is not a String or Fixnum uses the second object as a limit if it is a Fixnum
-fails:IO.foreach when passed name, object, object when the first object is not a String or Fixnum calls #to_int to convert the second object
-fails:IO.foreach when passed name, object, object when the first object is not a String or Fixnum uses the second object as an options Hash
-fails:IO.foreach when passed name, object, object when the first object is not a String or Fixnum calls #to_hash to convert the second object to a Hash
-fails:IO.foreach when passed name, separator, limit, options calls #to_path to convert the name object
-fails:IO.foreach when passed name, separator, limit, options calls #to_str to convert the separator object
-fails:IO.foreach when passed name, separator, limit, options calls #to_int to convert the limit argument
-fails:IO.foreach when passed name, separator, limit, options calls #to_hash to convert the options object

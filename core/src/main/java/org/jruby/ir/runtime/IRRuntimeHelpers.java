@@ -735,7 +735,36 @@ public class IRRuntimeHelpers {
         for (DynamicScope ds = currDynScope; ds != null; ) {
             IRScopeType scopeType = ds.getStaticScope().getScopeType();
             switch (ds.getEvalType()) {
-                case MODULE_EVAL  : return (RubyModule) self;
+                // The most common use case here is where :
+                // - a method is defined inside a closure
+                //   that is nested inside a module_eval.
+                //   here self = the module
+                // - in the rare case where it is not (looks like it can
+                //   happen in some testing frameworks), we have to add
+                //   the method to self itself => its metaclass.
+                //
+                // SSS FIXME: Looks like this rare case happens when
+                // the closure is used in a "define_method &block" scenario
+                // => in reality the scope is not a closure but an
+                // instance_method. So, when we fix define_method implementation
+                // to actually convert blocks to real instance_method scopes,
+                // we will not have this edge case since the code will then
+                // be covered by the (scopeType == IRScopeType.INSTANCE_METHOD)
+                // scenario below. Whenever we get to fixing define_method
+                // implementation, we should rip out this code here.
+                //
+                // Verify that this test runs:
+                // -------------
+                //   require "minitest/autorun"
+                //
+                //   describe "A" do
+                //     it "should do something" do
+                //       def foo
+                //       end
+                //     end
+                //   end
+                // -------------
+                case MODULE_EVAL  : return self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
                 case INSTANCE_EVAL: return self.getSingletonClass();
                 case BINDING_EVAL : ds = ds.getParentScope(); break;
                 case NONE:

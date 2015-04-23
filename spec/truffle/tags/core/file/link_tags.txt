@@ -1,4 +1,2 @@
 fails:File.link link a file with another
 fails:File.link raises an Errno::EEXIST if the target already exists
-fails:File.link raises an ArgumentError if not passed two arguments
-fails:File.link raises a TypeError if not passed String types
