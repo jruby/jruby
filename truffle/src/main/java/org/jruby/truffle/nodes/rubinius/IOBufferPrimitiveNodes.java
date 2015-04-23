@@ -80,7 +80,7 @@ public abstract class IOBufferPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "iobuffer_unshift")
+    @RubiniusPrimitive(name = "iobuffer_unshift", lowerFixnumParameters = 1)
     public static abstract class IOBufferUnshiftPrimitiveNode extends RubiniusPrimitiveNode {
 
         public IOBufferUnshiftPrimitiveNode(RubyContext context, SourceSection sourceSection) {
