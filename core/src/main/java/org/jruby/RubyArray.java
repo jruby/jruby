@@ -39,7 +39,7 @@ package org.jruby;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
-import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.specific.UTF16BEEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -60,19 +60,28 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
+import org.jruby.util.PerlHash;
 import org.jruby.util.Qsort;
 import org.jruby.util.RecursiveComparator;
+import org.jruby.util.SipHashInline;
 import org.jruby.util.TypeConverter;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.RandomAccess;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.Helpers.memchr;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
@@ -1781,7 +1790,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             len += ((RubyString) tmp).getByteList().length();
         }
 
-        return joinStrings(sepString, begin + realLength,
+        return joinStrings(sepString, begin + realLength, 
                 (RubyString) RubyString.newStringLight(runtime, len).infectBy(this));
     }
 
@@ -4088,7 +4097,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @JRubyMethod(name = "pack", required = 1)
     public RubyString pack(ThreadContext context, IRubyObject obj) {
         RubyString iFmt = obj.convertToString();
-
         try {
             return Pack.pack(context, context.runtime, this, iFmt);
         } catch (ArrayIndexOutOfBoundsException aioob) {
