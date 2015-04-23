@@ -187,3 +187,14 @@ end
 
 $PROGRAM_NAME = $0
 $$ = Process.pid
+
+# IO::printf from Rubinius uses Rubinius::Sprinter
+
+class IO
+
+  def printf(fmt, *args)
+    fmt = StringValue(fmt)
+    write sprintf(fmt, *args)
+  end
+
+end
