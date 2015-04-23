@@ -104,7 +104,6 @@ class MSpecScript
     "spec/ruby/library/time",
     "spec/ruby/library/tmpdir",
     "spec/ruby/library/uri",
-    "spec/ruby/library/yaml",
 
     # Not yet explored
     "^spec/ruby/library/bigdecimal",
@@ -126,13 +125,14 @@ class MSpecScript
     "^spec/ruby/library/resolv",
     "^spec/ruby/library/rexml",
     "^spec/ruby/library/securerandom",
-    "^spec/ruby/library/socket",
     "^spec/ruby/library/stringscanner",
     "^spec/ruby/library/syslog",
     "^spec/ruby/library/timeout",
     "^spec/ruby/library/weakref",
     "^spec/ruby/library/win32ole",
     "^spec/ruby/library/zlib",
+    "^spec/ruby/library/yaml",
+    "^spec/ruby/library/socket",
 
     # Load issues with 'delegate'.
     "^spec/ruby/library/delegate/delegate_class/instance_method_spec.rb",

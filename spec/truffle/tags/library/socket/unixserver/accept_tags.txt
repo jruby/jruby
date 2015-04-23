@@ -1,0 +1,3 @@
+fails:UNIXServer#accept accepts what is written by the client
+fails:UNIXServer#accept can be interrupted by Thread#kill
+fails:UNIXServer#accept can be interrupted by Thread#raise
