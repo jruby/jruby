@@ -250,7 +250,7 @@ test_delegate.rb
 # test_ipaddr.rb # cannot load such file -- ipaddr
 test_open3.rb
 test_pp.rb
-# test_prettyprint.rb # passes alone but not in suite, Integer.down_to int long proc
+test_prettyprint.rb
 test_prime.rb
 # test_pstore.rb
 # test_pty.rb
