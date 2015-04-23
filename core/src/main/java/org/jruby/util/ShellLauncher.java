@@ -723,7 +723,7 @@ public class ShellLauncher {
     }
 
     private static Process popenShared(Ruby runtime, IRubyObject[] strings, Map env) throws IOException {
-        return popenShared(runtime, strings, env, false);
+        return popenShared(runtime, strings, env, true);
     }
 
     private static Process popenShared(Ruby runtime, IRubyObject[] strings, Map env, boolean addShell) throws IOException {
@@ -749,10 +749,9 @@ public class ShellLauncher {
 
             String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
             LaunchConfig lc = new LaunchConfig(runtime, strings, false);
-            boolean useShell = lc.shouldRunInShell();
+            boolean useShell = Platform.IS_WINDOWS ? lc.shouldRunInShell() : false;
             if (addShell) for (String arg : args) useShell |= shouldUseShell(arg);
-            
-            // CON: popen is a case where I think we should just always shell out.
+
             if (strings.length == 1) {
                 if (useShell) {
                     // single string command, pass to sh to expand wildcards
