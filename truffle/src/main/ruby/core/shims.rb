@@ -18,10 +18,6 @@ class IO
     @internal
   end
 
-  def set_encoding(external, internal)
-    @external = external
-    @internal = internal
-  end
 end
 
 STDIN = File.new(0)

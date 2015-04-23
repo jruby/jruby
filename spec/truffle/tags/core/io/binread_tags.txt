@@ -1,4 +1,1 @@
-fails:IO.binread reads the contents of a file
-fails:IO.binread returns a String in ASCII-8BIT encoding
-fails:IO.binread returns a String in ASCII-8BIT encoding regardless of Encoding.default_internal
 fails:IO.binread raises an Errno::EINVAL when not passed a valid offset

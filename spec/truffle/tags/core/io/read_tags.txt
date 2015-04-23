@@ -19,7 +19,6 @@ fails:IO#read returns an empty string when the current pos is bigger than the co
 fails:IO#read returns nil at end-of-file with a length
 fails:IO#read with length argument returns nil when the current pos is bigger than the content size
 fails:IO#read raises IOError on closed stream
-fails:IO#read in binary mode does not transcode file contents when an internal encoding is specified
 fails:IO.read with BOM reads a file without a bom
 fails:IO.read with BOM reads a file with a utf-8 bom
 fails:IO.read with BOM reads a file with a utf-16le bom

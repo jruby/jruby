@@ -1,1 +1,0 @@
-fails:IO.binwrite accepts a :mode option
