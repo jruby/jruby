@@ -74,3 +74,5 @@ slow:Kernel.exec with a command array uses the first element as the command name
 slow:Kernel.exec with a command array coerces the argument using to_ary
 slow:Kernel.exec with a command array raises an ArgumentError if the Array does not have exactly two elements
 slow:Kernel.exec with an options Hash with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
+fails:Kernel.exec flushes STDOUT upon exit when it's not set to sync
+fails:Kernel#exec flushes STDOUT upon exit when it's not set to sync

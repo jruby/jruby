@@ -4,3 +4,5 @@ slow:Encoding.default_external with command line options is not changed by the -
 slow:Encoding.default_external with command line options returns the encoding specified by '-E external'
 slow:Encoding.default_external with command line options returns the encoding specified by '-E external:'
 fails:Encoding.default_external with command line options is not changed by the -U option
+fails:Encoding.default_external with command line options returns the encoding specified by '-E external:'
+fails:Encoding.default_external with command line options returns the encoding specified by '-E external'
