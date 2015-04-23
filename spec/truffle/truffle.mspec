@@ -96,6 +96,7 @@ class MSpecScript
     "spec/ruby/library/set",
     "spec/ruby/library/shellwords",
     "spec/ruby/library/singleton",
+    "spec/ruby/library/scanf",
     "spec/ruby/library/strscan",
     "spec/ruby/library/stringio",
     "spec/ruby/library/tempfile",
