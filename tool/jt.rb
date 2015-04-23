@@ -131,7 +131,7 @@ module ShellUtils
     sh 'mvn', *args
   end
 
-  def mspec(env, command, *args)
+  def mspec(command, *args)
     env_vars = {}
     mspec_env env_vars, command, *args
   end
