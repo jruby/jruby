@@ -104,6 +104,7 @@ class MSpecScript
     "spec/ruby/library/time",
     "spec/ruby/library/tmpdir",
     "spec/ruby/library/uri",
+    "spec/ruby/library/yaml",
 
     # Load issues with 'delegate'.
     "^spec/ruby/library/delegate/delegate_class/instance_method_spec.rb",
