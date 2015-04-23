@@ -44,7 +44,6 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.jruby.Ruby;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.CmpIntNode;
 import org.jruby.truffle.nodes.cast.CmpIntNodeFactory;
@@ -2263,7 +2262,7 @@ public abstract class StringNodes {
         public RubySymbol toSym(RubyString string) {
             notDesignedForCompilation();
 
-            return getContext().newSymbol(string.getByteList());
+            return getContext().getSymbol(string.getByteList());
         }
     }
 

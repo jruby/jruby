@@ -26,23 +26,17 @@ import org.jruby.RubyThread.Status;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.ThreadLocalObjectNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
-import org.jruby.truffle.nodes.control.WhileNode;
-import org.jruby.truffle.nodes.core.ClassNodes.NewNode;
-import org.jruby.truffle.nodes.core.ClassNodesFactory.NewNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
-import org.jruby.truffle.nodes.literal.BooleanLiteralNode;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodesFactory;
-import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -58,7 +52,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
 import java.io.*;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -1155,7 +1148,7 @@ public abstract class KernelNodes {
 
             for (Object name : Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
                 if (name instanceof String) {
-                    array.slowPush(getContext().newSymbol((String) name));
+                    array.slowPush(getContext().getSymbol((String) name));
                 }
             }
 
@@ -1255,7 +1248,7 @@ public abstract class KernelNodes {
 
             for (InternalMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC || method.getVisibility() == Visibility.PROTECTED) {
-                    array.slowPush(self.getContext().newSymbol(method.getName()));
+                    array.slowPush(self.getContext().getSymbol(method.getName()));
                 }
             }
 
@@ -1313,7 +1306,7 @@ public abstract class KernelNodes {
 
             for (InternalMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PRIVATE) {
-                    array.slowPush(self.getContext().newSymbol(method.getName()));
+                    array.slowPush(self.getContext().getSymbol(method.getName()));
                 }
             }
 
@@ -1376,7 +1369,7 @@ public abstract class KernelNodes {
 
             for (InternalMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC) {
-                    array.slowPush(self.getContext().newSymbol(method.getName()));
+                    array.slowPush(self.getContext().getSymbol(method.getName()));
                 }
             }
 

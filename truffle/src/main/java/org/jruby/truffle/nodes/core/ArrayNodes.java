@@ -1300,7 +1300,7 @@ public abstract class ArrayNodes {
 
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eachSymbol = getContext().getSymbolTable().getSymbol("each");
+            eachSymbol = getContext().getSymbol("each");
         }
 
         public EachNode(EachNode prev) {

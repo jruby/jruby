@@ -139,7 +139,7 @@ public abstract class MethodNodes {
         public RubySymbol name(RubyMethod method) {
             notDesignedForCompilation();
 
-            return getContext().newSymbol(method.getMethod().getName());
+            return getContext().getSymbol(method.getMethod().getName());
         }
 
     }

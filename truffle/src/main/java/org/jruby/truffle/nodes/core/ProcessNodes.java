@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 
@@ -34,8 +33,8 @@ public abstract class ProcessNodes {
 
         public ClockGetTimeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            floatSecondSymbol = context.newSymbol("float_second");
-            nanosecondSymbol = context.newSymbol("nanosecond");
+            floatSecondSymbol = context.getSymbol("float_second");
+            nanosecondSymbol = context.getSymbol("nanosecond");
         }
 
         public ClockGetTimeNode(ClockGetTimeNode prev) {

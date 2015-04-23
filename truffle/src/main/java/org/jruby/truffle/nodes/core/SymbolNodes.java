@@ -13,8 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.Ruby;
-import org.jruby.RubyObject;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyEncoding;
@@ -23,7 +21,6 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
@@ -116,7 +113,7 @@ public abstract class SymbolNodes {
         public RubySymbol capitalize(RubySymbol symbol) {
             notDesignedForCompilation();
             final ByteList byteList = SymbolNodesHelper.capitalize(symbol.getByteList());
-            return getContext().newSymbol(byteList);
+            return getContext().getSymbol(byteList);
         }
 
     }
@@ -163,7 +160,7 @@ public abstract class SymbolNodes {
             notDesignedForCompilation();
 
             final ByteList byteList = SymbolNodesHelper.downcase(symbol.getByteList());
-            return getContext().newSymbol(byteList);
+            return getContext().getSymbol(byteList);
         }
 
     }
@@ -354,7 +351,7 @@ public abstract class SymbolNodes {
             notDesignedForCompilation();
 
             final ByteList byteList = SymbolNodesHelper.swapcase(symbol.getByteList());
-            return getContext().newSymbol(byteList);
+            return getContext().getSymbol(byteList);
         }
 
     }
@@ -375,7 +372,7 @@ public abstract class SymbolNodes {
             notDesignedForCompilation();
 
             final ByteList byteList = SymbolNodesHelper.upcase(symbol.getByteList());
-            return getContext().newSymbol(byteList);
+            return getContext().getSymbol(byteList);
         }
 
     }
