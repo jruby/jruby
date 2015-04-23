@@ -167,6 +167,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -1285,6 +1286,20 @@ public final class Ruby implements Constantizable {
         if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks
                 && getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
             loadService.require("jruby");
+        }
+
+        // attempt to enable unlimited-strength crypto on OpenJDK
+        try {
+            Class jceSecurity = Class.forName("javax.crypto.JceSecurity");
+            Field isRestricted = jceSecurity.getField("isRestricted");
+            isRestricted.setAccessible(true);
+            isRestricted.set(null, false);
+            isRestricted.setAccessible(false);
+        } catch (Exception e) {
+            if (isDebug()) {
+                System.err.println("unable to enable unlimited-strength crypto");
+                e.printStackTrace();
+            }
         }
 
         // out of base boot mode
