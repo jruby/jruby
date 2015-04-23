@@ -13,8 +13,9 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.runtime.DebugOperations;
+import jnr.constants.platform.Fcntl;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyNilClass;
@@ -44,6 +45,59 @@ public abstract class IOPrimitiveNodes {
             return object;
         }
 
+    }
+
+    @RubiniusPrimitive(name = "io_connect_pipe", needsSelf = false)
+    public static abstract class IOConnectPipeNode extends RubiniusPrimitiveNode {
+
+        public IOConnectPipeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IOConnectPipeNode(IOConnectPipeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean connectPipe(VirtualFrame frame, RubyBasicObject lhs, RubyBasicObject rhs) {
+            final int[] fds = new int[2];
+
+            if (posix().pipe(fds) == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+
+            newOpenFd(fds[0]);
+            newOpenFd(fds[1]);
+
+            rubyWithSelf(frame, lhs, "@descriptor = fd", "fd", fds[0]);
+            rubyWithSelf(frame, lhs, "@mode = File::Constants::RDONLY");
+
+            rubyWithSelf(frame, rhs, "@descriptor = fd", "fd", fds[1]);
+            rubyWithSelf(frame, rhs, "@mode = File::Constants::WRONLY");
+
+            return true;
+        }
+
+        private void newOpenFd(int newFd) {
+            final int FD_CLOEXEC = 1;
+
+            if (newFd > 2) {
+                int flags = posix().fcntl(newFd, Fcntl.F_GETFD);
+
+                if (flags == -1) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                }
+
+                flags = posix().fcntlInt(newFd, Fcntl.F_SETFD, flags | FD_CLOEXEC);
+
+                if (flags == -1) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                }
+            }
+        }
     }
 
     @RubiniusPrimitive(name = "io_open", needsSelf = false)

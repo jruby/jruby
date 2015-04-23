@@ -32,12 +32,10 @@ fails:IO.copy_stream from a pipe IO to a file name copies the entire IO contents
 fails:IO.copy_stream from a pipe IO to a file name returns the number of bytes copied
 fails:IO.copy_stream from a pipe IO to a file name copies only length bytes when specified
 fails:IO.copy_stream from a pipe IO to a file name calls #to_path to convert on object to a file name
-fails:IO.copy_stream from a pipe IO to a file name raises a TypeError if #to_path does not return a String
 fails:IO.copy_stream from a pipe IO to an IO copies the entire IO contents to the IO
 fails:IO.copy_stream from a pipe IO to an IO returns the number of bytes copied
 fails:IO.copy_stream from a pipe IO to an IO starts writing at the destination IO's current position
 fails:IO.copy_stream from a pipe IO to an IO leaves the destination IO position at the last write
-fails:IO.copy_stream from a pipe IO to an IO raises an IOError if the destination IO is not open for writing
 fails:IO.copy_stream from a pipe IO to an IO does not close the destination IO
 fails:IO.copy_stream from a pipe IO to an IO copies only length bytes when specified
 fails:IO.copy_stream with non-IO Objects calls #readpartial on the source Object if defined

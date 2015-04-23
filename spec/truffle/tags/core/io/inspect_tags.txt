@@ -1,2 +1,1 @@
-fails:IO#inspect contains the file descriptor number
 fails:IO#inspect contains "(closed)" if the stream is closed
