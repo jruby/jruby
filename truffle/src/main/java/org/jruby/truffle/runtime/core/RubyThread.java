@@ -35,6 +35,7 @@ import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 
 /**
@@ -129,7 +130,7 @@ public class RubyThread extends RubyBasicObject {
 
     public void shutdown() {
         fiberManager.shutdown();
-        exit();
+        throw new ThreadExitException();
     }
 
     public Thread getRootFiberJavaThread() {
@@ -169,7 +170,8 @@ public class RubyThread extends RubyBasicObject {
         return joined;
     }
 
-    public void interrupt() {
+    public void wakeup() {
+        status = Status.RUN;
         Thread t = thread;
         if (t != null) {
             t.interrupt();
@@ -211,10 +213,6 @@ public class RubyThread extends RubyBasicObject {
 
     public RubyException getException() {
         return exception;
-    }
-
-    private void exit() {
-        throw new ThreadExitException();
     }
 
     public String getName() {

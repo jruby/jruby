@@ -17,6 +17,7 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.Node;
 
 import org.jruby.RubyThread.Status;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
 
@@ -69,13 +70,20 @@ public class SafepointManager {
         try {
             assumption.check();
         } catch (InvalidAssumptionException e) {
-            assumptionInvalidated(currentNode, holdsGlobalLock, false);
+            SafepointAction deferredAction = assumptionInvalidated(currentNode, holdsGlobalLock, false);
+
+            // We're now running again normally, with the global lock, and can run deferred actions
+            if (deferredAction != null && holdsGlobalLock) {
+                deferredAction.run(context.getThreadManager().getCurrentThread(), currentNode);
+            }
         }
     }
 
-    private void assumptionInvalidated(Node currentNode, boolean holdsGlobalLock, boolean isDrivingThread) {
-        RubyThread thread = null;
+    private SafepointAction assumptionInvalidated(Node currentNode, boolean holdsGlobalLock, boolean isDrivingThread) {
+        // Read these while in the safepoint.
+        SafepointAction deferredAction = deferred ? action : null;
 
+        RubyThread thread = null;
         if (holdsGlobalLock) {
             thread = context.getThreadManager().leaveGlobalLock();
         }
@@ -85,16 +93,13 @@ public class SafepointManager {
         try {
             step(currentNode, thread, isDrivingThread);
         } finally {
-            if (holdsGlobalLock) {
+            // The driving thread must acquire the global lock AFTER releasing the SafepointManager lock.
+            if (!isDrivingThread && holdsGlobalLock) {
                 context.getThreadManager().enterGlobalLock(thread);
             }
         }
 
-        // We're now running again normally, with the global lock, and can run deferred actions
-
-        if (deferred && holdsGlobalLock && thread != null) {
-            action.run(thread, currentNode);
-        }
+        return deferredAction;
     }
 
     private void step(Node currentNode, RubyThread thread, boolean isDrivingThread) {
@@ -123,6 +128,8 @@ public class SafepointManager {
             throw new IllegalStateException("Re-entered SafepointManager");
         }
 
+        RubyThread thread = context.getThreadManager().getCurrentThread();
+
         // Need to lock interruptibly since we are in the registered threads.
         while (true) {
             try {
@@ -137,6 +144,12 @@ public class SafepointManager {
             pauseAllThreadsAndExecute(currentNode, true, action, deferred);
         } finally {
             lock.unlock();
+            context.getThreadManager().enterGlobalLock(thread);
+        }
+
+        // Run deferred actions after leaving the SafepointManager lock and with the global lock.
+        if (deferred) {
+            action.run(thread, currentNode);
         }
     }
 
@@ -174,15 +187,21 @@ public class SafepointManager {
         assumptionInvalidated(currentNode, holdsGlobalLock, true);
     }
 
-    public void pauseThreadAndExecuteLater(final Thread thread, Node currentNode, final SafepointAction action) {
-        pauseAllThreadsAndExecute(currentNode, true, new SafepointAction() {
-            @Override
-            public void run(RubyThread rubyThread, Node currentNode) {
-                if (Thread.currentThread() == thread) {
-                    action.run(rubyThread, currentNode);
+    public void pauseThreadAndExecuteLater(final Thread thread, RubyNode currentNode, final SafepointAction action) {
+        if (Thread.currentThread() == thread) {
+            // fast path if we are already the right thread
+            RubyThread rubyThread = context.getThreadManager().getCurrentThread();
+            action.run(rubyThread, currentNode);
+        } else {
+            pauseAllThreadsAndExecute(currentNode, true, new SafepointAction() {
+                @Override
+                public void run(RubyThread rubyThread, Node currentNode) {
+                    if (Thread.currentThread() == thread) {
+                        action.run(rubyThread, currentNode);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     public void pauseMainThreadAndExecuteLaterFromNonRubyThread(final Thread thread, final SafepointAction action) {

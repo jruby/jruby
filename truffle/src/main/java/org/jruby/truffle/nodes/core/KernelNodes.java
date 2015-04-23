@@ -22,6 +22,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.jcodings.Encoding;
+import org.jruby.RubyThread.Status;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -1790,18 +1791,33 @@ public abstract class KernelNodes {
             }
 
             final long start = System.currentTimeMillis();
+            final RubyThread thread = getContext().getThreadManager().getCurrentThread();
 
-            getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
+            long slept = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Long>() {
+                boolean shouldWakeUp = false;
+
                 @Override
-                public Boolean block() throws InterruptedException {
-                    Thread.sleep(durationInMillis);
-                    return SUCCESS;
+                public Long block() throws InterruptedException {
+                    long now = System.currentTimeMillis();
+                    long slept = now - start;
+
+                    if (shouldWakeUp || slept >= durationInMillis) {
+                        return slept;
+                    }
+
+                    try {
+                        Thread.sleep(durationInMillis - slept);
+                        return System.currentTimeMillis() - start;
+                    } catch (InterruptedException e) {
+                        if (thread.getStatus() == Status.RUN) { // Thread#{wakeup,run}
+                            shouldWakeUp = true;
+                        }
+                        throw e;
+                    }
                 }
             });
 
-            final long end = System.currentTimeMillis();
-
-            return (end - start) / 1000;
+            return slept / 1000;
         }
 
     }
