@@ -1548,7 +1548,12 @@ public abstract class KernelNodes {
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, UndefinedPlaceholder checkVisibility) {
-            return dispatch.doesRespondTo(frame, name, object);
+            return doesRespondTo(frame, object, name, false);
+        }
+
+        @Specialization
+        public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, RubyBasicObject checkVisibility) {
+            return doesRespondTo(frame, object, name, false);
         }
 
         @Specialization
@@ -1562,7 +1567,12 @@ public abstract class KernelNodes {
 
         @Specialization
         public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, UndefinedPlaceholder checkVisibility) {
-            return dispatch.doesRespondTo(frame, name, object);
+            return doesRespondTo(frame, object, name, false);
+        }
+
+        @Specialization
+        public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, RubyBasicObject checkVisibility) {
+            return doesRespondTo(frame, object, name, false);
         }
 
         @Specialization
@@ -1573,6 +1583,7 @@ public abstract class KernelNodes {
                 return dispatch.doesRespondTo(frame, name, object);
             }
         }
+
     }
 
     @CoreMethod(names = "respond_to_missing?", required = 1, optional = 1)
