@@ -1,11 +1,2 @@
-fails:File.zero? returns true if the file is empty
-fails:File.zero? returns false if the file is not empty
-fails:File.zero? accepts an object that has a #to_path method
-fails:File.zero? returns true for /dev/null
-fails:File.zero? raises an ArgumentError if not passed one argument
-fails:File.zero? raises a TypeError if not passed a String type
-fails:File.zero? returns true inside a block opening a file if it is empty
-fails:File.zero? returns false for a directory
-fails:File.zero? returns false if the file does not exist
 fails(windows):File.zero? returns true for NUL
 fails(windows):File.zero? returns true for a directory

@@ -1240,8 +1240,11 @@ public abstract class ArrayNodes {
         private final BranchProfile nextProfile = BranchProfile.create();
         private final BranchProfile redoProfile = BranchProfile.create();
 
+        private final RubySymbol eachSymbol;
+
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            eachSymbol = getContext().getSymbolTable().getSymbol("each");
         }
 
         @Specialization
@@ -1251,7 +1254,7 @@ public abstract class ArrayNodes {
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return toEnumNode.call(frame, array, "to_enum", null, getContext().getCoreLibrary().getEachSymbol());
+            return toEnumNode.call(frame, array, "to_enum", null, eachSymbol);
         }
 
         @Specialization(guards = "isNull(array)")
@@ -1662,10 +1665,10 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null, null}));
             }
-            if (respondToToAryNode.doesRespondTo(frame, object, getContext().makeString("to_ary"), false)) {
+            if (respondToToAryNode.doesRespondTo(frame, object, getContext().makeString("to_ary"), true)) {
                 if (toAryNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), false));
+                    toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
                 }
                 Object toAryResult = toAryNode.call(frame, object, "to_ary", null);
                 if (toAryResult instanceof RubyArray) {
@@ -1859,11 +1862,8 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1, raiseIfFrozenSelf = true)
-    @NodeChildren({
-        @NodeChild(value = "self"),
-        @NodeChild(value = "from")
-    })
+    @CoreMethod(names = "initialize_copy", required = 1, raiseIfFrozenSelf = true)
+    @NodeChildren({ @NodeChild(value = "self"), @NodeChild(value = "from") })
     @ImportStatic(ArrayGuards.class)
     public abstract static class InitializeCopyNode extends RubyNode {
         // TODO(cs): what about allocationSite ?
@@ -3219,7 +3219,6 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"!isNull(array)", "isEmpty(array)"})
         public RubyArray pushEmptySingleIntegerFixnum(RubyArray array, Object... values) {
-            notDesignedForCompilation();
             // TODO CS 20-Apr-15 in reality might be better reusing any current storage, but won't worry about that for now
             array.setStore(values, values.length);
             return array;

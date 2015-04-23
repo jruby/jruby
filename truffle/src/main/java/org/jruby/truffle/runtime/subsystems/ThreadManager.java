@@ -10,8 +10,8 @@
 package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.CompilerDirectives;
-
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
@@ -38,11 +38,14 @@ public class ThreadManager {
 
     public ThreadManager(RubyContext context) {
         this.context = context;
-        rootThread = new RubyThread(context.getCoreLibrary().getThreadClass(), this);
+        this.rootThread = new RubyThread(context.getCoreLibrary().getThreadClass(), this);
         rootThread.setName("main");
-        rootThread.setRootThread(Thread.currentThread());
-        runningRubyThreads.add(rootThread);
-        enterGlobalLock(rootThread);
+    }
+
+    public void initialize() {
+        registerThread(rootThread);
+        rootThread.start();
+        rootThread.getRootFiber().start();
     }
 
     public RubyThread getRootThread() {
@@ -147,16 +150,18 @@ public class ThreadManager {
 
     public void shutdown() {
         // kill all threads except main
-        context.getSafepointManager().pauseAllThreadsAndExecute(null, new SafepointAction() {
+        context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
             @Override
-            public void run(RubyThread thread, Node currentThread) {
-                if (thread != rootThread) {
-                    thread.exit();
+            public synchronized void run(RubyThread thread, Node currentNode) {
+                if (thread != rootThread && Thread.currentThread() == thread.getRootFiberJavaThread()) {
+                    thread.shutdown();
                 }
             }
         });
 
-        rootThread.cleanup(context);
+        rootThread.getFiberManager().shutdown();
+        rootThread.getRootFiber().cleanup();
+        rootThread.cleanup();
     }
 
 }

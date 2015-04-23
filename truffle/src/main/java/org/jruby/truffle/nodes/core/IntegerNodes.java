@@ -74,6 +74,49 @@ public abstract class IntegerNodes {
         }
 
         @Specialization
+        public Object downto(VirtualFrame frame, long from, int to, RubyProc block) {
+            return downto(frame, from, (long) to, block);
+        }
+
+        @Specialization
+        public Object downto(VirtualFrame frame, int from, long to, RubyProc block) {
+            return downto(frame, (long) from, to, block);
+        }
+
+        @Specialization
+        public Object downto(VirtualFrame frame, long from, long to, RubyProc block) {
+            // TODO BJF 22-Apr-2015 how to handle reportLoopCount(long)
+            int count = 0;
+
+            try {
+                outer:
+                for (long i = from; i >= to; i--) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, i);
+                            continue outer;
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return nil();
+        }
+
+        @Specialization
         public Object downto(VirtualFrame frame, int from, double to, RubyProc block) {
             notDesignedForCompilation();
             return downto(frame, from, (int) Math.ceil(to), block);

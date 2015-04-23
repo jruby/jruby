@@ -2629,31 +2629,17 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitUntilNode(org.jruby.ast.UntilNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
-
-        RubyNode condition = node.getConditionNode().accept(this);
-        RubyNode conditionInversed = new NotNode(context, sourceSection, condition);
-        
-        final boolean oldTranslatingWhile = translatingWhile;
-        translatingWhile = true;
-
-        final RubyNode body;
-
-        try {
-            body = node.getBodyNode().accept(this);
-        } finally {
-            translatingWhile = oldTranslatingWhile;
-        }
-
-        if (node.evaluateAtStart()) {
-            return WhileNode.createWhile(context, sourceSection, conditionInversed, body);
-        } else {
-            return WhileNode.createDoWhile(context, sourceSection, conditionInversed, body);
-        }
+        org.jruby.ast.WhileNode whileNode = new org.jruby.ast.WhileNode(node.getPosition(), node.getConditionNode(), node.getBodyNode(), node.evaluateAtStart());
+        return visitWhileNode(whileNode, true);
     }
 
     @Override
     public RubyNode visitVCallNode(org.jruby.ast.VCallNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
+        if (node.getName().equals("undefined") && sourceSection.getSource().getPath().startsWith("core:/core/")) {
+            return new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getRubiniusUndefined());
+        }
+
         final org.jruby.ast.Node receiver = new org.jruby.ast.SelfNode(node.getPosition());
         final CallNode callNode = new CallNode(node.getPosition(), receiver, node.getName(), null, null);
         return visitCallNodeExtraArgument(callNode, null, true, true);
@@ -2661,15 +2647,20 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitWhileNode(org.jruby.ast.WhileNode node) {
+        return visitWhileNode(node, false);
+    }
+
+    private RubyNode visitWhileNode(org.jruby.ast.WhileNode node, boolean conditionInversed) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode condition = node.getConditionNode().accept(this);
-
-        final boolean oldTranslatingWhile = translatingWhile;
-        translatingWhile = true;
+        if (conditionInversed) {
+            condition = new NotNode(context, sourceSection, condition);
+        }
 
         final RubyNode body;
-
+        final boolean oldTranslatingWhile = translatingWhile;
+        translatingWhile = true;
         try {
             if (node.getBodyNode().isNil()) {
                 body = new NilLiteralNode(context, sourceSection);
@@ -2680,11 +2671,15 @@ public class BodyTranslator extends Translator {
             translatingWhile = oldTranslatingWhile;
         }
 
+        final RubyNode loop;
+
         if (node.evaluateAtStart()) {
-            return WhileNode.createWhile(context, sourceSection, condition, body);
+            loop = WhileNode.createWhile(context, sourceSection, condition, body);
         } else {
-            return WhileNode.createDoWhile(context, sourceSection, condition, body);
+            loop = WhileNode.createDoWhile(context, sourceSection, condition, body);
         }
+
+        return new CatchBreakFromCallNode(context, sourceSection, loop, environment.getBlockID());
     }
 
     @Override

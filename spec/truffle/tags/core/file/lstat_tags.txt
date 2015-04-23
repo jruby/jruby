@@ -1,5 +1,3 @@
 fails:File.lstat returns a File::Stat object if the given file exists
 fails:File.lstat returns a File::Stat object when called on an instance of File
-fails:File.lstat accepts an object that has a #to_path method
-fails:File.lstat raises an Errno::ENOENT if the file does not exist
 fails:File.lstat returns a File::Stat object with symlink properties for a symlink

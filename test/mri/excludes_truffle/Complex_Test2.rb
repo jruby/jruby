@@ -1,0 +1,1 @@
+exclude :test_kumi2, "core:/core/rubinius/common/array.rb:1163:in `at': internal implementation error - ClassCastException java.lang.Long cannot be cast to java.lang.Integer org.jruby.truffle.nodes.RubyTypesGen.asInteger(RubyTypesGen.java:109) (RubyTruffleError)"

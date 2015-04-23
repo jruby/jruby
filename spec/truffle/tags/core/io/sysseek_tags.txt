@@ -1,8 +1,3 @@
-fails:IO#sysseek sets the offset
-fails:IO#sysseek converts arguments to Integers
 fails:IO#sysseek does not accept Bignums that don't fit in a C long
 fails:IO#sysseek raises IOError on closed stream
-fails:IO#sysseek moves the read position relative to the current position with SEEK_CUR
-fails:IO#sysseek raises an error when called after buffered reads
-fails:IO#sysseek moves the read position relative to the start with SEEK_SET
 fails:IO#sysseek moves the read position relative to the end with SEEK_END

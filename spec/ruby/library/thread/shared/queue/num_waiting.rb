@@ -6,7 +6,7 @@ describe :queue_num_waiting, :shared => true do
     5.times do |i|
       q.num_waiting.should == i
       t = Thread.new { q.deq }
-      Thread.pass until t.status == 'sleep'
+      Thread.pass until q.num_waiting == i+1
       threads << t
     end
 

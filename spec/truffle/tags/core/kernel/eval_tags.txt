@@ -8,3 +8,5 @@ slow:Kernel#eval raises a LocalJumpError if there is no lambda-style closure in 
 slow:Kernel#eval does not share locals across eval scopes
 windows:Kernel#eval does not share locals across eval scopes
 windows:Kernel#eval raises a LocalJumpError if there is no lambda-style closure in the chain
+fails:Kernel#eval raises a LocalJumpError if there is no lambda-style closure in the chain
+fails:Kernel#eval does not share locals across eval scopes

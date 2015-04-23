@@ -234,11 +234,13 @@ module Commands
   alias ruby run
 
   def test_mri(*args)
-    env_vars = {}
-    jruby_args = %w[-X+T]
+    env_vars = {
+        "EXCLUDES" => "test/mri/excludes_truffle"
+    }
+    jruby_args = %w[-X+T -Xtruffle.exceptions.print_java]
 
     if args.empty?
-      args = File.readlines("#{JRUBY_DIR}/test/mri.index").grep(/^[^#]\w+/).map(&:chomp)
+      args = File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
     end
 
     command = %w[test/mri/runner.rb -v --color=never --tty=no -q --]

@@ -1,2 +1,0 @@
-fails:Array#cycle iterates indefinitely when not passed a count
-fails:Array#cycle iterates indefinitely when passed nil

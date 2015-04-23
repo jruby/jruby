@@ -160,7 +160,7 @@ public class ObjectSpaceManager {
 
         };
 
-        context.getSafepointManager().pauseAllThreadsAndExecute(null, new SafepointAction() {
+        context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
 
             @Override
             public void run(RubyThread currentThread, Node currentNode) {

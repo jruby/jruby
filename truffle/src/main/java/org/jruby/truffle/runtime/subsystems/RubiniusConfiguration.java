@@ -9,7 +9,10 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import jnr.constants.platform.Fcntl;
+import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
+import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,9 +21,15 @@ import java.util.Map;
 
 public class RubiniusConfiguration {
 
+    private static final int SIZE_OF_LONG = 8;
+
+    private final RubyContext context;
+
     private final Map<String, Object> configuration = new HashMap<>();
     
-    public RubiniusConfiguration() {
+    public RubiniusConfiguration(RubyContext context) {
+        this.context = context;
+
         config("hash.hamt", false);
 
         config("rbx.platform.file.S_IRUSR", FileStat.S_IRUSR);
@@ -43,8 +52,41 @@ public class RubiniusConfiguration {
         config("rbx.platform.file.S_ISUID", FileStat.S_ISUID);
         config("rbx.platform.file.S_ISGID", FileStat.S_ISGID);
         config("rbx.platform.file.S_ISVTX", FileStat.S_ISVTX);
+
+        for (Fcntl fcntl : Fcntl.values()) {
+            if (fcntl.name().startsWith("F_")) {
+                config("rbx.platform.fcntl." + fcntl.name(), fcntl.intValue());
+            }
+        }
+
+        for (OpenFlags openFlag : OpenFlags.values()) {
+            if (openFlag.name().startsWith("O_")) {
+                config("rbx.platform.file." + openFlag.name(), openFlag.intValue());
+            }
+        }
+
+        config("rbx.platform.fcntl.O_ACCMODE", OpenFlags.O_RDONLY.intValue()
+                | OpenFlags.O_WRONLY.intValue() | OpenFlags.O_RDWR.intValue());
+
+        config("rbx.platform.typedef.time_t", "long");
+
+        config("rbx.platform.timeval.sizeof", 2 * SIZE_OF_LONG);
+        config("rbx.platform.timeval.tv_sec.offset", 0 * SIZE_OF_LONG);
+        config("rbx.platform.timeval.tv_sec.size", SIZE_OF_LONG);
+        config("rbx.platform.timeval.tv_sec.type", "time_t");
+        config("rbx.platform.timeval.tv_usec.offset", 1 * SIZE_OF_LONG);
+        config("rbx.platform.timeval.tv_usec.size", SIZE_OF_LONG);
+        config("rbx.platform.timeval.tv_usec.type", "time_t");
+
+        config("rbx.platform.io.SEEK_SET", 0);
+        config("rbx.platform.io.SEEK_CUR", 1);
+        config("rbx.platform.io.SEEK_END", 2);
     }
-    
+
+    private void config(String key, String value) {
+        config(key, context.getSymbolTable().getSymbol(value));
+    }
+
     private void config(String key, Object value) {
         configuration.put(key, value);
     }

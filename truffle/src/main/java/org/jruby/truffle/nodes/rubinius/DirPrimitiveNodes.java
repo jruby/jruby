@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
+import jnr.constants.platform.Errno;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -59,10 +60,18 @@ public abstract class DirPrimitiveNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyNilClass open(RubyBasicObject dir, RubyString path, RubyNilClass encoding) {
-            final String[] contents = new File(path.toString()).list();
+            // TODO CS 22-Apr-15 race conditions here
+
+            final File file = new File(path.toString());
+
+            if (!file.isDirectory()) {
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(Errno.ENOTDIR.intValue(), this));
+            }
+
+            final String[] contents = file.list();
 
             if (contents == null) {
-                throw new RaiseException(getContext().getCoreLibrary().fileNotFoundError(path.toString(), this));
+                throw new UnsupportedOperationException();
             }
 
             writeContentsNode.execute(dir, contents);

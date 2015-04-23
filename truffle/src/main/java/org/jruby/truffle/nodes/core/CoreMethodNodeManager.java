@@ -116,14 +116,19 @@ public abstract class CoreMethodNodeManager {
         }
     }
 
-    private static void addMethod(RubyModule module, RubyRootNode rootNode, List<String> names, Visibility visibility) {
+    private static void addMethod(RubyModule module, RubyRootNode rootNode, List<String> names, final Visibility originalVisibility) {
         for (String name : names) {
             final RubyRootNode rootNodeCopy = NodeUtil.cloneNode(rootNode);
+
+            Visibility visibility = originalVisibility;
+            if (ModuleOperations.isMethodPrivateFromName(name)) {
+                visibility = Visibility.PRIVATE;
+            }
 
             final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
                     Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
 
-            module.addMethod(null, method.withVisibility(visibility).withNewName(name));
+            module.addMethod(null, method.withVisibility(visibility).withName(name));
         }
     }
 

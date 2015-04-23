@@ -1,7 +1,4 @@
 fails:IO#each_char yields each character
-fails:IO#each_char returns an Enumerator when passed no block
 fails:IO#each_char returns itself
-fails:IO#each_char returns an enumerator for a closed stream
 fails:IO#each_char raises an IOError when an enumerator created on a closed stream is accessed
 fails:IO#each_char raises IOError on closed stream
-fails:IO#each_char does not yield any characters on an empty stream

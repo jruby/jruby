@@ -1183,7 +1183,7 @@ public class PopenExecutor {
             }
             else {
                 envtbl = runtime.getObject().getConstant("ENV");
-                envtbl = TypeConverter.convertToType(envtbl, runtime.getHash(), "to_hash");
+                envtbl = TypeConverter.convertToType(envtbl, runtime.getHash(), "to_hash").dup();
             }
             if (envopts != null) {
                 RubyHash stenv = (RubyHash)envtbl;

@@ -86,12 +86,12 @@ public class RubyBasicObject implements TruffleObject {
 
     @Deprecated
     public void freeze() {
-        DebugOperations.verySlowFreeze(this);
+        DebugOperations.verySlowFreeze(getContext(), this);
     }
 
     @Deprecated
     public void checkFrozen(Node currentNode) {
-        if (DebugOperations.verySlowIsFrozen(this)) {
+        if (DebugOperations.verySlowIsFrozen(getContext(), this)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName(), currentNode));
         }
@@ -122,8 +122,8 @@ public class RubyBasicObject implements TruffleObject {
         metaClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass, attached,
                 String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), verySlowGetObjectID()));
 
-        if (DebugOperations.verySlowIsFrozen(this)) {
-            DebugOperations.verySlowFreeze(metaClass);
+        if (DebugOperations.verySlowIsFrozen(getContext(), this)) {
+            DebugOperations.verySlowFreeze(getContext(), metaClass);
         }
 
         return metaClass;

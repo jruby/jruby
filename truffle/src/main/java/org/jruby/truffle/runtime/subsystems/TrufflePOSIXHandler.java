@@ -1,9 +1,11 @@
 package org.jruby.truffle.runtime.subsystems;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIXHandler;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyException;
 
 import java.io.File;
 import java.io.InputStream;
@@ -17,15 +19,12 @@ public class TrufflePOSIXHandler implements POSIXHandler {
         this.context = context;
     }
 
+    @CompilerDirectives.TruffleBoundary
     @Override
     public void error(Errno errno, String methodName) {
         // TODO CS 17-Apr-15 - not specialised, no way to build a good stacktrace, missing content for error messages
 
-        if (errno == Errno.ENOTEMPTY) {
-            throw new RaiseException(context.getCoreLibrary().dirNotEmptyError("unknown", null));
-        }
-
-        throw new UnsupportedOperationException("errno: " + errno.name());
+        throw new RaiseException(new RubyException(context.getCoreLibrary().getErrnoClass(errno)));
     }
 
     @Override
@@ -45,7 +44,8 @@ public class TrufflePOSIXHandler implements POSIXHandler {
 
     @Override
     public boolean isVerbose() {
-        return context.getRuntime().isVerbose();
+        // Even if we are running in verbose mode we don't want jnr-posix's version of verbose
+        return false;
     }
 
     @Override

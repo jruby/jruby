@@ -12,7 +12,9 @@ package org.jruby.truffle.nodes.cast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -31,6 +33,8 @@ public abstract class BooleanCastNode extends RubyNode {
     public BooleanCastNode(BooleanCastNode copy) {
         super(copy.getContext(), copy.getSourceSection());
     }
+
+    public abstract boolean executeBoolean(VirtualFrame frame, Object value);
 
     @Specialization
     public boolean doNil(RubyNilClass nil) {
@@ -64,12 +68,5 @@ public abstract class BooleanCastNode extends RubyNode {
 
     @Override
     public abstract boolean executeBoolean(VirtualFrame frame);
-
-    public abstract boolean executeBoolean(VirtualFrame frame, Object value);
-
-    @Override
-    public final Object execute(VirtualFrame frame) {
-        return executeBoolean(frame);
-    }
 
 }

@@ -687,12 +687,13 @@
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
-                      <arg value="-t" />
-                      <arg value="spec/truffle/spec-wrapper" />
                       <arg value="--config" />
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
                       <arg value="fails" />
+                      <arg value="--format" />
+                      <arg value="summary" />
+                      <arg value="-V" />
                       <arg value=":language" />
                     </exec>
                   </target>
@@ -732,12 +733,13 @@
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
-                      <arg value="-t" />
-                      <arg value="spec/truffle/spec-wrapper" />
                       <arg value="--config" />
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
                       <arg value="fails" />
+                      <arg value="--format" />
+                      <arg value="summary" />
+                      <arg value="-V" />
                       <arg value=":core" />
                     </exec>
                   </target>
@@ -777,12 +779,13 @@
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
-                      <arg value="-t" />
-                      <arg value="spec/truffle/spec-wrapper" />
                       <arg value="--config" />
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
                       <arg value="fails" />
+                      <arg value="--format" />
+                      <arg value="summary" />
+                      <arg value="-V" />
                       <arg value=":library" />
                     </exec>
                   </target>
@@ -822,14 +825,12 @@
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
-                      <arg value="-f" />
-                      <arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />
-                      <arg value="-t" />
-                      <arg value="spec/truffle/spec-wrapper" />
                       <arg value="--config" />
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
                       <arg value="fails" />
+                      <arg value="--format" />
+                      <arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />
                       <arg value=":language" />
                     </exec>
                   </target>
@@ -889,14 +890,12 @@
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
-                      <arg value="-f" />
-                      <arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />
-                      <arg value="-t" />
-                      <arg value="spec/truffle/spec-wrapper" />
                       <arg value="--config" />
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
                       <arg value="fails" />
+                      <arg value="--format" />
+                      <arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />
                       <arg value=":core" />
                     </exec>
                   </target>
@@ -956,14 +955,12 @@
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
-                      <arg value="-f" />
-                      <arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />
-                      <arg value="-t" />
-                      <arg value="spec/truffle/spec-wrapper" />
                       <arg value="--config" />
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
                       <arg value="fails" />
+                      <arg value="--format" />
+                      <arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />
                       <arg value=":library" />
                     </exec>
                   </target>
@@ -1013,6 +1010,34 @@
                       <arg value="-J-server" />
                       <arg value="-X+T" />
                       <arg value="test/truffle/pe/pe.rb" />
+                    </exec>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>truffle-mri-tests</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>rake</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <exec dir="${jruby.home}" executable="ruby" failonerror="true">
+                      <arg value="tool/jt.rb" />
+                      <arg value="test" />
+                      <arg value="mri" />
                     </exec>
                   </target>
                 </configuration>

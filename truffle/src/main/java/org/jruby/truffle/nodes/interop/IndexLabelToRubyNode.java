@@ -22,10 +22,6 @@ public abstract class IndexLabelToRubyNode extends TargetableRubyNode {
         super(context, sourceSection);
     }
 
-    public IndexLabelToRubyNode(IndexLabelToRubyNode prev) {
-        super(prev.getContext(), prev.getSourceSection());
-    }
-
     @Specialization
     public Object doString(VirtualFrame frame, String index) {
         return toString(index);

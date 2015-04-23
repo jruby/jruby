@@ -19,7 +19,6 @@ require_relative 'core/rubinius/api/shims/array'
 require_relative 'core/rubinius/api/shims/rubinius'
 require_relative 'core/rubinius/api/shims/thread'
 require_relative 'core/rubinius/api/shims/tuple'
-require_relative 'core/rubinius/api/shims/undefined'
 require_relative 'core/rubinius/api/shims/metrics'
 require_relative 'core/rubinius/api/shims/module'
 
@@ -84,6 +83,20 @@ require_relative 'core/rubinius/bootstrap/type'
 #require_relative 'core/rubinius/bootstrap/vm'
 #require_relative 'core/rubinius/bootstrap/weakref'
 
+# Load platform (ordered according to Rubinius' load_order.txt)
+
+require_relative 'core/rubinius/platform/ffi'
+#require_relative 'core/rubinius/platform/enum'
+#require_relative 'core/rubinius/platform/library'
+require_relative 'core/rubinius/platform/pointer_accessors'
+require_relative 'core/rubinius/platform/pointer'
+#require_relative 'core/rubinius/platform/env'
+require_relative 'core/rubinius/platform/file'
+#require_relative 'core/rubinius/platform/math'
+#require_relative 'core/rubinius/platform/posix'
+require_relative 'core/rubinius/platform/struct'
+#require_relative 'core/rubinius/platform/union'
+
 # Load common (ordered according to Rubinius' load_order.txt)
 
 #require_relative 'core/rubinius/common/basic_object'
@@ -132,7 +145,7 @@ require_relative 'core/rubinius/common/errno'
 #require_relative 'core/rubinius/common/eval'
 require_relative 'core/rubinius/common/false'
 #require_relative 'core/rubinius/common/fiber'
-#require_relative 'core/rubinius/common/io'
+require_relative 'core/rubinius/common/io'
 require_relative 'core/rubinius/common/file'
 require_relative 'core/rubinius/common/dir'
 require_relative 'core/rubinius/common/dir_glob'
@@ -181,7 +194,7 @@ require_relative 'core/rubinius/common/gc'
 
 #require_relative 'core/rubinius/delta/ctype'
 #require_relative 'core/rubinius/delta/exception'
-#require_relative 'core/rubinius/delta/file'
+require_relative 'core/rubinius/delta/file'
 #require_relative 'core/rubinius/delta/rubinius'
 #require_relative 'core/rubinius/delta/runtime'
 require_relative 'core/rubinius/delta/module'
@@ -201,20 +214,6 @@ require_relative 'core/rubinius/delta/struct'
 #require_relative 'core/rubinius/delta/ruby_constants'
 #require_relative 'core/rubinius/delta/pack'
 #require_relative 'core/rubinius/delta/metrics'
-
-# Load platform (ordered according to Rubinius' load_order.txt)
-
-require_relative 'core/rubinius/platform/ffi'
-#require_relative 'core/rubinius/platform/enum'
-#require_relative 'core/rubinius/platform/library'
-require_relative 'core/rubinius/platform/pointer_accessors'
-require_relative 'core/rubinius/platform/pointer'
-#require_relative 'core/rubinius/platform/env'
-#require_relative 'core/rubinius/platform/file'
-#require_relative 'core/rubinius/platform/math'
-#require_relative 'core/rubinius/platform/posix'
-#require_relative 'core/rubinius/platform/struct'
-#require_relative 'core/rubinius/platform/union'
 
 # Load JRuby+Truffle classes
 

@@ -86,10 +86,6 @@ public abstract class TruffleInteropNodes {
             this.node = ForeignObjectAccessNode.getAccess(IsExecutable.create(Receiver.create()));
         }
 
-        public IsExecutableNode(IsExecutableNode prev) {
-            this(prev.getContext(), prev.getSourceSection());
-        }
-
         @Specialization
         public boolean isExecutable(VirtualFrame frame, TruffleObject receiver) {
             return (boolean) node.executeForeign(frame, receiver);
@@ -105,10 +101,6 @@ public abstract class TruffleInteropNodes {
         public IsBoxedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.node = ForeignObjectAccessNode.getAccess(IsBoxed.create(Receiver.create()));
-        }
-
-        public IsBoxedPrimitiveNode(IsBoxedPrimitiveNode prev) {
-            this(prev.getContext(), prev.getSourceSection());
         }
 
         @Specialization
@@ -128,10 +120,6 @@ public abstract class TruffleInteropNodes {
             this.node = ForeignObjectAccessNode.getAccess(IsNull.create(Receiver.create()));
         }
 
-        public IsNullNode(IsNullNode prev) {
-            this(prev.getContext(), prev.getSourceSection());
-        }
-
         @Specialization
         public boolean isNull(VirtualFrame frame, TruffleObject receiver) {
             return (boolean) node.executeForeign(frame, receiver);
@@ -149,10 +137,6 @@ public abstract class TruffleInteropNodes {
             this.node = ForeignObjectAccessNode.getAccess(HasSize.create(Receiver.create()));
         }
 
-        public HasSizePropertyNode(HasSizePropertyNode prev) {
-            this(prev.getContext(), prev.getSourceSection());
-        }
-
         @Specialization
         public boolean hasSizeProperty(VirtualFrame frame, TruffleObject receiver) {
             return (boolean) node.executeForeign(frame, receiver);
@@ -168,10 +152,6 @@ public abstract class TruffleInteropNodes {
         public ReadPropertyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.node = ForeignObjectAccessNode.getAccess(Read.create(Receiver.create(), Argument.create()));
-        }
-
-        public ReadPropertyNode(ReadPropertyNode prev) {
-            this(prev.getContext(), prev.getSourceSection());
         }
 
         @Specialization
@@ -217,10 +197,6 @@ public abstract class TruffleInteropNodes {
             this.node = ForeignObjectAccessNode.getAccess(Write.create(Receiver.create(), Argument.create(), Argument.create()));
         }
 
-        public WritePropertyNode(WritePropertyNode prev) {
-            this(prev.getContext(), prev.getSourceSection());
-        }
-
         @Specialization
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver, int identifier,  Object value) {
             return node.executeForeign(frame, receiver, identifier, value);
@@ -264,10 +240,6 @@ public abstract class TruffleInteropNodes {
             this.node = ForeignObjectAccessNode.getAccess(Unbox.create(Receiver.create()));
         }
 
-        public UnboxValueNode(UnboxValueNode prev) {
-            this(prev.getContext(), prev.getSourceSection());
-        }
-
         @Specialization
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver) {
             return node.executeForeign(frame, receiver);
@@ -282,10 +254,6 @@ public abstract class TruffleInteropNodes {
 
         public ExecuteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ExecuteNode(ExecuteNode prev) {
-            this(prev.getContext(), prev.getSourceSection());
         }
 
         @Specialization
@@ -307,10 +275,6 @@ public abstract class TruffleInteropNodes {
         public GetSizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.node = ForeignObjectAccessNode.getAccess(GetSize.create(Receiver.create()));
-        }
-
-        public GetSizeNode(GetSizeNode prev) {
-            this(prev.getContext(), prev.getSourceSection());
         }
 
         @Specialization

@@ -8,31 +8,6 @@
 
 module Kernel
 
-  def p(*args)
-    args.each do |arg|
-      print arg.inspect
-      print "\n"
-    end
-
-    args.size <= 1 ? args.first : args
-  end
-  module_function :p
-
-  def puts(*args)
-    print "\n" if args.empty?
-    args.each do |arg|
-      if arg.is_a?(Array)
-        arg.each do |child|
-          puts child
-        end
-      else
-        print arg
-        print "\n"
-      end
-    end
-  end
-  module_function :puts
-
   def printf(*args)
     print sprintf(*args)
   end

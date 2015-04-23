@@ -159,10 +159,6 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectRubyFiber(execute(frame));
     }
 
-    public RubyFile executeRubyFile(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyFile(execute(frame));
-    }
-
     public RubyHash executeRubyHash(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectRubyHash(execute(frame));
     }
@@ -368,11 +364,6 @@ public abstract class RubyNode extends Node {
     }
 
     @SuppressWarnings("static-method")
-    public boolean isRubyFile(Object value) {
-        return value instanceof RubyFile;
-    }
-
-    @SuppressWarnings("static-method")
     public boolean isRubyHash(Object value) {
         return value instanceof RubyHash;
     }
@@ -471,6 +462,10 @@ public abstract class RubyNode extends Node {
     }
 
     protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
+        return rubyWithSelf(frame, RubyArguments.getSelf(frame.getArguments()), expression, arguments);
+    }
+
+    protected Object rubyWithSelf(VirtualFrame frame, Object self, String expression, Object... arguments) {
         notDesignedForCompilation();
         
         final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
@@ -486,7 +481,7 @@ public abstract class RubyNode extends Node {
 
         final RubyBinding binding = new RubyBinding(
                 getContext().getCoreLibrary().getBindingClass(),
-                RubyArguments.getSelf(frame.getArguments()),
+                self,
                 evalFrame);
 
         return getContext().eval(ByteList.create(expression), binding, true, "inline-ruby", this);

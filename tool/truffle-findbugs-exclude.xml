@@ -94,4 +94,8 @@
     <Class name="org.jruby.truffle.nodes.RubyCallNode" />
     <Bug pattern="PZLA_PREFER_ZERO_LENGTH_ARRAYS" />
   </Match>
+  <Match>
+    <Class name="~org\.jruby\.truffle\.runtime\.DebugOperations.*" />
+    <Bug pattern="URF_UNREAD_FIELD" />
+  </Match>
 </FindBugsFilter>

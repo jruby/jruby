@@ -15,7 +15,9 @@ import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
+import org.jruby.util.ByteList;
 
 @CoreClass(name = "Rubinius::ByteArray")
 public abstract class ByteArrayNodes {
@@ -30,6 +32,27 @@ public abstract class ByteArrayNodes {
         @Specialization
         public int getByte(RubiniusByteArray bytes, int index) {
             return bytes.getBytes().get(index);
+        }
+
+    }
+
+    @CoreMethod(names = "locate", required = 3)
+    public abstract static class LocateNode extends CoreMethodNode {
+
+        public LocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object getByte(RubiniusByteArray bytes, RubyString pattern, int start, int length) {
+            final int index = new ByteList(bytes.getBytes().unsafeBytes(), start, length)
+                    .indexOf(pattern.getBytes());
+
+            if (index == -1) {
+                return nil();
+            } else {
+                return start + index + pattern.length();
+            }
         }
 
     }

@@ -1,3 +1,1 @@
-fails:File.pipe? returns false if file does not exist
-fails:File.pipe? returns false if the file is not a pipe
 fails:File.pipe? returns true if the file is a pipe

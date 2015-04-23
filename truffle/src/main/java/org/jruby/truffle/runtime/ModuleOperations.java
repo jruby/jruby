@@ -12,8 +12,10 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.nodes.Node;
 
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -23,6 +25,7 @@ import org.jruby.util.IdUtil;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public abstract class ModuleOperations {
 
@@ -182,23 +185,28 @@ public abstract class ModuleOperations {
 
     @TruffleBoundary
     public static Map<String, InternalMethod> getAllMethods(RubyModule module) {
-        CompilerAsserts.neverPartOfCompilation();
-
         final Map<String, InternalMethod> methods = new HashMap<>();
 
-        // Look in the current module
-        methods.putAll(module.getMethods());
-
-        // Look in ancestors
-        for (RubyModule ancestor : module.parentAncestors()) {
-            for (Map.Entry<String, InternalMethod> method : ancestor.getMethods().entrySet()) {
-                if (!methods.containsKey(method.getKey())) {
-                    methods.put(method.getKey(), method.getValue());
+        for (RubyModule ancestor : module.ancestors()) {
+            for (InternalMethod method : ancestor.getMethods().values()) {
+                if (!methods.containsKey(method.getName())) {
+                    methods.put(method.getName(), method);
                 }
             }
         }
 
         return methods;
+    }
+
+    @TruffleBoundary
+    public static Map<String, InternalMethod> withoutUndefinedMethods(Map<String, InternalMethod> methods) {
+        Map<String, InternalMethod> definedMethods = new HashMap<>();
+        for (Entry<String, InternalMethod> method : methods.entrySet()) {
+            if (!method.getValue().isUndefined()) {
+                definedMethods.put(method.getKey(), method.getValue());
+            }
+        }
+        return definedMethods;
     }
 
     @TruffleBoundary
@@ -328,6 +336,14 @@ public abstract class ModuleOperations {
         // Not existing class variable - set in the current module
 
         module.setClassVariable(currentNode, name, value);
+    }
+
+    public static boolean isMethodPrivateFromName(String name) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        return (name.equals("initialize") || name.equals("initialize_copy") ||
+                name.equals("initialize_clone") || name.equals("initialize_dup") ||
+                name.equals("respond_to_missing?"));
     }
 
 }

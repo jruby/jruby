@@ -23,10 +23,12 @@ import com.oracle.truffle.api.object.Location;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 
+import org.jruby.truffle.nodes.objects.FreezeNode;
+import org.jruby.truffle.nodes.objects.FreezeNodeFactory;
+import org.jruby.truffle.nodes.objects.IsFrozenNode;
+import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -134,47 +136,20 @@ public abstract class DebugOperations {
         printASTForBacktrace(currentNode.getRootNode(), activeNodes, 0);
     }
 
-    public static Object verySlowFreeze(Object o) {
-        if ((o instanceof Boolean) ||
-                (o instanceof Integer) ||
-                (o instanceof Long) ||
-                (o instanceof Double) ||
-                (o instanceof RubyNilClass) ||
-                (o instanceof RubySymbol) ||
-                (o instanceof RubyBignum)) {
-            return o;
-        }
-
-        final RubyBasicObject object = (RubyBasicObject) o;
-
-        object.getOperations().setInstanceVariable(object, RubyBasicObject.FROZEN_IDENTIFIER, true);
-
-        return o;
+    public static Object verySlowFreeze(RubyContext context, final Object object) {
+        final FreezeNode freezeNode = FreezeNodeFactory.create(context, null, null);
+        new Node() {
+            @Child FreezeNode child = freezeNode;
+        }.adoptChildren();
+        return freezeNode.executeFreeze(object);
     }
 
-    public static boolean verySlowIsFrozen(Object o) {
-        if ((o instanceof Boolean) ||
-                (o instanceof Integer) ||
-                (o instanceof Long) ||
-                (o instanceof Double) ||
-                (o instanceof RubyNilClass) ||
-                (o instanceof RubySymbol) ||
-                (o instanceof RubyBignum)) {
-            return true;
-        }
-
-        final RubyBasicObject object = (RubyBasicObject) o;
-
-        final Shape layout = object.getDynamicObject().getShape();
-        final Property property = layout.getProperty(RubyBasicObject.FROZEN_IDENTIFIER);
-
-        if (property == null) {
-            return false;
-        }
-
-        final Location storageLocation = property.getLocation();
-
-        return (boolean) storageLocation.get(object.getDynamicObject(), layout);
+    public static boolean verySlowIsFrozen(RubyContext context, Object object) {
+        final IsFrozenNode isFrozenNode = IsFrozenNodeFactory.create(context, null, null);
+        new Node() {
+            @Child IsFrozenNode child = isFrozenNode;
+        }.adoptChildren();
+        return isFrozenNode.executeIsFrozen(object);
     }
 
     public static boolean verySlowIsTainted(Object o) {

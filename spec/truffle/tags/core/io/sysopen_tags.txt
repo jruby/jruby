@@ -1,6 +1,0 @@
-fails:IO.sysopen returns the file descriptor for a given path
-fails:IO.sysopen works on directories
-fails:IO.sysopen calls #to_path to convert an object to a path
-fails:IO.sysopen accepts a mode as second argument
-fails:IO.sysopen accepts permissions as third argument
-fails:IO.sysopen accepts mode & permission that are nil

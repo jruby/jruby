@@ -1,9 +1,3 @@
-fails:IO#advise raises a TypeError if advise is not a Symbol
-fails:IO#advise raises a TypeError if offsert cannot be coerced to an Integer
-fails:IO#advise raises a TypeError if len cannot be coerced to an Integer
-fails:IO#advise raises a RangeError if offset is too big
-fails:IO#advise raises a RangeError if len is too big
-fails:IO#advise raises a NotImplementedError if advise is not recognized
 fails:IO#advise supports the normal advice type
 fails:IO#advise supports the sequential advice type
 fails:IO#advise supports the random advice type

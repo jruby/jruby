@@ -24,6 +24,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyFiber;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyThread;
 
 @CoreClass(name = "Fiber")
 public abstract class FiberNodes {
@@ -54,12 +55,13 @@ public abstract class FiberNodes {
                 throw new RaiseException(getContext().getCoreLibrary().deadFiberCalledError(this));
             }
 
-            if (fiber.getRubyThread() != getContext().getThreadManager().getCurrentThread()) {
+            RubyThread currentThread = getContext().getThreadManager().getCurrentThread();
+            if (fiber.getRubyThread() != currentThread) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().fiberError("fiber called across threads", this));
             }
 
-            final RubyFiber sendingFiber = getContext().getFiberManager().getCurrentFiber();
+            final RubyFiber sendingFiber = currentThread.getFiberManager().getCurrentFiber();
 
             return singleValue(frame, sendingFiber.transferControlTo(fiber, isYield, args));
         }
@@ -112,10 +114,11 @@ public abstract class FiberNodes {
 
         @Specialization
         public Object yield(VirtualFrame frame, Object[] args) {
-            final RubyFiber yieldingFiber = getContext().getFiberManager().getCurrentFiber();
+            RubyThread currentThread = getContext().getThreadManager().getCurrentThread();
+            final RubyFiber yieldingFiber = currentThread.getFiberManager().getCurrentFiber();
             final RubyFiber fiberYieldedTo = yieldingFiber.getLastResumedByFiber();
 
-            if (yieldingFiber.isTopLevel() || fiberYieldedTo == null) {
+            if (yieldingFiber.isRootFiber() || fiberYieldedTo == null) {
                 throw new RaiseException(getContext().getCoreLibrary().yieldFromRootFiberError(this));
             }
 

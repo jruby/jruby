@@ -33,7 +33,6 @@ import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.runtime.core.RubyFile;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
@@ -209,20 +208,8 @@ public class TranslatorDriver {
     }
 
     private Object getData(RubyContext context) {
-        // TODO(CS) how do we know this has been populated already?
-
-        // TODO(CS) rough translation of File object just to get up and running
-
-        final IRubyObject jrubyData = context.getRuntime().getObject().getConstantNoConstMissing("DATA", false, false);
-
-        if (jrubyData == null) {
-            return null;
-        }
-
-        final org.jruby.RubyFile jrubyFile = (org.jruby.RubyFile) jrubyData;
-        final RubyFile truffleFile = new RubyFile(context.getCoreLibrary().getFileClass(), new InputStreamReader(jrubyFile.getInStream(), StandardCharsets.UTF_8), null);
-
-        return truffleFile;
+        // TODO CS 18-Apr-15 restore the DATA functionality
+        return null;
     }
 
     private TranslatorEnvironment environmentForFrame(RubyContext context, MaterializedFrame frame) {

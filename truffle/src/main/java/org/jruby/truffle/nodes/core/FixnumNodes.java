@@ -1101,6 +1101,12 @@ public abstract class FixnumNodes {
         public Object bitXOr(long a, RubyBignum b) {
             return fixnumOrBignum(BigInteger.valueOf(a).xor(b.bigIntegerValue()));
         }
+
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object bitXOr(VirtualFrame frame, Object a, RubyBasicObject b) {
+            return ruby(frame, "a ^ Rubinius::Type.coerce_to_bitwise_operand(b)", "a", a, "b", b);
+        }
+
     }
 
     @CoreMethod(names = "<<", required = 1)

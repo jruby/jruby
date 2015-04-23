@@ -110,9 +110,6 @@ class MSpecScript
 
     # LoadError for `load "prime.rb"`
     "^spec/ruby/library/prime/each_spec.rb",
-
-    # Spec sporadically fails and cannot be tagged.
-    "^spec/ruby/library/thread/queue/num_waiting_spec.rb"
   ]
 
   set :tags_patterns, [
