@@ -75,7 +75,7 @@ public class RubyContext extends ExecutionContext {
     private final CompilerOptions compilerOptions;
     private final RubiniusPrimitiveManager rubiniusPrimitiveManager;
     private final InstrumentationServerManager instrumentationServerManager;
-    private final RubiniusConfiguration rubiniusConfiguration = new RubiniusConfiguration();
+    private final RubiniusConfiguration rubiniusConfiguration;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
@@ -131,6 +131,8 @@ public class RubyContext extends ExecutionContext {
         }
 
         runningOnWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).indexOf("win") >= 0;
+
+        rubiniusConfiguration = new RubiniusConfiguration(this);
     }
 
     public Shape getEmptyShape() {
@@ -307,6 +309,10 @@ public class RubyContext extends ExecutionContext {
 
     public RubyString makeString(RubyClass stringClass, char string, Encoding encoding) {
         return makeString(stringClass, Character.toString(string), encoding);
+    }
+
+    public RubyString makeString(byte[] bytes) {
+        return makeString(new ByteList(bytes));
     }
 
     public RubyString makeString(ByteList bytes) {

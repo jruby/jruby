@@ -1,5 +1,0 @@
-fails:File#to_path returns a String
-fails:File#to_path does not normalise the path it returns
-fails:File#to_path does not canonicalize the path it returns
-fails:File#to_path does not absolute-ise the path it returns
-fails:File#to_path preserves the encoding of the path

@@ -1,13 +1,1 @@
-fails:IO#puts writes just a newline when given no args
 fails:IO#puts writes just a newline when given just a newline
-fails:IO#puts writes empty string with a newline when given nil as an arg
-fails:IO#puts writes empty string with a newline when when given nil as multiple args
-fails:IO#puts calls to_s before writing non-string objects
-fails:IO#puts writes each arg if given several
-fails:IO#puts flattens a nested array before writing it
-fails:IO#puts writes nothing for an empty array
-fails:IO#puts writes [...] for a recursive array arg
-fails:IO#puts writes a newline after objects that do not end in newlines
-fails:IO#puts does not write a newline after objects that end in newlines
-fails:IO#puts ignores the $/ separator global
-fails:IO#puts raises IOError on closed stream

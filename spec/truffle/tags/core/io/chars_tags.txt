@@ -1,7 +1,4 @@
 fails:IO#chars yields each character
-fails:IO#chars returns an Enumerator when passed no block
 fails:IO#chars returns itself
-fails:IO#chars returns an enumerator for a closed stream
 fails:IO#chars raises an IOError when an enumerator created on a closed stream is accessed
 fails:IO#chars raises IOError on closed stream
-fails:IO#chars does not yield any characters on an empty stream

@@ -228,6 +228,21 @@ module Kernel
     self
   end
 
+  def p(*a)
+    return nil if a.empty?
+    a.each { |obj| $stdout.puts obj.inspect }
+    $stdout.flush
+
+    a.size == 1 ? a.first : a
+  end
+  module_function :p
+
+  def puts(*a)
+    $stdout.puts(*a)
+    nil
+  end
+  module_function :puts
+
   def loop
     return to_enum(:loop) unless block_given?
 

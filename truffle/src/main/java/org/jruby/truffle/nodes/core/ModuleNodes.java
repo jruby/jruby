@@ -1289,7 +1289,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule moduleFunction(VirtualFrame frame, RubyModule module, Object[] names) {
-            if (module instanceof RubyClass) {
+            if (module instanceof RubyClass && !getContext().getCoreLibrary().isLoadingRubyCore()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("module_function must be called for modules", this));
             }

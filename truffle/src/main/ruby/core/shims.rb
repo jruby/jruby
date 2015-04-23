@@ -24,7 +24,13 @@ class IO
   end
 end
 
-STDIN = IO.new
+STDIN = File.new(0)
+STDOUT = File.new(1)
+STDERR = File.new(2)
+
+$stdin = STDIN
+$stdout = STDOUT
+$stderr = STDERR
 
 class << STDIN
   def external_encoding
@@ -32,41 +38,12 @@ class << STDIN
   end
 end
 
-STDOUT = IO.new
-$stdout = STDOUT
-
-class << STDOUT
-  def puts(*values)
-    Kernel.send(:puts, *values)
-  end
-
-  def print(*values)
-    Kernel.send(:print, *values)
-  end
-
-  def printf(*values)
-    Kernel.send(:printf, *values)
-  end
-
-  def flush
-    Truffle::Primitive.flush_stdout
-  end
-
-  def sync
-    false
-  end
-
-  def sync=(value)
-  end
+if STDOUT.tty?
+  STDOUT.sync = true
 end
 
-STDERR = IO.new
-$stderr = STDERR
-
-class << STDERR
-  def puts(*values)
-    Kernel.send(:puts, *values)
-  end
+if STDERR.tty?
+  STDERR.sync = true
 end
 
 ARGF = Object.new
@@ -216,5 +193,16 @@ module Rubinius
 
 end
 
-$PROGRAM_NAME = $0
+module Errno
 
+  # TODO CS 18-Apr-15 this should be a separate class
+  DomainError = EDOM
+
+end
+
+module Math
+  DomainError = Errno::EDOM
+end
+
+$PROGRAM_NAME = $0
+$$ = Process.pid

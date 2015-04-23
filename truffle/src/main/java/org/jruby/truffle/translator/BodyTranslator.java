@@ -2664,6 +2664,7 @@ public class BodyTranslator extends Translator {
         }
 
         final RubyNode loop;
+
         if (node.evaluateAtStart()) {
             loop = WhileNode.createWhile(context, sourceSection, condition, body);
         } else {

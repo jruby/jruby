@@ -1,15 +1,7 @@
-fails:File.size? accepts a String-like (to_str) parameter
-fails:File.size? accepts an object that has a #to_path method
 fails:File.size? calls #to_io to convert the argument to an IO
 fails:File.size? accepts a File argument
-fails:File.size returns the size of the file if it exists and is not empty
-fails:File.size accepts a String-like (to_str) parameter
-fails:File.size accepts an object that has a #to_path method
 fails:File.size calls #to_io to convert the argument to an IO
-fails:File.size raises an error if file_name doesn't exist
-fails:File.size returns 0 if the file is empty
 fails:File.size accepts a File argument
-fails:File#size is an instance method
 fails:File#size returns the file's size as a Fixnum
 fails:File#size returns the file's size in bytes
 fails:File#size returns the cached size of the file if subsequently deleted

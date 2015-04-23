@@ -1,20 +1,4 @@
-fails:File.new returns a new File with mode string
-fails:File.new returns a new File with mode num
 fails:File.new returns a new File with modus num and permissions
-fails:File.new creates the file and returns writable descriptor when called with 'w' mode and r-o permissions
 fails:File.new opens the existing file, does not change permissions even when they are specified
-fails:File.new returns a new File with modus fd
-fails:File.new creates a new file when use File::EXCL mode
 fails:File.new raises an Errorno::EEXIST if the file exists when create a new file with File::CREAT|File::EXCL
-fails:File.new creates a new file when use File::WRONLY|File::APPEND mode
-fails:File.new returns a new File when use File::APPEND mode
-fails:File.new returns a new File when use File::RDONLY|File::APPEND mode
-fails:File.new returns a new File when use File::RDONLY|File::WRONLY mode
-fails:File.new creates a new file when use File::WRONLY|File::TRUNC mode
-fails:File.new coerces filename using to_str
-fails:File.new coerces filename using #to_path
-fails:File.new raises a TypeError if the first parameter can't be coerced to a string
-fails:File.new raises a TypeError if the first parameter is nil
 fails:File.new raises an Errno::EBADF if the first parameter is an invalid file descriptor
-fails:File.new can't alter mode or permissions when opening a file
-fails:File.new opens directories

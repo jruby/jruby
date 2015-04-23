@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.runtime.core.RubyFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,7 +71,7 @@ public class FeatureManager {
                 for (Object pathObject : context.getCoreLibrary().getLoadPath().slowToArray()) {
                     String loadPath = pathObject.toString();
                     if (!isAbsolutePath(loadPath)) {
-                        loadPath = RubyFile.expandPath(context, loadPath);
+                        loadPath = expandPath(context, loadPath);
                     }
 
                     if (requireInPath(loadPath, feature, currentNode)) {
@@ -162,7 +161,7 @@ public class FeatureManager {
                 return false;
             }
 
-            final String expandedPath = RubyFile.expandPath(context, path);
+            final String expandedPath = expandPath(context, path);
 
             for (Object loaded : Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray())) {
                 if (loaded.toString().equals(expandedPath)) {
@@ -182,9 +181,39 @@ public class FeatureManager {
     public void setMainScriptSource(Source source) {
         this.mainScriptSource = source;
         if (!source.getPath().equals("-e")) {
-            this.mainScriptFullPath = RubyFile.expandPath(context, source.getPath());
+            this.mainScriptFullPath = expandPath(context, source.getPath());
         }
     }
+
+    public static String expandPath(RubyContext context, String fileName) {
+        RubyNode.notDesignedForCompilation();
+
+        // TODO (nirvdrum 11-Feb-15) This needs to work on Windows without calling into non-Truffle JRuby.
+        if (context.isRunningOnWindows()) {
+            final org.jruby.RubyString path = context.toJRuby(context.makeString(fileName));
+            final org.jruby.RubyString expanded = (org.jruby.RubyString) org.jruby.RubyFile.expand_path19(
+                    context.getRuntime().getCurrentContext(),
+                    null,
+                    new org.jruby.runtime.builtin.IRubyObject[] { path });
+
+            return expanded.asJavaString();
+        } else {
+            return expandPath(fileName, null);
+        }
+    }
+
+    public static String expandPath(String fileName, String dir) {
+        RubyNode.notDesignedForCompilation();
+
+        /*
+         * TODO(cs): this isn't quite correct - I think we want to collapse .., but we don't want to
+         * resolve symlinks etc. This might be where we want to start borrowing JRuby's
+         * implementation, but it looks quite tied to their data structures.
+         */
+
+        return org.jruby.RubyFile.canonicalize(new File(dir, fileName).getAbsolutePath());
+    }
+
 
     public String getSourcePath(Source source) {
         if (source == mainScriptSource) {

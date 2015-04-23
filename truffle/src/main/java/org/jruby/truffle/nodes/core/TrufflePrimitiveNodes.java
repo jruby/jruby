@@ -456,4 +456,24 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
+    @CoreMethod(names = "debug_print", onSingleton = true, required = 1)
+    public abstract static class DebugPrintNode extends CoreMethodNode {
+
+        public DebugPrintNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DebugPrintNode(DebugPrintNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyNilClass debugPrint(RubyString string) {
+            System.err.println(string.toString());
+            return nil();
+        }
+
+    }
+
 }

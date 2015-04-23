@@ -40,7 +40,6 @@ import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
                 RubyClass.class, //
                 RubyException.class, //
                 RubyFiber.class, //
-                RubyFile.class, //
                 RubyHash.class, //
                 RubyMatchData.class, //
                 RubyModule.class, //
