@@ -13,7 +13,7 @@ import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.pack.runtime.PackFrame;
+import org.jruby.truffle.pack.runtime.PackFrameDescriptor;
 
 /**
  * Reads the source array from the frame - written as a node so that we can
@@ -24,7 +24,7 @@ public class SourceNode extends Node {
 
     public Object execute(VirtualFrame frame) {
         try {
-            return frame.getObject(PackFrame.INSTANCE.getSourceSlot());
+            return frame.getObject(PackFrameDescriptor.SOURCE_SLOT);
         } catch (FrameSlotTypeException e) {
             throw new IllegalStateException(e);
         }

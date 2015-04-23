@@ -15,7 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.NullSourceSection;
 import org.jruby.truffle.pack.runtime.PackEncoding;
-import org.jruby.truffle.pack.runtime.PackFrame;
+import org.jruby.truffle.pack.runtime.PackFrameDescriptor;
 import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 
@@ -32,7 +32,7 @@ public class PackRootNode extends RootNode {
     @CompilerDirectives.CompilationFinal private int expectedLength = ArrayUtils.capacity(0, 0);
 
     public PackRootNode(String description, PackEncoding encoding, PackNode child) {
-        super(new NullSourceSection("pack", description), PackFrame.INSTANCE.getFrameDescriptor());
+        super(new NullSourceSection("pack", description), PackFrameDescriptor.FRAME_DESCRIPTOR);
         this.description = description;
         this.encoding = encoding;
         this.child = child;
@@ -40,19 +40,19 @@ public class PackRootNode extends RootNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        frame.setObject(PackFrame.INSTANCE.getSourceSlot(), frame.getArguments()[0]);
-        frame.setInt(PackFrame.INSTANCE.getSourceLengthSlot(), (int) frame.getArguments()[1]);
-        frame.setInt(PackFrame.INSTANCE.getSourcePositionSlot(), 0);
-        frame.setObject(PackFrame.INSTANCE.getOutputSlot(), new byte[expectedLength]);
-        frame.setInt(PackFrame.INSTANCE.getOutputPositionSlot(), 0);
-        frame.setBoolean(PackFrame.INSTANCE.getTaintSlot(), false);
+        frame.setObject(PackFrameDescriptor.SOURCE_SLOT, frame.getArguments()[0]);
+        frame.setInt(PackFrameDescriptor.SOURCE_LENGTH_SLOT, (int) frame.getArguments()[1]);
+        frame.setInt(PackFrameDescriptor.SOURCE_POSITION_SLOT, 0);
+        frame.setObject(PackFrameDescriptor.OUTPUT_SLOT, new byte[expectedLength]);
+        frame.setInt(PackFrameDescriptor.OUTPUT_POSITION_SLOT, 0);
+        frame.setBoolean(PackFrameDescriptor.TAINT_SLOT, false);
 
         child.execute(frame);
 
         final int outputLength;
 
         try {
-            outputLength = frame.getInt(PackFrame.INSTANCE.getOutputPositionSlot());
+            outputLength = frame.getInt(PackFrameDescriptor.OUTPUT_POSITION_SLOT);
         } catch (FrameSlotTypeException e) {
             throw new IllegalStateException(e);
         }
@@ -65,7 +65,7 @@ public class PackRootNode extends RootNode {
         final byte[] output;
 
         try {
-            output = (byte[]) frame.getObject(PackFrame.INSTANCE.getOutputSlot());
+            output = (byte[]) frame.getObject(PackFrameDescriptor.OUTPUT_SLOT);
         } catch (FrameSlotTypeException e) {
             throw new IllegalStateException(e);
         }
@@ -73,7 +73,7 @@ public class PackRootNode extends RootNode {
         final boolean taint;
 
         try {
-            taint = frame.getBoolean(PackFrame.INSTANCE.getTaintSlot());
+            taint = frame.getBoolean(PackFrameDescriptor.TAINT_SLOT);
         } catch (FrameSlotTypeException e) {
             throw new IllegalStateException(e);
         }

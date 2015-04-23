@@ -17,7 +17,7 @@ import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-import org.jruby.truffle.pack.runtime.PackFrame;
+import org.jruby.truffle.pack.runtime.PackFrameDescriptor;
 import org.jruby.truffle.pack.runtime.exceptions.TooFewArgumentsException;
 import org.jruby.util.ByteList;
 
@@ -42,7 +42,7 @@ public abstract class PackNode extends Node {
      */
     public int getSourceLength(VirtualFrame frame) {
         try {
-            return frame.getInt(PackFrame.INSTANCE.getSourceLengthSlot());
+            return frame.getInt(PackFrameDescriptor.SOURCE_LENGTH_SLOT);
         } catch (FrameSlotTypeException e) {
             throw new IllegalStateException(e);
         }
@@ -53,7 +53,7 @@ public abstract class PackNode extends Node {
      */
     protected int getSourcePosition(VirtualFrame frame) {
         try {
-            return frame.getInt(PackFrame.INSTANCE.getSourcePositionSlot());
+            return frame.getInt(PackFrameDescriptor.SOURCE_POSITION_SLOT);
         } catch (FrameSlotTypeException e) {
             throw new IllegalStateException(e);
         }
@@ -63,7 +63,7 @@ public abstract class PackNode extends Node {
      * Set the current position we will read from next in the source array.
      */
     protected void setSourcePosition(VirtualFrame frame, int position) {
-        frame.setInt(PackFrame.INSTANCE.getSourcePositionSlot(), position);
+        frame.setInt(PackFrameDescriptor.SOURCE_POSITION_SLOT, position);
     }
 
     /**
@@ -88,7 +88,7 @@ public abstract class PackNode extends Node {
      */
     protected byte[] getOutput(VirtualFrame frame) {
         try {
-            return (byte[]) frame.getObject(PackFrame.INSTANCE.getOutputSlot());
+            return (byte[]) frame.getObject(PackFrameDescriptor.OUTPUT_SLOT);
         } catch (FrameSlotTypeException e) {
             throw new IllegalStateException(e);
         }
@@ -101,7 +101,7 @@ public abstract class PackNode extends Node {
      */
     protected void setOutput(VirtualFrame frame, byte[] output) {
         CompilerAsserts.neverPartOfCompilation();
-        frame.setObject(PackFrame.INSTANCE.getOutputSlot(), output);
+        frame.setObject(PackFrameDescriptor.OUTPUT_SLOT, output);
     }
 
     /**
@@ -109,7 +109,7 @@ public abstract class PackNode extends Node {
      */
     protected int getOutputPosition(VirtualFrame frame) {
         try {
-            return frame.getInt(PackFrame.INSTANCE.getOutputPositionSlot());
+            return frame.getInt(PackFrameDescriptor.OUTPUT_POSITION_SLOT);
         } catch (FrameSlotTypeException e) {
             throw new IllegalStateException(e);
         }
@@ -119,14 +119,14 @@ public abstract class PackNode extends Node {
      * Set the current position we are writing to in the output array.
      */
     protected void setOutputPosition(VirtualFrame frame, int position) {
-        frame.setInt(PackFrame.INSTANCE.getOutputPositionSlot(), position);
+        frame.setInt(PackFrameDescriptor.OUTPUT_POSITION_SLOT, position);
     }
 
     /**
      * Set the output to be tainted.
      */
     protected void setTainted(VirtualFrame frame) {
-        frame.setBoolean(PackFrame.INSTANCE.getTaintSlot(), true);
+        frame.setBoolean(PackFrameDescriptor.TAINT_SLOT, true);
     }
 
     /**
