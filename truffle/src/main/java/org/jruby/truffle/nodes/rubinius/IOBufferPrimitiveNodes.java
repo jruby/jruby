@@ -141,10 +141,10 @@ public abstract class IOBufferPrimitiveNodes {
             int bytesRead;
 
             while (true) {
-                bytesRead = getContext().getPosix().read(fd, readBuffer, count);
+                bytesRead = posix().read(fd, readBuffer, count);
 
                 if (bytesRead == -1) {
-                    final int errno = getContext().getPosix().errno();
+                    final int errno = posix().errno();
 
                     if (errno == Errno.ECONNRESET.intValue() || errno == Errno.ETIMEDOUT.intValue()) {
                         // Treat as seeing eof

@@ -47,7 +47,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int getEGID() {
-            return getContext().getPosix().getegid();
+            return posix().getegid();
         }
 
     }
@@ -65,7 +65,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int getEUID() {
-            return getContext().getPosix().geteuid();
+            return posix().geteuid();
         }
 
     }
@@ -83,7 +83,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int getGID() {
-            return getContext().getPosix().getgid();
+            return posix().getgid();
         }
 
     }
@@ -127,7 +127,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int getUID() {
-            return getContext().getPosix().getuid();
+            return posix().getuid();
         }
 
     }
@@ -170,7 +170,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int unlink(RubyString path) {
-            return getContext().getPosix().unlink(path.toString());
+            return posix().unlink(path.toString());
         }
 
     }
@@ -188,7 +188,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int mkdir(RubyString path, int mode) {
-            return getContext().getPosix().mkdir(path.toString(), mode);
+            return posix().mkdir(path.toString(), mode);
         }
 
     }
@@ -208,7 +208,7 @@ public abstract class PosixNodes {
         public int chdir(RubyString path) {
             final String pathString = path.toString();
 
-            final int result = getContext().getPosix().chdir(pathString);
+            final int result = posix().chdir(pathString);
 
             if (result == 0) {
                 getContext().getRuntime().setCurrentDirectory(pathString);
@@ -232,7 +232,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int rmdir(RubyString path) {
-            return getContext().getPosix().rmdir(path.toString());
+            return posix().rmdir(path.toString());
         }
 
     }
@@ -272,7 +272,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int errno() {
-            return getContext().getPosix().errno();
+            return posix().errno();
         }
 
     }
@@ -290,12 +290,12 @@ public abstract class PosixNodes {
 
         @Specialization
         public int fcntl(int fd, int fcntl, RubyNilClass nil) {
-            return getContext().getPosix().fcntl(fd, Fcntl.valueOf(fcntl));
+            return posix().fcntl(fd, Fcntl.valueOf(fcntl));
         }
 
         @Specialization
         public int fcntl(int fd, int fcntl, int arg) {
-            return getContext().getPosix().fcntlInt(fd, Fcntl.valueOf(fcntl), arg);
+            return posix().fcntlInt(fd, Fcntl.valueOf(fcntl), arg);
         }
 
     }
@@ -313,7 +313,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int isATTY(int fd) {
-            return getContext().getPosix().libc().isatty(fd);
+            return posix().libc().isatty(fd);
         }
 
     }

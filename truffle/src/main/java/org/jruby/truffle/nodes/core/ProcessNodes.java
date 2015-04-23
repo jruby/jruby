@@ -100,7 +100,7 @@ public abstract class ProcessNodes {
         public int kill(RubySymbol signalName, int pid) {
             notDesignedForCompilation();
 
-            int self = getContext().getPosix().getpid();
+            int self = posix().getpid();
 
             if (self == pid) {
                 Signal signal = new Signal(signalName.toString());
@@ -129,7 +129,7 @@ public abstract class ProcessNodes {
         public int pid() {
             notDesignedForCompilation();
 
-            return getContext().getPosix().getpid();
+            return posix().getpid();
         }
 
     }

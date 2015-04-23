@@ -113,7 +113,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public int open(RubyString path, int mode, int permission) {
-            return getContext().getPosix().open(path.getByteList(), mode, permission);
+            return posix().open(path.getByteList(), mode, permission);
         }
 
     }
@@ -184,7 +184,7 @@ public abstract class IOPrimitiveNodes {
             while (bytes.length > 0) {
                 getContext().getSafepointManager().poll(this);
 
-                int written = getContext().getPosix().write(fd, bytes, bytes.length);
+                int written = posix().write(fd, bytes, bytes.length);
 
                 if (written == -1) {
                     throw new UnsupportedOperationException();
@@ -215,7 +215,7 @@ public abstract class IOPrimitiveNodes {
         public int close(VirtualFrame frame, RubyBasicObject io) {
             // In Rubinius this does a lot more, but we'll stick with this for now
             final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
-            return getContext().getPosix().close(fd);
+            return posix().close(fd);
         }
 
     }
@@ -234,7 +234,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public int seek(VirtualFrame frame, RubyBasicObject io, int amount, int whence) {
             final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
-            return getContext().getPosix().lseek(fd, amount, whence);
+            return posix().lseek(fd, amount, whence);
         }
 
     }
