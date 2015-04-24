@@ -14,14 +14,14 @@ import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
 import org.jruby.truffle.runtime.RubyContext;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class RubiniusConfiguration {
 
+    private static final int SIZE_OF_SHORT = 2;
+    private static final int SIZE_OF_INT = 4;
     private static final int SIZE_OF_LONG = 8;
+    private static final int SIZE_OF_POINTER = 8;
 
     private final RubyContext context;
 
@@ -71,16 +71,132 @@ public class RubiniusConfiguration {
         config("rbx.platform.typedef.time_t", "long");
 
         config("rbx.platform.timeval.sizeof", 2 * SIZE_OF_LONG);
-        config("rbx.platform.timeval.tv_sec.offset", 0 * SIZE_OF_LONG);
+        config("rbx.platform.timeval.tv_sec.offset", 0);
         config("rbx.platform.timeval.tv_sec.size", SIZE_OF_LONG);
         config("rbx.platform.timeval.tv_sec.type", "time_t");
-        config("rbx.platform.timeval.tv_usec.offset", 1 * SIZE_OF_LONG);
+        config("rbx.platform.timeval.tv_usec.offset", SIZE_OF_LONG);
         config("rbx.platform.timeval.tv_usec.size", SIZE_OF_LONG);
         config("rbx.platform.timeval.tv_usec.type", "time_t");
+
+        /*
+         * struct addrinfo {
+         *     int              ai_flags;
+         *     int              ai_family;
+         *     int              ai_socktype;
+         *     int              ai_protocol;
+         *     socklen_t        ai_addrlen;
+         *     struct sockaddr *ai_addr;
+         *     char            *ai_canonname;
+         *     struct addrinfo *ai_next;
+         * };
+         */
+
+        config("rbx.platform.addrinfo.sizeof", 4 * SIZE_OF_INT + 4 * SIZE_OF_LONG);
+
+        int addrInfoOffset = 0;
+
+        for (String field : Arrays.asList("ai_flags", "ai_family", "ai_socktype", "ai_protocol")) {
+            config("rbx.platform.addrinfo." + field + ".offset", addrInfoOffset);
+            config("rbx.platform.addrinfo." + field + ".size", SIZE_OF_INT);
+            config("rbx.platform.addrinfo." + field + ".type", "int");
+            addrInfoOffset += SIZE_OF_INT;
+        }
+
+        config("rbx.platform.addrinfo.ai_addrlen.offset", addrInfoOffset);
+        config("rbx.platform.addrinfo.ai_addrlen.size", SIZE_OF_LONG);
+        config("rbx.platform.addrinfo.ai_addrlen.type", "long");
+        addrInfoOffset += SIZE_OF_LONG;
+
+        for (String field : Arrays.asList("ai_addr", "ai_canonname", "ai_next")) {
+            config("rbx.platform.addrinfo." + field + ".offset", addrInfoOffset);
+            config("rbx.platform.addrinfo." + field + ".size", SIZE_OF_POINTER);
+            config("rbx.platform.addrinfo." + field + ".type", "pointer");
+            addrInfoOffset += SIZE_OF_LONG;
+        }
+
+        /*
+         * struct linger {
+         *     int              l_onoff;
+         *     int              l_linger;
+         * };
+         */
+
+        config("rbx.platform.linger.sizeof", 2 * SIZE_OF_INT);
+
+        int lingerOffset = 0;
+
+        for (String field : Arrays.asList("l_onoff", "l_linger")) {
+            config("rbx.platform.linger." + field + ".offset", lingerOffset);
+            config("rbx.platform.linger." + field + ".size", SIZE_OF_INT);
+            config("rbx.platform.linger." + field + ".type", "int");
+            lingerOffset += SIZE_OF_INT;
+        }
+
+        /*
+         * struct sockaddr_in {
+         *     short            sin_family;
+         *     unsigned short   sin_port;
+         *     struct in_addr   sin_addr;
+         *     char             sin_zero[8];
+         * };
+         *
+         * struct in_addr {
+         *     unsigned long s_addr;
+         * };
+         */
+
+        config("rbx.platform.sockaddr_in.sizeof", 2 * SIZE_OF_SHORT + SIZE_OF_LONG + 8);
+
+        config("rbx.platform.sockaddr_in.sin_family.offset", 0);
+        config("rbx.platform.sockaddr_in.sin_family.size", SIZE_OF_SHORT);
+        config("rbx.platform.sockaddr_in.sin_family.type", "short");
+
+        config("rbx.platform.sockaddr_in.sin_port.offset", SIZE_OF_SHORT);
+        config("rbx.platform.sockaddr_in.sin_port.size", SIZE_OF_SHORT);
+        config("rbx.platform.sockaddr_in.sin_port.type", "ushort");
+
+        config("rbx.platform.sockaddr_in.sin_addr.offset", 2 * SIZE_OF_SHORT);
+        config("rbx.platform.sockaddr_in.sin_addr.size", SIZE_OF_LONG);
+        config("rbx.platform.sockaddr_in.sin_addr.type", "ulong");
+
+        config("rbx.platform.sockaddr_in.sin_zero.offset", 2 * SIZE_OF_SHORT + SIZE_OF_LONG);
+        config("rbx.platform.sockaddr_in.sin_zero.size", 8);
+        config("rbx.platform.sockaddr_in.sin_zero.type", "char");
+
+        /*
+         * struct servent {
+         *     char  *s_name;
+         *     char **s_aliases;
+         *     int    s_port;
+         *     char  *s_proto;
+         * };
+         */
+
+        config("rbx.platform.servent.sizeof", 3 * SIZE_OF_POINTER + SIZE_OF_INT);
+
+        config("rbx.platform.servent.s_name.offset", 0);
+        config("rbx.platform.servent.s_name.size", SIZE_OF_POINTER);
+        config("rbx.platform.servent.s_name.type", "pointer");
+
+        config("rbx.platform.servent.s_aliases.offset", SIZE_OF_POINTER);
+        config("rbx.platform.servent.s_aliases.size", SIZE_OF_POINTER);
+        config("rbx.platform.servent.s_aliases.type", "pointer");
+
+        config("rbx.platform.servent.s_port.offset", 2 * SIZE_OF_POINTER);
+        config("rbx.platform.servent.s_port.size", SIZE_OF_INT);
+        config("rbx.platform.servent.s_port.type", "int");
+
+        config("rbx.platform.servent.s_proto.offset", 2 * SIZE_OF_POINTER + SIZE_OF_INT);
+        config("rbx.platform.servent.s_proto.size", SIZE_OF_POINTER);
+        config("rbx.platform.servent.s_proto.type", "pointer");
 
         config("rbx.platform.io.SEEK_SET", 0);
         config("rbx.platform.io.SEEK_CUR", 1);
         config("rbx.platform.io.SEEK_END", 2);
+
+        config("rbx.platform.socket.AI_PASSIVE", context.makeString("1"));
+        config("rbx.platform.socket.AF_UNSPEC", context.makeString("0"));
+        config("rbx.platform.socket.SOCK_STREAM", context.makeString("1"));
     }
 
     private void config(String key, String value) {
