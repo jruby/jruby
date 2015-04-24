@@ -84,6 +84,10 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'test-unit.version' => '3.0.3',
               'power_assert.version' => '0.2.3' )
 
+  unless version =~ /-SNAPSHOT/
+    properties 'jruby.home' => '${basedir}/..'
+  end
+
   modules [ 'truffle', 'core', 'lib' ]
 
   plugin_management do

@@ -510,6 +510,7 @@
           <reuseForks>false</reuseForks>
           <systemProperties>
             <jruby.compat.version>1.9</jruby.compat.version>
+            <jruby.home>${basedir}/..</jruby.home>
           </systemProperties>
           <argLine>-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true</argLine>
           <includes>
