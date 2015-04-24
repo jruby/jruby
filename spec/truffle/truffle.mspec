@@ -82,6 +82,7 @@ class MSpecScript
     "spec/ruby/library/abbrev",
     "spec/ruby/library/base64",
     "spec/ruby/library/complex",
+    "spec/ruby/library/conditionvariable",
     "spec/ruby/library/date",
     "spec/ruby/library/datetime",
     "spec/ruby/library/delegate",
@@ -108,7 +109,6 @@ class MSpecScript
     # Not yet explored
     "^spec/ruby/library/bigdecimal",
     "^spec/ruby/library/cgi",
-    "^spec/ruby/library/conditionvariable",
     "^spec/ruby/library/continuation",
     "^spec/ruby/library/csv",
     "^spec/ruby/library/digest",
