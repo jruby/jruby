@@ -25,8 +25,6 @@ public class InterfaceInitializer extends Initializer {
 
         super.initializeBase(proxy);
 
-        runtime.getJavaSupport().getUnfinishedProxyClassCache().get(javaClass).set(proxy);
-
         Field[] fields = JavaClass.getDeclaredFields(javaClass);
 
         for (int i = fields.length; --i >= 0; ) {

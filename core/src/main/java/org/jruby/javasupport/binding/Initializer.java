@@ -7,6 +7,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
@@ -34,6 +35,7 @@ import static org.jruby.runtime.Visibility.PUBLIC;
 */
 public abstract class Initializer {
     protected final Ruby runtime;
+    protected final JavaSupport javaSupport;
     protected final Class javaClass;
 
     private static final Logger LOG = LoggerFactory.getLogger("Initializer");
@@ -68,6 +70,7 @@ public abstract class Initializer {
 
     public Initializer(Ruby runtime, Class javaClass) {
         this.runtime = runtime;
+        this.javaSupport = runtime.getJavaSupport();
         this.javaClass = javaClass;
     }
 
