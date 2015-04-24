@@ -318,4 +318,22 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "symlink", isModuleFunction = true, required = 2)
+    public abstract static class SymlinkNode extends CoreMethodNode {
+
+        public SymlinkNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SymlinkNode(SymlinkNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int symlink(RubyString first, RubyString second) {
+            return posix().symlink(first.toString(), second.toString());
+        }
+
+    }
+
 }

@@ -1,6 +1,2 @@
 fails:File.symlink creates a symlink between a source and target file
-fails:File.symlink creates a symbolic link
-fails:File.symlink accepts args that have #to_path methods
 fails:File.symlink raises an Errno::EEXIST if the target already exists
-fails:File.symlink? returns true if the file is a link
-fails:File.symlink? accepts an object that has a #to_path method
