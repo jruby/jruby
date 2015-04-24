@@ -9,12 +9,14 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
@@ -35,6 +37,30 @@ public abstract class ByteArrayNodes {
 
         @Specialization
         public int getByte(RubiniusByteArray bytes, int index) {
+            return bytes.getBytes().get(index);
+        }
+
+    }
+
+    @CoreMethod(names = "set_byte", required = 2, lowerFixnumParameters = {1, 2})
+    public abstract static class SetByteNode extends CoreMethodNode {
+
+        public SetByteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SetByteNode(SetByteNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object setByte(RubiniusByteArray bytes, int index, int value) {
+            if (index < 0 || index >= bytes.getBytes().getRealSize()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().indexError("index out of bounds", this));
+            }
+
+            bytes.getBytes().set(index, value);
             return bytes.getBytes().get(index);
         }
 
