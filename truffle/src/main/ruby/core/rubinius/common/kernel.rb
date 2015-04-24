@@ -228,6 +228,27 @@ module Kernel
     self
   end
 
+  def open(obj, *rest, &block)
+    if obj.respond_to?(:to_open)
+      obj = obj.to_open(*rest)
+
+      if block_given?
+        return yield(obj)
+      else
+        return obj
+      end
+    end
+
+    path = Rubinius::Type.coerce_to_path obj
+
+    if path.kind_of? String and path.prefix? '|'
+      return IO.popen(path[1..-1], *rest, &block)
+    end
+
+    File.open(path, *rest, &block)
+  end
+  module_function :open
+
   def p(*a)
     return nil if a.empty?
     a.each { |obj| $stdout.puts obj.inspect }
