@@ -229,6 +229,7 @@ require_relative 'core/signal'
 require_relative 'core/string'
 require_relative 'core/thread'
 require_relative 'core/unbound_method'
+require_relative 'core/library'
 
 require_relative 'core/shims'
 
