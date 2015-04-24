@@ -8,8 +8,6 @@
 
 require 'socket'
 
-message = "Hello, World!\n"
-
 server = TCPServer.new('localhost', 8080)
 
 loop do
