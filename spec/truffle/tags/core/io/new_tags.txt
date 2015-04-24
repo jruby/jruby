@@ -1,18 +1,2 @@
-fails:IO.new uses the external encoding specified in the mode argument
-fails:IO.new uses the external and the internal encoding specified in the mode argument
-fails:IO.new uses the external encoding specified via the :external_encoding option
-fails:IO.new uses the internal encoding specified via the :internal_encoding option
-fails:IO.new uses the colon-separated encodings specified via the :encoding option
-fails:IO.new ingores the :encoding option when the :external_encoding option is present
-fails:IO.new ingores the :encoding option when the :internal_encoding option is present
-fails:IO.new uses the encoding specified via the :mode option hash
-fails:IO.new ignores the :internal_encoding option when the same as the external encoding
-fails:IO.new sets internal encoding to nil when passed '-'
-fails:IO.new does not use binary encoding when mode encoding is specified
-fails:IO.new does not use binary encoding when :encoding option is specified
-fails:IO.new does not use binary encoding when :external_encoding option is specified
-fails:IO.new does not use binary encoding when :internal_encoding option is specified
-fails:IO.new coerces :external_encoding option with #to_str
-fails:IO.new coerces :internal_encoding option with #to_str
 fails:IO.new raises an Errno::EBADF if the file descriptor is not valid
 fails:IO.new raises an IOError if passed a closed stream

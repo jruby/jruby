@@ -759,7 +759,7 @@ public abstract class ModuleNodes {
 
             for (Entry<String, RubyConstant> constant : constants.entrySet()) {
                 if (!constant.getValue().isPrivate()) {
-                    constantsArray.add(getContext().newSymbol(constant.getKey()));
+                    constantsArray.add(getContext().getSymbol(constant.getKey()));
                 }
             }
 
@@ -1532,7 +1532,7 @@ public abstract class ModuleNodes {
             for (InternalMethod method : methods.values()) {
                 if (method.getVisibility() != Visibility.PRIVATE && !method.isUndefined()) {
                     // TODO(CS): shoudln't be using this
-                    array.slowPush(getContext().newSymbol(method.getName()));
+                    array.slowPush(getContext().getSymbol(method.getName()));
                 }
             }
 

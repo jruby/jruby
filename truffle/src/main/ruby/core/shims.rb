@@ -18,10 +18,6 @@ class IO
     @internal
   end
 
-  def set_encoding(external, internal)
-    @external = external
-    @internal = internal
-  end
 end
 
 STDIN = File.new(0)
@@ -131,21 +127,6 @@ module Rubinius
   end
 end
 
-class IO
-  RDONLY = 0
-  WRONLY = 1
-  RDWR = 2
-
-  CREAT = 512
-  EXCL = 2048
-  NOCTTY = 131072
-  TRUNC = 1024
-  APPEND = 8
-  NONBLOCK = 4
-  SYNC = 128
-  SEEK_SET = 0
-end
-
 # We use Rubinius's encoding subsystem for the most part, but we need to keep JRuby's up to date in case we
 # delegate to any of their methods.  Otherwise, they won't see the updated encoding and return incorrect results.
 class Encoding
@@ -206,3 +187,14 @@ end
 
 $PROGRAM_NAME = $0
 $$ = Process.pid
+
+# IO::printf from Rubinius uses Rubinius::Sprinter
+
+class IO
+
+  def printf(fmt, *args)
+    fmt = StringValue(fmt)
+    write sprintf(fmt, *args)
+  end
+
+end

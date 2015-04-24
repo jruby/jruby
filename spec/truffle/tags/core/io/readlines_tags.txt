@@ -3,6 +3,5 @@ fails:IO#readlines when passed a string that starts with a | gets data from the 
 fails:IO#readlines when passed a string that starts with a | gets data from a fork when passed -
 fails:IO.readlines when passed name, object when the object is a Fixnum uses the object as a limit if it is a Fixnum
 fails:IO.readlines when passed name, object when the object is a String accepts non-ASCII data as separator
-fails:IO.readlines encodes lines using the default internal encoding, when set
 windows:IO.readlines does not change $_
 windows:IO.readlines raises TypeError if the first parameter is nil

@@ -83,6 +83,38 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
+    @CoreMethod(names = "source_of_caller", onSingleton = true)
+    public abstract static class SourceOfCallerNode extends CoreMethodNode {
+
+        public SourceOfCallerNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyString sourceOfCaller() {
+            notDesignedForCompilation();
+
+            final Memo<Integer> frameCount = new Memo<>(0);
+
+            final String source = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<String>() {
+
+                @Override
+                public String visitFrame(FrameInstance frameInstance) {
+                    if (frameCount.get() == 1) {
+                        return frameInstance.getCallNode().getEncapsulatingSourceSection().getSource().getName();
+                    } else {
+                        frameCount.set(frameCount.get() + 1);
+                        return null;
+                    }
+                }
+
+            });
+
+            return getContext().makeString(source);
+        }
+
+    }
+
     @CoreMethod(names = "gc_count", onSingleton = true)
     public abstract static class GCCountNode extends CoreMethodNode {
 

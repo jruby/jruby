@@ -384,7 +384,7 @@ public abstract class VMPrimitiveNodes {
         public RubyArray times() {
             // Copied from org/jruby/RubyProcess.java - see copyright and license information there
 
-            Times tms = getContext().getPosix().times();
+            Times tms = posix().times();
             double utime = 0.0d, stime = 0.0d, cutime = 0.0d, cstime = 0.0d;
             if (tms == null) {
                 ThreadMXBean bean = ManagementFactory.getThreadMXBean();
@@ -399,7 +399,7 @@ public abstract class VMPrimitiveNodes {
                 cstime = (double)tms.cstime();
             }
 
-            long hz = getContext().getPosix().sysconf(Sysconf._SC_CLK_TCK);
+            long hz = posix().sysconf(Sysconf._SC_CLK_TCK);
             if (hz == -1) {
                 hz = 60; //https://github.com/ruby/ruby/blob/trunk/process.c#L6616
             }
@@ -533,11 +533,11 @@ public abstract class VMPrimitiveNodes {
             pid = getContext().getThreadManager().runOnce(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
-                    return getContext().getPosix().waitpid(input_pid, statusReference, finalOptions);
+                    return posix().waitpid(input_pid, statusReference, finalOptions);
                 }
             });
 
-            final int errno = getContext().getPosix().errno();
+            final int errno = posix().errno();
 
             if (pid == -1) {
                 if (errno == ECHILD.intValue()) {

@@ -33,7 +33,7 @@ public abstract class StringToSymbolNode extends RubyNode {
     public RubySymbol doString(RubyString string) {
         notDesignedForCompilation();
 
-        return getContext().newSymbol(string.toString());
+        return getContext().getSymbol(string.toString());
     }
 
 }

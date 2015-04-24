@@ -228,17 +228,17 @@ public class RubyContext extends ExecutionContext {
 
 
     @CompilerDirectives.TruffleBoundary
-    public RubySymbol newSymbol(String name) {
+    public RubySymbol getSymbol(String name) {
         return symbolTable.getSymbol(name, ASCIIEncoding.INSTANCE);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public RubySymbol newSymbol(String name, Encoding encoding) {
+    public RubySymbol getSymbol(String name, Encoding encoding) {
         return symbolTable.getSymbol(name, encoding);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public RubySymbol newSymbol(ByteList name) {
+    public RubySymbol getSymbol(ByteList name) {
         return symbolTable.getSymbol(name);
     }
 

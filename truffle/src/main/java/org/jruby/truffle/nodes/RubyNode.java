@@ -23,6 +23,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 
+import jnr.posix.POSIX;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchNode;
@@ -491,4 +492,7 @@ public abstract class RubyNode extends Node {
         return getContext().getCoreLibrary().getNilObject();
     }
 
+    protected POSIX posix() {
+        return getContext().getPosix();
+    }
 }

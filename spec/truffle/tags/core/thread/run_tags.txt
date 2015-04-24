@@ -1,3 +1,0 @@
-fails:Thread#run can interrupt Kernel#sleep
-fails:Thread#run does not result in a deadlock
-fails:Thread#run raises a ThreadError when trying to wake up a dead thread

@@ -14,7 +14,6 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public abstract class CachedDispatchNode extends DispatchNode {
 
@@ -40,9 +39,9 @@ public abstract class CachedDispatchNode extends DispatchNode {
         if (cachedName instanceof RubySymbol) {
             cachedNameAsSymbol = (RubySymbol) cachedName;
         } else if (cachedName instanceof RubyString) {
-            cachedNameAsSymbol = context.newSymbol(((RubyString) cachedName).getBytes());
+            cachedNameAsSymbol = context.getSymbol(((RubyString) cachedName).getBytes());
         } else if (cachedName instanceof String) {
-            cachedNameAsSymbol = context.newSymbol((String) cachedName);
+            cachedNameAsSymbol = context.getSymbol((String) cachedName);
         } else {
             throw new UnsupportedOperationException();
         }

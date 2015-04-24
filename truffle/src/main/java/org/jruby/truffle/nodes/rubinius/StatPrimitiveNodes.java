@@ -35,8 +35,8 @@ public abstract class StatPrimitiveNodes {
 
         @Specialization
         public int stat(RubyBasicObject rubyStat, RubyString path) {
-            final FileStat stat = getContext().getPosix().allocateStat();
-            final int code = getContext().getPosix().stat(path.toString(), stat);
+            final FileStat stat = posix().allocateStat();
+            final int code = posix().stat(path.toString(), stat);
 
             if (code == 0) {
                 writeStatNode.execute(rubyStat, stat);
@@ -64,8 +64,8 @@ public abstract class StatPrimitiveNodes {
 
         @Specialization
         public int lstat(RubyBasicObject rubyStat, RubyString path) {
-            final FileStat stat = getContext().getPosix().allocateStat();
-            final int code = getContext().getPosix().lstat(path.toString(), stat);
+            final FileStat stat = posix().allocateStat();
+            final int code = posix().lstat(path.toString(), stat);
 
             if (code == 0) {
                 writeStatNode.execute(rubyStat, stat);
