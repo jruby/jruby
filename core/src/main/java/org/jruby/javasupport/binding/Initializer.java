@@ -393,12 +393,13 @@ public abstract class Initializer {
                 IRubyObject[] newArgs = new IRubyObject[args.length - 1];
                 System.arraycopy(args, 1, newArgs, 0, newArgs.length);
 
-                if(v < 0 || v == (newArgs.length)) {
+                context.runtime.getWarnings().warn("#__jsend! is deprecated (and will no longer work in 9K); use #java_send instead");
+
+                if (v < 0 || v == (newArgs.length)) {
                     return Helpers.invoke(context, self, callName, newArgs, Block.NULL_BLOCK);
-                } else {
-                    RubyClass superClass = self.getMetaClass().getSuperClass();
-                    return Helpers.invokeAs(context, superClass, self, callName, newArgs, Block.NULL_BLOCK);
                 }
+                RubyClass superClass = self.getMetaClass().getSuperClass();
+                return Helpers.invokeAs(context, superClass, self, callName, newArgs, Block.NULL_BLOCK);
             }
         });
     }
