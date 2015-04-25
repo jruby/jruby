@@ -228,6 +228,36 @@ module Kernel
     self
   end
 
+  def test(cmd, file1, file2=nil)
+    case cmd
+      when ?d
+        File.directory? file1
+      when ?e
+        File.exist? file1
+      when ?f
+        File.file? file1
+      when ?l
+        File.symlink? file1
+      when ?r
+        File.readable? file1
+      when ?R
+        File.readable_real? file1
+      when ?w
+        File.writable? file1
+      when ?W
+        File.writable_real? file1
+      when ?A
+        File.atime file1
+      when ?C
+        File.ctime file1
+      when ?M
+        File.mtime file1
+      else
+        raise NotImplementedError, "command ?#{cmd.chr} not implemented"
+    end
+  end
+  module_function :test
+
   def open(obj, *rest, &block)
     if obj.respond_to?(:to_open)
       obj = obj.to_open(*rest)

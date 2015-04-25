@@ -258,15 +258,22 @@ public class RubyContext extends ExecutionContext {
     }
 
     @TruffleBoundary
+    public Object eval(String code, RubyBinding binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
+        return eval(ByteList.create(code), binding, ownScopeForAssignments, filename, currentNode);
+    }
+
+    @TruffleBoundary
     public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
         final Source source = Source.fromText(code, filename);
         return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, binding.getSelf(), binding.getFrame(), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
     }
 
+    @TruffleBoundary
     public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, Node currentNode) {
         return eval(code, binding, ownScopeForAssignments, "(eval)", currentNode);
     }
 
+    @TruffleBoundary
     public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, Node currentNode, NodeWrapper wrapper) {
         return execute(source, defaultEncoding, parserContext, self, parentFrame, true, currentNode, wrapper);
     }

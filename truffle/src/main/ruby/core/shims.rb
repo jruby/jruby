@@ -161,6 +161,7 @@ end
 class Rubinius::ByteArray
 
   alias_method :[], :get_byte
+  alias_method :[]=, :set_byte
 
 end
 

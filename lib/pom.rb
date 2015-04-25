@@ -60,16 +60,12 @@ project 'JRuby Lib Setup' do
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
               'tesla.version' => '0.1.1',
-              'jruby.plugins.version' => '1.0.5',
+              'jruby.plugins.version' => '1.0.9',
               'gem.home' => '${basedir}/ruby/gems/shared',
               # we copy everything into the target/classes/META-INF
               # so the jar plugin just packs it - see build/resources below
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home',
               'jruby.complete.gems' => '${jruby.complete.home}/lib/ruby/gems/shared' )
-
-  unless version =~ /-SNAPSHOT/
-    properties 'jruby.home' => '${basedir}/..'
-  end
 
   # just depends on jruby-core so we are sure the jruby.jar is in place
   jar "org.jruby:jruby-core:#{version}", :scope => 'test'

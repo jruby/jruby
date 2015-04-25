@@ -33,15 +33,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import org.jruby.javasupport.binding.AssignedName;
-import org.jruby.util.collections.MapBasedClassValue;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -49,29 +47,35 @@ import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.util.collections.ClassValue;
+import org.jruby.javasupport.binding.AssignedName;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.WeakIdentityHashMap;
-import org.jruby.util.cli.Options;
 import org.jruby.util.collections.ClassValueCalculator;
 
 public class JavaSupportImpl extends JavaSupport {
     private final Ruby runtime;
 
     private final ObjectProxyCache<IRubyObject,RubyClass> objectProxyCache =
-        // TODO: specifying soft refs, may want to compare memory consumption,
-        // behavior with weak refs (specify WEAK in place of SOFT below)
-        new ObjectProxyCache<IRubyObject,RubyClass>(ObjectProxyCache.ReferenceType.WEAK) {
+            // TODO: specifying soft refs, may want to compare memory consumption,
+            // behavior with weak refs (specify WEAK in place of SOFT below)
+            new ObjectProxyCache<IRubyObject,RubyClass>(ObjectProxyCache.ReferenceType.WEAK) {
 
-        public IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
-            return Java.allocateProxy(javaObject, clazz);
-        }
-    };
+                public IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
+                    return Java.allocateProxy(javaObject, clazz);
+                }
+            };
 
     private final ClassValue<JavaClass> javaClassCache;
     private final ClassValue<RubyModule> proxyClassCache;
-    private final ClassValue<ThreadLocal<RubyModule>> unfinishedProxyClassCache;
+    private class UnfinishedProxy extends ReentrantLock {
+        volatile RubyModule proxy;
+        UnfinishedProxy(RubyModule proxy) {
+            this.proxy = proxy;
+        }
+    }
+    private final Map<Class, UnfinishedProxy> unfinishedProxies;
     private final ClassValue<Map<String, AssignedName>> staticAssignedNames;
     private final ClassValue<Map<String, AssignedName>> instanceAssignedNames;
 
@@ -108,19 +112,20 @@ public class JavaSupportImpl extends JavaSupport {
                 return new JavaClass(runtime, cls);
             }
         });
+
         this.proxyClassCache = ClassValue.newInstance(new ClassValueCalculator<RubyModule>() {
+            /**
+             * Because of the complexity of processing a given class and all its dependencies,
+             * we opt to synchronize this logic. Creation of all proxies goes through here,
+             * allowing us to skip some threading work downstream.
+             */
             @Override
-            public RubyModule computeValue(Class<?> cls) {
+            public synchronized RubyModule computeValue(Class<?> cls) {
                 return Java.createProxyClassForClass(runtime, cls);
             }
         });
-        this.unfinishedProxyClassCache = ClassValue.newInstance(new ClassValueCalculator<ThreadLocal<RubyModule>>() {
-            @Override
-            public ThreadLocal<RubyModule> computeValue(Class<?> cls) {
-                return new ThreadLocal<RubyModule>();
-            }
-        });
-        this.staticAssignedNames =ClassValue.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
+
+        this.staticAssignedNames = ClassValue.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
             @Override
             public Map<String, AssignedName> computeValue(Class<?> cls) {
                 return new HashMap<String, AssignedName>();
@@ -132,6 +137,9 @@ public class JavaSupportImpl extends JavaSupport {
                 return new HashMap<String, AssignedName>();
             }
         });
+
+        // Proxy creation is synchronized (see above) so a HashMap is fine for recursion detection.
+        this.unfinishedProxies = new ConcurrentHashMap<Class, UnfinishedProxy>(8, 0.75f, 1);
     }
 
     public Class loadJavaClass(String className) throws ClassNotFoundException {
@@ -331,16 +339,29 @@ public class JavaSupportImpl extends JavaSupport {
         return this.javaProxyClassCache;
     }
 
-    public ClassValue<ThreadLocal<RubyModule>> getUnfinishedProxyClassCache() {
-        return unfinishedProxyClassCache;
-    }
-
     public ClassValue<Map<String, AssignedName>> getStaticAssignedNames() {
         return staticAssignedNames;
     }
 
     public ClassValue<Map<String, AssignedName>> getInstanceAssignedNames() {
         return instanceAssignedNames;
+    }
+
+    public void beginProxy(Class cls, RubyModule proxy) {
+        UnfinishedProxy up = new UnfinishedProxy(proxy);
+        up.lock();
+        unfinishedProxies.put(cls, up);
+    }
+
+    public void endProxy(Class cls) {
+        UnfinishedProxy up = unfinishedProxies.remove(cls);
+        up.unlock();
+    }
+
+    public RubyModule getUnfinishedProxy(Class cls) {
+        UnfinishedProxy up = unfinishedProxies.get(cls);
+        if (up != null && up.isHeldByCurrentThread()) return up.proxy;
+        return null;
     }
 
     @Deprecated

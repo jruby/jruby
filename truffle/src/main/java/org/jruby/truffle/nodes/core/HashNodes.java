@@ -148,8 +148,6 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isNull(hash)")
         public Object getNull(VirtualFrame frame, RubyHash hash, Object key) {
-            notDesignedForCompilation();
-
             hashNode.call(frame, key, "hash", null);
 
             if (undefinedValue != null) {

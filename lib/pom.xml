@@ -13,7 +13,7 @@
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
     <gem.home>${basedir}/ruby/gems/shared</gem.home>
-    <jruby.plugins.version>1.0.5</jruby.plugins.version>
+    <jruby.plugins.version>1.0.9</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
     <tesla.version>0.1.1</tesla.version>

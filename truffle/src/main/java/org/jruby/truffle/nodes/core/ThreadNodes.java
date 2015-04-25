@@ -54,8 +54,6 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyThread current() {
-            notDesignedForCompilation();
-
             return getContext().getThreadManager().getCurrentThread();
         }
 

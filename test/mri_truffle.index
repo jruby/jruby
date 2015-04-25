@@ -237,7 +237,7 @@ ruby/test_unicode_escape.rb
 ruby/test_variable.rb
 ruby/test_whileuntil.rb
 ruby/test_yield.rb
-# scanf/test_scanf.rb # cannot load such file -- scanf.rb
+# scanf/test_scanf.rb # Fails when run as suite
 # scanf/test_scanfblocks.rb
 # socket/test_basicsocket.rb
 # socket/test_nonblock.rb
