@@ -1260,13 +1260,6 @@ CLASSDEF
     assert nil == org.jruby.javasupport.test.NullToString.new.to_s
   end
 
-  def test___jsend! # expected to work (with a deprecation) under 1.7
-    verbose, $VERBOSE = $VERBOSE, nil
-    java.lang.Long.new(111).__jsend! :toString
-  ensure
-    $VERBOSE = verbose
-  end
-
   # JRUBY-2277
   # kind of a strange place for this test, but the error manifested
   # when JI was enabled.  the actual bug was a problem in alias_method,
