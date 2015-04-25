@@ -545,7 +545,7 @@ public abstract class InteropNode extends RubyNode {
         public ResolvedInteropWriteToSymbolNode(RubyContext context, SourceSection sourceSection, RubySymbol name, int labelIndex, int valueIndex) {
             super(context, sourceSection);
             this.name = name;
-            this.accessName = context.newSymbol(name.toString() + "=");
+            this.accessName = context.getSymbol(name.toString() + "=");
             this.head = new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, null, DispatchAction.CALL_METHOD);
             this.labelIndex = labelIndex;
             this.valueIndex = valueIndex;

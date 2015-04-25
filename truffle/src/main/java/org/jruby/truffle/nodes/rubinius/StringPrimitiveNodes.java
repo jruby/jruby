@@ -1261,7 +1261,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_from_bytearray", needsSelf = false)
+    @RubiniusPrimitive(name = "string_from_bytearray", needsSelf = false, lowerFixnumParameters = {0, 1})
     public static abstract class StringFromByteArrayPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringFromByteArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {

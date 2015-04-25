@@ -112,7 +112,7 @@ public abstract class UnboundMethodNodes {
         public RubySymbol name(RubyUnboundMethod unboundMethod) {
             notDesignedForCompilation();
 
-            return getContext().newSymbol(unboundMethod.getMethod().getName());
+            return getContext().getSymbol(unboundMethod.getMethod().getName());
         }
 
     }

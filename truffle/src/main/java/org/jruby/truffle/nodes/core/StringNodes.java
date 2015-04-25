@@ -44,7 +44,6 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.jruby.Ruby;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.CmpIntNode;
 import org.jruby.truffle.nodes.cast.CmpIntNodeFactory;
@@ -845,7 +844,7 @@ public abstract class StringNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("salt too short (need >= 2 bytes)", this));
             }
 
-            final POSIX posix = getContext().getPosix();
+            final POSIX posix = posix();
             final byte[] keyBytes = Arrays.copyOfRange(value.unsafeBytes(), value.begin(), value.realSize());
             final byte[] saltBytes = Arrays.copyOfRange(otherBL.unsafeBytes(), otherBL.begin(), otherBL.realSize());
 
@@ -2051,7 +2050,7 @@ public abstract class StringNodes {
         public RubySymbol toSym(RubyString string) {
             notDesignedForCompilation();
 
-            return getContext().newSymbol(string.getByteList());
+            return getContext().getSymbol(string.getByteList());
         }
     }
 

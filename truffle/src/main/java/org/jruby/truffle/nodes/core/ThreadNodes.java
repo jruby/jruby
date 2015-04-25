@@ -59,21 +59,6 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "exit", onSingleton = true)
-    public abstract static class ExitModuleNode extends CoreMethodNode {
-
-        public ExitModuleNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyNilClass exit() {
-            getContext().getThreadManager().getCurrentThread().shutdown();
-            return nil();
-        }
-
-    }
-
     @CoreMethod(names = { "kill", "exit", "terminate" })
     public abstract static class KillNode extends CoreMethodNode {
 
@@ -82,14 +67,17 @@ public abstract class ThreadNodes {
         }
 
         @Specialization
-        public RubyThread kill(final RubyThread thread) {
-            getContext().getSafepointManager().pauseThreadAndExecuteLater(thread.getRootFiberJavaThread(), this, new SafepointAction() {
+        public RubyThread kill(final RubyThread rubyThread) {
+            final Thread toKill = rubyThread.getRootFiberJavaThread();
+
+            getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new SafepointAction() {
                 @Override
                 public void run(RubyThread currentThread, Node currentNode) {
                     currentThread.shutdown();
                 }
             });
-            return thread;
+
+            return rubyThread;
         }
 
     }
@@ -231,24 +219,6 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "run")
-    public abstract static class RunNode extends CoreMethodNode {
-
-        public RunNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyThread run(final RubyThread thread) {
-            notDesignedForCompilation();
-
-            thread.interrupt();
-
-            return thread;
-        }
-
-    }
-
     @CoreMethod(names = "status")
     public abstract static class StatusNode extends CoreMethodNode {
 
@@ -308,7 +278,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "wakeup")
+    @CoreMethod(names = { "wakeup", "run" })
     public abstract static class WakeupNode extends CoreMethodNode {
 
         public WakeupNode(RubyContext context, SourceSection sourceSection) {
@@ -319,8 +289,13 @@ public abstract class ThreadNodes {
         public RubyThread wakeup(final RubyThread thread) {
             notDesignedForCompilation();
 
+            if (thread.getStatus() == Status.DEAD) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().threadError("killed thread", this));
+            }
+
             // TODO: should only interrupt sleep
-            thread.interrupt();
+            thread.wakeup();
 
             return thread;
         }

@@ -1,18 +1,2 @@
-fails:IO.for_fd uses the external encoding specified in the mode argument
-fails:IO.for_fd uses the external and the internal encoding specified in the mode argument
-fails:IO.for_fd uses the external encoding specified via the :external_encoding option
-fails:IO.for_fd uses the internal encoding specified via the :internal_encoding option
-fails:IO.for_fd uses the colon-separated encodings specified via the :encoding option
-fails:IO.for_fd ingores the :encoding option when the :external_encoding option is present
-fails:IO.for_fd ingores the :encoding option when the :internal_encoding option is present
-fails:IO.for_fd uses the encoding specified via the :mode option hash
-fails:IO.for_fd ignores the :internal_encoding option when the same as the external encoding
-fails:IO.for_fd sets internal encoding to nil when passed '-'
-fails:IO.for_fd does not use binary encoding when mode encoding is specified
-fails:IO.for_fd does not use binary encoding when :encoding option is specified
-fails:IO.for_fd does not use binary encoding when :external_encoding option is specified
-fails:IO.for_fd does not use binary encoding when :internal_encoding option is specified
-fails:IO.for_fd coerces :external_encoding option with #to_str
-fails:IO.for_fd coerces :internal_encoding option with #to_str
 fails:IO.for_fd raises an Errno::EBADF if the file descriptor is not valid
 fails:IO.for_fd raises an IOError if passed a closed stream

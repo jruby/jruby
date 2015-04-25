@@ -228,17 +228,17 @@ public class RubyContext extends ExecutionContext {
 
 
     @CompilerDirectives.TruffleBoundary
-    public RubySymbol newSymbol(String name) {
+    public RubySymbol getSymbol(String name) {
         return symbolTable.getSymbol(name, ASCIIEncoding.INSTANCE);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public RubySymbol newSymbol(String name, Encoding encoding) {
+    public RubySymbol getSymbol(String name, Encoding encoding) {
         return symbolTable.getSymbol(name, encoding);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public RubySymbol newSymbol(ByteList name) {
+    public RubySymbol getSymbol(ByteList name) {
         return symbolTable.getSymbol(name);
     }
 
@@ -258,15 +258,22 @@ public class RubyContext extends ExecutionContext {
     }
 
     @TruffleBoundary
+    public Object eval(String code, RubyBinding binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
+        return eval(ByteList.create(code), binding, ownScopeForAssignments, filename, currentNode);
+    }
+
+    @TruffleBoundary
     public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
         final Source source = Source.fromText(code, filename);
         return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, binding.getSelf(), binding.getFrame(), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
     }
 
+    @TruffleBoundary
     public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, Node currentNode) {
         return eval(code, binding, ownScopeForAssignments, "(eval)", currentNode);
     }
 
+    @TruffleBoundary
     public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, Node currentNode, NodeWrapper wrapper) {
         return execute(source, defaultEncoding, parserContext, self, parentFrame, true, currentNode, wrapper);
     }

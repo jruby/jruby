@@ -13,8 +13,9 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.runtime.DebugOperations;
+import jnr.constants.platform.Fcntl;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyNilClass;
@@ -42,6 +43,55 @@ public abstract class IOPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "io_connect_pipe", needsSelf = false)
+    public static abstract class IOConnectPipeNode extends RubiniusPrimitiveNode {
+
+        public IOConnectPipeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean connectPipe(VirtualFrame frame, RubyBasicObject lhs, RubyBasicObject rhs) {
+            final int[] fds = new int[2];
+
+            if (posix().pipe(fds) == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+
+            newOpenFd(fds[0]);
+            newOpenFd(fds[1]);
+
+            rubyWithSelf(frame, lhs, "@descriptor = fd", "fd", fds[0]);
+            rubyWithSelf(frame, lhs, "@mode = File::Constants::RDONLY");
+
+            rubyWithSelf(frame, rhs, "@descriptor = fd", "fd", fds[1]);
+            rubyWithSelf(frame, rhs, "@mode = File::Constants::WRONLY");
+
+            return true;
+        }
+
+        private void newOpenFd(int newFd) {
+            final int FD_CLOEXEC = 1;
+
+            if (newFd > 2) {
+                int flags = posix().fcntl(newFd, Fcntl.F_GETFD);
+
+                if (flags == -1) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                }
+
+                flags = posix().fcntlInt(newFd, Fcntl.F_SETFD, flags | FD_CLOEXEC);
+
+                if (flags == -1) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                }
+            }
+        }
+    }
+
     @RubiniusPrimitive(name = "io_open", needsSelf = false)
     public static abstract class IOOpenPrimitiveNode extends RubiniusPrimitiveNode {
 
@@ -51,7 +101,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public int open(RubyString path, int mode, int permission) {
-            return getContext().getPosix().open(path.getByteList(), mode, permission);
+            return posix().open(path.getByteList(), mode, permission);
         }
 
     }
@@ -110,7 +160,7 @@ public abstract class IOPrimitiveNodes {
             while (bytes.length > 0) {
                 getContext().getSafepointManager().poll(this);
 
-                int written = getContext().getPosix().write(fd, bytes, bytes.length);
+                int written = posix().write(fd, bytes, bytes.length);
 
                 if (written == -1) {
                     throw new UnsupportedOperationException();
@@ -137,7 +187,7 @@ public abstract class IOPrimitiveNodes {
         public int close(VirtualFrame frame, RubyBasicObject io) {
             // In Rubinius this does a lot more, but we'll stick with this for now
             final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
-            return getContext().getPosix().close(fd);
+            return posix().close(fd);
         }
 
     }
@@ -152,7 +202,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public int seek(VirtualFrame frame, RubyBasicObject io, int amount, int whence) {
             final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
-            return getContext().getPosix().lseek(fd, amount, whence);
+            return posix().lseek(fd, amount, whence);
         }
 
     }

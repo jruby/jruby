@@ -76,7 +76,7 @@ public abstract class IOBufferPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "iobuffer_unshift")
+    @RubiniusPrimitive(name = "iobuffer_unshift", lowerFixnumParameters = 1)
     public static abstract class IOBufferUnshiftPrimitiveNode extends RubiniusPrimitiveNode {
 
         public IOBufferUnshiftPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -91,7 +91,7 @@ public abstract class IOBufferPrimitiveNodes {
             final int usedSpace = (int) rubyWithSelf(frame, ioBuffer, "@used");
             final int availableSpace = IOBUFFER_SIZE - usedSpace;
 
-            if(stringSize > availableSpace) {
+            if (stringSize > availableSpace) {
                 stringSize = availableSpace;
             }
 
@@ -116,23 +116,23 @@ public abstract class IOBufferPrimitiveNodes {
 
         @Specialization
         public int fill(VirtualFrame frame, RubyBasicObject ioBuffer, RubyBasicObject io) {
-            int fd = (int) rubyWithSelf(frame, io, "@descriptor");
+            final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
 
             // TODO CS 21-Apr-15 allocating this buffer for each read is crazy
-            byte[] readBuffer = new byte[STACK_BUF_SZ];
+            final byte[] readBuffer = new byte[STACK_BUF_SZ];
             int count = STACK_BUF_SZ;
 
-            if(left(frame, ioBuffer) < count) {
+            if (left(frame, ioBuffer) < count) {
                 count = left(frame, ioBuffer);
             }
 
             int bytesRead;
 
             while (true) {
-                bytesRead = getContext().getPosix().read(fd, readBuffer, count);
+                bytesRead = posix().read(fd, readBuffer, count);
 
                 if (bytesRead == -1) {
-                    final int errno = getContext().getPosix().errno();
+                    final int errno = posix().errno();
 
                     if (errno == Errno.ECONNRESET.intValue() || errno == Errno.ETIMEDOUT.intValue()) {
                         // Treat as seeing eof
@@ -153,15 +153,15 @@ public abstract class IOBufferPrimitiveNodes {
                 }
             }
 
-            if(bytesRead > 0) {
+            if (bytesRead > 0) {
                 // Detect if another thread has updated the buffer
                 // and now there isn't enough room for this data.
-                if(bytesRead > left(frame, ioBuffer)) {
+                if (bytesRead > left(frame, ioBuffer)) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().internalError("IO buffer overrun", this));
                 }
-                int used = (int) rubyWithSelf(frame, ioBuffer, "@used");
-                ByteList storage = ((RubiniusByteArray) rubyWithSelf(frame, ioBuffer, "@storage")).getBytes();
+                final int used = (int) rubyWithSelf(frame, ioBuffer, "@used");
+                final ByteList storage = ((RubiniusByteArray) rubyWithSelf(frame, ioBuffer, "@storage")).getBytes();
                 System.arraycopy(readBuffer, 0, storage.getUnsafeBytes(), storage.getBegin() + used, bytesRead);
                 storage.setRealSize(used + bytesRead);
                 rubyWithSelf(frame, ioBuffer, "@used = used", "used", used + bytesRead);

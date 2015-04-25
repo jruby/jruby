@@ -35,7 +35,7 @@ public abstract class ExceptionNodes {
         public RubyNilClass initialize(RubyException exception, UndefinedPlaceholder message) {
             notDesignedForCompilation();
 
-            exception.initialize(getContext().makeString(" "));
+            exception.initialize(getContext().makeString(""));
             return nil();
         }
 
@@ -112,7 +112,11 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public RubyString toS(RubyException exception) {
-            return getContext().makeString(exception.getLogicalClass().getName());
+            if (exception.getMessage().length() == 0) {
+                return getContext().makeString(exception.getLogicalClass().getName());
+            } else {
+                return getContext().makeString(exception.getMessage().getBytes());
+            }
         }
 
     }

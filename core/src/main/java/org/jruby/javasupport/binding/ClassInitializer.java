@@ -30,8 +30,6 @@ public class ClassInitializer extends Initializer {
 
         proxyClass.setReifiedClass(javaClass);
 
-        runtime.getJavaSupport().getUnfinishedProxyClassCache().get(javaClass).set(proxyClass);
-
         if ( javaClass.isArray() || javaClass.isPrimitive() ) {
             return proxy;
         }
