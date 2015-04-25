@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.MaterializedFrame;
@@ -459,10 +460,20 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
     }
 
     protected Object rubyWithSelf(VirtualFrame frame, Object self, String expression, Object... arguments) {
-        notDesignedForCompilation();
-        
+        final MaterializedFrame evalFrame = setupFrame(RubyArguments.getSelf(frame.getArguments()), arguments);
+
+        final RubyBinding binding = new RubyBinding(
+                getContext().getCoreLibrary().getBindingClass(),
+                self,
+                evalFrame);
+
+        return getContext().eval(expression, binding, true, "inline-ruby", this);
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private MaterializedFrame setupFrame(Object self, Object... arguments) {
         final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
-                RubyArguments.pack(null, null, RubyArguments.getSelf(frame.getArguments()), null, new Object[]{}));
+                RubyArguments.pack(null, null,self, null, new Object[]{}));
 
         if (arguments.length % 2 == 1) {
             throw new UnsupportedOperationException("odd number of name-value pairs for arguments");
@@ -472,12 +483,7 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
             evalFrame.setObject(evalFrame.getFrameDescriptor().findOrAddFrameSlot(arguments[n]), arguments[n + 1]);
         }
 
-        final RubyBinding binding = new RubyBinding(
-                getContext().getCoreLibrary().getBindingClass(),
-                self,
-                evalFrame);
-
-        return getContext().eval(ByteList.create(expression), binding, true, "inline-ruby", this);
+        return evalFrame;
     }
 
     protected RubyNilClass nil() {
