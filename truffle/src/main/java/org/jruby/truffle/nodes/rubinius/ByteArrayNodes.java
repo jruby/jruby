@@ -42,7 +42,31 @@ public abstract class ByteArrayNodes {
 
     }
 
-    @CoreMethod(names = "set_byte", required = 2, lowerFixnumParameters = {1, 2})
+    @CoreMethod(names = "prepend", required = 1)
+    public abstract static class PrependNode extends CoreMethodNode {
+
+        public PrependNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PrependNode(PrependNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubiniusByteArray prepend(RubiniusByteArray bytes, RubyString string) {
+            final int prependLength = string.getByteList().getUnsafeBytes().length;
+            final int originalLength = bytes.getBytes().getUnsafeBytes().length;
+            final int newLength = prependLength + originalLength;
+            final byte[] prependedBytes = new byte[newLength];
+            System.arraycopy(string.getByteList().getUnsafeBytes(), 0, prependedBytes, 0, prependLength);
+            System.arraycopy(bytes.getBytes().getUnsafeBytes(), 0, prependedBytes, prependLength, originalLength);
+            return new RubiniusByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(prependedBytes));
+        }
+
+    }
+
+    @CoreMethod(names = "set_byte", required = 2, lowerFixnumParameters = {0, 1})
     public abstract static class SetByteNode extends CoreMethodNode {
 
         public SetByteNode(RubyContext context, SourceSection sourceSection) {
@@ -62,6 +86,24 @@ public abstract class ByteArrayNodes {
 
             bytes.getBytes().set(index, value);
             return bytes.getBytes().get(index);
+        }
+
+    }
+
+    @CoreMethod(names = "size")
+    public abstract static class SizeNode extends CoreMethodNode {
+
+        public SizeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SizeNode(SizeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int size(RubiniusByteArray bytes) {
+            return bytes.getBytes().getRealSize();
         }
 
     }
