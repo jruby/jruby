@@ -40,11 +40,11 @@ public class URLResource extends AbstractFileResource {
     URLResource(String uri, URL url, String[] files) {
         this(uri, url, null, null, files);
     }
-    
+
     URLResource(String uri, ClassLoader cl, String pathname, String[] files) {
         this(uri, null, cl, pathname, files);
     }
-    
+
     private URLResource(String uri, URL url, ClassLoader cl, String pathname, String[] files) {
         this.uri = uri;
         this.list = files;
@@ -53,7 +53,7 @@ public class URLResource extends AbstractFileResource {
         this.pathname = pathname;
         this.fileStat = new JarFileStat(this);
     }
-    
+
     @Override
     public String absolutePath()
     {
@@ -129,7 +129,7 @@ public class URLResource extends AbstractFileResource {
     public FileStat lstat() {
       return stat(); // URLs don't have symbolic links, so lstat == stat
     }
- 
+
     @Override
     public JRubyFile hackyGetJRubyFile() {
         return JRubyNonExistentFile.NOT_EXIST;
@@ -149,20 +149,23 @@ public class URLResource extends AbstractFileResource {
         return Channels.newChannel(inputStream());
     }
 
+    public static FileResource create(ClassLoader cl, String pathname) {
+      try
+      {
+          pathname = new URI(pathname.replaceFirst("^/*", "/")).normalize().getPath().replaceAll("^/([.][.]/)*", "");
+      } catch (URISyntaxException e) {
+          pathname = pathname.replaceAll("^[.]?/*", "");
+      }
+      URL url = cl.getResource(pathname);
+      String[] files = listClassLoaderFiles(cl, pathname);
+      return new URLResource(URI_CLASSLOADER + pathname,
+                             cl,
+                             url == null ? null : pathname,
+                             files);
+    }
+
     public static FileResource createClassloaderURI(Ruby runtime, String pathname) {
-        ClassLoader cl = runtime.getJRubyClassLoader();
-        try
-        {
-            pathname = new URI(pathname.replaceFirst("^/*", "/")).normalize().getPath().replaceAll("^/([.][.]/)*", "");
-        } catch (URISyntaxException e) {
-            pathname = pathname.replaceAll("^[.]?/*", "");
-        }
-        URL url = cl.getResource(pathname);
-        String[] files = listClassLoaderFiles(cl, pathname);
-        return new URLResource(URI_CLASSLOADER + pathname,
-                               cl,
-                               url == null ? null : pathname,
-                               files);
+        return create(runtime.getJRubyClassLoader(), pathname);
     }
 
     public static FileResource create(Ruby runtime, String pathname)
@@ -176,7 +179,7 @@ public class URLResource extends AbstractFileResource {
         }
         return createRegularURI(pathname);
     }
-    
+
     private static FileResource createRegularURI(String pathname) {
         URL url;
         try
@@ -185,7 +188,7 @@ public class URLResource extends AbstractFileResource {
             // and make file:/a protocol to be file:///a so the second replace does not apply
             pathname = pathname.replaceFirst( "file:/([^/])", "file:///$1" );
             pathname = pathname.replaceFirst( ":/([^/])", "://$1" );
-            
+
             url = new URL(pathname);
             // we do not want to deal with those url here like this though they are valid url/uri
             if (url.getProtocol().startsWith("http")){
@@ -311,5 +314,5 @@ public class URLResource extends AbstractFileResource {
             throw new RuntimeException("BUG in " + URLResource.class);
         }
     }
-    
+
 }
