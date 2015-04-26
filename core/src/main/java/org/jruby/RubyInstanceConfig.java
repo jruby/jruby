@@ -342,7 +342,7 @@ public class RubyInstanceConfig {
         }
         if (home.startsWith("jar:") || ( home.startsWith("file:") && home.contains(".jar!/") ) ||
                 home.startsWith("classpath:") || home.startsWith("uri:")) {
-            error.println("Warning: JRuby home with uri like pathes may not have full functionality - use at your own risk");
+            error.println("Warning: JRuby home with uri like paths may not have full functionality - use at your own risk");
         }
         // do not normalize on plain jar like pathes coming from jruby-rack
         else if (!home.contains(".jar!/") && !home.startsWith("uri:")) {
