@@ -68,6 +68,8 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=tool/truffle-findbugs.sh
       jdk: oraclejdk8
+    - env: COMMAND=test/truffle/run.sh
+      jdk: oraclejdk8
   fast_finish: true
 
 
