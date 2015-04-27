@@ -86,6 +86,7 @@ class MSpecScript
     "spec/ruby/library/date",
     "spec/ruby/library/datetime",
     "spec/ruby/library/delegate",
+    "spec/ruby/library/cgi",
     "spec/ruby/library/erb",
     "spec/ruby/library/getoptlong",
     "spec/ruby/library/matrix",
