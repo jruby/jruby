@@ -9,6 +9,7 @@ project 'JRuby Dist' do
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
+              'jruby.plugins.version' => '1.0.9', # Not sure why but wo this pom.xml get 1.0.8
               'main.basedir' => '${project.parent.parent.basedir}' )
 
   # pre-installed gems - not default gems !

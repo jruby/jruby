@@ -12,8 +12,8 @@
   <name>JRuby Dist</name>
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
-    <jruby.plugins.version>1.0.8</jruby.plugins.version>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <jruby.plugins.version>1.0.9</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <tesla.version>0.1.1</tesla.version>
   </properties>
