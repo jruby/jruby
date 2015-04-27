@@ -119,8 +119,8 @@ project 'JRuby Dist' do
             system( "git archive --prefix 'jruby-#{ctx.project.version}/' --format #{format} #{revision} . -o #{basefile}.#{format}" ) || raise( "error creating #{format}-file" )
           end
         end
-        #puts "zipping #{basefile}.tar"
-        #system( "gzip #{basefile}.tar -f" ) || raise( "error zipping #{basefile}.tar" )
+        puts "zipping #{basefile}.tar"
+        system( "gzip #{basefile}.tar -f" ) || raise( "error zipping #{basefile}.tar" )
       end
       plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
         execute_goal( 'attach-artifact',
