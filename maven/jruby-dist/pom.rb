@@ -114,8 +114,7 @@ project 'JRuby Dist' do
         basefile = "#{ctx.project.build.directory}/#{ctx.project.artifactId}-#{ctx.project.version}-src"
         
         FileUtils.cd( File.join( ctx.project.basedir.to_s, '..', '..' ) ) do
-          #[ 'tar', 'zip' ].each do |format|
-          [ 'zip' ].each do |format|
+          [ 'tar', 'zip' ].each do |format|
             puts "create #{basefile}.#{format}"
             system( "git archive --prefix 'jruby-#{ctx.project.version}/' --format #{format} #{revision} . -o #{basefile}.#{format}" ) || raise( "error creating #{format}-file" )
           end
