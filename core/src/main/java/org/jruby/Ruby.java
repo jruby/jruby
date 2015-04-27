@@ -1261,7 +1261,7 @@ public final class Ruby {
         // attempt to enable unlimited-strength crypto on OpenJDK
         try {
             Class jceSecurity = Class.forName("javax.crypto.JceSecurity");
-            Field isRestricted = jceSecurity.getField("isRestricted");
+            Field isRestricted = jceSecurity.getDeclaredField("isRestricted");
             isRestricted.setAccessible(true);
             isRestricted.set(null, false);
             isRestricted.setAccessible(false);
