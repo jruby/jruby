@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.0.0.0-SNAPSHOT</version>
+    <version>9.0.0.0.pre2</version>
   </parent>
   <artifactId>jruby-stdlib</artifactId>
   <name>JRuby Lib Setup</name>
@@ -22,7 +22,7 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-      <version>9.0.0.0-SNAPSHOT</version>
+      <version>9.0.0.0.pre2</version>
       <scope>test</scope>
     </dependency>
     <dependency>

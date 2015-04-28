@@ -151,13 +151,6 @@ class NullDeviceResource extends AbstractFileResource {
             throw new ResourceException.IOError(ioe);
         }
 
-        try {
-            if (flags.isTruncate()) fileChannel.truncate(0);
-        } catch (IOException ioe) {
-            // ignore; it's a pipe or fifo that can't be truncated (we only care about illegal seek).
-            if (!ioe.getMessage().equals("Illegal seek")) throw new ResourceException.IOError(ioe);
-        }
-
         return fileChannel;
     }
 }

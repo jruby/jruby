@@ -255,7 +255,7 @@ project 'JRuby Core' do
                                          'mainClass' => 'org.jruby.Main' } ] )
     execute_goals( 'shade',
                    :id => 'shade the asm classes',
-                   :phase => 'verify',
+                   :phase => 'package',
                    'artifactSet' => {
                      'includes' => [ 'com.github.jnr:jnr-ffi',
                                      'org.ow2.asm:*' ]

@@ -1304,14 +1304,19 @@ public abstract class ModuleNodes {
 
                 if (arg instanceof RubySymbol) {
                     methodName = arg.toString();
+                } else if (arg instanceof RubyString) {
+                    methodName = ((RubyString) arg).toString();
                 } else {
-                    throw new UnsupportedOperationException();
+                    // TODO BF 26-APR-2015 the message could be improved to match MRI
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().typeError(" is not a symbol", this));
                 }
 
                 final InternalMethod method = ModuleOperations.lookupMethod(moduleSingleton, methodName);
 
                 if (method == null) {
-                    throw new RuntimeException("Couldn't find method " + arg.toString());
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(methodName, module, this));
                 }
 
                 moduleSingleton.addMethod(this, method.withVisibility(Visibility.PRIVATE));
@@ -1702,6 +1707,7 @@ public abstract class ModuleNodes {
                     name = ((RubyString) arg).toString();
                 } else {
                     // TODO BF 9-APR-2015 the MRI message calls inspect for error message i think
+                    CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().typeError(" is not a symbol", this));
                 }
                 module.removeMethod(this, name);

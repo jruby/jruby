@@ -86,6 +86,7 @@ class MSpecScript
     "spec/ruby/library/date",
     "spec/ruby/library/datetime",
     "spec/ruby/library/delegate",
+    "spec/ruby/library/cgi",
     "spec/ruby/library/erb",
     "spec/ruby/library/getoptlong",
     "spec/ruby/library/matrix",
@@ -108,7 +109,6 @@ class MSpecScript
 
     # Not yet explored
     "^spec/ruby/library/bigdecimal",
-    "^spec/ruby/library/cgi",
     "^spec/ruby/library/continuation",
     "^spec/ruby/library/csv",
     "^spec/ruby/library/digest",

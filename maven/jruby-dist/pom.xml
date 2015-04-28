@@ -5,15 +5,15 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
-    <version>9.0.0.0-SNAPSHOT</version>
+    <version>9.0.0.0.pre2</version>
   </parent>
   <artifactId>jruby-dist</artifactId>
   <packaging>pom</packaging>
   <name>JRuby Dist</name>
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
-    <jruby.plugins.version>1.0.8</jruby.plugins.version>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <jruby.plugins.version>1.0.9</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <tesla.version>0.1.1</tesla.version>
   </properties>

@@ -11,6 +11,8 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
@@ -44,6 +46,11 @@ public class InteroplatedRegexpNode extends RubyNode {
         for (int n = 0; n < children.length; n++) {
             final Object child = children[n].execute(frame);
             strings[n] = org.jruby.RubyString.newString(getContext().getRuntime(), ((RubyString) toS.call(frame, child, "to_s", null)).getBytes());
+        }
+
+        // TODO 27-APR=2015 BJF Adding workaround to temporarily fix CGI error until Regex overhaul https://github.com/jruby/jruby/issues/2802
+        if (!options.isEncodingNone() && strings.length > 0 && strings[0].getEncoding() == ASCIIEncoding.INSTANCE && strings[0].getByteList().getRealSize() == 0) {
+            strings[0].setEncoding(USASCIIEncoding.INSTANCE);
         }
 
         final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getRuntime(), strings, options);

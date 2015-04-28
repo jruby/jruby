@@ -40,6 +40,8 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
 import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.URLResource;
+import org.jruby.util.FileResource;
 import org.jruby.util.cli.ArgumentProcessor;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
@@ -342,7 +344,7 @@ public class RubyInstanceConfig {
         }
         if (home.startsWith("jar:") || ( home.startsWith("file:") && home.contains(".jar!/") ) ||
                 home.startsWith("classpath:") || home.startsWith("uri:")) {
-            error.println("Warning: JRuby home with uri like pathes may not have full functionality - use at your own risk");
+            error.println("Warning: JRuby home with uri like paths may not have full functionality - use at your own risk");
         }
         // do not normalize on plain jar like pathes coming from jruby-rack
         else if (!home.contains(".jar!/") && !home.startsWith("uri:")) {
@@ -391,6 +393,9 @@ public class RubyInstanceConfig {
                     stream = new URL("jar:" + script).openStream();
                 } else if (script.startsWith("classpath:")) {
                     stream = getScriptSourceFromJar(script);
+                } else if (script.startsWith("uri:classloader:")) {
+                    FileResource urlResource = URLResource.create(loader, script);
+                    stream = urlResource.inputStream();
                 } else {
                     File file = JRubyFile.create(getCurrentDirectory(), getScriptFileName());
                     if (isXFlag()) {
@@ -1405,7 +1410,7 @@ public class RubyInstanceConfig {
     public void setProfilingService( String service )  {
         this.profilingService = service;
     }
-    
+
     private static ClassLoader setupLoader() {
         ClassLoader loader = RubyInstanceConfig.class.getClassLoader();
 

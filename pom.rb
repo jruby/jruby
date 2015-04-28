@@ -73,7 +73,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'base.java.version' => '1.7',
               'tesla.dump.readonly' => 'true',
               'rspec-mocks.version' => '2.14.1',
-              'jruby.plugins.version' => '1.0.7',
+              'jruby.plugins.version' => '1.0.9',
               'invoker.skip' => 'true',
               'json.version' => '1.8.0',
               'version.jruby' => '${project.version}',

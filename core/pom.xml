@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.0.0.0-SNAPSHOT</version>
+    <version>9.0.0.0.pre2</version>
   </parent>
   <artifactId>jruby-core</artifactId>
   <name>JRuby Core</name>
@@ -548,7 +548,7 @@
           </execution>
           <execution>
             <id>shade the asm classes</id>
-            <phase>verify</phase>
+            <phase>package</phase>
             <goals>
               <goal>shade</goal>
             </goals>

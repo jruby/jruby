@@ -9,6 +9,7 @@ project 'JRuby Dist' do
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
+              'jruby.plugins.version' => '1.0.9', # Not sure why but wo this pom.xml get 1.0.8
               'main.basedir' => '${project.parent.parent.basedir}' )
 
   # pre-installed gems - not default gems !
@@ -113,14 +114,13 @@ project 'JRuby Dist' do
         basefile = "#{ctx.project.build.directory}/#{ctx.project.artifactId}-#{ctx.project.version}-src"
         
         FileUtils.cd( File.join( ctx.project.basedir.to_s, '..', '..' ) ) do
-          #[ 'tar', 'zip' ].each do |format|
-          [ 'zip' ].each do |format|
+          [ 'tar', 'zip' ].each do |format|
             puts "create #{basefile}.#{format}"
             system( "git archive --prefix 'jruby-#{ctx.project.version}/' --format #{format} #{revision} . -o #{basefile}.#{format}" ) || raise( "error creating #{format}-file" )
           end
         end
-        #puts "zipping #{basefile}.tar"
-        #system( "gzip #{basefile}.tar -f" ) || raise( "error zipping #{basefile}.tar" )
+        puts "zipping #{basefile}.tar"
+        system( "gzip #{basefile}.tar -f" ) || raise( "error zipping #{basefile}.tar" )
       end
       plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
         execute_goal( 'attach-artifact',

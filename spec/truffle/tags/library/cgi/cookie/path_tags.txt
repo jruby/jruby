@@ -1,0 +1,1 @@
+fails:CGI::Cookie#path returns self's path

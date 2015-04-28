@@ -603,7 +603,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_index")
+    @RubiniusPrimitive(name = "string_index", lowerFixnumParameters = 1)
     public static abstract class StringIndexPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -977,7 +977,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_rindex")
+    @RubiniusPrimitive(name = "string_rindex", lowerFixnumParameters = 1)
     public static abstract class StringRindexPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringRindexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -1258,7 +1258,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_from_bytearray", needsSelf = false, lowerFixnumParameters = {0, 1})
+    @RubiniusPrimitive(name = "string_from_bytearray", needsSelf = false, lowerFixnumParameters = {1, 2})
     public static abstract class StringFromByteArrayPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringFromByteArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {

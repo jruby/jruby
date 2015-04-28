@@ -24,7 +24,7 @@ import org.jruby.util.ByteList;
 @CoreClass(name = "Rubinius::ByteArray")
 public abstract class ByteArrayNodes {
 
-    @CoreMethod(names = "get_byte", required = 1)
+    @CoreMethod(names = "get_byte", required = 1, lowerFixnumParameters = 0)
     public abstract static class GetByteNode extends CoreMethodNode {
 
         public GetByteNode(RubyContext context, SourceSection sourceSection) {
@@ -92,7 +92,7 @@ public abstract class ByteArrayNodes {
 
     }
 
-    @CoreMethod(names = "locate", required = 3)
+    @CoreMethod(names = "locate", required = 3, lowerFixnumParameters = {1, 2})
     public abstract static class LocateNode extends CoreMethodNode {
 
         public LocateNode(RubyContext context, SourceSection sourceSection) {

@@ -9,7 +9,7 @@
   </parent>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-parent</artifactId>
-  <version>9.0.0.0-SNAPSHOT</version>
+  <version>9.0.0.0.pre2</version>
   <packaging>pom</packaging>
   <name>JRuby</name>
   <description>JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter in Java.</description>
@@ -133,7 +133,7 @@
     <base.java.version>1.7</base.java.version>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <rspec-mocks.version>2.14.1</rspec-mocks.version>
-    <jruby.plugins.version>1.0.7</jruby.plugins.version>
+    <jruby.plugins.version>1.0.9</jruby.plugins.version>
     <json.version>1.8.0</json.version>
     <invoker.skip>true</invoker.skip>
     <power_assert.version>0.2.3</power_assert.version>
