@@ -46,13 +46,13 @@ fileutils/test_verbose.rb
 io/console/test_io_console.rb
 # io/nonblock/test_flush.rb
 # io/wait/test_io_wait.rb
-# json/test_json.rb
-# json/test_json_addition.rb
-# json/test_json_encoding.rb
-# json/test_json_fixtures.rb
-# json/test_json_generate.rb
-# json/test_json_generic_object.rb
-# json/test_json_string_matching.rb
+json/test_json.rb
+# json/test_json_addition.rb #  cannot load such file -- bigdecimal
+json/test_json_encoding.rb
+json/test_json_fixtures.rb
+json/test_json_generate.rb
+json/test_json_generic_object.rb
+json/test_json_string_matching.rb
 # json/test_json_unicode.rb
 # logger/test_logger.rb # library not added, needs file
 matrix/test_matrix.rb

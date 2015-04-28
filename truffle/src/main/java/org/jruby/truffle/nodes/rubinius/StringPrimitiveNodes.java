@@ -1054,7 +1054,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_rindex")
+    @RubiniusPrimitive(name = "string_rindex", lowerFixnumParameters = 1)
     public static abstract class StringRindexPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringRindexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
