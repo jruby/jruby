@@ -4135,7 +4135,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 ioOptions = newIOOptions(runtime, args[firstArg + 1].convertToString().toString());
             }
 
-            ShellLauncher.POpenProcess process = ShellLauncher.popen(runtime, new IRubyObject[]{cmdObj}, (RubyHash)envHash, ioOptions.getModeFlags());
+            ShellLauncher.POpenProcess process = ShellLauncher.popen(runtime, cmdObj, (RubyHash)envHash, ioOptions.getModeFlags());
 
             // Yes, this is gross. java.lang.Process does not appear to be guaranteed
             // "ready" when we get it back from Runtime#exec, so we try to give it a
@@ -4240,7 +4240,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 if ((arg0 = TypeConverter.checkStringType(runtime, args[firstArg])).isNil()) {
                     throw runtime.newTypeError(args[firstArg], runtime.getString());
                 }
-                _cmdPlusArgs = new IRubyObject[]{arg0};
+                _cmdPlusArgs = null;
+                _cmd = arg0;
             } else {
                 RubyArray arg0Ary = (RubyArray) arg0;
                 if (arg0Ary.isEmpty()) throw runtime.newArgumentError("wrong number of arguments");
@@ -4254,15 +4255,17 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     _env = arg0Ary.eltOk(arg0Ary.size() - 1);
                 }
                 _cmdPlusArgs = arg0Ary.toJavaArray();
+                _cmd = _cmdPlusArgs[0];
             }
 
             if (Platform.IS_WINDOWS) {
-                String commandString = _cmdPlusArgs[0].convertToString().toString().replace('/', '\\');
-                _cmdPlusArgs[0] = runtime.newString(commandString);
+                String commandString = _cmd.convertToString().toString().replace('/', '\\');
+                _cmd = runtime.newString(commandString);
+                if (_cmdPlusArgs != null) _cmdPlusArgs[0] = _cmd;
             } else {
-                _cmdPlusArgs[0] = _cmdPlusArgs[0].convertToString();
+                _cmd = _cmd.convertToString();
+                if (_cmdPlusArgs != null) _cmdPlusArgs[0] = _cmd;
             }
-            _cmd = _cmdPlusArgs[0];
 
             this.cmd = (RubyString)_cmd;
             this.cmdPlusArgs = _cmdPlusArgs;
