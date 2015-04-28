@@ -185,7 +185,7 @@ ruby/test_gc.rb
 ruby/test_ifunless.rb
 ruby/test_integer.rb
 ruby/test_integer_comb.rb
-# ruby/test_io.rb
+# ruby/test_io.rb # cannot load such file -- io/nonblock
 ruby/test_io_m17n.rb
 ruby/test_iterator.rb
 ruby/test_lambda.rb
@@ -238,7 +238,7 @@ ruby/test_variable.rb
 ruby/test_whileuntil.rb
 ruby/test_yield.rb
 scanf/test_scanf.rb
-# scanf/test_scanfblocks.rb
+scanf/test_scanfblocks.rb
 # socket/test_basicsocket.rb
 # socket/test_nonblock.rb
 # socket/test_socket.rb

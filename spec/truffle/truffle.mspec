@@ -109,7 +109,6 @@ class MSpecScript
 
     # Not yet explored
     "^spec/ruby/library/bigdecimal",
-    "^spec/ruby/library/cgi",
     "^spec/ruby/library/continuation",
     "^spec/ruby/library/csv",
     "^spec/ruby/library/digest",
