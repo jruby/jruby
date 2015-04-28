@@ -8,7 +8,7 @@ OpenSSL.debug = true
     # to find the pem certificates
     base = $LOAD_PATH.detect { |p| p =~ /ruby\/shared/ }
     pems = Dir[ File.join(base, 'rubygems/ssl_certs/*pem') ]
-    assert_equal( 7, pems.size )
+    assert_equal( 9, pems.size )
     pems.each do |pem|
       store = OpenSSL::X509::Store.new
       cert = OpenSSL::X509::Certificate.new(File.read(pem))
