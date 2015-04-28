@@ -30,18 +30,12 @@ module Utilities
   end
 
   def self.find_graal
-    base_graal_path = if graal_version.include?('SNAPSHOT')
-      'basic-graal/jdk1.8.0_05/product'
-    else
-      'graalvm-jdk1.8.0'
-    end
-
     graal_locations = [
-      ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"],
       ENV['GRAAL_BIN'],
-      "#{base_graal_path}/bin/java",
-      "../#{base_graal_path}/bin/java",
-      "../../#{base_graal_path}/bin/java",
+      ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"],
+      "graalvm-jdk1.8.0/bin/java",
+      "../graalvm-jdk1.8.0/bin/java",
+      "../../graalvm-jdk1.8.0/bin/java",
     ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
     not_found = -> {
