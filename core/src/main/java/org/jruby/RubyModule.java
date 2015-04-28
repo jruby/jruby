@@ -3892,6 +3892,17 @@ public class RubyModule extends RubyObject {
         setFlag(USER0_F, cacheProxy);
     }
 
+    @Override
+    public Object toJava(Class target) {
+        if (target == Class.class) { // try java_class for proxy modules
+            if ( respondsTo("java_class") ) {
+                return callMethod("java_class").toJava(target);
+            }
+        }
+
+        return super.toJava(target);
+    }
+
     /**
      * Visit all interpreted methods in this module (and superclasses, if this
      * is a class with superclasses) using the given visitor.
