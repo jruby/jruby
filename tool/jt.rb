@@ -140,42 +140,43 @@ module Commands
   include ShellUtils
 
   def help
-    puts 'jt build                                     build'
-    puts 'jt build truffle                             build only the Truffle part, assumes the rest is up-to-date'
-    puts 'jt clean                                     clean'
-    puts 'jt irb                                       irb'
-    puts 'jt rebuild                                   clean and build'
-    puts 'jt run [options] args...                     run JRuby with -X+T and args'
+    puts 'jt build                                       build'
+    puts 'jt build truffle                               build only the Truffle part, assumes the rest is up-to-date'
+    puts 'jt clean                                       clean'
+    puts 'jt irb                                         irb'
+    puts 'jt rebuild                                     clean and build'
+    puts 'jt run [options] args...                       run JRuby with -X+T and args'
     puts '    --graal        use Graal (set GRAAL_BIN or it will try to automagically find it)'
     puts '    --asm          show assembly (implies --graal)'
     puts '    --server       run an instrumentation server on port 8080'
     puts '    --igv          make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
-    puts 'jt test mri                                  run mri tests'
-    puts 'jt test                                      run all specs'
-    puts 'jt test fast                                 run all specs except sub-processes, GC, sleep, ...'
-    puts 'jt test spec/ruby/language                   run specs in this directory'
-    puts 'jt test spec/ruby/language/while_spec.rb     run specs in this file'
-    puts 'jt test pe                                   run partial evaluation tests'
-    puts 'jt tag spec/ruby/language                    tag failing specs in this directory'
-    puts 'jt tag spec/ruby/language/while_spec.rb      tag failing specs in this file'
-    puts 'jt tag all spec/ruby/language                tag all specs in this file, without running them'
-    puts 'jt untag spec/ruby/language                  untag passing specs in this directory'
-    puts 'jt untag spec/ruby/language/while_spec.rb    untag passing specs in this file'
-    puts 'jt bench debug benchmark                     run a single benchmark with options for compiler debugging'
-    puts 'jt bench reference [benchmarks]              run a set of benchmarks and record a reference point'
-    puts 'jt bench compare [benchmarks]                run a set of benchmarks and compare against a reference point'
+    puts 'jt test                                        run all mri tests and specs'
+    puts 'jt test mri                                    run mri tests'
+    puts 'jt test specs                                  run all specs'
+    puts 'jt test specs fast                             run all specs except sub-processes, GC, sleep, ...'
+    puts 'jt test spec/ruby/language                     run specs in this directory'
+    puts 'jt test spec/ruby/language/while_spec.rb       run specs in this file'
+    puts 'jt test pe                                     run partial evaluation tests'
+    puts 'jt tag spec/ruby/language                      tag failing specs in this directory'
+    puts 'jt tag spec/ruby/language/while_spec.rb        tag failing specs in this file'
+    puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
+    puts 'jt untag spec/ruby/language                    untag passing specs in this directory'
+    puts 'jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file'
+    puts 'jt bench debug benchmark                       run a single benchmark with options for compiler debugging'
+    puts 'jt bench reference [benchmarks]                run a set of benchmarks and record a reference point'
+    puts 'jt bench compare [benchmarks]                  run a set of benchmarks and compare against a reference point'
     puts '    benchmarks can be any benchmarks of group of benchmarks supported'
     puts '    by bench9000, eg all, classic, chunky, 3, 5, 10, 15 - default is 5'
-    puts 'jt findbugs                                  run findbugs'
-    puts 'jt findbugs report                           run findbugs and generate an HTML report'
-    puts 'jt install ..../graal/mx/suite.py            install a JRuby distribution into an mx suite'
+    puts 'jt findbugs                                    run findbugs'
+    puts 'jt findbugs report                             run findbugs and generate an HTML report'
+    puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
     puts
     puts 'you can also put build or rebuild in front of any command'
     puts
     puts 'recognised environment variables:'
     puts
-    puts '  GRAAL_BIN                                  GraalVM executable (java command) to use'
-    puts '  GRAAL_BIN_...git_branch_name...            GraalVM executable to use for a given branch'
+    puts '  GRAAL_BIN                                    GraalVM executable (java command) to use'
+    puts '  GRAAL_BIN_...git_branch_name...              GraalVM executable to use for a given branch'
     puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
   end
 
@@ -254,12 +255,33 @@ module Commands
     args.unshift(*command)
     raw_sh(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args)
   end
+  private :test_mri
 
   def test(*args)
     return test_pe(*args.drop(1)) if args.first == 'pe'
 
     return test_mri(*args.drop(1)) if args.first == 'mri'
 
+    return test_specs(*args.drop(1)) if args.first == 'specs'
+
+    if args.size > 0
+      if args.first.start_with?('spec')
+        return test_specs(*args)
+      else
+        return test_mri(*args)
+      end
+    end
+
+    test_specs(*args)
+    test_mri(*args)
+  end
+
+  def test_pe(*args)
+    run('--graal', *args, 'test/truffle/pe/pe.rb')
+  end
+  private :test_pe
+
+  def test_specs(*args)
     options = %w[--excl-tag fails]
     if args.first == 'fast'
       args.shift
@@ -267,11 +289,7 @@ module Commands
     end
     mspec 'run', *options, *args
   end
-
-  def test_pe(*args)
-    run('--graal', *args, 'test/truffle/pe/pe.rb')
-  end
-  private :test_pe
+  private :test_specs
 
   def tag(path, *args)
     return tag_all(*args) if path == 'all'
