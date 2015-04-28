@@ -9,7 +9,7 @@ require 'rbconfig'
 require 'thread'
 
 module Gem
-  VERSION = '2.4.5'
+  VERSION = '2.4.6'
 end
 
 # Must be first since it unloads the prelude from 1.9.2
@@ -598,7 +598,7 @@ module Gem
 
     unless test_syck
       begin
-        gem 'psych', '~> 1.2', '>= 1.2.1'
+        gem 'psych', '>= 1.2.1'
       rescue Gem::LoadError
         # It's OK if the user does not have the psych gem installed.  We will
         # attempt to require the stdlib version
