@@ -20,8 +20,7 @@ if Gem::GEM_PRELUDE_SUCKAGE and defined?(Gem::QuickLoader) then
 
   $LOADED_FEATURES.delete Gem::QuickLoader.path_to_full_rubygems_library
 
-  if $LOADED_FEATURES.any? do |path| path.end_with? '/rubygems.rb' end then
-    # TODO path does not exist here
+  if path = $LOADED_FEATURES.find {|n| n.end_with? '/rubygems.rb'} then
     raise LoadError, "another rubygems is already loaded from #{path}"
   end
 
@@ -33,7 +32,12 @@ end
 module Gem
   RubyGemsVersion = VERSION
 
+  # TODO remove at RubyGems 3
+
   RbConfigPriorities = %w[
+    MAJOR
+    MINOR
+    TEENY
     EXEEXT RUBY_SO_NAME arch bindir datadir libdir ruby_install_name
     ruby_version rubylibprefix sitedir sitelibdir vendordir vendorlibdir
     rubylibdir
@@ -42,7 +46,7 @@ module Gem
   unless defined?(ConfigMap)
     ##
     # Configuration settings from ::RbConfig
-    ConfigMap = Hash.new do |cm, key|
+    ConfigMap = Hash.new do |cm, key| # TODO remove at RubyGems 3
       cm[key] = RbConfig::CONFIG[key.to_s]
     end
   else

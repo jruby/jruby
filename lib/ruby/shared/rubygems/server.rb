@@ -445,7 +445,7 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
     @spec_dirs = @gem_dirs.map { |gem_dir| File.join gem_dir, 'specifications' }
     @spec_dirs.reject! { |spec_dir| !File.directory? spec_dir }
 
-    Gem::Specification.dirs = @gem_dirs
+    reset_gems
 
     @have_rdoc_4_plus = nil
   end
@@ -470,7 +470,7 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
   end
 
   def latest_specs(req, res)
-    Gem::Specification.reset
+    reset_gems
 
     res['content-type'] = 'application/x-gzip'
 
@@ -530,14 +530,44 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
     end
   end
 
+  def prerelease_specs req, res
+    reset_gems
+
+    res['content-type'] = 'application/x-gzip'
+
+    add_date res
+
+    specs = Gem::Specification.select do |spec|
+      spec.version.prerelease?
+    end.sort.map do |spec|
+      platform = spec.original_platform || Gem::Platform::RUBY
+      [spec.name, spec.version, platform]
+    end
+
+    specs = Marshal.dump specs
+
+    if req.path =~ /\.gz$/ then
+      specs = Gem.gzip specs
+      res['content-type'] = 'application/x-gzip'
+    else
+      res['content-type'] = 'application/octet-stream'
+    end
+
+    if req.request_method == 'HEAD' then
+      res['content-length'] = specs.length
+    else
+      res.body << specs
+    end
+  end
+
   def quick(req, res)
-    Gem::Specification.reset
+    reset_gems
 
     res['content-type'] = 'text/plain'
     add_date res
 
     case req.request_uri.path
-    when %r|^/quick/(Marshal.#{Regexp.escape Gem.marshal_version}/)?(.*?)-([0-9.]+)(-.*?)?\.gemspec\.rz$| then
+    when %r|^/quick/(Marshal.#{Regexp.escape Gem.marshal_version}/)?(.*?)-([0-9.]+[^-]*?)(-.*?)?\.gemspec\.rz$| then
       marshal_format, name, version, platform = $1, $2, $3, $4
       specs = Gem::Specification.find_all_by_name name, version
 
@@ -567,7 +597,8 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
   end
 
   def root(req, res)
-    Gem::Specification.reset
+    reset_gems
+
     add_date res
 
     raise WEBrick::HTTPStatus::NotFound, "`#{req.path}' not found." unless
@@ -698,6 +729,13 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
   end
 
   ##
+  # Updates the server to use the latest installed gems.
+
+  def reset_gems # :nodoc:
+    Gem::Specification.dirs = @gem_dirs
+  end
+
+  ##
   # Returns true and prepares http response, if rdoc for the requested gem
   # name pattern was found.
   #
@@ -749,6 +787,11 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
     @server.mount_proc "/latest_specs.#{Gem.marshal_version}.gz",
                        method(:latest_specs)
 
+    @server.mount_proc "/prerelease_specs.#{Gem.marshal_version}",
+                       method(:prerelease_specs)
+    @server.mount_proc "/prerelease_specs.#{Gem.marshal_version}.gz",
+                       method(:prerelease_specs)
+
     @server.mount_proc "/quick/", method(:quick)
 
     @server.mount_proc("/gem-server-rdoc-style.css") do |req, res|
@@ -787,7 +830,7 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
   end
 
   def specs(req, res)
-    Gem::Specification.reset
+    reset_gems
 
     add_date res
 

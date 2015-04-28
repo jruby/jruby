@@ -2,7 +2,7 @@
 
 begin
   gem 'minitest', '~> 4.0'
-rescue NoMethodError
+rescue NoMethodError, Gem::LoadError
   # for ruby tests
 end
 
@@ -24,17 +24,19 @@ unless Gem::Dependency.new('rdoc', '>= 3.10').matching_specs.empty?
   gem 'json'
 end
 
-require 'rubygems/deprecate'
 require 'minitest/autorun'
+
+require 'rubygems/deprecate'
+
 require 'fileutils'
+require 'pathname'
+require 'pp'
+require 'rubygems/package'
+require 'shellwords'
 require 'tmpdir'
 require 'uri'
-require 'rubygems/package'
-require 'rubygems/test_utilities'
-require 'pp'
 require 'zlib'
-require 'pathname'
-require 'shellwords'
+
 Gem.load_yaml
 
 require 'rubygems/mock_gem_ui'
@@ -84,6 +86,12 @@ end
 
 class Gem::TestCase < MiniTest::Unit::TestCase
 
+  attr_accessor :fetcher # :nodoc:
+
+  attr_accessor :gem_repo # :nodoc:
+
+  attr_accessor :uri # :nodoc:
+
   def assert_activate expected, *specs
     specs.each do |spec|
       case spec
@@ -105,6 +113,23 @@ class Gem::TestCase < MiniTest::Unit::TestCase
   def assert_path_exists path, msg = nil
     msg = message(msg) { "Expected path '#{path}' to exist" }
     assert File.exist?(path), msg
+  end
+
+  ##
+  # Sets the ENABLE_SHARED entry in RbConfig::CONFIG to +value+ and restores
+  # the original value when the block ends
+
+  def enable_shared value
+    enable_shared = RbConfig::CONFIG['ENABLE_SHARED']
+    RbConfig::CONFIG['ENABLE_SHARED'] = value
+
+    yield
+  ensure
+    if enable_shared then
+      RbConfig::CONFIG['enable_shared'] = enable_shared
+    else
+      RbConfig::CONFIG.delete 'enable_shared'
+    end
   end
 
   # TODO: move to minitest
@@ -193,11 +218,15 @@ class Gem::TestCase < MiniTest::Unit::TestCase
   def setup
     super
 
-    @orig_gem_home = ENV['GEM_HOME']
-    @orig_gem_path = ENV['GEM_PATH']
+    @orig_gem_home   = ENV['GEM_HOME']
+    @orig_gem_path   = ENV['GEM_PATH']
+    @orig_gem_vendor = ENV['GEM_VENDOR']
+
+    ENV['GEM_VENDOR'] = nil
 
     @current_dir = Dir.pwd
-    @ui = Gem::MockGemUi.new
+    @fetcher     = nil
+    @ui          = Gem::MockGemUi.new
 
     tmpdir = File.expand_path Dir.tmpdir
     tmpdir.untaint
@@ -231,6 +260,8 @@ class Gem::TestCase < MiniTest::Unit::TestCase
                    ruby
                  end
 
+    @git = ENV['GIT'] || 'git'
+
     Gem.ensure_gem_subdirectories @gemhome
 
     @orig_LOAD_PATH = $LOAD_PATH.dup
@@ -241,6 +272,8 @@ class Gem::TestCase < MiniTest::Unit::TestCase
     @orig_ENV_HOME = ENV['HOME']
     ENV['HOME'] = @userhome
     Gem.instance_variable_set :@user_home, nil
+    Gem.send :remove_instance_variable, :@ruby_version if
+      Gem.instance_variables.include? :@ruby_version
 
     FileUtils.mkdir_p @gemhome
     FileUtils.mkdir_p @userhome
@@ -281,10 +314,10 @@ class Gem::TestCase < MiniTest::Unit::TestCase
 
     Gem.searcher = nil
     Gem::SpecFetcher.fetcher = nil
-    @orig_BASERUBY = Gem::ConfigMap[:BASERUBY]
-    Gem::ConfigMap[:BASERUBY] = Gem::ConfigMap[:ruby_install_name]
+    @orig_BASERUBY = RbConfig::CONFIG['BASERUBY']
+    RbConfig::CONFIG['BASERUBY'] = RbConfig::CONFIG['ruby_install_name']
 
-    @orig_arch = Gem::ConfigMap[:arch]
+    @orig_arch = RbConfig::CONFIG['arch']
 
     if win_platform?
       util_set_arch 'i386-mswin32'
@@ -302,8 +335,12 @@ class Gem::TestCase < MiniTest::Unit::TestCase
   def teardown
     $LOAD_PATH.replace @orig_LOAD_PATH if @orig_LOAD_PATH
 
-    Gem::ConfigMap[:BASERUBY] = @orig_BASERUBY
-    Gem::ConfigMap[:arch] = @orig_arch
+    if @orig_BASERUBY
+      RbConfig::CONFIG['BASERUBY'] = @orig_BASERUBY
+    else
+      RbConfig::CONFIG.delete('BASERUBY')
+    end
+    RbConfig::CONFIG['arch'] = @orig_arch
 
     if defined? Gem::RemoteFetcher then
       Gem::RemoteFetcher.fetcher = nil
@@ -313,8 +350,9 @@ class Gem::TestCase < MiniTest::Unit::TestCase
 
     FileUtils.rm_rf @tempdir unless ENV['KEEP_FILES']
 
-    ENV['GEM_HOME'] = @orig_gem_home
-    ENV['GEM_PATH'] = @orig_gem_path
+    ENV['GEM_HOME']   = @orig_gem_home
+    ENV['GEM_PATH']   = @orig_gem_path
+    ENV['GEM_VENDOR'] = @orig_gem_vendor
 
     Gem.ruby = @orig_ruby if @orig_ruby
 
@@ -369,6 +407,64 @@ class Gem::TestCase < MiniTest::Unit::TestCase
   end
 
   ##
+  # A git_gem is used with a gem dependencies file.  The gem created here
+  # has no files, just a gem specification for the given +name+ and +version+.
+  #
+  # Yields the +specification+ to the block, if given
+
+  def git_gem name = 'a', version = 1
+    have_git?
+
+    directory = File.join 'git', name
+    directory = File.expand_path directory
+
+    git_spec = Gem::Specification.new name, version do |specification|
+      yield specification if block_given?
+    end
+
+    FileUtils.mkdir_p directory
+
+    gemspec = "#{name}.gemspec"
+
+    open File.join(directory, gemspec), 'w' do |io|
+      io.write git_spec.to_ruby
+    end
+
+    head = nil
+
+    Dir.chdir directory do
+      unless File.exist? '.git' then
+        system @git, 'init', '--quiet'
+        system @git, 'config', 'user.name',  'RubyGems Tests'
+        system @git, 'config', 'user.email', 'rubygems@example'
+      end
+
+      system @git, 'add', gemspec
+      system @git, 'commit', '-a', '-m', 'a non-empty commit message', '--quiet'
+      head = Gem::Util.popen('git', 'rev-parse', 'master').strip
+    end
+
+    return name, git_spec.version, directory, head
+  end
+
+  ##
+  # Skips this test unless you have a git executable
+
+  def have_git?
+    return if in_path? @git
+
+    skip 'cannot find git executable, use GIT environment variable to set'
+  end
+
+  def in_path? executable # :nodoc:
+    return true if %r%\A([A-Z]:|/)% =~ executable and File.exist? executable
+
+    ENV['PATH'].split(File::PATH_SEPARATOR).any? do |directory|
+      File.exist? File.join directory, executable
+    end
+  end
+
+  ##
   # Builds and installs the Gem::Specification +spec+
 
   def install_gem spec, options = {}
@@ -376,7 +472,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
 
     gem = File.join @tempdir, "gems", "#{spec.full_name}.gem"
 
-    unless File.exists? gem
+    unless File.exist? gem then
       use_ui Gem::MockGemUi.new do
         Dir.chdir @tempdir do
           Gem::Package.build spec
@@ -501,28 +597,11 @@ class Gem::TestCase < MiniTest::Unit::TestCase
     return spec
   end
 
-  def quick_spec name, version = '2'
-    # TODO: deprecate
-    require 'rubygems/specification'
+  ##
+  # TODO:  remove in RubyGems 3.0
 
-    spec = Gem::Specification.new do |s|
-      s.platform    = Gem::Platform::RUBY
-      s.name        = name
-      s.version     = version
-      s.author      = 'A User'
-      s.email       = 'example@example.com'
-      s.homepage    = 'http://example.com'
-      s.summary     = "this is a summary"
-      s.description = "This is a test description"
-
-      yield(s) if block_given?
-    end
-
-    spec.loaded_from = spec.spec_file
-
-    Gem::Specification.add_spec spec
-
-    return spec
+  def quick_spec name, version = '2' # :nodoc:
+    util_spec name, version
   end
 
   ##
@@ -559,7 +638,9 @@ class Gem::TestCase < MiniTest::Unit::TestCase
 
   def util_clear_gems
     FileUtils.rm_rf File.join(@gemhome, "gems") # TODO: use Gem::Dirs
+    FileUtils.mkdir File.join(@gemhome, "gems")
     FileUtils.rm_rf File.join(@gemhome, "specifications")
+    FileUtils.mkdir File.join(@gemhome, "specifications")
     Gem::Specification.reset
   end
 
@@ -610,10 +691,11 @@ class Gem::TestCase < MiniTest::Unit::TestCase
   end
 
   ##
-  # Create a new spec (or gem if passed an array of files) and set it
-  # up properly. Use this instead of util_spec and util_gem.
+  # new_spec is deprecated as it is never used.
+  #
+  # TODO:  remove in RubyGems 3.0
 
-  def new_spec name, version, deps = nil, *files
+  def new_spec name, version, deps = nil, *files # :nodoc:
     require 'rubygems/specification'
 
     spec = Gem::Specification.new do |s|
@@ -654,7 +736,8 @@ class Gem::TestCase < MiniTest::Unit::TestCase
   end
 
   def new_default_spec(name, version, deps = nil, *files)
-    spec = new_spec(name, version, deps)
+    spec = util_spec name, version, deps
+
     spec.loaded_from = File.join(@default_spec_dir, spec.spec_name)
     spec.files = files
 
@@ -672,24 +755,38 @@ class Gem::TestCase < MiniTest::Unit::TestCase
   end
 
   ##
-  # Creates a spec with +name+, +version+ and +deps+.
+  # Creates a spec with +name+, +version+.  +deps+ can specify the dependency
+  # or a +block+ can be given for full customization of the specification.
 
-  def util_spec(name, version, deps = nil, &block)
-    # TODO: deprecate
-    raise "deps or block, not both" if deps and block
+  def util_spec name, version = 2, deps = nil # :yields: specification
+    raise "deps or block, not both" if deps and block_given?
+
+    spec = Gem::Specification.new do |s|
+      s.platform    = Gem::Platform::RUBY
+      s.name        = name
+      s.version     = version
+      s.author      = 'A User'
+      s.email       = 'example@example.com'
+      s.homepage    = 'http://example.com'
+      s.summary     = "this is a summary"
+      s.description = "This is a test description"
+
+      yield s if block_given?
+    end
 
     if deps then
-      block = proc do |s|
-        # Since Hash#each is unordered in 1.8, sort
-        # the keys and iterate that way so the tests are
-        # deteriminstic on all implementations.
-        deps.keys.sort.each do |n|
-          s.add_dependency n, (deps[n] || '>= 0')
-        end
+      # Since Hash#each is unordered in 1.8, sort the keys and iterate that
+      # way so the tests are deterministic on all implementations.
+      deps.keys.sort.each do |n|
+        spec.add_dependency n, (deps[n] || '>= 0')
       end
     end
 
-    quick_spec(name, version, &block)
+    spec.loaded_from = spec.spec_file
+
+    Gem::Specification.add_spec spec
+
+    return spec
   end
 
   ##
@@ -826,7 +923,7 @@ Also, a list:
   # Set the platform to +arch+
 
   def util_set_arch(arch)
-    Gem::ConfigMap[:arch] = arch
+    RbConfig::CONFIG['arch'] = arch
     platform = Gem::Platform.new arch
 
     Gem.instance_variable_set :@platforms, nil
@@ -898,14 +995,35 @@ Also, a list:
       spec_fetcher.prerelease_specs[@uri] << spec.name_tuple
     end
 
-    v = Gem.marshal_version
+    # HACK for test_download_to_cache
+    unless Gem::RemoteFetcher === @fetcher then
+      v = Gem.marshal_version
 
-    Gem::Specification.each do |spec|
-      path = "#{@gem_repo}quick/Marshal.#{v}/#{spec.original_name}.gemspec.rz"
-      data = Marshal.dump spec
-      data_deflate = Zlib::Deflate.deflate data
-      @fetcher.data[path] = data_deflate
-    end unless Gem::RemoteFetcher === @fetcher # HACK for test_download_to_cache
+      specs = all.map { |spec| spec.name_tuple }
+      s_zip = util_gzip Marshal.dump Gem::NameTuple.to_basic specs
+
+      latest_specs = Gem::Specification.latest_specs.map do |spec|
+        spec.name_tuple
+      end
+
+      l_zip = util_gzip Marshal.dump Gem::NameTuple.to_basic latest_specs
+
+      prerelease_specs = prerelease.map { |spec| spec.name_tuple }
+      p_zip = util_gzip Marshal.dump Gem::NameTuple.to_basic prerelease_specs
+
+      @fetcher.data["#{@gem_repo}specs.#{v}.gz"]            = s_zip
+      @fetcher.data["#{@gem_repo}latest_specs.#{v}.gz"]     = l_zip
+      @fetcher.data["#{@gem_repo}prerelease_specs.#{v}.gz"] = p_zip
+
+      v = Gem.marshal_version
+
+      Gem::Specification.each do |spec|
+        path = "#{@gem_repo}quick/Marshal.#{v}/#{spec.original_name}.gemspec.rz"
+        data = Marshal.dump spec
+        data_deflate = Zlib::Deflate.deflate data
+        @fetcher.data[path] = data_deflate
+      end
+    end
 
     nil # force errors
   end
@@ -915,6 +1033,37 @@ Also, a list:
 
   def util_zip(data)
     Zlib::Deflate.deflate data
+  end
+
+  def util_set_RUBY_VERSION(version, patchlevel = nil, revision = nil)
+    if Gem.instance_variables.include? :@ruby_version or
+       Gem.instance_variables.include? '@ruby_version' then
+      Gem.send :remove_instance_variable, :@ruby_version
+    end
+
+    @RUBY_VERSION    = RUBY_VERSION
+    @RUBY_PATCHLEVEL = RUBY_PATCHLEVEL if defined?(RUBY_PATCHLEVEL)
+    @RUBY_REVISION   = RUBY_REVISION   if defined?(RUBY_REVISION)
+
+    Object.send :remove_const, :RUBY_VERSION
+    Object.send :remove_const, :RUBY_PATCHLEVEL if defined?(RUBY_PATCHLEVEL)
+    Object.send :remove_const, :RUBY_REVISION   if defined?(RUBY_REVISION)
+
+    Object.const_set :RUBY_VERSION,    version
+    Object.const_set :RUBY_PATCHLEVEL, patchlevel if patchlevel
+    Object.const_set :RUBY_REVISION,   revision   if revision
+  end
+
+  def util_restore_RUBY_VERSION
+    Object.send :remove_const, :RUBY_VERSION
+    Object.send :remove_const, :RUBY_PATCHLEVEL if defined?(RUBY_PATCHLEVEL)
+    Object.send :remove_const, :RUBY_REVISION   if defined?(RUBY_REVISION)
+
+    Object.const_set :RUBY_VERSION,    @RUBY_VERSION
+    Object.const_set :RUBY_PATCHLEVEL, @RUBY_PATCHLEVEL if
+      defined?(@RUBY_PATCHLEVEL)
+    Object.const_set :RUBY_REVISION,   @RUBY_REVISION   if
+      defined?(@RUBY_REVISION)
   end
 
   ##
@@ -1056,21 +1205,23 @@ Also, a list:
   end
 
   ##
-  # Constructs a Gem::DependencyResolver::DependencyRequest from a
+  # Constructs a Gem::Resolver::DependencyRequest from a
   # Gem::Dependency +dep+, a +from_name+ and +from_version+ requesting the
   # dependency and a +parent+ DependencyRequest
 
   def dependency_request dep, from_name, from_version, parent = nil
     remote = Gem::Source.new @uri
 
-    parent ||= Gem::DependencyResolver::DependencyRequest.new \
-      dep, nil
+    unless parent then
+      parent_dep = dep from_name, from_version
+      parent = Gem::Resolver::DependencyRequest.new parent_dep, nil
+    end
 
-    spec = Gem::DependencyResolver::IndexSpecification.new \
+    spec = Gem::Resolver::IndexSpecification.new \
       nil, from_name, from_version, remote, Gem::Platform::RUBY
-    activation = Gem::DependencyResolver::ActivationRequest.new spec, parent
+    activation = Gem::Resolver::ActivationRequest.new spec, parent
 
-    Gem::DependencyResolver::DependencyRequest.new dep, activation
+    Gem::Resolver::DependencyRequest.new dep, activation
   end
 
   ##
@@ -1089,20 +1240,91 @@ Also, a list:
   end
 
   ##
+  # Creates a SpecFetcher pre-filled with the gems or specs defined in the
+  # block.
+  #
+  # Yields a +fetcher+ object that responds to +spec+ and +gem+.  +spec+ adds
+  # a specification to the SpecFetcher while +gem+ adds both a specification
+  # and the gem data to the RemoteFetcher so the built gem can be downloaded.
+  #
+  # If only the a-3 gem is supposed to be downloaded you can save setup
+  # time by creating only specs for the other versions:
+  #
+  #   spec_fetcher do |fetcher|
+  #     fetcher.spec 'a', 1
+  #     fetcher.spec 'a', 2, 'b' => 3 # dependency on b = 3
+  #     fetcher.gem 'a', 3 do |spec|
+  #       # spec is a Gem::Specification
+  #       # ...
+  #     end
+  #   end
+
+  def spec_fetcher repository = @gem_repo
+    Gem::TestCase::SpecFetcherSetup.declare self, repository do |spec_fetcher_setup|
+      yield spec_fetcher_setup if block_given?
+    end
+  end
+
+  ##
   # Construct a new Gem::Version.
 
   def v string
     Gem::Version.create string
   end
 
-  class StaticSet
-    def initialize(specs)
-      @specs = specs
+  ##
+  # A vendor_gem is used with a gem dependencies file.  The gem created here
+  # has no files, just a gem specification for the given +name+ and +version+.
+  #
+  # Yields the +specification+ to the block, if given
+
+  def vendor_gem name = 'a', version = 1
+    directory = File.join 'vendor', name
+
+    vendor_spec = Gem::Specification.new name, version do |specification|
+      yield specification if block_given?
     end
+
+    FileUtils.mkdir_p directory
+
+    open File.join(directory, "#{name}.gemspec"), 'w' do |io|
+      io.write vendor_spec.to_ruby
+    end
+
+    return name, vendor_spec.version, directory
+  end
+
+  ##
+  # The StaticSet is a static set of gem specifications used for testing only.
+  # It is available by requiring Gem::TestCase.
+
+  class StaticSet < Gem::Resolver::Set
+
+    ##
+    # A StaticSet ignores remote because it has a fixed set of gems.
+
+    attr_accessor :remote
+
+    ##
+    # Creates a new StaticSet for the given +specs+
+
+    def initialize(specs)
+      super()
+
+      @specs = specs
+
+      @remote = true
+    end
+
+    ##
+    # Adds +spec+ to this set.
 
     def add spec
       @specs << spec
     end
+
+    ##
+    # Finds +dep+ in this set.
 
     def find_spec(dep)
       @specs.reverse_each do |s|
@@ -1110,9 +1332,16 @@ Also, a list:
       end
     end
 
+    ##
+    # Finds all gems matching +dep+ in this set.
+
     def find_all(dep)
-      @specs.find_all { |s| dep.matches_spec? s }
+      @specs.find_all { |s| dep.match? s, @prerelease }
     end
+
+    ##
+    # Loads a Gem::Specification from this set which has the given +name+,
+    # version +ver+, +platform+.  The +source+ is ignored.
 
     def load_spec name, ver, platform, source
       dep = Gem::Dependency.new name, ver
@@ -1123,7 +1352,7 @@ Also, a list:
       end
     end
 
-    def prefetch(reqs)
+    def prefetch reqs # :nodoc:
     end
   end
 
@@ -1196,3 +1425,23 @@ Also, a list:
   end if defined?(OpenSSL::SSL)
 
 end
+
+# require dependencies that are not discoverable once GEM_HOME and GEM_PATH
+# are wiped
+begin
+  gem 'rake'
+rescue Gem::LoadError
+end
+
+require 'rake/packagetask'
+
+begin
+  gem 'rdoc'
+  require 'rdoc'
+rescue LoadError, Gem::LoadError
+end
+
+require 'rubygems/test_utilities'
+ENV['GEM_HOME'] = Dir.mktmpdir "home"
+ENV['GEM_PATH'] = Dir.mktmpdir "path"
+Gem.clear_paths

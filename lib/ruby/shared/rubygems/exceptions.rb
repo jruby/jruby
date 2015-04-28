@@ -23,11 +23,11 @@ class Gem::DependencyError < Gem::Exception; end
 class Gem::DependencyRemovalException < Gem::Exception; end
 
 ##
-# Raised by Gem::DependencyResolver when a Gem::DependencyConflict reaches the
+# Raised by Gem::Resolver when a Gem::Dependency::Conflict reaches the
 # toplevel.  Indicates which dependencies were incompatible through #conflict
 # and #conflicting_dependencies
 
-class Gem::DependencyResolutionError < Gem::Exception
+class Gem::DependencyResolutionError < Gem::DependencyError
 
   attr_reader :conflict
 
@@ -35,7 +35,7 @@ class Gem::DependencyResolutionError < Gem::Exception
     @conflict = conflict
     a, b = conflicting_dependencies
 
-    super "unable to resolve conflicting dependencies '#{a}' and '#{b}'"
+    super "conflicting dependencies #{a} and #{b}\n#{@conflict.explanation}"
   end
 
   def conflicting_dependencies
@@ -81,7 +81,16 @@ end
 
 class Gem::GemNotFoundException < Gem::Exception; end
 
+##
+# Raised by the DependencyInstaller when a specific gem cannot be found
+
 class Gem::SpecificGemNotFoundException < Gem::GemNotFoundException
+
+  ##
+  # Creates a new SpecificGemNotFoundException for a gem with the given +name+
+  # and +version+.  Any +errors+ encountered when attempting to find the gem
+  # are also stored.
+
   def initialize(name, version, errors=nil)
     super "Could not find a valid gem '#{name}' (#{version}) locally or in a repository"
 
@@ -90,11 +99,25 @@ class Gem::SpecificGemNotFoundException < Gem::GemNotFoundException
     @errors = errors
   end
 
-  attr_reader :name, :version, :errors
+  ##
+  # The name of the gem that could not be found.
+
+  attr_reader :name
+
+  ##
+  # The version of the gem that could not be found.
+
+  attr_reader :version
+
+  ##
+  # Errors encountered attempting to find the gem.
+
+  attr_reader :errors
+
 end
 
 ##
-# Raised by Gem::DependencyResolver when dependencies conflict and create the
+# Raised by Gem::Resolver when dependencies conflict and create the
 # inability to find a valid possible spec for a request.
 
 class Gem::ImpossibleDependenciesError < Gem::Exception
@@ -154,6 +177,15 @@ class Gem::RemoteInstallationSkipped < Gem::Exception; end
 # Represents an error communicating via HTTP.
 class Gem::RemoteSourceException < Gem::Exception; end
 
+##
+# Raised when a gem dependencies file specifies a ruby version that does not
+# match the current version.
+
+class Gem::RubyVersionMismatch < Gem::Exception; end
+
+##
+# Raised by Gem::Validator when something is not right in a gem.
+
 class Gem::VerificationError < Gem::Exception; end
 
 ##
@@ -161,7 +193,14 @@ class Gem::VerificationError < Gem::Exception; end
 # exit_code
 
 class Gem::SystemExitException < SystemExit
+
+  ##
+  # The exit code for the process
+
   attr_accessor :exit_code
+
+  ##
+  # Creates a new SystemExitException with the given +exit_code+
 
   def initialize(exit_code)
     @exit_code = exit_code
@@ -172,19 +211,54 @@ class Gem::SystemExitException < SystemExit
 end
 
 ##
-# Raised by DependencyResolver when a dependency requests a gem for which
+# Raised by Resolver when a dependency requests a gem for which
 # there is no spec.
 
-class Gem::UnsatisfiableDependencyError < Gem::Exception
+class Gem::UnsatisfiableDependencyError < Gem::DependencyError
+
+  ##
+  # The unsatisfiable dependency.  This is a
+  # Gem::Resolver::DependencyRequest, not a Gem::Dependency
 
   attr_reader :dependency
 
-  def initialize dep
-    requester = dep.requester ? dep.requester.request : '(unknown)'
+  ##
+  # Errors encountered which may have contributed to this exception
 
-    super "Unable to resolve dependency: #{requester} requires #{dep}"
+  attr_accessor :errors
+
+  ##
+  # Creates a new UnsatisfiableDependencyError for the unsatisfiable
+  # Gem::Resolver::DependencyRequest +dep+
+
+  def initialize dep, platform_mismatch=nil
+    if platform_mismatch and !platform_mismatch.empty?
+      plats = platform_mismatch.map { |x| x.platform.to_s }.sort.uniq
+      super "Unable to resolve dependency: No match for '#{dep}' on this platform. Found: #{plats.join(', ')}"
+    else
+      if dep.explicit?
+        super "Unable to resolve dependency: user requested '#{dep}'"
+      else
+        super "Unable to resolve dependency: '#{dep.request_context}' requires '#{dep}'"
+      end
+    end
 
     @dependency = dep
+    @errors     = []
+  end
+
+  ##
+  # The name of the unresolved dependency
+
+  def name
+    @dependency.name
+  end
+
+  ##
+  # The Requirement of the unresolved dependency (not Version).
+
+  def version
+    @dependency.requirement
   end
 
 end

@@ -1,3 +1,9 @@
+##
+# RubyGems adds the #gem method to allow activation of specific gem versions
+# and overrides the #require method on Kernel to make gems appear as if they
+# live on the <code>$LOAD_PATH</code>.  See the documentation of these methods
+# for further detail.
+
 module Kernel
 
   # REFACTOR: This should be pulled out into some kind of hacks file.
@@ -19,6 +25,11 @@ module Kernel
   #
   # Kernel#gem should be called *before* any require statements (otherwise
   # RubyGems may load a conflicting library version).
+  #
+  # Kernel#gem only loads prerelease versions when prerelease +requirements+
+  # are given:
+  #
+  #   gem 'rake', '>= 1.1.a', '< 2'
   #
   # In older RubyGems versions, the environment variable GEM_SKIP could be
   # used to skip activation of specified gems, for example to test out changes
@@ -44,8 +55,17 @@ module Kernel
       gem_name = gem_name.name
     end
 
-    spec = Gem::Dependency.new(gem_name, *requirements).to_spec
-    spec.activate if spec
+    dep = Gem::Dependency.new(gem_name, *requirements)
+
+    loaded = Gem.loaded_specs[gem_name]
+
+    return false if loaded && dep.matches_spec?(loaded)
+
+    spec = dep.to_spec
+
+    Gem::LOADED_SPECS_MUTEX.synchronize {
+      spec.activate
+    } if spec
   end
 
   private :gem

@@ -8,7 +8,7 @@ rescue Gem::LoadError
   # swallow
 else
   # This will force any deps that 'rdoc' might have
-  # (such as json) that are ambigious to be activated, which
+  # (such as json) that are ambiguous to be activated, which
   # is important because we end up using Specification.reset
   # and we don't want the warning it pops out.
   Gem.finish_resolve
@@ -193,7 +193,7 @@ class Gem::RDoc # :nodoc: all
     ::RDoc::Parser::C.reset
 
     args = @spec.rdoc_options
-    args.concat @spec.require_paths
+    args.concat @spec.source_paths
     args.concat @spec.extra_rdoc_files
 
     case config_args = Gem.configuration[:rdoc]
@@ -263,7 +263,7 @@ class Gem::RDoc # :nodoc: all
       Gem::Requirement.new('>= 2.4.0') =~ self.class.rdoc_version
 
     r = new_rdoc
-    say "rdoc #{args.join ' '}" if Gem.configuration.really_verbose
+    verbose { "rdoc #{args.join ' '}" }
 
     Dir.chdir @spec.full_gem_path do
       begin
@@ -279,7 +279,6 @@ class Gem::RDoc # :nodoc: all
         ui.errs.puts "... RDOC args: #{args.join(' ')}"
         ui.backtrace ex
         ui.errs.puts "(continuing with the rest of the installation)"
-      ensure
       end
     end
   end
