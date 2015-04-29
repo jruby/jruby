@@ -34,6 +34,32 @@ describe "A Java object's java_send method" do
     str.to_s.should == '1234567890 str1 str2 str'
   end
 
+  it "works with package-level classes" do
+    array = Java::int[16].new
+    array[1] = 10; array[2] = 20
+
+    buffer = java.nio.IntBuffer.wrap array # returns a Java::JavaNio::HeapIntBuffer
+    buffer.java_send(:get, [ Java::int ], 1).should == 10
+    buffer.java_send(:get).should == 0
+    buffer.java_send(:get).should == 10
+    buffer.java_send(:get, []).should == 20
+  end
+
+  it "works with private classes" do
+    array = Java::int[16].new
+    array[1] = 10; array[2] = 20
+
+    map = java.util.HashMap.new
+    key_type = java.lang.String.java_class
+    val_type = java.lang.Number.java_class
+
+    map = java.util.Collections.checkedMap(map, key_type, val_type) # returns a private CheckedMap instance
+    map.java_send(:clear)
+    map.java_send(:put, [ Java::JavaLang::Object, Java::JavaLang::Object ], '1', 1.to_java)
+    map.java_send(:get, [ Java::JavaLang::Object ], '').should == nil
+    map.java_send(:get, [ Java::JavaLang::Object ], '1').should == 1
+  end
+
   it "raises NameError if the method can't be found" do
     lambda do
       @list.java_send :foobar
