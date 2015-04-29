@@ -45,7 +45,7 @@ public abstract class ProcOrNullNode extends RubyNode {
         final Object proc = execute(frame);
 
         // The standard asRubyProc test doesn't allow for null
-        assert proc == null || RubyTypesGen.RUBYTYPES.isRubyProc(proc);
+        assert proc == null || RubyTypesGen.isRubyProc(proc);
 
         return (RubyProc) proc;
     }

@@ -91,138 +91,138 @@ public abstract class RubyNode extends Node {
     }
 
     public String executeString(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectString(execute(frame));
+        return RubyTypesGen.expectString(execute(frame));
     }
 
     public RubyArray executeArray(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyArray(execute(frame));
+        return RubyTypesGen.expectRubyArray(execute(frame));
     }
 
     public RubyBignum executeBignum(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyBignum(execute(frame));
+        return RubyTypesGen.expectRubyBignum(execute(frame));
     }
 
     public boolean executeBoolean(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectBoolean(execute(frame));
+        return RubyTypesGen.expectBoolean(execute(frame));
     }
 
     public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectInteger(execute(frame));
+        return RubyTypesGen.expectInteger(execute(frame));
     }
 
     public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectLong(execute(frame));
+        return RubyTypesGen.expectLong(execute(frame));
     }
 
     public RubyRange.IntegerFixnumRange executeIntegerFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectIntegerFixnumRange(execute(frame));
+        return RubyTypesGen.expectIntegerFixnumRange(execute(frame));
     }
 
     public RubyRange.LongFixnumRange executeLongFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectLongFixnumRange(execute(frame));
+        return RubyTypesGen.expectLongFixnumRange(execute(frame));
     }
 
     public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectDouble(execute(frame));
+        return RubyTypesGen.expectDouble(execute(frame));
     }
 
     public Object[] executeObjectArray(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectObjectArray(execute(frame));
+        return RubyTypesGen.expectObjectArray(execute(frame));
     }
 
     public RubyRange.ObjectRange executeObjectRange(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectObjectRange(execute(frame));
+        return RubyTypesGen.expectObjectRange(execute(frame));
     }
 
     public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyBasicObject(execute(frame));
+        return RubyTypesGen.expectRubyBasicObject(execute(frame));
     }
 
     public RubyBinding executeRubyBinding(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyBinding(execute(frame));
+        return RubyTypesGen.expectRubyBinding(execute(frame));
     }
 
     public RubyClass executeRubyClass(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyClass(execute(frame));
+        return RubyTypesGen.expectRubyClass(execute(frame));
     }
 
     public RubyException executeRubyException(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyException(execute(frame));
+        return RubyTypesGen.expectRubyException(execute(frame));
     }
 
     public RubyFiber executeRubyFiber(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyFiber(execute(frame));
+        return RubyTypesGen.expectRubyFiber(execute(frame));
     }
 
     public RubyHash executeRubyHash(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyHash(execute(frame));
+        return RubyTypesGen.expectRubyHash(execute(frame));
     }
 
     public RubyMatchData executeRubyMatchData(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyMatchData(execute(frame));
+        return RubyTypesGen.expectRubyMatchData(execute(frame));
     }
 
     public RubyModule executeRubyModule(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyModule(execute(frame));
+        return RubyTypesGen.expectRubyModule(execute(frame));
     }
 
     public RubyNilClass executeRubyNilClass(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyNilClass(execute(frame));
+        return RubyTypesGen.expectRubyNilClass(execute(frame));
     }
 
     public RubyProc executeRubyProc(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyProc(execute(frame));
+        return RubyTypesGen.expectRubyProc(execute(frame));
     }
 
     public RubyRange executeRubyRange(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyRange(execute(frame));
+        return RubyTypesGen.expectRubyRange(execute(frame));
     }
 
     public RubyRegexp executeRubyRegexp(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyRegexp(execute(frame));
+        return RubyTypesGen.expectRubyRegexp(execute(frame));
     }
 
     public RubySymbol executeRubySymbol(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubySymbol(execute(frame));
+        return RubyTypesGen.expectRubySymbol(execute(frame));
     }
 
     public RubyThread executeRubyThread(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyThread(execute(frame));
+        return RubyTypesGen.expectRubyThread(execute(frame));
     }
 
     public RubyTime executeRubyTime(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyTime(execute(frame));
+        return RubyTypesGen.expectRubyTime(execute(frame));
     }
 
     public RubyString executeRubyString(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyString(execute(frame));
+        return RubyTypesGen.expectRubyString(execute(frame));
     }
     public RubyEncoding executeRubyEncoding(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyEncoding(execute(frame));
+        return RubyTypesGen.expectRubyEncoding(execute(frame));
     }
 
     public UndefinedPlaceholder executeUndefinedPlaceholder(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectUndefinedPlaceholder(execute(frame));
+        return RubyTypesGen.expectUndefinedPlaceholder(execute(frame));
     }
 
     public TruffleObject executeTruffleObject(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectTruffleObject(execute(frame));
+        return RubyTypesGen.expectTruffleObject(execute(frame));
     }
 
     public RubyEncodingConverter executeRubyEncodingConverter(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyEncodingConverter(execute(frame));
+        return RubyTypesGen.expectRubyEncodingConverter(execute(frame));
     }
 
     public RubyMethod executeRubyMethod(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyMethod(execute(frame));
+        return RubyTypesGen.expectRubyMethod(execute(frame));
     }
 
     public RubyUnboundMethod executeRubyUnboundMethod(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyUnboundMethod(execute(frame));
+        return RubyTypesGen.expectRubyUnboundMethod(execute(frame));
     }
 
     public RubiniusByteArray executeRubiniusByteArray(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubiniusByteArray(execute(frame));
+        return RubyTypesGen.expectRubiniusByteArray(execute(frame));
     }
 
     public void executeVoid(VirtualFrame frame) {
