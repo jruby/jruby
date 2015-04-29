@@ -17,7 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.util.ByteList;
-import org.jruby.util.Pack;
+import org.jruby.util.PackUtils;
 
 /**
  * Read a string that contains MIME encoded data and write as actual binary
@@ -49,7 +49,7 @@ public abstract class WriteMIMEStringNode extends PackNode {
     private ByteList encode(ByteList bytes) {
         // TODO CS 30-Mar-15 should write our own optimizable version of MIME
         final ByteList output = new ByteList();
-        Pack.qpencode(output, bytes, length);
+        PackUtils.qpencode(output, bytes, length);
         return output;
     }
 

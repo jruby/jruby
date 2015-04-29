@@ -76,7 +76,6 @@ public class Pack {
     private static final String PACK_IGNORE_NULL_CODES = "cCiIlLnNqQsSvV";
     private static final String PACK_IGNORE_NULL_CODES_WITH_MODIFIERS = "lLsS";
     private static final String sTooFew = "too few arguments";
-    private static final byte[] hex_table;
     private static final byte[] uu_table;
     private static final byte[] b64_table;
     private static final byte[] sHexDigits;
@@ -103,7 +102,6 @@ public class Pack {
     }    
 
     static {
-        hex_table = ByteList.plain("0123456789ABCDEF");
         uu_table =
             ByteList.plain("`!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_");
         b64_table =
@@ -548,61 +546,6 @@ public class Pack {
             io2Append.append(lPadding);
         }
         if (tailLf) {
-            io2Append.append('\n');
-        }
-        return io2Append;
-    }
-
-    /**
-     * encodes a String with the Quoted printable, MIME encoding (see RFC2045).
-     * appends the result of the encoding in a StringBuffer
-     * @param io2Append The StringBuffer which should receive the result
-     * @param i2Encode The String to encode
-     * @param iLength The max number of characters to encode
-     * @return the io2Append buffer
-     **/
-    public static ByteList qpencode(ByteList io2Append, ByteList i2Encode, int iLength) {
-        io2Append.ensure(1024);
-        int lCurLineLength = 0;
-        int lPrevChar = -1;
-        byte[] l2Encode = i2Encode.getUnsafeBytes();
-        try {
-            int end = i2Encode.getBegin() + i2Encode.getRealSize();
-            for (int i = i2Encode.getBegin(); i < end; i++) {
-                int lCurChar = l2Encode[i] & 0xff;
-                if (lCurChar > 126 || (lCurChar < 32 && lCurChar != '\n' && lCurChar != '\t') || lCurChar == '=') {
-                    io2Append.append('=');
-                    io2Append.append(hex_table[lCurChar >>> 4]);
-                    io2Append.append(hex_table[lCurChar & 0x0f]);
-                    lCurLineLength += 3;
-                    lPrevChar = -1;
-                } else if (lCurChar == '\n') {
-                    if (lPrevChar == ' ' || lPrevChar == '\t') {
-                        io2Append.append('=');
-                        io2Append.append(lCurChar);
-                    }
-                    io2Append.append(lCurChar);
-                    lCurLineLength = 0;
-                    lPrevChar = lCurChar;
-                } else {
-                    io2Append.append(lCurChar);
-                    lCurLineLength++;
-                    lPrevChar = lCurChar;
-                }
-                if (lCurLineLength > iLength) {
-                    io2Append.append('=');
-                    io2Append.append('\n');
-                    lCurLineLength = 0;
-                    lPrevChar = '\n';
-                }
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            //normal exit, this should be faster than a test at each iterations for string with more than
-            //about 40 char
-        }
-
-        if (lCurLineLength > 0) {
-            io2Append.append('=');
             io2Append.append('\n');
         }
         return io2Append;
@@ -2027,7 +1970,7 @@ public class Pack {
                            occurrences = 72;
                        }
 
-                       qpencode(result, lCurElemString, occurrences);
+                       PackUtils.qpencode(result, lCurElemString, occurrences);
                     }
                     break;
                 case 'U' :
