@@ -72,6 +72,8 @@ matrix:
     - env: COMMAND=test/truffle/run.sh
       jdk: oraclejdk8
   fast_finish: true
+  allow_failures:
+    - env: COMMAND=test/truffle/run.sh
 
 
 branches:
