@@ -346,6 +346,7 @@ public abstract class BignumNodes {
 
         public EqualNode(EqualNode prev) {
             super(prev);
+            booleanCastNode = prev.booleanCastNode;
             reverseCallNode = prev.reverseCallNode;
         }
 
