@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.0.0.0.pre2</version>
+    <version>9.0.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-tests</artifactId>
   <name>JRuby Integration Tests</name>
@@ -145,8 +145,7 @@
               <gemHome>${gem.home}</gemHome>
               <binDirectory>${jruby.home}/bin</binDirectory>
               <includeRubygemsInTestResources>false</includeRubygemsInTestResources>
-              <libDirectory>${jruby.home}/lib</libDirectory>
-              <jrubyJvmArgs>-Djruby.home=${jruby.home}</jrubyJvmArgs>
+              <jrubyVersion>1.7.12</jrubyVersion>
             </configuration>
           </execution>
         </executions>
@@ -225,14 +224,6 @@
   <profiles>
     <profile>
       <id>bootstrap</id>
-      <dependencies>
-        <dependency>
-          <groupId>rubygems</groupId>
-          <artifactId>jruby-launcher</artifactId>
-          <version>${jruby-launcher.version}</version>
-          <type>gem</type>
-        </dependency>
-      </dependencies>
     </profile>
     <profile>
       <id>rake</id>
@@ -1043,7 +1034,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="ruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="ruby">
                       <arg value="tool/jt.rb" />
                       <arg value="test" />
                       <arg value="mri" />

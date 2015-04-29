@@ -2985,18 +2985,25 @@ public class RubyModule extends RubyObject {
         String symbol = fullName;
         boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
 
+        int sep = symbol.indexOf("::");
         // symbol form does not allow ::
-        if (args[0] instanceof RubySymbol && symbol.indexOf("::") != -1) {
+        if (args[0] instanceof RubySymbol && sep != -1) {
             throw runtime.newNameError("wrong constant name", symbol);
         }
 
         RubyModule mod = this;
 
-        if (symbol.startsWith("::")) mod = runtime.getObject();
+        if (sep == 0) { // ::Foo::Bar
+            mod = runtime.getObject();
+            symbol = symbol.substring(2);
+        }
 
-        int sep;
+        // Bare ::
+        if (symbol.length() == 0) throw context.runtime.newNameError("wrong constant name ::", fullName);
+
         while((sep = symbol.indexOf("::")) != -1) {
             String segment = symbol.substring(0, sep);
+            if (segment.length() == 0) throw context.runtime.newNameError("wrong constant name " + fullName, symbol);
             symbol = symbol.substring(sep + 2);
             IRubyObject obj = mod.getConstantNoConstMissing(validateConstant(segment, args[0]), inherit, inherit);
             if(obj instanceof RubyModule) {
@@ -3039,6 +3046,9 @@ public class RubyModule extends RubyObject {
             mod = runtime.getObject();
             symbol = symbol.substring(2);
         }
+
+        // Bare ::
+        if (symbol.length() == 0) throw context.runtime.newNameError("wrong constant name ::", fullName);
 
         while ((sep = symbol.indexOf("::")) != -1) {
             String segment = symbol.substring(0, sep);
@@ -3107,15 +3117,16 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "const_missing", required = 1)
     public IRubyObject const_missing(ThreadContext context, IRubyObject rubyName, Block block) {
         Ruby runtime = context.runtime;
-        String name;
+        String shortName = rubyName.asJavaString();
+        String longName;
 
         if (this != runtime.getObject()) {
-            name = getName() + "::" + rubyName.asJavaString();
+            longName = getName() + "::" + shortName;
         } else {
-            name = rubyName.asJavaString();
+            longName = shortName;
         }
 
-        throw runtime.newNameErrorObject("uninitialized constant " + name, runtime.newSymbol(name));
+        throw runtime.newNameErrorObject("uninitialized constant " + longName, runtime.newSymbol(shortName));
     }
 
     public RubyArray constants(ThreadContext context) {
