@@ -1009,7 +1009,6 @@
                     <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-J-server" />
                       <arg value="-X+T" />
-                      <arg value="-Xtruffle.debug.enable_assert_constant=true" />
                       <arg value="test/truffle/pe/pe.rb" />
                     </exec>
                   </target>

@@ -31,11 +31,6 @@ public abstract class ArrayReadDenormalizedNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ArrayReadDenormalizedNode(ArrayReadDenormalizedNode prev) {
-        super(prev);
-        readNode = prev.readNode;
-    }
-
     public abstract Object executeRead(VirtualFrame frame, RubyArray array, int index);
 
     @Specialization

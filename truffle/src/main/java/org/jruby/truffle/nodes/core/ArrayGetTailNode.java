@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -23,7 +23,7 @@ import org.jruby.truffle.runtime.util.ArrayUtils;
 import java.util.Arrays;
 
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
-@ImportGuards(ArrayGuards.class)
+@ImportStatic(ArrayGuards.class)
 public abstract class ArrayGetTailNode extends RubyNode {
 
     final int index;
@@ -33,19 +33,14 @@ public abstract class ArrayGetTailNode extends RubyNode {
         this.index = index;
     }
 
-    public ArrayGetTailNode(ArrayGetTailNode prev) {
-        super(prev);
-        index = prev.index;
-    }
-
-    @Specialization(guards = "isNull")
+    @Specialization(guards = "isNull(array)")
     public RubyArray getTailNull(RubyArray array) {
         notDesignedForCompilation();
 
         return new RubyArray(getContext().getCoreLibrary().getArrayClass());
     }
 
-    @Specialization(guards = "isIntegerFixnum")
+    @Specialization(guards = "isIntegerFixnum(array)")
     public RubyArray getTailIntegerFixnum(RubyArray array) {
         notDesignedForCompilation();
 
@@ -56,7 +51,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isLongFixnum")
+    @Specialization(guards = "isLongFixnum(array)")
     public RubyArray getTailLongFixnum(RubyArray array) {
         notDesignedForCompilation();
 
@@ -67,7 +62,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isFloat")
+    @Specialization(guards = "isFloat(array)")
     public RubyArray getTailFloat(RubyArray array) {
         notDesignedForCompilation();
 
@@ -78,7 +73,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isObject")
+    @Specialization(guards = "isObject(array)")
     public RubyArray getTailObject(RubyArray array) {
         notDesignedForCompilation();
 

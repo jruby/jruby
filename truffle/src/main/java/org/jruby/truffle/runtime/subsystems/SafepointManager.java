@@ -35,6 +35,7 @@ public class SafepointManager {
 
     @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption("SafepointManager");
     private final ReentrantLock lock = new ReentrantLock();
+
     private final Phaser phaser = new Phaser();
     private volatile SafepointAction action;
     private volatile boolean deferred;

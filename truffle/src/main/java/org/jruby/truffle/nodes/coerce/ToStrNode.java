@@ -32,11 +32,6 @@ public abstract class ToStrNode extends RubyNode {
         toStrNode = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    public ToStrNode(ToStrNode prev) {
-        super(prev);
-        toStrNode = prev.toStrNode;
-    }
-
     public abstract RubyString executeRubyString(VirtualFrame frame, Object object);
 
     @Specialization
@@ -44,7 +39,7 @@ public abstract class ToStrNode extends RubyNode {
         return string;
     }
 
-    @Specialization(guards = "!isRubyString")
+    @Specialization(guards = "!isRubyString(object)")
     public RubyString coerceObject(VirtualFrame frame, Object object) {
         notDesignedForCompilation();
 

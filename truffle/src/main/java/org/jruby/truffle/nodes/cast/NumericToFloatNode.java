@@ -29,7 +29,7 @@ import com.oracle.truffle.api.source.SourceSection;
 /**
  * Casts a value into a Ruby Float (double).
  */
-@NodeChild(value = "child", type = RubyNode.class)
+@NodeChild(value = "value", type = RubyNode.class)
 public abstract class NumericToFloatNode extends RubyNode {
 
     @Child private KernelNodes.IsANode isANode;
@@ -43,12 +43,6 @@ public abstract class NumericToFloatNode extends RubyNode {
         this.method = method;
     }
 
-    public NumericToFloatNode(NumericToFloatNode prev) {
-        super(prev.getContext(), prev.getSourceSection());
-        isANode = prev.isANode;
-        method = prev.method;
-    }
-
     public abstract double executeFloat(VirtualFrame frame, RubyBasicObject value);
 
     private Object callToFloat(VirtualFrame frame, RubyBasicObject value) {
@@ -59,7 +53,7 @@ public abstract class NumericToFloatNode extends RubyNode {
         return toFloatCallNode.call(frame, value, method, null);
     }
 
-    @Specialization(guards = "isNumeric")
+    @Specialization(guards = "isNumeric(frame, value)")
     protected double castNumeric(VirtualFrame frame, RubyBasicObject value) {
         final Object result = callToFloat(frame, value);
 

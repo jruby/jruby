@@ -35,10 +35,6 @@ public abstract class ObjectSpaceNodes {
             super(context, sourceSection);
         }
 
-        public ID2RefNode(ID2RefNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object id2Ref(int id) {
             return id2Ref((long) id);
@@ -67,12 +63,12 @@ public abstract class ObjectSpaceNodes {
             }
         }
 
-        @Specialization(guards = "isLargeFixnumID")
+        @Specialization(guards = "isLargeFixnumID(id)")
         public Object id2RefLargeFixnum(RubyBignum id) {
             return ObjectIDOperations.toFixnum(id);
         }
 
-        @Specialization(guards = "isFloatID")
+        @Specialization(guards = "isFloatID(id)")
         public double id2RefFloat(RubyBignum id) {
             return ObjectIDOperations.toFloat(id);
         }
@@ -92,10 +88,6 @@ public abstract class ObjectSpaceNodes {
 
         public EachObjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EachObjectNode(EachObjectNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -143,10 +135,6 @@ public abstract class ObjectSpaceNodes {
             super(context, sourceSection);
         }
 
-        public DefineFinalizerNode(DefineFinalizerNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyArray defineFinalizer(Object object, RubyProc finalizer) {
             notDesignedForCompilation();
@@ -161,10 +149,6 @@ public abstract class ObjectSpaceNodes {
 
         public UndefineFinalizerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public UndefineFinalizerNode(UndefineFinalizerNode prev) {
-            super(prev);
         }
 
         @Specialization

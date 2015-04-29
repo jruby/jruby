@@ -24,10 +24,6 @@ public abstract class BinaryCoreMethodNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public BinaryCoreMethodNode(BinaryCoreMethodNode prev) {
-        super(prev);
-    }
-
     public abstract RubyNode getLeft();
 
     public abstract RubyNode getRight();

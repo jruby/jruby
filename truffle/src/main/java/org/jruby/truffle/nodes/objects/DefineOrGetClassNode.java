@@ -56,7 +56,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         // Look for a current definition of the class, or create a new one
 
         RubyModule lexicalParent = getLexicalParentModule(frame);
-        final RubyConstant constant = lookupForExistingModule(frame, lexicalParent);
+        final RubyConstant constant = lookupForExistingModule(lexicalParent);
 
         RubyClass definingClass;
         RubyClass superClassObject = getRubySuperClass(frame, context);

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.ExecutionContext;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
@@ -29,6 +30,8 @@ public class RubyRootNode extends RootNode {
     private final SharedMethodInfo sharedMethodInfo;
     @Child private RubyNode body;
     private final RubyNode uninitializedBody;
+
+    private boolean instrumentationApplied = false;
 
     public RubyRootNode(RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor, SharedMethodInfo sharedMethodInfo, RubyNode body) {
         super(sourceSection, frameDescriptor);
@@ -70,5 +73,13 @@ public class RubyRootNode extends RootNode {
     @Override
     public ExecutionContext getExecutionContext() {
         return context;
+    }
+
+    @Override
+    public void applyInstrumentation() {
+        if (!instrumentationApplied) {
+            Probe.applyASTProbers(body);
+            instrumentationApplied = true;
+        }
     }
 }

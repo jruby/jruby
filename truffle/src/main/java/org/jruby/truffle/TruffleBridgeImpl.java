@@ -44,6 +44,8 @@ import java.util.List;
 
 public class TruffleBridgeImpl implements TruffleBridge {
 
+    private static final boolean PRINT_RUNTIME = Options.TRUFFLE_PRINT_RUNTIME.load();
+
     private final org.jruby.Ruby runtime;
     private final RubyContext truffleContext;
 
@@ -59,7 +61,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
     @Override
     public void init() {
-        if (Options.TRUFFLE_PRINT_RUNTIME.load()) {
+        if (PRINT_RUNTIME) {
             runtime.getInstanceConfig().getError().println("jruby: using " + Truffle.getRuntime().getName());
         }
 
@@ -96,6 +98,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, TrufflePrimitiveNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, EncodingNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, EncodingConverterNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, TruffleInteropNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, MethodNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, UnboundMethodNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ByteArrayNodesFactory.getFactories());
@@ -139,6 +142,9 @@ public class TruffleBridgeImpl implements TruffleBridge {
         // Libraries copied unmodified from MRI
         loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/mri").toString()));
 
+        // Our own implementations
+        loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/truffle").toString()));
+
         // Libraries from RubySL
         for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
                 "rubysl-complex", "rubysl-date", "rubysl-pathname",
@@ -164,12 +170,6 @@ public class TruffleBridgeImpl implements TruffleBridge {
                 }
             }
         }
-
-        // Hook
-
-        if (truffleContext.getHooks() != null) {
-            truffleContext.getHooks().afterInit(truffleContext);
-        }
     }
 
     @Override
@@ -189,10 +189,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
             // Assume UTF-8 for the moment
             source = Source.fromBytes(runtime.getInstanceConfig().inlineScript(), "-e", new BytesDecoder.UTF8BytesDecoder());
         } else {
-            final byte[] bytes = FileUtils.readAllBytesInterruptedly(truffleContext, inputFile);
-
-            // Assume UTF-8 for the moment
-            source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());
+            source = truffleContext.getSourceManager().forFile(inputFile);
         }
 
         truffleContext.getFeatureManager().setMainScriptSource(source);

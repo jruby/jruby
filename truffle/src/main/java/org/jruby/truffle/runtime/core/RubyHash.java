@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -139,6 +140,11 @@ public class RubyHash extends RubyBasicObject {
 
     public Entry getFirstInSequence() {
         return firstInSequence;
+    }
+
+    @Override
+    public ForeignAccessFactory getForeignAccessFactory() {
+        return new HashForeignAccessFactory(getContext());
     }
 
     public void setFirstInSequence(Entry firstInSequence) {

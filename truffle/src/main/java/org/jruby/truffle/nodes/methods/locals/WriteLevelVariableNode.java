@@ -30,39 +30,35 @@ public abstract class WriteLevelVariableNode extends FrameSlotNode implements Wr
         this.varLevel = level;
     }
 
-    protected WriteLevelVariableNode(WriteLevelVariableNode prev) {
-        this(prev.getContext(), prev.getSourceSection(), prev.frameSlot, prev.varLevel);
-    }
-
-    @Specialization(guards = "isBooleanKind")
+    @Specialization(guards = "isBooleanKind(frame)")
     public boolean doBoolean(VirtualFrame frame, boolean value) {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
         setBoolean(levelFrame, value);
         return value;
     }
 
-    @Specialization(guards = "isFixnumKind")
+    @Specialization(guards = "isFixnumKind(frame)")
     public int doFixnum(VirtualFrame frame, int value) {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
         setFixnum(levelFrame, value);
         return value;
     }
 
-    @Specialization(guards = "isLongFixnumKind")
+    @Specialization(guards = "isLongFixnumKind(frame)")
     public long doLongFixnum(VirtualFrame frame, long value) {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
         setLongFixnum(levelFrame, value);
         return value;
     }
 
-    @Specialization(guards = "isFloatKind")
+    @Specialization(guards = "isFloatKind(frame)")
     public double doFloat(VirtualFrame frame, double value) {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
         setFloat(levelFrame, value);
         return value;
     }
 
-    @Specialization(guards = "isObjectKind")
+    @Specialization(guards = "isObjectKind(frame)")
     public Object doObject(VirtualFrame frame, Object value) {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
         setObject(levelFrame, value);

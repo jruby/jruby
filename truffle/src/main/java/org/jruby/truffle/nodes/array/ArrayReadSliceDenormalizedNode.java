@@ -32,11 +32,6 @@ public abstract class ArrayReadSliceDenormalizedNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ArrayReadSliceDenormalizedNode(ArrayReadSliceDenormalizedNode prev) {
-        super(prev);
-        readNode = prev.readNode;
-    }
-
     public abstract Object executeReadSlice(VirtualFrame frame, RubyArray array, int index, int length);
 
     @Specialization

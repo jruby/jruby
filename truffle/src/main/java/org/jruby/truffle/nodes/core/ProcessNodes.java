@@ -37,29 +37,23 @@ public abstract class ProcessNodes {
             nanosecondSymbol = context.getSymbol("nanosecond");
         }
 
-        public ClockGetTimeNode(ClockGetTimeNode prev) {
-            super(prev);
-            floatSecondSymbol = prev.floatSecondSymbol;
-            nanosecondSymbol = prev.nanosecondSymbol;
-        }
-
-        @Specialization(guards = "isMonotonic(arguments[0])")
+        @Specialization(guards = "isMonotonic(clock_id)")
         Object clock_gettime_monotonic(int clock_id, UndefinedPlaceholder unit) {
             return clock_gettime_monotonic(CLOCK_MONOTONIC, floatSecondSymbol);
         }
 
-        @Specialization(guards = "isRealtime(arguments[0])")
+        @Specialization(guards = "isRealtime(clock_id)")
         Object clock_gettime_realtime(int clock_id, UndefinedPlaceholder unit) {
             return clock_gettime_realtime(CLOCK_REALTIME, floatSecondSymbol);
         }
 
-        @Specialization(guards = "isMonotonic(arguments[0])")
+        @Specialization(guards = "isMonotonic(clock_id)")
         Object clock_gettime_monotonic(int clock_id, RubySymbol unit) {
             long time = System.nanoTime();
             return timeToUnit(time, unit);
         }
 
-        @Specialization(guards = "isRealtime(arguments[0])")
+        @Specialization(guards = "isRealtime(clock_id)")
         Object clock_gettime_realtime(int clock_id, RubySymbol unit) {
             long time = System.currentTimeMillis() * 1000000;
             return timeToUnit(time, unit);
@@ -92,10 +86,6 @@ public abstract class ProcessNodes {
             super(context, sourceSection);
         }
 
-        public KillNode(KillNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int kill(RubySymbol signalName, int pid) {
             notDesignedForCompilation();
@@ -119,10 +109,6 @@ public abstract class ProcessNodes {
 
         public PidNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public PidNode(PidNode prev) {
-            super(prev);
         }
 
         @Specialization

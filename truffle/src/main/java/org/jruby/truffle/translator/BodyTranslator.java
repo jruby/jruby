@@ -82,6 +82,8 @@ import java.util.*;
  */
 public class BodyTranslator extends Translator {
 
+    private static final int PASS_A_LOT = Options.TRUFFLE_PASSALOT.load();
+
     protected final BodyTranslator parent;
     protected final TranslatorEnvironment environment;
 
@@ -2147,14 +2149,16 @@ public class BodyTranslator extends Translator {
 
         final List<RubyNode> lineSequence = new ArrayList<>();
 
-        if (Options.TRUFFLE_PASSALOT.load() > 0) {
-            if (Options.TRUFFLE_PASSALOT.load() > Math.random() * 100) {
+        if (PASS_A_LOT > 0) {
+            if (PASS_A_LOT > Math.random() * 100) {
                 lineSequence.add(new ThreadPassNode(context, sourceSection));
             }
         }
 
         lineSequence.add(new TraceNode(context, sourceSection));
         lineSequence.add(node.getNextNode().accept(this));
+
+        lineSequence.get(0).setAtNewline();
 
         return SequenceNode.sequence(context, sourceSection, lineSequence);
     }
@@ -2658,7 +2662,11 @@ public class BodyTranslator extends Translator {
         final boolean oldTranslatingWhile = translatingWhile;
         translatingWhile = true;
         try {
-            body = node.getBodyNode().accept(this);
+            if (node.getBodyNode().isNil()) {
+                body = new NilLiteralNode(context, sourceSection);
+            } else {
+                body = node.getBodyNode().accept(this);
+            }
         } finally {
             translatingWhile = oldTranslatingWhile;
         }

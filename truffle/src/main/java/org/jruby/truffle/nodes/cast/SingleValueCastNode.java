@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.cast;
 
+import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -25,23 +26,19 @@ public abstract class SingleValueCastNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public SingleValueCastNode(SingleValueCastNode prev) {
-        super(prev);
-    }
+    public abstract Object executeSingleValue(VirtualFrame frame, Object[] args);
 
-    public abstract Object executeSingleValue(Object[] args);
-
-    @Specialization(guards = "noArguments")
+    @Specialization(guards = "noArguments(args)")
     protected RubyNilClass castNil(Object[] args) {
         return nil();
     }
 
-    @Specialization(guards = "singleArgument")
+    @Specialization(guards = "singleArgument(args)")
     protected Object castSingle(Object[] args) {
         return args[0];
     }
     
-    @Specialization(guards = { "!noArguments", "!singleArgument" })
+    @Specialization(guards = { "!noArguments(args)", "!singleArgument(args)" })
     protected RubyArray castMany(Object[] args) {
         notDesignedForCompilation();
 

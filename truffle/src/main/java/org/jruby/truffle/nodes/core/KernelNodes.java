@@ -65,10 +65,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public BacktickNode(BacktickNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString backtick(RubyString command) {
             // Command is lexically a string interoplation, so variables will already have been expanded
@@ -134,10 +130,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public SameOrEqualNode(SameOrEqualNode prev) {
-            super(prev);
-        }
-
         public abstract boolean executeSameOrEqual(VirtualFrame frame, Object a, Object b);
 
         @Specialization
@@ -176,10 +168,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public MatchNode(MatchNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass equal(Object other) {
             return nil();
@@ -197,11 +185,6 @@ public abstract class KernelNodes {
             matchNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
-        public NotMatchNode(NotMatchNode prev) {
-            super(prev);
-            matchNode = prev.matchNode;
-        }
-
         @Specialization
         public boolean notMatch(VirtualFrame frame, Object self, Object other) {
             return !matchNode.callBoolean(frame, self, "=~", null, other);
@@ -217,11 +200,6 @@ public abstract class KernelNodes {
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             equalNode = SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
-        }
-
-        public CompareNode(CompareNode prev) {
-            super(prev);
-            equalNode = prev.equalNode;
         }
 
         @Specialization
@@ -242,10 +220,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public AbortNode(AbortNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass abort() {
             CompilerDirectives.transferToInterpreter();
@@ -259,10 +233,6 @@ public abstract class KernelNodes {
 
         public AtExitNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public AtExitNode(AtExitNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -282,6 +252,10 @@ public abstract class KernelNodes {
         }
 
         public abstract RubyBinding executeRubyBinding(VirtualFrame frame);
+
+        public Object execute(VirtualFrame frame) {
+            return executeRubyBinding(frame);
+        }
 
         @Specialization
         public RubyBinding binding() {
@@ -304,10 +278,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public BlockGivenNode(BlockGivenNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean blockGiven() {
             return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
@@ -319,10 +289,6 @@ public abstract class KernelNodes {
 
         public CalleeNameNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CalleeNameNode(CalleeNameNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -338,10 +304,6 @@ public abstract class KernelNodes {
 
         public CallerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CallerNode(CallerNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -381,14 +343,9 @@ public abstract class KernelNodes {
             classNode = ClassNodeFactory.create(context, sourceSection, null);
         }
 
-        public KernelClassNode(KernelClassNode prev) {
-            super(prev);
-            classNode = prev.classNode;
-        }
-
         @Specialization
-        public RubyClass getClass(Object self) {
-            return classNode.executeGetClass(self);
+        public RubyClass getClass(VirtualFrame frame, Object self) {
+            return classNode.executeGetClass(frame, self);
         }
 
     }
@@ -397,10 +354,6 @@ public abstract class KernelNodes {
 
         public CopyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CopyNode(CopyNode prev) {
-            super(prev);
         }
 
         public abstract RubyBasicObject executeCopy(VirtualFrame frame, RubyBasicObject self);
@@ -435,14 +388,6 @@ public abstract class KernelNodes {
             initializeCloneNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.CALL_METHOD_MISSING);
             isFrozenNode = IsFrozenNodeFactory.create(context, sourceSection, null);
             freezeNode = FreezeNodeFactory.create(context, sourceSection, null);
-        }
-
-        public CloneNode(CloneNode prev) {
-            super(prev);
-            copyNode = prev.copyNode;
-            initializeCloneNode = prev.initializeCloneNode;
-            isFrozenNode = prev.isFrozenNode;
-            freezeNode = prev.freezeNode;
         }
 
         @Specialization
@@ -480,12 +425,6 @@ public abstract class KernelNodes {
             initializeDupNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.CALL_METHOD_MISSING);
         }
 
-        public DupNode(DupNode prev) {
-            super(prev);
-            copyNode = prev.copyNode;
-            initializeDupNode = prev.initializeDupNode;
-        }
-
         @Specialization
         public RubyBasicObject dup(VirtualFrame frame, RubyBasicObject self) {
             final RubyBasicObject newObject = copyNode.executeCopy(frame, self);
@@ -511,10 +450,6 @@ public abstract class KernelNodes {
 
         public EvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EvalNode(EvalNode prev) {
-            super(prev);
         }
 
         @CreateCast("source") public RubyNode coerceSourceToString(RubyNode source) {
@@ -565,7 +500,7 @@ public abstract class KernelNodes {
             return getContext().eval(source.getBytes(), binding, false, filename.toString(), this);
         }
 
-        @Specialization(guards = "!isRubyBinding(binding)")
+        @Specialization(guards = "!isRubyBinding(badBinding)")
         public Object eval(RubyString source, RubyBasicObject badBinding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(badBinding, "binding", this));
         }
@@ -576,10 +511,6 @@ public abstract class KernelNodes {
 
         public ExecNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ExecNode(ExecNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -636,10 +567,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public ExitNode(ExitNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object exit(UndefinedPlaceholder exitCode) {
             return exit(0);
@@ -672,10 +599,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public ExitBangNode(ExitBangNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass exit(UndefinedPlaceholder exitCode) {
             return exit(1);
@@ -697,10 +620,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public ForkNode(ForkNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object fork(Object[] args) {
             notDesignedForCompilation();
@@ -717,11 +636,6 @@ public abstract class KernelNodes {
 
         public KernelFreezeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public KernelFreezeNode(KernelFreezeNode prev) {
-            super(prev);
-            freezeNode = prev.freezeNode;
         }
 
         @Specialization
@@ -745,11 +659,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public KernelFrozenNode(KernelFrozenNode prev) {
-            super(prev);
-            isFrozenNode = prev.isFrozenNode;
-        }
-
         @Specialization
         public boolean isFrozen(Object self) {
             if (isFrozenNode == null) {
@@ -767,10 +676,6 @@ public abstract class KernelNodes {
 
         public GetsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public GetsNode(GetsNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -824,10 +729,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public HashNode(HashNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int hash(int value) {
             // TODO(CS): should check this matches MRI
@@ -867,10 +768,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public InitializeCopyNode(InitializeCopyNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object initializeCopy(RubyBasicObject self, RubyBasicObject from) {
             notDesignedForCompilation();
@@ -895,11 +792,6 @@ public abstract class KernelNodes {
             initializeCopyNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
-        public InitializeDupCloneNode(InitializeDupCloneNode prev) {
-            super(prev);
-            initializeCopyNode = prev.initializeCopyNode;
-        }
-
         @Specialization
         public Object initializeDup(VirtualFrame frame, RubyBasicObject self, RubyBasicObject from) {
             return initializeCopyNode.call(frame, self, "initialize_copy", null, from);
@@ -917,15 +809,9 @@ public abstract class KernelNodes {
             classNode = ClassNodeFactory.create(context, sourceSection, null);
         }
 
-        public InstanceOfNode(InstanceOfNode prev) {
-            super(prev);
-            classNode = prev.classNode;
-        }
-
-        @TruffleBoundary
         @Specialization
-        public boolean instanceOf(Object self, RubyClass rubyClass) {
-            return classNode.executeGetClass(self) == rubyClass;
+        public boolean instanceOf(VirtualFrame frame, Object self, RubyClass rubyClass) {
+            return classNode.executeGetClass(frame, self) == rubyClass;
         }
 
     }
@@ -935,10 +821,6 @@ public abstract class KernelNodes {
 
         public InstanceVariableDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InstanceVariableDefinedNode(InstanceVariableDefinedNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -962,10 +844,6 @@ public abstract class KernelNodes {
 
         public InstanceVariableGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InstanceVariableGetNode(InstanceVariableGetNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -993,10 +871,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public InstanceVariableSetNode(InstanceVariableSetNode prev) {
-            super(prev);
-        }
-        
         // TODO CS 4-Mar-15 this badly needs to be cached
 
         @TruffleBoundary
@@ -1020,10 +894,6 @@ public abstract class KernelNodes {
 
         public InstanceVariablesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InstanceVariablesNode(InstanceVariablesNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1054,10 +924,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public IsANode(IsANode prev) {
-            super(prev);
-        }
-
         public abstract boolean executeIsA(VirtualFrame frame, Object self, RubyModule rubyClass);
 
         @Specialization
@@ -1082,10 +948,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public LambdaNode(LambdaNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyProc proc(RubyProc block) {
             notDesignedForCompilation();
@@ -1102,10 +964,6 @@ public abstract class KernelNodes {
 
         public LoadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public LoadNode(LoadNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1136,10 +994,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public LocalVariablesNode(LocalVariablesNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyArray localVariables() {
             notDesignedForCompilation();
@@ -1164,10 +1018,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public MethodNameNode(MethodNameNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubySymbol methodName(VirtualFrame frame) {
             notDesignedForCompilation();
@@ -1182,10 +1032,6 @@ public abstract class KernelNodes {
 
         public MethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public MethodNode(MethodNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1221,10 +1067,6 @@ public abstract class KernelNodes {
 
         public MethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public MethodsNode(MethodsNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1264,10 +1106,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public NilNode(NilNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean isNil() {
             return false;
@@ -1279,10 +1117,6 @@ public abstract class KernelNodes {
 
         public PrivateMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public PrivateMethodsNode(PrivateMethodsNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1322,10 +1156,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public ProcNode(ProcNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyProc proc(RubyProc block) {
             notDesignedForCompilation();
@@ -1342,10 +1172,6 @@ public abstract class KernelNodes {
 
         public PublicMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public PublicMethodsNode(PublicMethodsNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1385,31 +1211,27 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public RandNode(RandNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public double rand(UndefinedPlaceholder undefined) {
             return getContext().getRandom().nextDouble();
         }
 
-        @Specialization(guards = "isZero")
+        @Specialization(guards = "isZero(max)")
         public double randZero(int max) {
             return getContext().getRandom().nextDouble();
         }
 
-        @Specialization(guards = "isNonZero")
+        @Specialization(guards = "isNonZero(max)")
         public int randNonZero(int max) {
             return getContext().getRandom().nextInt(max);
         }
 
-        @Specialization(guards = "isZero")
+        @Specialization(guards = "isZero(max)")
         public double randZero(long max) {
             return getContext().getRandom().nextDouble();
         }
 
-        @Specialization(guards = "isNonZero")
+        @Specialization(guards = "isNonZero(max)")
         public long randNonZero(long max) {
             return getContext().getRandom().nextLong() % max;
         }
@@ -1439,10 +1261,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public RequireNode(RequireNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean require(RubyString feature) {
             notDesignedForCompilation();
@@ -1469,10 +1287,6 @@ public abstract class KernelNodes {
 
         public RequireRelativeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public RequireRelativeNode(RequireRelativeNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1526,16 +1340,10 @@ public abstract class KernelNodes {
             dispatch = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null);
             dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true, false, MissingBehavior.RETURN_MISSING, null);
 
-            if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
+            if (DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
                 dispatch.forceUncached();
                 dispatchIgnoreVisibility.forceUncached();
             }
-        }
-
-        public RespondToNode(RespondToNode prev) {
-            super(prev);
-            dispatch = prev.dispatch;
-            dispatchIgnoreVisibility = prev.dispatchIgnoreVisibility;
         }
 
         public abstract boolean executeDoesRespondTo(VirtualFrame frame, Object object, Object name, boolean includePrivate);
@@ -1587,10 +1395,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public RespondToMissingNode(RespondToMissingNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean doesRespondToMissing(Object object, RubyString name, UndefinedPlaceholder includeAll) {
             return false;
@@ -1620,10 +1424,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public SetTraceFuncNode(SetTraceFuncNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass setTraceFunc(RubyNilClass nil) {
             notDesignedForCompilation();
@@ -1651,11 +1451,6 @@ public abstract class KernelNodes {
             singletonClassNode = SingletonClassNodeFactory.create(context, sourceSection, null);
         }
 
-        public SingletonClassMethodNode(SingletonClassMethodNode prev) {
-            super(prev);
-            singletonClassNode = prev.singletonClassNode;
-        }
-
         @Specialization
         public RubyClass singletonClass(VirtualFrame frame, Object self) {
             return singletonClassNode.executeSingletonClass(frame, self);
@@ -1668,10 +1463,6 @@ public abstract class KernelNodes {
 
         public SingletonMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SingletonMethodsNode(SingletonMethodsNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1712,17 +1503,12 @@ public abstract class KernelNodes {
             toS = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        public StringNode(StringNode prev) {
-            super(prev);
-            toS = prev.toS;
-        }
-
         @Specialization
         public RubyString string(RubyString value) {
             return value;
         }
 
-        @Specialization(guards = "!isRubyString")
+        @Specialization(guards = "!isRubyString(value)")
         public Object string(VirtualFrame frame, Object value) {
             return toS.call(frame, value, "to_s", null);
         }
@@ -1736,10 +1522,6 @@ public abstract class KernelNodes {
 
         public SleepNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SleepNode(SleepNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1763,12 +1545,12 @@ public abstract class KernelNodes {
             return doSleepMillis((long) (duration * 1000));
         }
 
-        @Specialization(guards = "isRubiniusUndefined")
+        @Specialization(guards = "isRubiniusUndefined(duration)")
         public long sleep(RubyBasicObject duration) {
             return sleep(UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization(guards = "!isRubiniusUndefined")
+        @Specialization(guards = "!isRubiniusUndefined(duration)")
         public long sleep(VirtualFrame frame, RubyBasicObject duration) {
             if (floatCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -1822,10 +1604,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public SPrintfNode(SPrintfNode prev) {
-            super(prev);
-        }
-
         @TruffleBoundary
         @Specialization
         public RubyString sprintf(Object[] args) {
@@ -1855,10 +1633,6 @@ public abstract class KernelNodes {
 
         public SystemNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SystemNode(SystemNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1897,10 +1671,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public KernelTaintNode(KernelTaintNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object taint(Object object) {
             if (taintNode == null) {
@@ -1921,11 +1691,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public KernelIsTaintedNode(KernelIsTaintedNode prev) {
-            super(prev);
-            isTaintedNode = prev.isTaintedNode;
-        }
-
         @Specialization
         public boolean isTainted(Object object) {
             if (isTaintedNode == null) {
@@ -1941,10 +1706,6 @@ public abstract class KernelNodes {
 
         public ToHexStringNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToHexStringNode(ToHexStringNode prev) {
-            super(prev);
         }
 
         public abstract String executeToHexString(VirtualFrame frame, Object value);
@@ -1986,7 +1747,7 @@ public abstract class KernelNodes {
         public RubyString toS(VirtualFrame frame, Object self) {
             notDesignedForCompilation();
 
-            String className = classNode.executeGetClass(self).getName();
+            String className = classNode.executeGetClass(frame, self).getName();
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
@@ -2003,11 +1764,6 @@ public abstract class KernelNodes {
         public UntaintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             writeTaintNode = new WriteHeadObjectFieldNode(RubyBasicObject.TAINTED_IDENTIFIER);
-        }
-
-        public UntaintNode(UntaintNode prev) {
-            super(prev);
-            writeTaintNode = prev.writeTaintNode;
         }
 
         @Specialization

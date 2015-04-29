@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.nodes.Node;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
@@ -96,6 +97,11 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
 
     public int clampExclusiveIndex(int index) {
         return RubyArray.clampExclusiveIndex(bytes.length(), index);
+    }
+
+    @Override
+    public ForeignAccessFactory getForeignAccessFactory() {
+        return new StringForeignAccessFactory(getContext());
     }
 
     @Override

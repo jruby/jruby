@@ -26,15 +26,11 @@ public abstract class AssertConstantNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public AssertConstantNode(AssertConstantNode prev) {
-        super(prev);
-    }
-
     private static volatile boolean[] sideEffect;
 
     @Specialization
     public RubyNilClass assertCompilationConstant(Object value) {
-        final boolean[] compilationConstant = new boolean[]{CompilerDirectives.isCompilationConstant(value) || CompilerDirectives.inInterpreter()};
+        final boolean[] compilationConstant = new boolean[]{CompilerDirectives.isCompilationConstant(value)};
 
         sideEffect = compilationConstant;
 

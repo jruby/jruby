@@ -475,6 +475,10 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object append(Object store, int index, Object value) {
+            if (index >= ((Object[]) store).length) {
+                new Exception().printStackTrace();
+            }
+
             ((Object[]) store)[index] = value;
             return store;
         }

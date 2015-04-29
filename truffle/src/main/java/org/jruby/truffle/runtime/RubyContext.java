@@ -12,11 +12,14 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.tools.CoverageTracker;
 
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
@@ -28,9 +31,9 @@ import org.jruby.Ruby;
 import org.jruby.RubyNil;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
@@ -55,6 +58,11 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class RubyContext extends ExecutionContext {
 
+    private static RubyContext latestInstance;
+
+    private static final boolean TRUFFLE_COVERAGE = Options.TRUFFLE_COVERAGE.load();
+    private static final int INSTRUMENTATION_SERVER_PORT = Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load();
+
     private final Ruby runtime;
 
     private final POSIX posix;
@@ -74,7 +82,10 @@ public class RubyContext extends ExecutionContext {
     private final LexicalScope rootLexicalScope;
     private final CompilerOptions compilerOptions;
     private final RubiniusPrimitiveManager rubiniusPrimitiveManager;
+    private final CoverageTracker coverageTracker;
     private final InstrumentationServerManager instrumentationServerManager;
+    private final AttachmentsManager attachmentsManager;
+    private final SourceManager sourceManager;
     private final RubiniusConfiguration rubiniusConfiguration;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
@@ -82,6 +93,8 @@ public class RubyContext extends ExecutionContext {
     private final boolean runningOnWindows;
 
     public RubyContext(Ruby runtime) {
+        latestInstance = this;
+
         assert runtime != null;
 
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
@@ -92,6 +105,17 @@ public class RubyContext extends ExecutionContext {
 
         if (compilerOptions.supportsOption("MinInliningMaxCallerSize")) {
             compilerOptions.setOption("MinInliningMaxCallerSize", 5000);
+        }
+
+        // TODO CS 28-Feb-15 this is global
+        Probe.registerASTProber(new RubyDefaultASTProber());
+
+        // TODO(CS, 28-Jan-15) this is global
+        // TODO(CS, 28-Jan-15) maybe not do this for core?
+        if (TRUFFLE_COVERAGE) {
+            coverageTracker = new CoverageTracker();
+        } else {
+            coverageTracker = null;
         }
 
         safepointManager = new SafepointManager(this);
@@ -123,8 +147,8 @@ public class RubyContext extends ExecutionContext {
 
         rubiniusPrimitiveManager = RubiniusPrimitiveManager.create();
 
-        if (Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load() != 0) {
-            instrumentationServerManager = new InstrumentationServerManager(this, Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load());
+        if (INSTRUMENTATION_SERVER_PORT != 0) {
+            instrumentationServerManager = new InstrumentationServerManager(this, INSTRUMENTATION_SERVER_PORT);
             instrumentationServerManager.start();
         } else {
             instrumentationServerManager = null;
@@ -132,6 +156,8 @@ public class RubyContext extends ExecutionContext {
 
         runningOnWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).indexOf("win") >= 0;
 
+        attachmentsManager = new AttachmentsManager(this);
+        sourceManager = new SourceManager(this);
         rubiniusConfiguration = new RubiniusConfiguration(this);
     }
 
@@ -173,12 +199,8 @@ public class RubyContext extends ExecutionContext {
         }
     }
 
-    private void loadFileAbsolute(String path, Node currentNode) {
-        final byte[] bytes = FileUtils.readAllBytesInterruptedly(this, path);
-
-        // Assume UTF-8 for the moment
-        final Source source = Source.fromBytes(bytes, path, new BytesDecoder.UTF8BytesDecoder());
-
+    private void loadFileAbsolute(String fileName, Node currentNode) {
+        final Source source = sourceManager.forFile(fileName);
         load(source, currentNode, NodeWrapper.IDENTITY);
     }
 
@@ -495,10 +517,6 @@ public class RubyContext extends ExecutionContext {
         return "ruby";
     }
 
-    public TruffleHooks getHooks() {
-        return (TruffleHooks) runtime.getInstanceConfig().getTruffleHooks();
-    }
-
     public TraceManager getTraceManager() {
         return traceManager;
     }
@@ -525,6 +543,33 @@ public class RubyContext extends ExecutionContext {
 
     public RubiniusPrimitiveManager getRubiniusPrimitiveManager() {
         return rubiniusPrimitiveManager;
+    }
+
+    // TODO(mg): we need to find a better place for this:
+    private TruffleObject multilanguageObject;
+
+    public TruffleObject getMultilanguageObject() {
+        return multilanguageObject;
+    }
+
+    public void setMultilanguageObject(TruffleObject multilanguageObject) {
+        this.multilanguageObject = multilanguageObject;
+    }
+
+    public CoverageTracker getCoverageTracker() {
+        return coverageTracker;
+    }
+
+    public static RubyContext getLatestInstance() {
+        return latestInstance;
+    }
+
+    public AttachmentsManager getAttachmentsManager() {
+        return attachmentsManager;
+    }
+
+    public SourceManager getSourceManager() {
+        return sourceManager;
     }
 
     public RubiniusConfiguration getRubiniusConfiguration() {

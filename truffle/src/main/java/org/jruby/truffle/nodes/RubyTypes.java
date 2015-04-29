@@ -10,6 +10,8 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.dsl.TypeSystem;
+import com.oracle.truffle.api.dsl.internal.DSLOptions;
+import com.oracle.truffle.api.interop.TruffleObject;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -20,6 +22,12 @@ import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
  * The list of types and type conversions that the AST interpreter knows about and can specialise
  * using. Used by the DSL.
  */
+@DSLOptions(
+        useNewLayout = true,
+        monomorphicTypeBoxingOptimization = DSLOptions.TypeBoxingOptimization.NONE,
+        polymorphicTypeBoxingElimination = DSLOptions.TypeBoxingOptimization.NONE,
+        implicitTypeBoxingOptimization = DSLOptions.TypeBoxingOptimization.NONE,
+        voidBoxingOptimization = DSLOptions.TypeBoxingOptimization.NONE)
 @TypeSystem({ //
                 UndefinedPlaceholder.class, //
                 boolean.class, //
@@ -57,6 +65,7 @@ import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
                 RubyUnboundMethod.class, //
                 RubiniusByteArray.class, //
                 RubyBasicObject.class, //
+                TruffleObject.class, //
                 ThreadLocal.class, //
                 Object[].class})
 

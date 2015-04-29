@@ -31,11 +31,6 @@ public abstract class MainNodes {
             publicNode = ModuleNodesFactory.PublicNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
         }
 
-        public PublicNode(PublicNode prev) {
-            super(prev);
-            publicNode = prev.publicNode;
-        }
-
         @Specialization
         public RubyModule doPublic(VirtualFrame frame, Object[] args) {
             notDesignedForCompilation();
@@ -52,11 +47,6 @@ public abstract class MainNodes {
         public PrivateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             privateNode = ModuleNodesFactory.PrivateNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
-        }
-
-        public PrivateNode(PrivateNode prev) {
-            super(prev);
-            privateNode = prev.privateNode;
         }
 
         @Specialization

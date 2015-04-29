@@ -27,6 +27,8 @@ import java.util.List;
 
 public class DebugBacktraceFormatter implements BacktraceFormatter {
 
+    private static final int BACKTRACE_MAX_VALUE_LENGTH = Options.TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH.load();
+
     @Override
     public String[] format(RubyContext context, RubyException exception, Backtrace backtrace) {
         try {
@@ -100,10 +102,10 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
         try {
             final String string = DebugOperations.inspect(context, value);
 
-            if (string.length() <= Options.TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH.load()) {
+            if (string.length() <= BACKTRACE_MAX_VALUE_LENGTH) {
                 return string;
             } else {
-                return string.substring(0, Options.TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH.load()) + "…";
+                return string.substring(0, BACKTRACE_MAX_VALUE_LENGTH) + "…";
             }
         } catch (Throwable t) {
             return "*error*";

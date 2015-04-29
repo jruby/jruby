@@ -22,15 +22,11 @@ import org.jruby.truffle.runtime.core.CoreLibrary;
  * {@code int}, such as Java array indexing, but we would like to also handle {@code long} if they also fit within an
  * {@code int}.
  */
-@NodeChild(value="child", type=RubyNode.class)
+@NodeChild(value="value", type=RubyNode.class)
 public abstract class NewFixnumLowerNode extends RubyNode {
 
     public NewFixnumLowerNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-    }
-
-    public NewFixnumLowerNode(NewFixnumLowerNode prev) {
-        super(prev);
     }
 
     @Specialization
@@ -38,12 +34,12 @@ public abstract class NewFixnumLowerNode extends RubyNode {
         return value;
     }
 
-    @Specialization(guards="canLower")
+    @Specialization(guards="canLower(value)")
     public int lower(long value) {
         return (int) value;
     }
 
-    @Specialization(guards="!canLower")
+    @Specialization(guards="!canLower(value)")
     public long lowerFails(long value) {
         return value;
     }

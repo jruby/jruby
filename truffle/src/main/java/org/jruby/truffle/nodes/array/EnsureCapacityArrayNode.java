@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.nodes.array;
 
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -28,7 +28,7 @@ import java.util.Arrays;
         @NodeChild(value="array", type=RubyNode.class),
         @NodeChild(value="requiredCapacity", type=RubyNode.class)
 })
-@ImportGuards(ArrayGuards.class)
+@ImportStatic(ArrayGuards.class)
 public abstract class EnsureCapacityArrayNode extends RubyNode {
 
     private final ConditionProfile allocateProfile = ConditionProfile.createCountingProfile();
@@ -37,14 +37,10 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public EnsureCapacityArrayNode(EnsureCapacityArrayNode prev) {
-        super(prev);
-    }
-
     public abstract Object executeEnsureCapacity(VirtualFrame frame, RubyArray array, int requiredCapacity);
 
     @Specialization(
-            guards={"isIntArray"}
+            guards={"isIntArray(array)"}
     )
     public boolean ensureCapacityInt(RubyArray array, int requiredCapacity) {
         final int[] store = (int[]) array.getStore();
@@ -58,7 +54,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isLongArray"}
+            guards={"isLongArray(array)"}
     )
     public boolean ensureCapacityLong(RubyArray array, int requiredCapacity) {
         final long[] store = (long[]) array.getStore();
@@ -72,7 +68,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isDoubleArray"}
+            guards={"isDoubleArray(array)"}
     )
     public boolean ensureCapacityDouble(RubyArray array, int requiredCapacity) {
         final double[] store = (double[]) array.getStore();
@@ -86,7 +82,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isObjectArray"}
+            guards={"isObjectArray(array)"}
     )
     public boolean ensureCapacityObject(RubyArray array, int requiredCapacity) {
         final Object[] store = (Object[]) array.getStore();

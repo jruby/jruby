@@ -36,10 +36,6 @@ public abstract class ToIntNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ToIntNode(ToIntNode prev) {
-        super(prev);
-    }
-
     public abstract int executeInt(VirtualFrame frame, Object object);
 
     @Specialization
@@ -71,7 +67,7 @@ public abstract class ToIntNode extends RubyNode {
         return coerceObject(frame, value);
     }
 
-    @Specialization(guards = "!isRubyBignum")
+    @Specialization(guards = "!isRubyBignum(object)")
     public Object coerceBasicObject(VirtualFrame frame, RubyBasicObject object) {
         return coerceObject(frame, object);
     }

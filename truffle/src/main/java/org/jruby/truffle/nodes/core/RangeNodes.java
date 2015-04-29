@@ -43,11 +43,6 @@ public abstract class RangeNodes {
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
-        public CollectNode(CollectNode prev) {
-            super(prev);
-            arrayBuilder = prev.arrayBuilder;
-        }
-
         @Specialization
         public RubyArray collect(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyProc block) {
             final int begin = range.getBegin();
@@ -86,10 +81,6 @@ public abstract class RangeNodes {
 
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EachNode(EachNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -184,10 +175,6 @@ public abstract class RangeNodes {
             super(context, sourceSection);
         }
 
-        public ExcludeEndNode(ExcludeEndNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean excludeEnd(RubyRange range) {
             return range.doesExcludeEnd();
@@ -200,10 +187,6 @@ public abstract class RangeNodes {
 
         public BeginNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public BeginNode(BeginNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -230,10 +213,6 @@ public abstract class RangeNodes {
             super(context, sourceSection);
         }
 
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyRange.ObjectRange initialize(RubyRange.ObjectRange range, Object begin, Object end, UndefinedPlaceholder undefined) {
             return initialize(range, begin, end, false);
@@ -252,10 +231,6 @@ public abstract class RangeNodes {
 
         public EndNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EndNode(EndNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -286,11 +261,7 @@ public abstract class RangeNodes {
             super(context, sourceSection);
         }
 
-        public StepNode(StepNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isStepValid")
+        @Specialization(guards = "isStepValid(range, step, block)")
         public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, int step, RubyProc block) {
             int count = 0;
 
@@ -322,7 +293,7 @@ public abstract class RangeNodes {
             return range;
         }
 
-        @Specialization(guards = "isStepValid")
+        @Specialization(guards = "isStepValid(range, step, block)")
         public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, int step, RubyProc block) {
             int count = 0;
 
@@ -354,12 +325,12 @@ public abstract class RangeNodes {
             return range;
         }
 
-        @Specialization(guards = {"!isStepValidInt","!isUndefinedPlaceholder(arguments[1])"})
+        @Specialization(guards = {"!isStepValidInt(range, step, block)","!isUndefinedPlaceholder(step)"})
         public Object stepFallback(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, RubyProc block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
 
-        @Specialization(guards = {"!isStepValidInt","!isUndefinedPlaceholder(arguments[1])"})
+        @Specialization(guards = {"!isStepValidInt(range, step, block)","!isUndefinedPlaceholder(step)"})
         public Object stepFallback(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, RubyProc block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
@@ -374,7 +345,7 @@ public abstract class RangeNodes {
             return ruby(frame, "step_internal(&block)", "block", block);
         }
 
-        @Specialization(guards = {"!isInteger(arguments[1])","!isLong(arguments[1])","!isUndefinedPlaceholder(arguments[1])"})
+        @Specialization(guards = {"!isInteger(step)","!isLong(step)","!isUndefinedPlaceholder(step)"})
         public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, UndefinedPlaceholder block) {
             return ruby(frame, "step_internal(step)", "step", step);
         }
@@ -389,12 +360,12 @@ public abstract class RangeNodes {
             return ruby(frame, "step_internal(&block)", "block", block);
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
+        @Specialization(guards = "!isUndefinedPlaceholder(step)")
         public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, UndefinedPlaceholder block) {
             return ruby(frame, "step_internal(step)", "step", step);
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
+        @Specialization(guards = "!isUndefinedPlaceholder(step)")
         public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, RubyProc block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
@@ -409,7 +380,7 @@ public abstract class RangeNodes {
             return ruby(frame, "step_internal(&block)", "block", block);
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
+        @Specialization(guards = "!isUndefinedPlaceholder(step)")
         public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, UndefinedPlaceholder block) {
             return ruby(frame, "step_internal(step)", "step", step);
         }
@@ -438,10 +409,6 @@ public abstract class RangeNodes {
 
         public ToANode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToANode(ToANode prev) {
-            super(prev);
         }
 
         @Specialization

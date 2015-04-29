@@ -9,19 +9,15 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
 
-@ImportGuards(HashGuards.class)
+@ImportStatic(HashGuards.class)
 public abstract class HashCoreMethodNode extends CoreMethodNode {
 
     public HashCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-    }
-
-    public HashCoreMethodNode(HashCoreMethodNode prev) {
-        super(prev);
     }
 
 }

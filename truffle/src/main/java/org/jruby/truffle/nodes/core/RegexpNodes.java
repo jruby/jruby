@@ -40,10 +40,6 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
-        public EqualNode(EqualNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean equal(RubyRegexp a, RubyRegexp b) {
             if (a == b) {
@@ -61,7 +57,7 @@ public abstract class RegexpNodes {
             return a.getSource().equal(b.getSource());
         }
 
-        @Specialization(guards = "!isRubyRegexp(arguments[1])")
+        @Specialization(guards = "!isRubyRegexp(b)")
         public boolean equal(RubyRegexp a, Object b) {
             return false;
         }
@@ -74,10 +70,6 @@ public abstract class RegexpNodes {
 
         public EscapingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EscapingNode(EscapingNode prev) {
-            super(prev);
         }
 
         protected RubyString escape(VirtualFrame frame, RubyString string) {
@@ -96,10 +88,6 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
-        public EscapingYieldingNode(EscapingYieldingNode prev) {
-            super(prev);
-        }
-
         protected RubyString escape(VirtualFrame frame, RubyString string) {
             if (escapeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -114,10 +102,6 @@ public abstract class RegexpNodes {
 
         public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public MatchOperatorNode(MatchOperatorNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -145,10 +129,6 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
-        public EscapeNode(EscapeNode prev) {
-            super(prev);
-        }
-
         public abstract RubyString executeEscape(VirtualFrame frame, RubyString pattern);
 
         @Specialization
@@ -167,10 +147,6 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
-        public HashNode(HashNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int hash(RubyRegexp regexp) {
             int options = regexp.getRegex().getOptions() & ~32 /* option n, NO_ENCODING in common/regexp.rb */;
@@ -186,10 +162,6 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
-        public InspectNode(InspectNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString match(RubyRegexp regexp) {
             return new RubyString(getContext().getCoreLibrary().getStringClass(), ((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), regexp.getSource(), regexp.getRegex().getOptions()).inspect19()).getByteList());
@@ -202,10 +174,6 @@ public abstract class RegexpNodes {
 
         public MatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public MatchNode(MatchNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -228,10 +196,6 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
-        public MatchStartNode(MatchStartNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object matchStart(RubyRegexp regexp, RubyString string, int startPos) {
             final Object matchResult = regexp.matchCommon(string, false, false, startPos);
@@ -250,10 +214,6 @@ public abstract class RegexpNodes {
 
         public OptionsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public OptionsNode(OptionsNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -279,10 +239,6 @@ public abstract class RegexpNodes {
 
         public QuoteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public QuoteNode(QuoteNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -311,10 +267,6 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
-        public SearchFromNode(SearchFromNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object searchFrom(RubyRegexp regexp, RubyString string, int startPos) {
             return regexp.matchCommon(string, false, false, startPos);
@@ -326,10 +278,6 @@ public abstract class RegexpNodes {
 
         public SourceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SourceNode(SourceNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -344,10 +292,6 @@ public abstract class RegexpNodes {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToSNode(ToSNode prev) {
-            super(prev);
         }
 
         @Specialization

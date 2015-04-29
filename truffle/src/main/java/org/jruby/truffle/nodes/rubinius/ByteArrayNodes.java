@@ -31,10 +31,6 @@ public abstract class ByteArrayNodes {
             super(context, sourceSection);
         }
 
-        public GetByteNode(GetByteNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int getByte(RubiniusByteArray bytes, int index) {
             return bytes.getBytes().get(index);
@@ -47,10 +43,6 @@ public abstract class ByteArrayNodes {
 
         public PrependNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public PrependNode(PrependNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -73,10 +65,6 @@ public abstract class ByteArrayNodes {
             super(context, sourceSection);
         }
 
-        public SetByteNode(SetByteNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object setByte(RubiniusByteArray bytes, int index, int value) {
             if (index < 0 || index >= bytes.getBytes().getRealSize()) {
@@ -97,10 +85,6 @@ public abstract class ByteArrayNodes {
             super(context, sourceSection);
         }
 
-        public SizeNode(SizeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int size(RubiniusByteArray bytes) {
             return bytes.getBytes().getRealSize();
@@ -113,10 +97,6 @@ public abstract class ByteArrayNodes {
 
         public LocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public LocateNode(LocateNode prev) {
-            super(prev);
         }
 
         @Specialization

@@ -38,10 +38,6 @@ public abstract class RandomPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public RandomizerSeedPrimitiveNode(RandomizerSeedPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public long randomizerSeed(RubyBasicObject random) {
             notDesignedForCompilation();
@@ -58,10 +54,6 @@ public abstract class RandomPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public RandomizerRandFloatPrimitiveNode(RandomizerRandFloatPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public double randomizerRandFloat(RubyBasicObject random) {
             notDesignedForCompilation();
@@ -76,10 +68,6 @@ public abstract class RandomPrimitiveNodes {
 
         public RandomizerRandIntPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public RandomizerRandIntPrimitiveNode(RandomizerRandIntPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -102,10 +90,6 @@ public abstract class RandomPrimitiveNodes {
 
         public RandomizerGenSeedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public RandomizerGenSeedPrimitiveNode(RandomizerGenSeedPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization

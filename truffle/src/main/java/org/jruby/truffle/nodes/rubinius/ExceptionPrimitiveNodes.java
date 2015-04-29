@@ -21,26 +21,22 @@ import org.jruby.truffle.runtime.core.*;
  */
 public abstract class ExceptionPrimitiveNodes {
 
-    private static final int ENOENT = Errno.ENOENT.intValue();
-
     @RubiniusPrimitive(name = "exception_errno_error", needsSelf = false)
     public static abstract class ExceptionErrnoErrorPrimitiveNode extends RubiniusPrimitiveNode {
+
+        protected final int ENOENT = Errno.ENOENT.intValue();
 
         public ExceptionErrnoErrorPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ExceptionErrnoErrorPrimitiveNode(ExceptionErrnoErrorPrimitiveNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isENOENT(arguments[1])")
+        @Specialization(guards = "errno == ENOENT")
         public RubyException enoent(RubyString message, int errno) {
             return getContext().getCoreLibrary().fileNotFoundError(message.toString(), this);
         }
 
         @CompilerDirectives.TruffleBoundary
-        @Specialization(guards = "!isENOENT(arguments[1])")
+        @Specialization(guards = "errno != ENOENT")
         public RubyException unsupported(RubyString message, int errno) {
             final Errno errnoObject = Errno.valueOf(errno);
 
@@ -49,10 +45,6 @@ public abstract class ExceptionPrimitiveNodes {
             } else {
                 throw new UnsupportedOperationException("errno: " + errnoObject.name());
             }
-        }
-
-        protected boolean isENOENT(int errno) {
-            return errno == ENOENT;
         }
 
     }

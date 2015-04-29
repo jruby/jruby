@@ -62,10 +62,6 @@ public abstract class IOBufferPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public IOBufferAllocatePrimitiveNode(IOBufferAllocatePrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyBasicObject allocate(VirtualFrame frame, RubyClass classToAllocate) {
             final RubyBasicObject ioBuffer = new RubyBasicObject(classToAllocate);
@@ -85,10 +81,6 @@ public abstract class IOBufferPrimitiveNodes {
 
         public IOBufferUnshiftPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public IOBufferUnshiftPrimitiveNode(IOBufferUnshiftPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -120,10 +112,6 @@ public abstract class IOBufferPrimitiveNodes {
 
         public IOBufferFillPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public IOBufferFillPrimitiveNode(IOBufferFillPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization

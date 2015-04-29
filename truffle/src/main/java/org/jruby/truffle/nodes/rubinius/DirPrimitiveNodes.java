@@ -38,10 +38,6 @@ public abstract class DirPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public DirAllocatePrimitiveNode(DirAllocatePrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyBasicObject allocate(RubyClass dirClass) {
             return new RubyBasicObject(dirClass);
@@ -59,12 +55,6 @@ public abstract class DirPrimitiveNodes {
             super(context, sourceSection);
             writeContentsNode = new WriteHeadObjectFieldNode(contentsKey);
             writePositionNode = new WriteHeadObjectFieldNode(positionKey);
-        }
-
-        public DirOpenPrimitiveNode(DirOpenPrimitiveNode prev) {
-            super(prev);
-            writeContentsNode = prev.writeContentsNode;
-            writePositionNode = prev.writePositionNode;
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -106,13 +96,6 @@ public abstract class DirPrimitiveNodes {
             writePositionNode = new WriteHeadObjectFieldNode(positionKey);
         }
 
-        public DirReadPrimitiveNode(DirReadPrimitiveNode prev) {
-            super(prev);
-            readContentsNode = prev.readContentsNode;
-            readPositionNode = prev.readPositionNode;
-            writePositionNode = prev.writePositionNode;
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object read(RubyBasicObject dir) {
@@ -148,10 +131,6 @@ public abstract class DirPrimitiveNodes {
 
         public DirClosePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DirClosePrimitiveNode(DirClosePrimitiveNode prev) {
-            super(prev);
         }
 
         @CompilerDirectives.TruffleBoundary

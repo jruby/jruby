@@ -41,10 +41,6 @@ public abstract class RangeLiteralNode extends RubyNode {
         this.excludeEnd = excludeEnd;
     }
 
-    public RangeLiteralNode(RangeLiteralNode prev) {
-        this(prev.getContext(), prev.getSourceSection(), prev.excludeEnd);
-    }
-
     @Specialization
     public RubyRange.IntegerFixnumRange doRange(int begin, int end) {
         return new RubyRange.IntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);

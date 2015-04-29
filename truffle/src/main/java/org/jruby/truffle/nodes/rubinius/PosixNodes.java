@@ -41,10 +41,6 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        public GetEGIDNode(GetEGIDNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int getEGID() {
             return posix().getegid();
@@ -57,10 +53,6 @@ public abstract class PosixNodes {
 
         public GetEUIDNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public GetEUIDNode(GetEUIDNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -77,10 +69,6 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        public GetGIDNode(GetGIDNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int getGID() {
             return posix().getgid();
@@ -93,10 +81,6 @@ public abstract class PosixNodes {
 
         public GetGroupsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public GetGroupsNode(GetGroupsNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -121,10 +105,6 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        public GetUIDNode(GetUIDNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int getUID() {
             return posix().getuid();
@@ -137,10 +117,6 @@ public abstract class PosixNodes {
 
         public MemsetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public MemsetNode(MemsetNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -164,10 +140,6 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        public UnlinkNode(UnlinkNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int unlink(RubyString path) {
             return posix().unlink(path.toString());
@@ -182,10 +154,6 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        public MkdirNode(MkdirNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int mkdir(RubyString path, int mode) {
             return posix().mkdir(path.toString(), mode);
@@ -198,10 +166,6 @@ public abstract class PosixNodes {
 
         public ChdirNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ChdirNode(ChdirNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -226,10 +190,6 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        public RmdirNode(RmdirNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int rmdir(RubyString path) {
             return posix().rmdir(path.toString());
@@ -242,10 +202,6 @@ public abstract class PosixNodes {
 
         public GetcwdNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public GetcwdNode(GetcwdNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -266,10 +222,6 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        public ErrnoNode(ErrnoNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int errno() {
             return posix().errno();
@@ -282,10 +234,6 @@ public abstract class PosixNodes {
 
         public FcntlNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public FcntlNode(FcntlNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -307,10 +255,6 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        public IsATTYNode(IsATTYNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int isATTY(int fd) {
             return posix().libc().isatty(fd);
@@ -323,10 +267,6 @@ public abstract class PosixNodes {
 
         public SymlinkNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SymlinkNode(SymlinkNode prev) {
-            super(prev);
         }
 
         @Specialization

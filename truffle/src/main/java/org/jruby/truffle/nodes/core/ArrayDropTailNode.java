@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -23,7 +23,7 @@ import org.jruby.truffle.runtime.util.ArrayUtils;
 import java.util.Arrays;
 
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
-@ImportGuards(ArrayGuards.class)
+@ImportStatic(ArrayGuards.class)
 public abstract class ArrayDropTailNode extends RubyNode {
 
     final int index;
@@ -33,19 +33,14 @@ public abstract class ArrayDropTailNode extends RubyNode {
         this.index = index;
     }
 
-    public ArrayDropTailNode(ArrayDropTailNode prev) {
-        super(prev);
-        index = prev.index;
-    }
-
-    @Specialization(guards = "isNull")
+    @Specialization(guards = "isNull(array)")
     public RubyArray getHeadNull(RubyArray array) {
         notDesignedForCompilation();
 
         return new RubyArray(getContext().getCoreLibrary().getArrayClass());
     }
 
-    @Specialization(guards = "isIntegerFixnum")
+    @Specialization(guards = "isIntegerFixnum(array)")
     public RubyArray getHeadIntegerFixnum(RubyArray array) {
         notDesignedForCompilation();
 
@@ -56,7 +51,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isLongFixnum")
+    @Specialization(guards = "isLongFixnum(array)")
     public RubyArray geHeadLongFixnum(RubyArray array) {
         notDesignedForCompilation();
 
@@ -68,7 +63,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isFloat")
+    @Specialization(guards = "isFloat(array)")
     public RubyArray getHeadFloat(RubyArray array) {
         notDesignedForCompilation();
 
@@ -80,7 +75,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isObject")
+    @Specialization(guards = "isObject(array)")
     public RubyArray getHeadObject(RubyArray array) {
         notDesignedForCompilation();
 

@@ -33,10 +33,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public ACosNode(ACosNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             if (a < -1.0 || a > 1.0) {
@@ -54,10 +50,6 @@ public abstract class MathNodes {
 
         public ACosHNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ACosHNode(ACosHNode prev) {
-            super(prev);
         }
 
         @Override
@@ -85,10 +77,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public ASinNode(ASinNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             if (a < -1.0 || a > 1.0) {
@@ -106,10 +94,6 @@ public abstract class MathNodes {
 
         public ASinHNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ASinHNode(ASinHNode prev) {
-            super(prev);
         }
 
         @Override
@@ -142,10 +126,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public ATanNode(ATanNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.atan(a);
@@ -160,10 +140,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public ATan2Node(ATan2Node prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a, double b) {
             return Math.atan2(a, b);
@@ -176,10 +152,6 @@ public abstract class MathNodes {
 
         public ATanHNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ATanHNode(ATanHNode prev) {
-            super(prev);
         }
 
         @Override
@@ -217,10 +189,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public CbRtNode(CbRtNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.cbrt(a);
@@ -233,10 +201,6 @@ public abstract class MathNodes {
 
         public CosNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CosNode(CosNode prev) {
-            super(prev);
         }
 
         @Override
@@ -253,10 +217,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public CosHNode(CosHNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.cosh(a);
@@ -269,10 +229,6 @@ public abstract class MathNodes {
 
         public ErfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ErfNode(ErfNode prev) {
-            super(prev);
         }
 
         @Override
@@ -301,10 +257,6 @@ public abstract class MathNodes {
 
         public ErfcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ErfcNode(ErfcNode prev) {
-            super(prev);
         }
 
         @Override
@@ -348,10 +300,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public ExpNode(ExpNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.exp(a);
@@ -369,12 +317,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
             floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
-        }
-
-        public FrExpNode(FrExpNode prev) {
-            super(prev);
-            isANode = prev.isANode;
-            floatNode = prev.floatNode;
         }
 
         @Specialization
@@ -443,10 +385,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public GammaNode(GammaNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             // Copied from RubyMath - see copyright notices there
@@ -500,10 +438,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public HypotNode(HypotNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a, double b) {
             return Math.hypot(a, b);
@@ -523,13 +457,6 @@ public abstract class MathNodes {
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
             floatANode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
             integerBNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
-        }
-
-        protected LdexpNode(LdexpNode prev) {
-            super(prev);
-            isANode = prev.isANode;
-            floatANode = prev.floatANode;
-            integerBNode = prev.integerBNode;
         }
 
         @Specialization
@@ -632,12 +559,6 @@ public abstract class MathNodes {
             floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
-        public LGammaNode(LGammaNode prev) {
-            super(prev);
-            isANode = prev.isANode;
-            floatNode = prev.floatNode;
-        }
-
         @Specialization
         public RubyArray lgamma(int a) {
             return lgamma((double) a);
@@ -691,10 +612,6 @@ public abstract class MathNodes {
 
         public LogNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public LogNode(LogNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -763,10 +680,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public Log10Node(Log10Node prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             if (a < 0) {
@@ -788,10 +701,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public Log2Node(Log2Node prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             if (a < 0) {
@@ -811,10 +720,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public SinNode(SinNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.sin(a);
@@ -827,10 +732,6 @@ public abstract class MathNodes {
 
         public SinHNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SinHNode(SinHNode prev) {
-            super(prev);
         }
 
         @Override
@@ -847,10 +748,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public TanNode(TanNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.tan(a);
@@ -865,10 +762,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public TanHNode(TanHNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.tanh(a);
@@ -881,10 +774,6 @@ public abstract class MathNodes {
 
         public SqrtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SqrtNode(SqrtNode prev) {
-            super(prev);
         }
 
         @Override
@@ -903,12 +792,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
             floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
-        }
-
-        protected SimpleMonadicMathNode(SimpleMonadicMathNode prev) {
-            super(prev);
-            isANode = prev.isANode;
-            floatNode = prev.floatNode;
         }
 
         // TODO: why can't we leave this abstract?
@@ -967,13 +850,6 @@ public abstract class MathNodes {
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
             floatANode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
             floatBNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
-        }
-
-        protected SimpleDyadicMathNode(SimpleDyadicMathNode prev) {
-            super(prev);
-            isANode = prev.isANode;
-            floatANode = prev.floatANode;
-            floatBNode = prev.floatBNode;
         }
 
         // TODO: why can't we leave this abstract?

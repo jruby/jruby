@@ -26,10 +26,6 @@ public abstract class ToJavaStringNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ToJavaStringNode(ToJavaStringNode prev) {
-        super(prev);
-    }
-
     public abstract String executeJavaString(VirtualFrame frame, Object object);
 
     // TODO(CS): cache the conversion to a Java String? Or should the user do that themselves?

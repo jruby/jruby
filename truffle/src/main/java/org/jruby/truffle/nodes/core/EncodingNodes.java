@@ -44,10 +44,6 @@ public abstract class EncodingNodes {
             super(context, sourceSection);
         }
 
-        public AsciiCompatibleNode(AsciiCompatibleNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object isCompatible(RubyEncoding encoding) {
             notDesignedForCompilation();
@@ -60,10 +56,6 @@ public abstract class EncodingNodes {
 
         public CompatibleQueryNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CompatibleQueryNode(CompatibleQueryNode prev) {
-            super(prev);
         }
 
         @TruffleBoundary
@@ -198,11 +190,6 @@ public abstract class EncodingNodes {
             super(context, sourceSection);
         }
 
-        public SetDefaultExternalNode(SetDefaultExternalNode prev) {
-            super(prev);
-            toStrNode = prev.toStrNode;
-        }
-
         @Specialization
         public RubyEncoding defaultExternal(RubyEncoding encoding) {
             notDesignedForCompilation();
@@ -227,7 +214,7 @@ public abstract class EncodingNodes {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("default external can not be nil", this));
         }
 
-        @Specialization(guards = { "!isRubyEncoding", "!isRubyString", "!isRubyNilClass" })
+        @Specialization(guards = { "!isRubyEncoding(encoding)", "!isRubyString(encoding)", "!isRubyNilClass(encoding)" })
         public RubyEncoding defaultExternal(VirtualFrame frame, Object encoding) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -249,10 +236,6 @@ public abstract class EncodingNodes {
             super(context, sourceSection);
         }
 
-        public SetDefaultInternalNode(SetDefaultInternalNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyEncoding defaultInternal(RubyEncoding encoding) {
             notDesignedForCompilation();
@@ -271,7 +254,7 @@ public abstract class EncodingNodes {
             return encoding;
         }
 
-        @Specialization(guards = { "!isRubyEncoding", "!isRubyNilClass" })
+        @Specialization(guards = { "!isRubyEncoding(encoding)", "!isRubyNilClass(encoding)" })
         public RubyString defaultInternal(VirtualFrame frame, Object encoding) {
             notDesignedForCompilation();
 
@@ -295,10 +278,6 @@ public abstract class EncodingNodes {
             super(context, sourceSection);
         }
 
-        public ListNode(ListNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyArray list() {
             notDesignedForCompilation();
@@ -317,10 +296,6 @@ public abstract class EncodingNodes {
             super(context, sourceSection);
         }
 
-        public LocaleCharacterMapNode(LocaleCharacterMapNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString localeCharacterMap() {
             notDesignedForCompilation();
@@ -334,10 +309,6 @@ public abstract class EncodingNodes {
 
         public DummyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DummyNode(DummyNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -365,15 +336,6 @@ public abstract class EncodingNodes {
             newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
             newTupleNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public EncodingMapNode(EncodingMapNode prev) {
-            super(prev);
-            upcaseNode = prev.upcaseNode;
-            toSymNode = prev.toSymNode;
-            newLookupTableNode = prev.newLookupTableNode;
-            lookupTableWriteNode = prev.lookupTableWriteNode;
-            newTupleNode = prev.newTupleNode;
         }
 
         @Specialization
@@ -445,10 +407,6 @@ public abstract class EncodingNodes {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToSNode(ToSNode prev) {
-            super(prev);
         }
 
         @CompilerDirectives.TruffleBoundary

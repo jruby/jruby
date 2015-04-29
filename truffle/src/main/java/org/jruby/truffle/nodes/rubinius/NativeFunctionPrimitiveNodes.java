@@ -48,10 +48,6 @@ public abstract class NativeFunctionPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public NativeFunctionTypeSizePrimitiveNode(NativeFunctionTypeSizePrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public long typeSize(int type) {
             switch (type) {

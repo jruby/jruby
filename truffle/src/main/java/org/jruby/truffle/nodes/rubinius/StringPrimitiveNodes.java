@@ -54,7 +54,7 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
@@ -93,10 +93,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public CharacterAsciiPrimitiveNode(CharacterAsciiPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean isCharacterAscii(RubyString character) {
             final ByteList bytes = character.getByteList();
@@ -120,11 +116,6 @@ public abstract class StringPrimitiveNodes {
         public StringAwkSplitPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             taintResultNode = new TaintResultNode(context, sourceSection);
-        }
-
-        public StringAwkSplitPrimitiveNode(StringAwkSplitPrimitiveNode prev) {
-            super(prev);
-            taintResultNode = prev.taintResultNode;
         }
 
         @Specialization
@@ -204,11 +195,6 @@ public abstract class StringPrimitiveNodes {
         public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             taintResultNode = new TaintResultNode(context, sourceSection);
-        }
-
-        public StringByteSubstringPrimitiveNode(StringByteSubstringPrimitiveNode prev) {
-            super(prev);
-            taintResultNode = prev.taintResultNode;
         }
 
         @Specialization
@@ -301,7 +287,7 @@ public abstract class StringPrimitiveNodes {
             return null;
         }
 
-        @Specialization(guards = "!isRubyRange(arguments[1])")
+        @Specialization(guards = "!isRubyRange(indexOrRange)")
         public Object stringByteSubstring(RubyString string, Object indexOrRange, Object length) {
             return null;
         }
@@ -315,10 +301,6 @@ public abstract class StringPrimitiveNodes {
 
         public StringCheckNullSafePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StringCheckNullSafePrimitiveNode(StringCheckNullSafePrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -341,11 +323,6 @@ public abstract class StringPrimitiveNodes {
 
         public StringChrAtPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StringChrAtPrimitiveNode(StringChrAtPrimitiveNode prev) {
-            super(prev);
-            stringByteSubstringNode = prev.stringByteSubstringNode;
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -399,11 +376,6 @@ public abstract class StringPrimitiveNodes {
         public StringCompareSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { null });
-        }
-
-        public StringCompareSubstringPrimitiveNode(StringCompareSubstringPrimitiveNode prev) {
-            super(prev);
-            sizeNode = prev.sizeNode;
         }
 
         @Specialization
@@ -463,10 +435,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringEqualPrimitiveNode(StringEqualPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean stringEqual(RubyString string, RubyString other) {
             final ByteList a = string.getBytes();
@@ -483,7 +451,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_find_character")
-    @ImportGuards(StringGuards.class)
+    @ImportStatic(StringGuards.class)
     public static abstract class StringFindCharacterPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child private TaintResultNode taintResultNode;
@@ -492,12 +460,7 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringFindCharacterPrimitiveNode(StringFindCharacterPrimitiveNode prev) {
-            super(prev);
-            taintResultNode = prev.taintResultNode;
-        }
-
-        @Specialization(guards = "isSingleByte")
+        @Specialization(guards = "isSingleByte(string)")
         public Object stringFindCharacterSingleByte(RubyString string, int offset) {
             // Taken from Rubinius's String::find_character.
 
@@ -514,7 +477,7 @@ public abstract class StringPrimitiveNodes {
             return propagate(string, ret);
         }
 
-        @Specialization(guards = "!isSingleByte")
+        @Specialization(guards = "!isSingleByte(string)")
         public Object stringFindCharacter(RubyString string, int offset) {
             // Taken from Rubinius's String::find_character.
 
@@ -563,18 +526,14 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringFromCodepointPrimitiveNode(StringFromCodepointPrimitiveNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isSimple")
+        @Specialization(guards = "isSimple(code, encoding)")
         public RubyString stringFromCodepointSimple(int code, RubyEncoding encoding) {
             return new RubyString(
                     getContext().getCoreLibrary().getStringClass(),
                     new ByteList(new byte[]{(byte) code}, encoding.getEncoding()));
         }
 
-        @Specialization(guards = "!isSimple")
+        @Specialization(guards = "!isSimple(code, encoding)")
         public RubyString stringFromCodepoint(int code, RubyEncoding encoding) {
             notDesignedForCompilation();
 
@@ -631,10 +590,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringToFPrimitiveNode(StringToFPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object stringToF(RubyString string) {
             notDesignedForCompilation();
@@ -656,10 +611,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringIndexPrimitiveNode(StringIndexPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object stringIndex(RubyString string, RubyString pattern, int start) {
             final int index = StringSupport.index(string,
@@ -676,23 +627,19 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_character_byte_index", needsSelf = false)
-    @ImportGuards(StringGuards.class)
+    @ImportStatic(StringGuards.class)
     public static abstract class CharacterByteIndexNode extends RubiniusPrimitiveNode {
 
         public CharacterByteIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public CharacterByteIndexNode(CharacterByteIndexNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isSingleByteOptimizable")
+        @Specialization(guards = "isSingleByteOptimizable(string)")
         public int stringCharacterByteIndex(RubyString string, int index, int start) {
             return start + index;
         }
 
-        @Specialization(guards = "!isSingleByteOptimizable")
+        @Specialization(guards = "!isSingleByteOptimizable(string)")
         public int stringCharacterByteIndexMultiByteEncoding(RubyString string, int index, int start) {
             final ByteList bytes = string.getBytes();
 
@@ -702,30 +649,26 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_byte_character_index", needsSelf = false)
-    @ImportGuards(StringGuards.class)
+    @ImportStatic(StringGuards.class)
     public static abstract class StringByteCharacterIndexPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringByteCharacterIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public StringByteCharacterIndexPrimitiveNode(StringByteCharacterIndexPrimitiveNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isSingleByteOptimizableOrAsciiCompatible")
+        @Specialization(guards = "isSingleByteOptimizableOrAsciiCompatible(string)")
         public int stringByteCharacterIndexSingleByte(RubyString string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index.
             return index;
         }
 
-        @Specialization(guards = { "!isSingleByteOptimizableOrAsciiCompatible", "isFixedWidthEncoding", "!isValidUtf8" })
+        @Specialization(guards = { "!isSingleByteOptimizableOrAsciiCompatible(string)", "isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
         public int stringByteCharacterIndexFixedWidth(RubyString string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index.
             return index / string.getByteList().getEncoding().minLength();
         }
 
-        @Specialization(guards = { "!isSingleByteOptimizableOrAsciiCompatible", "!isFixedWidthEncoding", "isValidUtf8" })
+        @Specialization(guards = { "!isSingleByteOptimizableOrAsciiCompatible(string)", "!isFixedWidthEncoding(string)", "isValidUtf8(string)" })
         public int stringByteCharacterIndexValidUtf8(RubyString string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index.
 
@@ -734,7 +677,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @CompilerDirectives.TruffleBoundary
-        @Specialization(guards = { "!isSingleByteOptimizableOrAsciiCompatible", "!isFixedWidthEncoding", "!isValidUtf8" })
+        @Specialization(guards = { "!isSingleByteOptimizableOrAsciiCompatible(string)", "!isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
         public int stringByteCharacterIndex(RubyString string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index and Encoding::find_byte_character_index.
 
@@ -760,10 +703,6 @@ public abstract class StringPrimitiveNodes {
 
         public StringCharacterIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StringCharacterIndexPrimitiveNode(StringCharacterIndexPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -867,10 +806,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringByteIndexPrimitiveNode(StringByteIndexPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object stringByteIndex(RubyString string, int index, int start) {
             // Taken from Rubinius's String::byte_index.
@@ -967,10 +902,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringPreviousByteIndexPrimitiveNode(StringPreviousByteIndexPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object stringPreviousByteIndex(RubyString string, int index) {
             // Port of Rubinius's String::previous_byte_index.
@@ -1000,10 +931,6 @@ public abstract class StringPrimitiveNodes {
 
         public StringCopyFromPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StringCopyFromPrimitiveNode(StringCopyFromPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1042,10 +969,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringResizeCapacityPrimitiveNode(StringResizeCapacityPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString stringResizeCapacity(RubyString string, int capacity) {
             string.getByteList().ensure(capacity);
@@ -1059,10 +982,6 @@ public abstract class StringPrimitiveNodes {
 
         public StringRindexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StringRindexPrimitiveNode(StringRindexPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1132,16 +1051,13 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringPatternPrimitiveNode(StringPatternPrimitiveNode prev) {
-            super(prev);
-        }
 
-        @Specialization(guards = "isZero(arguments[1]))")
+        @Specialization(guards = "value == 0")
         public RubyString stringPatternZero(RubyClass stringClass, int size, int value) {
             return new RubyString(stringClass, new ByteList(new byte[size]));
         }
 
-        @Specialization(guards = "!isZero(arguments[1]))")
+        @Specialization(guards = "value != 0")
         public RubyString stringPattern(RubyClass stringClass, int size, int value) {
             final byte[] bytes = new byte[size];
             Arrays.fill(bytes, (byte) value);
@@ -1162,10 +1078,6 @@ public abstract class StringPrimitiveNodes {
             return new RubyString(stringClass, new ByteList(bytes));
         }
 
-        protected boolean isZero(int value) {
-            return value == 0;
-        }
-
     }
 
     @RubiniusPrimitive(name = "string_to_inum")
@@ -1173,10 +1085,6 @@ public abstract class StringPrimitiveNodes {
 
         public StringToInumPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StringToInumPrimitiveNode(StringToInumPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -1205,10 +1113,6 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringByteAppendPrimitiveNode(StringByteAppendPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString stringByteAppend(RubyString string, RubyString other) {
             notDesignedForCompilation();
@@ -1219,7 +1123,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_substring")
-    @ImportGuards(StringGuards.class)
+    @ImportStatic(StringGuards.class)
     public static abstract class StringSubstringPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child private TaintResultNode taintResultNode;
@@ -1228,14 +1132,9 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public StringSubstringPrimitiveNode(StringSubstringPrimitiveNode prev) {
-            super(prev);
-            taintResultNode = prev.taintResultNode;
-        }
-
         public abstract Object execute(VirtualFrame frame, RubyString string, int beg, int len);
 
-        @Specialization(guards = "isSingleByteOptimizable")
+        @Specialization(guards = "isSingleByteOptimizable(string)")
         public Object stringSubstringSingleByteOptimizable(RubyString string, int beg, int len) {
             // Taken from org.jruby.RubyString#substr19.
 
@@ -1272,7 +1171,7 @@ public abstract class StringPrimitiveNodes {
             return makeSubstring(string, beg, len);
         }
 
-        @Specialization(guards = "!isSingleByteOptimizable")
+        @Specialization(guards = "!isSingleByteOptimizable(string)")
         public Object stringSubstring(RubyString string, int beg, int len) {
             // Taken from org.jruby.RubyString#substr19 & org.jruby.RubyString#multibyteSubstr19.
 
@@ -1364,10 +1263,6 @@ public abstract class StringPrimitiveNodes {
 
         public StringFromByteArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StringFromByteArrayPrimitiveNode(StringFromByteArrayPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization

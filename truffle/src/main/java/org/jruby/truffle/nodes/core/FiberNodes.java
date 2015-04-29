@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
@@ -36,22 +37,18 @@ public abstract class FiberNodes {
             super(context, sourceSection);
         }
 
-        public FiberTransferNode(FiberTransferNode prev) {
-            super(prev);
-        }
-
-        protected Object singleValue(Object[] args) {
+        protected Object singleValue(VirtualFrame frame, Object[] args) {
             if (singleValueCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 singleValueCastNode = insert(SingleValueCastNodeFactory.create(getContext(), getSourceSection(), null));
             }
-            return singleValueCastNode.executeSingleValue(args);
+            return singleValueCastNode.executeSingleValue(frame, args);
         }
 
-        public abstract Object executeTransferControlTo(RubyFiber fiber, boolean isYield, Object[] args);
+        public abstract Object executeTransferControlTo(VirtualFrame frame, RubyFiber fiber, boolean isYield, Object[] args);
 
         @Specialization
-        protected Object transfer(RubyFiber fiber, boolean isYield, Object[] args) {
+        protected Object transfer(VirtualFrame frame, RubyFiber fiber, boolean isYield, Object[] args) {
             notDesignedForCompilation();
 
             if (!fiber.isAlive()) {
@@ -66,7 +63,7 @@ public abstract class FiberNodes {
 
             final RubyFiber sendingFiber = currentThread.getFiberManager().getCurrentFiber();
 
-            return singleValue(sendingFiber.transferControlTo(fiber, isYield, args));
+            return singleValue(frame, sendingFiber.transferControlTo(fiber, isYield, args));
         }
 
     }
@@ -76,10 +73,6 @@ public abstract class FiberNodes {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -102,14 +95,9 @@ public abstract class FiberNodes {
             fiberTransferNode = FiberTransferNodeFactory.create(context, sourceSection, new RubyNode[] { null, null, null });
         }
 
-        public ResumeNode(ResumeNode prev) {
-            super(prev);
-            fiberTransferNode = prev.fiberTransferNode;
-        }
-
         @Specialization
-        public Object resume(RubyFiber fiberBeingResumed, Object[] args) {
-            return fiberTransferNode.executeTransferControlTo(fiberBeingResumed, false, args);
+        public Object resume(VirtualFrame frame, RubyFiber fiberBeingResumed, Object[] args) {
+            return fiberTransferNode.executeTransferControlTo(frame, fiberBeingResumed, false, args);
         }
 
     }
@@ -124,13 +112,8 @@ public abstract class FiberNodes {
             fiberTransferNode = FiberTransferNodeFactory.create(context, sourceSection, new RubyNode[] { null, null, null });
         }
 
-        public YieldNode(YieldNode prev) {
-            super(prev);
-            fiberTransferNode = prev.fiberTransferNode;
-        }
-
         @Specialization
-        public Object yield(Object[] args) {
+        public Object yield(VirtualFrame frame, Object[] args) {
             RubyThread currentThread = getContext().getThreadManager().getCurrentThread();
             final RubyFiber yieldingFiber = currentThread.getFiberManager().getCurrentFiber();
             final RubyFiber fiberYieldedTo = yieldingFiber.getLastResumedByFiber();
@@ -139,7 +122,7 @@ public abstract class FiberNodes {
                 throw new RaiseException(getContext().getCoreLibrary().yieldFromRootFiberError(this));
             }
 
-            return fiberTransferNode.executeTransferControlTo(fiberYieldedTo, true, args);
+            return fiberTransferNode.executeTransferControlTo(frame, fiberYieldedTo, true, args);
         }
 
     }

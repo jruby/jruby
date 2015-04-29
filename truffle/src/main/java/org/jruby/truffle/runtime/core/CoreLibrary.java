@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 
@@ -53,6 +54,9 @@ import java.util.List;
 import java.util.Map;
 
 public class CoreLibrary {
+
+    private static final boolean LOAD_CORE = Options.TRUFFLE_LOAD_CORE.load();
+    private static final String CLI_RECORD_SEPARATOR = Options.CLI_RECORD_SEPARATOR.load();
 
     private final RubyContext context;
 
@@ -132,6 +136,7 @@ public class CoreLibrary {
     private final ArrayNodes.MinBlock arrayMinBlock;
     private final ArrayNodes.MaxBlock arrayMaxBlock;
 
+    private final RubyClass rubyInternalMethod;
     private final Map<Errno, RubyClass> errnoClasses = new HashMap<>();
 
     @CompilerDirectives.CompilationFinal private RubySymbol eachSymbol;
@@ -294,6 +299,7 @@ public class CoreLibrary {
         encodingConverterClass = defineClass(encodingClass, objectClass, "Converter", new RubyEncodingConverter.EncodingConverterAllocator());
 
         truffleModule = defineModule("Truffle");
+        defineModule(truffleModule, "Interop");
         defineModule(truffleModule, "Debug");
         defineModule(truffleModule, "Primitive");
 
@@ -310,6 +316,10 @@ public class CoreLibrary {
         stringDataClass = defineClass(rubiniusModule, objectClass, "StringData");
         transcodingClass = defineClass(encodingClass, objectClass, "Transcoding");
         tupleClass = defineClass(rubiniusModule, arrayClass, "Tuple");
+
+        // Interop
+
+        rubyInternalMethod = null;
 
         // Include the core modules
 
@@ -367,7 +377,7 @@ public class CoreLibrary {
         Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
         globals.getOperations().setInstanceVariable(globals, "$VERBOSE", value);
 
-        final RubyString defaultRecordSeparator = RubyString.fromJavaString(stringClass, Options.CLI_RECORD_SEPARATOR.load());
+        final RubyString defaultRecordSeparator = RubyString.fromJavaString(stringClass, CLI_RECORD_SEPARATOR);
         defaultRecordSeparator.freeze();
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
@@ -467,7 +477,7 @@ public class CoreLibrary {
 
         // Load Ruby core
 
-        if (Options.TRUFFLE_LOAD_CORE.load()) {
+        if (LOAD_CORE) {
             try {
                 state = State.LOADING_RUBY_CORE;
                 loadRubyCore("core.rb");
@@ -516,6 +526,7 @@ public class CoreLibrary {
         final Source source;
 
         try {
+            // TODO CS 28-Feb-15 need to use SourceManager here so that the debugger knows about the core files
             source = Source.fromReader(new InputStreamReader(getRubyCoreInputStream(fileName), StandardCharsets.UTF_8), prefix + fileName);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -1060,6 +1071,14 @@ public class CoreLibrary {
 
     public RubyClass getNameErrorClass() {
         return nameErrorClass;
+    }
+
+    public RubyClass getNilClass() {
+        return nilClass;
+    }
+
+    public RubyClass getRubyInternalMethod() {
+        return rubyInternalMethod;
     }
 
     public RubyClass getNoMethodErrorClass() {

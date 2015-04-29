@@ -36,10 +36,6 @@ public abstract class ClassNodes {
             super(context, sourceSection);
         }
 
-        public AllocateNode(AllocateNode prev) {
-            super(prev);
-        }
-
         public abstract RubyBasicObject executeAllocate(VirtualFrame frame, RubyClass rubyClass);
 
         @Specialization
@@ -65,14 +61,6 @@ public abstract class ClassNodes {
             initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
-        public NewNode(NewNode prev) {
-            super(prev);
-            allocateNode = prev.allocateNode;
-            initialize = prev.initialize;
-        }
-
-        public abstract RubyBasicObject executeNew(VirtualFrame frame, RubyClass rubyClass, Object[] args, Object block);
-
         @Specialization
         public Object newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, UndefinedPlaceholder block) {
             return doNewInstance(frame, rubyClass, args, null);
@@ -97,10 +85,6 @@ public abstract class ClassNodes {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
         }
 
         void moduleInitialize(VirtualFrame frame, RubyClass rubyClass, RubyProc block) {
@@ -143,10 +127,6 @@ public abstract class ClassNodes {
             super(context, sourceSection);
         }
 
-        public InheritedNode(InheritedNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass inherited(Object subclass) {
             return nil();
@@ -159,10 +139,6 @@ public abstract class ClassNodes {
 
         public SuperClassNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SuperClassNode(SuperClassNode prev) {
-            super(prev);
         }
 
         @Specialization

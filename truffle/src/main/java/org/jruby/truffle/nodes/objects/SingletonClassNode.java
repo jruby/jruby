@@ -23,25 +23,21 @@ import org.jruby.truffle.runtime.core.RubyClass;
 /**
  * Reads the singleton (meta, eigen) class of an object.
  */
-@NodeChild(value="object", type=RubyNode.class)
+@NodeChild(value="value", type=RubyNode.class)
 public abstract class SingletonClassNode extends RubyNode {
 
     public SingletonClassNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
-    public SingletonClassNode(SingletonClassNode prev) {
-        super(prev);
-    }
-
     public abstract RubyClass executeSingletonClass(VirtualFrame frame, Object value);
 
-    @Specialization(guards = "isTrue")
+    @Specialization(guards = "isTrue(value)")
     protected RubyClass singletonClassTrue(boolean value) {
         return getContext().getCoreLibrary().getTrueClass();
     }
 
-    @Specialization(guards = "!isTrue")
+    @Specialization(guards = "!isTrue(value)")
     protected RubyClass singletonClassFalse(boolean value) {
         return getContext().getCoreLibrary().getFalseClass();
     }

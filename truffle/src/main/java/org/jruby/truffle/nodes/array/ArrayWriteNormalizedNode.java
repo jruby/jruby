@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.nodes.array;
 
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -28,7 +28,7 @@ import org.jruby.truffle.runtime.util.ArrayUtils;
         @NodeChild(value="index", type=RubyNode.class),
         @NodeChild(value="value", type=RubyNode.class)
 })
-@ImportGuards(ArrayGuards.class)
+@ImportStatic(ArrayGuards.class)
 public abstract class ArrayWriteNormalizedNode extends RubyNode {
 
     @Child private EnsureCapacityArrayNode ensureCapacityNode;
@@ -42,18 +42,12 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         generalizeNode = GeneralizeArrayNodeFactory.create(context, sourceSection, null, null);
     }
 
-    public ArrayWriteNormalizedNode(ArrayWriteNormalizedNode prev) {
-        super(prev);
-        ensureCapacityNode = prev.ensureCapacityNode;
-        generalizeNode = prev.generalizeNode;
-    }
-
     public abstract Object executeWrite(VirtualFrame frame, RubyArray array, int index, Object value);
 
     // Writing at index 0 into a null array creates a new array of the most specific type
 
     @Specialization(
-            guards={"isNullArray", "isIndex0"}
+            guards={"isNullArray(array)", "isIndex0(array, index)"}
     )
     public boolean writeNull0(RubyArray array, int index, boolean value) {
         array.setStore(new Object[]{value}, 1);
@@ -61,7 +55,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isNullArray", "isIndex0"}
+            guards={"isNullArray(array)", "isIndex0(array, index)"}
     )
     public int writeNull0(RubyArray array, int index, int value) {
         array.setStore(new int[]{value}, 1);
@@ -69,7 +63,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isNullArray", "isIndex0"}
+            guards={"isNullArray(array)", "isIndex0(array, index)"}
     )
     public long writeNull0(RubyArray array, int index, long value) {
         array.setStore(new long[]{value}, 1);
@@ -77,7 +71,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isNullArray", "isIndex0"}
+            guards={"isNullArray(array)", "isIndex0(array, index)"}
     )
     public double writeNull0(RubyArray array, int index, double value) {
         array.setStore(new double[]{value}, 1);
@@ -85,7 +79,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isNullArray", "isIndex0"}
+            guards={"isNullArray(array)", "isIndex0(array, index)"}
     )
     public RubyBasicObject writeNull0(RubyArray array, int index, RubyBasicObject value) {
         array.setStore(new Object[]{value}, 1);
@@ -95,7 +89,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     // Writing beyond index 0 in a null array creates an Object[] as we need to fill the rest with nil
 
     @Specialization(
-            guards={"isNullArray", "!isIndex0"}
+            guards={"isNullArray(array)", "!isIndex0(array, index)"}
     )
     public Object writeNullBeyond(RubyArray array, int index, Object value) {
         final Object[] store = new Object[index + 1];
@@ -112,7 +106,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     // Writing within an existing array with a compatible type
 
     @Specialization(
-            guards={"isObjectArray", "isInBounds"}
+            guards={"isObjectArray(array)", "isInBounds(array, index)"}
     )
     public boolean writeWithin(RubyArray array, int index, boolean value) {
         final Object[] store = (Object[]) array.getStore();
@@ -121,7 +115,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isIntArray", "isInBounds"}
+            guards={"isIntArray(array)", "isInBounds(array, index)"}
     )
     public int writeWithin(RubyArray array, int index, int value) {
         final int[] store = (int[]) array.getStore();
@@ -130,7 +124,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isLongArray", "isInBounds"}
+            guards={"isLongArray(array)", "isInBounds(array, index)"}
     )
     public int writeWithinIntIntoLong(RubyArray array, int index, int value) {
         writeWithin(array, index, (long) value);
@@ -138,7 +132,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isLongArray", "isInBounds"}
+            guards={"isLongArray(array)", "isInBounds(array, index)"}
     )
     public long writeWithin(RubyArray array, int index, long value) {
         final long[] store = (long[]) array.getStore();
@@ -147,7 +141,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isDoubleArray", "isInBounds"}
+            guards={"isDoubleArray(array)", "isInBounds(array, index)"}
     )
     public double writeWithin(RubyArray array, int index, double value) {
         final double[] store = (double[]) array.getStore();
@@ -156,7 +150,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isObjectArray", "isInBounds"}
+            guards={"isObjectArray(array)", "isInBounds(array, index)"}
     )
     public Object writeWithin(RubyArray array, int index, Object value) {
         final Object[] store = (Object[]) array.getStore();
@@ -167,7 +161,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     // Writing within an existing array with an incompatible type - need to generalise
 
     @Specialization(
-            guards={"isIntArray", "isInBounds"}
+            guards={"isIntArray(array)", "isInBounds(array, index)"}
     )
     public long writeWithinInt(RubyArray array, int index, long value) {
         final int[] intStore = (int[]) array.getStore();
@@ -183,7 +177,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isIntArray", "isInBounds", "!isInteger(value)", "!isLong(value)"}
+            guards={"isIntArray(array)", "isInBounds(array, index)", "!isInteger(value)", "!isLong(value)"}
     )
     public Object writeWithinInt(RubyArray array, int index, Object value) {
         final Object[] objectStore = ArrayUtils.box((int[]) array.getStore());
@@ -193,7 +187,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isLongArray", "isInBounds", "!isInteger(value)", "!isLong(value)"}
+            guards={"isLongArray(array)", "isInBounds(array, index)", "!isInteger(value)", "!isLong(value)"}
     )
     public Object writeWithinLong(RubyArray array, int index, Object value) {
         final Object[] objectStore = ArrayUtils.box((long[]) array.getStore());
@@ -203,7 +197,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isDoubleArray", "isInBounds", "!isDouble(value)"}
+            guards={"isDoubleArray(array)", "isInBounds(array, index)", "!isDouble(value)"}
     )
     public Object writeWithinDouble(RubyArray array, int index, Object value) {
         final Object[] objectStore = ArrayUtils.box((double[]) array.getStore());
@@ -215,7 +209,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     // Extending an array of compatible type by just one
 
     @Specialization(
-            guards={"isObjectArray", "isExtendingByOne"}
+            guards={"isObjectArray(array)", "isExtendingByOne(array, index)"}
     )
     public boolean writeExtendByOne(VirtualFrame frame, RubyArray array, int index, boolean value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
@@ -225,7 +219,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isIntArray", "isExtendingByOne"}
+            guards={"isIntArray(array)", "isExtendingByOne(array, index)"}
     )
     public int writeExtendByOne(VirtualFrame frame, RubyArray array, int index, int value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
@@ -235,7 +229,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isLongArray", "isExtendingByOne"}
+            guards={"isLongArray(array)", "isExtendingByOne(array, index)"}
     )
     public int writeExtendByOneIntIntoLong(VirtualFrame frame, RubyArray array, int index, int value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
@@ -245,7 +239,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isLongArray", "isExtendingByOne"}
+            guards={"isLongArray(array)", "isExtendingByOne(array, index)"}
     )
     public long writeExtendByOne(VirtualFrame frame, RubyArray array, int index, long value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
@@ -255,7 +249,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isDoubleArray", "isExtendingByOne"}
+            guards={"isDoubleArray(array)", "isExtendingByOne(array, index)"}
     )
     public double writeExtendByOne(VirtualFrame frame, RubyArray array, int index, double value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
@@ -265,7 +259,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isObjectArray", "isExtendingByOne"}
+            guards={"isObjectArray(array)", "isExtendingByOne(array, index)"}
     )
     public RubyBasicObject writeExtendByOne(VirtualFrame frame, RubyArray array, int index, RubyBasicObject value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
@@ -275,7 +269,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-        guards={"isObjectArray", "isExtendingByOne"}
+        guards={"isObjectArray(array)", "isExtendingByOne(array, index)"}
     )
     public int writeObjectExtendByOne(VirtualFrame frame, RubyArray array, int index, int value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
@@ -287,7 +281,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     // Writing beyond the end of an array - may need to generalise to Object[] or otherwise extend
 
     @Specialization(
-            guards={"!isObjectArray", "!isInBounds", "!isExtendingByOne"}
+            guards={"!isObjectArray(array)", "!isInBounds(array, index)", "!isExtendingByOne(array, index)"}
     )
     public Object writeBeyondPrimitive(VirtualFrame frame, RubyArray array, int index, Object value) {
         generalizeNode.executeGeneralize(frame, array, index + 1);
@@ -303,7 +297,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isObjectArray", "!isInBounds", "!isExtendingByOne"}
+            guards={"isObjectArray(array)", "!isInBounds(array, index)", "!isExtendingByOne(array, index)"}
     )
     public Object writeBeyondObject(VirtualFrame frame, RubyArray array, int index, Object value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);

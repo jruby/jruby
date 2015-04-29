@@ -32,16 +32,13 @@ public abstract class SymbolNodes {
             super(context, sourceSection);
         }
 
-        public EqualNode(EqualNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean equal(RubySymbol a, RubySymbol b) {
             return a == b;
         }
 
-        @Specialization(guards = "!isRubySymbol(arguments[1])")
+
+        @Specialization(guards = "!isRubySymbol(b)")
         public boolean equal(RubySymbol a, Object b) {
             return false;
         }
@@ -55,10 +52,6 @@ public abstract class SymbolNodes {
             super(context, sourceSection);
         }
 
-        public CompareNode(CompareNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int compare(RubySymbol a, RubySymbol b) {
             notDesignedForCompilation();
@@ -66,7 +59,7 @@ public abstract class SymbolNodes {
             return a.getByteList().cmp(b.getByteList());
         }
 
-        @Specialization(guards = "!isRubySymbol(arguments[1])")
+        @Specialization(guards = "!isRubySymbol(other)")
         public RubyNilClass compare(RubySymbol symbol,  Object other) {
             notDesignedForCompilation();
             return nil();
@@ -78,10 +71,6 @@ public abstract class SymbolNodes {
 
         public AllSymbolsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public AllSymbolsNode(AllSymbolsNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -105,10 +94,6 @@ public abstract class SymbolNodes {
             super(context, sourceSection);
         }
 
-        public CapitalizeNode(CapitalizeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubySymbol capitalize(RubySymbol symbol) {
             notDesignedForCompilation();
@@ -125,10 +110,6 @@ public abstract class SymbolNodes {
             super(context, sourceSection);
         }
 
-        public CaseCompareNode(CaseCompareNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int caseCompare(RubySymbol symbol, RubySymbol other) {
             notDesignedForCompilation();
@@ -136,7 +117,7 @@ public abstract class SymbolNodes {
             return symbol.getByteList().caseInsensitiveCmp(other.getByteList());
         }
 
-        @Specialization(guards = "!isRubySymbol(arguments[1])")
+        @Specialization(guards = "!isRubySymbol(other)")
         public RubyNilClass caseCompare(RubySymbol symbol,  Object other) {
             notDesignedForCompilation();
             return nil();
@@ -149,10 +130,6 @@ public abstract class SymbolNodes {
 
         public DowncaseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DowncaseNode(DowncaseNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -172,10 +149,6 @@ public abstract class SymbolNodes {
             super(context, sourceSection);
         }
 
-        public EmptyNode(EmptyNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean empty(RubySymbol symbol) {
             notDesignedForCompilation();
@@ -190,10 +163,6 @@ public abstract class SymbolNodes {
 
         public EncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EncodingNode(EncodingNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -212,10 +181,6 @@ public abstract class SymbolNodes {
             super(context, sourceSection);
         }
 
-        public HashNode(HashNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int hash(RubySymbol symbol) {
             return symbol.toString().hashCode();
@@ -230,10 +195,6 @@ public abstract class SymbolNodes {
             super(context, sourceSection);
         }
 
-        public InternNode(InternNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubySymbol intern(RubySymbol symbol) {
             return symbol;
@@ -246,10 +207,6 @@ public abstract class SymbolNodes {
 
         public ToProcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToProcNode(ToProcNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -268,10 +225,6 @@ public abstract class SymbolNodes {
             super(context, sourceSection);
         }
 
-        public ToSymNode(ToSymNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubySymbol toSym(RubySymbol symbol) {
             return symbol;
@@ -286,10 +239,6 @@ public abstract class SymbolNodes {
             super(context, sourceSection);
         }
 
-        public ToSNode(ToSNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString toS(RubySymbol symbol) {
             return getContext().makeString(symbol.getSymbolBytes().dup());
@@ -302,10 +251,6 @@ public abstract class SymbolNodes {
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InspectNode(InspectNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -324,10 +269,6 @@ public abstract class SymbolNodes {
             super(context, sourceSection);
         }
 
-        public SizeNode(SizeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int size(RubySymbol symbol) {
             return symbol.getByteList().lengthEnc();
@@ -340,10 +281,6 @@ public abstract class SymbolNodes {
 
         public SwapcaseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SwapcaseNode(SwapcaseNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -361,10 +298,6 @@ public abstract class SymbolNodes {
 
         public UpcaseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public UpcaseNode(UpcaseNode prev) {
-            super(prev);
         }
 
         @Specialization

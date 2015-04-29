@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
@@ -17,7 +18,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.instrument.ProbeNode;
-import com.oracle.truffle.api.instrument.TruffleEventReceiver;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
@@ -42,9 +43,17 @@ import java.math.BigInteger;
  * @see YieldDispatchNode
  */
 @TypeSystemReference(RubyTypes.class)
-public abstract class RubyNode extends Node implements ProbeNode.Instrumentable {
+@GenerateNodeFactory
+public abstract class RubyNode extends Node {
 
     private final RubyContext context;
+
+    // This field is a hack, used to transmit the information
+    // supplied by the JRuby parser in the form of a special
+    // node in the parse tree. The right thing to do is to
+    // add a special information node when the AST is constructed,
+    // which can then be removed.
+    private boolean atNewline = false;
 
     public RubyNode(RubyContext context, SourceSection sourceSection) {
         super(sourceSection);
@@ -52,11 +61,31 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         this.context = context;
     }
 
-    public RubyNode(RubyNode prev) {
-        this(prev.context, prev.getSourceSection());
+    @Override
+    public boolean isInstrumentable() {
+        return true;
+    }
+
+    @Override
+    public ProbeNode.WrapperNode createWrapperNode() {
+        return new RubyWrapperNode(this);
     }
 
     public abstract Object execute(VirtualFrame frame);
+
+    /**
+     * Records that this node was wrapped by the JRuby parser with a "newline" node.
+     */
+    public void setAtNewline() {
+        atNewline = true;
+    }
+
+    /**
+     * Was this ndoe wrapped by a JRuby parser "newline" node?
+     */
+    public boolean isAtNewline() {
+        return atNewline;
+    }
 
     /**
      * Ruby's parallel semantic path.
@@ -182,6 +211,10 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         return RubyTypesGen.RUBYTYPES.expectUndefinedPlaceholder(execute(frame));
     }
 
+    public TruffleObject executeTruffleObject(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectTruffleObject(execute(frame));
+    }
+
     public RubyEncodingConverter executeRubyEncodingConverter(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectRubyEncodingConverter(execute(frame));
     }
@@ -222,44 +255,18 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         return this;
     }
 
-    public Probe probe() {
-        final Node parent = getParent();
-
-        if (parent == null) {
-            throw new IllegalStateException("Cannot call probe() on a node without a parent.");
-        }
-
-        if (parent instanceof RubyWrapperNode) {
-            return ((RubyWrapperNode) parent).getProbe();
-        }
-
-        // Create a new wrapper/probe with this node as its child.
-        final RubyWrapperNode wrapper = new RubyWrapperNode(this);
-
-        // Connect it to a Probe
-        final Probe probe = ProbeNode.insertProbe(wrapper);
-
-        // Replace this node in the AST with the wrapper
-        this.replace(wrapper);
-
-        return probe;
+    public boolean isRational(RubyBasicObject o) {
+        // TODO(CS, 10-Jan-15) should this be a full is_a? test? We'd need a node for that.
+        return o.getLogicalClass() == getContext().getCoreLibrary().getRationalClass();
     }
 
-    public void probeLite(TruffleEventReceiver eventReceiver) {
-        final Node parent = getParent();
+    public boolean isForeignObject(Object object) {
+        return (object instanceof TruffleObject) && !(isRubyBasicObject(object));
+    }
 
-        if (parent == null) {
-            throw new IllegalStateException("Cannot call probeLite() on a node without a parent");
-        }
-
-        if (parent instanceof RubyWrapperNode) {
-            throw new IllegalStateException("Cannot call probeLite() on a node that already has a wrapper.");
-        }
-
-        final RubyWrapperNode wrapper = new RubyWrapperNode(this);
-        ProbeNode.insertProbeLite(wrapper, eventReceiver);
-
-        this.replace(wrapper);
+    public boolean isComplex(RubyBasicObject o) {
+        // TODO(BF, 4-4-15) COPIED from isRational - should this be a full is_a? test? We'd need a node for that.
+        return o.getLogicalClass() == getContext().getCoreLibrary().getComplexClass();
     }
 
     public boolean isNaN(double value) {
@@ -443,7 +450,7 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
     }
 
     @SuppressWarnings("static-method")
-    public boolean isObjectArray(Object value) {
+    public boolean isJavaObjectArray(Object value) {
         return value instanceof Object[];
     }
 

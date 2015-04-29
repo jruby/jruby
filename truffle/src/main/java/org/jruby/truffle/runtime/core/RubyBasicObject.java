@@ -12,6 +12,8 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.interop.ForeignAccessFactory;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.HiddenKey;
@@ -33,7 +35,7 @@ import java.util.Map;
 /**
  * Represents the Ruby {@code BasicObject} class - the root of the Ruby class hierarchy.
  */
-public class RubyBasicObject {
+public class RubyBasicObject implements TruffleObject {
 
     public static final HiddenKey OBJECT_ID_IDENTIFIER = new HiddenKey("object_id");
     public static final HiddenKey TAINTED_IDENTIFIER = new HiddenKey("tainted?");
@@ -175,6 +177,11 @@ public class RubyBasicObject {
 
     public boolean isFieldDefined(String name) {
         return getOperations().isFieldDefined(this, name);
+    }
+
+    @Override
+    public ForeignAccessFactory getForeignAccessFactory() {
+        return new BasicForeignAccessFactory(getContext());
     }
 
     public final void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {

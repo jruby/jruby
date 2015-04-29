@@ -11,8 +11,8 @@ package org.jruby.truffle.runtime.util;
 
 import com.oracle.truffle.api.CompilerAsserts;
 
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyArguments;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -281,7 +281,7 @@ public abstract class ArrayUtils {
                 destination[destinationStart + n] = unboxedSource[n];
             }
         } else if (source instanceof Object[]) {
-            RubyArguments.arraycopy((Object[]) source, 0, destination, destinationStart, length);
+            arraycopy((Object[]) source, 0, destination, destinationStart, length);
         } else {
             throw new UnsupportedOperationException();
         }
@@ -311,4 +311,7 @@ public abstract class ArrayUtils {
         }
     }
 
+    public static void arraycopy(Object[] src, int srcPos, Object[] dest, int destPos, int length) {
+        System.arraycopy(src, srcPos, dest, destPos, length);
+    }
 }

@@ -27,10 +27,6 @@ public abstract class FalseClassNodes {
             super(context, sourceSection);
         }
 
-        public AndNode(AndNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean and(Object other) {
             return false;
@@ -42,10 +38,6 @@ public abstract class FalseClassNodes {
 
         public OrXorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public OrXorNode(OrXorNode prev) {
-            super(prev);
         }
 
         @CreateCast("operand") public RubyNode createCast(RubyNode operand) {

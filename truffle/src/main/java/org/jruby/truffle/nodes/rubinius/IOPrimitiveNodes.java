@@ -33,10 +33,6 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public IOAllocatePrimitiveNode(IOAllocatePrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyBasicObject allocate(VirtualFrame frame, RubyClass classToAllocate) {
             final RubyBasicObject object = new RubyBasicObject(classToAllocate);
@@ -52,10 +48,6 @@ public abstract class IOPrimitiveNodes {
 
         public IOConnectPipeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public IOConnectPipeNode(IOConnectPipeNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -107,10 +99,6 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public IOOpenPrimitiveNode(IOOpenPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int open(RubyString path, int mode, int permission) {
             return posix().open(path.getByteList(), mode, permission);
@@ -123,10 +111,6 @@ public abstract class IOPrimitiveNodes {
 
         public IOFNMatchPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public IOFNMatchPrimitiveNode(IOFNMatchPrimitiveNode prev) {
-            super(prev);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -150,10 +134,6 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public IOEnsureOpenPrimitiveNode(IOEnsureOpenPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass ensureOpen(RubyBasicObject file) {
             // TODO CS 18-Apr-15
@@ -167,10 +147,6 @@ public abstract class IOPrimitiveNodes {
 
         public IOWritePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public IOWritePrimitiveNode(IOWritePrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -207,10 +183,6 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public IOClosePrimitiveNode(IOClosePrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int close(VirtualFrame frame, RubyBasicObject io) {
             // In Rubinius this does a lot more, but we'll stick with this for now
@@ -225,10 +197,6 @@ public abstract class IOPrimitiveNodes {
 
         public IOSeekPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public IOSeekPrimitiveNode(IOSeekPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization

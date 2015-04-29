@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.objects;
 
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.nodes.RubyNode;
@@ -28,18 +29,14 @@ public abstract class ClassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ClassNode(ClassNode prev) {
-        super(prev);
-    }
+    public abstract RubyClass executeGetClass(VirtualFrame frame, Object value);
 
-    public abstract RubyClass executeGetClass(Object value);
-
-    @Specialization(guards = "isTrue")
+    @Specialization(guards = "isTrue(value)")
     protected RubyClass getClassTrue(boolean value) {
         return getContext().getCoreLibrary().getTrueClass();
     }
 
-    @Specialization(guards = "!isTrue")
+    @Specialization(guards = "!isTrue(value)")
     protected RubyClass getClassFalse(boolean value) {
         return getContext().getCoreLibrary().getFalseClass();
     }

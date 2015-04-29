@@ -34,12 +34,7 @@ public abstract class SymbolOrToStrNode extends RubyNode {
         toStr = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    public SymbolOrToStrNode(SymbolOrToStrNode prev) {
-        super(prev);
-        toStr = prev.toStr;
-    }
-
-    public abstract String executeToJavaString(VirtualFrame frame, Object object);
+    public abstract String executeToJavaString(VirtualFrame frame, Object name);
 
     @Specialization
     public String coerceRubySymbol(RubySymbol symbol) {
@@ -51,7 +46,7 @@ public abstract class SymbolOrToStrNode extends RubyNode {
         return string.toString();
     }
 
-    @Specialization(guards = { "!isRubySymbol", "!isRubyString" })
+    @Specialization(guards = { "!isRubySymbol(object)", "!isRubyString(object)" })
     public String coerceObject(VirtualFrame frame, Object object) {
         notDesignedForCompilation();
 
@@ -75,5 +70,4 @@ public abstract class SymbolOrToStrNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
         }
     }
-
 }

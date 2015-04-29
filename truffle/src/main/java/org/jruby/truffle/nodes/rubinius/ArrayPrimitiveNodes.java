@@ -23,10 +23,6 @@ public abstract class ArrayPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TupleCopyFromPrimitiveNode(TupleCopyFromPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object tupleCopyFrom() {
             return null;

@@ -1,0 +1,3 @@
+fails:String#strip returns a new string with leading and trailing whitespace removed
+fails:String#strip returns a copy of self with trailing NULL bytes and whitespace
+fails:String#strip taints the result when self is tainted

@@ -145,6 +145,8 @@ public class Options {
     public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_PARSE_TREE = string(TRUFFLE, "truffle.translator.print_parse_trees", "", "Comma delimited list of method names to print the JRuby parse tree of before translation.");
     public static final Option<Boolean> TRUFFLE_PANIC_ON_JAVA_ASSERT = bool(TRUFFLE, "truffle.debug.panic_on_java_assert", false, "Panic as soon as a Java assertion failure is found.");
     public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
+    public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_uncaught_java", false, "Print uncaught Java exceptions at the point of translating them to Ruby exceptions.");
+    public static final Option<Boolean> TRUFFLE_COVERAGE = bool(TRUFFLE, "truffle.coverage", false, "Enable coverage (will be enabled by default in the future - currently has some bugs");
 
     public static final Option<Boolean> TRUFFLE_INLINER_ALWAYS_CLONE_YIELD = bool(TRUFFLE, "truffle.inliner.always_clone_yield", true, "Always clone yield call targets.");
     public static final Option<Boolean> TRUFFLE_INLINER_ALWAYS_INLINE_YIELD = bool(TRUFFLE, "truffle.inliner.always_inline_yield", true, "Always inline yield call targets.");

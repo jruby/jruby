@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
@@ -28,6 +29,10 @@ import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.util.cli.Options;
 
 public class ExceptionTranslatingNode extends RubyNode {
+
+    private static final boolean PRINT_JAVA_EXCEPTIONS = Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load();
+    private static final boolean PRINT_UNCAUGHT_JAVA_EXCEPTIONS = Options.TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA.load();
+    private static final boolean PANIC_ON_JAVA_ASSERT = Options.TRUFFLE_PANIC_ON_JAVA_ASSERT.load();
 
     private final UnsupportedOperationBehavior unsupportedOperationBehavior;
 
@@ -78,7 +83,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     private RubyException translate(ArithmeticException exception) {
-        if (Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
+        if (PRINT_JAVA_EXCEPTIONS) {
             exception.printStackTrace();
         }
 
@@ -86,7 +91,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     private RubyException translate(UnsupportedSpecializationException exception) {
-        if (Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
+        if (PRINT_JAVA_EXCEPTIONS) {
             exception.printStackTrace();
         }
 
@@ -149,14 +154,11 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     public RubyException translate(Throwable throwable) {
-        try {
-            if (Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
-                throwable.printStackTrace();
-            }
-        } catch (NullPointerException e) {
+        if (PRINT_JAVA_EXCEPTIONS || PRINT_UNCAUGHT_JAVA_EXCEPTIONS) {
+            throwable.printStackTrace();
         }
 
-        if (Options.TRUFFLE_PANIC_ON_JAVA_ASSERT.load() && throwable instanceof AssertionError) {
+        if (PANIC_ON_JAVA_ASSERT && throwable instanceof AssertionError) {
             DebugOperations.panic(getContext(), this, throwable.toString());
         }
 

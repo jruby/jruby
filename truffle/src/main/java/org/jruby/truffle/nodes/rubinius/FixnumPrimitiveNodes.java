@@ -46,12 +46,6 @@ public abstract class FixnumPrimitiveNodes {
             toF = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        public FixnumCoercePrimitiveNode(FixnumCoercePrimitiveNode prev) {
-            super(prev);
-            toFRespond = prev.toFRespond;
-            toF = prev.toF;
-        }
-
         @Specialization
         public RubyArray coerce(int a, int b) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new int[]{b, a}, 2);
@@ -62,7 +56,7 @@ public abstract class FixnumPrimitiveNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new long[]{b, a}, 2);
         }
 
-        @Specialization(guards = "!isInteger(arguments[1])")
+        @Specialization(guards = "!isInteger(b)")
         public RubyArray coerce(int a, Object b) {
             return null; // Primitive failure
         }
@@ -79,16 +73,12 @@ public abstract class FixnumPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public FixnumPowPrimitiveNode(FixnumPowPrimitiveNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "canShiftIntoInt")
+        @Specialization(guards = "canShiftIntoInt(a, b)")
         public int powTwo(int a, int b) {
             return 1 << b;
         }
 
-        @Specialization(guards = "canShiftIntoInt")
+        @Specialization(guards = "canShiftIntoInt(a, b)")
         public int powTwo(int a, long b) {
             return 1 << b;
         }
@@ -113,12 +103,12 @@ public abstract class FixnumPrimitiveNodes {
             return pow((long) a, b);
         }
 
-        @Specialization(guards = "canShiftIntoLong")
+        @Specialization(guards = "canShiftIntoLong(a, b)")
         public long powTwo(long a, int b) {
             return 1 << b;
         }
 
-        @Specialization(guards = "canShiftIntoLong")
+        @Specialization(guards = "canShiftIntoLong(a, b)")
         public long powTwo(long a, long b) {
             return 1 << b;
         }
@@ -183,12 +173,12 @@ public abstract class FixnumPrimitiveNodes {
             return Double.POSITIVE_INFINITY;
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(b)")
         public Object pow(int a, RubyBasicObject b) {
             return null; // Primitive failure
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(b)")
         public Object pow(long a, RubyBasicObject b) {
             return null; // Primitive failure
         }

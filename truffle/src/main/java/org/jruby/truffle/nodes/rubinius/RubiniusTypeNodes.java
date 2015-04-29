@@ -31,10 +31,6 @@ public abstract class RubiniusTypeNodes {
             super(context, sourceSection);
         }
 
-        public EachAncestorNode(EachAncestorNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass eachAncestor(VirtualFrame frame, RubyModule module, RubyProc block) {
             for (RubyModule ancestor : module.ancestors()) {

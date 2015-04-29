@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.nodes.array;
 
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -26,15 +26,11 @@ import org.jruby.truffle.runtime.core.RubyNilClass;
         @NodeChild(value="array", type=RubyNode.class),
         @NodeChild(value="index", type=RubyNode.class)
 })
-@ImportGuards(ArrayGuards.class)
+@ImportStatic(ArrayGuards.class)
 public abstract class ArrayReadNormalizedNode extends RubyNode {
 
     public ArrayReadNormalizedNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-    }
-
-    public ArrayReadNormalizedNode(ArrayReadNormalizedNode prev) {
-        super(prev);
     }
 
     public abstract Object executeRead(VirtualFrame frame, RubyArray array, int index);
@@ -42,7 +38,7 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
     // Anything from a null array is nil
 
     @Specialization(
-            guards="isNullArray"
+            guards="isNullArray(array)"
     )
     public RubyNilClass readNull(RubyArray array, int index) {
         return nil();
@@ -51,28 +47,28 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
     // Read within the bounds of an array with actual storage
 
     @Specialization(
-            guards={"isInBounds", "isIntArray"}
+            guards={"isInBounds(array, index)", "isIntArray(array)"}
     )
     public int readIntInBounds(RubyArray array, int index) {
         return ((int[]) array.getStore())[index];
     }
 
     @Specialization(
-            guards={"isInBounds", "isLongArray"}
+            guards={"isInBounds(array, index)", "isLongArray(array)"}
     )
     public long readLongInBounds(RubyArray array, int index) {
         return ((long[]) array.getStore())[index];
     }
 
     @Specialization(
-            guards={"isInBounds", "isDoubleArray"}
+            guards={"isInBounds(array, index)", "isDoubleArray(array)"}
     )
     public double readDoubleInBounds(RubyArray array, int index) {
         return ((double[]) array.getStore())[index];
     }
 
     @Specialization(
-            guards={"isInBounds", "isObjectArray"}
+            guards={"isInBounds(array, index)", "isObjectArray(array)"}
     )
     public Object readObjectInBounds(RubyArray array, int index) {
         return ((Object[]) array.getStore())[index];
@@ -81,7 +77,7 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
     // Reading out of bounds is nil of any array is nil - cannot contain isNullArray
 
     @Specialization(
-            guards="!isInBounds"
+            guards="!isInBounds(array, index)"
     )
     public RubyNilClass readOutOfBounds(RubyArray array, int index) {
         return nil();

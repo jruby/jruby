@@ -35,10 +35,6 @@ public abstract class FloatNodes {
             super(context, sourceSection);
         }
 
-        public NegNode(NegNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public double neg(double value) {
             return -value;
@@ -51,10 +47,6 @@ public abstract class FloatNodes {
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public AddNode(AddNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -86,10 +78,6 @@ public abstract class FloatNodes {
             super(context, sourceSection);
         }
 
-        public SubNode(SubNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public double sub(double a, int b) {
             return a - b;
@@ -110,7 +98,7 @@ public abstract class FloatNodes {
             return a - b.bigIntegerValue().doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(b)")
         public Object subCoerced(VirtualFrame frame, double a, RubyBasicObject b) {
             return ruby(frame, "redo_coerced :-, b", "b", b);
         }
@@ -122,10 +110,6 @@ public abstract class FloatNodes {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public MulNode(MulNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -148,7 +132,7 @@ public abstract class FloatNodes {
             return a * b.bigIntegerValue().doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(b)")
         public Object mulCoerced(VirtualFrame frame, double a, RubyBasicObject b) {
             return ruby(frame, "redo_coerced :*, b", "b", b);
         }
@@ -165,10 +149,6 @@ public abstract class FloatNodes {
 
         public PowNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public PowNode(PowNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -203,7 +183,7 @@ public abstract class FloatNodes {
             return Math.pow(a, b.bigIntegerValue().doubleValue());
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(b)")
         public Object powCoerced(VirtualFrame frame, double a, RubyBasicObject b) {
             return ruby(frame, "redo_coerced :**, b", "b", b);
         }
@@ -217,11 +197,6 @@ public abstract class FloatNodes {
 
         public DivNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DivNode(DivNode prev) {
-            super(prev);
-            redoCoercedNode = prev.redoCoercedNode;
         }
 
         @Specialization
@@ -245,10 +220,10 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = {
-                "!isInteger(arguments[1])",
-                "!isLong(arguments[1])",
-                "!isDouble(arguments[1])",
-                "!isRubyBignum(arguments[1])"})
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)",
+                "!isRubyBignum(b)"})
         public Object div(VirtualFrame frame, double a, Object b) {
             if (redoCoercedNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -267,10 +242,6 @@ public abstract class FloatNodes {
 
         public ModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ModNode(ModNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -316,11 +287,6 @@ public abstract class FloatNodes {
             divModNode = new GeneralDivModNode(context, sourceSection);
         }
 
-        public DivModNode(DivModNode prev) {
-            super(prev);
-            divModNode = prev.divModNode;
-        }
-
         @Specialization
         public RubyArray divMod(double a, int b) {
             return divModNode.execute(a, b);
@@ -350,10 +316,6 @@ public abstract class FloatNodes {
             super(context, sourceSection);
         }
 
-        public LessNode(LessNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean less(double a, int b) {
             return a < b;
@@ -374,7 +336,7 @@ public abstract class FloatNodes {
             return a < b.bigIntegerValue().doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(other)")
         public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(getContext().getCoreLibrary().argumentError(
                     String.format("comparison of Float with %s failed", other.getLogicalClass().getName()), this));
@@ -386,10 +348,6 @@ public abstract class FloatNodes {
 
         public LessEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public LessEqualNode(LessEqualNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -412,7 +370,7 @@ public abstract class FloatNodes {
             return a <= b.bigIntegerValue().doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(other)")
         public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(getContext().getCoreLibrary().argumentError(
                     String.format("comparison of Float with %s failed", other.getLogicalClass().getName()), this));
@@ -426,10 +384,6 @@ public abstract class FloatNodes {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -452,7 +406,7 @@ public abstract class FloatNodes {
             return a == b.bigIntegerValue().doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(b)")
         public Object equal(VirtualFrame frame, double a, RubyBasicObject b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -470,31 +424,27 @@ public abstract class FloatNodes {
             super(context, sourceSection);
         }
 
-        public CompareNode(CompareNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isNaN(arguments[0])")
+        @Specialization(guards = "isNaN(a)")
         public RubyNilClass compareFirstNaN(double a, Object b) {
             return nil();
         }
 
-        @Specialization(guards = "isNaN(arguments[1])")
+        @Specialization(guards = "isNaN(b)")
         public RubyNilClass compareSecondNaN(Object a, double b) {
             return nil();
         }
 
-        @Specialization(guards = {"!isNaN(arguments[0])"})
+        @Specialization(guards = {"!isNaN(a)"})
         public int compare(double a, int b) {
             return Double.compare(a, b);
         }
 
-        @Specialization(guards = {"!isNaN(arguments[0])"})
+        @Specialization(guards = {"!isNaN(a)"})
         public int compare(double a, long b) {
             return Double.compare(a, b);
         }
 
-        @Specialization(guards = "isInfinity(arguments[0])")
+        @Specialization(guards = "isInfinity(a)")
         public int compareInfinity(double a, RubyBignum b) {
             if (a < 0) {
                 return -1;
@@ -503,17 +453,17 @@ public abstract class FloatNodes {
             }
         }
 
-        @Specialization(guards = {"!isNaN(arguments[0])", "!isInfinity(arguments[0])"})
+        @Specialization(guards = {"!isNaN(a)", "!isInfinity(a)"})
         public int compare(double a, RubyBignum b) {
             return Double.compare(a, b.bigIntegerValue().doubleValue());
         }
 
-        @Specialization(guards = {"!isNaN(arguments[0])", "!isNaN(arguments[1])"})
+        @Specialization(guards = {"!isNaN(a)", "!isNaN(b)"})
         public int compare(double a, double b) {
             return Double.compare(a, b);
         }
 
-        @Specialization(guards = {"!isNaN(arguments[0])", "!isRubyBignum(arguments[1])"})
+        @Specialization(guards = {"!isNaN(a)", "!isRubyBignum(b)"})
         public RubyNilClass compare(double a, RubyBasicObject b) {
             return nil();
         }
@@ -525,10 +475,6 @@ public abstract class FloatNodes {
 
         public GreaterEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public GreaterEqualNode(GreaterEqualNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -551,7 +497,7 @@ public abstract class FloatNodes {
             return a >= b.bigIntegerValue().doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(other)")
         public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(getContext().getCoreLibrary().argumentError(
                     String.format("comparison of Float with %s failed", other.getLogicalClass().getName()), this));
@@ -563,10 +509,6 @@ public abstract class FloatNodes {
 
         public GreaterNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public GreaterNode(GreaterNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -589,7 +531,7 @@ public abstract class FloatNodes {
             return a > b.bigIntegerValue().doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(other)")
         public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(getContext().getCoreLibrary().argumentError(
                     String.format("comparison of Float with %s failed", other.getLogicalClass().getName()), this));
@@ -601,10 +543,6 @@ public abstract class FloatNodes {
 
         public AbsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public AbsNode(AbsNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -624,11 +562,6 @@ public abstract class FloatNodes {
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
         }
 
-        public CeilNode(CeilNode prev) {
-            super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
-        }
-
         @Specialization
         public Object ceil(double n) {
             return fixnumOrBignum.fixnumOrBignum(Math.ceil(n));
@@ -646,11 +579,6 @@ public abstract class FloatNodes {
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
         }
 
-        public FloorNode(FloorNode prev) {
-            super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
-        }
-
         @Specialization
         public Object floor(double n) {
             return fixnumOrBignum.fixnumOrBignum(Math.floor(n));
@@ -663,10 +591,6 @@ public abstract class FloatNodes {
 
         public InfiniteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InfiniteNode(InfiniteNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -691,10 +615,6 @@ public abstract class FloatNodes {
             super(context, sourceSection);
         }
 
-        public NaNNode(NaNNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean nan(double value) {
             return Double.isNaN(value);
@@ -713,11 +633,6 @@ public abstract class FloatNodes {
         public RoundNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
-        }
-
-        public RoundNode(RoundNode prev) {
-            super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
@@ -757,7 +672,7 @@ public abstract class FloatNodes {
             return fixnumOrBignum.fixnumOrBignum(f);
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
+        @Specialization(guards = "!isUndefinedPlaceholder(ndigits)")
         public Object round(VirtualFrame frame, double n, Object ndigits) {
             return ruby(frame, "round_internal(ndigits)", "ndigits", ndigits);
         }
@@ -772,11 +687,6 @@ public abstract class FloatNodes {
         public ToINode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
-        }
-
-        public ToINode(ToINode prev) {
-            super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         public abstract Object executeToI(VirtualFrame frame, double value);
@@ -805,10 +715,6 @@ public abstract class FloatNodes {
             super(context, sourceSection);
         }
 
-        public ToFNode(ToFNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public double toF(double value) {
             return value;
@@ -821,10 +727,6 @@ public abstract class FloatNodes {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToSNode(ToSNode prev) {
-            super(prev);
         }
 
         @CompilerDirectives.TruffleBoundary

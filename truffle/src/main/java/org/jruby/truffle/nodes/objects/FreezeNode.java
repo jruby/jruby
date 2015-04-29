@@ -32,11 +32,6 @@ public abstract class FreezeNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public FreezeNode(FreezeNode prev) {
-        super(prev);
-        writeFrozenNode = prev.writeFrozenNode;
-    }
-
     public abstract Object executeFreeze(Object object);
 
     @Specialization
@@ -74,7 +69,7 @@ public abstract class FreezeNode extends RubyNode {
         return object;
     }
 
-    @Specialization(guards = { "!isRubyNilClass", "!isRubyBignum", "!isRubySymbol" })
+    @Specialization(guards = { "!isRubyNilClass(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
     public Object freeze(RubyBasicObject object) {
         if (writeFrozenNode == null) {
             CompilerDirectives.transferToInterpreter();
