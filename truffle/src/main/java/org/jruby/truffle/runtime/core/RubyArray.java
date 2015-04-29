@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Random;
 
 /**

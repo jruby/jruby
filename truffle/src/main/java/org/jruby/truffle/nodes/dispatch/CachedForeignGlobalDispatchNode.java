@@ -9,10 +9,6 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.util.ArrayUtils;
-
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.TruffleObject;
@@ -21,6 +17,9 @@ import com.oracle.truffle.interop.messages.Execute;
 import com.oracle.truffle.interop.messages.Read;
 import com.oracle.truffle.interop.messages.Receiver;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 
 public final class CachedForeignGlobalDispatchNode extends CachedDispatchNode {
 

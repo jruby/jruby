@@ -18,8 +18,6 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.core.RubyProc;
 
-import java.util.Arrays;
-
 public class ReturnEnumeratorIfNoBlockNode extends RubyNode {
 
     @Child private RubyNode method;

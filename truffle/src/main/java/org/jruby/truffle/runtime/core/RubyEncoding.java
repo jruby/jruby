@@ -9,15 +9,13 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
-
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;

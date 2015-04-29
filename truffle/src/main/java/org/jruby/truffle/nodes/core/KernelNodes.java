@@ -20,7 +20,6 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jcodings.Encoding;
 import org.jruby.RubyThread.Status;
 import org.jruby.common.IRubyWarnings;
@@ -49,7 +48,6 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.FeatureManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 import org.jruby.util.ByteList;
-import org.jruby.util.cli.Options;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

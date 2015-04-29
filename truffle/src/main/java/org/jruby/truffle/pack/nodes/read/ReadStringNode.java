@@ -14,14 +14,12 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.nodes.type.ToStringNode;
 import org.jruby.truffle.pack.nodes.type.ToStringNodeGen;
 import org.jruby.truffle.pack.nodes.write.NullNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.util.ByteList;
 
 /**
  * Read a string from the source, converting if needed.

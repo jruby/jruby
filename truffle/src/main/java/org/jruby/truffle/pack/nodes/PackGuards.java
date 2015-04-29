@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.pack.nodes;
 
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyString;

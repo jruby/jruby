@@ -14,7 +14,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.core.RubyString;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Exception} class.

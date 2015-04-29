@@ -14,7 +14,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.ReturnException;
 
 public class InvokeRubiniusPrimitiveNode extends RubyNode {
 

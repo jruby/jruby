@@ -9,15 +9,14 @@
  */
 package org.jruby.truffle.runtime.signal;
 
+import org.jruby.RubySignal;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import org.jruby.RubySignal;
-
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
 
 @SuppressWarnings("restriction")
 public class SignalOperations {

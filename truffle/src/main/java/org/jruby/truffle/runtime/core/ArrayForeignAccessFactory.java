@@ -10,15 +10,18 @@
 package org.jruby.truffle.runtime.core;
 
 
-import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.interop.*;
-import com.oracle.truffle.api.interop.exception.*;
-import com.oracle.truffle.interop.messages.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.ForeignAccessFactory;
+import com.oracle.truffle.api.interop.InteropPredicate;
+import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.interop.exception.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.messages.Message;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.NullSourceSection;
+import com.oracle.truffle.interop.messages.*;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyTypes;
 import org.jruby.truffle.nodes.interop.InteropNode;

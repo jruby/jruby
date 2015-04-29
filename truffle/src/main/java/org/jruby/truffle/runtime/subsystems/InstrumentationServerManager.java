@@ -15,12 +15,10 @@ import com.oracle.truffle.api.nodes.Node;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyThread;
-import org.jruby.truffle.runtime.util.Consumer;
 
 import java.io.IOException;
 import java.io.OutputStream;

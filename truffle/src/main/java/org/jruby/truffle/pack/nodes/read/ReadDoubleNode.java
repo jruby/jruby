@@ -14,15 +14,11 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.nodes.type.ToDoubleNode;
 import org.jruby.truffle.pack.nodes.type.ToDoubleNodeGen;
-import org.jruby.truffle.pack.nodes.type.ToLongNode;
-import org.jruby.truffle.pack.nodes.type.ToLongNodeGen;
 import org.jruby.truffle.pack.nodes.write.NullNode;
-import org.jruby.truffle.pack.runtime.exceptions.WrongArgumentTypeException;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**

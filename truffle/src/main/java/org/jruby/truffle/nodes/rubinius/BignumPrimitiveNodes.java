@@ -10,15 +10,11 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import org.jruby.truffle.runtime.RubyContext;
-
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
-import org.jruby.truffle.runtime.core.*;
-
-import java.math.BigInteger;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBignum;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Bignum} class.

@@ -9,8 +9,10 @@
  */
 package org.jruby.truffle.nodes.instrument;
 
-import com.oracle.truffle.api.instrument.*;
-import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.instrument.ASTProber;
+import com.oracle.truffle.api.instrument.StandardSyntaxTag;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.NodeVisitor;
 import org.jruby.truffle.nodes.RubyNode;
 
 public class RubyDefaultASTProber implements NodeVisitor, ASTProber {

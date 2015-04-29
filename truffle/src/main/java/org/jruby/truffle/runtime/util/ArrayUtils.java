@@ -10,8 +10,6 @@
 package org.jruby.truffle.runtime.util;
 
 import com.oracle.truffle.api.CompilerAsserts;
-
-import com.oracle.truffle.api.nodes.ExplodeLoop;
 import org.jruby.truffle.nodes.RubyNode;
 
 import java.lang.reflect.Array;

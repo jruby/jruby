@@ -16,7 +16,6 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
-
 import com.oracle.truffle.api.nodes.Node;
 import org.jcodings.Encoding;
 import org.joni.*;
