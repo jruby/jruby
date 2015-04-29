@@ -9,11 +9,17 @@ project 'JRuby Truffle' do
               'tesla.dump.readonly' => true,
 
               'jruby.basedir' => '${basedir}/..' )
+  
+  repository( 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/releases/',
+              :id => 'truffle' ) do
+    releases 'true'
+    snapshots 'false'
+  end
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
-  jar 'com.oracle:truffle:0.7-SNAPSHOT'
-  jar 'com.oracle:truffle-dsl-processor:0.7-SNAPSHOT', :scope => 'provided'
+  jar 'com.oracle:truffle:0.7'
+  jar 'com.oracle:truffle-dsl-processor:0.7', :scope => 'provided'
 
   plugin( :compiler,
           'encoding' => 'utf-8',
