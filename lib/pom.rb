@@ -57,9 +57,8 @@ project 'JRuby Lib Setup' do
   id 'jruby-stdlib'
   inherit "org.jruby:jruby-parent", version
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readonly' => true,
-              'tesla.version' => '0.1.1',
+  properties( 'polyglot.dump.pom' => 'pom.xml',
+              'polyglot.dump.readonly' => true,
               'jruby.plugins.version' => '1.0.9',
               'gem.home' => '${basedir}/ruby/gems/shared',
               # we copy everything into the target/classes/META-INF

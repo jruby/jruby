@@ -5,8 +5,8 @@ project 'JRuby Truffle' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-truffle'
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readonly' => true,
+  properties( 'polyglot.dump.pom' => 'pom.xml',
+              'polyglot.dump.readonly' => true,
 
               'jruby.basedir' => '${basedir}/..' )
 
