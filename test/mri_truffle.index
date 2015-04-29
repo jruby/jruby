@@ -225,7 +225,7 @@ ruby/test_stringchar.rb
 ruby/test_struct.rb
 ruby/test_super.rb
 ruby/test_symbol.rb
-# ruby/test_syntax.rb # core:/core/rubinius/common/type.rb:62:in `initialize': Coercion error: "map".to_ary => Array failed (TypeError)
+ruby/test_syntax.rb
 ruby/test_system.rb
 ruby/test_thread.rb
 ruby/test_time.rb
