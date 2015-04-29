@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.0.0.0.pre2</version>
+    <version>9.0.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-tests</artifactId>
   <name>JRuby Integration Tests</name>
@@ -145,8 +145,7 @@
               <gemHome>${gem.home}</gemHome>
               <binDirectory>${jruby.home}/bin</binDirectory>
               <includeRubygemsInTestResources>false</includeRubygemsInTestResources>
-              <libDirectory>${jruby.home}/lib</libDirectory>
-              <jrubyJvmArgs>-Djruby.home=${jruby.home}</jrubyJvmArgs>
+              <jrubyVersion>1.7.12</jrubyVersion>
             </configuration>
           </execution>
         </executions>
@@ -225,14 +224,6 @@
   <profiles>
     <profile>
       <id>bootstrap</id>
-      <dependencies>
-        <dependency>
-          <groupId>rubygems</groupId>
-          <artifactId>jruby-launcher</artifactId>
-          <version>${jruby-launcher.version}</version>
-          <type>gem</type>
-        </dependency>
-      </dependencies>
     </profile>
     <profile>
       <id>rake</id>
@@ -249,7 +240,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <env value="" key="JRUBY_OPTS" />
                       <arg value="-S" />
                       <arg value="rake" />
@@ -278,7 +269,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="java" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="java">
                       <arg value="-cp" />
                       <arg value="core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar" />
                       <arg value="org.jruby.Main" />
@@ -520,7 +511,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="java" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="java">
                       <arg value="-cp" />
                       <arg value="core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar" />
                       <arg value="org.jruby.Main" />
@@ -637,7 +628,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="java" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="java">
                       <arg value="-cp" />
                       <arg value="core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar" />
                       <arg value="org.jruby.Main" />
@@ -682,7 +673,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -728,7 +719,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -774,7 +765,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -820,7 +811,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -885,7 +876,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -950,7 +941,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -1015,7 +1006,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-J-server" />
                       <arg value="-X+T" />
                       <arg value="-Xtruffle.debug.enable_assert_constant=true" />
@@ -1044,7 +1035,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="ruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="ruby">
                       <arg value="tool/jt.rb" />
                       <arg value="test" />
                       <arg value="mri" />
