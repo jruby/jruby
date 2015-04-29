@@ -17,7 +17,10 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -334,12 +337,16 @@ public abstract class BignumNodes {
     @CoreMethod(names = {"==", "eql?"}, required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
+        @Child private BooleanCastNode booleanCastNode;
+        @Child private CallDispatchHeadNode reverseCallNode;
+
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public EqualNode(EqualNode prev) {
             super(prev);
+            reverseCallNode = prev.reverseCallNode;
         }
 
         @Specialization
@@ -360,6 +367,23 @@ public abstract class BignumNodes {
         @Specialization
         public boolean equal(RubyBignum a, RubyBignum b) {
             return a.bigIntegerValue().equals(b.bigIntegerValue());
+        }
+
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        public Object equal(VirtualFrame frame, RubyBignum a, RubyBasicObject b) {
+            if (booleanCastNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                booleanCastNode = insert(BooleanCastNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            if (reverseCallNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                reverseCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            final Object reversedResult = reverseCallNode.call(frame, b, "==", null, a);
+
+            return booleanCastNode.executeBoolean(frame, reversedResult);
         }
     }
 
