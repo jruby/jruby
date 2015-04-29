@@ -1,0 +1,2 @@
+fails:Logger::LogDevice#write can create a file and writes empty message
+fails:Logger::LogDevice#write fails if the device is already closed
