@@ -4,14 +4,14 @@ base64/test_base64.rb
 # bigdecimal/test_bigdecimal.rb
 # bigdecimal/test_bigdecimal_util.rb
 # bigdecimal/test_bigmath.rb
-# cgi/test_cgi_cookie.rb
-# cgi/test_cgi_core.rb
-# cgi/test_cgi_header.rb
-# cgi/test_cgi_modruby.rb
-# cgi/test_cgi_multipart.rb
-# cgi/test_cgi_session.rb
-# cgi/test_cgi_tag_helper.rb
-# cgi/test_cgi_util.rb
+cgi/test_cgi_cookie.rb
+cgi/test_cgi_core.rb
+cgi/test_cgi_header.rb
+cgi/test_cgi_modruby.rb
+cgi/test_cgi_multipart.rb
+# cgi/test_cgi_session.rb # cannot load such file -- pstore
+cgi/test_cgi_tag_helper.rb
+cgi/test_cgi_util.rb
 # coverage/test_coverage.rb
 # csv/test_csv_parsing.rb
 # csv/test_csv_writing.rb
@@ -46,13 +46,13 @@ fileutils/test_verbose.rb
 io/console/test_io_console.rb
 # io/nonblock/test_flush.rb
 # io/wait/test_io_wait.rb
-# json/test_json.rb
-# json/test_json_addition.rb
-# json/test_json_encoding.rb
-# json/test_json_fixtures.rb
-# json/test_json_generate.rb
-# json/test_json_generic_object.rb
-# json/test_json_string_matching.rb
+json/test_json.rb
+# json/test_json_addition.rb #  cannot load such file -- bigdecimal
+json/test_json_encoding.rb
+json/test_json_fixtures.rb
+json/test_json_generate.rb
+json/test_json_generic_object.rb
+json/test_json_string_matching.rb
 # json/test_json_unicode.rb
 # logger/test_logger.rb # library not added, needs file
 matrix/test_matrix.rb
@@ -163,7 +163,7 @@ ruby/test_complex2.rb
 ruby/test_complexrational.rb
 ruby/test_condition.rb
 ruby/test_const.rb
-# ruby/test_continuation.rb
+# ruby/test_continuation.rb # cannot load such file -- continuation
 ruby/test_defined.rb
 ruby/test_dir.rb
 ruby/test_dir_m17n.rb
@@ -185,7 +185,7 @@ ruby/test_gc.rb
 ruby/test_ifunless.rb
 ruby/test_integer.rb
 ruby/test_integer_comb.rb
-# ruby/test_io.rb
+# ruby/test_io.rb # cannot load such file -- io/nonblock
 ruby/test_io_m17n.rb
 ruby/test_iterator.rb
 ruby/test_lambda.rb
@@ -208,24 +208,24 @@ ruby/test_parse.rb
 ruby/test_path.rb
 # ruby/test_pipe.rb # tests not excluding
 ruby/test_primitive.rb
-# ruby/test_process.rb
+# ruby/test_process.rb # cannot load such file -- io/wait
 ruby/test_rand.rb
 # ruby/test_range.rb # cannot load such file -- bigdecimal
 ruby/test_rational.rb
 ruby/test_rational2.rb
 # ruby/test_readpartial.rb
-# ruby/test_regexp.rb
+# ruby/test_regexp.rb # NPE in BodyTranslator
 ruby/test_require.rb
 ruby/test_rubyoptions.rb
 ruby/test_signal.rb
-# ruby/test_sleep.rb
+# ruby/test_sleep.rb #  cannot load such file -- etc
 ruby/test_sprintf.rb
 ruby/test_string.rb
 ruby/test_stringchar.rb
 ruby/test_struct.rb
 ruby/test_super.rb
 ruby/test_symbol.rb
-# ruby/test_syntax.rb # core:/core/rubinius/common/type.rb:62:in `initialize': Coercion error: "map".to_ary => Array failed (TypeError)
+ruby/test_syntax.rb
 ruby/test_system.rb
 ruby/test_thread.rb
 ruby/test_time.rb
@@ -237,8 +237,8 @@ ruby/test_unicode_escape.rb
 ruby/test_variable.rb
 ruby/test_whileuntil.rb
 ruby/test_yield.rb
-# scanf/test_scanf.rb # Fails when run as suite
-# scanf/test_scanfblocks.rb
+scanf/test_scanf.rb
+scanf/test_scanfblocks.rb
 # socket/test_basicsocket.rb
 # socket/test_nonblock.rb
 # socket/test_socket.rb

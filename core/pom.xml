@@ -548,7 +548,7 @@
           </execution>
           <execution>
             <id>shade the asm classes</id>
-            <phase>verify</phase>
+            <phase>package</phase>
             <goals>
               <goal>shade</goal>
             </goals>

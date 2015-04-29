@@ -192,7 +192,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "io_seek")
+    @RubiniusPrimitive(name = "io_seek", lowerFixnumParameters = {0, 1})
     public static abstract class IOSeekPrimitiveNode extends RubiniusPrimitiveNode {
 
         public IOSeekPrimitiveNode(RubyContext context, SourceSection sourceSection) {

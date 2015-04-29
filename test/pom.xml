@@ -1034,7 +1034,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="ruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="ruby">
                       <arg value="tool/jt.rb" />
                       <arg value="test" />
                       <arg value="mri" />

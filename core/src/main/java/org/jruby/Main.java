@@ -283,8 +283,6 @@ public class Main {
         }
 
         try {
-            doSetContextClassLoader(runtime);
-
             if (in == null) {
                 // no script to run, return success
                 return new Status();
@@ -451,18 +449,6 @@ public class Main {
             }
             runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
             return false;
-        }
-    }
-
-    private void doSetContextClassLoader(Ruby runtime) {
-        // set thread context JRuby classloader here, for the main thread
-        try {
-            Thread.currentThread().setContextClassLoader(runtime.getJRubyClassLoader());
-        } catch (SecurityException se) {
-            // can't set TC classloader
-            if (runtime.getInstanceConfig().isVerbose()) {
-                config.getError().println("WARNING: Security restrictions disallowed setting context classloader for main thread.");
-            }
         }
     }
 

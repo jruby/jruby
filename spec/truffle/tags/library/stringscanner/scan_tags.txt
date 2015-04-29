@@ -1,0 +1,1 @@
+fails:StringScanner#scan treats ^ as matching from the beginning of the current position

@@ -1,0 +1,2 @@
+fails:CGI::Cookie#to_s returns a String representation of self
+fails:CGI::Cookie#to_s escapes the self's values

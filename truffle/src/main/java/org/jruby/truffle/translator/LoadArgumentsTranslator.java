@@ -318,7 +318,11 @@ public class LoadArgumentsTranslator extends Translator {
     @Override
     public RubyNode visitArrayNode(org.jruby.ast.ArrayNode node) {
         // (ArrayNode 0, (MultipleAsgn19Node 0, (ArrayNode 0, (LocalAsgnNode:a 0, ), (LocalAsgnNode:b 0, )), null, null)))
-        return node.childNodes().get(0).accept(this);
+        if (node.size() == 1 && node.get(0) instanceof org.jruby.ast.MultipleAsgn19Node) {
+            return node.childNodes().get(0).accept(this);
+        } else {
+            return defaultVisit(node);
+        }
     }
 
     @Override

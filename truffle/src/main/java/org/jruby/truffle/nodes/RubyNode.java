@@ -481,7 +481,7 @@ public abstract class RubyNode extends Node {
     @CompilerDirectives.TruffleBoundary
     private MaterializedFrame setupFrame(Object self, Object... arguments) {
         final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
-                RubyArguments.pack(null, null,self, null, new Object[]{}));
+                RubyArguments.pack(null, null, self, null, new Object[]{}));
 
         if (arguments.length % 2 == 1) {
             throw new UnsupportedOperationException("odd number of name-value pairs for arguments");
