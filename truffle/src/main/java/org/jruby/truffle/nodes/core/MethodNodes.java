@@ -18,7 +18,7 @@ import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.nodes.objects.ClassNode;
-import org.jruby.truffle.nodes.objects.ClassNodeFactory;
+import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -178,7 +178,7 @@ public abstract class MethodNodes {
 
         public UnbindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = ClassNodeFactory.create(context, sourceSection, null);
+            classNode = ClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization

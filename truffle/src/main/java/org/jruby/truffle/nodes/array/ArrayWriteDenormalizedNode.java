@@ -38,7 +38,7 @@ public abstract class ArrayWriteDenormalizedNode extends RubyNode {
     public Object write(VirtualFrame frame, RubyArray array, int index, Object value) {
         if (writeNode == null) {
             CompilerDirectives.transferToInterpreter();
-            writeNode = insert(ArrayWriteNormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+            writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
         }
 
         final int normalizedIndex = array.normalizeIndex(index);

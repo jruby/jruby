@@ -41,16 +41,16 @@ import org.joni.Option;
 import org.jruby.Ruby;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.CmpIntNode;
-import org.jruby.truffle.nodes.cast.CmpIntNodeFactory;
+import org.jruby.truffle.nodes.cast.CmpIntNodeGen;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
-import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
+import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
-import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
+import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
-import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
+import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -81,7 +81,7 @@ public abstract class StringNodes {
         }
 
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
-            return ToStrNodeFactory.create(getContext(), getSourceSection(), other);
+            return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization
@@ -147,7 +147,7 @@ public abstract class StringNodes {
         public RubyString multiply(VirtualFrame frame, RubyString string, Object times) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
 
             return multiply(string, toIntNode.doInt(frame, times));
@@ -229,7 +229,7 @@ public abstract class StringNodes {
             if (respondToToStrNode.doesRespondTo(frame, b, getContext().makeString("to_str"), false)) {
                 if (toStrNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+                    toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
                 }
 
                 try {
@@ -264,7 +264,7 @@ public abstract class StringNodes {
 
                 if (cmpIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    cmpIntNode = insert(CmpIntNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                    cmpIntNode = insert(CmpIntNodeGen.create(getContext(), getSourceSection(), null, null, null));
                 }
 
                 return -(cmpIntNode.executeCmpInt(frame, cmpResult, a, b));
@@ -556,7 +556,7 @@ public abstract class StringNodes {
         private ToIntNode getToIntNode() {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
 
             return toIntNode;
@@ -676,7 +676,7 @@ public abstract class StringNodes {
         }
 
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
-            return ToStrNodeFactory.create(getContext(), getSourceSection(), other);
+            return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization(guards = "bothSingleByteOptimizable(string, other)")
@@ -758,7 +758,7 @@ public abstract class StringNodes {
 
         public CountNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toStr = ToStrNodeFactory.create(context, sourceSection, null);
+            toStr = ToStrNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
@@ -814,7 +814,7 @@ public abstract class StringNodes {
         }
 
         @CreateCast("salt") public RubyNode coerceSaltToString(RubyNode other) {
-            return ToStrNodeFactory.create(getContext(), getSourceSection(), other);
+            return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization
@@ -882,7 +882,7 @@ public abstract class StringNodes {
 
         public DeleteBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toStr = ToStrNodeFactory.create(context, sourceSection, null);
+            toStr = ToStrNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
@@ -1118,7 +1118,7 @@ public abstract class StringNodes {
         public RubyString forceEncoding(VirtualFrame frame, RubyString string, Object encoding) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
             return forceEncoding(string, toStrNode.executeRubyString(frame, encoding));
@@ -1202,7 +1202,7 @@ public abstract class StringNodes {
         public RubyString initialize(RubyString self, RubyString from) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                isFrozenNode = insert(IsFrozenNodeFactory.create(getContext(), getSourceSection(), null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
             }
 
             if (isFrozenNode.executeIsFrozen(self)) {
@@ -1222,7 +1222,7 @@ public abstract class StringNodes {
         public RubyString initialize(VirtualFrame frame, RubyString self, Object from) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
             return initialize(self, toStrNode.executeRubyString(frame, from));
@@ -1269,11 +1269,11 @@ public abstract class StringNodes {
         }
 
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
-            return ToIntNodeFactory.create(getContext(), getSourceSection(), index);
+            return ToIntNodeGen.create(getContext(), getSourceSection(), index);
         }
 
         @CreateCast("otherString") public RubyNode coerceOtherToString(RubyNode other) {
-            return ToStrNodeFactory.create(getContext(), getSourceSection(), other);
+            return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization
@@ -1438,7 +1438,7 @@ public abstract class StringNodes {
         }
 
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
-            return ToStrNodeFactory.create(getContext(), getSourceSection(), other);
+            return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization
@@ -1746,11 +1746,11 @@ public abstract class StringNodes {
         }
 
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
-            return new FixnumLowerNode(ToIntNodeFactory.create(getContext(), getSourceSection(), index));
+            return new FixnumLowerNode(ToIntNodeGen.create(getContext(), getSourceSection(), index));
         }
 
         @CreateCast("value") public RubyNode coerceValueToInt(RubyNode value) {
-            return new FixnumLowerNode(ToIntNodeFactory.create(getContext(), getSourceSection(), value));
+            return new FixnumLowerNode(ToIntNodeGen.create(getContext(), getSourceSection(), value));
         }
 
         @Specialization
@@ -1833,7 +1833,7 @@ public abstract class StringNodes {
 
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
             final RubyString[] otherStrings = new RubyString[args.length];
@@ -2133,11 +2133,11 @@ public abstract class StringNodes {
         }
 
         @CreateCast("fromStr") public RubyNode coerceFromStrToString(RubyNode fromStr) {
-            return ToStrNodeFactory.create(getContext(), getSourceSection(), fromStr);
+            return ToStrNodeGen.create(getContext(), getSourceSection(), fromStr);
         }
 
         @CreateCast("toStrNode") public RubyNode coerceToStrToString(RubyNode toStr) {
-            return ToStrNodeFactory.create(getContext(), getSourceSection(), toStr);
+            return ToStrNodeGen.create(getContext(), getSourceSection(), toStr);
         }
 
         @Specialization
@@ -2174,11 +2174,11 @@ public abstract class StringNodes {
         }
 
         @CreateCast("fromStr") public RubyNode coerceFromStrToString(RubyNode fromStr) {
-            return ToStrNodeFactory.create(getContext(), getSourceSection(), fromStr);
+            return ToStrNodeGen.create(getContext(), getSourceSection(), fromStr);
         }
 
         @CreateCast("toStrNode") public RubyNode coerceToStrToString(RubyNode toStr) {
-            return ToStrNodeFactory.create(getContext(), getSourceSection(), toStr);
+            return ToStrNodeGen.create(getContext(), getSourceSection(), toStr);
         }
 
         @Specialization

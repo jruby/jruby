@@ -50,7 +50,7 @@ import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.objects.ClassNode;
-import org.jruby.truffle.nodes.objects.ClassNodeFactory;
+import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -170,7 +170,7 @@ public abstract class VMPrimitiveNodes {
 
         public VMObjectClassPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = ClassNodeFactory.create(context, sourceSection, null);
+            classNode = ClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization

@@ -26,8 +26,8 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
-import org.jruby.truffle.nodes.cast.NumericToFloatNodeFactory;
-import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
+import org.jruby.truffle.nodes.cast.NumericToFloatNodeGen;
+import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -338,7 +338,7 @@ public abstract class KernelNodes {
 
         public KernelClassNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = ClassNodeFactory.create(context, sourceSection, null);
+            classNode = ClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
@@ -384,8 +384,8 @@ public abstract class KernelNodes {
             copyNode = CopyNodeFactory.create(context, sourceSection, null);
             // Calls private initialize_clone on the new copy.
             initializeCloneNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.CALL_METHOD_MISSING);
-            isFrozenNode = IsFrozenNodeFactory.create(context, sourceSection, null);
-            freezeNode = FreezeNodeFactory.create(context, sourceSection, null);
+            isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
+            freezeNode = FreezeNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
@@ -451,7 +451,7 @@ public abstract class KernelNodes {
         }
 
         @CreateCast("source") public RubyNode coerceSourceToString(RubyNode source) {
-            return ToStrNodeFactory.create(getContext(), getSourceSection(), source);
+            return ToStrNodeGen.create(getContext(), getSourceSection(), source);
         }
 
         protected RubyBinding getCallerBinding(VirtualFrame frame) {
@@ -640,7 +640,7 @@ public abstract class KernelNodes {
         public Object freeze(Object self) {
             if (freezeNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                freezeNode = insert(FreezeNodeFactory.create(getContext(), getEncapsulatingSourceSection(), null));
+                freezeNode = insert(FreezeNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
             }
 
             return freezeNode.executeFreeze(self);
@@ -661,7 +661,7 @@ public abstract class KernelNodes {
         public boolean isFrozen(Object self) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                isFrozenNode = insert(IsFrozenNodeFactory.create(getContext(), getEncapsulatingSourceSection(), null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
             }
 
             return isFrozenNode.executeIsFrozen(self);
@@ -804,7 +804,7 @@ public abstract class KernelNodes {
 
         public InstanceOfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = ClassNodeFactory.create(context, sourceSection, null);
+            classNode = ClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
@@ -1444,7 +1444,7 @@ public abstract class KernelNodes {
 
         public SingletonClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            singletonClassNode = SingletonClassNodeFactory.create(context, sourceSection, null);
+            singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
@@ -1550,7 +1550,7 @@ public abstract class KernelNodes {
         public long sleep(VirtualFrame frame, RubyBasicObject duration) {
             if (floatCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                floatCastNode = insert(NumericToFloatNodeFactory.create(getContext(), getSourceSection(), "to_f", null));
+                floatCastNode = insert(NumericToFloatNodeGen.create(getContext(), getSourceSection(), "to_f", null));
             }
             return sleep(floatCastNode.executeFloat(frame, duration));
         }
@@ -1671,7 +1671,7 @@ public abstract class KernelNodes {
         public Object taint(Object object) {
             if (taintNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintNode = insert(TaintNodeFactory.create(getContext(), getEncapsulatingSourceSection(), null));
+                taintNode = insert(TaintNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
             }
             return taintNode.executeTaint(object);
         }
@@ -1691,7 +1691,7 @@ public abstract class KernelNodes {
         public boolean isTainted(Object object) {
             if (isTaintedNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                isTaintedNode = insert(IsTaintedNodeFactory.create(getContext(), getEncapsulatingSourceSection(), null));
+                isTaintedNode = insert(IsTaintedNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
             }
             return isTaintedNode.executeIsTainted(object);
         }
@@ -1732,7 +1732,7 @@ public abstract class KernelNodes {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = ClassNodeFactory.create(context, sourceSection, null);
+            classNode = ClassNodeGen.create(context, sourceSection, null);
             objectIDNode = ObjectPrimitiveNodesFactory.ObjectIDPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[] { null });
             toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(context, sourceSection, new RubyNode[]{null});
         }

@@ -37,7 +37,6 @@ import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
  * @see YieldDispatchNode
  */
 @TypeSystemReference(RubyTypes.class)
-@GenerateNodeFactory
 public abstract class RubyNode extends Node {
 
     private final RubyContext context;

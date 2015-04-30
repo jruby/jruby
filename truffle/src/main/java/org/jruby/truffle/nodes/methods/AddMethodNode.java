@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
-import org.jruby.truffle.nodes.objects.SingletonClassNodeFactory;
+import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -34,7 +34,7 @@ public class AddMethodNode extends RubyNode {
         super(context, section);
         this.receiver = receiver;
         this.methodNode = method;
-        singletonClassNode = SingletonClassNodeFactory.create(context, section, null);
+        singletonClassNode = SingletonClassNodeGen.create(context, section, null);
     }
 
     @Override

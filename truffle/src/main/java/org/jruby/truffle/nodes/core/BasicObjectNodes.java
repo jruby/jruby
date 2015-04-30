@@ -19,7 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyCallNode;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
@@ -43,7 +43,7 @@ public abstract class BasicObjectNodes {
         }
 
         @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
-            return BooleanCastNodeFactory.create(getContext(), getSourceSection(), operand);
+            return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
         }
 
         @Specialization

@@ -18,7 +18,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
-import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
+import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -91,7 +91,7 @@ public abstract class MatchDataNodes {
 
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
 
             return getIndex(matchData, toIntNode.doInt(frame, index));

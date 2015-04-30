@@ -20,7 +20,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
-import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
+import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -212,7 +212,7 @@ public abstract class EncodingNodes {
         public RubyEncoding defaultExternal(VirtualFrame frame, Object encoding) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
             return defaultExternal(toStrNode.executeRubyString(frame, encoding));
@@ -254,7 +254,7 @@ public abstract class EncodingNodes {
 
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
             final RubyString encodingName = toStrNode.executeRubyString(frame, encoding);

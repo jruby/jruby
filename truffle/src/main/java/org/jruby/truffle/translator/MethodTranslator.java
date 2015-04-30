@@ -19,7 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
+import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
@@ -29,7 +29,7 @@ import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.arguments.ShouldDestructureNode;
 import org.jruby.truffle.nodes.methods.locals.FlipFlopStateNode;
-import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeFactory;
+import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeGen;
 import org.jruby.truffle.nodes.respondto.RespondToNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperCallNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperReCallNode;
@@ -114,9 +114,9 @@ class MethodTranslator extends BodyTranslator {
 
             if (shouldConsiderDestructuringArrayArg) {
                 final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
-                final RubyNode castArrayNode = ArrayCastNodeFactory.create(context, sourceSection, readArrayNode);
+                final RubyNode castArrayNode = ArrayCastNodeGen.create(context, sourceSection, readArrayNode);
                 final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
-                final RubyNode writeArrayNode = WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot, castArrayNode);
+                final RubyNode writeArrayNode = WriteLocalVariableNodeGen.create(context, sourceSection, arraySlot, castArrayNode);
 
                 final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
                 destructureArgumentsTranslator.pushArraySlot(arraySlot);

@@ -18,9 +18,9 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
-import org.jruby.truffle.nodes.objects.IsTaintedNodeFactory;
+import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
-import org.jruby.truffle.nodes.objects.TaintNodeFactory;
+import org.jruby.truffle.nodes.objects.TaintNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -40,21 +40,21 @@ public class TaintResultNode extends RubyNode {
         this.taintFromSelf = taintFromSelf;
         this.taintFromParameter = taintFromParameter;
         this.method = method;
-        this.isTaintedNode = IsTaintedNodeFactory.create(getContext(), getSourceSection(), null);
+        this.isTaintedNode = IsTaintedNodeGen.create(getContext(), getSourceSection(), null);
     }
 
     public TaintResultNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         this.taintFromSelf = false;
         this.taintFromParameter = -1;
-        this.isTaintedNode = IsTaintedNodeFactory.create(getContext(), getSourceSection(), null);
+        this.isTaintedNode = IsTaintedNodeGen.create(getContext(), getSourceSection(), null);
     }
 
     public Object maybeTaint(RubyBasicObject source, RubyBasicObject result) {
         if (taintProfile.profile(isTaintedNode.isTainted(source))) {
             if (taintNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                taintNode = insert(TaintNodeFactory.create(getContext(), getSourceSection(), null));
+                taintNode = insert(TaintNodeGen.create(getContext(), getSourceSection(), null));
             }
 
             taintNode.taint(result);

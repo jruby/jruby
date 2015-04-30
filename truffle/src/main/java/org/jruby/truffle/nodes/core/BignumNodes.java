@@ -17,7 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -328,7 +328,7 @@ public abstract class BignumNodes {
         public Object equal(VirtualFrame frame, RubyBignum a, RubyBasicObject b) {
             if (booleanCastNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                booleanCastNode = insert(BooleanCastNodeFactory.create(getContext(), getSourceSection(), null));
+                booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
             }
 
             if (reverseCallNode == null) {

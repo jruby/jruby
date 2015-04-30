@@ -28,19 +28,19 @@ import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.array.*;
-import org.jruby.truffle.nodes.coerce.ToAryNodeFactory;
+import org.jruby.truffle.nodes.coerce.ToAryNodeGen;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
-import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
+import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
-import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
+import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeGen;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
-import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
+import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
-import org.jruby.truffle.nodes.objects.TaintNodeFactory;
+import org.jruby.truffle.nodes.objects.TaintNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.pack.parser.PackParser;
 import org.jruby.truffle.pack.runtime.PackResult;
@@ -77,7 +77,7 @@ public abstract class ArrayNodes {
         }
 
         @CreateCast("b") public RubyNode coerceOtherToAry(RubyNode other) {
-            return ToAryNodeFactory.create(getContext(), getSourceSection(), other);
+            return ToAryNodeGen.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization(guards = {"isNull(a)", "isNull(b)"})
@@ -285,7 +285,7 @@ public abstract class ArrayNodes {
             } else {
                 if (toIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                    toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
                 }
                 final int count = toIntNode.doInt(frame, object);
                 if (count < 0) {
@@ -325,7 +325,7 @@ public abstract class ArrayNodes {
         public Object index(VirtualFrame frame, RubyArray array, int index, UndefinedPlaceholder undefined) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                readNode = insert(ArrayReadDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null));
+                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
             }
 
             return readNode.executeRead(frame, array, index);
@@ -339,7 +339,7 @@ public abstract class ArrayNodes {
 
             if (readSliceNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                readSliceNode = insert(ArrayReadSliceDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
 
             return readSliceNode.executeReadSlice(frame, array, start, length);
@@ -363,7 +363,7 @@ public abstract class ArrayNodes {
 
                 if (readNormalizedSliceNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                    readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                 }
 
                 return readNormalizedSliceNode.executeReadSlice(frame, array, normalizedIndex, length);
@@ -411,7 +411,7 @@ public abstract class ArrayNodes {
         public Object set(VirtualFrame frame, RubyArray array, Object indexObject, Object value, UndefinedPlaceholder unused) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             final int index = toIntNode.doInt(frame, indexObject);
             return set(frame, array, index, value, unused);
@@ -427,7 +427,7 @@ public abstract class ArrayNodes {
             }
             if (writeNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
             return writeNode.executeWrite(frame, array, index, value);
         }
@@ -436,7 +436,7 @@ public abstract class ArrayNodes {
         public Object setObject(VirtualFrame frame, RubyArray array, int start, Object lengthObject, Object value) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             int length = toIntNode.doInt(frame, lengthObject);
             return setObject(frame, array, start, length, value);
@@ -446,7 +446,7 @@ public abstract class ArrayNodes {
         public Object setObject(VirtualFrame frame, RubyArray array, Object startObject, int length, Object value) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             int start = toIntNode.doInt(frame, startObject);
             return setObject(frame, array, start, length, value);
@@ -456,7 +456,7 @@ public abstract class ArrayNodes {
         public Object setObject(VirtualFrame frame, RubyArray array, Object startObject, Object lengthObject, Object value) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             int length = toIntNode.doInt(frame, lengthObject);
             int start = toIntNode.doInt(frame, startObject);
@@ -485,7 +485,7 @@ public abstract class ArrayNodes {
             if (begin < array.getSize() && length == 1) {
                 if (writeNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                    writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                 }
 
                 return writeNode.executeWrite(frame, array, begin, value);
@@ -493,12 +493,12 @@ public abstract class ArrayNodes {
                 if (array.getSize() > (begin + length)) { // there is a tail, else other values discarded
                     if (readSliceNode == null) {
                         CompilerDirectives.transferToInterpreter();
-                        readSliceNode = insert(ArrayReadSliceDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                        readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                     }
                     RubyArray endValues = (RubyArray) readSliceNode.executeReadSlice(frame, array, (begin + length), (array.getSize() - begin - length));
                     if (writeNode == null) {
                         CompilerDirectives.transferToInterpreter();
-                        writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                        writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                     }
                     writeNode.executeWrite(frame, array, begin, value);
                     Object[] endValuesStore = ArrayUtils.box(endValues.getStore());
@@ -527,7 +527,7 @@ public abstract class ArrayNodes {
         public Object setOtherArray(VirtualFrame frame, RubyArray array, Object startObject, int length, RubyArray value) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             int start = toIntNode.doInt(frame, startObject);
             return setOtherArray(frame, array, start, length, value);
@@ -537,7 +537,7 @@ public abstract class ArrayNodes {
         public Object setOtherArray(VirtualFrame frame, RubyArray array, int start, Object lengthObject, RubyArray value) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             int length = toIntNode.doInt(frame, lengthObject);
             return setOtherArray(frame, array, start, length, value);
@@ -547,7 +547,7 @@ public abstract class ArrayNodes {
         public Object setOtherArray(VirtualFrame frame, RubyArray array, Object startObject, Object lengthObject, RubyArray value) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             int start = toIntNode.doInt(frame, startObject);
             int length = toIntNode.doInt(frame, lengthObject);
@@ -593,7 +593,7 @@ public abstract class ArrayNodes {
             } else {
                 if (writeNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                    writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                 }
                 Object[] values = ArrayUtils.box(value.getStore());
                 if (value.getSize() == length || (begin + length + 1) > array.getSize()) {
@@ -605,7 +605,7 @@ public abstract class ArrayNodes {
                 } else {
                     if (readSliceNode == null) {
                         CompilerDirectives.transferToInterpreter();
-                        readSliceNode = insert(ArrayReadSliceDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                        readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                     }
 
                     final int newLength = (length + begin) > array.getSize() ? begin + values.length : array.getSize() + values.length - length;
@@ -716,14 +716,14 @@ public abstract class ArrayNodes {
         }
 
         @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
-            return new FixnumLowerNode(ToIntNodeFactory.create(getContext(), getSourceSection(), index));
+            return new FixnumLowerNode(ToIntNodeGen.create(getContext(), getSourceSection(), index));
         }
 
         @Specialization
         public Object at(VirtualFrame frame, RubyArray array, int index) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                readNode = insert(ArrayReadDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null));
+                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
             }
 
             return readNode.executeRead(frame, array, index);
@@ -851,7 +851,7 @@ public abstract class ArrayNodes {
         public abstract RubyArray executeConcat(RubyArray array, RubyArray other);
 
         @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode other) {
-            return ToAryNodeFactory.create(getContext(), getSourceSection(), other);
+            return ToAryNodeGen.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization(guards = "areBothNull(array, other)")
@@ -974,7 +974,7 @@ public abstract class ArrayNodes {
                 if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     if (isFrozenNode == null) {
                         CompilerDirectives.transferToInterpreter();
-                        isFrozenNode = insert(IsFrozenNodeFactory.create(getContext(), getSourceSection(), null));
+                        isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
                     }
                     if (isFrozenNode.executeIsFrozen(array)) {
                         CompilerDirectives.transferToInterpreter();
@@ -1011,7 +1011,7 @@ public abstract class ArrayNodes {
                 if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     if (isFrozenNode == null) {
                         CompilerDirectives.transferToInterpreter();
-                        isFrozenNode = insert(IsFrozenNodeFactory.create(getContext(), getSourceSection(), null));
+                        isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
                     }
                     if (isFrozenNode.executeIsFrozen(array)) {
                         CompilerDirectives.transferToInterpreter();
@@ -1058,7 +1058,7 @@ public abstract class ArrayNodes {
         }
 
         @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
-            return ToIntNodeFactory.create(getContext(), getSourceSection(), index);
+            return ToIntNodeGen.create(getContext(), getSourceSection(), index);
         }
 
         @Specialization(guards = "isIntegerFixnum(array)", rewriteOn = UnexpectedResultException.class)
@@ -1683,7 +1683,7 @@ public abstract class ArrayNodes {
             } else {
                 if (toIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                    toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
                 }
                 int size = toIntNode.doInt(frame, object);
                 if (size < 0) {
@@ -1792,7 +1792,7 @@ public abstract class ArrayNodes {
         public RubyArray initialize(VirtualFrame frame, RubyArray array, Object sizeObject, Object defaultValue, UndefinedPlaceholder block) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             int size = toIntNode.doInt(frame, sizeObject);
             if (size < 0) {
@@ -1877,7 +1877,7 @@ public abstract class ArrayNodes {
         }
 
         @CreateCast("from") public RubyNode coerceOtherToAry(RubyNode other) {
-            return ToAryNodeFactory.create(getContext(), getSourceSection(), other);
+            return ToAryNodeGen.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization(guards = "isOtherNull(self, from)")
@@ -2118,7 +2118,7 @@ public abstract class ArrayNodes {
             } else {
                 if (toIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                    toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
                 }
                 index = toIntNode.doInt(frame, values[0]);
             }
@@ -2336,7 +2336,7 @@ public abstract class ArrayNodes {
         public Object mapInPlaceFixnumInteger(VirtualFrame frame, RubyArray array, RubyProc block) {
             if (writeNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
 
             final int[] store = (int[]) array.getStore();
@@ -2376,7 +2376,7 @@ public abstract class ArrayNodes {
         public Object mapInPlaceObject(VirtualFrame frame, RubyArray array, RubyProc block) {
             if (writeNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
 
             final Object[] store = (Object[]) array.getStore();
@@ -2495,7 +2495,7 @@ public abstract class ArrayNodes {
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
                     context, sourceSection, null, sharedMethodInfo,
                     ArrayNodesFactory.MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
-                            ReadLevelVariableNodeFactory.create(context, sourceSection, frameSlot, 1),
+                            ReadLevelVariableNodeGen.create(context, sourceSection, frameSlot, 1),
                             new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
                     })));
         }
@@ -2597,7 +2597,7 @@ public abstract class ArrayNodes {
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
                     context, sourceSection, null, sharedMethodInfo,
                     ArrayNodesFactory.MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
-                            ReadLevelVariableNodeFactory.create(context, sourceSection, frameSlot, 1),
+                            ReadLevelVariableNodeGen.create(context, sourceSection, frameSlot, 1),
                             new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
                     })));
         }
@@ -2707,7 +2707,7 @@ public abstract class ArrayNodes {
             if (result.isTainted()) {
                 if (taintNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    taintNode = insert(TaintNodeFactory.create(getContext(), getEncapsulatingSourceSection(), null));
+                    taintNode = insert(TaintNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
                 }
 
                 taintNode.executeTaint(string);
@@ -2869,7 +2869,7 @@ public abstract class ArrayNodes {
             } else {
                 if (toIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                    toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
                 }
                 final int n = toIntNode.doInt(frame, object);
                 if (n < 0) {
@@ -3014,7 +3014,7 @@ public abstract class ArrayNodes {
         public RubyArray popIntegerFixnumInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -3038,7 +3038,7 @@ public abstract class ArrayNodes {
         public Object popIntegerFixnumWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -3062,7 +3062,7 @@ public abstract class ArrayNodes {
         public RubyArray popLongFixnumInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -3086,7 +3086,7 @@ public abstract class ArrayNodes {
         public Object popLongFixnumWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -3109,7 +3109,7 @@ public abstract class ArrayNodes {
         public RubyArray popFloatInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -3132,7 +3132,7 @@ public abstract class ArrayNodes {
         public Object popFloatWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -3155,7 +3155,7 @@ public abstract class ArrayNodes {
         public Object popObjectWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -3736,7 +3736,7 @@ public abstract class ArrayNodes {
         }
 
         @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode index) {
-            return ToAryNodeFactory.create(getContext(), getSourceSection(), index);
+            return ToAryNodeGen.create(getContext(), getSourceSection(), index);
         }
 
         @Specialization(guards = "isOtherNull(array, other)")
@@ -3994,7 +3994,7 @@ public abstract class ArrayNodes {
             } else {
                 if (toIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                    toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
                 }
                 final int n = toIntNode.doInt(frame, object);
                 if (n < 0) {
@@ -4149,7 +4149,7 @@ public abstract class ArrayNodes {
         public RubyArray shiftIntegerFixnumInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -4174,7 +4174,7 @@ public abstract class ArrayNodes {
         public Object shiftIntegerFixnumWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -4199,7 +4199,7 @@ public abstract class ArrayNodes {
         public RubyArray shiftLongFixnumInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -4224,7 +4224,7 @@ public abstract class ArrayNodes {
         public Object shiftLongFixnumWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -4248,7 +4248,7 @@ public abstract class ArrayNodes {
         public RubyArray shiftFloatInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -4273,7 +4273,7 @@ public abstract class ArrayNodes {
         public Object shiftFloatWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {
@@ -4298,7 +4298,7 @@ public abstract class ArrayNodes {
         public Object shiftObjectWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.doInt(frame, object);
             if (num < 0) {

@@ -26,10 +26,10 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.coerce.SymbolOrToStrNode;
-import org.jruby.truffle.nodes.coerce.SymbolOrToStrNodeFactory;
-import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
+import org.jruby.truffle.nodes.coerce.SymbolOrToStrNodeGen;
+import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.KernelNodes.BindingNode;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeFactory;
@@ -67,7 +67,7 @@ public abstract class ModuleNodes {
         
         public ContainsInstanceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            metaClassNode = MetaClassNodeFactory.create(context, sourceSection, null);
+            metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
@@ -247,7 +247,7 @@ public abstract class ModuleNodes {
         private boolean booleanCast(VirtualFrame frame, Object value) {
             if (booleanCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                booleanCastNode = insert(BooleanCastNodeFactory.create(getContext(), getSourceSection(), null));
+                booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
             }
             return booleanCastNode.executeBoolean(frame, value);
         }
@@ -495,7 +495,7 @@ public abstract class ModuleNodes {
         }
 
         @CreateCast("filename") public RubyNode coerceFilenameToString(RubyNode filename) {
-            return ToStrNodeFactory.create(getContext(), getSourceSection(), filename);
+            return ToStrNodeGen.create(getContext(), getSourceSection(), filename);
         }
 
         @Specialization
@@ -680,7 +680,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -732,7 +732,7 @@ public abstract class ModuleNodes {
         private boolean booleanCast(VirtualFrame frame, Object value) {
             if (booleanCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                booleanCastNode = insert(BooleanCastNodeFactory.create(getContext(), getSourceSection(), null));
+                booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
             }
             return booleanCastNode.executeBoolean(frame, value);
         }
@@ -785,7 +785,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -818,7 +818,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization(guards = "!isScoped(name)")
@@ -902,7 +902,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -934,7 +934,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -1137,7 +1137,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -1357,7 +1357,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -1410,7 +1410,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -1462,7 +1462,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -1524,7 +1524,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -1588,7 +1588,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -1707,7 +1707,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -1810,7 +1810,7 @@ public abstract class ModuleNodes {
         public SetVisibilityNode(RubyContext context, SourceSection sourceSection, Visibility visibility) {
             super(context, sourceSection);
             this.visibility = visibility;
-            this.symbolOrToStrNode = SymbolOrToStrNodeFactory.create(context, sourceSection, null);
+            this.symbolOrToStrNode = SymbolOrToStrNodeGen.create(context, sourceSection, null);
         }
 
         public abstract RubyModule executeSetVisibility(VirtualFrame frame, RubyModule module, Object[] arguments);

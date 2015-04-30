@@ -13,7 +13,7 @@ import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 
 @CoreClass(name = "TrueClass")
@@ -27,7 +27,7 @@ public abstract class TrueClassNodes {
         }
 
         @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
-            return BooleanCastNodeFactory.create(getContext(), getSourceSection(), operand);
+            return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
         }
 
         @Specialization
@@ -57,7 +57,7 @@ public abstract class TrueClassNodes {
         }
 
         @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
-            return BooleanCastNodeFactory.create(getContext(), getSourceSection(), operand);
+            return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
         }
 
         @Specialization

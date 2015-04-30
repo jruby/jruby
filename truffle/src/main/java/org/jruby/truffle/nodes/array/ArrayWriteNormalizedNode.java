@@ -37,8 +37,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         super(context, sourceSection);
 
         // TODO CS 9-Feb-15 make this lazy later on
-        ensureCapacityNode = EnsureCapacityArrayNodeFactory.create(context, sourceSection, null, null);
-        generalizeNode = GeneralizeArrayNodeFactory.create(context, sourceSection, null, null);
+        ensureCapacityNode = EnsureCapacityArrayNodeGen.create(context, sourceSection, null, null);
+        generalizeNode = GeneralizeArrayNodeGen.create(context, sourceSection, null, null);
     }
 
     public abstract Object executeWrite(VirtualFrame frame, RubyArray array, int index, Object value);

@@ -299,7 +299,7 @@ public abstract class InteropNode extends RubyNode {
             this.name = "[]";
             this.indexIndex = indexIndex;
             this.head = new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, null, DispatchAction.CALL_METHOD);
-            this.toRubyIndex = IndexLabelToRubyNodeFactory.create(context, sourceSection, null);
+            this.toRubyIndex = IndexLabelToRubyNodeGen.create(context, sourceSection, null);
         }
 
         @Override
@@ -487,7 +487,7 @@ public abstract class InteropNode extends RubyNode {
             this.indexIndex = indexIndex;
             this.valueIndex = valueIndex;
             this.head = new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, null, DispatchAction.CALL_METHOD);
-            this.toRubyIndex = IndexLabelToRubyNodeFactory.create(context, sourceSection, null);
+            this.toRubyIndex = IndexLabelToRubyNodeGen.create(context, sourceSection, null);
         }
 
         @Override

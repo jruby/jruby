@@ -15,7 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.SingleValueCastNode;
-import org.jruby.truffle.nodes.cast.SingleValueCastNodeFactory;
+import org.jruby.truffle.nodes.cast.SingleValueCastNodeGen;
 import org.jruby.truffle.nodes.core.FiberNodesFactory.FiberTransferNodeFactory;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.RubyContext;
@@ -39,7 +39,7 @@ public abstract class FiberNodes {
         protected Object singleValue(VirtualFrame frame, Object[] args) {
             if (singleValueCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                singleValueCastNode = insert(SingleValueCastNodeFactory.create(getContext(), getSourceSection(), null));
+                singleValueCastNode = insert(SingleValueCastNodeGen.create(getContext(), getSourceSection(), null));
             }
             return singleValueCastNode.executeSingleValue(frame, args);
         }

@@ -13,7 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -31,7 +31,7 @@ public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNod
     private boolean booleanCast(VirtualFrame frame, Object value) {
         if (booleanCastNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            booleanCastNode = insert(BooleanCastNodeFactory.create(getContext(), getSourceSection(), null));
+            booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
         }
         return booleanCastNode.executeBoolean(frame, value);
     }
