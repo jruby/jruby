@@ -94,7 +94,7 @@ public abstract class MatchDataNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
 
-            return getIndex(matchData, toIntNode.executeInt(frame, index));
+            return getIndex(matchData, toIntNode.doInt(frame, index));
         }
 
         @Specialization(guards = {"!isRubySymbol(range)", "!isRubyString(range)"})

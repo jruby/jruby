@@ -36,7 +36,7 @@ public abstract class ToIntNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public int executeInt(VirtualFrame frame, Object object) {
+    public int doInt(VirtualFrame frame, Object object) {
         final Object integerObject = executeIntOrLong(frame, object);
 
         if (integerObject instanceof Integer) {

@@ -155,6 +155,8 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     public RubyException translate(Throwable throwable) {
+        throwable.printStackTrace();
+
         if (PRINT_JAVA_EXCEPTIONS || PRINT_UNCAUGHT_JAVA_EXCEPTIONS) {
             throwable.printStackTrace();
         }

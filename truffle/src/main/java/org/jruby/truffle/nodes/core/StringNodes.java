@@ -150,7 +150,7 @@ public abstract class StringNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
 
-            return multiply(string, toIntNode.executeInt(frame, times));
+            return multiply(string, toIntNode.doInt(frame, times));
         }
     }
 
@@ -446,7 +446,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!isRubyRange(index)", "!isRubyRegexp(index)", "!isRubyString(index)" })
         public Object getIndex(VirtualFrame frame, RubyString string, Object index, UndefinedPlaceholder undefined) {
-            return getIndex(frame, string, getToIntNode().executeInt(frame, index), undefined);
+            return getIndex(frame, string, getToIntNode().doInt(frame, index), undefined);
         }
 
         @Specialization
@@ -463,8 +463,8 @@ public abstract class StringNodes {
         @Specialization
         public Object sliceObjectRange(VirtualFrame frame, RubyString string, RubyRange.ObjectRange range, UndefinedPlaceholder undefined) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values may return Fixnums beyond int boundaries and we should handle that -- Bignums are always errors.
-            final int coercedBegin = getToIntNode().executeInt(frame, range.getBegin());
-            final int coercedEnd = getToIntNode().executeInt(frame, range.getEnd());
+            final int coercedBegin = getToIntNode().doInt(frame, range.getBegin());
+            final int coercedEnd = getToIntNode().doInt(frame, range.getEnd());
 
             return sliceRange(frame, string, coercedBegin, coercedEnd, range.doesExcludeEnd());
         }
@@ -511,12 +511,12 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isUndefinedPlaceholder(length)")
         public Object slice(VirtualFrame frame, RubyString string, int start, Object length) {
-            return slice(frame, string, start, getToIntNode().executeInt(frame, length));
+            return slice(frame, string, start, getToIntNode().doInt(frame, length));
         }
 
         @Specialization(guards = { "!isRubyRange(start)", "!isRubyRegexp(start)", "!isRubyString(start)", "!isUndefinedPlaceholder(length)" })
         public Object slice(VirtualFrame frame, RubyString string, Object start, Object length) {
-            return slice(frame, string, getToIntNode().executeInt(frame, start), getToIntNode().executeInt(frame, length));
+            return slice(frame, string, getToIntNode().doInt(frame, start), getToIntNode().doInt(frame, length));
         }
 
         @Specialization
