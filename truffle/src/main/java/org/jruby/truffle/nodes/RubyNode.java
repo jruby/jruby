@@ -43,9 +43,13 @@ public abstract class RubyNode extends Node {
         this.context = context;
     }
 
-    // Fundamental execute method
+    // Fundamental execute methods
 
     public abstract Object execute(VirtualFrame frame);
+
+    public Object isDefined(VirtualFrame frame) {
+        return getContext().makeString("expression");
+    }
 
     // Execute without returing the result
 
@@ -217,22 +221,8 @@ public abstract class RubyNode extends Node {
 
     // Guards which use the context and so can't be static
 
-    public boolean isRubyNilObject(Object value) {
-        return value == nil();
-    }
-
     public boolean isRubiniusUndefined(Object value) {
         return value == getContext().getCoreLibrary().getRubiniusUndefined();
-    }
-
-    public boolean isRational(RubyBasicObject o) {
-        // TODO(CS, 10-Jan-15) should this be a full is_a? test? We'd need a node for that.
-        return o.getLogicalClass() == getContext().getCoreLibrary().getRationalClass();
-    }
-
-    public boolean isComplex(RubyBasicObject o) {
-        // TODO(BF, 4-4-15) COPIED from isRational - should this be a full is_a? test? We'd need a node for that.
-        return o.getLogicalClass() == getContext().getCoreLibrary().getComplexClass();
     }
 
     // Helpers methods for terseness
@@ -257,10 +247,6 @@ public abstract class RubyNode extends Node {
         return new RubyWrapperNode(this);
     }
 
-    public RubyNode getNonWrapperNode() {
-        return this;
-    }
-
     public void setAtNewline() {
         atNewline = true;
     }
@@ -273,22 +259,19 @@ public abstract class RubyNode extends Node {
         return this;
     }
 
-    /**
-     * Ruby's parallel semantic path.
-     * 
-     * @see DefinedNode
-     */
-    public Object isDefined(VirtualFrame frame) {
-        return getContext().makeString("expression");
-    }
+    // Accessors
 
     public RubyContext getContext() {
         return context;
     }
 
+    // notDesignedForCompilation() helper
+
     public static void notDesignedForCompilation() {
         CompilerDirectives.bailout("this code either doesn't implement Ruby semantics properly, or is a basic implementation that will not compile");
     }
+
+    // ruby() helper
 
     protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
         return rubyWithSelf(frame, RubyArguments.getSelf(frame.getArguments()), expression, arguments);
@@ -320,4 +303,5 @@ public abstract class RubyNode extends Node {
 
         return evalFrame;
     }
+
 }
