@@ -18,6 +18,7 @@ import com.oracle.truffle.interop.messages.Argument;
 import com.oracle.truffle.interop.messages.Read;
 import com.oracle.truffle.interop.messages.Receiver;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
@@ -90,10 +91,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
                 } else {
                     depth++;
-                    if (isRubyBasicObject(receiverObject)) {
+                    if (receiverObject instanceof RubyBasicObject) {
                         newDispathNode = doRubyBasicObject(frame, first, receiverObject, methodName, argumentsObjects);
                     }
-                    else if (isForeign(receiverObject)) {
+                    else if (RubyGuards.isForeignObject(receiverObject)) {
                         newDispathNode = createForeign(argumentsObjects, first, methodName);
                     } else {
                         newDispathNode = doUnboxedObject(frame, first, receiverObject, methodName);
@@ -106,10 +107,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         });
 
         return dispatch.executeDispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
-    }
-
-    private boolean isForeign(Object receiverObject) {
-        return isForeignObject(receiverObject);
     }
 
     private DispatchNode createForeign(Object argumentsObjects, DispatchNode first, Object methodName) {

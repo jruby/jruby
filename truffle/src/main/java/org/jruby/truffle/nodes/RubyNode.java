@@ -11,26 +11,21 @@ package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.GenerateNodeFactory;
-import com.oracle.truffle.api.dsl.TypeSystemReference;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.ProbeNode;
-import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.POSIX;
-import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
-import org.jruby.truffle.nodes.yield.YieldDispatchNode;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 
+@ImportStatic(RubyGuards.class)
 public abstract class RubyNode extends Node {
 
     private final RubyContext context;
@@ -220,6 +215,38 @@ public abstract class RubyNode extends Node {
         }
     }
 
+    // Guards which use the context and so can't be static
+
+    public boolean isRubyNilObject(Object value) {
+        return value == nil();
+    }
+
+    public boolean isRubiniusUndefined(Object value) {
+        return value == getContext().getCoreLibrary().getRubiniusUndefined();
+    }
+
+    public boolean isRational(RubyBasicObject o) {
+        // TODO(CS, 10-Jan-15) should this be a full is_a? test? We'd need a node for that.
+        return o.getLogicalClass() == getContext().getCoreLibrary().getRationalClass();
+    }
+
+    public boolean isComplex(RubyBasicObject o) {
+        // TODO(BF, 4-4-15) COPIED from isRational - should this be a full is_a? test? We'd need a node for that.
+        return o.getLogicalClass() == getContext().getCoreLibrary().getComplexClass();
+    }
+
+    // Helpers methods for terseness
+
+    protected RubyNilClass nil() {
+        return getContext().getCoreLibrary().getNilObject();
+    }
+
+    protected POSIX posix() {
+        return getContext().getPosix();
+    }
+
+    // Instrumentation
+
     @Override
     public boolean isInstrumentable() {
         return true;
@@ -230,18 +257,20 @@ public abstract class RubyNode extends Node {
         return new RubyWrapperNode(this);
     }
 
-    /**
-     * Records that this node was wrapped by the JRuby parser with a "newline" node.
-     */
+    public RubyNode getNonWrapperNode() {
+        return this;
+    }
+
     public void setAtNewline() {
         atNewline = true;
     }
 
-    /**
-     * Was this ndoe wrapped by a JRuby parser "newline" node?
-     */
     public boolean isAtNewline() {
         return atNewline;
+    }
+
+    public RubyNode getNonProxyNode() {
+        return this;
     }
 
     /**
@@ -253,231 +282,12 @@ public abstract class RubyNode extends Node {
         return getContext().makeString("expression");
     }
 
-    public RubyNode getNonProxyNode() {
-        return this;
-    }
-
     public RubyContext getContext() {
         return context;
     }
 
     public static void notDesignedForCompilation() {
         CompilerDirectives.bailout("this code either doesn't implement Ruby semantics properly, or is a basic implementation that will not compile");
-    }
-
-    public boolean isTrue(boolean value) {
-        return value;
-    }
-
-    public RubyNode getNonWrapperNode() {
-        return this;
-    }
-
-    public boolean isRational(RubyBasicObject o) {
-        // TODO(CS, 10-Jan-15) should this be a full is_a? test? We'd need a node for that.
-        return o.getLogicalClass() == getContext().getCoreLibrary().getRationalClass();
-    }
-
-    public boolean isForeignObject(Object object) {
-        return (object instanceof TruffleObject) && !(isRubyBasicObject(object));
-    }
-
-    public boolean isComplex(RubyBasicObject o) {
-        // TODO(BF, 4-4-15) COPIED from isRational - should this be a full is_a? test? We'd need a node for that.
-        return o.getLogicalClass() == getContext().getCoreLibrary().getComplexClass();
-    }
-
-    public boolean isNaN(double value) {
-        return Double.isNaN(value);
-    }
-
-    public boolean isInfinity(double value) {
-        return Double.isInfinite(value);
-    }
-
-    // Copied from RubyTypesGen
-
-    @SuppressWarnings("static-method")
-    public boolean isDispatchAction(Object value) {
-        return value instanceof DispatchAction;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isLexicalScope(Object value) {
-        return value instanceof LexicalScope;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isUndefinedPlaceholder(Object value) {
-        return value instanceof UndefinedPlaceholder;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isBoolean(Object value) {
-        return value instanceof Boolean;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isInteger(Object value) {
-        return value instanceof Integer;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isLong(Object value) {
-        return value instanceof Long;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isDouble(Object value) {
-        return value instanceof Double;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isString(Object value) {
-        return value instanceof String;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyBignum(Object value) {
-        return value instanceof RubyBignum;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isIntegerFixnumRange(Object value) {
-        return value instanceof RubyRange.IntegerFixnumRange;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isLongFixnumRange(Object value) {
-        return value instanceof RubyRange.LongFixnumRange;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isObjectRange(Object value) {
-        return value instanceof RubyRange.ObjectRange;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyArray(Object value) {
-        return value instanceof RubyArray;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyBinding(Object value) {
-        return value instanceof RubyBinding;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyClass(Object value) {
-        return value instanceof RubyClass;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyException(Object value) {
-        return value instanceof RubyException;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyFiber(Object value) {
-        return value instanceof RubyFiber;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyHash(Object value) {
-        return value instanceof RubyHash;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyMatchData(Object value) {
-        return value instanceof RubyMatchData;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyModule(Object value) {
-        return value instanceof RubyModule;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyNilClass(Object value) {
-        return value instanceof RubyNilClass;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyProc(Object value) {
-        return value instanceof RubyProc;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyRange(Object value) {
-        return value instanceof RubyRange;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyRegexp(Object value) {
-        return value instanceof RubyRegexp;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyString(Object value) {
-        return value instanceof RubyString;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyEncoding(Object value) {
-        return value instanceof RubyEncoding;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubySymbol(Object value) {
-        return value instanceof RubySymbol;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyThread(Object value) {
-        return value instanceof RubyThread;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyTime(Object value) {
-        return value instanceof RubyTime;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyEncodingConverter(Object value) {
-        return value instanceof RubyEncodingConverter;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyMethod(Object value) {
-        return value instanceof RubyMethod;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyUnboundMethod(Object value) {
-        return value instanceof RubyUnboundMethod;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyBasicObject(Object value) {
-        return value instanceof RubyBasicObject;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isThreadLocal(Object value) {
-        return value instanceof ThreadLocal;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isJavaObjectArray(Object value) {
-        return value instanceof Object[];
-    }
-
-    public boolean isRubyNilObject(Object value) {
-        return value == nil();
-    }
-
-    public boolean isRubiniusUndefined(Object value) {
-        return value == getContext().getCoreLibrary().getRubiniusUndefined();
     }
 
     protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
@@ -509,13 +319,5 @@ public abstract class RubyNode extends Node {
         }
 
         return evalFrame;
-    }
-
-    protected RubyNilClass nil() {
-        return getContext().getCoreLibrary().getNilObject();
-    }
-
-    protected POSIX posix() {
-        return getContext().getPosix();
     }
 }
