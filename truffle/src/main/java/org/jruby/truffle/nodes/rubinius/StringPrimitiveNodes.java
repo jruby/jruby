@@ -454,11 +454,11 @@ public abstract class StringPrimitiveNodes {
 
     @RubiniusPrimitive(name = "string_find_character")
     @ImportStatic(StringGuards.class)
-    public static abstract class StringFindCharacterPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringFindCharacterNode extends RubiniusPrimitiveNode {
 
         @Child private TaintResultNode taintResultNode;
 
-        public StringFindCharacterPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public StringFindCharacterNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
@@ -652,9 +652,9 @@ public abstract class StringPrimitiveNodes {
 
     @RubiniusPrimitive(name = "string_byte_character_index", needsSelf = false)
     @ImportStatic(StringGuards.class)
-    public static abstract class StringByteCharacterIndexPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StringByteCharacterIndexNode extends RubiniusPrimitiveNode {
 
-        public StringByteCharacterIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public StringByteCharacterIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
