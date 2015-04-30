@@ -585,4 +585,19 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
+    @CoreMethod(names = "home_directory", onSingleton = true)
+    public abstract static class HomeDirectoryNode extends CoreMethodNode {
+
+        public HomeDirectoryNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyString homeDirectory() {
+            return getContext().makeString(getContext().getRuntime().getJRubyHome());
+        }
+
+    }
+
 }
