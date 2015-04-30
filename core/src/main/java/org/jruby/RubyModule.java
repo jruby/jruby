@@ -2999,7 +2999,7 @@ public class RubyModule extends RubyObject {
         }
 
         // Bare ::
-        if (symbol.length() == 0) throw context.runtime.newNameError("wrong constant name ::", fullName);
+        if (symbol.length() == 0) throw context.runtime.newNameError("wrong constant name ", fullName);
 
         while((sep = symbol.indexOf("::")) != -1) {
             String segment = symbol.substring(0, sep);
@@ -3048,7 +3048,7 @@ public class RubyModule extends RubyObject {
         }
 
         // Bare ::
-        if (symbol.length() == 0) throw context.runtime.newNameError("wrong constant name ::", fullName);
+        if (symbol.length() == 0) throw context.runtime.newNameError("wrong constant name ", fullName);
 
         while ((sep = symbol.indexOf("::")) != -1) {
             String segment = symbol.substring(0, sep);
