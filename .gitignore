@@ -22,7 +22,7 @@ lib/ruby/shared/rubygems/defaults/jruby_native.rb
 lib/ruby/shared/krypt*
 lib/ruby/shared/jopenssl*
 lib/ruby/shared/org/
-lib/ruby/shared/openssl
+lib/ruby/shared/openssl*
 lib/ruby/shared/jar*
 lib/ruby/shared/*rdoc*
 nbproject/private
