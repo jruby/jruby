@@ -30,7 +30,6 @@ import java.util.Arrays;
  * frame.
  */
 @ImportStatic(PackGuards.class)
-@TypeSystemReference(PackTypes.class)
 public abstract class PackNode extends Node {
 
     private ConditionProfile writeMoreThanZeroBytes = ConditionProfile.createBinaryProfile();

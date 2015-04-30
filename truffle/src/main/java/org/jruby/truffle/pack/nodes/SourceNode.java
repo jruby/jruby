@@ -19,7 +19,6 @@ import org.jruby.truffle.pack.runtime.PackFrameDescriptor;
  * Reads the source array from the frame - written as a node so that we can
  * write DSL specializations based on the type of that array.
  */
-@TypeSystemReference(PackTypes.class)
 public class SourceNode extends Node {
 
     public Object execute(VirtualFrame frame) {
