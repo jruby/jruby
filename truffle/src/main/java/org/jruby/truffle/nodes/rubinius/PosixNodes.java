@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Fcntl;
+import org.jruby.RubyEncoding;
 import org.jruby.platform.Platform;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
@@ -23,6 +24,7 @@ import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.unsafe.UnsafeHolder;
 import sun.misc.Unsafe;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 
 @CoreClass(name = "Rubinius::FFI::Platform::POSIX")
@@ -193,7 +195,21 @@ public abstract class PosixNodes {
 
         @Specialization
         public int unlink(RubyString path) {
-            return posix().unlink(path.toString());
+            return posix().unlink(RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize()));
+        }
+
+    }
+
+    @CoreMethod(names = "umask", isModuleFunction = true, required = 1)
+    public abstract static class UmaskNode extends CoreMethodArrayArgumentsNode {
+
+        public UmaskNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int umask(int mask) {
+            return posix().umask(mask);
         }
 
     }

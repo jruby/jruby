@@ -1,7 +1,3 @@
-fails:Dir.entries returns an Array of filenames in an existing directory including dotfiles
-fails:Dir.entries calls #to_path on non-String arguments
-fails:Dir.entries accepts an options Hash
 fails:Dir.entries returns entries encoded with the filesystem encoding by default
 fails:Dir.entries returns entries encoded with the specified encoding
 fails:Dir.entries returns entries transcoded to the default internal encoding
-fails:Dir.entries raises a SystemCallError if called with a nonexistent diretory
