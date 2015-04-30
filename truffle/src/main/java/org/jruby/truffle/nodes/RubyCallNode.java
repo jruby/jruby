@@ -53,8 +53,6 @@ public class RubyCallNode extends RubyNode {
 
     @Child private CallDispatchHeadNode dispatchHead;
 
-    private final BranchProfile splatNotArrayProfile = BranchProfile.create();
-
     @CompilerDirectives.CompilationFinal private boolean seenNullInUnsplat = false;
     @CompilerDirectives.CompilationFinal private boolean seenIntegerFixnumInUnsplat = false;
     @CompilerDirectives.CompilationFinal private boolean seenLongFixnumInUnsplat = false;
@@ -192,9 +190,8 @@ public class RubyCallNode extends RubyNode {
         // TODO(CS): what happens if isn't just one argument, or it isn't an Array?
 
         if (!(argument instanceof RubyArray)) {
-            splatNotArrayProfile.enter();
-            notDesignedForCompilation();
-            throw new UnsupportedOperationException();
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException(argument.toString());
         }
 
         final RubyArray array = (RubyArray) argument;
