@@ -13,6 +13,9 @@
 
 # Run in the root directory. Run -Pdist first.
 
+echo "build-graal-bundles does not work with an unreleased Graal"
+exit 1
+
 version=`cat VERSION`
 
 tar -zxf maven/jruby-dist/target/jruby-dist-$version-bin.tar.gz || exit $?

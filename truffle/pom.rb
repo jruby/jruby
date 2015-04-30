@@ -18,8 +18,8 @@ project 'JRuby Truffle' do
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
-  jar 'com.oracle:truffle:0.7'
-  jar 'com.oracle:truffle-dsl-processor:0.7', :scope => 'provided'
+  jar 'com.oracle:truffle:0.8-SNAPSHOT'
+  jar 'com.oracle:truffle-dsl-processor:0.8-SNAPSHOT', :scope => 'provided'
 
   plugin( :compiler,
           'encoding' => 'utf-8',
