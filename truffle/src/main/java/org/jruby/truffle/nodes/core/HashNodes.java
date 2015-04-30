@@ -1133,8 +1133,8 @@ public abstract class HashNodes {
     }
 
     // Not a core method, used to simulate Rubinius @default.
-    @NodeChild(value = "self")
-    public abstract static class DefaultValueNode extends RubyNode {
+    @NodeChild(type = RubyNode.class, value = "self")
+    public abstract static class DefaultValueNode extends CoreMethodNode {
 
         public DefaultValueNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1153,8 +1153,11 @@ public abstract class HashNodes {
     }
 
     // Not a core method, used to simulate Rubinius @default.
-    @NodeChildren({ @NodeChild("self"), @NodeChild("defaultValue") })
-    public abstract static class SetDefaultValueNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "self"),
+            @NodeChild(type = RubyNode.class, value = "defaultValue")
+    })
+    public abstract static class SetDefaultValueNode extends CoreMethodNode {
 
         public SetDefaultValueNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1169,8 +1172,11 @@ public abstract class HashNodes {
     }
 
     // Not a core method, used to simulate Rubinius @default_proc.
-    @NodeChildren({ @NodeChild("self"), @NodeChild("defaultProc") })
-    public abstract static class SetDefaultProcNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "self"),
+            @NodeChild(type = RubyNode.class, value = "defaultProc")
+    })
+    public abstract static class SetDefaultProcNode extends CoreMethodNode {
 
         public SetDefaultProcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

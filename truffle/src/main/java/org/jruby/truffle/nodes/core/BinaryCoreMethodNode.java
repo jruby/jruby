@@ -18,7 +18,7 @@ import org.jruby.truffle.runtime.RubyContext;
 @NodeChildren({
         @NodeChild(value = "left", type = RubyNode.class),
         @NodeChild(value = "right", type = RubyNode.class)})
-public abstract class BinaryCoreMethodNode extends RubyNode {
+public abstract class BinaryCoreMethodNode extends CoreMethodNode {
 
     public BinaryCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);

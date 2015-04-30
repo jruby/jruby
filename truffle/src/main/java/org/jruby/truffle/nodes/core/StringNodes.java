@@ -69,10 +69,10 @@ public abstract class StringNodes {
 
     @CoreMethod(names = "+", required = 1)
     @NodeChildren({
-        @NodeChild(value = "string"),
-        @NodeChild(value = "other")
+        @NodeChild(type = RubyNode.class, value = "string"),
+        @NodeChild(type = RubyNode.class, value = "other")
     })
-    public abstract static class AddNode extends RubyNode {
+    public abstract static class AddNode extends CoreMethodNode {
 
         @Child private TaintResultNode taintResultNode;
 
@@ -276,10 +276,10 @@ public abstract class StringNodes {
 
     @CoreMethod(names = { "<<", "concat" }, required = 1, taintFromParameter = 0, raiseIfFrozenSelf = true)
     @NodeChildren({
-            @NodeChild(value = "string"),
-            @NodeChild(value = "other")
+            @NodeChild(type = RubyNode.class, value = "string"),
+            @NodeChild(type = RubyNode.class, value = "other")
     })
-    public abstract static class ConcatNode extends RubyNode {
+    public abstract static class ConcatNode extends CoreMethodNode {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -666,10 +666,10 @@ public abstract class StringNodes {
 
     @CoreMethod(names = "casecmp", required = 1)
     @NodeChildren({
-        @NodeChild(value = "string"),
-        @NodeChild(value = "other")
+        @NodeChild(type = RubyNode.class, value = "string"),
+        @NodeChild(type = RubyNode.class, value = "other")
     })
-    public abstract static class CaseCmpNode extends RubyNode {
+    public abstract static class CaseCmpNode extends CoreMethodNode {
 
         public CaseCmpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -804,10 +804,10 @@ public abstract class StringNodes {
 
     @CoreMethod(names = "crypt", required = 1, taintFromSelf = true, taintFromParameter = 0)
     @NodeChildren({
-            @NodeChild(value = "string"),
-            @NodeChild(value = "salt")
+            @NodeChild(type = RubyNode.class, value = "string"),
+            @NodeChild(type = RubyNode.class, value = "salt")
     })
-    public abstract static class CryptNode extends RubyNode {
+    public abstract static class CryptNode extends CoreMethodNode {
 
         public CryptNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1253,11 +1253,11 @@ public abstract class StringNodes {
 
     @CoreMethod(names = "insert", required = 2, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
     @NodeChildren({
-        @NodeChild(value = "string"),
-        @NodeChild(value = "index"),
-        @NodeChild(value = "otherString")
+        @NodeChild(type = RubyNode.class, value = "string"),
+        @NodeChild(type = RubyNode.class, value = "index"),
+        @NodeChild(type = RubyNode.class, value = "otherString")
     })
-    public abstract static class InsertNode extends RubyNode {
+    public abstract static class InsertNode extends CoreMethodNode {
 
         @Child private CallDispatchHeadNode concatNode;
         @Child private TaintResultNode taintResultNode;
@@ -1428,10 +1428,10 @@ public abstract class StringNodes {
 
     @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true, taintFromParameter = 0)
     @NodeChildren({
-        @NodeChild(value = "string"),
-        @NodeChild(value = "other")
+        @NodeChild(type = RubyNode.class, value = "string"),
+        @NodeChild(type = RubyNode.class, value = "other")
     })
-    public abstract static class ReplaceNode extends RubyNode {
+    public abstract static class ReplaceNode extends CoreMethodNode {
 
         public ReplaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1735,11 +1735,11 @@ public abstract class StringNodes {
 
     @CoreMethod(names = "setbyte", required = 2, raiseIfFrozenSelf = true)
     @NodeChildren({
-        @NodeChild(value = "string"),
-        @NodeChild(value = "index"),
-        @NodeChild(value = "value")
+        @NodeChild(type = RubyNode.class, value = "string"),
+        @NodeChild(type = RubyNode.class, value = "index"),
+        @NodeChild(type = RubyNode.class, value = "value")
     })
-    public abstract static class SetByteNode extends RubyNode {
+    public abstract static class SetByteNode extends CoreMethodNode {
 
         public SetByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2120,11 +2120,11 @@ public abstract class StringNodes {
 
     @CoreMethod(names = "tr!", required = 2, raiseIfFrozenSelf = true)
     @NodeChildren({
-        @NodeChild(value = "self"),
-        @NodeChild(value = "fromStr"),
-        @NodeChild(value = "toStrNode")
+        @NodeChild(type = RubyNode.class, value = "self"),
+        @NodeChild(type = RubyNode.class, value = "fromStr"),
+        @NodeChild(type = RubyNode.class, value = "toStrNode")
     })
-    public abstract static class TrBangNode extends RubyNode {
+    public abstract static class TrBangNode extends CoreMethodNode {
 
         @Child private DeleteBangNode deleteBangNode;
 
@@ -2161,11 +2161,11 @@ public abstract class StringNodes {
 
     @CoreMethod(names = "tr_s!", required = 2, raiseIfFrozenSelf = true)
     @NodeChildren({
-            @NodeChild(value = "self"),
-            @NodeChild(value = "fromStr"),
-            @NodeChild(value = "toStrNode")
+            @NodeChild(type = RubyNode.class, value = "self"),
+            @NodeChild(type = RubyNode.class, value = "fromStr"),
+            @NodeChild(type = RubyNode.class, value = "toStrNode")
     })
-    public abstract static class TrSBangNode extends RubyNode {
+    public abstract static class TrSBangNode extends CoreMethodNode {
 
         @Child private DeleteBangNode deleteBangNode;
 

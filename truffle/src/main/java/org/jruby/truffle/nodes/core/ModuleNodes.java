@@ -479,11 +479,11 @@ public abstract class ModuleNodes {
 
     @CoreMethod(names = "autoload", required = 2)
     @NodeChildren({
-            @NodeChild(value = "module"),
-            @NodeChild(value = "name"),
-            @NodeChild(value = "filename")
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name"),
+            @NodeChild(type = RubyNode.class, value = "filename")
     })
-    public abstract static class AutoloadNode extends RubyNode {
+    public abstract static class AutoloadNode extends CoreMethodNode {
 
         @Child private StringNodes.EmptyNode emptyNode;
         private final ConditionProfile invalidConstantName = ConditionProfile.createBinaryProfile();
@@ -668,8 +668,11 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "class_variable_get", required = 1)
-    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
-    public abstract static class ClassVariableGetNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class ClassVariableGetNode extends CoreMethodNode {
 
         public ClassVariableGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -769,8 +772,12 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "const_defined?", required = 1, optional = 1)
-    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("inherit") })
-    public abstract static class ConstDefinedNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name"),
+            @NodeChild(type = RubyNode.class, value = "inherit")
+    })
+    public abstract static class ConstDefinedNode extends CoreMethodNode {
 
         public ConstDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -795,8 +802,12 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "const_get", required = 1, optional = 1)
-    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("inherit") })
-    public abstract static class ConstGetNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name"),
+            @NodeChild(type = RubyNode.class, value = "inherit")
+    })
+    public abstract static class ConstGetNode extends CoreMethodNode {
 
         @Child private DispatchHeadNode dispatch;
 
@@ -878,8 +889,12 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "const_set", required = 2)
-    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("value") })
-    public abstract static class ConstSetNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name"),
+            @NodeChild(type = RubyNode.class, value = "value")
+    })
+    public abstract static class ConstSetNode extends CoreMethodNode {
 
         public ConstSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -905,8 +920,13 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "define_method", needsBlock = true, required = 1, optional = 1, visibility = Visibility.PRIVATE)
-    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("proc"), @NodeChild("block") })
-    public abstract static class DefineMethodNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name"),
+            @NodeChild(type = RubyNode.class, value = "proc"),
+            @NodeChild(type = RubyNode.class, value = "block")
+    })
+    public abstract static class DefineMethodNode extends CoreMethodNode {
 
         public DefineMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1105,8 +1125,11 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "method_defined?", required = 1, optional = 1)
-    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("inherit") })
-    public abstract static class MethodDefinedNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name"),
+            @NodeChild(type = RubyNode.class, value = "inherit") })
+    public abstract static class MethodDefinedNode extends CoreMethodNode {
 
         public MethodDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1322,8 +1345,11 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "private_method_defined?", required = 1)
-    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
-    public abstract static class PrivateMethodDefinedNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class PrivateMethodDefinedNode extends CoreMethodNode {
 
         public PrivateMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1372,8 +1398,11 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "protected_method_defined?", required = 1)
-    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
-    public abstract static class ProtectedMethodDefinedNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class ProtectedMethodDefinedNode extends CoreMethodNode {
 
         public ProtectedMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1421,8 +1450,11 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "public_instance_method", required = 1)
-    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
-    public abstract static class PublicInstanceMethodNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class PublicInstanceMethodNode extends CoreMethodNode {
 
         public PublicInstanceMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1480,8 +1512,11 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "public_method_defined?", required = 1)
-    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
-    public abstract static class PublicMethodDefinedNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class PublicMethodDefinedNode extends CoreMethodNode {
 
         public PublicMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1541,8 +1576,11 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "instance_method", required = 1)
-    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
-    public abstract static class InstanceMethodNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class InstanceMethodNode extends CoreMethodNode {
 
         public InstanceMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1657,8 +1695,11 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "remove_const", required = 1, visibility = Visibility.PRIVATE)
-    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
-    public abstract static class RemoveConstNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class RemoveConstNode extends CoreMethodNode {
 
         public RemoveConstNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1760,7 +1801,7 @@ public abstract class ModuleNodes {
     }
 
     @NodeChildren({ @NodeChild(value = "module"), @NodeChild(value = "names") })
-    public abstract static class SetVisibilityNode extends RubyNode {
+    public abstract static class SetVisibilityNode extends CoreMethodNode {
 
         @Child SymbolOrToStrNode symbolOrToStrNode;
 

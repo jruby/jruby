@@ -66,11 +66,11 @@ public abstract class ArrayNodes {
 
     @CoreMethod(names = "+", required = 1)
     @NodeChildren({
-        @NodeChild(value = "a"),
-        @NodeChild(value = "b")
+        @NodeChild(type = RubyNode.class, value = "a"),
+        @NodeChild(type = RubyNode.class, value = "b")
     })
     @ImportStatic(ArrayGuards.class)
-    public abstract static class AddNode extends RubyNode {
+    public abstract static class AddNode extends CoreMethodNode {
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -704,10 +704,10 @@ public abstract class ArrayNodes {
 
     @CoreMethod(names = "at", required = 1)
     @NodeChildren({
-        @NodeChild(value = "array"),
-        @NodeChild(value = "index")
+        @NodeChild(type = RubyNode.class, value = "array"),
+        @NodeChild(type = RubyNode.class, value = "index")
     })
-    public abstract static class AtNode extends RubyNode {
+    public abstract static class AtNode extends CoreMethodNode {
 
         @Child private ArrayReadDenormalizedNode readNode;
 
@@ -838,11 +838,11 @@ public abstract class ArrayNodes {
 
     @CoreMethod(names = "concat", required = 1, raiseIfFrozenSelf = true)
     @NodeChildren({
-        @NodeChild(value = "array"),
-        @NodeChild(value = "other")
+        @NodeChild(type = RubyNode.class, value = "array"),
+        @NodeChild(type = RubyNode.class, value = "other")
     })
     @ImportStatic(ArrayGuards.class)
-    public abstract static class ConcatNode extends RubyNode {
+    public abstract static class ConcatNode extends CoreMethodNode {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1044,11 +1044,11 @@ public abstract class ArrayNodes {
 
     @CoreMethod(names = "delete_at", required = 1, raiseIfFrozenSelf = true)
     @NodeChildren({
-        @NodeChild(value = "array"),
-        @NodeChild(value = "index")
+        @NodeChild(type = RubyNode.class, value = "array"),
+        @NodeChild(type = RubyNode.class, value = "index")
     })
     @ImportStatic(ArrayGuards.class)
-    public abstract static class DeleteAtNode extends RubyNode {
+    public abstract static class DeleteAtNode extends CoreMethodNode {
 
         private final BranchProfile tooSmallBranch = BranchProfile.create();
         private final BranchProfile beyondEndBranch = BranchProfile.create();
@@ -1864,9 +1864,12 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "initialize_copy", required = 1, raiseIfFrozenSelf = true)
-    @NodeChildren({ @NodeChild(value = "self"), @NodeChild(value = "from") })
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "self"),
+            @NodeChild(type = RubyNode.class, value = "from")
+    })
     @ImportStatic(ArrayGuards.class)
-    public abstract static class InitializeCopyNode extends RubyNode {
+    public abstract static class InitializeCopyNode extends CoreMethodNode {
         // TODO(cs): what about allocationSite ?
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
@@ -3722,11 +3725,11 @@ public abstract class ArrayNodes {
 
     @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true)
     @NodeChildren({
-        @NodeChild(value = "array"),
-        @NodeChild(value = "other")
+        @NodeChild(type = RubyNode.class, value = "array"),
+        @NodeChild(type = RubyNode.class, value = "other")
     })
     @ImportStatic(ArrayGuards.class)
-    public abstract static class ReplaceNode extends RubyNode {
+    public abstract static class ReplaceNode extends CoreMethodNode {
 
         public ReplaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

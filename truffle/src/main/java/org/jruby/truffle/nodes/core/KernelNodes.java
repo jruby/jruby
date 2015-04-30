@@ -441,7 +441,7 @@ public abstract class KernelNodes {
             @NodeChild(value = "filename", type = RubyNode.class),
             @NodeChild(value = "lineNumber", type = RubyNode.class)
     })
-    public abstract static class EvalNode extends RubyNode {
+    public abstract static class EvalNode extends CoreMethodNode {
 
         @Child private CallDispatchHeadNode toStr;
         @Child private BindingNode bindingNode;
