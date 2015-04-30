@@ -1,4 +1,2 @@
 fails:Dir.pwd returns the current working directory
-fails:Dir.pwd returns a String with Encoding.default_external encoding
-fails:Dir.pwd does not transcode to Encoding.default_internal
 fails:Dir.pwd correctly displays dirs with unicode characters in them
