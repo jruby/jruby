@@ -267,8 +267,10 @@ public abstract class RubyNode extends Node {
 
     // notDesignedForCompilation() helper
 
+    // TODO CS 30-Apr-15 inline this when we think it's working well
+
     public static void notDesignedForCompilation() {
-        CompilerDirectives.bailout("this code either doesn't implement Ruby semantics properly, or is a basic implementation that will not compile");
+        CompilerDirectives.transferToInterpreter();
     }
 
     // ruby() helper
