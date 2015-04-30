@@ -231,4 +231,10 @@ public class RubyBasicObject implements TruffleObject {
 
     }
 
+    @Override
+    public String toString() {
+        CompilerAsserts.neverPartOfCompilation("should never use RubyBasicObject#toString to implement Ruby functionality");
+        return String.format("RubyBasicObject@%x<logicalClass=%s>", System.identityHashCode(this), logicalClass.getName());
+    }
+
 }
