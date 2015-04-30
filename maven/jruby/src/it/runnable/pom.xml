@@ -297,7 +297,7 @@
                     <ice_nine>0.11.0</ice_nine>
                     <coercible>1.0.0</coercible>
                     <equalizer>0.0.9</equalizer>
-                    <ruby-maven>3.1.1.0.8</ruby-maven>
+                    <ruby-maven>3.1.1.0.11</ruby-maven>
                     <ruby-maven-libs>3.1.1</ruby-maven-libs>
                   </gems>
                 </configuration>

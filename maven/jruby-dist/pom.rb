@@ -13,7 +13,7 @@ project 'JRuby Dist' do
               'main.basedir' => '${project.parent.parent.basedir}' )
 
   # pre-installed gems - not default gems !
-  gem 'ruby-maven', '3.1.1.0.8', :scope => 'provided'
+  gem 'ruby-maven', '3.1.1.0.11', :scope => 'provided'
 
   # HACK: add torquebox repo only when building from filesystem
   # not when using the pom as "dependency" in some other projects
