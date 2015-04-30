@@ -29,7 +29,7 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 public abstract class MethodNodes {
 
     @CoreMethod(names = { "==", "eql?" }, required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
+    public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child protected ReferenceEqualNode referenceEqualNode;
 
@@ -58,7 +58,7 @@ public abstract class MethodNodes {
     }
 
     @CoreMethod(names = "arity")
-    public abstract static class ArityNode extends CoreMethodNode {
+    public abstract static class ArityNode extends CoreMethodArrayArgumentsNode {
 
         public ArityNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -72,7 +72,7 @@ public abstract class MethodNodes {
     }
 
     @CoreMethod(names = "call", needsBlock = true, argumentsAsArray = true)
-    public abstract static class CallNode extends CoreMethodNode {
+    public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IndirectCallNode callNode;
 
@@ -104,7 +104,7 @@ public abstract class MethodNodes {
     }
 
     @CoreMethod(names = "name")
-    public abstract static class NameNode extends CoreMethodNode {
+    public abstract static class NameNode extends CoreMethodArrayArgumentsNode {
 
         public NameNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -120,7 +120,7 @@ public abstract class MethodNodes {
     }
 
     @CoreMethod(names = "owner")
-    public abstract static class OwnerNode extends CoreMethodNode {
+    public abstract static class OwnerNode extends CoreMethodArrayArgumentsNode {
 
         public OwnerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -134,7 +134,7 @@ public abstract class MethodNodes {
     }
 
     @CoreMethod(names = "receiver")
-    public abstract static class ReceiverNode extends CoreMethodNode {
+    public abstract static class ReceiverNode extends CoreMethodArrayArgumentsNode {
 
         public ReceiverNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -148,7 +148,7 @@ public abstract class MethodNodes {
     }
 
     @CoreMethod(names = "source_location")
-    public abstract static class SourceLocationNode extends CoreMethodNode {
+    public abstract static class SourceLocationNode extends CoreMethodArrayArgumentsNode {
 
         public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -172,7 +172,7 @@ public abstract class MethodNodes {
     }
 
     @CoreMethod(names = "unbind")
-    public abstract static class UnbindNode extends CoreMethodNode {
+    public abstract static class UnbindNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ClassNode classNode;
 
@@ -192,7 +192,7 @@ public abstract class MethodNodes {
     }
 
     @CoreMethod(names = "to_proc")
-    public abstract static class ToProcNode extends CoreMethodNode {
+    public abstract static class ToProcNode extends CoreMethodArrayArgumentsNode {
 
         public ToProcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

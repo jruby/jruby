@@ -2448,7 +2448,7 @@ public abstract class ArrayNodes {
 
     }
 
-    public abstract static class MaxBlockNode extends CoreMethodNode {
+    public abstract static class MaxBlockNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode compareNode;
 
@@ -2550,7 +2550,7 @@ public abstract class ArrayNodes {
 
     }
 
-    public abstract static class MinBlockNode extends CoreMethodNode {
+    public abstract static class MinBlockNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode compareNode;
 
@@ -4459,7 +4459,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "unshift", argumentsAsArray = true, raiseIfFrozenSelf = true)
-    public abstract static class UnshiftNode extends CoreMethodNode {
+    public abstract static class UnshiftNode extends CoreMethodArrayArgumentsNode {
 
         public UnshiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

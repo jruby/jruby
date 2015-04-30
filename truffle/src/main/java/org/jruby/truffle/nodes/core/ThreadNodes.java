@@ -27,7 +27,7 @@ import org.jruby.truffle.runtime.subsystems.SafepointAction;
 public abstract class ThreadNodes {
 
     @CoreMethod(names = "alive?")
-    public abstract static class AliveNode extends CoreMethodNode {
+    public abstract static class AliveNode extends CoreMethodArrayArgumentsNode {
 
         public AliveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -41,7 +41,7 @@ public abstract class ThreadNodes {
     }
 
     @CoreMethod(names = "current", onSingleton = true)
-    public abstract static class CurrentNode extends CoreMethodNode {
+    public abstract static class CurrentNode extends CoreMethodArrayArgumentsNode {
 
         public CurrentNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -55,7 +55,7 @@ public abstract class ThreadNodes {
     }
 
     @CoreMethod(names = { "kill", "exit", "terminate" })
-    public abstract static class KillNode extends CoreMethodNode {
+    public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
 
         public KillNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -78,7 +78,7 @@ public abstract class ThreadNodes {
     }
 
     @CoreMethod(names = "initialize", needsBlock = true)
-    public abstract static class InitializeNode extends CoreMethodNode {
+    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -95,7 +95,7 @@ public abstract class ThreadNodes {
     }
 
     @CoreMethod(names = "join", optional = 1)
-    public abstract static class JoinNode extends CoreMethodNode {
+    public abstract static class JoinNode extends CoreMethodArrayArgumentsNode {
 
         public JoinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -139,7 +139,7 @@ public abstract class ThreadNodes {
     }
 
     @CoreMethod(names = "main", onSingleton = true)
-    public abstract static class MainNode extends CoreMethodNode {
+    public abstract static class MainNode extends CoreMethodArrayArgumentsNode {
 
         public MainNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -153,7 +153,7 @@ public abstract class ThreadNodes {
     }
 
     @CoreMethod(names = "pass", onSingleton = true)
-    public abstract static class PassNode extends CoreMethodNode {
+    public abstract static class PassNode extends CoreMethodArrayArgumentsNode {
 
         @Child ThreadPassNode threadPassNode;
 
@@ -171,7 +171,7 @@ public abstract class ThreadNodes {
     }
 
     @CoreMethod(names = "raise", required = 1, optional = 1)
-    public abstract static class RaiseNode extends CoreMethodNode {
+    public abstract static class RaiseNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode initialize;
 
@@ -215,7 +215,7 @@ public abstract class ThreadNodes {
     }
 
     @CoreMethod(names = "status")
-    public abstract static class StatusNode extends CoreMethodNode {
+    public abstract static class StatusNode extends CoreMethodArrayArgumentsNode {
 
         public StatusNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -240,7 +240,7 @@ public abstract class ThreadNodes {
     }
 
     @CoreMethod(names = "stop?")
-    public abstract static class StopNode extends CoreMethodNode {
+    public abstract static class StopNode extends CoreMethodArrayArgumentsNode {
 
         public StopNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -256,7 +256,7 @@ public abstract class ThreadNodes {
     }
 
     @CoreMethod(names = "value")
-    public abstract static class ValueNode extends CoreMethodNode {
+    public abstract static class ValueNode extends CoreMethodArrayArgumentsNode {
 
         public ValueNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -274,7 +274,7 @@ public abstract class ThreadNodes {
     }
 
     @CoreMethod(names = { "wakeup", "run" })
-    public abstract static class WakeupNode extends CoreMethodNode {
+    public abstract static class WakeupNode extends CoreMethodArrayArgumentsNode {
 
         public WakeupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

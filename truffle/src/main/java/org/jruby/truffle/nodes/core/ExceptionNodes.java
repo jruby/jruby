@@ -23,7 +23,7 @@ import org.jruby.truffle.runtime.core.RubyString;
 public abstract class ExceptionNodes {
 
     @CoreMethod(names = "initialize", optional = 1)
-    public abstract static class InitializeNode extends CoreMethodNode {
+    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -48,7 +48,7 @@ public abstract class ExceptionNodes {
     }
 
     @CoreMethod(names = "backtrace")
-    public abstract static class BacktraceNode extends CoreMethodNode {
+    public abstract static class BacktraceNode extends CoreMethodArrayArgumentsNode {
 
         public BacktraceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -67,7 +67,7 @@ public abstract class ExceptionNodes {
 
     @RubiniusOnly
     @CoreMethod(names = "capture_backtrace!", optional = 1)
-    public abstract static class CaptureBacktraceNode extends CoreMethodNode {
+    public abstract static class CaptureBacktraceNode extends CoreMethodArrayArgumentsNode {
 
         public CaptureBacktraceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -88,7 +88,7 @@ public abstract class ExceptionNodes {
     }
 
     @CoreMethod(names = "message")
-    public abstract static class MessageNode extends CoreMethodNode {
+    public abstract static class MessageNode extends CoreMethodArrayArgumentsNode {
 
         public MessageNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -102,7 +102,7 @@ public abstract class ExceptionNodes {
     }
 
     @CoreMethod(names = "to_s")
-    public abstract static class ToSNode extends CoreMethodNode {
+    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

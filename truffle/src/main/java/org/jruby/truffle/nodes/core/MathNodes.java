@@ -311,7 +311,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "frexp", isModuleFunction = true, required = 1)
-    public abstract static class FrExpNode extends CoreMethodNode {
+    public abstract static class FrExpNode extends CoreMethodArrayArgumentsNode {
 
         @Child private KernelNodes.IsANode isANode;
         @Child private CallDispatchHeadNode floatNode;
@@ -449,7 +449,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "ldexp", isModuleFunction = true, required = 2)
-    public abstract static class LdexpNode extends CoreMethodNode {
+    public abstract static class LdexpNode extends CoreMethodArrayArgumentsNode {
 
         @Child private KernelNodes.IsANode isANode;
         @Child private CallDispatchHeadNode floatANode;
@@ -551,7 +551,7 @@ public abstract class MathNodes {
 
 
     @CoreMethod(names = "lgamma", isModuleFunction = true, required = 1)
-    public abstract static class LGammaNode extends CoreMethodNode {
+    public abstract static class LGammaNode extends CoreMethodArrayArgumentsNode {
 
         @Child private KernelNodes.IsANode isANode;
         @Child private CallDispatchHeadNode floatNode;
@@ -786,7 +786,7 @@ public abstract class MathNodes {
 
     }
 
-    protected abstract static class SimpleMonadicMathNode extends CoreMethodNode {
+    protected abstract static class SimpleMonadicMathNode extends CoreMethodArrayArgumentsNode {
 
         @Child private KernelNodes.IsANode isANode;
         @Child private CallDispatchHeadNode floatNode;
@@ -842,7 +842,7 @@ public abstract class MathNodes {
 
     }
 
-    protected abstract static class SimpleDyadicMathNode extends CoreMethodNode {
+    protected abstract static class SimpleDyadicMathNode extends CoreMethodArrayArgumentsNode {
 
         @Child protected KernelNodes.IsANode isANode;
         @Child protected CallDispatchHeadNode floatANode;

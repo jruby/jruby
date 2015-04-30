@@ -14,7 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
 
 @ImportStatic(HashGuards.class)
-public abstract class HashCoreMethodNode extends CoreMethodNode {
+public abstract class HashCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
     public HashCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);

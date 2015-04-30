@@ -26,7 +26,7 @@ import org.jruby.truffle.runtime.core.*;
 public abstract class UnboundMethodNodes {
 
     @CoreMethod(names = "==", required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
+    public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -45,7 +45,7 @@ public abstract class UnboundMethodNodes {
     }
 
     @CoreMethod(names = "arity")
-    public abstract static class ArityNode extends CoreMethodNode {
+    public abstract static class ArityNode extends CoreMethodArrayArgumentsNode {
 
         public ArityNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -59,7 +59,7 @@ public abstract class UnboundMethodNodes {
     }
 
     @CoreMethod(names = "bind", required = 1)
-    public abstract static class BindNode extends CoreMethodNode {
+    public abstract static class BindNode extends CoreMethodArrayArgumentsNode {
 
         @Child private MetaClassNode metaClassNode;
 
@@ -95,7 +95,7 @@ public abstract class UnboundMethodNodes {
     }
 
     @CoreMethod(names = "name")
-    public abstract static class NameNode extends CoreMethodNode {
+    public abstract static class NameNode extends CoreMethodArrayArgumentsNode {
 
         public NameNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -112,7 +112,7 @@ public abstract class UnboundMethodNodes {
 
     // TODO: We should have an additional method for this but we need to access it for #inspect.
     @CoreMethod(names = "origin", visibility = Visibility.PRIVATE)
-    public abstract static class OriginNode extends CoreMethodNode {
+    public abstract static class OriginNode extends CoreMethodArrayArgumentsNode {
 
         public OriginNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -126,7 +126,7 @@ public abstract class UnboundMethodNodes {
     }
 
     @CoreMethod(names = "owner")
-    public abstract static class OwnerNode extends CoreMethodNode {
+    public abstract static class OwnerNode extends CoreMethodArrayArgumentsNode {
 
         public OwnerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -140,7 +140,7 @@ public abstract class UnboundMethodNodes {
     }
 
     @CoreMethod(names = "source_location")
-    public abstract static class SourceLocationNode extends CoreMethodNode {
+    public abstract static class SourceLocationNode extends CoreMethodArrayArgumentsNode {
 
         public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

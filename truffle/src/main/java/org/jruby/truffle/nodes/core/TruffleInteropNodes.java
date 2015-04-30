@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.core.RubySymbol;
 public abstract class TruffleInteropNodes {
 
     @CoreMethod(names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class InteropToRubyNode extends CoreMethodNode {
+    public abstract static class InteropToRubyNode extends CoreMethodArrayArgumentsNode {
 
         public InteropToRubyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -73,7 +73,7 @@ public abstract class TruffleInteropNodes {
     }
 
     @CoreMethod(names = "executable?", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class IsExecutableNode extends CoreMethodNode {
+    public abstract static class IsExecutableNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ForeignObjectAccessNode node;
 
@@ -90,7 +90,7 @@ public abstract class TruffleInteropNodes {
     }
 
     @CoreMethod(names = "boxed_primitive?", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class IsBoxedPrimitiveNode extends CoreMethodNode {
+    public abstract static class IsBoxedPrimitiveNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ForeignObjectAccessNode node;
 
@@ -107,7 +107,7 @@ public abstract class TruffleInteropNodes {
     }
 
     @CoreMethod(names = "null?", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class IsNullNode extends CoreMethodNode {
+    public abstract static class IsNullNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ForeignObjectAccessNode node;
 
@@ -124,7 +124,7 @@ public abstract class TruffleInteropNodes {
     }
 
     @CoreMethod(names = "has_size_property?", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class HasSizePropertyNode extends CoreMethodNode {
+    public abstract static class HasSizePropertyNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ForeignObjectAccessNode node;
 
@@ -141,7 +141,7 @@ public abstract class TruffleInteropNodes {
     }
 
     @CoreMethod(names = "read_property", isModuleFunction = true, needsSelf = false, required = 2)
-    public abstract static class ReadPropertyNode extends CoreMethodNode {
+    public abstract static class ReadPropertyNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ForeignObjectAccessNode node;
 
@@ -184,7 +184,7 @@ public abstract class TruffleInteropNodes {
     }
 
     @CoreMethod(names = "write_property", isModuleFunction = true, needsSelf = false, required = 3)
-    public abstract static class WritePropertyNode extends CoreMethodNode {
+    public abstract static class WritePropertyNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ForeignObjectAccessNode node;
 
@@ -227,7 +227,7 @@ public abstract class TruffleInteropNodes {
     }
 
     @CoreMethod(names = "unbox_value", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class UnboxValueNode extends CoreMethodNode {
+    public abstract static class UnboxValueNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ForeignObjectAccessNode node;
 
@@ -244,7 +244,7 @@ public abstract class TruffleInteropNodes {
     }
     // TODO: remove maxArgs - hits an assertion if maxArgs is removed - trying argumentsAsArray = true (CS)
     @CoreMethod(names = "execute", isModuleFunction = true, needsSelf = false, required = 1, argumentsAsArray = true)
-    public abstract static class ExecuteNode extends CoreMethodNode {
+    public abstract static class ExecuteNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ForeignObjectAccessNode node;
 
@@ -264,7 +264,7 @@ public abstract class TruffleInteropNodes {
     }
 
     @CoreMethod(names = "size", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class GetSizeNode extends CoreMethodNode {
+    public abstract static class GetSizeNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ForeignObjectAccessNode node;
 

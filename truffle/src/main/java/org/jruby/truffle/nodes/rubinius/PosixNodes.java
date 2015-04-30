@@ -15,7 +15,7 @@ import jnr.constants.platform.Fcntl;
 import org.jruby.platform.Platform;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
-import org.jruby.truffle.nodes.core.CoreMethodNode;
+import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyNilClass;
@@ -29,7 +29,7 @@ import java.nio.charset.StandardCharsets;
 public abstract class PosixNodes {
 
     @CoreMethod(names = "getegid", isModuleFunction = true)
-    public abstract static class GetEGIDNode extends CoreMethodNode {
+    public abstract static class GetEGIDNode extends CoreMethodArrayArgumentsNode {
 
         public GetEGIDNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -43,7 +43,7 @@ public abstract class PosixNodes {
     }
 
     @CoreMethod(names = "geteuid", isModuleFunction = true)
-    public abstract static class GetEUIDNode extends CoreMethodNode {
+    public abstract static class GetEUIDNode extends CoreMethodArrayArgumentsNode {
 
         public GetEUIDNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -57,7 +57,7 @@ public abstract class PosixNodes {
     }
 
     @CoreMethod(names = "getgid", isModuleFunction = true)
-    public abstract static class GetGIDNode extends CoreMethodNode {
+    public abstract static class GetGIDNode extends CoreMethodArrayArgumentsNode {
 
         public GetGIDNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -93,7 +93,7 @@ public abstract class PosixNodes {
     }
 
     @CoreMethod(names = "getuid", isModuleFunction = true)
-    public abstract static class GetUIDNode extends CoreMethodNode {
+    public abstract static class GetUIDNode extends CoreMethodArrayArgumentsNode {
 
         public GetUIDNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -210,7 +210,7 @@ public abstract class PosixNodes {
     }
 
     @CoreMethod(names = "errno", isModuleFunction = true)
-    public abstract static class ErrnoNode extends CoreMethodNode {
+    public abstract static class ErrnoNode extends CoreMethodArrayArgumentsNode {
 
         public ErrnoNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -224,7 +224,7 @@ public abstract class PosixNodes {
     }
 
     @CoreMethod(names = "fcntl", isModuleFunction = true, required = 3)
-    public abstract static class FcntlNode extends CoreMethodNode {
+    public abstract static class FcntlNode extends CoreMethodArrayArgumentsNode {
 
         public FcntlNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -243,7 +243,7 @@ public abstract class PosixNodes {
     }
 
     @CoreMethod(names = "isatty", isModuleFunction = true, required = 1)
-    public abstract static class IsATTYNode extends CoreMethodNode {
+    public abstract static class IsATTYNode extends CoreMethodArrayArgumentsNode {
 
         public IsATTYNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -257,7 +257,7 @@ public abstract class PosixNodes {
     }
 
     @CoreMethod(names = "symlink", isModuleFunction = true, required = 2)
-    public abstract static class SymlinkNode extends CoreMethodNode {
+    public abstract static class SymlinkNode extends CoreMethodArrayArgumentsNode {
 
         public SymlinkNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

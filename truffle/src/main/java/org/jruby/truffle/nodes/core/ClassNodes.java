@@ -29,7 +29,7 @@ import org.jruby.truffle.runtime.core.RubyProc;
 public abstract class ClassNodes {
 
     @CoreMethod(names = "allocate")
-    public abstract static class AllocateNode extends CoreMethodNode {
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -49,7 +49,7 @@ public abstract class ClassNodes {
     }
 
     @CoreMethod(names = "new", needsBlock = true, argumentsAsArray = true)
-    public abstract static class NewNode extends CoreMethodNode {
+    public abstract static class NewNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode allocateNode;
         @Child private CallDispatchHeadNode initialize;
@@ -78,7 +78,7 @@ public abstract class ClassNodes {
     }
 
     @CoreMethod(names = "initialize", optional = 1, needsBlock = true)
-    public abstract static class InitializeNode extends CoreMethodNode {
+    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ModuleNodes.InitializeNode moduleInitializeNode;
 
@@ -120,7 +120,7 @@ public abstract class ClassNodes {
     }
 
     @CoreMethod(names = "inherited", required = 1, visibility = Visibility.PRIVATE)
-    public abstract static class InheritedNode extends CoreMethodNode {
+    public abstract static class InheritedNode extends CoreMethodArrayArgumentsNode {
 
         public InheritedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -134,7 +134,7 @@ public abstract class ClassNodes {
     }
 
     @CoreMethod(names = "superclass")
-    public abstract static class SuperClassNode extends CoreMethodNode {
+    public abstract static class SuperClassNode extends CoreMethodArrayArgumentsNode {
 
         public SuperClassNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

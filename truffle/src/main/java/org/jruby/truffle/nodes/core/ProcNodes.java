@@ -32,7 +32,7 @@ import org.jruby.util.Memo;
 public abstract class ProcNodes {
 
     @CoreMethod(names = "arity")
-    public abstract static class ArityNode extends CoreMethodNode {
+    public abstract static class ArityNode extends CoreMethodArrayArgumentsNode {
 
         public ArityNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -46,7 +46,7 @@ public abstract class ProcNodes {
     }
 
     @CoreMethod(names = "binding")
-    public abstract static class BindingNode extends CoreMethodNode {
+    public abstract static class BindingNode extends CoreMethodArrayArgumentsNode {
 
         public BindingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -64,7 +64,7 @@ public abstract class ProcNodes {
     }
 
     @CoreMethod(names = {"call", "[]", "yield"}, argumentsAsArray = true, needsBlock = true)
-    public abstract static class CallNode extends CoreMethodNode {
+    public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldDispatchHeadNode yieldNode;
 
@@ -86,7 +86,7 @@ public abstract class ProcNodes {
     }
 
     @CoreMethod(names = "initialize", needsBlock = true)
-    public abstract static class InitializeNode extends CoreMethodNode {
+    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -138,7 +138,7 @@ public abstract class ProcNodes {
     }
 
     @CoreMethod(names = "lambda?")
-    public abstract static class LambdaNode extends CoreMethodNode {
+    public abstract static class LambdaNode extends CoreMethodArrayArgumentsNode {
 
         public LambdaNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -152,7 +152,7 @@ public abstract class ProcNodes {
     }
 
     @CoreMethod(names = "parameters")
-    public abstract static class ParametersNode extends CoreMethodNode {
+    public abstract static class ParametersNode extends CoreMethodArrayArgumentsNode {
 
         public ParametersNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -172,7 +172,7 @@ public abstract class ProcNodes {
     }
 
     @CoreMethod(names = "source_location")
-    public abstract static class SourceLocationNode extends CoreMethodNode {
+    public abstract static class SourceLocationNode extends CoreMethodArrayArgumentsNode {
 
         public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

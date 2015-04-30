@@ -104,7 +104,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0, taintFromSelf = true)
-    public abstract static class MulNode extends CoreMethodNode {
+    public abstract static class MulNode extends CoreMethodArrayArgumentsNode {
 
         private final ConditionProfile negativeTimesProfile = ConditionProfile.createBinaryProfile();
 
@@ -155,7 +155,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = {"==", "===", "eql?"}, required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
+    public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child private StringPrimitiveNodes.StringEqualPrimitiveNode stringEqualNode;
         @Child private KernelNodes.RespondToNode respondToNode;
@@ -192,7 +192,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "<=>", required = 1)
-    public abstract static class CompareNode extends CoreMethodNode {
+    public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode cmpNode;
         @Child private CmpIntNode cmpIntNode;
@@ -388,7 +388,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "%", required = 1, argumentsAsArray = true)
-    public abstract static class FormatNode extends CoreMethodNode {
+    public abstract static class FormatNode extends CoreMethodArrayArgumentsNode {
 
         public FormatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -417,7 +417,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1}, taintFromSelf = true)
-    public abstract static class GetIndexNode extends CoreMethodNode {
+    public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToIntNode toIntNode;
         @Child private CallDispatchHeadNode includeNode;
@@ -575,7 +575,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "=~", required = 1)
-    public abstract static class MatchOperatorNode extends CoreMethodNode {
+    public abstract static class MatchOperatorNode extends CoreMethodArrayArgumentsNode {
 
         public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -588,7 +588,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "ascii_only?")
-    public abstract static class ASCIIOnlyNode extends CoreMethodNode {
+    public abstract static class ASCIIOnlyNode extends CoreMethodArrayArgumentsNode {
 
         public ASCIIOnlyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -613,7 +613,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "b", taintFromSelf = true)
-    public abstract static class BNode extends CoreMethodNode {
+    public abstract static class BNode extends CoreMethodArrayArgumentsNode {
 
         public BNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -629,7 +629,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "bytes")
-    public abstract static class BytesNode extends CoreMethodNode {
+    public abstract static class BytesNode extends CoreMethodArrayArgumentsNode {
 
         public BytesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -651,7 +651,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "bytesize")
-    public abstract static class ByteSizeNode extends CoreMethodNode {
+    public abstract static class ByteSizeNode extends CoreMethodArrayArgumentsNode {
 
         public ByteSizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -717,7 +717,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "chop!", raiseIfFrozenSelf = true)
-    public abstract static class ChopBangNode extends CoreMethodNode {
+    public abstract static class ChopBangNode extends CoreMethodArrayArgumentsNode {
 
         @Child private SizeNode sizeNode;
 
@@ -752,7 +752,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "count", argumentsAsArray = true)
-    public abstract static class CountNode extends CoreMethodNode {
+    public abstract static class CountNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStr;
 
@@ -863,7 +863,7 @@ public abstract class StringNodes {
 
     @RubiniusOnly
     @CoreMethod(names = "data")
-    public abstract static class DataNode extends CoreMethodNode {
+    public abstract static class DataNode extends CoreMethodArrayArgumentsNode {
 
         public DataNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -876,7 +876,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "delete!", argumentsAsArray = true, raiseIfFrozenSelf = true)
-    public abstract static class DeleteBangNode extends CoreMethodNode {
+    public abstract static class DeleteBangNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStr;
 
@@ -929,7 +929,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "downcase", taintFromSelf = true)
-    public abstract static class DowncaseNode extends CoreMethodNode {
+    public abstract static class DowncaseNode extends CoreMethodArrayArgumentsNode {
 
         public DowncaseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -944,7 +944,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "downcase!", raiseIfFrozenSelf = true)
-    public abstract static class DowncaseBangNode extends CoreMethodNode {
+    public abstract static class DowncaseBangNode extends CoreMethodArrayArgumentsNode {
 
         public DowncaseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1066,7 +1066,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "empty?")
-    public abstract static class EmptyNode extends CoreMethodNode {
+    public abstract static class EmptyNode extends CoreMethodArrayArgumentsNode {
 
         public EmptyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1079,7 +1079,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "encoding")
-    public abstract static class EncodingNode extends CoreMethodNode {
+    public abstract static class EncodingNode extends CoreMethodArrayArgumentsNode {
 
         public EncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1093,7 +1093,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "force_encoding", required = 1)
-    public abstract static class ForceEncodingNode extends CoreMethodNode {
+    public abstract static class ForceEncodingNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStrNode;
 
@@ -1127,7 +1127,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "getbyte", required = 1)
-    public abstract static class GetByteNode extends CoreMethodNode {
+    public abstract static class GetByteNode extends CoreMethodArrayArgumentsNode {
 
         private final ConditionProfile negativeIndexProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile indexOutOfBoundsProfile = ConditionProfile.createBinaryProfile();
@@ -1153,7 +1153,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "hash")
-    public abstract static class HashNode extends CoreMethodNode {
+    public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
         public HashNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1167,7 +1167,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "inspect", taintFromSelf = true)
-    public abstract static class InspectNode extends CoreMethodNode {
+    public abstract static class InspectNode extends CoreMethodArrayArgumentsNode {
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1184,7 +1184,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "initialize", optional = 1, taintFromParameter = 0)
-    public abstract static class InitializeNode extends CoreMethodNode {
+    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsFrozenNode isFrozenNode;
         @Child private ToStrNode toStrNode;
@@ -1230,7 +1230,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "initialize_copy", required = 1)
-    public abstract static class InitializeCopyNode extends CoreMethodNode {
+    public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1295,7 +1295,7 @@ public abstract class StringNodes {
 
     @CoreMethod(names = "lstrip!", raiseIfFrozenSelf = true)
     @ImportStatic(StringGuards.class)
-    public abstract static class LstripBangNode extends CoreMethodNode {
+    public abstract static class LstripBangNode extends CoreMethodArrayArgumentsNode {
 
         public LstripBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1358,7 +1358,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "match", required = 1, taintFromSelf = true)
-    public abstract static class MatchNode extends CoreMethodNode {
+    public abstract static class MatchNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode regexpMatchNode;
 
@@ -1384,7 +1384,7 @@ public abstract class StringNodes {
 
     @RubiniusOnly
     @CoreMethod(names = "modify!", raiseIfFrozenSelf = true)
-    public abstract static class ModifyBangNode extends CoreMethodNode {
+    public abstract static class ModifyBangNode extends CoreMethodArrayArgumentsNode {
 
         public ModifyBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1399,7 +1399,7 @@ public abstract class StringNodes {
 
     @RubiniusOnly
     @CoreMethod(names = "num_bytes=", lowerFixnumParameters = 0, required = 1)
-    public abstract static class SetNumBytesNode extends CoreMethodNode {
+    public abstract static class SetNumBytesNode extends CoreMethodArrayArgumentsNode {
 
         public SetNumBytesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1413,7 +1413,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "ord")
-    public abstract static class OrdNode extends CoreMethodNode {
+    public abstract static class OrdNode extends CoreMethodArrayArgumentsNode {
 
         public OrdNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1458,7 +1458,7 @@ public abstract class StringNodes {
 
     @CoreMethod(names = "rstrip!", raiseIfFrozenSelf = true)
     @ImportStatic(StringGuards.class)
-    public abstract static class RstripBangNode extends CoreMethodNode {
+    public abstract static class RstripBangNode extends CoreMethodArrayArgumentsNode {
 
         public RstripBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1527,7 +1527,7 @@ public abstract class StringNodes {
 
     @CoreMethod(names = "swapcase!", raiseIfFrozenSelf = true)
     @ImportStatic(StringGuards.class)
-    public abstract static class SwapcaseBangNode extends CoreMethodNode {
+    public abstract static class SwapcaseBangNode extends CoreMethodArrayArgumentsNode {
 
         private final ConditionProfile dummyEncodingProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile singleByteOptimizableProfile = ConditionProfile.createBinaryProfile();
@@ -1576,7 +1576,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "strip")
-    public abstract static class StripNode extends CoreMethodNode {
+    public abstract static class StripNode extends CoreMethodArrayArgumentsNode {
 
         public StripNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1595,7 +1595,7 @@ public abstract class StringNodes {
 
     @CoreMethod(names = "dump", taintFromSelf = true)
     @ImportStatic(StringGuards.class)
-    public abstract static class DumpNode extends CoreMethodNode {
+    public abstract static class DumpNode extends CoreMethodArrayArgumentsNode {
 
         public DumpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1767,7 +1767,7 @@ public abstract class StringNodes {
 
     @CoreMethod(names = {"size", "length"})
     @ImportStatic(StringGuards.class)
-    public abstract static class SizeNode extends CoreMethodNode {
+    public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1787,7 +1787,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "squeeze!", argumentsAsArray = true, raiseIfFrozenSelf = true)
-    public abstract static class SqueezeBangNode extends CoreMethodNode {
+    public abstract static class SqueezeBangNode extends CoreMethodArrayArgumentsNode {
 
         private ConditionProfile singleByteOptimizableProfile = ConditionProfile.createBinaryProfile();
 
@@ -1882,7 +1882,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "succ", taintFromSelf = true)
-    public abstract static class SuccNode extends CoreMethodNode {
+    public abstract static class SuccNode extends CoreMethodArrayArgumentsNode {
 
         public SuccNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1901,7 +1901,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "succ!", raiseIfFrozenSelf = true)
-    public abstract static class SuccBangNode extends CoreMethodNode {
+    public abstract static class SuccBangNode extends CoreMethodArrayArgumentsNode {
 
         public SuccBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1922,7 +1922,7 @@ public abstract class StringNodes {
     // String#sum is in Java because without OSR we can't warm up the Rubinius implementation
 
     @CoreMethod(names = "sum", optional = 1)
-    public abstract static class SumNode extends CoreMethodNode {
+    public abstract static class SumNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode addNode;
         @Child private CallDispatchHeadNode subNode;
@@ -1985,7 +1985,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "to_f")
-    public abstract static class ToFNode extends CoreMethodNode {
+    public abstract static class ToFNode extends CoreMethodArrayArgumentsNode {
 
         public ToFNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2008,7 +2008,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = { "to_s", "to_str" })
-    public abstract static class ToSNode extends CoreMethodNode {
+    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2031,7 +2031,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = {"to_sym", "intern"})
-    public abstract static class ToSymNode extends CoreMethodNode {
+    public abstract static class ToSymNode extends CoreMethodArrayArgumentsNode {
 
         public ToSymNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2047,7 +2047,7 @@ public abstract class StringNodes {
 
     @CoreMethod(names = "reverse!", raiseIfFrozenSelf = true)
     @ImportStatic(StringGuards.class)
-    public abstract static class ReverseBangNode extends CoreMethodNode {
+    public abstract static class ReverseBangNode extends CoreMethodArrayArgumentsNode {
 
         public ReverseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2217,7 +2217,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "upcase", taintFromSelf = true)
-    public abstract static class UpcaseNode extends CoreMethodNode {
+    public abstract static class UpcaseNode extends CoreMethodArrayArgumentsNode {
 
         public UpcaseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2233,7 +2233,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "upcase!", raiseIfFrozenSelf = true)
-    public abstract static class UpcaseBangNode extends CoreMethodNode {
+    public abstract static class UpcaseBangNode extends CoreMethodArrayArgumentsNode {
 
         public UpcaseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2254,7 +2254,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "valid_encoding?")
-    public abstract static class ValidEncodingQueryNode extends CoreMethodNode {
+    public abstract static class ValidEncodingQueryNode extends CoreMethodArrayArgumentsNode {
 
         public ValidEncodingQueryNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2268,7 +2268,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "capitalize!", raiseIfFrozenSelf = true)
-    public abstract static class CapitalizeBangNode extends CoreMethodNode {
+    public abstract static class CapitalizeBangNode extends CoreMethodArrayArgumentsNode {
 
         private final ConditionProfile dummyEncodingProfile = ConditionProfile.createBinaryProfile();
 
@@ -2324,7 +2324,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "capitalize", taintFromSelf = true)
-    public abstract static class CapitalizeNode extends CoreMethodNode {
+    public abstract static class CapitalizeNode extends CoreMethodArrayArgumentsNode {
 
         @Child CallDispatchHeadNode capitalizeBangNode;
         @Child CallDispatchHeadNode dupNode;
@@ -2346,7 +2346,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
-    public abstract static class ClearNode extends CoreMethodNode {
+    public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
 
         public ClearNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

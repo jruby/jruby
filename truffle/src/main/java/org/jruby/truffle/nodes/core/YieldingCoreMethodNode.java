@@ -18,7 +18,7 @@ import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 
-public abstract class YieldingCoreMethodNode extends CoreMethodNode {
+public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
     @Child private YieldDispatchHeadNode dispatchNode;
     @Child private BooleanCastNode booleanCastNode;

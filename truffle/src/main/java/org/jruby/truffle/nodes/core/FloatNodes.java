@@ -26,7 +26,7 @@ import org.jruby.truffle.runtime.core.*;
 public abstract class FloatNodes {
 
     @CoreMethod(names = "-@")
-    public abstract static class NegNode extends CoreMethodNode {
+    public abstract static class NegNode extends CoreMethodArrayArgumentsNode {
 
         public NegNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -40,7 +40,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "+", required = 1)
-    public abstract static class AddNode extends CoreMethodNode {
+    public abstract static class AddNode extends CoreMethodArrayArgumentsNode {
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -69,7 +69,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "-", required = 1)
-    public abstract static class SubNode extends CoreMethodNode {
+    public abstract static class SubNode extends CoreMethodArrayArgumentsNode {
 
         public SubNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -103,7 +103,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "*", required = 1)
-    public abstract static class MulNode extends CoreMethodNode {
+    public abstract static class MulNode extends CoreMethodArrayArgumentsNode {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -137,7 +137,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "**", required = 1)
-    public abstract static class PowNode extends CoreMethodNode {
+    public abstract static class PowNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode complexConvertNode;
         @Child private CallDispatchHeadNode complexPowNode;
@@ -188,7 +188,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = {"/", "__slash__"}, required = 1)
-    public abstract static class DivNode extends CoreMethodNode {
+    public abstract static class DivNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode redoCoercedNode;
 
@@ -233,7 +233,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "%", required = 1)
-    public abstract static class ModNode extends CoreMethodNode {
+    public abstract static class ModNode extends CoreMethodArrayArgumentsNode {
 
         private ConditionProfile lessThanZeroProfile = ConditionProfile.createBinaryProfile();
 
@@ -275,7 +275,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "divmod", required = 1)
-    public abstract static class DivModNode extends CoreMethodNode {
+    public abstract static class DivModNode extends CoreMethodArrayArgumentsNode {
 
         @Child private GeneralDivModNode divModNode;
 
@@ -307,7 +307,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "<", required = 1)
-    public abstract static class LessNode extends CoreMethodNode {
+    public abstract static class LessNode extends CoreMethodArrayArgumentsNode {
 
         public LessNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -341,7 +341,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "<=", required = 1)
-    public abstract static class LessEqualNode extends CoreMethodNode {
+    public abstract static class LessEqualNode extends CoreMethodArrayArgumentsNode {
 
         public LessEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -375,7 +375,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = { "==", "===" }, required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
+    public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode fallbackCallNode;
 
@@ -415,7 +415,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "<=>", required = 1)
-    public abstract static class CompareNode extends CoreMethodNode {
+    public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -468,7 +468,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = ">=", required = 1)
-    public abstract static class GreaterEqualNode extends CoreMethodNode {
+    public abstract static class GreaterEqualNode extends CoreMethodArrayArgumentsNode {
 
         public GreaterEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -502,7 +502,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = ">", required = 1)
-    public abstract static class GreaterNode extends CoreMethodNode {
+    public abstract static class GreaterNode extends CoreMethodArrayArgumentsNode {
 
         public GreaterNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -536,7 +536,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = { "abs", "magnitude" })
-    public abstract static class AbsNode extends CoreMethodNode {
+    public abstract static class AbsNode extends CoreMethodArrayArgumentsNode {
 
         public AbsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -550,7 +550,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "ceil")
-    public abstract static class CeilNode extends CoreMethodNode {
+    public abstract static class CeilNode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
@@ -567,7 +567,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "floor")
-    public abstract static class FloorNode extends CoreMethodNode {
+    public abstract static class FloorNode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
@@ -584,7 +584,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "infinite?")
-    public abstract static class InfiniteNode extends CoreMethodNode {
+    public abstract static class InfiniteNode extends CoreMethodArrayArgumentsNode {
 
         public InfiniteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -606,7 +606,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "nan?")
-    public abstract static class NaNNode extends CoreMethodNode {
+    public abstract static class NaNNode extends CoreMethodArrayArgumentsNode {
 
         public NaNNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -620,7 +620,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "round", optional = 1)
-    public abstract static class RoundNode extends CoreMethodNode {
+    public abstract static class RoundNode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
@@ -677,7 +677,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = { "to_i", "to_int", "truncate" })
-    public abstract static class ToINode extends CoreMethodNode {
+    public abstract static class ToINode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
@@ -706,7 +706,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "to_f")
-    public abstract static class ToFNode extends CoreMethodNode {
+    public abstract static class ToFNode extends CoreMethodArrayArgumentsNode {
 
         public ToFNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -720,7 +720,7 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = {"to_s", "inspect"})
-    public abstract static class ToSNode extends CoreMethodNode {
+    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

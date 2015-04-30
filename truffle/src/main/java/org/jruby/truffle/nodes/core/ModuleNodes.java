@@ -61,7 +61,7 @@ import java.util.Map.Entry;
 public abstract class ModuleNodes {
 
     @CoreMethod(names = "===", required = 1)
-    public abstract static class ContainsInstanceNode extends CoreMethodNode {
+    public abstract static class ContainsInstanceNode extends CoreMethodArrayArgumentsNode {
 
         @Child private MetaClassNode metaClassNode;
         
@@ -87,7 +87,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "<", required = 1)
-    public abstract static class IsSubclassOfNode extends CoreMethodNode {
+    public abstract static class IsSubclassOfNode extends CoreMethodArrayArgumentsNode {
 
         public IsSubclassOfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -124,7 +124,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "<=", required = 1)
-    public abstract static class IsSubclassOfOrEqualToNode extends CoreMethodNode {
+    public abstract static class IsSubclassOfOrEqualToNode extends CoreMethodArrayArgumentsNode {
 
         public IsSubclassOfOrEqualToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -157,7 +157,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = ">", required = 1)
-    public abstract static class IsSuperclassOfNode extends CoreMethodNode {
+    public abstract static class IsSuperclassOfNode extends CoreMethodArrayArgumentsNode {
 
         public IsSuperclassOfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -194,7 +194,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = ">=", required = 1)
-    public abstract static class IsSuperclassOfOrEqualToNode extends CoreMethodNode {
+    public abstract static class IsSuperclassOfOrEqualToNode extends CoreMethodArrayArgumentsNode {
 
         public IsSuperclassOfOrEqualToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -227,7 +227,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "<=>", required = 1)
-    public abstract static class CompareNode extends CoreMethodNode {
+    public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsSubclassOfOrEqualToNode subclassNode;
         @Child private BooleanCastNode booleanCastNode;
@@ -280,7 +280,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "alias_method", required = 2)
-    public abstract static class AliasMethodNode extends CoreMethodNode {
+    public abstract static class AliasMethodNode extends CoreMethodArrayArgumentsNode {
 
         public AliasMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -305,7 +305,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "ancestors")
-    public abstract static class AncestorsNode extends CoreMethodNode {
+    public abstract static class AncestorsNode extends CoreMethodArrayArgumentsNode {
 
         public AncestorsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -325,7 +325,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "append_features", required = 1, visibility = Visibility.PRIVATE)
-    public abstract static class AppendFeaturesNode extends CoreMethodNode {
+    public abstract static class AppendFeaturesNode extends CoreMethodArrayArgumentsNode {
 
         public AppendFeaturesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -341,7 +341,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "attr_reader", argumentsAsArray = true)
-    public abstract static class AttrReaderNode extends CoreMethodNode {
+    public abstract static class AttrReaderNode extends CoreMethodArrayArgumentsNode {
 
         public AttrReaderNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -391,7 +391,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "attr_writer", argumentsAsArray = true)
-    public abstract static class AttrWriterNode extends CoreMethodNode {
+    public abstract static class AttrWriterNode extends CoreMethodArrayArgumentsNode {
 
         public AttrWriterNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -440,7 +440,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = {"attr_accessor", "attr"}, argumentsAsArray = true)
-    public abstract static class AttrAccessorNode extends CoreMethodNode {
+    public abstract static class AttrAccessorNode extends CoreMethodArrayArgumentsNode {
 
         public AttrAccessorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -526,7 +526,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "autoload?", required = 1)
-    public abstract static class AutoloadQueryNode extends CoreMethodNode {
+    public abstract static class AutoloadQueryNode extends CoreMethodArrayArgumentsNode {
 
         public AutoloadQueryNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -554,7 +554,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = {"class_eval","module_eval"}, optional = 3, needsBlock = true)
-    public abstract static class ClassEvalNode extends CoreMethodNode {
+    public abstract static class ClassEvalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldDispatchHeadNode yield;
         @Child private BindingNode bindingNode;
@@ -622,7 +622,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = {"class_exec","module_exec"}, argumentsAsArray = true, needsBlock = true)
-    public abstract static class ClassExecNode extends CoreMethodNode {
+    public abstract static class ClassExecNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldDispatchHeadNode yield;
 
@@ -645,7 +645,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "class_variable_defined?", required = 1)
-    public abstract static class ClassVariableDefinedNode extends CoreMethodNode {
+    public abstract static class ClassVariableDefinedNode extends CoreMethodArrayArgumentsNode {
 
         public ClassVariableDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -698,7 +698,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "class_variables")
-    public abstract static class ClassVariablesNode extends CoreMethodNode {
+    public abstract static class ClassVariablesNode extends CoreMethodArrayArgumentsNode {
 
         public ClassVariablesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -718,7 +718,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "constants", optional = 1)
-    public abstract static class ConstantsNode extends CoreMethodNode {
+    public abstract static class ConstantsNode extends CoreMethodArrayArgumentsNode {
 
         @Child BooleanCastNode booleanCastNode;
 
@@ -864,7 +864,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "const_missing", required = 1)
-    public abstract static class ConstMissingNode extends CoreMethodNode {
+    public abstract static class ConstMissingNode extends CoreMethodArrayArgumentsNode {
 
         public ConstMissingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -981,7 +981,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "extend_object", required = 1, visibility = Visibility.PRIVATE)
-    public abstract static class ExtendObjectNode extends CoreMethodNode {
+    public abstract static class ExtendObjectNode extends CoreMethodArrayArgumentsNode {
 
         public ExtendObjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1003,7 +1003,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "initialize", needsBlock = true)
-    public abstract static class InitializeNode extends CoreMethodNode {
+    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ModuleNodes.ClassExecNode classExecNode;
 
@@ -1035,7 +1035,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "initialize_copy", required = 1)
-    public abstract static class InitializeCopyNode extends CoreMethodNode {
+    public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1068,7 +1068,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "included", required = 1, visibility = Visibility.PRIVATE)
-    public abstract static class IncludedNode extends CoreMethodNode {
+    public abstract static class IncludedNode extends CoreMethodArrayArgumentsNode {
 
         public IncludedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1082,7 +1082,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "included_modules")
-    public abstract static class IncludedModulesNode extends CoreMethodNode {
+    public abstract static class IncludedModulesNode extends CoreMethodArrayArgumentsNode {
 
         public IncludedModulesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1139,7 +1139,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "module_function", argumentsAsArray = true, visibility = Visibility.PRIVATE)
-    public abstract static class ModuleFunctionNode extends CoreMethodNode {
+    public abstract static class ModuleFunctionNode extends CoreMethodArrayArgumentsNode {
 
         @Child SetVisibilityNode setVisibilityNode;
 
@@ -1161,7 +1161,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "name")
-    public abstract static class NameNode extends CoreMethodNode {
+    public abstract static class NameNode extends CoreMethodArrayArgumentsNode {
 
         public NameNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1180,7 +1180,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "nesting", onSingleton = true)
-    public abstract static class NestingNode extends CoreMethodNode {
+    public abstract static class NestingNode extends CoreMethodArrayArgumentsNode {
 
         public NestingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1209,7 +1209,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "public", argumentsAsArray = true, visibility = Visibility.PRIVATE)
-    public abstract static class PublicNode extends CoreMethodNode {
+    public abstract static class PublicNode extends CoreMethodArrayArgumentsNode {
 
         @Child SetVisibilityNode setVisibilityNode;
 
@@ -1228,7 +1228,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "public_class_method", argumentsAsArray = true)
-    public abstract static class PublicClassMethodNode extends CoreMethodNode {
+    public abstract static class PublicClassMethodNode extends CoreMethodArrayArgumentsNode {
 
         public PublicClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1263,7 +1263,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "private", argumentsAsArray = true, visibility = Visibility.PRIVATE)
-    public abstract static class PrivateNode extends CoreMethodNode {
+    public abstract static class PrivateNode extends CoreMethodArrayArgumentsNode {
 
         @Child SetVisibilityNode setVisibilityNode;
 
@@ -1282,7 +1282,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "private_class_method", argumentsAsArray = true)
-    public abstract static class PrivateClassMethodNode extends CoreMethodNode {
+    public abstract static class PrivateClassMethodNode extends CoreMethodArrayArgumentsNode {
 
         public PrivateClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1345,7 +1345,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "protected_instance_methods", optional = 1)
-    public abstract static class ProtectedInstanceMethodsNode extends CoreMethodNode {
+    public abstract static class ProtectedInstanceMethodsNode extends CoreMethodArrayArgumentsNode {
 
         public ProtectedInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1395,7 +1395,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "private_instance_methods", optional = 1)
-    public abstract static class PrivateInstanceMethodsNode extends CoreMethodNode {
+    public abstract static class PrivateInstanceMethodsNode extends CoreMethodArrayArgumentsNode {
 
         public PrivateInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1454,7 +1454,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "public_instance_methods", optional = 1)
-    public abstract static class PublicInstanceMethodsNode extends CoreMethodNode {
+    public abstract static class PublicInstanceMethodsNode extends CoreMethodArrayArgumentsNode {
 
         public PublicInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1503,7 +1503,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "instance_methods", optional = 1)
-    public abstract static class InstanceMethodsNode extends CoreMethodNode {
+    public abstract static class InstanceMethodsNode extends CoreMethodArrayArgumentsNode {
 
         public InstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1571,7 +1571,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "private_constant", argumentsAsArray = true)
-    public abstract static class PrivateConstantNode extends CoreMethodNode {
+    public abstract static class PrivateConstantNode extends CoreMethodArrayArgumentsNode {
 
         public PrivateConstantNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1593,7 +1593,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "public_constant", argumentsAsArray = true)
-    public abstract static class PublicConstantNode extends CoreMethodNode {
+    public abstract static class PublicConstantNode extends CoreMethodArrayArgumentsNode {
 
         public PublicConstantNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1615,7 +1615,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "protected", argumentsAsArray = true, visibility = Visibility.PRIVATE)
-    public abstract static class ProtectedNode extends CoreMethodNode {
+    public abstract static class ProtectedNode extends CoreMethodArrayArgumentsNode {
 
         @Child SetVisibilityNode setVisibilityNode;
 
@@ -1632,7 +1632,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "remove_class_variable", required = 1)
-    public abstract static class RemoveClassVariableNode extends CoreMethodNode {
+    public abstract static class RemoveClassVariableNode extends CoreMethodArrayArgumentsNode {
 
         public RemoveClassVariableNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1683,7 +1683,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "remove_method", argumentsAsArray = true, visibility = Visibility.PRIVATE)
-    public abstract static class RemoveMethodNode extends CoreMethodNode {
+    public abstract static class RemoveMethodNode extends CoreMethodArrayArgumentsNode {
 
         public RemoveMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1714,7 +1714,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = { "to_s", "inspect" })
-    public abstract static class ToSNode extends CoreMethodNode {
+    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1730,7 +1730,7 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "undef_method", required = 1)
-    public abstract static class UndefMethodNode extends CoreMethodNode {
+    public abstract static class UndefMethodNode extends CoreMethodArrayArgumentsNode {
 
         public UndefMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

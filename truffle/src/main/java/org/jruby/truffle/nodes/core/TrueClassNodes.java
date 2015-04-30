@@ -37,7 +37,7 @@ public abstract class TrueClassNodes {
     }
 
     @CoreMethod(names = "|", needsSelf = false, required = 1)
-    public abstract static class OrNode extends CoreMethodNode {
+    public abstract static class OrNode extends CoreMethodArrayArgumentsNode {
 
         public OrNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
