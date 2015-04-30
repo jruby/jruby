@@ -41,7 +41,6 @@ env:
     - PHASE='-Ptruffle-specs-language'
     - PHASE='-Ptruffle-specs-core'
     - PHASE='-Ptruffle-specs-library'
-    - PHASE='-Ptruffle-mri-tests'
 
 matrix:
   include:
@@ -74,6 +73,7 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: COMMAND=test/truffle/run.sh
+    - PHASE='-Ptruffle-mri-tests'
 
 
 branches:
