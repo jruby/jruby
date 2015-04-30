@@ -79,13 +79,13 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
     }
 
     @Override
-    public RubyArray executeArray(VirtualFrame frame) throws UnexpectedResultException {
+    public RubyArray executeRubyArray(VirtualFrame frame) throws UnexpectedResultException {
         probeNode.enter(child, frame);
 
         RubyArray result;
 
         try {
-            result = child.executeArray(frame);
+            result = child.executeRubyArray(frame);
             probeNode.returnValue(child, frame, result);
         } catch (KillException e) {
             throw e;
@@ -98,13 +98,13 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
     }
 
     @Override
-    public RubyBignum executeBignum(VirtualFrame frame) throws UnexpectedResultException {
+    public RubyBignum executeRubyBignum(VirtualFrame frame) throws UnexpectedResultException {
         probeNode.enter(child, frame);
 
         RubyBignum result;
 
         try {
-            result = child.executeBignum(frame);
+            result = child.executeRubyBignum(frame);
             probeNode.returnValue(child, frame, result);
         } catch (KillException e) {
             throw e;
@@ -141,13 +141,13 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
     }
 
     @Override
-    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeInteger(VirtualFrame frame) throws UnexpectedResultException {
         probeNode.enter(child, frame);
 
         int result;
 
         try {
-            result = child.executeIntegerFixnum(frame);
+            result = child.executeInteger(frame);
             probeNode.returnValue(child, frame, result);
         } catch (KillException e) {
             throw e;
@@ -160,13 +160,13 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
     }
 
     @Override
-    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
         probeNode.enter(child, frame);
 
         long result;
 
         try {
-            result = child.executeLongFixnum(frame);
+            result = child.executeLong(frame);
             probeNode.returnValue(child, frame, result);
         } catch (KillException e) {
             throw e;
@@ -179,13 +179,13 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
     }
 
     @Override
-    public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
+    public double executeDouble(VirtualFrame frame) throws UnexpectedResultException {
         probeNode.enter(child, frame);
 
         double result;
 
         try {
-            result = child.executeFloat(frame);
+            result = child.executeDouble(frame);
             probeNode.returnValue(child, frame, result);
         } catch (KillException e) {
             throw e;

@@ -31,11 +31,6 @@ import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 
-/**
- * Base class for most nodes in Ruby.
- *
- * @see YieldDispatchNode
- */
 @TypeSystemReference(RubyTypes.class)
 public abstract class RubyNode extends Node {
 
@@ -54,6 +49,178 @@ public abstract class RubyNode extends Node {
         this.context = context;
     }
 
+    // Fundamental execute method
+
+    public abstract Object execute(VirtualFrame frame);
+
+    // Execute without returing the result
+
+    public void executeVoid(VirtualFrame frame) {
+        execute(frame);
+    }
+
+    // Utility methods to execute and expect a particular type
+
+    public UndefinedPlaceholder executeUndefinedPlaceholder(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof UndefinedPlaceholder) {
+            return (UndefinedPlaceholder) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public boolean executeBoolean(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof Boolean) {
+            return (boolean) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public int executeInteger(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof Integer) {
+            return (int) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof Long) {
+            return (long) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyBignum executeRubyBignum(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyBignum) {
+            return (RubyBignum) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyRange.IntegerFixnumRange executeIntegerFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyRange.IntegerFixnumRange) {
+            return (RubyRange.IntegerFixnumRange) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyRange.LongFixnumRange executeLongFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyRange.LongFixnumRange) {
+            return (RubyRange.LongFixnumRange) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public double executeDouble(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof Double) {
+            return (double) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyString executeRubyString(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyString) {
+            return (RubyString) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyArray executeRubyArray(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyArray) {
+            return (RubyArray) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyHash executeRubyHash(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyHash) {
+            return (RubyHash) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyRegexp executeRubyRegexp(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyRegexp) {
+            return (RubyRegexp) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyModule executeRubyModule(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyModule) {
+            return (RubyModule) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyProc executeRubyProc(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyProc) {
+            return (RubyProc) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyBasicObject) {
+            return (RubyBasicObject) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public Object[] executeObjectArray(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof Object[]) {
+            return (Object[]) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
     @Override
     public boolean isInstrumentable() {
         return true;
@@ -63,8 +230,6 @@ public abstract class RubyNode extends Node {
     public ProbeNode.WrapperNode createWrapperNode() {
         return new RubyWrapperNode(this);
     }
-
-    public abstract Object execute(VirtualFrame frame);
 
     /**
      * Records that this node was wrapped by the JRuby parser with a "newline" node.
@@ -87,145 +252,6 @@ public abstract class RubyNode extends Node {
      */
     public Object isDefined(VirtualFrame frame) {
         return getContext().makeString("expression");
-    }
-
-    public String executeString(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectString(execute(frame));
-    }
-
-    public RubyArray executeArray(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyArray(execute(frame));
-    }
-
-    public RubyBignum executeBignum(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyBignum(execute(frame));
-    }
-
-    public boolean executeBoolean(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectBoolean(execute(frame));
-    }
-
-    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectInteger(execute(frame));
-    }
-
-    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectLong(execute(frame));
-    }
-
-    public RubyRange.IntegerFixnumRange executeIntegerFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectIntegerFixnumRange(execute(frame));
-    }
-
-    public RubyRange.LongFixnumRange executeLongFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectLongFixnumRange(execute(frame));
-    }
-
-    public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectDouble(execute(frame));
-    }
-
-    public Object[] executeObjectArray(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectObjectArray(execute(frame));
-    }
-
-    public RubyRange.ObjectRange executeObjectRange(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectObjectRange(execute(frame));
-    }
-
-    public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyBasicObject(execute(frame));
-    }
-
-    public RubyBinding executeRubyBinding(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyBinding(execute(frame));
-    }
-
-    public RubyClass executeRubyClass(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyClass(execute(frame));
-    }
-
-    public RubyException executeRubyException(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyException(execute(frame));
-    }
-
-    public RubyFiber executeRubyFiber(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyFiber(execute(frame));
-    }
-
-    public RubyHash executeRubyHash(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyHash(execute(frame));
-    }
-
-    public RubyMatchData executeRubyMatchData(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyMatchData(execute(frame));
-    }
-
-    public RubyModule executeRubyModule(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyModule(execute(frame));
-    }
-
-    public RubyNilClass executeRubyNilClass(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyNilClass(execute(frame));
-    }
-
-    public RubyProc executeRubyProc(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyProc(execute(frame));
-    }
-
-    public RubyRange executeRubyRange(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyRange(execute(frame));
-    }
-
-    public RubyRegexp executeRubyRegexp(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyRegexp(execute(frame));
-    }
-
-    public RubySymbol executeRubySymbol(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubySymbol(execute(frame));
-    }
-
-    public RubyThread executeRubyThread(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyThread(execute(frame));
-    }
-
-    public RubyTime executeRubyTime(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyTime(execute(frame));
-    }
-
-    public RubyString executeRubyString(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyString(execute(frame));
-    }
-    public RubyEncoding executeRubyEncoding(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyEncoding(execute(frame));
-    }
-
-    public UndefinedPlaceholder executeUndefinedPlaceholder(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectUndefinedPlaceholder(execute(frame));
-    }
-
-    public TruffleObject executeTruffleObject(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectTruffleObject(execute(frame));
-    }
-
-    public RubyEncodingConverter executeRubyEncodingConverter(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyEncodingConverter(execute(frame));
-    }
-
-    public RubyMethod executeRubyMethod(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyMethod(execute(frame));
-    }
-
-    public RubyUnboundMethod executeRubyUnboundMethod(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyUnboundMethod(execute(frame));
-    }
-
-    public RubiniusByteArray executeRubiniusByteArray(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubiniusByteArray(execute(frame));
-    }
-
-    public void executeVoid(VirtualFrame frame) {
-        execute(frame);
     }
 
     public RubyNode getNonProxyNode() {

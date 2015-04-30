@@ -39,7 +39,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     }
 
     @Override
-    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeInteger(VirtualFrame frame) throws UnexpectedResultException {
         final Object receiverObject = receiver.execute(frame);
 
         if (receiverObject instanceof RubyBasicObject) {
@@ -53,7 +53,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     }
 
     @Override
-    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
         final Object receiverObject = receiver.execute(frame);
 
         if (receiverObject instanceof RubyBasicObject) {
@@ -67,7 +67,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     }
 
     @Override
-    public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
+    public double executeDouble(VirtualFrame frame) throws UnexpectedResultException {
         final Object receiverObject = receiver.execute(frame);
 
         if (receiverObject instanceof RubyBasicObject) {

@@ -50,7 +50,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
     }
 
     @Override
-    public abstract RubyArray executeArray(VirtualFrame frame);
+    public abstract RubyArray executeRubyArray(VirtualFrame frame);
 
     @ExplodeLoop
     @Override
@@ -62,7 +62,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return executeArray(frame);
+        return executeRubyArray(frame);
     }
 
     @ExplodeLoop
@@ -89,7 +89,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
         }
 
         @Override
-        public RubyArray executeArray(VirtualFrame frame) {
+        public RubyArray executeRubyArray(VirtualFrame frame) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
         }
 
@@ -103,12 +103,12 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @ExplodeLoop
         @Override
-        public RubyArray executeArray(VirtualFrame frame) {
+        public RubyArray executeRubyArray(VirtualFrame frame) {
             final double[] executedValues = new double[values.length];
 
             for (int n = 0; n < values.length; n++) {
                 try {
-                    executedValues[n] = values[n].executeFloat(frame);
+                    executedValues[n] = values[n].executeDouble(frame);
                 } catch (UnexpectedResultException e) {
                     return makeGeneric(frame, executedValues, n);
                 }
@@ -140,13 +140,13 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @ExplodeLoop
         @Override
-        public RubyArray executeArray(VirtualFrame frame) {
+        public RubyArray executeRubyArray(VirtualFrame frame) {
             if (arrayAllocationSite.hasConvertedIntToLong()) {
                 final long[] executedValues = new long[values.length];
 
                 for (int n = 0; n < values.length; n++) {
                     try {
-                        executedValues[n] = values[n].executeLongFixnum(frame);
+                        executedValues[n] = values[n].executeLong(frame);
                     } catch (UnexpectedResultException e) {
                         return makeGeneric(frame, executedValues, n);
                     }
@@ -158,7 +158,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
                 for (int n = 0; n < values.length; n++) {
                     try {
-                        executedValues[n] = values[n].executeIntegerFixnum(frame);
+                        executedValues[n] = values[n].executeInteger(frame);
                     } catch (UnexpectedResultException e) {
                         return makeGeneric(frame, executedValues, n);
                     }
@@ -200,12 +200,12 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @ExplodeLoop
         @Override
-        public RubyArray executeArray(VirtualFrame frame) {
+        public RubyArray executeRubyArray(VirtualFrame frame) {
             final long[] executedValues = new long[values.length];
 
             for (int n = 0; n < values.length; n++) {
                 try {
-                    executedValues[n] = values[n].executeLongFixnum(frame);
+                    executedValues[n] = values[n].executeLong(frame);
                 } catch (UnexpectedResultException e) {
                     return makeGeneric(frame, executedValues, n);
                 }
@@ -235,7 +235,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @ExplodeLoop
         @Override
-        public RubyArray executeArray(VirtualFrame frame) {
+        public RubyArray executeRubyArray(VirtualFrame frame) {
             final Object[] executedValues = new Object[values.length];
 
             for (int n = 0; n < values.length; n++) {
@@ -255,7 +255,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @ExplodeLoop
         @Override
-        public RubyArray executeArray(VirtualFrame frame) {
+        public RubyArray executeRubyArray(VirtualFrame frame) {
             CompilerDirectives.transferToInterpreter();
 
             final Object[] executedValues = new Object[values.length];

@@ -42,7 +42,7 @@ public final class ArrayConcatNode extends RubyNode {
         if (children.length == 1) {
             return executeSingle(frame, store, length);
         } else {
-            return executeArray(frame, store, length);
+            return executeRubyArray(frame, store, length);
         }
     }
 
@@ -65,7 +65,7 @@ public final class ArrayConcatNode extends RubyNode {
     }
 
     @ExplodeLoop
-    private RubyArray executeArray(VirtualFrame frame, Object store, int length) {
+    private RubyArray executeRubyArray(VirtualFrame frame, Object store, int length) {
         for (int n = 0; n < children.length; n++) {
             final Object childObject = children[n].execute(frame);
 

@@ -1552,7 +1552,7 @@ public abstract class KernelNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 floatCastNode = insert(NumericToFloatNodeGen.create(getContext(), getSourceSection(), "to_f", null));
             }
-            return sleep(floatCastNode.executeFloat(frame, duration));
+            return sleep(floatCastNode.executeDouble(frame, duration));
         }
 
         @TruffleBoundary

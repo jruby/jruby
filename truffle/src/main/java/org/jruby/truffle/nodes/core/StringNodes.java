@@ -475,7 +475,7 @@ public abstract class StringNodes {
                 sizeNode = insert(StringNodesFactory.SizeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
             }
 
-            final int stringLength = sizeNode.executeIntegerFixnum(frame, string);
+            final int stringLength = sizeNode.executeInteger(frame, string);
             begin = string.normalizeIndex(stringLength, begin);
 
             if (begin < 0 || begin > stringLength) {
@@ -730,7 +730,7 @@ public abstract class StringNodes {
         public Object chopBang(VirtualFrame frame, RubyString string) {
             notDesignedForCompilation();
 
-            if (sizeNode.executeIntegerFixnum(frame, string) == 0) {
+            if (sizeNode.executeInteger(frame, string) == 0) {
                 return nil();
             }
 
@@ -1773,7 +1773,7 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public abstract int executeIntegerFixnum(VirtualFrame frame, RubyString string);
+        public abstract int executeInteger(VirtualFrame frame, RubyString string);
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public int sizeSingleByte(RubyString string) {

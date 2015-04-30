@@ -40,7 +40,7 @@ public class WhenSplatNode extends RubyNode {
         final RubyArray array;
 
         try {
-            array = splat.executeArray(frame);
+            array = splat.executeRubyArray(frame);
         } catch (UnexpectedResultException e) {
             throw new UnsupportedOperationException(e);
         }
