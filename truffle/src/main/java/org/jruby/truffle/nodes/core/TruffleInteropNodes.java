@@ -24,14 +24,10 @@ import org.jruby.truffle.runtime.core.RubySymbol;
 public abstract class TruffleInteropNodes {
 
     @CoreMethod(names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class InteropToRubyPrimitive extends CoreMethodNode {
+    public abstract static class InteropToRubyNode extends CoreMethodNode {
 
-        public InteropToRubyPrimitive(RubyContext context, SourceSection sourceSection) {
+        public InteropToRubyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InteropToRubyPrimitive(InteropToRubyPrimitive prev) {
-            this(prev.getContext(), prev.getSourceSection());
         }
 
         @Specialization

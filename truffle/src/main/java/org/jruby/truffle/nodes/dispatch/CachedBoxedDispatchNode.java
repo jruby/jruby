@@ -84,7 +84,6 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
                 if ((callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit())
                         || (method.getDeclaringModule() != null
-                            && method.getDeclaringModule().getName() != null
                         && method.getDeclaringModule().getName().equals("TruffleInterop"))) {
                     insert(callNode);
                     callNode.cloneCallTarget();

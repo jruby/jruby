@@ -124,6 +124,8 @@ public class PackParser {
                                 size = 64;
                                 signedness = Signedness.SIGNED;
                                 break;
+                            default:
+                                break;
                         }
 
                         if (tokenizer.peek('_') || tokenizer.peek('!')) {
@@ -213,6 +215,8 @@ public class PackParser {
                                 case 'A':
                                 case 'a':
                                     padOnNull = false;
+                                    break;
+                                default:
                                     break;
                             }
                         } else {
@@ -354,36 +358,36 @@ public class PackParser {
                     case 'd':
                         node = writeInteger(64, Signedness.UNSIGNED, nativeEndianness(),
                                 AsLongNodeGen.create(
-                                        ReadDoubleNodeGen.create(context, new SourceNode())));
+                                        ReadDoubleNodeGen.create(new SourceNode())));
                         break;
                     case 'F':
                     case 'f':
                         node = writeInteger(32, Signedness.UNSIGNED, nativeEndianness(),
                                 AsLongNodeGen.create(
                                         AsSinglePrecisionNodeGen.create(
-                                            ReadDoubleNodeGen.create(context, new SourceNode()))));
+                                            ReadDoubleNodeGen.create(new SourceNode()))));
                         break;
                     case 'E':
                         node = writeInteger(64, Signedness.UNSIGNED, Endianness.LITTLE,
                                 AsLongNodeGen.create(
-                                        ReadDoubleNodeGen.create(context, new SourceNode())));
+                                        ReadDoubleNodeGen.create(new SourceNode())));
                         break;
                     case 'e':
                         node = writeInteger(32, Signedness.UNSIGNED, Endianness.LITTLE,
                                 AsLongNodeGen.create(
                                         AsSinglePrecisionNodeGen.create(
-                                                ReadDoubleNodeGen.create(context, new SourceNode()))));
+                                                ReadDoubleNodeGen.create(new SourceNode()))));
                         break;
                     case 'G':
                         node = writeInteger(64, Signedness.UNSIGNED, Endianness.BIG,
                                 AsLongNodeGen.create(
-                                        ReadDoubleNodeGen.create(context, new SourceNode())));
+                                        ReadDoubleNodeGen.create(new SourceNode())));
                         break;
                     case 'g':
                         node = writeInteger(32, Signedness.UNSIGNED, Endianness.BIG,
                                 AsLongNodeGen.create(
                                         AsSinglePrecisionNodeGen.create(
-                                                ReadDoubleNodeGen.create(context, new SourceNode()))));
+                                                ReadDoubleNodeGen.create(new SourceNode()))));
                         break;
                     case 'P':
                     case 'p':

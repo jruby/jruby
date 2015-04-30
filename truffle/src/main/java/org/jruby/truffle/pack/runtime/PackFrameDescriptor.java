@@ -15,12 +15,12 @@ import com.oracle.truffle.api.frame.FrameSlotKind;
 
 public class PackFrameDescriptor {
 
-    public static FrameDescriptor FRAME_DESCRIPTOR = new FrameDescriptor();
-    public static FrameSlot SOURCE_SLOT = FRAME_DESCRIPTOR.addFrameSlot("source", FrameSlotKind.Object);
-    public static FrameSlot SOURCE_LENGTH_SLOT = FRAME_DESCRIPTOR.addFrameSlot("source-length", FrameSlotKind.Int);
-    public static FrameSlot SOURCE_POSITION_SLOT = FRAME_DESCRIPTOR.addFrameSlot("source-position", FrameSlotKind.Int);
-    public static FrameSlot OUTPUT_SLOT = FRAME_DESCRIPTOR.addFrameSlot("output", FrameSlotKind.Object);
-    public static FrameSlot OUTPUT_POSITION_SLOT = FRAME_DESCRIPTOR.addFrameSlot("output-position", FrameSlotKind.Int);
-    public static FrameSlot TAINT_SLOT = FRAME_DESCRIPTOR.addFrameSlot("taint", FrameSlotKind.Boolean);
+    public static final FrameDescriptor FRAME_DESCRIPTOR = new FrameDescriptor();
+    public static final FrameSlot SOURCE_SLOT = FRAME_DESCRIPTOR.addFrameSlot("source", FrameSlotKind.Object);
+    public static final FrameSlot SOURCE_LENGTH_SLOT = FRAME_DESCRIPTOR.addFrameSlot("source-length", FrameSlotKind.Int);
+    public static final FrameSlot SOURCE_POSITION_SLOT = FRAME_DESCRIPTOR.addFrameSlot("source-position", FrameSlotKind.Int);
+    public static final FrameSlot OUTPUT_SLOT = FRAME_DESCRIPTOR.addFrameSlot("output", FrameSlotKind.Object);
+    public static final FrameSlot OUTPUT_POSITION_SLOT = FRAME_DESCRIPTOR.addFrameSlot("output-position", FrameSlotKind.Int);
+    public static final FrameSlot TAINT_SLOT = FRAME_DESCRIPTOR.addFrameSlot("taint", FrameSlotKind.Boolean);
 
 }

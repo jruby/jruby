@@ -99,9 +99,6 @@ public abstract class WriteHexStringNode extends PackNode {
 
         if ((lengthToUse & 1) != 0) {
             writeBytes(frame, (byte) (currentByte & 0xff));
-            if(padLength > 0) {
-                padLength--;
-            }
         }
 
         return null;

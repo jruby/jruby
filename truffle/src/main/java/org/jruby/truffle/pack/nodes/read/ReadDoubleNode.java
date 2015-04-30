@@ -29,13 +29,7 @@ import org.jruby.truffle.runtime.RubyContext;
 })
 public abstract class ReadDoubleNode extends PackNode {
 
-    private final RubyContext context;
-
     @Child private ToDoubleNode toDoubleNode;
-
-    public ReadDoubleNode(RubyContext context) {
-        this.context = context;
-    }
 
     @Specialization(guards = "isNull(source)")
     public double read(VirtualFrame frame, Object source) {
