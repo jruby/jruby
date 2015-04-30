@@ -28,6 +28,34 @@ import java.nio.charset.StandardCharsets;
 @CoreClass(name = "Rubinius::FFI::Platform::POSIX")
 public abstract class PosixNodes {
 
+    @CoreMethod(names = "chmod", isModuleFunction = true, required = 2)
+    public abstract static class ChmodNode extends CoreMethodArrayArgumentsNode {
+
+        public ChmodNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int chmod(RubyString path, int mode) {
+            return posix().chmod(path.toString(), mode);
+        }
+
+    }
+
+    @CoreMethod(names = "fchmod", isModuleFunction = true, required = 2)
+    public abstract static class FchmodNode extends CoreMethodArrayArgumentsNode {
+
+        public FchmodNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int fchmod(int one, int mode) {
+            return posix().fchmod(one, mode);
+        }
+
+    }
+
     @CoreMethod(names = "getegid", isModuleFunction = true)
     public abstract static class GetEGIDNode extends CoreMethodArrayArgumentsNode {
 
