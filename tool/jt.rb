@@ -169,6 +169,7 @@ module Commands
     puts 'jt findbugs                                    run findbugs'
     puts 'jt findbugs report                             run findbugs and generate an HTML report'
     puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
+    puts 'jt poms                                        rebuild Maven POM XML files from Ruby files'
     puts
     puts 'you can also put build or rebuild in front of any command'
     puts
@@ -382,6 +383,10 @@ module Commands
     else
       raise ArgumentError, kind
     end
+  end
+
+  def poms
+    sh 'rake', 'maven:dump_poms'
   end
 end
 
