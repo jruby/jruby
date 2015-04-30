@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.runtime.core;
 
-
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
@@ -23,7 +22,6 @@ import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.interop.messages.*;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.RubyTypes;
 import org.jruby.truffle.nodes.interop.InteropNode;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -69,7 +67,6 @@ public class StringForeignAccessFactory implements ForeignAccessFactory {
         }
     }
 
-    @TypeSystemReference(RubyTypes.class)
     protected static final class RubyInteropRootNode extends RootNode {
 
         @Child private RubyNode node;

@@ -31,7 +31,6 @@ import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 
-@TypeSystemReference(RubyTypes.class)
 public abstract class RubyNode extends Node {
 
     private final RubyContext context;
