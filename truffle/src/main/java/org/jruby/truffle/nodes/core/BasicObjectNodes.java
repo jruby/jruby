@@ -183,7 +183,7 @@ public abstract class BasicObjectNodes {
         public Object instanceEval(VirtualFrame frame, Object receiver, RubyString string, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            return getContext().instanceEval(string.getBytes(), receiver, this);
+            return getContext().instanceEval(string.getByteList(), receiver, this);
         }
 
         @Specialization

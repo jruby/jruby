@@ -398,7 +398,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public org.jruby.RubyString toJRuby(RubyString string) {
-        final org.jruby.RubyString jrubyString = runtime.newString(string.getBytes().dup());
+        final org.jruby.RubyString jrubyString = runtime.newString(string.getByteList().dup());
 
         final Object tainted = string.getOperations().getInstanceVariable(string, RubyBasicObject.TAINTED_IDENTIFIER);
 

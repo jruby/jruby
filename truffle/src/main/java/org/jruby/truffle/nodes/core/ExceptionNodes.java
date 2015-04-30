@@ -113,7 +113,7 @@ public abstract class ExceptionNodes {
             if (exception.getMessage().length() == 0) {
                 return getContext().makeString(exception.getLogicalClass().getName());
             } else {
-                return getContext().makeString(exception.getMessage().getBytes());
+                return getContext().makeString(exception.getMessage().getByteList());
             }
         }
 

@@ -30,7 +30,7 @@ public abstract class EncodingPrimitiveNodes {
         public RubyEncoding encodingGetObjectEncoding(RubyString string) {
             notDesignedForCompilation();
 
-            return RubyEncoding.getEncoding(string.getBytes().getEncoding());
+            return RubyEncoding.getEncoding(string.getByteList().getEncoding());
         }
 
         @Specialization

@@ -577,7 +577,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final Source source = Source.fromText(code.toString(), "(eval)");
-            return classEvalSource(frame, module, source, code.getBytes().getEncoding());
+            return classEvalSource(frame, module, source, code.getByteList().getEncoding());
         }
 
         @Specialization
@@ -585,7 +585,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final Source source = Source.asPseudoFile(code.toString(), file.toString());
-            return classEvalSource(frame, module, source, code.getBytes().getEncoding());
+            return classEvalSource(frame, module, source, code.getByteList().getEncoding());
         }
 
         @Specialization
@@ -593,7 +593,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final Source source = Source.asPseudoFile(code.toString(), file.toString());
-            return classEvalSource(frame, module, source, code.getBytes().getEncoding());
+            return classEvalSource(frame, module, source, code.getByteList().getEncoding());
         }
 
         private Object classEvalSource(VirtualFrame frame, RubyModule module, Source source, Encoding encoding) {

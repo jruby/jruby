@@ -245,7 +245,7 @@ public abstract class MatchDataNodes {
         public RubyString toS(RubyMatchData matchData) {
             notDesignedForCompilation();
 
-            final ByteList bytes = matchData.getGlobal().getBytes().dup();
+            final ByteList bytes = matchData.getGlobal().getByteList().dup();
             return getContext().makeString(bytes);
         }
     }

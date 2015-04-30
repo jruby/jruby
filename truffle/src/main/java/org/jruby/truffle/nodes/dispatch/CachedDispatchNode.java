@@ -38,7 +38,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
         if (cachedName instanceof RubySymbol) {
             cachedNameAsSymbol = (RubySymbol) cachedName;
         } else if (cachedName instanceof RubyString) {
-            cachedNameAsSymbol = context.getSymbol(((RubyString) cachedName).getBytes());
+            cachedNameAsSymbol = context.getSymbol(((RubyString) cachedName).getByteList());
         } else if (cachedName instanceof String) {
             cachedNameAsSymbol = context.getSymbol((String) cachedName);
         } else {
@@ -68,7 +68,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
             // TODO(CS, 11-Jan-15) this just repeats the above guard...
             return cachedName == methodName;
         } else if (cachedName instanceof RubyString) {
-            return (methodName instanceof RubyString) && ((RubyString) cachedName).getBytes().equal(((RubyString) methodName).getBytes());
+            return (methodName instanceof RubyString) && ((RubyString) cachedName).getByteList().equal(((RubyString) methodName).getByteList());
         } else {
             throw new UnsupportedOperationException();
         }

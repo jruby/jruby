@@ -102,7 +102,7 @@ public abstract class ByteArrayNodes {
         @Specialization
         public Object getByte(RubiniusByteArray bytes, RubyString pattern, int start, int length) {
             final int index = new ByteList(bytes.getBytes().unsafeBytes(), start, length)
-                    .indexOf(pattern.getBytes());
+                    .indexOf(pattern.getByteList());
 
             if (index == -1) {
                 return nil();

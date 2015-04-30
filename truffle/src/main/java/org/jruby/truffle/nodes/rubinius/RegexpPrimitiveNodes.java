@@ -39,7 +39,7 @@ public abstract class RegexpPrimitiveNodes {
         public RubyRegexp initialize(RubyRegexp regexp, RubyString pattern, int options) {
             notDesignedForCompilation();
 
-            regexp.initialize(this, pattern.getBytes(), options);
+            regexp.initialize(this, pattern.getByteList(), options);
             return regexp;
         }
 
@@ -67,7 +67,7 @@ public abstract class RegexpPrimitiveNodes {
                         String.format("invalid byte sequence in %s", string.getByteList().getEncoding()), this));
             }
 
-            final Matcher matcher = regexp.getRegex().matcher(string.getBytes().bytes());
+            final Matcher matcher = regexp.getRegex().matcher(string.getByteList().bytes());
 
             return regexp.matchCommon(string, false, false, matcher, start, end);
         }

@@ -246,14 +246,14 @@ public class RubyRegexp extends RubyBasicObject {
     public RubyString gsub(RubyString string, String replacement) {
         final RubyContext context = getContext();
 
-        final byte[] stringBytes = string.getBytes().bytes();
+        final byte[] stringBytes = string.getByteList().bytes();
 
-        final Encoding encoding = string.getBytes().getEncoding();
+        final Encoding encoding = string.getByteList().getEncoding();
         final Matcher matcher = regex.matcher(stringBytes);
 
-        int p = string.getBytes().getBegin();
+        int p = string.getByteList().getBegin();
         int end = 0;
-        int range = p + string.getBytes().getRealSize();
+        int range = p + string.getByteList().getRealSize();
         int lastMatchEnd = 0;
 
         // We only ever care about the entire matched string, not each of the matched parts, so we can hard-code the index.
@@ -279,7 +279,7 @@ public class RubyRegexp extends RubyBasicObject {
             builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(replacement.getBytes(StandardCharsets.UTF_8))));
 
             lastMatchEnd = regionEnd;
-            end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
+            end = StringSupport.positionEndForScan(string.getByteList(), matcher, encoding, p, range);
         }
 
         return context.makeString(builder.toString());
@@ -309,12 +309,12 @@ public class RubyRegexp extends RubyBasicObject {
     public RubyString[] split(final RubyString string, final boolean useLimit, final int limit) {
         final RubyContext context = getContext();
 
-        final ByteList bytes = string.getBytes();
+        final ByteList bytes = string.getByteList();
         final byte[] byteArray = bytes.bytes();
         final int begin = bytes.getBegin();
         final int len = bytes.getRealSize();
         final int range = begin + len;
-        final Encoding encoding = string.getBytes().getEncoding();
+        final Encoding encoding = string.getByteList().getEncoding();
         final Matcher matcher = regex.matcher(byteArray);
 
         final ArrayList<RubyString> strings = new ArrayList<>();
@@ -374,13 +374,13 @@ public class RubyRegexp extends RubyBasicObject {
     public Object scan(RubyString string) {
         final RubyContext context = getContext();
 
-        final byte[] stringBytes = string.getBytes().bytes();
-        final Encoding encoding = string.getBytes().getEncoding();
+        final byte[] stringBytes = string.getByteList().bytes();
+        final Encoding encoding = string.getByteList().getEncoding();
         final Matcher matcher = regex.matcher(stringBytes);
 
-        int p = string.getBytes().getBegin();
+        int p = string.getByteList().getBegin();
         int end = 0;
-        int range = p + string.getBytes().getRealSize();
+        int range = p + string.getByteList().getRealSize();
 
         Object lastGoodMatchData = getContext().getCoreLibrary().getNilObject();
 
@@ -402,7 +402,7 @@ public class RubyRegexp extends RubyBasicObject {
                 strings.add((RubyString) values[0]);
 
                 lastGoodMatchData = matchData;
-                end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
+                end = StringSupport.positionEndForScan(string.getByteList(), matcher, encoding, p, range);
             }
 
             setThread("$~", lastGoodMatchData);
@@ -421,7 +421,7 @@ public class RubyRegexp extends RubyBasicObject {
                 allMatches.add(new RubyArray(context.getCoreLibrary().getArrayClass(), captures, captures.length));
 
                 lastGoodMatchData = matchData;
-                end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
+                end = StringSupport.positionEndForScan(string.getByteList(), matcher, encoding, p, range);
             }
 
             setThread("$~", lastGoodMatchData);

@@ -251,7 +251,7 @@ public abstract class TrufflePrimitiveNodes {
             final StringBuilder builder = new StringBuilder();
             builder.append("\"");
 
-            for (byte b : string.getBytes().unsafeBytes()) {
+            for (byte b : string.getByteList().unsafeBytes()) {
                 builder.append(String.format("\\x%02x", b));
             }
 

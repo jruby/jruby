@@ -466,7 +466,7 @@ public abstract class KernelNodes {
         public Object eval(VirtualFrame frame, RubyString source, UndefinedPlaceholder binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
-            return getContext().eval(source.getBytes(), getCallerBinding(frame), true, this);
+            return getContext().eval(source.getByteList(), getCallerBinding(frame), true, this);
         }
 
         @Specialization
@@ -481,21 +481,21 @@ public abstract class KernelNodes {
         public Object eval(RubyString source, RubyBinding binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
-            return getContext().eval(source.getBytes(), binding, false, this);
+            return getContext().eval(source.getByteList(), binding, false, this);
         }
 
         @Specialization
         public Object eval(RubyString source, RubyBinding binding, RubyString filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
-            return getContext().eval(source.getBytes(), binding, false, filename.toString(), this);
+            return getContext().eval(source.getByteList(), binding, false, filename.toString(), this);
         }
 
         @Specialization
         public Object eval(RubyString source, RubyBinding binding, RubyString filename, int lineNumber) {
             notDesignedForCompilation();
 
-            return getContext().eval(source.getBytes(), binding, false, filename.toString(), this);
+            return getContext().eval(source.getByteList(), binding, false, filename.toString(), this);
         }
 
         @Specialization(guards = "!isRubyBinding(badBinding)")

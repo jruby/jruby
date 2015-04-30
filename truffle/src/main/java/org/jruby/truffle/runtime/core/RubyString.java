@@ -61,10 +61,6 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         clearCodeRange();
     }
 
-    public ByteList getBytes() {
-        return bytes;
-    }
-
     @Override
     @TruffleBoundary
     public String toString() {

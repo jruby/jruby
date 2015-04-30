@@ -166,7 +166,7 @@ public abstract class InteropNode extends RubyNode {
         @Override
         public Object execute(VirtualFrame frame) {
             Object o = ForeignAccessArguments.getReceiver(frame.getArguments());
-            return o instanceof RubyString && ((RubyString) o).getBytes().length() == 1;
+            return o instanceof RubyString && ((RubyString) o).getByteList().length() == 1;
         }
     }
 
@@ -179,7 +179,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return ((RubyString) ForeignAccessArguments.getReceiver(frame.getArguments())).getBytes().get(0);
+            return ((RubyString) ForeignAccessArguments.getReceiver(frame.getArguments())).getByteList().get(0);
         }
     }
 
@@ -274,10 +274,10 @@ public abstract class InteropNode extends RubyNode {
             if (ForeignAccessArguments.getReceiver(frame.getArguments()) instanceof RubyString) {
                 final RubyString string = (RubyString) ForeignAccessArguments.getReceiver(frame.getArguments());
                 final int index = (int) ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex);
-                if (index >= string.getBytes().length()) {
+                if (index >= string.getByteList().length()) {
                     return 0;
                 } else {
-                    return (byte) string.getBytes().get(index);
+                    return (byte) string.getByteList().get(index);
                 }
             } else {
                 CompilerDirectives.transferToInterpreter();

@@ -78,7 +78,7 @@ public final class InterpolatedStringNode extends RubyNode {
                 try {
                     builder.append19(getContext().toJRuby(string));
                 } catch (org.jruby.exceptions.RaiseException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(builder.getEncoding().getCharsetName(), string.getBytes().getEncoding().getCharsetName(), this));
+                    throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(builder.getEncoding().getCharsetName(), string.getByteList().getEncoding().getCharsetName(), this));
                 }
             }
         }

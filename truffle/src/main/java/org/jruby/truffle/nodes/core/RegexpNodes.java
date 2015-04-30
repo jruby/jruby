@@ -128,7 +128,7 @@ public abstract class RegexpNodes {
         public RubyString escape(RubyString pattern) {
             notDesignedForCompilation();
 
-            return getContext().makeString(org.jruby.RubyRegexp.quote19(new ByteList(pattern.getBytes()), true).toString());
+            return getContext().makeString(org.jruby.RubyRegexp.quote19(new ByteList(pattern.getByteList()), true).toString());
         }
 
     }
@@ -240,7 +240,7 @@ public abstract class RegexpNodes {
 
             boolean isAsciiOnly = raw.getByteList().getEncoding().isAsciiCompatible() && raw.scanForCodeRange() == CR_7BIT;
 
-            return getContext().makeString(org.jruby.RubyRegexp.quote19(raw.getBytes(), isAsciiOnly));
+            return getContext().makeString(org.jruby.RubyRegexp.quote19(raw.getByteList(), isAsciiOnly));
         }
 
         @Specialization

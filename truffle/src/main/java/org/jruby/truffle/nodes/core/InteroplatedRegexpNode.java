@@ -43,7 +43,7 @@ public class InteroplatedRegexpNode extends RubyNode {
 
         for (int n = 0; n < children.length; n++) {
             final Object child = children[n].execute(frame);
-            strings[n] = org.jruby.RubyString.newString(getContext().getRuntime(), ((RubyString) toS.call(frame, child, "to_s", null)).getBytes());
+            strings[n] = org.jruby.RubyString.newString(getContext().getRuntime(), ((RubyString) toS.call(frame, child, "to_s", null)).getByteList());
         }
 
         // TODO 27-APR=2015 BJF Adding workaround to temporarily fix CGI error until Regex overhaul https://github.com/jruby/jruby/issues/2802

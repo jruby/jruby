@@ -18,7 +18,7 @@ import org.jruby.util.StringSupport;
 public class StringGuards {
 
     public static boolean isSingleByteOptimizable(RubyString string) {
-        return StringSupport.isSingleByteOptimizable(string, string.getBytes().getEncoding());
+        return StringSupport.isSingleByteOptimizable(string, string.getByteList().getEncoding());
     }
 
     public static boolean isAsciiCompatible(RubyString string) {
