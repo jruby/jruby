@@ -270,8 +270,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
 
         RubyString str = RubyString.newString(runtime, result); 
         // TODO: 1.9 rb_enc_symname_p
-        if (isPrintable() && isSymbolName19(symbol)) return str;
-            
+        Encoding resenc = runtime.getDefaultInternalEncoding();
+        if (resenc == null) {
+            resenc = runtime.getDefaultExternalEncoding();
+        }
+
+        if (isPrintable() && (resenc.equals(symbolBytes.getEncoding()) || str.isAsciiOnly()) && isSymbolName19(symbol)) {
+            return str;
+        }
+    
         str = (RubyString)str.inspect19();
         ByteList bytes = str.getByteList();
         bytes.set(0, ':');
@@ -512,11 +519,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     }
     
     private static boolean isIdentStart(char c) {
-        return ((c >= 'a' && c <= 'z')|| (c >= 'A' && c <= 'Z') || c == '_');
+        return ((c >= 'a' && c <= 'z')|| (c >= 'A' && c <= 'Z') || c == '_' || !(c < 128));
     }
     
     private static boolean isIdentChar(char c) {
-        return ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c == '_');
+        return ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c == '_' || !(c < 128));
     }
     
     private static boolean isIdentifier(String s) {
