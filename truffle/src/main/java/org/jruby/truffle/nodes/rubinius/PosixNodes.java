@@ -42,6 +42,20 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "chown", isModuleFunction = true, required = 3)
+    public abstract static class ChownNode extends CoreMethodArrayArgumentsNode {
+
+        public ChownNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int chown(RubyString path, int owner, int group) {
+            return posix().chown(path.toString(), owner, group);
+        }
+
+    }
+
     @CoreMethod(names = "fchmod", isModuleFunction = true, required = 2)
     public abstract static class FchmodNode extends CoreMethodArrayArgumentsNode {
 
@@ -52,6 +66,21 @@ public abstract class PosixNodes {
         @Specialization
         public int fchmod(int one, int mode) {
             return posix().fchmod(one, mode);
+        }
+
+    }
+
+
+    @CoreMethod(names = "fchown", isModuleFunction = true, required = 3)
+    public abstract static class FchownNode extends CoreMethodArrayArgumentsNode {
+
+        public FchownNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int fchown(int descriptor, int owner, int group) {
+            return posix().fchown(descriptor, owner, group);
         }
 
     }
