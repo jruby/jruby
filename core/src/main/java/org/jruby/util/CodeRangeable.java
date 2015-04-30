@@ -29,12 +29,12 @@ package org.jruby.util;
 import org.jcodings.Encoding;
 
 public interface CodeRangeable extends ByteListHolder {
-    public int getCodeRange();
-    public int scanForCodeRange();
-    public boolean isCodeRangeValid();
-    public void setCodeRange(int codeRange);
-    public void clearCodeRange();
-    public void keepCodeRange();
-    public void modifyAndKeepCodeRange();
-    public Encoding checkEncoding(CodeRangeable other);
+    int getCodeRange();
+    int scanForCodeRange();
+    boolean isCodeRangeValid();
+    void setCodeRange(int codeRange);
+    void clearCodeRange();
+    void keepCodeRange();
+    void modifyAndKeepCodeRange();
+    Encoding checkEncoding(CodeRangeable other);
 }
