@@ -1,2 +1,1 @@
-fails:FileTest.sticky? returns false if the file dies not exist
 fails:FileTest.sticky? returns true if the named file has the sticky bit, otherwise false
