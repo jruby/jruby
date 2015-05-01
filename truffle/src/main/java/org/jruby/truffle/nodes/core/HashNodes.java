@@ -43,7 +43,8 @@ import java.util.List;
 public abstract class HashNodes {
 
     @CoreMethod(names = "[]", onSingleton = true, argumentsAsArray = true, reallyDoesNeedSelf = true)
-    public abstract static class ConstructNode extends HashCoreMethodNode {
+    @ImportStatic(HashGuards.class)
+    public abstract static class ConstructNode extends CoreMethodArrayArgumentsNode {
 
         public ConstructNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -119,7 +120,8 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = "[]", required = 1)
-    public abstract static class GetIndexNode extends HashCoreMethodNode {
+    @ImportStatic(HashGuards.class)
+    public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode hashNode;
         @Child private CallDispatchHeadNode eqlNode;
@@ -215,7 +217,7 @@ public abstract class HashNodes {
     }
     
     @CoreMethod(names = "_get_or_undefined", required = 1)
-    public abstract static class GetOrUndefinedNode extends HashCoreMethodNode {
+    public abstract static class GetOrUndefinedNode extends CoreMethodArrayArgumentsNode {
 
         @Child private GetIndexNode getIndexNode;
         
@@ -233,7 +235,8 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = "[]=", required = 2, raiseIfFrozenSelf = true)
-    public abstract static class SetIndexNode extends HashCoreMethodNode {
+    @ImportStatic(HashGuards.class)
+    public abstract static class SetIndexNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode hashNode;
         @Child private CallDispatchHeadNode eqlNode;
@@ -358,7 +361,8 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
-    public abstract static class ClearNode extends HashCoreMethodNode {
+    @ImportStatic(HashGuards.class)
+    public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
 
         public ClearNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -378,7 +382,7 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = "compare_by_identity", raiseIfFrozenSelf = true)
-    public abstract static class CompareByIdentityNode extends HashCoreMethodNode {
+    public abstract static class CompareByIdentityNode extends CoreMethodArrayArgumentsNode {
 
         public CompareByIdentityNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -393,7 +397,7 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = "compare_by_identity?")
-    public abstract static class IsCompareByIdentityNode extends HashCoreMethodNode {
+    public abstract static class IsCompareByIdentityNode extends CoreMethodArrayArgumentsNode {
 
         private final ConditionProfile profile = ConditionProfile.createBinaryProfile();
         
@@ -409,7 +413,7 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = "default_proc")
-    public abstract static class DefaultProcNode extends HashCoreMethodNode {
+    public abstract static class DefaultProcNode extends CoreMethodArrayArgumentsNode {
 
         public DefaultProcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -427,7 +431,8 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = "delete", required = 1, needsBlock = true, raiseIfFrozenSelf = true)
-    public abstract static class DeleteNode extends HashCoreMethodNode {
+    @ImportStatic(HashGuards.class)
+    public abstract static class DeleteNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode eqlNode;
         @Child private FindEntryNode findEntryNode;
@@ -592,7 +597,8 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = "empty?")
-    public abstract static class EmptyNode extends HashCoreMethodNode {
+    @ImportStatic(HashGuards.class)
+    public abstract static class EmptyNode extends CoreMethodArrayArgumentsNode {
 
         public EmptyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -611,7 +617,8 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = "initialize", needsBlock = true, optional = 1, raiseIfFrozenSelf = true)
-    public abstract static class InitializeNode extends HashCoreMethodNode {
+    @ImportStatic(HashGuards.class)
+    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -651,7 +658,8 @@ public abstract class HashNodes {
 
     // TODO CS 8-Mar-15 visibility = Visibility.PRIVATE
     @CoreMethod(names = {"initialize_copy", "replace"}, required = 1, raiseIfFrozenSelf = true)
-    public abstract static class InitializeCopyNode extends HashCoreMethodNode {
+    @ImportStatic(HashGuards.class)
+    public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -966,7 +974,7 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = "default=", required = 1)
-    public abstract static class SetDefaultNode extends HashCoreMethodNode {
+    public abstract static class SetDefaultNode extends CoreMethodArrayArgumentsNode {
 
         public SetDefaultNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -985,7 +993,8 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = "shift", raiseIfFrozenSelf = true)
-    public abstract static class ShiftNode extends HashCoreMethodNode {
+    @ImportStatic(HashGuards.class)
+    public abstract static class ShiftNode extends CoreMethodArrayArgumentsNode {
 
         public ShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1085,7 +1094,8 @@ public abstract class HashNodes {
     }
     
     @CoreMethod(names = {"size", "length"})
-    public abstract static class SizeNode extends HashCoreMethodNode {
+    @ImportStatic(HashGuards.class)
+    public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1104,7 +1114,8 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = "rehash", raiseIfFrozenSelf = true)
-    public abstract static class RehashNode extends HashCoreMethodNode {
+    @ImportStatic(HashGuards.class)
+    public abstract static class RehashNode extends CoreMethodArrayArgumentsNode {
 
         public RehashNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1194,6 +1205,34 @@ public abstract class HashNodes {
             hash.setDefaultValue(null);
             hash.setDefaultBlock(null);
             return nil();
+        }
+
+    }
+
+    public static class HashGuards {
+
+        public static boolean isNull(RubyHash hash) {
+            return hash.getStore() == null;
+        }
+
+        public static boolean isBuckets(RubyHash hash) {
+            return hash.getStore() instanceof Entry[];
+        }
+
+        public static boolean isCompareByIdentity(RubyHash hash) {
+            return hash.isCompareByIdentity();
+        }
+
+        public static boolean isEmpty(RubyHash hash) {
+            return hash.getSize() == 0;
+        }
+
+        public static boolean hasDefaultValue(RubyHash hash) {
+            return hash.getDefaultValue() != null;
+        }
+
+        public static boolean hasDefaultBlock(RubyHash hash) {
+            return hash.getDefaultBlock() != null;
         }
 
     }
