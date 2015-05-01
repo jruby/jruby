@@ -121,6 +121,22 @@ class Dir
     error
   end
 
+  def self.foreach(path)
+    return to_enum(:foreach, path) unless block_given?
+
+    open(path) do |dir|
+      while s = dir.read
+        yield s
+      end
+    end
+
+    nil
+  end
+
+  def self.join_path(p1, p2, dirsep)
+    "#{p1}#{dirsep ? '/' : ''}#{p2}"
+  end
+
   def self.chdir(path = ENV['HOME'])
     path = Rubinius::Type.coerce_to_path path
 
@@ -157,6 +173,16 @@ class Dir
     Rubinius::Type.external_string wd
   end
 
+  def each
+    return to_enum unless block_given?
+
+    while s = read
+      yield s
+    end
+
+    self
+  end
+
   class << self
     alias_method :pwd, :getwd
     alias_method :delete, :rmdir
@@ -169,6 +195,10 @@ class Dir
 
   class << self
     alias_method :exists?, :exist?
+  end
+
+  def self.home(user=nil)
+    PrivateFile.expand_path("~#{user}")
   end
 
 end

@@ -21,6 +21,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import jnr.posix.Passwd;
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -1796,6 +1797,27 @@ public abstract class ModuleNodes {
             }
             module.undefMethod(this, method);
             return module;
+        }
+
+    }
+
+    @CoreMethod(names = "get_user_home", needsSelf = false, required = 1)
+    public abstract static class GetUserHomeNode extends CoreMethodArrayArgumentsNode {
+
+        public GetUserHomeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyString userHome(RubyString uname) {
+            notDesignedForCompilation();
+            // TODO BJF 30-APR-2015 Review the more robust getHomeDirectoryPath implementation
+            final Passwd passwd = getContext().getPosix().getpwnam(uname.toString());
+            if (passwd == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("user " + uname.toString() + " does not exist", this));
+            }
+            return getContext().makeString(passwd.getHome());
         }
 
     }
