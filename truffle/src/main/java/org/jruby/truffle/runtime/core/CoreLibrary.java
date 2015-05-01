@@ -24,6 +24,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
 import org.jruby.truffle.nodes.core.MutexNodes;
 import org.jruby.truffle.nodes.core.ProcessNodes;
+import org.jruby.truffle.nodes.core.ThreadBacktraceLocationNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.nodes.rubinius.NativeFunctionPrimitiveNodes;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -100,6 +101,8 @@ public class CoreLibrary {
     private final RubyClass syntaxErrorClass;
     private final RubyClass systemCallErrorClass;
     private final RubyClass threadClass;
+    private final RubyClass threadBacktraceClass;
+    private final RubyClass threadBacktraceLocationClass;
     private final RubyClass timeClass;
     private final RubyClass transcodingClass;
     private final RubyClass trueClass;
@@ -271,6 +274,8 @@ public class CoreLibrary {
         stringClass = defineClass("String", new RubyString.StringAllocator());
         symbolClass = defineClass("Symbol");
         threadClass = defineClass("Thread", new RubyThread.ThreadAllocator());
+        threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
+        threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location", ThreadBacktraceLocationNodes.createThreadBacktraceLocationAllocator(context.getEmptyShape()));
         timeClass = defineClass("Time", new RubyTime.TimeAllocator());
         trueClass = defineClass("TrueClass");
         unboundMethodClass = defineClass("UnboundMethod");
@@ -1241,6 +1246,10 @@ public class CoreLibrary {
 
     public RubyClass getSymbolClass() {
         return symbolClass;
+    }
+
+    public RubyClass getThreadBacktraceLocationClass() {
+        return threadBacktraceLocationClass;
     }
 
 }

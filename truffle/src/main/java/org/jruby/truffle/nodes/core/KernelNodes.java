@@ -331,6 +331,51 @@ public abstract class KernelNodes {
         }
     }
 
+    @CoreMethod(names = "caller_locations", isModuleFunction = true, optional = 2)
+    public abstract static class CallerLocationsNode extends CoreMethodArrayArgumentsNode {
+
+        public CallerLocationsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyArray callerLocations(UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2) {
+            return callerLocations(1, -1);
+        }
+
+        @Specialization
+        public RubyArray callerLocations(int omit, UndefinedPlaceholder undefined) {
+            return callerLocations(omit, -1);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public RubyArray callerLocations(int omit, int length) {
+            final RubyClass threadBacktraceLocationClass = getContext().getCoreLibrary().getThreadBacktraceLocationClass();
+
+            final Backtrace backtrace = RubyCallStack.getBacktrace(this, 1 + omit, true);
+
+            int locationsCount = backtrace.getActivations().size();
+
+            if (length != -1 && locationsCount > length) {
+                locationsCount = length;
+            }
+
+            final Object[] locations = new Object[locationsCount];
+
+            for (int n = 0; n < locationsCount; n++) {
+                final RubyBasicObject location = threadBacktraceLocationClass.getAllocator().allocate(getContext(), threadBacktraceLocationClass, this);
+
+                // TODO CS 30-Apr-15 can't set set this in the allocator? How do we get it there?
+                ThreadBacktraceLocationNodes.setActivation(location, backtrace.getActivations().get(n));
+
+                locations[n] = location;
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), locations, locations.length);
+        }
+    }
+
     @CoreMethod(names = "class")
     public abstract static class KernelClassNode extends CoreMethodArrayArgumentsNode {
 
