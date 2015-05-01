@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.control;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
@@ -80,11 +81,8 @@ public class TryNode extends RubyNode {
         }
     }
 
-    @ExplodeLoop
     private Object handleException(VirtualFrame frame, RaiseException exception) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         final RubyBasicObject threadLocals = getContext().getThreadManager().getCurrentThread().getThreadLocals();
         threadLocals.getOperations().setInstanceVariable(threadLocals, "$!", exception.getRubyException());

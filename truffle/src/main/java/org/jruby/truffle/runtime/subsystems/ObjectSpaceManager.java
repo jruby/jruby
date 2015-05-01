@@ -68,8 +68,6 @@ public class ObjectSpaceManager {
     }
 
     public synchronized void defineFinalizer(RubyBasicObject object, RubyProc proc) {
-        RubyNode.notDesignedForCompilation();
-
         // Record the finalizer against the object
 
         FinalizerReference finalizerReference = finalizerReferences.get(object);
@@ -97,8 +95,6 @@ public class ObjectSpaceManager {
     }
 
     public synchronized void undefineFinalizer(RubyBasicObject object) {
-        RubyNode.notDesignedForCompilation();
-
         final FinalizerReference finalizerReference = finalizerReferences.get(object);
 
         if (finalizerReference != null) {
@@ -141,8 +137,6 @@ public class ObjectSpaceManager {
 
     @TruffleBoundary
     public Map<Long, RubyBasicObject> collectLiveObjects() {
-        RubyNode.notDesignedForCompilation();
-
         final Map<Long, RubyBasicObject> liveObjects = new HashMap<>();
 
         final ObjectGraphVisitor visitor = new ObjectGraphVisitor() {

@@ -153,7 +153,7 @@ public abstract class HashLiteralNode extends RubyNode {
 
         @Override
         public RubyHash executeRubyHash(VirtualFrame frame) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             final List<KeyValue> entries = new ArrayList<>();
 

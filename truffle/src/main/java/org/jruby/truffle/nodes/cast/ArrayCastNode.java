@@ -100,8 +100,6 @@ public abstract class ArrayCastNode extends RubyNode {
 
     @Specialization(guards = {"!isRubyNilClass(object)", "!isRubyArray(object)"})
     public Object cast(VirtualFrame frame, RubyBasicObject object) {
-        notDesignedForCompilation();
-
         final Object result = toArrayNode.call(frame, object, "to_ary", null, new Object[]{});
 
         if (result == DispatchNode.MISSING) {

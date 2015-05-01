@@ -345,7 +345,7 @@ public class RubyCallNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         if (receiver.isDefined(frame) == nil()) {
             return nil();

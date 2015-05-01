@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.objects;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
@@ -41,7 +42,7 @@ public class OpenModuleNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         // TODO(CS): cast
         final RubyModule module = (RubyModule) definingModule.execute(frame);

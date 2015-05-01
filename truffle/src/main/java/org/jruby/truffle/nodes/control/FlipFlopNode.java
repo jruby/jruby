@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.control;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -35,8 +36,6 @@ public class FlipFlopNode extends RubyNode {
 
     @Override
     public boolean executeBoolean(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         if (exclusive) {
             if (stateNode.getState(frame)) {
                 if (end.executeBoolean(frame)) {
