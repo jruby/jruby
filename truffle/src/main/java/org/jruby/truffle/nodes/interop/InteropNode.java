@@ -13,6 +13,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.nodes.interop.InteropNodeFactory.ExecuteMethodNodeGen;
 import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -34,8 +35,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
-import com.oracle.truffle.api.nodes.Node.Child;
-import com.oracle.truffle.api.nodes.Node.Children;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.interop.ForeignAccessArguments;
 import com.oracle.truffle.interop.messages.Execute;
@@ -106,7 +105,7 @@ public abstract class InteropNode extends RubyNode {
     	
     	public InteropExecute(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.execute = ExecuteMethodNodeFactory.create(context, sourceSection, null);
+            this.execute = ExecuteMethodNodeGen.create(context, sourceSection, null);
         }
 
         
