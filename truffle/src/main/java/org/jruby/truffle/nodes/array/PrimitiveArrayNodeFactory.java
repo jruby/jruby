@@ -23,9 +23,9 @@ public abstract class PrimitiveArrayNodeFactory {
         final RubyNode literalIndex = new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, index);
 
         if (index >= 0) {
-            return ArrayReadNormalizedNodeFactory.create(context, sourceSection, array, literalIndex);
+            return ArrayReadNormalizedNodeGen.create(context, sourceSection, array, literalIndex);
         } else {
-            return ArrayReadDenormalizedNodeFactory.create(context, sourceSection, array, literalIndex);
+            return ArrayReadDenormalizedNodeGen.create(context, sourceSection, array, literalIndex);
         }
     }
 
@@ -37,9 +37,9 @@ public abstract class PrimitiveArrayNodeFactory {
         final RubyNode literalExclusiveEnd = new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, exclusiveEnd);
 
         if (start >= 0 && exclusiveEnd >= 0) {
-            return ArrayReadSliceNormalizedNodeFactory.create(context, sourceSection, array, literalStart, literalExclusiveEnd);
+            return ArrayReadSliceNormalizedNodeGen.create(context, sourceSection, array, literalStart, literalExclusiveEnd);
         } else {
-            return ArrayReadSliceDenormalizedNodeFactory.create(context, sourceSection, array, literalStart, literalExclusiveEnd);
+            return ArrayReadSliceDenormalizedNodeGen.create(context, sourceSection, array, literalStart, literalExclusiveEnd);
         }
     }
 

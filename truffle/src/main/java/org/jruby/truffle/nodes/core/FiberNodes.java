@@ -15,7 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.SingleValueCastNode;
-import org.jruby.truffle.nodes.cast.SingleValueCastNodeFactory;
+import org.jruby.truffle.nodes.cast.SingleValueCastNodeGen;
 import org.jruby.truffle.nodes.core.FiberNodesFactory.FiberTransferNodeFactory;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.RubyContext;
@@ -28,7 +28,7 @@ import org.jruby.truffle.runtime.core.RubyThread;
 @CoreClass(name = "Fiber")
 public abstract class FiberNodes {
 
-    public abstract static class FiberTransferNode extends CoreMethodNode {
+    public abstract static class FiberTransferNode extends CoreMethodArrayArgumentsNode {
 
         @Child SingleValueCastNode singleValueCastNode;
 
@@ -39,7 +39,7 @@ public abstract class FiberNodes {
         protected Object singleValue(VirtualFrame frame, Object[] args) {
             if (singleValueCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                singleValueCastNode = insert(SingleValueCastNodeFactory.create(getContext(), getSourceSection(), null));
+                singleValueCastNode = insert(SingleValueCastNodeGen.create(getContext(), getSourceSection(), null));
             }
             return singleValueCastNode.executeSingleValue(frame, args);
         }
@@ -68,7 +68,7 @@ public abstract class FiberNodes {
     }
 
     @CoreMethod(names = "initialize", needsBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
-    public abstract static class InitializeNode extends CoreMethodNode {
+    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -85,7 +85,7 @@ public abstract class FiberNodes {
     }
 
     @CoreMethod(names = "resume", argumentsAsArray = true)
-    public abstract static class ResumeNode extends CoreMethodNode {
+    public abstract static class ResumeNode extends CoreMethodArrayArgumentsNode {
 
         @Child FiberTransferNode fiberTransferNode;
 
@@ -102,7 +102,7 @@ public abstract class FiberNodes {
     }
 
     @CoreMethod(names = "yield", onSingleton = true, argumentsAsArray = true)
-    public abstract static class YieldNode extends CoreMethodNode {
+    public abstract static class YieldNode extends CoreMethodArrayArgumentsNode {
 
         @Child FiberTransferNode fiberTransferNode;
 

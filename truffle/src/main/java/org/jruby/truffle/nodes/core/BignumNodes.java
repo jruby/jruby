@@ -17,7 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -33,7 +33,7 @@ import java.math.BigInteger;
 @CoreClass(name = "Bignum")
 public abstract class BignumNodes {
 
-    public static abstract class BignumCoreMethodNode extends CoreMethodNode {
+    public static abstract class BignumCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
@@ -233,7 +233,7 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "<", required = 1)
-    public abstract static class LessNode extends CoreMethodNode {
+    public abstract static class LessNode extends CoreMethodArrayArgumentsNode {
 
         public LessNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -267,7 +267,7 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "<=", required = 1)
-    public abstract static class LessEqualNode extends CoreMethodNode {
+    public abstract static class LessEqualNode extends CoreMethodArrayArgumentsNode {
 
         public LessEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -295,7 +295,7 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = {"==", "eql?"}, required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
+    public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child private BooleanCastNode booleanCastNode;
         @Child private CallDispatchHeadNode reverseCallNode;
@@ -328,7 +328,7 @@ public abstract class BignumNodes {
         public Object equal(VirtualFrame frame, RubyBignum a, RubyBasicObject b) {
             if (booleanCastNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                booleanCastNode = insert(BooleanCastNodeFactory.create(getContext(), getSourceSection(), null));
+                booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
             }
 
             if (reverseCallNode == null) {
@@ -343,7 +343,7 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "<=>", required = 1)
-    public abstract static class CompareNode extends CoreMethodNode {
+    public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         private final ConditionProfile negativeInfinityProfile = ConditionProfile.createBinaryProfile();
 
@@ -377,7 +377,7 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = ">=", required = 1)
-    public abstract static class GreaterEqualNode extends CoreMethodNode {
+    public abstract static class GreaterEqualNode extends CoreMethodArrayArgumentsNode {
 
         public GreaterEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -405,7 +405,7 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = ">", required = 1)
-    public abstract static class GreaterNode extends CoreMethodNode {
+    public abstract static class GreaterNode extends CoreMethodArrayArgumentsNode {
 
         public GreaterNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -558,7 +558,7 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "bit_length")
-    public abstract static class BitLengthNode extends CoreMethodNode {
+    public abstract static class BitLengthNode extends CoreMethodArrayArgumentsNode {
 
         public BitLengthNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -572,7 +572,7 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "coerce", required = 1)
-    public abstract static class CoerceNode extends CoreMethodNode {
+    public abstract static class CoerceNode extends CoreMethodArrayArgumentsNode {
 
         public CoerceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -609,7 +609,7 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "divmod", required = 1)
-    public abstract static class DivModNode extends CoreMethodNode {
+    public abstract static class DivModNode extends CoreMethodArrayArgumentsNode {
 
         @Child private GeneralDivModNode divModNode;
 
@@ -651,7 +651,7 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "hash")
-    public abstract static class HashNode extends CoreMethodNode {
+    public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
         public HashNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -665,7 +665,7 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "size")
-    public abstract static class SizeNode extends CoreMethodNode {
+    public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -679,7 +679,7 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "to_f")
-    public abstract static class ToFNode extends CoreMethodNode {
+    public abstract static class ToFNode extends CoreMethodArrayArgumentsNode {
 
         public ToFNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -693,7 +693,7 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = {"to_s", "inspect"}, optional = 1)
-    public abstract static class ToSNode extends CoreMethodNode {
+    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

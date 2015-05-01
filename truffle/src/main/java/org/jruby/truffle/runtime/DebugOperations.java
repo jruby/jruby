@@ -20,9 +20,9 @@ import com.oracle.truffle.api.object.Location;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.nodes.objects.FreezeNode;
-import org.jruby.truffle.nodes.objects.FreezeNodeFactory;
+import org.jruby.truffle.nodes.objects.FreezeNodeGen;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
-import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
+import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -133,7 +133,7 @@ public abstract class DebugOperations {
     }
 
     public static Object verySlowFreeze(RubyContext context, final Object object) {
-        final FreezeNode freezeNode = FreezeNodeFactory.create(context, null, null);
+        final FreezeNode freezeNode = FreezeNodeGen.create(context, null, null);
         new Node() {
             @Child FreezeNode child = freezeNode;
         }.adoptChildren();
@@ -141,7 +141,7 @@ public abstract class DebugOperations {
     }
 
     public static boolean verySlowIsFrozen(RubyContext context, Object object) {
-        final IsFrozenNode isFrozenNode = IsFrozenNodeFactory.create(context, null, null);
+        final IsFrozenNode isFrozenNode = IsFrozenNodeGen.create(context, null, null);
         new Node() {
             @Child IsFrozenNode child = isFrozenNode;
         }.adoptChildren();

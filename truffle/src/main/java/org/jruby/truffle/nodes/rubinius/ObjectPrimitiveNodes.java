@@ -14,9 +14,9 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
-import org.jruby.truffle.nodes.objects.IsTaintedNodeFactory;
+import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
-import org.jruby.truffle.nodes.objects.TaintNodeFactory;
+import org.jruby.truffle.nodes.objects.TaintNodeGen;
 import org.jruby.truffle.runtime.ObjectIDOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -112,7 +112,7 @@ public abstract class ObjectPrimitiveNodes {
         public Object objectInfect(Object host, Object source) {
             if (isTaintedNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                isTaintedNode = insert(IsTaintedNodeFactory.create(getContext(), getSourceSection(), null));
+                isTaintedNode = insert(IsTaintedNodeGen.create(getContext(), getSourceSection(), null));
             }
             
             if (isTaintedNode.executeIsTainted(source)) {
@@ -120,7 +120,7 @@ public abstract class ObjectPrimitiveNodes {
                 
                 if (taintNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    taintNode = insert(TaintNodeFactory.create(getContext(), getSourceSection(), null));
+                    taintNode = insert(TaintNodeGen.create(getContext(), getSourceSection(), null));
                 }
                 
                 taintNode.executeTaint(host);

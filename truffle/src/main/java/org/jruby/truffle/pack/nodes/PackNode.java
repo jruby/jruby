@@ -12,7 +12,6 @@ package org.jruby.truffle.pack.nodes;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.ImportStatic;
-import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
@@ -30,7 +29,6 @@ import java.util.Arrays;
  * frame.
  */
 @ImportStatic(PackGuards.class)
-@TypeSystemReference(PackTypes.class)
 public abstract class PackNode extends Node {
 
     private ConditionProfile writeMoreThanZeroBytes = ConditionProfile.createBinaryProfile();

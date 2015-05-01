@@ -1,10 +1,2 @@
-fails:Dir.open returns a Dir instance representing the specified directory
-fails:Dir.open raises a SystemCallError if the directory does not exist
-fails:Dir.open may take a block which is yielded to with the Dir instance
-fails:Dir.open returns the value of the block if a block is given
 fails:Dir.open closes the Dir instance when the block exits if given a block
 fails:Dir.open closes the Dir instance when the block exits the block even due to an exception
-fails:Dir.open calls #to_path on non-String arguments
-fails:Dir.open accepts an options Hash
-fails:Dir.open calls #to_hash to convert the options object
-fails:Dir.open ignores the :encoding option if it is nil

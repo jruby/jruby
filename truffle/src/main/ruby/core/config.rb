@@ -13,6 +13,7 @@ CONFIG = {
   'host_os' => File::ALT_SEPARATOR.nil? ? 'unknown' : 'mswin32',
   'exeext' => '',
   'EXEEXT' => 'rubytruffle',
-  'ruby_version' => '2.2.0'
+  'ruby_version' => '2.2.0',
+  'libdir' => "#{Truffle::Primitive.home_directory}/lib/ruby/truffle"
 }
 end

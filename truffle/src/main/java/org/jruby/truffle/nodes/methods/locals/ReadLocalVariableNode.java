@@ -61,7 +61,7 @@ public abstract class ReadLocalVariableNode extends FrameSlotNode implements Rea
 
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
-        return WriteLocalVariableNodeFactory.create(getContext(), getSourceSection(), frameSlot, rhs);
+        return WriteLocalVariableNodeGen.create(getContext(), getSourceSection(), frameSlot, rhs);
     }
 
     public static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Arrays.asList("$~"));

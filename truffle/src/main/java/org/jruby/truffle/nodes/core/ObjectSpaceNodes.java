@@ -22,7 +22,7 @@ import org.jruby.truffle.runtime.core.*;
 public abstract class ObjectSpaceNodes {
 
     @CoreMethod(names = "_id2ref", isModuleFunction = true, required = 1)
-    public abstract static class ID2RefNode extends CoreMethodNode {
+    public abstract static class ID2RefNode extends CoreMethodArrayArgumentsNode {
 
         public ID2RefNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -122,7 +122,7 @@ public abstract class ObjectSpaceNodes {
     }
 
     @CoreMethod(names = "define_finalizer", isModuleFunction = true, required = 2)
-    public abstract static class DefineFinalizerNode extends CoreMethodNode {
+    public abstract static class DefineFinalizerNode extends CoreMethodArrayArgumentsNode {
 
         public DefineFinalizerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -138,7 +138,7 @@ public abstract class ObjectSpaceNodes {
     }
 
     @CoreMethod(names = "undefine_finalizer", isModuleFunction = true, required = 1)
-    public abstract static class UndefineFinalizerNode extends CoreMethodNode {
+    public abstract static class UndefineFinalizerNode extends CoreMethodArrayArgumentsNode {
 
         public UndefineFinalizerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

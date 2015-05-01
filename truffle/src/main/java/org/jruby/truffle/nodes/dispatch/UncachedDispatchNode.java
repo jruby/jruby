@@ -15,11 +15,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
-import org.jruby.truffle.nodes.conversion.ToJavaStringNodeFactory;
+import org.jruby.truffle.nodes.conversion.ToJavaStringNodeGen;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
-import org.jruby.truffle.nodes.conversion.ToSymbolNodeFactory;
+import org.jruby.truffle.nodes.conversion.ToSymbolNodeGen;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
-import org.jruby.truffle.nodes.objects.MetaClassNodeFactory;
+import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -48,9 +48,9 @@ public class UncachedDispatchNode extends DispatchNode {
         this.ignoreVisibility = ignoreVisibility;
         this.missingBehavior = missingBehavior;
         callNode = Truffle.getRuntime().createIndirectCallNode();
-        toSymbolNode = ToSymbolNodeFactory.create(context, null, null);
-        toJavaStringNode = ToJavaStringNodeFactory.create(context, null, null);
-        metaClassNode = MetaClassNodeFactory.create(context, null, null);
+        toSymbolNode = ToSymbolNodeGen.create(context, null, null);
+        toJavaStringNode = ToJavaStringNodeGen.create(context, null, null);
+        metaClassNode = MetaClassNodeGen.create(context, null, null);
     }
 
     @Override

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.source.NullSourceSection;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -59,7 +60,11 @@ public abstract class RubyCallStack {
         return getBacktrace(currentNode, 0);
     }
 
-    public static Backtrace getBacktrace(Node currentNode, final int omit) {
+    public static Backtrace getBacktrace(Node currentNode, int omit) {
+        return getBacktrace(currentNode, omit, false);
+    }
+
+    public static Backtrace getBacktrace(Node currentNode, final int omit, final boolean filterNullSourceSection) {
         CompilerAsserts.neverPartOfCompilation();
 
         final ArrayList<Activation> activations = new ArrayList<>();
@@ -83,8 +88,10 @@ public abstract class RubyCallStack {
                     // Multiple top level methods (require) introduce null call nodes - ignore them
                     
                     if (frameInstance.getCallNode() != null && depth >= omit) {
-                        activations.add(new Activation(frameInstance.getCallNode(),
-                                frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
+                        if (!(frameInstance.getCallNode().getEncapsulatingSourceSection() instanceof NullSourceSection)) {
+                            activations.add(new Activation(frameInstance.getCallNode(),
+                                    frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
+                        }
                     }
                     depth++;
 

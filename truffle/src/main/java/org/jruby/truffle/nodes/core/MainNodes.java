@@ -22,7 +22,7 @@ import org.jruby.truffle.runtime.core.RubyModule;
 public abstract class MainNodes {
 
     @CoreMethod(names = "public", argumentsAsArray = true, needsSelf = false, visibility = Visibility.PRIVATE)
-    public abstract static class PublicNode extends CoreMethodNode {
+    public abstract static class PublicNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ModuleNodes.PublicNode publicNode;
 
@@ -40,7 +40,7 @@ public abstract class MainNodes {
     }
 
     @CoreMethod(names = "private", argumentsAsArray = true, needsSelf = false, visibility = Visibility.PRIVATE)
-    public abstract static class PrivateNode extends CoreMethodNode {
+    public abstract static class PrivateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ModuleNodes.PrivateNode privateNode;
 

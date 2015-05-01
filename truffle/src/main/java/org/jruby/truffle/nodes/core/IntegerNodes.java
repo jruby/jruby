@@ -239,7 +239,7 @@ public abstract class IntegerNodes {
     }
 
     @CoreMethod(names = {"to_i", "to_int"})
-    public abstract static class ToINode extends CoreMethodNode {
+    public abstract static class ToINode extends CoreMethodArrayArgumentsNode {
 
         public ToINode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

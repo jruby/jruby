@@ -20,7 +20,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
-import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
+import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -32,7 +32,7 @@ import org.jruby.util.ByteList;
 public abstract class EncodingNodes {
 
     @CoreMethod(names = "ascii_compatible?")
-    public abstract static class AsciiCompatibleNode extends CoreMethodNode {
+    public abstract static class AsciiCompatibleNode extends CoreMethodArrayArgumentsNode {
 
         public AsciiCompatibleNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -46,7 +46,7 @@ public abstract class EncodingNodes {
     }
 
     @CoreMethod(names = "compatible?", needsSelf = false, onSingleton = true, required = 2)
-    public abstract static class CompatibleQueryNode extends CoreMethodNode {
+    public abstract static class CompatibleQueryNode extends CoreMethodArrayArgumentsNode {
 
         public CompatibleQueryNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -176,7 +176,7 @@ public abstract class EncodingNodes {
 
     @RubiniusOnly
     @CoreMethod(names = "default_external_jruby=", onSingleton = true, required = 1)
-    public abstract static class SetDefaultExternalNode extends CoreMethodNode {
+    public abstract static class SetDefaultExternalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStrNode;
 
@@ -212,7 +212,7 @@ public abstract class EncodingNodes {
         public RubyEncoding defaultExternal(VirtualFrame frame, Object encoding) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
             return defaultExternal(toStrNode.executeRubyString(frame, encoding));
@@ -222,7 +222,7 @@ public abstract class EncodingNodes {
 
     @RubiniusOnly
     @CoreMethod(names = "default_internal_jruby=", onSingleton = true, required = 1)
-    public abstract static class SetDefaultInternalNode extends CoreMethodNode {
+    public abstract static class SetDefaultInternalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStrNode;
 
@@ -254,7 +254,7 @@ public abstract class EncodingNodes {
 
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
             final RubyString encodingName = toStrNode.executeRubyString(frame, encoding);
@@ -266,7 +266,7 @@ public abstract class EncodingNodes {
     }
 
     @CoreMethod(names = "list", onSingleton = true)
-    public abstract static class ListNode extends CoreMethodNode {
+    public abstract static class ListNode extends CoreMethodArrayArgumentsNode {
 
         public ListNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -284,7 +284,7 @@ public abstract class EncodingNodes {
 
 
     @CoreMethod(names = "locale_charmap", onSingleton = true)
-    public abstract static class LocaleCharacterMapNode extends CoreMethodNode {
+    public abstract static class LocaleCharacterMapNode extends CoreMethodArrayArgumentsNode {
 
         public LocaleCharacterMapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -299,7 +299,7 @@ public abstract class EncodingNodes {
     }
 
     @CoreMethod(names = "dummy?")
-    public abstract static class DummyNode extends CoreMethodNode {
+    public abstract static class DummyNode extends CoreMethodArrayArgumentsNode {
 
         public DummyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -315,7 +315,7 @@ public abstract class EncodingNodes {
 
     @RubiniusOnly
     @CoreMethod(names = "encoding_map", onSingleton = true)
-    public abstract static class EncodingMapNode extends CoreMethodNode {
+    public abstract static class EncodingMapNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode upcaseNode;
         @Child private CallDispatchHeadNode toSymNode;
@@ -397,7 +397,7 @@ public abstract class EncodingNodes {
     }
 
     @CoreMethod(names = { "name", "to_s" })
-    public abstract static class ToSNode extends CoreMethodNode {
+    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

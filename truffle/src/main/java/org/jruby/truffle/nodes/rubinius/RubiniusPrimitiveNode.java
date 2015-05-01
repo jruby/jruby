@@ -9,11 +9,13 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
+@GenerateNodeFactory
 @NodeChild(value = "arguments", type = RubyNode[].class)
 public abstract class RubiniusPrimitiveNode extends RubyNode {
 

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 
 /**
@@ -43,6 +44,23 @@ public abstract class ExceptionPrimitiveNodes {
 
             if (errnoObject == null) {
                 throw new UnsupportedOperationException("errno: " + errno + " " + message);
+            } else {
+                throw new UnsupportedOperationException("errno: " + errnoObject.name());
+            }
+        }
+
+        @Specialization(guards = "errno == ENOENT")
+        public RubyException enoent(RubyNilClass message, int errno) {
+            return getContext().getCoreLibrary().fileNotFoundError("nil", this);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization(guards = "errno != ENOENT")
+        public RubyException unsupported(RubyNilClass message, int errno) {
+            final Errno errnoObject = Errno.valueOf(errno);
+
+            if (errnoObject == null) {
+                throw new UnsupportedOperationException("errno: " + errno + " nil");
             } else {
                 throw new UnsupportedOperationException("errno: " + errnoObject.name());
             }

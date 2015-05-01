@@ -14,7 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
 
 @ImportStatic(ArrayGuards.class)
-public abstract class ArrayCoreMethodNode extends CoreMethodNode {
+public abstract class ArrayCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
     public ArrayCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);

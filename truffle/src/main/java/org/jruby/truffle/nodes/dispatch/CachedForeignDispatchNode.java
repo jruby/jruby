@@ -18,7 +18,7 @@ import com.oracle.truffle.interop.messages.*;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.interop.RubyToIndexLabelNode;
-import org.jruby.truffle.nodes.interop.RubyToIndexLabelNodeFactory;
+import org.jruby.truffle.nodes.interop.RubyToIndexLabelNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 
@@ -123,7 +123,7 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
             this.converters = new RubyToIndexLabelNode[arity];
             this.arity = arity;
             for (int i = 0; i < arity; i++) {
-                this.converters[i] = RubyToIndexLabelNodeFactory.create(context, sourceSection, null);
+                this.converters[i] = RubyToIndexLabelNodeGen.create(context, sourceSection, null);
             }
         }
 

@@ -5,3 +5,5 @@ gem 'rspec', '~> 2.14'
 gem 'rake', '~> 10.3'
 
 gem 'jbundler', '0.7.1'
+
+gem 'ruby-maven', '3.1.1.0.11'

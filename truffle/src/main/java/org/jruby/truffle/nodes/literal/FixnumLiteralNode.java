@@ -30,11 +30,11 @@ public abstract class FixnumLiteralNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return executeIntegerFixnum(frame);
+            return executeInteger(frame);
         }
 
         @Override
-        public int executeIntegerFixnum(VirtualFrame frame) {
+        public int executeInteger(VirtualFrame frame) {
             return value;
         }
 
@@ -56,11 +56,11 @@ public abstract class FixnumLiteralNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return executeLongFixnum(frame);
+            return executeLong(frame);
         }
 
         @Override
-        public long executeLongFixnum(VirtualFrame frame) {
+        public long executeLong(VirtualFrame frame) {
             return value;
         }
 

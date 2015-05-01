@@ -15,11 +15,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
-import org.jruby.truffle.nodes.cast.ProcOrNullNodeFactory;
+import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.literal.HashLiteralNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
@@ -84,7 +83,7 @@ public class RubyCallNode extends RubyNode {
         if (block == null) {
             this.block = null;
         } else {
-            this.block = ProcOrNullNodeFactory.create(context, section, block);
+            this.block = ProcOrNullNodeGen.create(context, section, block);
         }
 
         this.arguments = arguments;
@@ -93,7 +92,7 @@ public class RubyCallNode extends RubyNode {
 
         dispatchHead = DispatchHeadNodeFactory.createMethodCall(context, ignoreVisibility, false, MissingBehavior.CALL_METHOD_MISSING);
         respondToMissing = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
-        respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
+        respondToMissingCast = BooleanCastNodeGen.create(context, section, null);
 
         this.ignoreVisibility = ignoreVisibility;
 

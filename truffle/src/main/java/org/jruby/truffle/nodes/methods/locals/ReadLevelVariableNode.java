@@ -68,7 +68,7 @@ public abstract class ReadLevelVariableNode extends FrameSlotNode implements Rea
 
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
-        return WriteLevelVariableNodeFactory.create(getContext(), getSourceSection(), frameSlot, varLevel, rhs);
+        return WriteLevelVariableNodeGen.create(getContext(), getSourceSection(), frameSlot, varLevel, rhs);
     }
 
     @Override

@@ -27,7 +27,7 @@ default_gems =
    ImportedGem.new( 'minitest', 'minitest.version', true ),
    ImportedGem.new( 'test-unit', 'test-unit.version', true ),
    ImportedGem.new( 'power_assert', 'power_assert.version', true ),
-   ImportedGem.new( 'psych', '2.0.9.2', true ),
+   ImportedGem.new( 'psych', '2.0.14.pre1', true ),
    ImportedGem.new( 'json', 'json.version', true ),
    ImportedGem.new( 'jar-dependencies', '0.1.13', true )
   ]
@@ -87,7 +87,7 @@ project 'JRuby Lib Setup' do
     end
   end
 
-  gem 'ruby-maven', '3.1.1.0.8', :scope => :provided
+  gem 'ruby-maven', '3.1.1.0.11', :scope => :provided
 
   default_gemnames = default_gems.collect { |g| g.name }
 

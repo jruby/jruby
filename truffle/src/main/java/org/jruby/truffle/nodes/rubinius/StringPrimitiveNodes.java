@@ -384,8 +384,8 @@ public abstract class StringPrimitiveNodes {
         public int stringCompareSubstring(VirtualFrame frame, RubyString string, RubyString other, int start, int size) {
             // Transliterated from Rubinius C++.
 
-            final int stringLength = sizeNode.executeIntegerFixnum(frame, string);
-            final int otherLength = sizeNode.executeIntegerFixnum(frame, other);
+            final int stringLength = sizeNode.executeInteger(frame, string);
+            final int otherLength = sizeNode.executeInteger(frame, other);
 
             if (start < 0) {
                 start += otherLength;

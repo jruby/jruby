@@ -21,6 +21,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 
@@ -80,6 +81,13 @@ public abstract class DirPrimitiveNodes {
             writePositionNode.execute(dir, -2); // -2 for . and then ..
 
             return nil();
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyNilClass open(RubyBasicObject dir, RubyString path, RubyEncoding encoding) {
+            // TODO BJF 30-APR-2015 HandleEncoding
+            return open(dir, path, nil());
         }
 
     }

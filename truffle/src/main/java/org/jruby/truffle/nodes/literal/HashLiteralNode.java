@@ -18,7 +18,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
-import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
+import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -118,7 +118,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 if (stringKeyProfile.profile(key instanceof RubyString)) {
                     if (isFrozenNode == null) {
                         CompilerDirectives.transferToInterpreter();
-                        isFrozenNode = insert(IsFrozenNodeFactory.create(getContext(), getSourceSection(), null));
+                        isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
                     }
 
                     if (! isFrozenNode.executeIsFrozen(key)) {

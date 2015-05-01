@@ -23,7 +23,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
-import org.jruby.truffle.nodes.objects.IsTaintedNodeFactory;
+import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
@@ -60,7 +60,7 @@ public abstract class ToStringNode extends PackNode {
         this.convertNumbersToStrings = convertNumbersToStrings;
         this.conversionMethod = conversionMethod;
         this.inspectOnConversionFailure = inspectOnConversionFailure;
-        isTaintedNode = IsTaintedNodeFactory.create(context, getEncapsulatingSourceSection(), null);
+        isTaintedNode = IsTaintedNodeGen.create(context, getEncapsulatingSourceSection(), null);
     }
 
     public abstract Object executeToString(VirtualFrame frame, Object object);

@@ -11,33 +11,21 @@ package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.GenerateNodeFactory;
-import com.oracle.truffle.api.dsl.TypeSystemReference;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.ProbeNode;
-import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.POSIX;
-import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
-import org.jruby.truffle.nodes.yield.YieldDispatchNode;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 
-/**
- * Base class for most nodes in Ruby.
- *
- * @see YieldDispatchNode
- */
-@TypeSystemReference(RubyTypes.class)
-@GenerateNodeFactory
+@ImportStatic(RubyGuards.class)
 public abstract class RubyNode extends Node {
 
     private final RubyContext context;
@@ -55,6 +43,200 @@ public abstract class RubyNode extends Node {
         this.context = context;
     }
 
+    // Fundamental execute methods
+
+    public abstract Object execute(VirtualFrame frame);
+
+    public Object isDefined(VirtualFrame frame) {
+        return getContext().makeString("expression");
+    }
+
+    // Execute without returing the result
+
+    public void executeVoid(VirtualFrame frame) {
+        execute(frame);
+    }
+
+    // Utility methods to execute and expect a particular type
+
+    public UndefinedPlaceholder executeUndefinedPlaceholder(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof UndefinedPlaceholder) {
+            return (UndefinedPlaceholder) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public boolean executeBoolean(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof Boolean) {
+            return (boolean) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public int executeInteger(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof Integer) {
+            return (int) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof Long) {
+            return (long) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyBignum executeRubyBignum(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyBignum) {
+            return (RubyBignum) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyRange.IntegerFixnumRange executeIntegerFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyRange.IntegerFixnumRange) {
+            return (RubyRange.IntegerFixnumRange) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyRange.LongFixnumRange executeLongFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyRange.LongFixnumRange) {
+            return (RubyRange.LongFixnumRange) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public double executeDouble(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof Double) {
+            return (double) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyString executeRubyString(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyString) {
+            return (RubyString) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyArray executeRubyArray(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyArray) {
+            return (RubyArray) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyHash executeRubyHash(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyHash) {
+            return (RubyHash) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyRegexp executeRubyRegexp(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyRegexp) {
+            return (RubyRegexp) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyModule executeRubyModule(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyModule) {
+            return (RubyModule) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyProc executeRubyProc(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyProc) {
+            return (RubyProc) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof RubyBasicObject) {
+            return (RubyBasicObject) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    public Object[] executeObjectArray(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (value instanceof Object[]) {
+            return (Object[]) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    // Guards which use the context and so can't be static
+
+    public boolean isRubiniusUndefined(Object value) {
+        return value == getContext().getCoreLibrary().getRubiniusUndefined();
+    }
+
+    // Helpers methods for terseness
+
+    protected RubyNilClass nil() {
+        return getContext().getCoreLibrary().getNilObject();
+    }
+
+    protected POSIX posix() {
+        return getContext().getPosix();
+    }
+
+    // Instrumentation
+
     @Override
     public boolean isInstrumentable() {
         return true;
@@ -65,396 +247,33 @@ public abstract class RubyNode extends Node {
         return new RubyWrapperNode(this);
     }
 
-    public abstract Object execute(VirtualFrame frame);
-
-    /**
-     * Records that this node was wrapped by the JRuby parser with a "newline" node.
-     */
     public void setAtNewline() {
         atNewline = true;
     }
 
-    /**
-     * Was this ndoe wrapped by a JRuby parser "newline" node?
-     */
     public boolean isAtNewline() {
         return atNewline;
-    }
-
-    /**
-     * Ruby's parallel semantic path.
-     * 
-     * @see DefinedNode
-     */
-    public Object isDefined(VirtualFrame frame) {
-        return getContext().makeString("expression");
-    }
-
-    public String executeString(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectString(execute(frame));
-    }
-
-    public RubyArray executeArray(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyArray(execute(frame));
-    }
-
-    public RubyBignum executeBignum(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyBignum(execute(frame));
-    }
-
-    public boolean executeBoolean(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectBoolean(execute(frame));
-    }
-
-    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectInteger(execute(frame));
-    }
-
-    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectLong(execute(frame));
-    }
-
-    public RubyRange.IntegerFixnumRange executeIntegerFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectIntegerFixnumRange(execute(frame));
-    }
-
-    public RubyRange.LongFixnumRange executeLongFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectLongFixnumRange(execute(frame));
-    }
-
-    public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectDouble(execute(frame));
-    }
-
-    public Object[] executeObjectArray(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectObjectArray(execute(frame));
-    }
-
-    public RubyRange.ObjectRange executeObjectRange(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectObjectRange(execute(frame));
-    }
-
-    public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyBasicObject(execute(frame));
-    }
-
-    public RubyBinding executeRubyBinding(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyBinding(execute(frame));
-    }
-
-    public RubyClass executeRubyClass(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyClass(execute(frame));
-    }
-
-    public RubyException executeRubyException(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyException(execute(frame));
-    }
-
-    public RubyFiber executeRubyFiber(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyFiber(execute(frame));
-    }
-
-    public RubyHash executeRubyHash(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyHash(execute(frame));
-    }
-
-    public RubyMatchData executeRubyMatchData(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyMatchData(execute(frame));
-    }
-
-    public RubyModule executeRubyModule(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyModule(execute(frame));
-    }
-
-    public RubyNilClass executeRubyNilClass(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyNilClass(execute(frame));
-    }
-
-    public RubyProc executeRubyProc(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyProc(execute(frame));
-    }
-
-    public RubyRange executeRubyRange(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyRange(execute(frame));
-    }
-
-    public RubyRegexp executeRubyRegexp(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyRegexp(execute(frame));
-    }
-
-    public RubySymbol executeRubySymbol(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubySymbol(execute(frame));
-    }
-
-    public RubyThread executeRubyThread(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyThread(execute(frame));
-    }
-
-    public RubyTime executeRubyTime(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyTime(execute(frame));
-    }
-
-    public RubyString executeRubyString(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyString(execute(frame));
-    }
-    public RubyEncoding executeRubyEncoding(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyEncoding(execute(frame));
-    }
-
-    public UndefinedPlaceholder executeUndefinedPlaceholder(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectUndefinedPlaceholder(execute(frame));
-    }
-
-    public TruffleObject executeTruffleObject(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectTruffleObject(execute(frame));
-    }
-
-    public RubyEncodingConverter executeRubyEncodingConverter(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyEncodingConverter(execute(frame));
-    }
-
-    public RubyMethod executeRubyMethod(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyMethod(execute(frame));
-    }
-
-    public RubyUnboundMethod executeRubyUnboundMethod(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubyUnboundMethod(execute(frame));
-    }
-
-    public RubiniusByteArray executeRubiniusByteArray(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.expectRubiniusByteArray(execute(frame));
-    }
-
-    public void executeVoid(VirtualFrame frame) {
-        execute(frame);
     }
 
     public RubyNode getNonProxyNode() {
         return this;
     }
 
+    // Accessors
+
     public RubyContext getContext() {
         return context;
     }
 
+    // notDesignedForCompilation() helper
+
+    // TODO CS 30-Apr-15 inline this when we think it's working well
+
     public static void notDesignedForCompilation() {
-        CompilerDirectives.bailout("this code either doesn't implement Ruby semantics properly, or is a basic implementation that will not compile");
+        CompilerDirectives.transferToInterpreter();
     }
 
-    public boolean isTrue(boolean value) {
-        return value;
-    }
-
-    public RubyNode getNonWrapperNode() {
-        return this;
-    }
-
-    public boolean isRational(RubyBasicObject o) {
-        // TODO(CS, 10-Jan-15) should this be a full is_a? test? We'd need a node for that.
-        return o.getLogicalClass() == getContext().getCoreLibrary().getRationalClass();
-    }
-
-    public boolean isForeignObject(Object object) {
-        return (object instanceof TruffleObject) && !(isRubyBasicObject(object));
-    }
-
-    public boolean isComplex(RubyBasicObject o) {
-        // TODO(BF, 4-4-15) COPIED from isRational - should this be a full is_a? test? We'd need a node for that.
-        return o.getLogicalClass() == getContext().getCoreLibrary().getComplexClass();
-    }
-
-    public boolean isNaN(double value) {
-        return Double.isNaN(value);
-    }
-
-    public boolean isInfinity(double value) {
-        return Double.isInfinite(value);
-    }
-
-    // Copied from RubyTypesGen
-
-    @SuppressWarnings("static-method")
-    public boolean isDispatchAction(Object value) {
-        return value instanceof DispatchAction;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isLexicalScope(Object value) {
-        return value instanceof LexicalScope;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isUndefinedPlaceholder(Object value) {
-        return value instanceof UndefinedPlaceholder;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isBoolean(Object value) {
-        return value instanceof Boolean;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isInteger(Object value) {
-        return value instanceof Integer;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isLong(Object value) {
-        return value instanceof Long;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isDouble(Object value) {
-        return value instanceof Double;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isString(Object value) {
-        return value instanceof String;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyBignum(Object value) {
-        return value instanceof RubyBignum;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isIntegerFixnumRange(Object value) {
-        return value instanceof RubyRange.IntegerFixnumRange;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isLongFixnumRange(Object value) {
-        return value instanceof RubyRange.LongFixnumRange;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isObjectRange(Object value) {
-        return value instanceof RubyRange.ObjectRange;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyArray(Object value) {
-        return value instanceof RubyArray;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyBinding(Object value) {
-        return value instanceof RubyBinding;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyClass(Object value) {
-        return value instanceof RubyClass;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyException(Object value) {
-        return value instanceof RubyException;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyFiber(Object value) {
-        return value instanceof RubyFiber;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyHash(Object value) {
-        return value instanceof RubyHash;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyMatchData(Object value) {
-        return value instanceof RubyMatchData;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyModule(Object value) {
-        return value instanceof RubyModule;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyNilClass(Object value) {
-        return value instanceof RubyNilClass;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyProc(Object value) {
-        return value instanceof RubyProc;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyRange(Object value) {
-        return value instanceof RubyRange;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyRegexp(Object value) {
-        return value instanceof RubyRegexp;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyString(Object value) {
-        return value instanceof RubyString;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyEncoding(Object value) {
-        return value instanceof RubyEncoding;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubySymbol(Object value) {
-        return value instanceof RubySymbol;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyThread(Object value) {
-        return value instanceof RubyThread;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyTime(Object value) {
-        return value instanceof RubyTime;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyEncodingConverter(Object value) {
-        return value instanceof RubyEncodingConverter;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyMethod(Object value) {
-        return value instanceof RubyMethod;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyUnboundMethod(Object value) {
-        return value instanceof RubyUnboundMethod;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isRubyBasicObject(Object value) {
-        return value instanceof RubyBasicObject;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isThreadLocal(Object value) {
-        return value instanceof ThreadLocal;
-    }
-
-    @SuppressWarnings("static-method")
-    public boolean isJavaObjectArray(Object value) {
-        return value instanceof Object[];
-    }
-
-    public boolean isRubyNilObject(Object value) {
-        return value == nil();
-    }
-
-    public boolean isRubiniusUndefined(Object value) {
-        return value == getContext().getCoreLibrary().getRubiniusUndefined();
-    }
+    // ruby() helper
 
     protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
         return rubyWithSelf(frame, RubyArguments.getSelf(frame.getArguments()), expression, arguments);
@@ -487,11 +306,4 @@ public abstract class RubyNode extends Node {
         return evalFrame;
     }
 
-    protected RubyNilClass nil() {
-        return getContext().getCoreLibrary().getNilObject();
-    }
-
-    protected POSIX posix() {
-        return getContext().getPosix();
-    }
 }

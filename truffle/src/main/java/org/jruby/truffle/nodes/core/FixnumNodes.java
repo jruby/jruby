@@ -37,7 +37,7 @@ public abstract class FixnumNodes {
     private static final int BITS = 64;
 
     @CoreMethod(names = "-@")
-    public abstract static class NegNode extends CoreMethodNode {
+    public abstract static class NegNode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignumNode;
 
@@ -317,7 +317,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = {"/", "__slash__"}, required = 1)
-    public abstract static class DivNode extends CoreMethodNode {
+    public abstract static class DivNode extends CoreMethodArrayArgumentsNode {
 
         private final BranchProfile bGreaterZero = BranchProfile.create();
         private final BranchProfile bGreaterZeroAGreaterEqualZero = BranchProfile.create();
@@ -589,7 +589,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "divmod", required = 1)
-    public abstract static class DivModNode extends CoreMethodNode {
+    public abstract static class DivModNode extends CoreMethodArrayArgumentsNode {
 
         @Child private GeneralDivModNode divModNode;
 
@@ -641,7 +641,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "<", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
-    public abstract static class LessNode extends CoreMethodNode {
+    public abstract static class LessNode extends CoreMethodArrayArgumentsNode {
 
         public LessNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -700,7 +700,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "<=", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
-    public abstract static class LessEqualNode extends CoreMethodNode {
+    public abstract static class LessEqualNode extends CoreMethodArrayArgumentsNode {
 
         public LessEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -748,7 +748,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = {"==", "==="}, required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
+    public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode reverseCallNode;
 
@@ -809,7 +809,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "<=>", required = 1)
-    public abstract static class CompareNode extends CoreMethodNode {
+    public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -867,7 +867,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = ">=", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
-    public abstract static class GreaterEqualNode extends CoreMethodNode {
+    public abstract static class GreaterEqualNode extends CoreMethodArrayArgumentsNode {
 
         public GreaterEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -915,7 +915,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = ">", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
-    public abstract static class GreaterNode extends CoreMethodNode {
+    public abstract static class GreaterNode extends CoreMethodArrayArgumentsNode {
 
         public GreaterNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -965,7 +965,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "~")
-    public abstract static class ComplementNode extends CoreMethodNode {
+    public abstract static class ComplementNode extends CoreMethodArrayArgumentsNode {
 
         public ComplementNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1213,7 +1213,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = ">>", required = 1)
-    public abstract static class RightShiftNode extends CoreMethodNode {
+    public abstract static class RightShiftNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode fallbackCallNode;
         @Child private LeftShiftNode leftShiftNode;
@@ -1313,7 +1313,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = {"abs", "magnitude"})
-    public abstract static class AbsNode extends CoreMethodNode {
+    public abstract static class AbsNode extends CoreMethodArrayArgumentsNode {
 
         public AbsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1348,7 +1348,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "bit_length")
-    public abstract static class BitLengthNode extends CoreMethodNode {
+    public abstract static class BitLengthNode extends CoreMethodArrayArgumentsNode {
 
         private static final int INTEGER_BITS = Integer.numberOfLeadingZeros(0);
         private static final int LONG_BITS = Long.numberOfLeadingZeros(0);
@@ -1378,7 +1378,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "floor")
-    public abstract static class FloorNode extends CoreMethodNode {
+    public abstract static class FloorNode extends CoreMethodArrayArgumentsNode {
 
         public FloorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1397,7 +1397,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "inspect")
-    public abstract static class InspectNode extends CoreMethodNode {
+    public abstract static class InspectNode extends CoreMethodArrayArgumentsNode {
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1418,7 +1418,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "size", needsSelf = false)
-    public abstract static class SizeNode extends CoreMethodNode {
+    public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1432,7 +1432,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "to_f")
-    public abstract static class ToFNode extends CoreMethodNode {
+    public abstract static class ToFNode extends CoreMethodArrayArgumentsNode {
 
         public ToFNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1451,7 +1451,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "to_s", optional = 1)
-    public abstract static class ToSNode extends CoreMethodNode {
+    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1489,7 +1489,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "zero?")
-    public abstract static class ZeroNode extends CoreMethodNode {
+    public abstract static class ZeroNode extends CoreMethodArrayArgumentsNode {
 
         public ZeroNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

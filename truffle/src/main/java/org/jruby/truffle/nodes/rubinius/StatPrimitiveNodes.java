@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.FileStat;
+import org.jruby.RubyEncoding;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -36,7 +37,8 @@ public abstract class StatPrimitiveNodes {
         @Specialization
         public int stat(RubyBasicObject rubyStat, RubyString path) {
             final FileStat stat = posix().allocateStat();
-            final int code = posix().stat(path.toString(), stat);
+            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
+            final int code = posix().stat(pathString, stat);
 
             if (code == 0) {
                 writeStatNode.execute(rubyStat, stat);

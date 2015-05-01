@@ -34,6 +34,33 @@ class Dir
 
   FFI = Rubinius::FFI
 
+  def self.open(path, options=undefined)
+    dir = new path, options
+    if block_given?
+      begin
+        value = yield dir
+      ensure
+        dir.close
+      end
+
+      return value
+    else
+      return dir
+    end
+  end
+
+  def self.entries(path, options=undefined)
+    ret = []
+
+    open(path, options) do |dir|
+      while s = dir.read
+        ret << s
+      end
+    end
+
+    ret
+  end
+
   def self.[](*patterns)
     if patterns.size == 1
       pattern = Rubinius::Type.coerce_to_path(patterns[0])

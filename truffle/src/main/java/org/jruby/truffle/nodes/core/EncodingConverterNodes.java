@@ -36,7 +36,7 @@ public abstract class EncodingConverterNodes {
 
     @RubiniusOnly
     @CoreMethod(names = "initialize_jruby", required = 2, optional = 1, visibility = Visibility.PRIVATE)
-    public abstract static class InitializeNode extends CoreMethodNode {
+    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -110,7 +110,7 @@ public abstract class EncodingConverterNodes {
 
     @RubiniusOnly
     @CoreMethod(names = "transcoding_map", onSingleton = true)
-    public abstract static class TranscodingMapNode extends CoreMethodNode {
+    public abstract static class TranscodingMapNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode upcaseNode;
         @Child private CallDispatchHeadNode toSymNode;

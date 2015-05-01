@@ -19,7 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyCallNode;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
@@ -43,7 +43,7 @@ public abstract class BasicObjectNodes {
         }
 
         @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
-            return BooleanCastNodeFactory.create(getContext(), getSourceSection(), operand);
+            return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
         }
 
         @Specialization
@@ -96,7 +96,7 @@ public abstract class BasicObjectNodes {
     }
 
     @CoreMethod(names = "!=", required = 1)
-    public abstract static class NotEqualNode extends CoreMethodNode {
+    public abstract static class NotEqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode equalNode;
 
@@ -156,7 +156,7 @@ public abstract class BasicObjectNodes {
     }
 
     @CoreMethod(names = "initialize", needsSelf = false)
-    public abstract static class InitializeNode extends CoreMethodNode {
+    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -170,7 +170,7 @@ public abstract class BasicObjectNodes {
     }
 
     @CoreMethod(names = "instance_eval", needsBlock = true, optional = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
-    public abstract static class InstanceEvalNode extends CoreMethodNode {
+    public abstract static class InstanceEvalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldDispatchHeadNode yield;
 
@@ -217,7 +217,7 @@ public abstract class BasicObjectNodes {
     }
 
     @CoreMethod(names = "method_missing", needsBlock = true, argumentsAsArray = true, visibility = Visibility.PRIVATE)
-    public abstract static class MethodMissingNode extends CoreMethodNode {
+    public abstract static class MethodMissingNode extends CoreMethodArrayArgumentsNode {
 
         public MethodMissingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -267,7 +267,7 @@ public abstract class BasicObjectNodes {
     }
 
     @CoreMethod(names = "__send__", needsBlock = true, required = 1, argumentsAsArray = true)
-    public abstract static class SendNode extends CoreMethodNode {
+    public abstract static class SendNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode dispatchNode;
 

@@ -7,6 +7,10 @@
     <Class name="~.*NodeFactory.*" />
   </Match>
 
+  <Match>
+    <Class name="~.*NodeGen.*" />
+  </Match>
+
   <!-- Sometimes we really do want to exit - but we should rethink for multi-tennant -->
 
   <Match>
@@ -89,6 +93,14 @@
   <Match>
     <Class name="org.jruby.truffle.nodes.debug.AssertNotCompiledNode" />
     <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.debug.AssertConstantNode" />
+    <Bug pattern="URF_UNREAD_FIELD" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.debug.AssertNotCompiledNode" />
+    <Bug pattern="URF_UNREAD_FIELD" />
   </Match>
   <Match>
     <Class name="~org\.jruby\.truffle\.runtime\.DebugOperations.*" />

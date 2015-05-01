@@ -57,7 +57,7 @@ public abstract class WriteLocalVariableNode extends FrameSlotNode implements Wr
 
     @Override
     public RubyNode makeReadNode() {
-        return ReadLocalVariableNodeFactory.create(getContext(), getSourceSection(), frameSlot);
+        return ReadLocalVariableNodeGen.create(getContext(), getSourceSection(), frameSlot);
     }
 
     @Override
