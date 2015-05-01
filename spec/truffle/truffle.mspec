@@ -17,6 +17,9 @@ class MSpecScript
     # Can't load these - so tags aren't enough to exclude them. The problem is
     # either fixtures or syntax. Some of them are probably easy fixes.
 
+    # This seems to hang sometimes on Travis
+    "^spec/ruby/core/signal/list_spec.rb",
+
     # require 'socket'
     "^spec/ruby/core/file/socket_spec.rb",
 
