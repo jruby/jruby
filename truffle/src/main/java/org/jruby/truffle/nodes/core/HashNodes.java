@@ -23,6 +23,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.hash.FindEntryNode;
+import org.jruby.truffle.nodes.hash.HashNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -118,7 +119,7 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode hashNode;
+        @Child private HashNode hashNode;
         @Child private CallDispatchHeadNode eqlNode;
         @Child private BasicObjectNodes.ReferenceEqualNode equalNode;
         @Child private CallDispatchHeadNode callDefaultNode;
@@ -132,7 +133,7 @@ public abstract class HashNodes {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            hashNode = DispatchHeadNodeFactory.createMethodCall(context, true);
+            hashNode = new HashNode(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
             equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
             callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
@@ -143,7 +144,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isNullStorage(hash)")
         public Object getNull(VirtualFrame frame, RubyHash hash, Object key) {
-            hashNode.call(frame, key, "hash", null);
+            hashNode.hash(frame, key);
 
             if (undefinedValue != null) {
                 return undefinedValue;
@@ -155,7 +156,7 @@ public abstract class HashNodes {
         @ExplodeLoop
         @Specialization(guards = "isPackedArrayStorage(hash)")
         public Object getPackedArray(VirtualFrame frame, RubyHash hash, Object key) {
-            hashNode.call(frame, key, "hash", null);
+            hashNode.hash(frame, key);
 
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
@@ -233,7 +234,7 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class SetIndexNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode hashNode;
+        @Child private HashNode hashNode;
         @Child private CallDispatchHeadNode eqlNode;
         @Child private BasicObjectNodes.ReferenceEqualNode equalNode;
 
@@ -243,7 +244,7 @@ public abstract class HashNodes {
 
         public SetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            hashNode = DispatchHeadNodeFactory.createMethodCall(context, true);
+            hashNode = new HashNode(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
             equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
         }
@@ -251,7 +252,7 @@ public abstract class HashNodes {
         @Specialization(guards = { "isNullStorage(hash)", "!isRubyString(key)" })
         public Object setNull(VirtualFrame frame, RubyHash hash, Object key, Object value) {
             final Object[] store = new Object[PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX * 2];
-            hashNode.call(frame, key, "hash", null);
+            hashNode.hash(frame, key);
             store[0] = key;
             store[1] = value;
             hash.setStore(store, 1, null, null);
@@ -271,7 +272,7 @@ public abstract class HashNodes {
         @ExplodeLoop
         @Specialization(guards = {"isPackedArrayStorage(hash)", "!isRubyString(key)"})
         public Object setPackedArray(VirtualFrame frame, RubyHash hash, Object key, Object value) {
-            hashNode.call(frame, key, "hash", null);
+            hashNode.hash(frame, key);
 
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
@@ -1211,7 +1212,7 @@ public abstract class HashNodes {
         }
 
         public static boolean isPackedArrayStorage(RubyHash hash) {
-            // Can't do instanceof Object[] due to cavariance
+            // Can't do instanceof Object[] due to covariance
             return !(isNullStorage(hash) || isBucketsStorage(hash));
         }
 

@@ -25,7 +25,7 @@ import org.jruby.truffle.runtime.hash.HashSearchResult;
 
 public class FindEntryNode extends RubyNode {
 
-    @Child CallDispatchHeadNode hashNode;
+    @Child HashNode hashNode;
     @Child CallDispatchHeadNode eqlNode;
     @Child BasicObjectNodes.ReferenceEqualNode equalNode;
     
@@ -33,23 +33,13 @@ public class FindEntryNode extends RubyNode {
 
     public FindEntryNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        hashNode = DispatchHeadNodeFactory.createMethodCall(context, true);
+        hashNode = new HashNode(context, sourceSection);
         eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
     }
 
     public HashSearchResult search(VirtualFrame frame, RubyHash hash, Object key) {
-        final Object hashValue = hashNode.call(frame, key, "hash", null);
-
-        final int hashed;
-
-        if (hashValue instanceof Integer) {
-            hashed = (int) hashValue;
-        } else if (hashValue instanceof Long) {
-            hashed = (int) (long) hashValue;
-        } else {
-            throw new UnsupportedOperationException();
-        }
+        final int hashed = hashNode.hash(frame, key);
 
         final Entry[] entries = (Entry[]) hash.getStore();
         final int index = HashOperations.getIndex(hashed, entries.length);
