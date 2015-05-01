@@ -1,64 +1,7 @@
-fails:Dir.glob raises an Encoding::CompatibilityError if the argument encoding is not compatible with US-ASCII
-fails:Dir.glob calls #to_path to convert a pattern
-fails:Dir.glob splits the string on \0 if there is only one string given
-fails:Dir.glob matches non-dotfiles with '*'
-fails:Dir.glob returns empty array when empty pattern provided
-fails:Dir.glob matches regexp special +
-fails:Dir.glob matches regexp special *
-fails:Dir.glob matches regexp special ?
-fails:Dir.glob matches regexp special |
-fails:Dir.glob matches regexp special ^
-fails:Dir.glob matches regexp special $
-fails:Dir.glob matches regexp special (
-fails:Dir.glob matches regexp special )
-fails:Dir.glob matches regexp special [
-fails:Dir.glob matches regexp special ]
-fails:Dir.glob matches regexp special {
-fails:Dir.glob matches regexp special }
-fails:Dir.glob matches paths with glob patterns
-fails:Dir.glob matches dotfiles with '.*'
-fails:Dir.glob matches non-dotfiles with '*<non-special characters>'
-fails:Dir.glob matches dotfiles with '.*<non-special characters>'
-fails:Dir.glob matches files with any ending with '<non-special characters>*'
-fails:Dir.glob matches files with any middle with '<non-special characters>*<non-special characters>'
-fails:Dir.glob handles directories with globs
-fails:Dir.glob matches files with multiple '*' special characters
-fails:Dir.glob matches non-dotfiles in the current directory with '**'
-fails:Dir.glob matches dotfiles in the current directory with '.**'
-fails:Dir.glob recursively matches any nondot subdirectories with '**/'
-fails:Dir.glob recursively matches any subdirectories including ./ and ../ with '.**/'
-fails:Dir.glob matches a single character except leading '.' with '?'
-fails:Dir.glob accepts multiple '?' characters in a pattern
-fails:Dir.glob matches any characters in a set with '[<characters>]'
-fails:Dir.glob matches any characters in a range with '[<character>-<character>]'
-fails:Dir.glob matches any characters except those in a set with '[^<characters>]'
-fails:Dir.glob matches any characters except those in a range with '[^<character>-<character]'
-fails:Dir.glob matches any one of the strings in a set with '{<string>,<other>,...}'
-fails:Dir.glob matches a set '{<string>,<other>,...}' which also uses a glob
-fails:Dir.glob accepts string sets with empty strings with {<string>,,<other>}
-fails:Dir.glob matches dot or non-dotfiles with '{,.}*'
-fails:Dir.glob respects the order of {} expressions, expanding left most first
-fails:Dir.glob respects the optional nested {} expressions
-fails:Dir.glob matches special characters by escaping with a backslash with '\<character>'
-fails:Dir.glob recursively matches directories with '**/<characters>'
-fails:Dir.glob preserves the separator between directory components
-fails:Dir.glob ignores matching through directories that doen't exist
-fails:Dir.glob ignores matching only directories under an nonexistant path
-fails:Dir.glob matches UTF-8 paths
-fails:Dir.glob matches multiple recursives
-fails:Dir.glob ignores symlinks
-fails:Dir.glob can take an array of patterns
-fails:Dir.glob calls #to_path to convert multiple patterns
-fails:Dir.glob matches both dot and non-dotfiles with '*' and option File::FNM_DOTMATCH
-fails:Dir.glob matches files with any beginning with '*<non-special characters>' and option File::FNM_DOTMATCH
-fails:Dir.glob matches any files in the current directory with '**' and option File::FNM_DOTMATCH
+fails:Dir.glob handles infinite directory wildcards
 fails:Dir.glob recursively matches any subdirectories except './' or '../' with '**/' from the current directory and option File::FNM_DOTMATCH
 fails:Dir.glob recursively matches any subdirectories except './' or '../' with '**/' and option File::FNM_DOTMATCH
-fails:Dir.glob matches a list of paths by concatenating their individual results
-fails:Dir.glob accepts a block and yields it with each elements
-fails:Dir.glob ignores non-dirs when traversing recursively
-fails:Dir.glob matches nothing when given an empty list of paths
-fails:Dir.glob handles infinite directory wildcards
-fails:Dir.glob matches the literal character '\' with option File::FNM_NOESCAPE
-fails:Dir.glob returns nil for directories current user has no permission to read
-fails:Dir.glob with encoding returns Strings in the encoding of the pattern
+fails:Dir.glob matches UTF-8 paths
+fails:Dir.glob recursively matches directories with '**/<characters>'
+fails:Dir.glob recursively matches any nondot subdirectories with '**/'
+fails:Dir.glob matches paths with glob patterns
