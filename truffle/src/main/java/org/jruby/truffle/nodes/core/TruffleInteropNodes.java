@@ -179,6 +179,12 @@ public abstract class TruffleInteropNodes {
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver, int identifier) {
             return node.executeForeign(frame, receiver, identifier);
         }
+        
+        @Specialization
+        public Object executeForeign(VirtualFrame frame, String receiver, int identifier) {
+            return receiver.charAt(identifier);
+        }
+
 
         @Specialization
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver, long identifier) {
