@@ -1257,7 +1257,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         fptr.setMode(fmode_p[0]);
         fptr.encs.copy(convConfig);
-        fptr.setPath(RubyFile.get_path(context, filename).asJavaString());
+        fptr.setPath(adjustRootPathOnWindows(context.runtime,
+                RubyFile.get_path(context, filename).asJavaString(), getRuntime().getCurrentDirectory()));
 
         fptr.setFD(sysopen(context.runtime, fptr.getPath(), oflags, perm));
         fptr.checkTTY();
