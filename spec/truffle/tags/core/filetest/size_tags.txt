@@ -1,2 +1,0 @@
-fails:FileTest.size? accepts a File argument
-fails:FileTest.size accepts a File argument

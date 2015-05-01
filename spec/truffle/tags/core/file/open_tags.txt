@@ -1,6 +1,3 @@
-fails:File.open opens the file when passed mode, num and permissions
-fails:File.open opens the file when passed mode, num, permissions and block
-fails:File.open opens the existing file, does not change permissions even when they are specified
 fails:File.open raises an Errorno::EEXIST if the file exists when open with File::CREAT|File::EXCL
 fails:File.open raises an Errno::EACCES when opening non-permitted file
 fails:File.open raises an Errno::EACCES when opening read-only file

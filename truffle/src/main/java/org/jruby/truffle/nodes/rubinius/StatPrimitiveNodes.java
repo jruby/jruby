@@ -24,6 +24,35 @@ public abstract class StatPrimitiveNodes {
 
     public static final HiddenKey STAT_IDENTIFIER = new HiddenKey("stat");
 
+
+    @RubiniusPrimitive(name = "stat_dev")
+    public static abstract class StatDevPrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatDevPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public long dev(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).dev();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_ino")
+    public static abstract class StatInoPrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatInoPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public long ino(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).ino();
+        }
+
+    }
+
     @RubiniusPrimitive(name = "stat_stat")
     public static abstract class StatStatPrimitiveNode extends RubiniusPrimitiveNode {
 
@@ -44,6 +73,35 @@ public abstract class StatPrimitiveNodes {
                 writeStatNode.execute(rubyStat, stat);
             }
             
+            return code;
+        }
+
+        @Specialization(guards = "!isRubyString(path)")
+        public Object stat(RubyBasicObject rubyStat, Object path) {
+            return null;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_fstat")
+    public static abstract class StatFStatPrimitiveNode extends RubiniusPrimitiveNode {
+
+        @Child private WriteHeadObjectFieldNode writeStatNode;
+
+        public StatFStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
+        }
+
+        @Specialization
+        public int fstat(RubyBasicObject rubyStat, int fd) {
+            final FileStat stat = posix().allocateStat();
+            final int code = posix().fstat(fd, stat);
+
+            if (code == 0) {
+                writeStatNode.execute(rubyStat, stat);
+            }
+
             return code;
         }
 

@@ -1,8 +1,0 @@
-fails:File.directory? returns true if the argument is a directory
-fails:File.directory? returns false if the argument is not a directory
-fails:File.directory? accepts an object that has a #to_path method
-fails:File.directory? raises a TypeError when passed an Integer
-fails:File.directory? raises a TypeError when passed nil
-fails:File.directory? returns false if the argument is an IO that's not a directory
-fails:File.directory? returns true if the argument is an IO that is a directory
-fails:File.directory? calls #to_io to convert a non-IO object
