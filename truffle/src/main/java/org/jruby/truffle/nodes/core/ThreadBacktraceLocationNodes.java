@@ -88,6 +88,25 @@ public class ThreadBacktraceLocationNodes {
 
     }
 
+    @CoreMethod(names = "lineno")
+    public abstract static class LinenoNode extends UnaryCoreMethodNode {
+
+        public LinenoNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public int lineno(RubyBasicObject threadBacktraceLocation) {
+            final Activation activation = getActivation(threadBacktraceLocation);
+
+            final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
+
+            return sourceSection.getStartLine();
+        }
+
+    }
+
     @CoreMethod(names = {"to_s", "inspect"})
     public abstract static class ToSNode extends UnaryCoreMethodNode {
 

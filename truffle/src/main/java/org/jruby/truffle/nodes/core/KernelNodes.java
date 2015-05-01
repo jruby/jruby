@@ -297,7 +297,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "caller_locations", isModuleFunction = true, optional = 2)
+    @CoreMethod(names = "caller_locations", isModuleFunction = true, optional = 2, lowerFixnumParameters = {0, 1})
     public abstract static class CallerLocationsNode extends CoreMethodArrayArgumentsNode {
 
         public CallerLocationsNode(RubyContext context, SourceSection sourceSection) {
