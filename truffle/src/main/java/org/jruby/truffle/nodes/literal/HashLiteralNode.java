@@ -24,6 +24,7 @@ import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
+import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +58,7 @@ public abstract class HashLiteralNode extends RubyNode {
     public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
         if (keyValues.length == 0) {
             return new EmptyHashLiteralNode(context, sourceSection);
-        } else if (keyValues.length <= HashOperations.SMALL_HASH_SIZE * 2) {
+        } else if (keyValues.length <= PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX * 2) {
             return new SmallHashLiteralNode(context, sourceSection, keyValues);
         } else {
             return new GenericHashLiteralNode(context, sourceSection, keyValues);
@@ -108,7 +109,7 @@ public abstract class HashLiteralNode extends RubyNode {
         @ExplodeLoop
         @Override
         public RubyHash executeRubyHash(VirtualFrame frame) {
-            final Object[] storage = new Object[HashOperations.SMALL_HASH_SIZE * 2];
+            final Object[] storage = new Object[PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX * 2];
 
             int end = 0;
 

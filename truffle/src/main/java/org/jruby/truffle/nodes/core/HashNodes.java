@@ -29,10 +29,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.hash.Entry;
-import org.jruby.truffle.runtime.hash.HashOperations;
-import org.jruby.truffle.runtime.hash.HashSearchResult;
-import org.jruby.truffle.runtime.hash.KeyValue;
+import org.jruby.truffle.runtime.hash.*;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.Arrays;
@@ -58,9 +55,9 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) array.getStore();
 
             final int size = array.getSize();
-            final Object[] newStore = new Object[HashOperations.SMALL_HASH_SIZE * 2];
+            final Object[] newStore = new Object[PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX * 2];
 
-            for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
+            for (int n = 0; n < PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < size) {
                     final Object pair = store[n];
 
@@ -77,9 +74,7 @@ public abstract class HashNodes {
                     }
 
                     final Object[] pairStore = (Object[]) pairArray.getStore();
-
-                    newStore[n * 2] = pairStore[0];
-                    newStore[n * 2 + 1] = pairStore[1];
+                    PackedArrayStrategy.setKeyValue(newStore, n, pairStore[0], pairStore[1]);
                 }
             }
 
@@ -110,7 +105,7 @@ public abstract class HashNodes {
 
             final Object[] store = (Object[]) array.getStore();
 
-            if (store.length > HashOperations.SMALL_HASH_SIZE) {
+            if (store.length > PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX) {
                 return false;
             }
 
@@ -165,18 +160,18 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
 
-            for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
+            for (int n = 0; n < PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < size) {
                     final boolean equal;
 
                     if (byIdentityProfile.profile(hash.isCompareByIdentity())) {
-                        equal = equalNode.executeReferenceEqual(frame, key, store[n * 2]);
+                        equal = equalNode.executeReferenceEqual(frame, key, PackedArrayStrategy.getKey(store, n));
                     } else {
-                        equal = eqlNode.callBoolean(frame, key, "eql?", null, store[n * 2]);
+                        equal = eqlNode.callBoolean(frame, key, "eql?", null, PackedArrayStrategy.getKey(store, n));
                     }
                     
                     if (equal) {
-                        return store[n * 2 + 1];
+                        return PackedArrayStrategy.getValue(store, n);
                     }
                 }
             }
@@ -255,7 +250,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = { "isNullStorage(hash)", "!isRubyString(key)" })
         public Object setNull(VirtualFrame frame, RubyHash hash, Object key, Object value) {
-            final Object[] store = new Object[HashOperations.SMALL_HASH_SIZE * 2];
+            final Object[] store = new Object[PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX * 2];
             hashNode.call(frame, key, "hash", null);
             store[0] = key;
             store[1] = value;
@@ -281,18 +276,18 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
 
-            for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
+            for (int n = 0; n < PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < size) {
                     final boolean equal;
                     
                     if (byIdentityProfile.profile(hash.isCompareByIdentity())) {
-                        equal = equalNode.executeReferenceEqual(frame, key, store[n * 2]);
+                        equal = equalNode.executeReferenceEqual(frame, key, PackedArrayStrategy.getKey(store, n));
                     } else {
-                        equal = eqlNode.callBoolean(frame, key, "eql?", null, store[n * 2]);
+                        equal = eqlNode.callBoolean(frame, key, "eql?", null, PackedArrayStrategy.getKey(store, n));
                     }
                     
                     if (equal) {
-                        store[n * 2 + 1] = value;
+                        PackedArrayStrategy.setValue(store, n, value);
                         return value;
                     }
                 }
@@ -302,7 +297,7 @@ public abstract class HashNodes {
 
             final int newSize = size + 1;
 
-            if (newSize <= HashOperations.SMALL_HASH_SIZE) {
+            if (newSize <= PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX) {
                 extendProfile.enter();
                 store[size * 2] = key;
                 store[size * 2 + 1] = value;
@@ -459,9 +454,9 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
 
-            for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
-                if (n < size && eqlNode.callBoolean(frame, store[n * 2], "eql?", null, key)) {
-                    final Object value = store[n * 2 + 1];
+            for (int n = 0; n < PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
+                if (n < size && eqlNode.callBoolean(frame, PackedArrayStrategy.getKey(store, n), "eql?", null, key)) {
+                    final Object value = PackedArrayStrategy.getValue(store, n);
 
                     // Move the later values down
                     int k = n * 2; // position of the key
@@ -549,13 +544,13 @@ public abstract class HashNodes {
             int count = 0;
 
             try {
-                for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
+                for (int n = 0; n < PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
 
                     if (n < size) {
-                        yield(frame, block, new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{store[n * 2], store[n * 2 + 1]}, 2));
+                        yield(frame, block, new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{PackedArrayStrategy.getKey(store, n), PackedArrayStrategy.getValue(store, n)}, 2));
                     }
                 }
             } finally {
@@ -688,7 +683,7 @@ public abstract class HashNodes {
             }
 
             final Object[] store = (Object[]) from.getStore();
-            self.setStore(Arrays.copyOf(store, HashOperations.SMALL_HASH_SIZE * 2), from.getSize(), null, null);
+            self.setStore(Arrays.copyOf(store, PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX * 2), from.getSize(), null, null);
 
             copyOther(self, from);
 
@@ -747,10 +742,10 @@ public abstract class HashNodes {
             int count = 0;
 
             try {
-                for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
+                for (int n = 0; n < PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
                     if (n < size) {
-                        final Object key = store[n * 2];
-                        final Object value = store[n * 2 + 1];
+                        final Object key = PackedArrayStrategy.getKey(store, n);
+                        final Object value = PackedArrayStrategy.getValue(store, n);
                         result[n] = yield(frame, block, key, value);
 
                         if (CompilerDirectives.inInterpreter()) {
@@ -795,7 +790,7 @@ public abstract class HashNodes {
         private final BranchProfile considerResultIsSmallProfile = BranchProfile.create();
         private final BranchProfile resultIsSmallProfile = BranchProfile.create();
 
-        private final int smallHashSize = HashOperations.SMALL_HASH_SIZE;
+        private final int smallHashSize = PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX;
 
         public MergeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -805,7 +800,7 @@ public abstract class HashNodes {
         @Specialization(guards = {"isPackedArrayStorage(hash)", "isNullStorage(other)", "!isCompareByIdentity(hash)"})
         public RubyHash mergePackedArrayNull(RubyHash hash, RubyHash other, UndefinedPlaceholder block) {
             final Object[] store = (Object[]) hash.getStore();
-            final Object[] copy = Arrays.copyOf(store, HashOperations.SMALL_HASH_SIZE * 2);
+            final Object[] copy = Arrays.copyOf(store, PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX * 2);
 
             return new RubyHash(hash.getLogicalClass(), hash.getDefaultBlock(), hash.getDefaultValue(), copy, hash.getSize(), null);
         }
@@ -826,11 +821,11 @@ public abstract class HashNodes {
 
             int conflictsCount = 0;
 
-            for (int a = 0; a < HashOperations.SMALL_HASH_SIZE; a++) {
+            for (int a = 0; a < PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX; a++) {
                 if (a < storeASize) {
                     boolean merge = true;
 
-                    for (int b = 0; b < HashOperations.SMALL_HASH_SIZE; b++) {
+                    for (int b = 0; b < PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX; b++) {
                         if (b < storeBSize) {
                             if (eqlNode.callBoolean(frame, storeA[a * 2], "eql?", null, storeB[b * 2])) {
                                 conflictsCount++;
@@ -850,14 +845,14 @@ public abstract class HashNodes {
 
             if (mergeFromACount == 0) {
                 nothingFromFirstProfile.enter();
-                return new RubyHash(hash.getLogicalClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeB, HashOperations.SMALL_HASH_SIZE * 2), storeBSize, null);
+                return new RubyHash(hash.getLogicalClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeB, PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX * 2), storeBSize, null);
             }
 
             considerNothingFromSecondProfile.enter();
 
             if (conflictsCount == storeBSize) {
                 nothingFromSecondProfile.enter();
-                return new RubyHash(hash.getLogicalClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeA, HashOperations.SMALL_HASH_SIZE * 2), storeASize, null);
+                return new RubyHash(hash.getLogicalClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeA, PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX * 2), storeASize, null);
             }
 
             considerResultIsSmallProfile.enter();
@@ -867,21 +862,21 @@ public abstract class HashNodes {
             if (storeBSize + mergeFromACount <= smallHashSize) {
                 resultIsSmallProfile.enter();
 
-                final Object[] merged = new Object[HashOperations.SMALL_HASH_SIZE * 2];
+                final Object[] merged = new Object[PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX * 2];
 
                 int index = 0;
 
                 for (int n = 0; n < storeASize; n++) {
                     if (mergeFromA[n]) {
-                        merged[index] = storeA[n * 2];
-                        merged[index + 1] = storeA[n * 2 + 1];
+                        merged[index] = PackedArrayStrategy.getKey(storeA, n);
+                        merged[index + 1] = PackedArrayStrategy.getValue(storeA, n);
                         index += 2;
                     }
                 }
 
                 for (int n = 0; n < storeBSize; n++) {
-                    merged[index] = storeB[n * 2];
-                    merged[index + 1] = storeB[n * 2 + 1];
+                    merged[index] = PackedArrayStrategy.getKey(storeB, n);
+                    merged[index + 1] = PackedArrayStrategy.getValue(storeB, n);
                     index += 2;
                 }
 
@@ -1026,7 +1021,7 @@ public abstract class HashNodes {
             final Object key = store[0];
             final Object value = store[1];
             
-            System.arraycopy(store, 2, store, 0, HashOperations.SMALL_HASH_SIZE * 2 - 2);
+            System.arraycopy(store, 2, store, 0, PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX * 2 - 2);
             
             hash.setSize(hash.getSize() - 1);
             

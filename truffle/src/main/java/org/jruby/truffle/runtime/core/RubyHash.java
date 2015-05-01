@@ -16,6 +16,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
+import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 public class RubyHash extends RubyBasicObject {
@@ -111,11 +112,11 @@ public class RubyHash extends RubyBasicObject {
             assert firstInSequence == null || foundFirst;
             assert lastInSequence == null || foundLast;
         } else if (store instanceof Object[]) {
-            assert ((Object[]) store).length == HashOperations.SMALL_HASH_SIZE * 2 : ((Object[]) store).length;
+            assert ((Object[]) store).length == PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX * 2 : ((Object[]) store).length;
             
             final Object[] packedStore = (Object[]) store;
             
-            for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
+            for (int n = 0; n < PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < storeSize) {
                     assert packedStore[n * 2] != null;
                     assert packedStore[n * 2 + 1] != null;
