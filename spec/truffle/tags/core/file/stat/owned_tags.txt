@@ -1,2 +1,0 @@
-fails:File::Stat#owned? returns true if the file is owned by the user
-fails:File::Stat#owned? returns false if the file is not owned by the user

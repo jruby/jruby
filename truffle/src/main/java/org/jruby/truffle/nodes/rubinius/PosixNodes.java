@@ -44,7 +44,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(names = "chown", isModuleFunction = true, required = 3)
+    @CoreMethod(names = "chown", isModuleFunction = true, required = 3, lowerFixnumParameters = {1, 2})
     public abstract static class ChownNode extends CoreMethodArrayArgumentsNode {
 
         public ChownNode(RubyContext context, SourceSection sourceSection) {

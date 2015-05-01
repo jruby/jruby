@@ -1,2 +1,0 @@
-fails:File::Stat#writable? returns true if named file is writable by the effective user id of the process, otherwise false
-fails:File::Stat#writable? accepts an object that has a #to_path method
