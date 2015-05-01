@@ -37,8 +37,6 @@ public abstract class ModuleOperations {
     }
 
     public static boolean assignableTo(RubyClass thisClass, RubyModule otherClass) {
-        RubyNode.notDesignedForCompilation();
-
         return includesModule(thisClass, otherClass);
     }
 

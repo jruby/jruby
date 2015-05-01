@@ -30,8 +30,6 @@ public class LambdaNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         final InternalMethod method = (InternalMethod) definition.execute(frame);
 
         // TODO(CS): not sure we're closing over the correct state here

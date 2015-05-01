@@ -38,8 +38,6 @@ public abstract class ToAryNode extends RubyNode {
 
     @Specialization(guards = "!isRubyArray(object)")
     public RubyArray coerceObject(VirtualFrame frame, Object object) {
-        notDesignedForCompilation();
-
         if (toAryNode == null) {
             CompilerDirectives.transferToInterpreter();
             toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));

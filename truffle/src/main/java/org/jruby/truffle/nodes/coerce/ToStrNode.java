@@ -41,8 +41,6 @@ public abstract class ToStrNode extends RubyNode {
 
     @Specialization(guards = "!isRubyString(object)")
     public RubyString coerceObject(VirtualFrame frame, Object object) {
-        notDesignedForCompilation();
-
         final Object coerced;
 
         try {

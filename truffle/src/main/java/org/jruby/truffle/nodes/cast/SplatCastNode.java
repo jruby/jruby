@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.cast;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -84,8 +85,6 @@ public abstract class SplatCastNode extends RubyNode {
 
     @Specialization(guards = {"!isRubyNilClass(object)", "!isRubyArray(object)"})
     public RubyArray splat(VirtualFrame frame, Object object) {
-        notDesignedForCompilation();
-
         final String method;
 
         if (useToAry) {
@@ -102,6 +101,7 @@ public abstract class SplatCastNode extends RubyNode {
             if (array instanceof RubyArray) {
                 return (RubyArray) array;
             } else if (array instanceof RubyNilClass || array == DispatchNode.MISSING) {
+                CompilerDirectives.transferToInterpreter();
                 return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
             } else {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertTo(

@@ -47,8 +47,6 @@ public abstract class SymbolOrToStrNode extends RubyNode {
 
     @Specialization(guards = { "!isRubySymbol(object)", "!isRubyString(object)" })
     public String coerceObject(VirtualFrame frame, Object object) {
-        notDesignedForCompilation();
-
         final Object coerced;
 
         try {
@@ -63,7 +61,7 @@ public abstract class SymbolOrToStrNode extends RubyNode {
         }
 
         if (coerced instanceof RubyString) {
-            return ((RubyString) coerced).toString();
+            return coerced.toString();
         } else {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));

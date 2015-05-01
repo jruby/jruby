@@ -45,8 +45,6 @@ public class HashOperations {
 
     @CompilerDirectives.TruffleBoundary
     public static RubyHash verySlowFromEntries(RubyClass hashClass, List<KeyValue> entries, boolean byIdentity) {
-        RubyNode.notDesignedForCompilation();
-
         final RubyHash hash = new RubyHash(hashClass, null, null, null, 0, null);
         verySlowSetKeyValues(hash, entries, byIdentity);
         return hash;

@@ -162,10 +162,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {
-        RubyNode.notDesignedForCompilation();
-
         if (!name.startsWith("@")) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
 
@@ -173,10 +170,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public static String checkClassVariableName(RubyContext context, String name, Node currentNode) {
-        RubyNode.notDesignedForCompilation();
-
         if (!name.startsWith("@@")) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
 
@@ -353,8 +347,6 @@ public class RubyContext extends ExecutionContext {
     }
 
     public IRubyObject toJRuby(Object object) {
-        RubyNode.notDesignedForCompilation();
-
         if (object instanceof RubyNilClass) {
             return runtime.getNil();
         } else if (object == getCoreLibrary().getKernelModule()) {
@@ -381,8 +373,6 @@ public class RubyContext extends ExecutionContext {
     }
 
     public org.jruby.RubyArray toJRuby(RubyArray array) {
-        RubyNode.notDesignedForCompilation();
-
         final Object[] objects = array.slowToArray();
         final IRubyObject[] store = new IRubyObject[objects.length];
 
@@ -410,8 +400,6 @@ public class RubyContext extends ExecutionContext {
     }
 
     public Object toTruffle(IRubyObject object) {
-        RubyNode.notDesignedForCompilation();
-
         if (object == runtime.getTopSelf()) {
             return getCoreLibrary().getMainObject();
         } else if (object == runtime.getKernel()) {
