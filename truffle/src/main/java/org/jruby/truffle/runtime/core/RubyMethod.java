@@ -11,6 +11,8 @@ package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
+import com.oracle.truffle.api.interop.ForeignAccessFactory;
+
 public class RubyMethod extends RubyBasicObject {
 
     private final Object receiver;
@@ -28,5 +30,10 @@ public class RubyMethod extends RubyBasicObject {
 
     public Object getReceiver() {
         return receiver;
+    }
+    
+    @Override
+    public ForeignAccessFactory getForeignAccessFactory() {
+        return new RubyMethodForeignAccessFactory(getContext());
     }
 }

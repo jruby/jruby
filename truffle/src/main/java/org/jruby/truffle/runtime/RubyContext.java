@@ -541,17 +541,6 @@ public class RubyContext extends ExecutionContext {
         return rubiniusPrimitiveManager;
     }
 
-    // TODO(mg): we need to find a better place for this:
-    private TruffleObject multilanguageObject;
-
-    public TruffleObject getMultilanguageObject() {
-        return multilanguageObject;
-    }
-
-    public void setMultilanguageObject(TruffleObject multilanguageObject) {
-        this.multilanguageObject = multilanguageObject;
-    }
-
     public CoverageTracker getCoverageTracker() {
         return coverageTracker;
     }

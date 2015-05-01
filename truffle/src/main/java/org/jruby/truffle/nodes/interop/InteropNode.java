@@ -9,14 +9,6 @@
  */
 package org.jruby.truffle.nodes.interop;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
-import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.interop.ForeignAccessArguments;
-import com.oracle.truffle.interop.messages.Execute;
-import com.oracle.truffle.interop.messages.Read;
-import com.oracle.truffle.interop.messages.Write;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
@@ -24,12 +16,32 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyMethod;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.Node.Child;
+import com.oracle.truffle.api.nodes.Node.Children;
+import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.interop.ForeignAccessArguments;
+import com.oracle.truffle.interop.messages.Execute;
+import com.oracle.truffle.interop.messages.Read;
+import com.oracle.truffle.interop.messages.Write;
+
 
 
 public abstract class InteropNode extends RubyNode {
@@ -51,6 +63,10 @@ public abstract class InteropNode extends RubyNode {
 
     public static InteropNode createIsExecutable(final RubyContext context, final SourceSection sourceSection) {
         return new InteropIsExecutable(context, sourceSection);
+    }
+    
+    public static InteropNode createExecute(final RubyContext context, final SourceSection sourceSection) {
+        return new InteropExecute(context, sourceSection);
     }
 
     public static InteropNode createIsBoxedPrimitive(final RubyContext context, final SourceSection sourceSection) {
@@ -84,6 +100,63 @@ public abstract class InteropNode extends RubyNode {
     public static RubyNode createStringUnbox(RubyContext context, final SourceSection sourceSection) {
         return new InteropStringUnboxNode(context, sourceSection);
     }
+    
+    private static class InteropExecute extends InteropNode {
+        @Child private ExecuteMethodNode execute;
+    	
+    	public InteropExecute(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            this.execute = ExecuteMethodNodeFactory.create(context, sourceSection, null);
+        }
+
+        
+        
+        @Override
+        public Object execute(VirtualFrame frame) {
+        	Object result = execute.executeWithTarget(frame, ForeignAccessArguments.getReceiver(frame.getArguments()));
+            return result;
+        }
+    }
+    
+    protected static abstract class AbstractExecuteMethodNode extends InteropNode {
+    	public AbstractExecuteMethodNode(RubyContext context,
+				SourceSection sourceSection) {
+			super(context, sourceSection);
+		}
+
+		public abstract Object executeWithTarget(VirtualFrame frame, Object method);
+    }
+    
+    @NodeChild(value="method", type = InteropNode.class)
+    protected static abstract class ExecuteMethodNode extends AbstractExecuteMethodNode {
+    	@Child private IndirectCallNode callNode;
+    	public ExecuteMethodNode(RubyContext context,
+				SourceSection sourceSection) {
+			super(context, sourceSection);
+			callNode = Truffle.getRuntime().createIndirectCallNode();
+		}
+
+    	
+		@Specialization(guards = {"method == cachedMethod"})
+    	protected Object doCall(VirtualFrame frame, RubyMethod method, @Cached("method") RubyMethod cachedMethod, @Cached("cachedMethod.getMethod()") InternalMethod internalMethod,  @Cached("create(cachedMethod.getMethod().getCallTarget())") DirectCallNode callNode) {
+    		// skip first argument; it's the receiver but a RubyMethod knows its receiver
+			Object[] args = ForeignAccessArguments.extractUserArguments(1, frame.getArguments());
+			return callNode.call(frame, RubyArguments.pack(internalMethod, internalMethod.getDeclarationFrame(), cachedMethod.getReceiver(), null, args));
+    	}
+		
+		@Specialization
+    	protected Object doCall(VirtualFrame frame, RubyMethod method) {
+			final InternalMethod internalMethod = method.getMethod();
+			// skip first argument; it's the receiver but a RubyMethod knows its receiver
+			Object[] args = ForeignAccessArguments.extractUserArguments(1, frame.getArguments());
+            return callNode.call(frame, method.getMethod().getCallTarget(), RubyArguments.pack(
+                    internalMethod,
+                    internalMethod.getDeclarationFrame(),
+                    method.getReceiver(),
+                    null,
+                    args));
+		}
+    }
 
 
     private static class InteropIsExecutable extends InteropNode {
@@ -93,7 +166,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return false;
+            return ForeignAccessArguments.getReceiver(frame.getArguments()) instanceof RubyMethod;
         }
 
     }
