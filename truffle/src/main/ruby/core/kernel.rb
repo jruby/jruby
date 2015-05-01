@@ -13,9 +13,19 @@ module Kernel
   end
   module_function :printf
 
-
   alias_method :trust, :untaint
   alias_method :untrust, :taint
   alias_method :untrusted?, :tainted?
+
+  def caller(start = 1, limit = nil)
+    start += 1
+    if limit.nil?
+      args = [start]
+    else
+      args = [start, limit]
+    end
+    caller_locations(*args).map(&:inspect)
+  end
+  module_function :caller
 
 end

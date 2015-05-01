@@ -297,40 +297,6 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "caller", isModuleFunction = true, optional = 1)
-    public abstract static class CallerNode extends CoreMethodArrayArgumentsNode {
-
-        public CallerNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object caller(UndefinedPlaceholder omit) {
-            return caller(1);
-        }
-
-        @Specialization
-        public Object caller(int omit) {
-            notDesignedForCompilation();
-
-            omit += 1; // Always ignore this node
-
-            Backtrace backtrace = RubyCallStack.getBacktrace(this);
-            List<Activation> activations = backtrace.getActivations();
-            int size = activations.size() - omit;
-
-            if (size < 0) {
-                return nil();
-            }
-
-            Object[] callers = new Object[size];
-            for (int n = 0; n < size; n++) {
-                callers[n] = getContext().makeString(MRIBacktraceFormatter.formatCallerLine(activations, n + omit));
-            }
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), callers, callers.length);
-        }
-    }
-
     @CoreMethod(names = "caller_locations", isModuleFunction = true, optional = 2)
     public abstract static class CallerLocationsNode extends CoreMethodArrayArgumentsNode {
 
