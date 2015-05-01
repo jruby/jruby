@@ -105,11 +105,6 @@ public abstract class StatPrimitiveNodes {
             return code;
         }
 
-        @Specialization(guards = "!isRubyString(path)")
-        public Object stat(RubyBasicObject rubyStat, Object path) {
-            return null;
-        }
-
     }
 
     @RubiniusPrimitive(name = "stat_lstat")
