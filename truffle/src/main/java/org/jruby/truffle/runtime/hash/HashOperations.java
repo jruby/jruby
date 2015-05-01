@@ -157,19 +157,19 @@ public class HashOperations {
             }
 
             if ((boolean) DebugOperations.send(hash.getContext(), key, method, null, entry.getKey())) {
-                return new HashSearchResult(bucketIndex, previousEntry, entry);
+                return new HashSearchResult(hashed, bucketIndex, previousEntry, entry);
             }
 
             previousEntry = entry;
             entry = entry.getNextInLookup();
         }
 
-        return new HashSearchResult(bucketIndex, previousEntry, null);
+        return new HashSearchResult(hashed, bucketIndex, previousEntry, null);
     }
 
     public static void setAtBucket(RubyHash hash, HashSearchResult hashSearchResult, Object key, Object value) {
         if (hashSearchResult.getEntry() == null) {
-            final Entry entry = new Entry(key, value);
+            final Entry entry = new Entry(hashSearchResult.getHashed(), key, value);
 
             if (hashSearchResult.getPreviousEntry() == null) {
                 ((Entry[]) hash.getStore())[hashSearchResult.getIndex()] = entry;
@@ -192,6 +192,7 @@ public class HashOperations {
 
             // Update the key (it overwrites even it it's eql?) and value
 
+            entry.setHashed(hashSearchResult.getHashed());
             entry.setKey(key);
             entry.setValue(value);
         }

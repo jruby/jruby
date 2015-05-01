@@ -25,14 +25,20 @@ package org.jruby.truffle.runtime.hash;
  */
 public class HashSearchResult {
 
+    private final int hashed;
+    private final int index;
     private final Entry previousEntry;
     private final Entry entry;
-    private final int index;
 
-    public HashSearchResult(int index, Entry previousEntry, Entry entry) {
+    public HashSearchResult(int hashed, int index, Entry previousEntry, Entry entry) {
+        this.hashed = hashed;
         this.index = index;
         this.previousEntry = previousEntry;
         this.entry = entry;
+    }
+
+    public int getHashed() {
+        return hashed;
     }
 
     public int getIndex() {

@@ -60,11 +60,11 @@ public class FindEntryNode extends RubyNode {
         while (entry != null) {
             if (byIdentityProfile.profile(hash.isCompareByIdentity())) {
                 if (equalNode.executeReferenceEqual(frame, key, entry.getKey())) {
-                    return new HashSearchResult(index, previousEntry, entry);
+                    return new HashSearchResult(hashed, index, previousEntry, entry);
                 }
             } else {
                 if (eqlNode.callBoolean(frame, key, "eql?", null, entry.getKey())) {
-                    return new HashSearchResult(index, previousEntry, entry);
+                    return new HashSearchResult(hashed, index, previousEntry, entry);
                 }
             }
 
@@ -72,7 +72,7 @@ public class FindEntryNode extends RubyNode {
             entry = entry.getNextInLookup();
         }
 
-        return new HashSearchResult(index, previousEntry, null);
+        return new HashSearchResult(hashed, index, previousEntry, null);
     }
 
     @Override
