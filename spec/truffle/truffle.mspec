@@ -18,7 +18,7 @@ class MSpecScript
     # either fixtures or syntax. Some of them are probably easy fixes.
 
     # This seems to hang sometimes on Travis
-    "^spec/ruby/core/signal/list_spec.rb",
+    "^spec/ruby/core/signal",
 
     # require 'socket'
     "^spec/ruby/core/file/socket_spec.rb",
