@@ -311,7 +311,7 @@ public abstract class TruffleInteropNodes {
     }
     
     @CoreMethod(names = "export", isModuleFunction = true, needsSelf = false, required = 2)
-    public abstract static class ExportNode extends CoreMethodNode {
+    public abstract static class ExportNode extends CoreMethodArrayArgumentsNode {
 
 
         public ExportNode(RubyContext context, SourceSection sourceSection) {
@@ -341,7 +341,7 @@ public abstract class TruffleInteropNodes {
     }
     
     @CoreMethod(names = "import", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class ImportNode extends CoreMethodNode {
+    public abstract static class ImportNode extends CoreMethodArrayArgumentsNode {
 
 
         public ImportNode(RubyContext context, SourceSection sourceSection) {
