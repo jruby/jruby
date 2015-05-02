@@ -266,6 +266,20 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "flock", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1})
+    public abstract static class FlockNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+
+        public FlockNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int flock(int fd, int constant) {
+            return posix().flock(fd, constant);
+        }
+
+    }
+
     @CoreMethod(names = "rmdir", isModuleFunction = true, required = 1)
     public abstract static class RmdirNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
 
