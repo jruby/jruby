@@ -22,6 +22,7 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.CoreSourceSection;
@@ -3178,7 +3179,24 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"push", "<<", "__append__"}, argumentsAsArray = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "<<", raiseIfFrozenSelf = true, required = 1)
+    public abstract static class ShiftIntoNode extends ArrayCoreMethodNode {
+
+        @Child private AppendOneNode appendOneNode;
+
+        public ShiftIntoNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            appendOneNode = AppendOneNodeGen.create(context, sourceSection, null, null);
+        }
+
+        @Specialization
+        public RubyArray pushNullEmptySingleIntegerFixnum(RubyArray array, Object value) {
+            return appendOneNode.executeAppendOne(array, value);
+        }
+
+    }
+
+    @CoreMethod(names = {"push", "__append__"}, argumentsAsArray = true, raiseIfFrozenSelf = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
         private final BranchProfile extendBranch = BranchProfile.create();
