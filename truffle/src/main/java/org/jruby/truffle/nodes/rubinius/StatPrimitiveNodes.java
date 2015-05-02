@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.FileStat;
@@ -24,6 +25,64 @@ public abstract class StatPrimitiveNodes {
 
     public static final HiddenKey STAT_IDENTIFIER = new HiddenKey("stat");
 
+    @RubiniusPrimitive(name = "stat_atime")
+    public static abstract class StatAtimePrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatAtimePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object atime(VirtualFrame frame, RubyBasicObject rubyStat) {
+            final long time = getStat(rubyStat).atime();
+            return ruby(frame, "Time.at(time)", "time", time);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_ctime")
+    public static abstract class StatCtimePrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatCtimePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object ctime(VirtualFrame frame, RubyBasicObject rubyStat) {
+            final long time = getStat(rubyStat).ctime();
+            return ruby(frame, "Time.at(time)", "time", time);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_mtime")
+    public static abstract class StatMtimePrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatMtimePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object mtime(VirtualFrame frame, RubyBasicObject rubyStat) {
+            final long time = getStat(rubyStat).mtime();
+            return ruby(frame, "Time.at(time)", "time", time);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_blksize")
+    public static abstract class StatBlksizePrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatBlksizePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public long blksize(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).blockSize();
+        }
+
+    }
 
     @RubiniusPrimitive(name = "stat_dev")
     public static abstract class StatDevPrimitiveNode extends StatReadPrimitiveNode {

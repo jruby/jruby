@@ -1,4 +1,0 @@
-fails:File.stat returns a File::Stat object if the given file exists
-fails:File.stat returns a File::Stat object when called on an instance of File
-fails:File.stat returns information for a file that has been deleted but is still open
-fails:File.stat returns a File::Stat object with file properties for a symlink
