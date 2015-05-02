@@ -692,8 +692,7 @@
                       <arg value="--excl-tag" />
                       <arg value="fails" />
                       <arg value="--format" />
-                      <arg value="summary" />
-                      <arg value="-V" />
+                      <arg value="specdoc" />
                       <arg value=":language" />
                     </exec>
                   </target>
@@ -738,8 +737,7 @@
                       <arg value="--excl-tag" />
                       <arg value="fails" />
                       <arg value="--format" />
-                      <arg value="summary" />
-                      <arg value="-V" />
+                      <arg value="specdoc" />
                       <arg value=":core" />
                     </exec>
                   </target>
@@ -784,8 +782,7 @@
                       <arg value="--excl-tag" />
                       <arg value="fails" />
                       <arg value="--format" />
-                      <arg value="summary" />
-                      <arg value="-V" />
+                      <arg value="specdoc" />
                       <arg value=":library" />
                     </exec>
                   </target>

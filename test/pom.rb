@@ -23,7 +23,7 @@ def truffle_spec_config(spec_type, generate_report)
     (if generate_report
       '<arg value="--format" /><arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />'
     else
-      '<arg value="--format" /><arg value="summary" /><arg value="-V" />' # Produce some new lines for Travis+Maven
+      '<arg value="--format" /><arg value="specdoc" />' # Need lots of output to keep Travis happy
     end) +
     "<arg value=\":#{spec_type}\" />" +
     '</exec>' +
