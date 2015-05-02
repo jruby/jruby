@@ -1,14 +1,4 @@
-fails:File.size? calls #to_io to convert the argument to an IO
-fails:File.size? accepts a File argument
-fails:File.size calls #to_io to convert the argument to an IO
-fails:File.size accepts a File argument
-fails:File#size returns the file's size as a Fixnum
-fails:File#size returns the file's size in bytes
-fails:File#size returns the cached size of the file if subsequently deleted
-fails:File#size returns the file's current size even if modified
 fails:File#size raises an IOError on a closed file
-fails:File#size follows symlinks if necessary
-fails:File#size for an empty file returns 0
 windows:File.size? returns the size of the file if it exists and is not empty
 windows:File.size? returns nil if file_name doesn't exist or has 0 size
 windows:File.size? returns nil if file_name is empty

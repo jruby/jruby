@@ -70,6 +70,34 @@ public abstract class StatPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "stat_nlink")
+    public static abstract class NlinkPrimitiveNode extends StatReadPrimitiveNode {
+
+        public NlinkPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int nlink(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).nlink();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_rdev")
+    public static abstract class RdevPrimitiveNode extends StatReadPrimitiveNode {
+
+        public RdevPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public long rdev(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).rdev();
+        }
+
+    }
+
     @RubiniusPrimitive(name = "stat_blksize")
     public static abstract class StatBlksizePrimitiveNode extends StatReadPrimitiveNode {
 
@@ -80,6 +108,20 @@ public abstract class StatPrimitiveNodes {
         @Specialization
         public long blksize(RubyBasicObject rubyStat) {
             return getStat(rubyStat).blockSize();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_blocks")
+    public static abstract class StatBlocksPrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatBlocksPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public long blocks(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).blocks();
         }
 
     }
