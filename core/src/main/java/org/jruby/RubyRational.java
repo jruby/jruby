@@ -38,9 +38,11 @@ import static org.jruby.util.Numeric.f_idiv;
 import static org.jruby.util.Numeric.f_inspect;
 import static org.jruby.util.Numeric.f_integer_p;
 import static org.jruby.util.Numeric.f_lt_p;
+import static org.jruby.util.Numeric.f_minus_one_p;
 import static org.jruby.util.Numeric.f_mul;
 import static org.jruby.util.Numeric.f_negate;
 import static org.jruby.util.Numeric.f_negative_p;
+import static org.jruby.util.Numeric.f_odd_p;
 import static org.jruby.util.Numeric.f_one_p;
 import static org.jruby.util.Numeric.f_rshift;
 import static org.jruby.util.Numeric.f_sub;
@@ -54,6 +56,8 @@ import static org.jruby.util.Numeric.f_zero_p;
 import static org.jruby.util.Numeric.i_gcd;
 import static org.jruby.util.Numeric.i_ilog2;
 import static org.jruby.util.Numeric.k_exact_p;
+import static org.jruby.util.Numeric.k_integer_p;
+import static org.jruby.util.Numeric.k_numeric_p;
 import static org.jruby.util.Numeric.ldexp;
 import static org.jruby.util.Numeric.nurat_rationalize_internal;
 
@@ -581,6 +585,25 @@ public class RubyRational extends RubyNumeric {
             if (f_one_p(context, otherRational.den)) other = otherRational.num;
         }
 
+        // Deal with special cases of 0**n and 1**n
+        if (k_numeric_p(other) && k_exact_p(other)) {
+            if (f_one_p(context, den)) {
+                if (f_one_p(context, num)) {
+                    return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.one(runtime));
+                } else if (f_minus_one_p(context, num) && k_integer_p(other)) {
+                    return RubyRational.newRationalBang(context, getMetaClass(),
+                            f_odd_p(context, other) ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime));
+                } else if (f_zero_p(context, num)) {
+                    if (f_cmp(context, other, RubyFixnum.zero(runtime)) == RubyFixnum.minus_one(runtime)) {
+                        throw context.runtime.newZeroDivisionError();
+                    } else {
+                        return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.zero(runtime));
+                    }
+                }
+            }
+        }
+
+        // General case
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {        
             final IRubyObject tnum, tden;
             IRubyObject res = f_cmp(context, other, RubyFixnum.zero(runtime));

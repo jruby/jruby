@@ -21,7 +21,7 @@ public class Backtrace {
     public static final BacktraceFormatter DISPLAY_FORMATTER = getFormatter(Options.TRUFFLE_BACKTRACE_DISPLAY_FORMAT.load());
     public static final BacktraceFormatter EXCEPTION_FORMATTER = getFormatter(Options.TRUFFLE_BACKTRACE_EXCEPTION_FORMAT.load());
     public static final BacktraceFormatter DEBUG_FORMATTER = getFormatter(Options.TRUFFLE_BACKTRACE_DEBUG_FORMAT.load());
-    public static final BacktraceFormatter PANIC_FORMATTER = getFormatter(Options.TRUFFLE_BACKTRACE_PANIC_FORMAT.load());
+    public static final BacktraceFormatter PANIC_FORMATTER = getFormatter(Options.TRUFFLE_BACKTRACE_DISPLAY_FORMAT.load());
 
     private final Activation[] activations;
 

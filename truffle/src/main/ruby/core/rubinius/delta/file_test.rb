@@ -1,11 +1,3 @@
-# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
-# code is released under a tri EPL/GPL/LGPL license. You can use it,
-# redistribute it and/or modify it under the terms of the:
-# 
-# Eclipse Public License version 1.0
-# GNU General Public License version 2
-# GNU Lesser General Public License version 2.1
-
 # Copyright (c) 2007-2014, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -32,32 +24,29 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-class Fixnum
-
-  def left_shift_fallback(other)
-    # Fallback from Rubinius' Fixnum#<<, after the primitive call
-
-    other = Rubinius::Type.coerce_to other, Integer, :to_int
-    unless other.kind_of? Fixnum
-      raise RangeError, "argument is out of range for a Fixnum"
-    end
-
-    self << other
-  end
-
-  private :left_shift_fallback
-
-  def right_shift_fallback(other)
-    # Fallback from Rubinius' Fixnum#>>, after the primitive call
-
-    other = Rubinius::Type.coerce_to other, Integer, :to_int
-    unless other.kind_of? Fixnum
-      raise RangeError, "argument is out of range for a Fixnum"
-    end
-
-    self >> other
-  end
-
-  private :right_shift_fallback
-
+module FileTest
+  module_function :blockdev?,
+                  :chardev?,
+                  :directory?,
+                  :executable?,
+                  :executable_real?,
+                  :exist?,
+                  :exists?,
+                  :file?,
+                  :grpowned?,
+                  :identical?,
+                  :owned?,
+                  :pipe?,
+                  :readable?,
+                  :readable_real?,
+                  :setgid?,
+                  :setuid?,
+                  :size,
+                  :size?,
+                  :socket?,
+                  :sticky?,
+                  :symlink?,
+                  :writable?,
+                  :writable_real?,
+                  :zero?
 end

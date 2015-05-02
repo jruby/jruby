@@ -1,11 +1,3 @@
-# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
-# code is released under a tri EPL/GPL/LGPL license. You can use it,
-# redistribute it and/or modify it under the terms of the:
-# 
-# Eclipse Public License version 1.0
-# GNU General Public License version 2
-# GNU Lesser General Public License version 2.1
-
 # Copyright (c) 2007-2014, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -32,32 +24,97 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-class Fixnum
-
-  def left_shift_fallback(other)
-    # Fallback from Rubinius' Fixnum#<<, after the primitive call
-
-    other = Rubinius::Type.coerce_to other, Integer, :to_int
-    unless other.kind_of? Fixnum
-      raise RangeError, "argument is out of range for a Fixnum"
-    end
-
-    self << other
+module FileTest
+  def blockdev?(path)
+    File.blockdev? path
   end
 
-  private :left_shift_fallback
-
-  def right_shift_fallback(other)
-    # Fallback from Rubinius' Fixnum#>>, after the primitive call
-
-    other = Rubinius::Type.coerce_to other, Integer, :to_int
-    unless other.kind_of? Fixnum
-      raise RangeError, "argument is out of range for a Fixnum"
-    end
-
-    self >> other
+  def chardev?(path)
+    File.chardev? path
   end
 
-  private :right_shift_fallback
+  def directory?(path)
+    File.directory? path
+  end
 
+  def executable?(path)
+    File.executable? path
+  end
+
+  def executable_real?(path)
+    File.executable_real? path
+  end
+
+  def exist?(path)
+    File.exist? path
+  end
+  alias_method :exists?, :exist?
+
+  def file?(path)
+    File.file? path
+  end
+
+  def grpowned?(path)
+    File.grpowned? path
+  end
+
+  def identical?(a, b)
+    File.identical? a, b
+  end
+
+  def owned?(path)
+    File.owned? path
+  end
+
+  def pipe?(path)
+    File.pipe? path
+  end
+
+  def readable?(path)
+    File.readable? path
+  end
+
+  def readable_real?(path)
+    File.readable_real? path
+  end
+
+  def setgid?(path)
+    File.setgid? path
+  end
+
+  def setuid?(path)
+    File.setuid? path
+  end
+
+  def size(path)
+    File.size path
+  end
+
+  def size?(path)
+    File.size? path
+  end
+
+  def socket?(path)
+    File.socket? path
+  end
+
+  def sticky?(path)
+    File.sticky? path
+  end
+
+  def symlink?(path)
+    File.symlink? path
+  end
+
+  def writable?(path)
+    File.writable? path
+  end
+
+  def writable_real?(path)
+    File.writable_real? path
+  end
+
+  def zero?(path)
+    File.zero? path
+  end
 end

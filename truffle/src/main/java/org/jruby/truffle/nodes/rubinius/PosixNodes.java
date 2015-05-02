@@ -44,7 +44,7 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(names = "chown", isModuleFunction = true, required = 3)
+    @CoreMethod(names = "chown", isModuleFunction = true, required = 3, lowerFixnumParameters = {1, 2})
     public abstract static class ChownNode extends CoreMethodArrayArgumentsNode {
 
         public ChownNode(RubyContext context, SourceSection sourceSection) {
@@ -186,6 +186,22 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "link", isModuleFunction = true, required = 2)
+    public abstract static class LinkNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+
+        public LinkNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int link(RubyString path, RubyString other) {
+            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
+            final String otherString = RubyEncoding.decodeUTF8(other.getByteList().getUnsafeBytes(), other.getByteList().getBegin(), other.getByteList().getRealSize());
+            return posix().link(pathString, otherString);
+        }
+
+    }
+
     @CoreMethod(names = "unlink", isModuleFunction = true, required = 1)
     public abstract static class UnlinkNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
 
@@ -246,6 +262,20 @@ public abstract class PosixNodes {
             }
 
             return result;
+        }
+
+    }
+
+    @CoreMethod(names = "flock", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1})
+    public abstract static class FlockNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+
+        public FlockNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int flock(int fd, int constant) {
+            return posix().flock(fd, constant);
         }
 
     }

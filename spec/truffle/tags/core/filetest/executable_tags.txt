@@ -1,6 +1,0 @@
-fails:FileTest.executable? returns true if named file is executable by the effective user id of the process, otherwise false
-fails:FileTest.executable? returns true if the argument is an executable file
-fails:FileTest.executable? accepts an object that has a #to_path method
-fails:FileTest.executable? raises an ArgumentError if not passed one argument
-fails:FileTest.executable? raises a TypeError if not passed a String type
-fails:FileTest.executable? returns false if the file does not exist

@@ -1,16 +1,1 @@
-fails:File::Constants::APPEND is defined
-fails:File::Constants::CREAT is defined
-fails:File::Constants::EXCL is defined
-fails:File::Constants::FNM_SYSCASE is defined
-fails:File::Constants::LOCK_EX is defined
-fails:File::Constants::LOCK_NB is defined
-fails:File::Constants::LOCK_SH is defined
-fails:File::Constants::LOCK_UN is defined
-fails:File::Constants::NONBLOCK is defined
-fails:File::Constants::RDONLY is defined
-fails:File::Constants::RDWR is defined
-fails:File::Constants::TRUNC is defined
-fails:File::Constants::WRONLY is defined
-fails:File::Constants::NOCTTY is defined
-fails:File::Constants::SYNC is defined
 fails(windows):File::Constants::BINARY is defined

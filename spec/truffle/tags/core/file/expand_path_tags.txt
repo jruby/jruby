@@ -1,6 +1,4 @@
 fails:File.expand_path does not replace multiple '/' at the beginning of the path
-fails:File.expand_path raises an ArgumentError if the path is not valid
-fails:File.expand_path expands ~ENV['USER'] to the user's home directory
 fails(windows):File.expand_path expands C:/./dir to C:/dir
 windows:File.expand_path converts a pathname to an absolute pathname, Ruby-Talk:18512
 windows:File.expand_path converts a pathname to an absolute pathname, using a complete path

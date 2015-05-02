@@ -1,5 +1,0 @@
-fails:File.world_readable? returns nil if the file is chmod 600
-fails:File.world_readable? returns nil if the file is chmod 000
-fails:File.world_readable? returns nil if the file is chmod 700
-fails:File.world_readable? returns a Fixnum if the file is chmod 644
-fails:File.world_readable? returns a Fixnum if the file is a directory and chmod 644

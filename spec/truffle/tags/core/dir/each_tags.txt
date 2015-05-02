@@ -1,2 +1,1 @@
-fails:Dir#each returns the directory which remains open
 fails:Dir#each raises an IOError when called on a closed Dir instance

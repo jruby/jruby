@@ -54,6 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.RubyObject.equalInternal;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.RubyEnumerator.SizeFn;
@@ -717,7 +718,7 @@ public class RubyEnumerable {
             callEach(runtime, context, self, Signature.ONE_ARGUMENT, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = packEnumValues(runtime, largs);
-                    if (larg.equals(cond)) throw JumpException.SPECIAL_JUMP;
+                    if (equalInternal(ctx, larg, cond)) throw JumpException.SPECIAL_JUMP;
                     result[0]++;
                     return runtime.getNil();
                 }

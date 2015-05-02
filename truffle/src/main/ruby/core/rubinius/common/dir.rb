@@ -183,6 +183,34 @@ class Dir
     self
   end
 
+  SeekKind = 0
+  RewindKind = 1
+  TellKind = 2
+
+  def pos
+    control TellKind, 0
+  end
+
+  alias_method :tell, :pos
+
+  def pos=(position)
+    seek(position)
+
+    position
+  end
+
+  def seek(position)
+    control SeekKind, position
+
+    self
+  end
+
+  def rewind
+    control RewindKind, 0
+
+    self
+  end
+
   class << self
     alias_method :pwd, :getwd
     alias_method :delete, :rmdir

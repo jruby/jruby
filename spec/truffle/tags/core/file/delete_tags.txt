@@ -1,1 +1,0 @@
-fails:File.delete raises an Errno::ENOENT when the given file doesn't exist

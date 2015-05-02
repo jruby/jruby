@@ -1769,6 +1769,8 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitMatchNode(org.jruby.ast.MatchNode node) {
+        // Triggered when a Regexp literal is used as a conditional's value.
+
         final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), new org.jruby.ast.GlobalVarNode(node.getPosition(), "$_"));
         final org.jruby.ast.Node callNode = new CallNode(node.getPosition(), node.getRegexpNode(), "=~", argsNode, null);
         return callNode.accept(this);
@@ -1776,6 +1778,8 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitMatch2Node(org.jruby.ast.Match2Node node) {
+        // Triggered when a Regexp literal is the LHS of an expression.
+
         if (node.getReceiverNode() instanceof org.jruby.ast.RegexpNode) {
             final org.jruby.ast.RegexpNode regexpNode = (org.jruby.ast.RegexpNode) node.getReceiverNode();
             final Regex regex = new Regex(regexpNode.getValue().bytes(), 0, regexpNode.getValue().length(), regexpNode.getOptions().toOptions(), regexpNode.getEncoding(), Syntax.RUBY);
@@ -1807,8 +1811,12 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitMatch3Node(org.jruby.ast.Match3Node node) {
-        final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), node.getValueNode());
-        final org.jruby.ast.Node callNode = new CallNode(node.getPosition(), node.getReceiverNode(), "=~", argsNode, null);
+        // Triggered when a Regexp literal is the RHS of an expression.
+
+        // This looks weird, but the receiver and value nodes are reversed by the time they get to us, so we need to
+        // reverse them back in the CallNode.
+        final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), node.getReceiverNode());
+        final org.jruby.ast.Node callNode = new CallNode(node.getPosition(), node.getValueNode(), "=~", argsNode, null);
         return callNode.accept(this);
     }
 

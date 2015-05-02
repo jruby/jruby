@@ -7,6 +7,7 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.representations.BasicBlock;
 
 import java.util.*;
 
@@ -18,6 +19,10 @@ public class LocalOptimizationPass extends CompilerPass {
 
     @Override
     public Object execute(IRScope s, Object... data) {
+        for (BasicBlock b: s.getCFG().getBasicBlocks()) {
+            runLocalOptsOnInstrList(s, b.getInstrs().listIterator(), false);
+        }
+
         // SSS FIXME: What is this about? 
         // Why 'Only after running local opts'? Figure out and document.
         //

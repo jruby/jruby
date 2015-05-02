@@ -25,7 +25,17 @@ class Hash
   # term, as it creates objects which already exist for them and we have to
   # create, but for now it allows us to use more Rubinius code unmodified.
 
-  KeyValue = Struct.new(:key, :value)
+  class KeyValue
+
+    attr_reader :key
+    attr_reader :value
+
+    def initialize(key, value)
+      @key = key
+      @value = value
+    end
+
+  end
 
   def each_item
     each do |key, value|

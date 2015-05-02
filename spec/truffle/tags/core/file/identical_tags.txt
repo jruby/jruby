@@ -1,6 +1,3 @@
 fails:File.identical? returns true for a file and its link
-fails:File.identical? returns false if any of the files doesn't exist
 fails:File.identical? accepts an object that has a #to_path method
-fails:File.identical? raises an ArgumentError if not passed two arguments
-fails:File.identical? raises a TypeError if not passed String types
 fails:File.identical? returns true if both named files are identical

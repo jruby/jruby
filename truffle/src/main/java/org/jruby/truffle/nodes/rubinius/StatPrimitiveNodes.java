@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.FileStat;
@@ -23,6 +24,135 @@ import org.jruby.truffle.runtime.core.RubyString;
 public abstract class StatPrimitiveNodes {
 
     public static final HiddenKey STAT_IDENTIFIER = new HiddenKey("stat");
+
+    @RubiniusPrimitive(name = "stat_atime")
+    public static abstract class StatAtimePrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatAtimePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object atime(VirtualFrame frame, RubyBasicObject rubyStat) {
+            final long time = getStat(rubyStat).atime();
+            return ruby(frame, "Time.at(time)", "time", time);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_ctime")
+    public static abstract class StatCtimePrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatCtimePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object ctime(VirtualFrame frame, RubyBasicObject rubyStat) {
+            final long time = getStat(rubyStat).ctime();
+            return ruby(frame, "Time.at(time)", "time", time);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_mtime")
+    public static abstract class StatMtimePrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatMtimePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object mtime(VirtualFrame frame, RubyBasicObject rubyStat) {
+            final long time = getStat(rubyStat).mtime();
+            return ruby(frame, "Time.at(time)", "time", time);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_nlink")
+    public static abstract class NlinkPrimitiveNode extends StatReadPrimitiveNode {
+
+        public NlinkPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int nlink(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).nlink();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_rdev")
+    public static abstract class RdevPrimitiveNode extends StatReadPrimitiveNode {
+
+        public RdevPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public long rdev(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).rdev();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_blksize")
+    public static abstract class StatBlksizePrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatBlksizePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public long blksize(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).blockSize();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_blocks")
+    public static abstract class StatBlocksPrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatBlocksPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public long blocks(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).blocks();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_dev")
+    public static abstract class StatDevPrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatDevPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public long dev(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).dev();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_ino")
+    public static abstract class StatInoPrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatInoPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public long ino(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).ino();
+        }
+
+    }
 
     @RubiniusPrimitive(name = "stat_stat")
     public static abstract class StatStatPrimitiveNode extends RubiniusPrimitiveNode {
@@ -50,6 +180,30 @@ public abstract class StatPrimitiveNodes {
         @Specialization(guards = "!isRubyString(path)")
         public Object stat(RubyBasicObject rubyStat, Object path) {
             return null;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_fstat")
+    public static abstract class StatFStatPrimitiveNode extends RubiniusPrimitiveNode {
+
+        @Child private WriteHeadObjectFieldNode writeStatNode;
+
+        public StatFStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
+        }
+
+        @Specialization
+        public int fstat(RubyBasicObject rubyStat, int fd) {
+            final FileStat stat = posix().allocateStat();
+            final int code = posix().fstat(fd, stat);
+
+            if (code == 0) {
+                writeStatNode.execute(rubyStat, stat);
+            }
+
+            return code;
         }
 
     }

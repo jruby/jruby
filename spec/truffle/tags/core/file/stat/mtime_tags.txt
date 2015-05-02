@@ -1,1 +1,0 @@
-fails:File::Stat#mtime returns the mtime of a File::Stat object
