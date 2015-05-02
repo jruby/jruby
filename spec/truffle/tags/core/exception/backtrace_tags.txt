@@ -1,1 +1,2 @@
 fails:Exception#backtrace when redefined does not affect the behaviour of Exception#message
+fails:Exception#backtrace contains lines of the same format for each prior position in the stack
