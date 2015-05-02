@@ -280,6 +280,34 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "major", isModuleFunction = true, required = 1, lowerFixnumParameters = 0)
+    public abstract static class MajorNode extends CoreMethodArrayArgumentsNode {
+
+        public MajorNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int major(int dev) {
+            return (dev >> 24) & 255;
+        }
+
+    }
+
+    @CoreMethod(names = "minor", isModuleFunction = true, required = 1, lowerFixnumParameters = 0)
+    public abstract static class MinorNode extends CoreMethodArrayArgumentsNode {
+
+        public MinorNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int minor(int dev) {
+            return (dev & 16777215);
+        }
+
+    }
+
     @CoreMethod(names = "rmdir", isModuleFunction = true, required = 1)
     public abstract static class RmdirNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
 
