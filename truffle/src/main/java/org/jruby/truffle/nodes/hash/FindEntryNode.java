@@ -19,8 +19,8 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
-import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.HashSearchResult;
 
 public class FindEntryNode extends RubyNode {
@@ -42,7 +42,7 @@ public class FindEntryNode extends RubyNode {
         final int hashed = hashNode.hash(frame, key);
 
         final Entry[] entries = (Entry[]) hash.getStore();
-        final int index = HashOperations.getIndex(hashed, entries.length);
+        final int index = BucketsStrategy.getBucketIndex(hashed, entries.length);
         Entry entry = entries[index];
 
         Entry previousEntry = null;

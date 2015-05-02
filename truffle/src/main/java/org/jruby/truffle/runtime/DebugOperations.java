@@ -85,11 +85,11 @@ public abstract class DebugOperations {
         System.err.println("    ========================== AST Backtrace ==========================    ");
         System.err.println();
 
-        try {
-            printASTBacktrace(currentNode);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
+        //try {
+        //    printASTBacktrace(currentNode);
+        //} catch (Throwable e) {
+        //    e.printStackTrace();
+        //}
 
         System.err.println();
         System.err.println("    =========================== Java Backtrace ============================    ");

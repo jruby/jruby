@@ -34,9 +34,6 @@
 
 class Fixnum
 
-  MIN = -9223372036854775808
-  MAX =  9223372036854775807
-
   def left_shift_fallback(other)
     # Fallback from Rubinius' Fixnum#<<, after the primitive call
 

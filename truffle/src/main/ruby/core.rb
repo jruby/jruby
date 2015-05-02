@@ -21,6 +21,7 @@ require_relative 'core/rubinius/api/shims/thread'
 require_relative 'core/rubinius/api/shims/tuple'
 require_relative 'core/rubinius/api/shims/metrics'
 require_relative 'core/rubinius/api/shims/module'
+require_relative 'core/rubinius/api/shims/fixnum'
 
 # Load alpha.rb
 
@@ -114,6 +115,7 @@ require_relative 'core/rubinius/common/exception'
 require_relative 'core/rubinius/common/undefined'
 require_relative 'core/rubinius/common/type'
 require_relative 'core/rubinius/common/hash'
+require_relative 'core/hash' # Our changes
 #require_relative 'core/rubinius/common/hash_hamt'
 require_relative 'core/rubinius/common/array'
 require_relative 'core/rubinius/common/kernel'
@@ -220,7 +222,6 @@ require_relative 'core/rubinius/delta/struct'
 require_relative 'core/array'
 require_relative 'core/fixnum'
 require_relative 'core/float'
-require_relative 'core/hash'
 require_relative 'core/kernel'
 require_relative 'core/math'
 require_relative 'core/method'

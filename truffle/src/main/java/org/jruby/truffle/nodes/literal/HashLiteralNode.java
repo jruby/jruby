@@ -17,6 +17,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.hash.HashNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
@@ -58,7 +59,7 @@ public abstract class HashLiteralNode extends RubyNode {
     public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
         if (keyValues.length == 0) {
             return new EmptyHashLiteralNode(context, sourceSection);
-        } else if (keyValues.length <= PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX * 2) {
+        } else if (keyValues.length <= PackedArrayStrategy.MAX_ENTRIES * 2) {
             return new SmallHashLiteralNode(context, sourceSection, keyValues);
         } else {
             return new GenericHashLiteralNode(context, sourceSection, keyValues);
@@ -98,23 +99,25 @@ public abstract class HashLiteralNode extends RubyNode {
 
         private final ConditionProfile stringKeyProfile = ConditionProfile.createBinaryProfile();
 
+        @Child private HashNode hashNode;
         @Child private CallDispatchHeadNode equalNode;
         @Child private IsFrozenNode isFrozenNode;
 
         public SmallHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
             super(context, sourceSection, keyValues);
+            hashNode = new HashNode(context, sourceSection);
             equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
         @ExplodeLoop
         @Override
         public RubyHash executeRubyHash(VirtualFrame frame) {
-            final Object[] storage = new Object[PackedArrayStrategy.TRUFFLE_HASH_PACKED_ARRAY_MAX * 2];
+            final Object[] store = PackedArrayStrategy.createStore();
 
-            int end = 0;
+            int size = 0;
 
-            initializers: for (int n = 0; n < keyValues.length; n += 2) {
-                Object key = keyValues[n].execute(frame);
+            initializers: for (int n = 0; n < keyValues.length / 2; n++) {
+                Object key = keyValues[n * 2].execute(frame);
 
                 if (stringKeyProfile.profile(key instanceof RubyString)) {
                     if (isFrozenNode == null) {
@@ -122,26 +125,30 @@ public abstract class HashLiteralNode extends RubyNode {
                         isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
                     }
 
-                    if (! isFrozenNode.executeIsFrozen(key)) {
+                    if (!isFrozenNode.executeIsFrozen(key)) {
                         key = freezeNode.call(frame, dupNode.call(frame, key, "dup", null), "freeze", null);
                     }
                 }
 
-                final Object value = keyValues[n + 1].execute(frame);
+                final int hashed = hashNode.hash(frame, key);
 
-                for (int i = 0; i < n; i += 2) {
-                    if (i < end && equalNode.callBoolean(frame, key, "eql?", null, storage[i])) {
-                        storage[i + 1] = value;
+                final Object value = keyValues[n * 2 + 1].execute(frame);
+
+                for (int i = 0; i < n; i++) {
+                    if (i < size &&
+                            hashed == PackedArrayStrategy.getHashed(store, i) &&
+                            equalNode.callBoolean(frame, key, "eql?", null, PackedArrayStrategy.getKey(store, i))) {
+                        PackedArrayStrategy.setKey(store, i, key);
+                        PackedArrayStrategy.setValue(store, i, value);
                         continue initializers;
                     }
                 }
 
-                storage[end] = key;
-                storage[end + 1] = value;
-                end += 2;
+                PackedArrayStrategy.setHashedKeyValue(store, size, hashed, key, value);
+                size++;
             }
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, storage, end / 2, null);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, store, size, null);
         }
 
     }
