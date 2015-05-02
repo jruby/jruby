@@ -9,20 +9,45 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.interop.TruffleObject;
-import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.interop.messages.*;
-import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.interop.TruffleGlobalScope;
+import com.oracle.truffle.interop.messages.Argument;
+import com.oracle.truffle.interop.messages.Execute;
+import com.oracle.truffle.interop.messages.GetSize;
+import com.oracle.truffle.interop.messages.HasSize;
+import com.oracle.truffle.interop.messages.IsBoxed;
+import com.oracle.truffle.interop.messages.IsExecutable;
+import com.oracle.truffle.interop.messages.IsNull;
+import com.oracle.truffle.interop.messages.Read;
+import com.oracle.truffle.interop.messages.Receiver;
+import com.oracle.truffle.interop.messages.Unbox;
+import com.oracle.truffle.interop.messages.Write;
+import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
+
+
 @CoreClass(name = "Truffle::Interop")
 public abstract class TruffleInteropNodes {
 
+	private static TruffleGlobalScope globalScope;
+	
+	public static void setGlobalScope(TruffleGlobalScope globalScope) {
+		TruffleInteropNodes.globalScope = globalScope;
+	}
+	
+	public static TruffleGlobalScope getGlobalScope() {
+		return globalScope;
+	}
+	
     @CoreMethod(names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class InteropToRubyNode extends CoreMethodArrayArgumentsNode {
 
@@ -154,6 +179,11 @@ public abstract class TruffleInteropNodes {
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver, int identifier) {
             return node.executeForeign(frame, receiver, identifier);
         }
+        
+        @Specialization
+        public Object executeForeign(VirtualFrame frame, String receiver, int identifier) {
+            return receiver.charAt(identifier);
+        }
 
         @Specialization
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver, long identifier) {
@@ -284,5 +314,62 @@ public abstract class TruffleInteropNodes {
         }
 
     }
+    
+    @CoreMethod(names = "export", isModuleFunction = true, needsSelf = false, required = 2)
+    public abstract static class ExportNode extends CoreMethodArrayArgumentsNode {
 
+
+        public ExportNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "name == cachedName")
+        public Object export(VirtualFrame frame, RubyString name,  TruffleObject object, @Cached("name") RubyString cachedName, @Cached("rubyStringToString(cachedName)") String stringName, @Cached("getGlobal()") TruffleGlobalScope global) {
+            global.exportTruffleObject(stringName, object);
+            return object;
+        }
+        
+        @Specialization
+        public Object export(VirtualFrame frame, RubyString name,  TruffleObject object) {
+        	globalScope.exportTruffleObject(name.toString(), object);
+            return object;
+        }
+
+        protected static String rubyStringToString(RubyString rubyString) {
+        	return rubyString.toString();
+        }
+        
+        protected TruffleGlobalScope getGlobal() {
+        	return globalScope;
+        }
+
+    }
+    
+    @CoreMethod(names = "import", isModuleFunction = true, needsSelf = false, required = 1)
+    public abstract static class ImportNode extends CoreMethodArrayArgumentsNode {
+
+
+        public ImportNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "name == cachedName")
+        public TruffleObject importObject(VirtualFrame frame, RubyString name,  @Cached("name") RubyString cachedName, @Cached("getSlot(cachedName)") FrameSlot slot, @Cached("getGlobal()") TruffleGlobalScope global) {
+            return global.getTruffleObject(slot);
+        }
+        
+        @Specialization
+        public Object importObject(VirtualFrame frame, RubyString name) {
+            return getGlobal().getTruffleObject(getSlot(name));
+        }
+
+        protected FrameSlot getSlot(RubyString rubyString) {
+        	return globalScope.getFrameSlot(rubyString.toString());
+        }
+        
+        protected TruffleGlobalScope getGlobal() {
+        	return globalScope;
+        }
+
+    }
 }

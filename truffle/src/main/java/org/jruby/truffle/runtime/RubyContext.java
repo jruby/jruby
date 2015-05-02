@@ -14,7 +14,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.Probe;
-import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.Source;
@@ -527,17 +526,6 @@ public class RubyContext extends ExecutionContext {
 
     public RubiniusPrimitiveManager getRubiniusPrimitiveManager() {
         return rubiniusPrimitiveManager;
-    }
-
-    // TODO(mg): we need to find a better place for this:
-    private TruffleObject multilanguageObject;
-
-    public TruffleObject getMultilanguageObject() {
-        return multilanguageObject;
-    }
-
-    public void setMultilanguageObject(TruffleObject multilanguageObject) {
-        this.multilanguageObject = multilanguageObject;
     }
 
     public CoverageTracker getCoverageTracker() {

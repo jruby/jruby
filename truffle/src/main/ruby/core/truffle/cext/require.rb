@@ -8,8 +8,8 @@
 
 # TODO CS 18-Apr-15 can't seem to monkey patch via Kernel?
 
-#module Kernel
-class Object
+module Kernel
+#class Object
 
   if Truffle::CExt.supported?
 
