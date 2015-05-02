@@ -5,3 +5,4 @@ slow:Kernel.at_exit gives access to the last raised exception
 fails:Kernel.at_exit allows calling exit inside at_exit handler
 fails:Kernel.at_exit runs in reverse order of registration
 fails:Kernel.at_exit runs after all other code
+fails:Kernel.at_exit gives access to the last raised exception
