@@ -7,9 +7,10 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime;
+package org.jruby.truffle.runtime.object;
 
 import com.oracle.truffle.api.ExactMath;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
 import java.math.BigInteger;

@@ -21,7 +21,7 @@ import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.RubyOperations;
+import org.jruby.truffle.runtime.object.RubyObjectType;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
@@ -144,24 +144,24 @@ public class RubyBasicObject implements TruffleObject {
 
         assert instanceVariables != null;
 
-        getOperations().setInstanceVariables(this, instanceVariables);
+        getObjectType().setInstanceVariables(this, instanceVariables);
     }
 
 
     public Map<Object, Object>  getInstanceVariables() {
         RubyNode.notDesignedForCompilation();
 
-        return getOperations().getInstanceVariables(this);
+        return getObjectType().getInstanceVariables(this);
     }
 
     public Object[] getFieldNames() {
-        return getOperations().getFieldNames(this);
+        return getObjectType().getFieldNames(this);
     }
 
     public Object getInstanceVariable(String name) {
         RubyNode.notDesignedForCompilation();
 
-        final Object value = getOperations().getInstanceVariable(this, name);
+        final Object value = getObjectType().getInstanceVariable(this, name);
 
         if (value == null) {
             return getContext().getCoreLibrary().getNilObject();
@@ -171,7 +171,7 @@ public class RubyBasicObject implements TruffleObject {
     }
 
     public boolean isFieldDefined(String name) {
-        return getOperations().isFieldDefined(this, name);
+        return getObjectType().isFieldDefined(this, name);
     }
 
     @Override
@@ -183,7 +183,7 @@ public class RubyBasicObject implements TruffleObject {
         if (visitor.visit(this)) {
             metaClass.visitObjectGraph(visitor);
 
-            for (Object instanceVariable : getOperations().getInstanceVariables(this).values()) {
+            for (Object instanceVariable : getObjectType().getInstanceVariables(this).values()) {
                 if (instanceVariable instanceof RubyBasicObject) {
                     ((RubyBasicObject) instanceVariable).visitObjectGraph(visitor);
                 }
@@ -208,8 +208,8 @@ public class RubyBasicObject implements TruffleObject {
         return dynamicObject.getShape();
     }
 
-    public RubyOperations getOperations() {
-        return (RubyOperations) dynamicObject.getShape().getObjectType();
+    public RubyObjectType getObjectType() {
+        return (RubyObjectType) dynamicObject.getShape().getObjectType();
     }
 
     public RubyClass getLogicalClass() {

@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle;
 
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
@@ -31,7 +30,6 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
-import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.io.IOException;
@@ -170,7 +168,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
     }
 
     public Object execute(final TranslatorDriver.ParserContext parserContext, final Object self, final MaterializedFrame parentFrame, final org.jruby.ast.RootNode rootNode) {
-        truffleContext.getCoreLibrary().getGlobalVariablesObject().getOperations().setInstanceVariable(
+        truffleContext.getCoreLibrary().getGlobalVariablesObject().getObjectType().setInstanceVariable(
                 truffleContext.getCoreLibrary().getGlobalVariablesObject(), "$0",
                 truffleContext.toTruffle(runtime.getGlobalVariables().get("$0")));
 

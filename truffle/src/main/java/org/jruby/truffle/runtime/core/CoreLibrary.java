@@ -363,25 +363,25 @@ public class CoreLibrary {
 
         RubyBasicObject globals = globalVariablesObject;
 
-        globals.getOperations().setInstanceVariable(globals, "$LOAD_PATH", new RubyArray(arrayClass));
-        globals.getOperations().setInstanceVariable(globals, "$LOADED_FEATURES", new RubyArray(arrayClass));
-        globals.getOperations().setInstanceVariable(globals, "$:", globals.getInstanceVariable("$LOAD_PATH"));
-        globals.getOperations().setInstanceVariable(globals, "$\"", globals.getInstanceVariable("$LOADED_FEATURES"));
-        globals.getOperations().setInstanceVariable(globals, "$,", nilObject);
-        globals.getOperations().setInstanceVariable(globals, "$0", context.toTruffle(context.getRuntime().getGlobalVariables().get("$0")));
+        globals.getObjectType().setInstanceVariable(globals, "$LOAD_PATH", new RubyArray(arrayClass));
+        globals.getObjectType().setInstanceVariable(globals, "$LOADED_FEATURES", new RubyArray(arrayClass));
+        globals.getObjectType().setInstanceVariable(globals, "$:", globals.getInstanceVariable("$LOAD_PATH"));
+        globals.getObjectType().setInstanceVariable(globals, "$\"", globals.getInstanceVariable("$LOADED_FEATURES"));
+        globals.getObjectType().setInstanceVariable(globals, "$,", nilObject);
+        globals.getObjectType().setInstanceVariable(globals, "$0", context.toTruffle(context.getRuntime().getGlobalVariables().get("$0")));
 
-        globals.getOperations().setInstanceVariable(globals, "$DEBUG", context.getRuntime().isDebug());
+        globals.getObjectType().setInstanceVariable(globals, "$DEBUG", context.getRuntime().isDebug());
 
         Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
-        globals.getOperations().setInstanceVariable(globals, "$VERBOSE", value);
+        globals.getObjectType().setInstanceVariable(globals, "$VERBOSE", value);
 
         final RubyString defaultRecordSeparator = RubyString.fromJavaString(stringClass, CLI_RECORD_SEPARATOR);
         defaultRecordSeparator.freeze();
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
-        globals.getOperations().setInstanceVariable(globals, "$/", defaultRecordSeparator);
+        globals.getObjectType().setInstanceVariable(globals, "$/", defaultRecordSeparator);
 
-        globals.getOperations().setInstanceVariable(globals, "$SAFE", 0);
+        globals.getObjectType().setInstanceVariable(globals, "$SAFE", 0);
     }
 
     private void initializeConstants() {
@@ -815,7 +815,7 @@ public class CoreLibrary {
     public RubyException nameError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         RubyException nameError = new RubyException(nameErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
-        nameError.getOperations().setInstanceVariable(nameError, "@name", context.getSymbolTable().getSymbol(name));
+        nameError.getObjectType().setInstanceVariable(nameError, "@name", context.getSymbolTable().getSymbol(name));
         return nameError;
     }
 
@@ -867,7 +867,7 @@ public class CoreLibrary {
     public RubyException noMethodError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         RubyException noMethodError = new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
-        noMethodError.getOperations().setInstanceVariable(noMethodError, "@name", context.getSymbolTable().getSymbol(name));
+        noMethodError.getObjectType().setInstanceVariable(noMethodError, "@name", context.getSymbolTable().getSymbol(name));
         return noMethodError;
     }
 

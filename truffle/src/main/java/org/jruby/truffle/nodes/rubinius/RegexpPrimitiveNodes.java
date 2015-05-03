@@ -85,7 +85,7 @@ public abstract class RegexpPrimitiveNodes {
         public Object setLastMatch(RubyClass regexpClass, Object matchData) {
             notDesignedForCompilation();
 
-            getContext().getThreadManager().getCurrentThread().getThreadLocals().getOperations().setInstanceVariable(
+            getContext().getThreadManager().getCurrentThread().getThreadLocals().getObjectType().setInstanceVariable(
                     getContext().getThreadManager().getCurrentThread().getThreadLocals(), "$~", matchData);
 
             return matchData;

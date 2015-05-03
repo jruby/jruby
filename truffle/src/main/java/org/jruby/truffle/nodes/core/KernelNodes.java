@@ -37,9 +37,7 @@ import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodesFactory;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.hash.HashOperations;
@@ -373,7 +371,7 @@ public abstract class KernelNodes {
 
             final RubyBasicObject newObject = self.getLogicalClass().allocate(this);
 
-            newObject.getOperations().setInstanceVariables(newObject, self.getOperations().getInstanceVariables(self));
+            newObject.getObjectType().setInstanceVariables(newObject, self.getObjectType().getInstanceVariables(self));
 
             return newObject;
         }
@@ -885,14 +883,14 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public Object instanceVariableSet(RubyBasicObject object, RubyString name, Object value) {
-            object.getOperations().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
+            object.getObjectType().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
         @TruffleBoundary
         @Specialization
         public Object instanceVariableSet(RubyBasicObject object, RubySymbol name, Object value) {
-            object.getOperations().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
+            object.getObjectType().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
@@ -909,7 +907,7 @@ public abstract class KernelNodes {
         public RubyArray instanceVariables(RubyBasicObject self) {
             notDesignedForCompilation();
 
-            final Object[] instanceVariableNames = self.getOperations().getFieldNames(self);
+            final Object[] instanceVariableNames = self.getObjectType().getFieldNames(self);
 
             Arrays.sort(instanceVariableNames);
 
