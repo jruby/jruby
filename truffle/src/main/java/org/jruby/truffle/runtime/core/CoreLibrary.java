@@ -931,6 +931,11 @@ public class CoreLibrary {
         return new RubyException(ioErrorClass, context.makeString(String.format("Error reading file -  %s", fileName)), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException badFileDescriptor(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(getErrnoClass(Errno.EBADF), context.makeString("Bad file descriptor"), RubyCallStack.getBacktrace(currentNode));
+    }
+
     public RubyException fileNotFoundError(String fileName, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(getErrnoClass(Errno.ENOENT), context.makeString(String.format("No such file or directory -  %s", fileName)), RubyCallStack.getBacktrace(currentNode));
