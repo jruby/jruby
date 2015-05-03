@@ -15,9 +15,12 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.PackRootNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.nodes.control.*;
+import org.jruby.truffle.pack.nodes.format.FormatIntegerNodeGen;
 import org.jruby.truffle.pack.nodes.read.LiteralBytesNode;
 import org.jruby.truffle.pack.nodes.read.ReadStringNode;
 import org.jruby.truffle.pack.nodes.read.ReadStringNodeGen;
+import org.jruby.truffle.pack.nodes.read.ReadValueNodeGen;
+import org.jruby.truffle.pack.nodes.type.ToIntegerNodeGen;
 import org.jruby.truffle.pack.nodes.write.*;
 import org.jruby.truffle.pack.runtime.PackEncoding;
 import org.jruby.truffle.runtime.RubyContext;
@@ -68,6 +71,14 @@ public class FormatParser {
                         break;
                     case 's':
                         node = WriteBytesNodeGen.create(ReadStringNodeGen.create(context, true, "to_s", false, new SourceNode()));
+                        break;
+                    case 'd':
+                    case 'i':
+                    case 'u':
+                        node = WriteBytesNodeGen.create(
+                                FormatIntegerNodeGen.create(
+                                        ToIntegerNodeGen.create(
+                                                ReadValueNodeGen.create(new SourceNode()))));
                         break;
                     default:
                         throw new UnsupportedOperationException();
