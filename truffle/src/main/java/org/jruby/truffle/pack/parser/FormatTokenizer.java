@@ -19,8 +19,6 @@ import org.jruby.util.ByteList;
  */
 public class FormatTokenizer {
 
-    private static final String SIMPLE_TOKENS = "CSLIQcsliqnNvVAaZUXx*<>!_@DdFfEeGgPpHhMmuwBb";
-
     private final ByteList format;
     private int position;
     private Object peek;
@@ -31,19 +29,6 @@ public class FormatTokenizer {
      */
     public FormatTokenizer(ByteList format) {
         this.format = format;
-    }
-
-    /**
-     * Peeks at the next token and returns if it is a given character.
-     */
-    public boolean peek(char c) {
-        final Object peek = peek();
-
-        if (peek == null) {
-            return false;
-        }
-
-        return peek.equals(c);
     }
 
     public Object peek() {
@@ -67,20 +52,24 @@ public class FormatTokenizer {
 
         final char c = format.charAt(position);
 
-        if (c == '%') {
-            position++;
-            return c;
-        }
+        if (c != '%') {
+            final int stringStart = position;
 
-        final int stringStart = position;
+            position++;
+
+            while (position < format.length() && format.charAt(position) != '%') {
+                position++;
+            }
+
+            return format.subSequence(stringStart, position);
+        }
 
         position++;
 
-        while (position < format.length() && format.charAt(position) != '%') {
-            position++;
-        }
+        final char type = format.charAt(position);
+        position++;
 
-        return (ByteList) format.subSequence(stringStart, position);
+        return new FormatDirective(type);
     }
 
 }

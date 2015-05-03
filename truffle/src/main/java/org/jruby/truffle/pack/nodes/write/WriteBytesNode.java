@@ -9,6 +9,9 @@
  */
 package org.jruby.truffle.pack.nodes.write;
 
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.util.ByteList;
@@ -16,16 +19,13 @@ import org.jruby.util.ByteList;
 /**
  * Simply write bytes.
  */
-public class WriteBytesNode extends PackNode {
+@NodeChildren({
+        @NodeChild(value = "value", type = PackNode.class),
+})
+public abstract class WriteBytesNode extends PackNode {
 
-    private final ByteList bytes;
-
-    public WriteBytesNode(ByteList bytes) {
-        this.bytes = bytes;
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
+    @Specialization
+    public Object write(VirtualFrame frame, ByteList bytes) {
         writeBytes(frame, bytes);
         return null;
     }

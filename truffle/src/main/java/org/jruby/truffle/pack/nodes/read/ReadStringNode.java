@@ -18,7 +18,7 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.nodes.type.ToStringNode;
 import org.jruby.truffle.pack.nodes.type.ToStringNodeGen;
-import org.jruby.truffle.pack.nodes.write.NullNode;
+import org.jruby.truffle.pack.nodes.write.WriteByteNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**
@@ -78,7 +78,7 @@ public abstract class ReadStringNode extends PackNode {
         if (toStringNode == null) {
             CompilerDirectives.transferToInterpreter();
             toStringNode = insert(ToStringNodeGen.create(context, convertNumbersToStrings,
-                    conversionMethod, inspectOnConversionFailure, new NullNode()));
+                    conversionMethod, inspectOnConversionFailure, new WriteByteNode((byte) 0)));
         }
 
         return toStringNode.executeToString(frame, value);

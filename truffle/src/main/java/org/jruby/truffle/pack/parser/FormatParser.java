@@ -13,7 +13,11 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.PackRootNode;
+import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.nodes.control.*;
+import org.jruby.truffle.pack.nodes.read.LiteralBytesNode;
+import org.jruby.truffle.pack.nodes.read.ReadStringNode;
+import org.jruby.truffle.pack.nodes.read.ReadStringNodeGen;
 import org.jruby.truffle.pack.nodes.write.*;
 import org.jruby.truffle.pack.runtime.PackEncoding;
 import org.jruby.truffle.runtime.RubyContext;
@@ -26,11 +30,6 @@ import java.util.List;
  * Parses a pack format expression into a tree of Truffle nodes.
  */
 public class FormatParser {
-
-    private enum State {
-        READY,
-        START
-    }
 
     private final RubyContext context;
 
@@ -47,8 +46,6 @@ public class FormatParser {
     }
 
     public PackNode parse(FormatTokenizer tokenizer) {
-        State state = State.READY;
-
         final List<PackNode> sequenceChildren = new ArrayList<>();
 
         while (true) {
@@ -58,33 +55,28 @@ public class FormatParser {
                 break;
             }
 
+            final PackNode node;
+
             if (token instanceof ByteList) {
-                switch (state) {
-                    case READY:
-                        sequenceChildren.add(new WriteBytesNode((ByteList) token));
+                node = WriteBytesNodeGen.create(new LiteralBytesNode((ByteList) token));
+            } else if (token instanceof FormatDirective) {
+                final FormatDirective directive = (FormatDirective) token;
+
+                switch (directive.getType()) {
+                    case '%':
+                        node = new WriteByteNode((byte) '%');
+                        break;
+                    case 's':
+                        node = WriteBytesNodeGen.create(ReadStringNodeGen.create(context, true, "to_s", false, new SourceNode()));
                         break;
                     default:
                         throw new UnsupportedOperationException();
                 }
-            } else if (token instanceof Character) {
-                if ((char) token == '%') {
-                    switch (state) {
-                        case READY:
-                            state = State.START;
-                            break;
-                        case START:
-                            sequenceChildren.add(new WriteByteNode((byte) '%'));
-                            state = State.READY;
-                            break;
-                        default:
-                            throw new UnsupportedOperationException();
-                    }
-                } else {
-                    throw new UnsupportedOperationException();
-                }
             } else {
                 throw new UnsupportedOperationException();
             }
+
+            sequenceChildren.add(node);
         }
 
         return new SequenceNode(sequenceChildren.toArray(new PackNode[sequenceChildren.size()]));

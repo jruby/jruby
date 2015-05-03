@@ -343,7 +343,7 @@ public class PackParser {
                         node = new BackNode();
                         break;
                     case 'x':
-                        node = new NullNode();
+                        node = new WriteByteNode((byte) 0);
                         break;
                     case '@': {
                         final int position;
