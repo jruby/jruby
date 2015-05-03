@@ -509,7 +509,7 @@ public class PackParser {
      * Provide a simple string describing the format expression that is short
      * enough to be used in Truffle and Graal diagnostics.
      */
-    private String describe(String format) {
+    public static String describe(String format) {
         format = format.replace("\\s+", "");
 
         if (format.length() > 10) {
