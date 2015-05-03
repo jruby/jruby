@@ -1,4 +1,4 @@
 <factorypath>
-    <factorypathentry kind="VARJAR" id="M2_REPO/com/oracle/truffle/0.7-SNAPSHOT/truffle-0.7-SNAPSHOT.jar" enabled="true" runInBatchMode="false"/>
-    <factorypathentry kind="VARJAR" id="M2_REPO/com/oracle/truffle-dsl-processor/0.7-SNAPSHOT/truffle-dsl-processor-0.7-SNAPSHOT.jar" enabled="true" runInBatchMode="false"/>
+    <factorypathentry kind="VARJAR" id="M2_REPO/com/oracle/truffle/0.7/truffle-0.7.jar" enabled="true" runInBatchMode="false"/>
+    <factorypathentry kind="VARJAR" id="M2_REPO/com/oracle/truffle-dsl-processor/0.7/truffle-dsl-processor-0.7.jar" enabled="true" runInBatchMode="false"/>
 </factorypath>
