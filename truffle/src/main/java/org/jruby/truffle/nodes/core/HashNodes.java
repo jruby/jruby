@@ -110,7 +110,9 @@ public abstract class HashNodes {
                 return false;
             }
 
-            if (PackedArrayStrategy.MAX_ELEMENTS > PackedArrayStrategy.MAX_ENTRIES) {
+            final Object[] store = (Object[]) array.getStore();
+
+            if (store.length > PackedArrayStrategy.MAX_ENTRIES) {
                 return false;
             }
 
