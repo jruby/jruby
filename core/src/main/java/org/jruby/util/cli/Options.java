@@ -127,7 +127,6 @@ public class Options {
     public static final Option<Boolean> IR_WRITING_DEBUG     = bool(IR, "ir.writing.debug", false, "Debug writing JRuby IR file.");
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
 
-    public static final Option<Boolean> TRUFFLE_PRINT_RUNTIME = bool(TRUFFLE, "truffle.printRuntime", false, "Print the name of the Truffle runtime on startup.");
     public static final Option<Boolean> TRUFFLE_RUNTIME_VERSION_CHECK = bool(TRUFFLE, "truffle.runtime.version_check", true, "Check the version of Truffle supplied by the JVM before starting.");
 
     public static final Option<Integer> TRUFFLE_DISPATCH_POLYMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.polymorphic.max", 8, "Maximum size of a polymorphic call site cache.");

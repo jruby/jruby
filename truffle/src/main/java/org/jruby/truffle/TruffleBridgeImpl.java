@@ -41,8 +41,6 @@ import java.util.List;
 
 public class TruffleBridgeImpl implements TruffleBridge {
 
-    private static final boolean PRINT_RUNTIME = Options.TRUFFLE_PRINT_RUNTIME.load();
-
     private final org.jruby.Ruby runtime;
     private final RubyContext truffleContext;
 
@@ -58,10 +56,6 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
     @Override
     public void init() {
-        if (PRINT_RUNTIME) {
-            runtime.getInstanceConfig().getError().println("jruby: using " + Truffle.getRuntime().getName());
-        }
-
         // Bring in core method nodes
 
         RubyClass rubyObjectClass = truffleContext.getCoreLibrary().getObjectClass();
