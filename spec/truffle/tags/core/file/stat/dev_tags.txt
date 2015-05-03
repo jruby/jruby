@@ -1,1 +1,0 @@
-fails:File::Stat#dev returns the number of the device on which the file exists
