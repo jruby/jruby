@@ -50,7 +50,6 @@ import java.util.Map;
 
 public class CoreLibrary {
 
-    private static final boolean LOAD_CORE = Options.TRUFFLE_LOAD_CORE.load();
     private static final String CLI_RECORD_SEPARATOR = Options.CLI_RECORD_SEPARATOR.load();
 
     private final RubyContext context;
@@ -476,21 +475,19 @@ public class CoreLibrary {
 
         // Load Ruby core
 
-        if (LOAD_CORE) {
-            try {
-                state = State.LOADING_RUBY_CORE;
-                loadRubyCore("core.rb");
-            } catch (RaiseException e) {
-                final RubyException rubyException = e.getRubyException();
+        try {
+            state = State.LOADING_RUBY_CORE;
+            loadRubyCore("core.rb");
+        } catch (RaiseException e) {
+            final RubyException rubyException = e.getRubyException();
 
-                for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), rubyException, rubyException.getBacktrace())) {
-                    System.err.println(line);
-                }
-
-                throw new TruffleFatalException("couldn't load the core library", e);
-            } finally {
-                state = State.LOADED;
+            for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), rubyException, rubyException.getBacktrace())) {
+                System.err.println(line);
             }
+
+            throw new TruffleFatalException("couldn't load the core library", e);
+        } finally {
+            state = State.LOADED;
         }
     }
 

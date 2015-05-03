@@ -135,8 +135,6 @@ public class Options {
     public static final Option<Integer> TRUFFLE_ARRAYS_SMALL = integer(TRUFFLE, "truffle.arrays.small", 3, "Maximum size of an Array to consider small for optimisations.");
     public static final Option<Integer> TRUFFLE_HASH_PACKED_ARRAY_MAX = integer(TRUFFLE, "truffle.hash.packed_array_max", 3, "Maximum size of a Hash to use with the packed array storage strategy.");
 
-    public static final Option<Boolean> TRUFFLE_LOAD_CORE = bool(TRUFFLE, "truffle.load_core", true, "Load the Truffle core library.");
-
     public static final Option<Integer> TRUFFLE_PASSALOT = integer(TRUFFLE, "truffle.passalot", 0, "Probabilty between 0 and 100 to randomly insert Thread.pass at a given line.");
     public static final Option<Integer> TRUFFLE_INSTRUMENTATION_SERVER_PORT = integer(TRUFFLE, "truffle.instrumentation_server_port", 0, "Port number to run an HTTP server on that provides instrumentation services");
     public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_AST = string(TRUFFLE, "truffle.translator.print_asts", "", "Comma delimited list of method names to print the AST of after translation.");
