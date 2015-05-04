@@ -90,7 +90,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
-      <version>0.8</version>
+      <version>0.9</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -100,22 +100,22 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
-      <version>0.7</version>
+      <version>0.8</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.12-SNAPSHOT</version>
+      <version>3.0.12</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.8.6</version>
+      <version>0.8.7</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>2.0.3-SNAPSHOT</version>
+      <version>2.0.3</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>

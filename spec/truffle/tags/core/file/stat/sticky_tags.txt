@@ -1,1 +1,0 @@
-fails:File::Stat#sticky? returns true if the named file has the sticky bit, otherwise false

@@ -117,7 +117,7 @@
     <minitest.version>5.4.1</minitest.version>
     <ant.version>1.9.2</ant.version>
     <diff-lcs.version>1.1.3</diff-lcs.version>
-    <jffi.version>1.2.8</jffi.version>
+    <jffi.version>1.2.9</jffi.version>
     <rake.version>10.1.0</rake.version>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <jruby-launcher.version>1.1.1</jruby-launcher.version>
