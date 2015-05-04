@@ -387,35 +387,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "%", required = 1, argumentsAsArray = true)
-    public abstract static class FormatNode extends CoreMethodArrayArgumentsNode {
-
-        public FormatNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        private final BranchProfile singleArrayProfile = BranchProfile.create();
-        private final BranchProfile multipleArgumentsProfile = BranchProfile.create();
-
-        @Specialization
-        public RubyString format(RubyString format, Object[] args) {
-            return formatSlow(format, args);
-        }
-
-        @CompilerDirectives.TruffleBoundary
-        private RubyString formatSlow(RubyString format, Object[] args) {
-            final RubyContext context = getContext();
-
-            if (args.length == 1 && args[0] instanceof RubyArray) {
-                singleArrayProfile.enter();
-                return context.makeString(StringFormatter.format(getContext(), format.toString(), Arrays.asList(((RubyArray) args[0]).slowToArray())), format.getByteList().getEncoding());
-            } else {
-                multipleArgumentsProfile.enter();
-                return context.makeString(StringFormatter.format(getContext(), format.toString(), Arrays.asList(args)), format.getByteList().getEncoding());
-            }
-        }
-    }
-
     @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1}, taintFromSelf = true)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
@@ -899,8 +870,9 @@ public abstract class StringNodes {
             return deleteBangSlow(frame, string, otherStrings);
         }
 
-        @CompilerDirectives.TruffleBoundary
         private Object deleteBangSlow(VirtualFrame frame, RubyString string, Object... args) {
+            notDesignedForCompilation();
+
             RubyString[] otherStrings = new RubyString[args.length];
 
             for (int i = 0; i < args.length; i++) {

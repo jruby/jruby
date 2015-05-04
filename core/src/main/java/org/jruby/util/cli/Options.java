@@ -127,7 +127,6 @@ public class Options {
     public static final Option<Boolean> IR_WRITING_DEBUG     = bool(IR, "ir.writing.debug", false, "Debug writing JRuby IR file.");
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
 
-    public static final Option<Boolean> TRUFFLE_PRINT_RUNTIME = bool(TRUFFLE, "truffle.printRuntime", false, "Print the name of the Truffle runtime on startup.");
     public static final Option<Boolean> TRUFFLE_RUNTIME_VERSION_CHECK = bool(TRUFFLE, "truffle.runtime.version_check", true, "Check the version of Truffle supplied by the JVM before starting.");
 
     public static final Option<Integer> TRUFFLE_DISPATCH_POLYMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.polymorphic.max", 8, "Maximum size of a polymorphic call site cache.");
@@ -135,8 +134,6 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_ARRAYS_OPTIMISTIC_LONG = bool(TRUFFLE, "truffle.arrays.optimistic.long", true, "If we allocate an int[] for an Array and it has been converted to a long[], directly allocate a long[] next time.");
     public static final Option<Integer> TRUFFLE_ARRAYS_SMALL = integer(TRUFFLE, "truffle.arrays.small", 3, "Maximum size of an Array to consider small for optimisations.");
     public static final Option<Integer> TRUFFLE_HASH_PACKED_ARRAY_MAX = integer(TRUFFLE, "truffle.hash.packed_array_max", 3, "Maximum size of a Hash to use with the packed array storage strategy.");
-
-    public static final Option<Boolean> TRUFFLE_LOAD_CORE = bool(TRUFFLE, "truffle.load_core", true, "Load the Truffle core library.");
 
     public static final Option<Integer> TRUFFLE_PASSALOT = integer(TRUFFLE, "truffle.passalot", 0, "Probabilty between 0 and 100 to randomly insert Thread.pass at a given line.");
     public static final Option<Integer> TRUFFLE_INSTRUMENTATION_SERVER_PORT = integer(TRUFFLE, "truffle.instrumentation_server_port", 0, "Port number to run an HTTP server on that provides instrumentation services");

@@ -1,2 +1,0 @@
-fails:File.new raises an Errorno::EEXIST if the file exists when create a new file with File::CREAT|File::EXCL
-fails:File.new raises an Errno::EBADF if the first parameter is an invalid file descriptor

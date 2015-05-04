@@ -1,1 +1,10 @@
 fails:Thread#alive? describes a dying sleeping thread
+fails(flaky):Thread#alive? can check it's own status
+fails(flaky):Thread#alive? describes a running thread
+fails(flaky):Thread#alive? describes a sleeping thread
+fails(flaky):Thread#alive? describes a blocked thread
+fails(flaky):Thread#alive? describes a completed thread
+fails(flaky):Thread#alive? describes a killed thread
+fails(flaky):Thread#alive? describes a thread with an uncaught exception
+fails(flaky):Thread#alive? describes a dying running thread
+fails(flaky):Thread#alive? returns true for a killed but still running thread

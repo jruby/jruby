@@ -83,7 +83,6 @@ public abstract class ToIntNode extends RubyNode {
         return coerceObject(frame, object);
     }
 
-    @CompilerDirectives.TruffleBoundary
     private Object coerceObject(VirtualFrame frame, Object object) {
         if (toIntNode == null) {
             CompilerDirectives.transferToInterpreter();
@@ -97,9 +96,7 @@ public abstract class ToIntNode extends RubyNode {
         } catch (RaiseException e) {
             if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(
-                        getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "Integer", this));
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "Integer", this));
             } else {
                 throw e;
             }

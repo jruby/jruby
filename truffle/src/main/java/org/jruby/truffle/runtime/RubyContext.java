@@ -36,6 +36,8 @@ import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.object.ObjectIDOperations;
+import org.jruby.truffle.runtime.object.RubyObjectType;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
@@ -125,7 +127,7 @@ public class RubyContext extends ExecutionContext {
         // Object space manager needs to come early before we create any objects
         objectSpaceManager = new ObjectSpaceManager(this);
 
-        emptyShape = RubyBasicObject.LAYOUT.createShape(new RubyOperations(this));
+        emptyShape = RubyBasicObject.LAYOUT.createShape(new RubyObjectType(this));
 
         coreLibrary = new CoreLibrary(this);
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
@@ -389,7 +391,7 @@ public class RubyContext extends ExecutionContext {
     public org.jruby.RubyString toJRuby(RubyString string) {
         final org.jruby.RubyString jrubyString = runtime.newString(string.getByteList().dup());
 
-        final Object tainted = string.getOperations().getInstanceVariable(string, RubyBasicObject.TAINTED_IDENTIFIER);
+        final Object tainted = string.getObjectType().getInstanceVariable(string, RubyBasicObject.TAINTED_IDENTIFIER);
 
         if (tainted instanceof Boolean && (boolean) tainted) {
             jrubyString.setTaint(true);
@@ -448,7 +450,7 @@ public class RubyContext extends ExecutionContext {
         final RubyString truffleString = new RubyString(getCoreLibrary().getStringClass(), jrubyString.getByteList().dup());
 
         if (jrubyString.isTaint()) {
-            truffleString.getOperations().setInstanceVariable(truffleString, RubyBasicObject.TAINTED_IDENTIFIER, true);
+            truffleString.getObjectType().setInstanceVariable(truffleString, RubyBasicObject.TAINTED_IDENTIFIER, true);
         }
 
         return truffleString;

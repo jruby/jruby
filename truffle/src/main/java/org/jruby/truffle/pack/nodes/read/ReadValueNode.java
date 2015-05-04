@@ -16,21 +16,14 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
-import org.jruby.truffle.pack.nodes.type.ToDoubleNode;
-import org.jruby.truffle.pack.nodes.type.ToDoubleNodeGen;
 
-/**
- * Read a {@code double} value from the source.
- */
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
 })
-public abstract class ReadDoubleNode extends PackNode {
-
-    @Child private ToDoubleNode toDoubleNode;
+public abstract class ReadValueNode extends PackNode {
 
     @Specialization(guards = "isNull(source)")
-    public double read(VirtualFrame frame, Object source) {
+    public void read(VirtualFrame frame, Object source) {
         CompilerDirectives.transferToInterpreter();
 
         // Advance will handle the error
@@ -40,28 +33,23 @@ public abstract class ReadDoubleNode extends PackNode {
     }
 
     @Specialization
-    public double read(VirtualFrame frame, int[] source) {
+    public long read(VirtualFrame frame, int[] source) {
         return source[advanceSourcePosition(frame)];
     }
 
     @Specialization
-    public double read(VirtualFrame frame, long[] source) {
+    public long read(VirtualFrame frame, long[] source) {
         return source[advanceSourcePosition(frame)];
     }
 
     @Specialization
-    public double read(VirtualFrame frame, double[] source) {
-        return source[advanceSourcePosition(frame)];
+    public long read(VirtualFrame frame, double[] source) {
+        return (long) source[advanceSourcePosition(frame)];
     }
 
     @Specialization
-    public double read(VirtualFrame frame, Object[] source) {
-        if (toDoubleNode == null) {
-            CompilerDirectives.transferToInterpreter();
-            toDoubleNode = insert(ToDoubleNodeGen.create(null));
-        }
-
-        return toDoubleNode.executeToDouble(frame, source[advanceSourcePosition(frame)]);
+    public Object read(VirtualFrame frame, Object[] source) {
+        return source[advanceSourcePosition(frame)];
     }
 
 }

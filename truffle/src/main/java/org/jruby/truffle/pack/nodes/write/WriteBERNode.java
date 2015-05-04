@@ -32,6 +32,18 @@ import java.math.BigInteger;
 public abstract class WriteBERNode extends PackNode {
 
     @Specialization
+    public Object doWrite(VirtualFrame frame, int value) {
+        if (value < 0) {
+            CompilerDirectives.transferToInterpreter();
+            throw new CantCompressNegativeException();
+        }
+
+        writeBytes(frame, encode(value));
+
+        return null;
+    }
+
+    @Specialization
     public Object doWrite(VirtualFrame frame, long value) {
         if (value < 0) {
             CompilerDirectives.transferToInterpreter();

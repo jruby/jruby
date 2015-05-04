@@ -18,7 +18,7 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.nodes.type.ToStringNode;
 import org.jruby.truffle.pack.nodes.type.ToStringNodeGen;
-import org.jruby.truffle.pack.nodes.write.NullNode;
+import org.jruby.truffle.pack.nodes.write.WriteByteNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**
@@ -33,15 +33,18 @@ public abstract class ReadStringNode extends PackNode {
     private final boolean convertNumbersToStrings;
     private final String conversionMethod;
     private final boolean inspectOnConversionFailure;
+    private final Object valueOnNil;
 
     @Child private ToStringNode toStringNode;
 
     public ReadStringNode(RubyContext context, boolean convertNumbersToStrings,
-                          String conversionMethod, boolean inspectOnConversionFailure) {
+                          String conversionMethod, boolean inspectOnConversionFailure,
+                          Object valueOnNil) {
         this.context = context;
         this.convertNumbersToStrings = convertNumbersToStrings;
         this.conversionMethod = conversionMethod;
         this.inspectOnConversionFailure = inspectOnConversionFailure;
+        this.valueOnNil = valueOnNil;
     }
 
     @Specialization(guards = "isNull(source)")
@@ -78,7 +81,7 @@ public abstract class ReadStringNode extends PackNode {
         if (toStringNode == null) {
             CompilerDirectives.transferToInterpreter();
             toStringNode = insert(ToStringNodeGen.create(context, convertNumbersToStrings,
-                    conversionMethod, inspectOnConversionFailure, new NullNode()));
+                    conversionMethod, inspectOnConversionFailure, valueOnNil, new WriteByteNode((byte) 0)));
         }
 
         return toStringNode.executeToString(frame, value);

@@ -7,24 +7,25 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime;
+package org.jruby.truffle.runtime.object;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class RubyOperations extends ObjectType {
+public class RubyObjectType extends ObjectType {
 
     private final RubyContext context;
 
-    public RubyOperations(RubyContext context) {
+    public RubyObjectType(RubyContext context) {
         this.context = context;
     }
 

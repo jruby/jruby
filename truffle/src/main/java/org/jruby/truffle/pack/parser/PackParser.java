@@ -226,7 +226,8 @@ public class PackParser {
 
                         node = WriteBinaryStringNodeGen.create(pad, padOnNull,
                                 width, padding, takeAll, appendNull,
-                                ReadStringNodeGen.create(context, true, "to_str", false, new SourceNode()));
+                                ReadStringNodeGen.create(context, true, "to_str",
+                                        false, context.getCoreLibrary().getNilObject(), new SourceNode()));
                     } break;
                     case 'H':
                     case 'h': {
@@ -254,7 +255,8 @@ public class PackParser {
                         }
 
                         node = WriteHexStringNodeGen.create(endianness, length,
-                                ReadStringNodeGen.create(context, true, "to_str", false, new SourceNode()));
+                                ReadStringNodeGen.create(context, true, "to_str",
+                                        false, context.getCoreLibrary().getNilObject(), new SourceNode()));
                     } break;
                     case 'B':
                     case 'b': {
@@ -287,7 +289,8 @@ public class PackParser {
                         }
 
                         node = WriteBitStringNodeGen.create(endianness, star, length,
-                                ReadStringNodeGen.create(context, true, "to_str", false, new SourceNode()));
+                                ReadStringNodeGen.create(context, true, "to_str",
+                                        false, context.getCoreLibrary().getNilObject(), new SourceNode()));
                     } break;
                     case 'M': {
                         encoding = encoding.unifyWith(PackEncoding.US_ASCII);
@@ -305,7 +308,8 @@ public class PackParser {
                         }
 
                         node = WriteMIMEStringNodeGen.create(length,
-                                ReadStringNodeGen.create(context, true, "to_s", true, new SourceNode()));
+                                ReadStringNodeGen.create(context, true, "to_s",
+                                        true, context.getCoreLibrary().getNilObject(), new SourceNode()));
                     } break;
                     case 'm':
                     case 'u': {
@@ -325,11 +329,13 @@ public class PackParser {
                         switch ((char) token) {
                             case 'm':
                                 node = WriteBase64StringNodeGen.create(length, ignoreStar,
-                                        ReadStringNodeGen.create(context, false, "to_str", false, new SourceNode()));
+                                        ReadStringNodeGen.create(context, false, "to_str",
+                                                false, context.getCoreLibrary().getNilObject(), new SourceNode()));
                                 break;
                             case 'u':
                                 node = WriteUUStringNodeGen.create(length, ignoreStar,
-                                        ReadStringNodeGen.create(context, false, "to_str", false, new SourceNode()));
+                                        ReadStringNodeGen.create(context, false, "to_str",
+                                                false, context.getCoreLibrary().getNilObject(), new SourceNode()));
                                 break;
                             default:
                                 throw new UnsupportedOperationException();
@@ -343,7 +349,7 @@ public class PackParser {
                         node = new BackNode();
                         break;
                     case 'x':
-                        node = new NullNode();
+                        node = new WriteByteNode((byte) 0);
                         break;
                     case '@': {
                         final int position;
@@ -509,7 +515,7 @@ public class PackParser {
      * Provide a simple string describing the format expression that is short
      * enough to be used in Truffle and Graal diagnostics.
      */
-    private String describe(String format) {
+    public static String describe(String format) {
         format = format.replace("\\s+", "");
 
         if (format.length() > 10) {

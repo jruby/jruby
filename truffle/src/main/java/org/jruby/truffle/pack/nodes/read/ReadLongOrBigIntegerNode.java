@@ -19,7 +19,6 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.nodes.type.ToLongNode;
 import org.jruby.truffle.pack.nodes.type.ToLongNodeGen;
-import org.jruby.truffle.pack.nodes.write.NullNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
@@ -46,7 +45,7 @@ public abstract class ReadLongOrBigIntegerNode extends PackNode {
     }
 
     @Specialization(guards = "isNull(source)")
-    public long read(VirtualFrame frame, Object source) {
+    public void read(VirtualFrame frame, Object source) {
         CompilerDirectives.transferToInterpreter();
 
         // Advance will handle the error
@@ -56,18 +55,13 @@ public abstract class ReadLongOrBigIntegerNode extends PackNode {
     }
 
     @Specialization
-    public long read(VirtualFrame frame, int[] source) {
+    public int read(VirtualFrame frame, int[] source) {
         return source[advanceSourcePosition(frame)];
     }
 
     @Specialization
     public long read(VirtualFrame frame, long[] source) {
         return source[advanceSourcePosition(frame)];
-    }
-
-    @Specialization
-    public long read(VirtualFrame frame, double[] source) {
-        return (long) source[advanceSourcePosition(frame)];
     }
 
     @Specialization
@@ -79,7 +73,7 @@ public abstract class ReadLongOrBigIntegerNode extends PackNode {
         } else {
             if (toLongNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toLongNode = insert(ToLongNodeGen.create(context, new NullNode()));
+                toLongNode = insert(ToLongNodeGen.create(context, null));
             }
 
             return toLongNode.executeToLong(frame, value);

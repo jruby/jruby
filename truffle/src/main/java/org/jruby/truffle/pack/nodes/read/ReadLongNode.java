@@ -18,7 +18,6 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.nodes.type.ToLongNode;
 import org.jruby.truffle.pack.nodes.type.ToLongNodeGen;
-import org.jruby.truffle.pack.nodes.write.NullNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**
@@ -67,7 +66,7 @@ public abstract class ReadLongNode extends PackNode {
     public long read(VirtualFrame frame, Object[] source) {
         if (toLongNode == null) {
             CompilerDirectives.transferToInterpreter();
-            toLongNode = insert(ToLongNodeGen.create(context, new NullNode()));
+            toLongNode = insert(ToLongNodeGen.create(context, null));
         }
 
         return toLongNode.executeToLong(frame, source[advanceSourcePosition(frame)]);

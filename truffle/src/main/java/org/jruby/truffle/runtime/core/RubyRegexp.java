@@ -239,7 +239,7 @@ public class RubyRegexp extends RubyBasicObject {
         assert value != null;
 
         RubyNode.notDesignedForCompilation();
-        getContext().getThreadManager().getCurrentThread().getThreadLocals().getOperations().setInstanceVariable(getContext().getThreadManager().getCurrentThread().getThreadLocals(), name, value);
+        getContext().getThreadManager().getCurrentThread().getThreadLocals().getObjectType().setInstanceVariable(getContext().getThreadManager().getCurrentThread().getThreadLocals(), name, value);
     }
 
     @CompilerDirectives.TruffleBoundary

@@ -9,18 +9,20 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.CreateCast;
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeChildren;
-import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyThread.Status;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
@@ -36,10 +38,11 @@ import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodesFactory;
+import org.jruby.truffle.pack.parser.FormatParser;
+import org.jruby.truffle.pack.runtime.PackResult;
+import org.jruby.truffle.pack.runtime.exceptions.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.hash.HashOperations;
@@ -47,6 +50,7 @@ import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.FeatureManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
 
 import java.io.*;
@@ -373,7 +377,7 @@ public abstract class KernelNodes {
 
             final RubyBasicObject newObject = self.getLogicalClass().allocate(this);
 
-            newObject.getOperations().setInstanceVariables(newObject, self.getOperations().getInstanceVariables(self));
+            newObject.getObjectType().setInstanceVariables(newObject, self.getObjectType().getInstanceVariables(self));
 
             return newObject;
         }
@@ -885,14 +889,14 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public Object instanceVariableSet(RubyBasicObject object, RubyString name, Object value) {
-            object.getOperations().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
+            object.getObjectType().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
         @TruffleBoundary
         @Specialization
         public Object instanceVariableSet(RubyBasicObject object, RubySymbol name, Object value) {
-            object.getOperations().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
+            object.getObjectType().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
@@ -909,7 +913,7 @@ public abstract class KernelNodes {
         public RubyArray instanceVariables(RubyBasicObject self) {
             notDesignedForCompilation();
 
-            final Object[] instanceVariableNames = self.getOperations().getFieldNames(self);
+            final Object[] instanceVariableNames = self.getObjectType().getFieldNames(self);
 
             Arrays.sort(instanceVariableNames);
 
@@ -1604,35 +1608,131 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = { "sprintf", "format" }, isModuleFunction = true, argumentsAsArray = true)
-    public abstract static class SPrintfNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = {"format", "sprintf"}, isModuleFunction = true, argumentsAsArray = true, required = 1, taintFromParameter = 0)
+    public abstract static class FormatNode extends CoreMethodArrayArgumentsNode {
 
-        public SPrintfNode(RubyContext context, SourceSection sourceSection) {
+        @Child private TaintNode taintNode;
+
+        public FormatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
-        @Specialization
-        public RubyString sprintf(Object[] args) {
-            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        @Specialization(guards = {"isRubyString(firstArgument(arguments))", "byteListsEqual(asRubyString(firstArgument(arguments)), cachedFormat)"})
+        public RubyString formatCached(
+                VirtualFrame frame,
+                Object[] arguments,
+                @Cached("privatizeByteList(asRubyString(firstArgument(arguments)))") ByteList cachedFormat,
+                @Cached("create(compileFormat(asRubyString(firstArgument(arguments))))") DirectCallNode callPackNode) {
+            final Object[] store = ArrayUtils.extractRange(arguments, 1, arguments.length);
 
-            final PrintStream printStream;
+            final PackResult result;
 
             try {
-                printStream = new PrintStream(outputStream, true, StandardCharsets.UTF_8.name());
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
+                result = (PackResult) callPackNode.call(frame, new Object[]{store, store.length});
+            } catch (PackException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw handleException(e);
             }
 
-            if (args.length > 0) {
-                final String format = args[0].toString();
-                final List<Object> values = Arrays.asList(args).subList(1, args.length);
-
-                StringFormatter.format(getContext(), printStream, format, values);
-            }
-
-            return getContext().makeString(new ByteList(outputStream.toByteArray()));
+            return finishFormat(cachedFormat, result);
         }
+
+        @Specialization(guards = "isRubyString(firstArgument(arguments))", contains = "formatCached")
+        public RubyString formatUncached(
+                VirtualFrame frame,
+                Object[] arguments,
+                @Cached("create()") IndirectCallNode callPackNode) {
+            final RubyString format = (RubyString) arguments[0];
+            final Object[] store = ArrayUtils.extractRange(arguments, 1, arguments.length);
+
+            final PackResult result;
+
+            try {
+                result = (PackResult) callPackNode.call(frame, compileFormat((RubyString) arguments[0]), new Object[]{store, store.length});
+            } catch (PackException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw handleException(e);
+            }
+
+            return finishFormat(format.getByteList(), result);
+        }
+
+        private RuntimeException handleException(PackException exception) {
+            try {
+                throw exception;
+            } catch (TooFewArgumentsException e) {
+                return new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
+            } catch (NoImplicitConversionException e) {
+                return new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
+            } catch (OutsideOfStringException e) {
+                return new RaiseException(getContext().getCoreLibrary().argumentError("X outside of string", this));
+            } catch (CantCompressNegativeException e) {
+                return new RaiseException(getContext().getCoreLibrary().argumentError("can't compress negative numbers", this));
+            } catch (RangeException e) {
+                return new RaiseException(getContext().getCoreLibrary().rangeError(e.getMessage(), this));
+            } catch (CantConvertException e) {
+                return new RaiseException(getContext().getCoreLibrary().typeError(e.getMessage(), this));
+            }
+        }
+
+        private RubyString finishFormat(ByteList format, PackResult result) {
+            final RubyString string = getContext().makeString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
+
+            if (format.length() == 0) {
+                string.forceEncoding(USASCIIEncoding.INSTANCE);
+            } else {
+                switch (result.getEncoding()) {
+                    case DEFAULT:
+                    case ASCII_8BIT:
+                        break;
+                    case US_ASCII:
+                        string.forceEncoding(USASCIIEncoding.INSTANCE);
+                        break;
+                    case UTF_8:
+                        string.forceEncoding(UTF8Encoding.INSTANCE);
+                        break;
+                    default:
+                        throw new UnsupportedOperationException();
+                }
+            }
+
+            if (result.isTainted()) {
+                if (taintNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    taintNode = insert(TaintNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
+                }
+
+                taintNode.executeTaint(string);
+            }
+
+            return string;
+        }
+
+        protected ByteList privatizeByteList(RubyString string) {
+            return string.getByteList().dup();
+        }
+
+        protected boolean byteListsEqual(RubyString string, ByteList byteList) {
+            return string.getByteList().equal(byteList);
+        }
+
+        protected CallTarget compileFormat(RubyString format) {
+            try {
+                return new FormatParser(getContext()).parse(format.getByteList());
+            } catch (FormatException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+            }
+        }
+
+        protected Object firstArgument(Object[] args) {
+            return args[0];
+        }
+
+        protected RubyString asRubyString(Object arg) {
+            return (RubyString) arg;
+        }
+
     }
 
     @CoreMethod(names = "system", isModuleFunction = true, needsSelf = false, required = 1)
