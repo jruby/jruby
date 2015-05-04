@@ -57,7 +57,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
-      <version>0.8</version>
+      <version>0.9-SNAPSHOT</version>
       <type>jar</type>
     </dependency>
     <dependency>
@@ -68,13 +68,13 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
-      <version>0.7</version>
+      <version>0.8-SNAPSHOT</version>
       <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.11</version>
+      <version>3.0.12-SNAPSHOT</version>
       <type>jar</type>
     </dependency>
     <dependency>
@@ -86,7 +86,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.8.6</version>
+      <version>0.8.7-SNAPSHOT</version>
       <type>jar</type>
     </dependency>
     <dependency>

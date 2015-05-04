@@ -72,7 +72,7 @@
     <krypt.version>0.0.2.rc1</krypt.version>
     <ant.version>1.9.2</ant.version>
     <joda.time.version>2.5</joda.time.version>
-    <jffi.version>1.2.8</jffi.version>
+    <jffi.version>1.2.9-SNAPSHOT</jffi.version>
     <asm.version>5.0.3</asm.version>
     <base.java.version>1.6</base.java.version>
     <base.javac.version>1.6</base.javac.version>
