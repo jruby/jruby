@@ -18,7 +18,7 @@ import org.jruby.util.ByteList;
  */
 public class FormatTokenizer {
 
-    private static final String TYPE_CHARS = "%sdiuxX";
+    private static final String TYPE_CHARS = "%sdiuxXfg";
 
     private final ByteList format;
     private int position;
@@ -67,8 +67,8 @@ public class FormatTokenizer {
 
         position++;
 
-        final int spacePadding;
-        final int zeroPadding;
+        int spacePadding;
+        int zeroPadding;
 
         if (format.charAt(position) == ' ') {
             position++;
@@ -94,12 +94,17 @@ public class FormatTokenizer {
             precision = FormatDirective.DEFAULT;
         }
 
+        if (Character.isDigit(format.charAt(position))) {
+            spacePadding = readInt();
+        }
+
         final char type = format.charAt(position);
-        position++;
 
         if (TYPE_CHARS.indexOf(type) == -1) {
-            throw new UnsupportedOperationException(format.toString());
+            throw new UnsupportedOperationException("Unknown format type '" + format.charAt(position) + "'");
         }
+
+        position++;
 
         return new FormatDirective(spacePadding, zeroPadding, precision, type);
     }

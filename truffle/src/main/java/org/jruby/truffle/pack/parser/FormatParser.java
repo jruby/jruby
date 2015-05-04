@@ -15,11 +15,13 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.PackRootNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.nodes.control.*;
+import org.jruby.truffle.pack.nodes.format.FormatFloatNodeGen;
 import org.jruby.truffle.pack.nodes.format.FormatIntegerNodeGen;
 import org.jruby.truffle.pack.nodes.read.LiteralBytesNode;
 import org.jruby.truffle.pack.nodes.read.ReadStringNode;
 import org.jruby.truffle.pack.nodes.read.ReadStringNodeGen;
 import org.jruby.truffle.pack.nodes.read.ReadValueNodeGen;
+import org.jruby.truffle.pack.nodes.type.ToDoubleNodeGen;
 import org.jruby.truffle.pack.nodes.type.ToIntegerNodeGen;
 import org.jruby.truffle.pack.nodes.write.*;
 import org.jruby.truffle.pack.runtime.PackEncoding;
@@ -113,6 +115,12 @@ public class FormatParser {
                         node = WriteBytesNodeGen.create(
                                 FormatIntegerNodeGen.create(spacePadding, zeroPadding, format,
                                         ToIntegerNodeGen.create(
+                                                ReadValueNodeGen.create(new SourceNode()))));
+                        break;
+                    case 'f':
+                        node = WriteBytesNodeGen.create(
+                                FormatFloatNodeGen.create(directive.getSpacePadding(), directive.getZeroPadding(), directive.getPrecision(),
+                                        ToDoubleNodeGen.create(
                                                 ReadValueNodeGen.create(new SourceNode()))));
                         break;
                     default:

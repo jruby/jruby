@@ -8,8 +8,8 @@
 
 class String
 
-  #def %(*args)
-  #  sprintf(self, *args)
-  #end
+  def %(args)
+    sprintf(self, *args)
+  end
 
 end

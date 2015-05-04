@@ -22,30 +22,20 @@ import java.nio.charset.StandardCharsets;
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
 })
-public abstract class FormatIntegerNode extends PackNode {
+public abstract class FormatFloatNode extends PackNode {
 
     private final int spacePadding;
     private final int zeroPadding;
-    private final char format;
+    private final int precision;
 
-    public FormatIntegerNode(int spacePadding, int zeroPadding, char format) {
+    public FormatFloatNode(int spacePadding, int zeroPadding, int precision) {
         this.spacePadding = spacePadding;
         this.zeroPadding = zeroPadding;
-        this.format = format;
+        this.precision = precision;
     }
 
     @Specialization
-    public ByteList format(int value) {
-        return doFormat(value);
-    }
-
-    @Specialization
-    public ByteList format(long value) {
-        return doFormat(value);
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    protected ByteList doFormat(Object value) {
+    public ByteList format(double value) {
         // TODO CS 3-May-15 write this without building a string and formatting
 
         final StringBuilder builder = new StringBuilder();
@@ -65,7 +55,12 @@ public abstract class FormatIntegerNode extends PackNode {
             builder.append(zeroPadding);
         }
 
-        builder.append(format);
+        if (precision != FormatDirective.DEFAULT) {
+            builder.append(".");
+            builder.append(precision);
+        }
+
+        builder.append("f");
 
         return new ByteList(String.format(builder.toString(), value).getBytes(StandardCharsets.US_ASCII));
     }
