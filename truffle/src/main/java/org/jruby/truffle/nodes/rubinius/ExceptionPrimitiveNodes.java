@@ -54,6 +54,12 @@ public abstract class ExceptionPrimitiveNodes {
             return getContext().getCoreLibrary().fileExistsError(message.toString(), this);
         }
 
+        @Specialization(guards = "errno == EEXIST")
+        public RubyException eexist(RubyNilClass message, int errno) {
+            return getContext().getCoreLibrary().fileExistsError("nil", this);
+        }
+
+
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "!isExceptionSupported(errno)")
         public RubyException unsupported(RubyString message, int errno) {

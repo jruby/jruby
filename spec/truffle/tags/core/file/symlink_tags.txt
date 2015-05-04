@@ -1,2 +1,1 @@
 fails:File.symlink creates a symlink between a source and target file
-fails:File.symlink raises an Errno::EEXIST if the target already exists
