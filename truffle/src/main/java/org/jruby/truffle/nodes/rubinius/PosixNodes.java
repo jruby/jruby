@@ -143,7 +143,7 @@ public abstract class PosixNodes {
             final long address = getAddress(pointer);
 
             for (int n = 0; n < groups.length && n < max; n++) {
-                UnsafeHolder.U.putInt(address + n * Unsafe.ARRAY_LONG_INDEX_SCALE, (int) groups[n]);
+                UnsafeHolder.U.putInt(address + n * Unsafe.ARRAY_INT_INDEX_SCALE, (int) groups[n]);
             }
 
             return groups.length;
