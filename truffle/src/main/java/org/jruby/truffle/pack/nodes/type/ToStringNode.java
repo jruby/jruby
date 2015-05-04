@@ -46,6 +46,7 @@ public abstract class ToStringNode extends PackNode {
     protected final boolean convertNumbersToStrings;
     private final String conversionMethod;
     private final boolean inspectOnConversionFailure;
+    private final Object valueOnNil;
 
     @Child private CallDispatchHeadNode toStrNode;
     @Child private CallDispatchHeadNode toSNode;
@@ -55,19 +56,21 @@ public abstract class ToStringNode extends PackNode {
     private final ConditionProfile taintedProfile = ConditionProfile.createBinaryProfile();
 
     public ToStringNode(RubyContext context, boolean convertNumbersToStrings,
-                        String conversionMethod, boolean inspectOnConversionFailure) {
+                        String conversionMethod, boolean inspectOnConversionFailure,
+                        Object valueOnNil) {
         this.context = context;
         this.convertNumbersToStrings = convertNumbersToStrings;
         this.conversionMethod = conversionMethod;
         this.inspectOnConversionFailure = inspectOnConversionFailure;
+        this.valueOnNil = valueOnNil;
         isTaintedNode = IsTaintedNodeGen.create(context, getEncapsulatingSourceSection(), null);
     }
 
     public abstract Object executeToString(VirtualFrame frame, Object object);
 
     @Specialization
-    public RubyNilClass toString(VirtualFrame frame, RubyNilClass nil) {
-        return nil;
+    public Object toString(VirtualFrame frame, RubyNilClass nil) {
+        return valueOnNil;
     }
 
     // TODO CS 31-Mar-15 these boundaries and slow versions are not ideal

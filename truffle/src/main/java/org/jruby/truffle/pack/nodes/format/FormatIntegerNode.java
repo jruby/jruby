@@ -14,8 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.pack.nodes.PackNode;
-import org.jruby.truffle.pack.nodes.SourceNode;
-import org.jruby.truffle.runtime.core.RubyBignum;
+import org.jruby.truffle.pack.parser.FormatDirective;
 import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
@@ -25,22 +24,50 @@ import java.nio.charset.StandardCharsets;
 })
 public abstract class FormatIntegerNode extends PackNode {
 
-    @CompilerDirectives.TruffleBoundary
+    private final int spacePadding;
+    private final int zeroPadding;
+    private final char format;
+
+    public FormatIntegerNode(int spacePadding, int zeroPadding, char format) {
+        this.spacePadding = spacePadding;
+        this.zeroPadding = zeroPadding;
+        this.format = format;
+    }
+
     @Specialization
     public ByteList formatInteger(int value) {
-        return new ByteList(Integer.toString(value).getBytes(StandardCharsets.US_ASCII));
+        return format(value);
     }
 
-    @CompilerDirectives.TruffleBoundary
     @Specialization
     public ByteList formatInteger(long value) {
-        return new ByteList(Long.toString(value).getBytes(StandardCharsets.US_ASCII));
+        return format(value);
     }
 
     @CompilerDirectives.TruffleBoundary
-    @Specialization
-    public ByteList formatInteger(RubyBignum value) {
-        return new ByteList(value.bigIntegerValue().toString().getBytes(StandardCharsets.US_ASCII));
+    protected ByteList format(Object value) {
+        // TODO CS 3-May-15 write this without building a string and formatting
+
+        final StringBuilder builder = new StringBuilder();
+
+        builder.append("%");
+
+        if (spacePadding != FormatDirective.DEFAULT) {
+            builder.append(" ");
+            builder.append(spacePadding);
+
+            if (zeroPadding != FormatDirective.DEFAULT) {
+                builder.append(".");
+                builder.append(zeroPadding);
+            }
+        } else if (zeroPadding != FormatDirective.DEFAULT) {
+            builder.append("0");
+            builder.append(zeroPadding);
+        }
+
+        builder.append(format);
+
+        return new ByteList(String.format(builder.toString(), value).getBytes(StandardCharsets.US_ASCII));
     }
 
 }

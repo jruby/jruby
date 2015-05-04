@@ -11,13 +11,34 @@ package org.jruby.truffle.pack.parser;
 
 public class FormatDirective {
 
+    public static final int DEFAULT = -1;
+
+    private final int spacePadding;
+    private final int zeroPadding;
+    private final int precision;
     private final char type;
 
-    public FormatDirective(char type) {
+    public FormatDirective(int spacePadding, int zeroPadding, int precision, char type) {
+        this.spacePadding = spacePadding;
+        this.zeroPadding = zeroPadding;
+        this.precision = precision;
         this.type = type;
+    }
+
+    public int getSpacePadding() {
+        return spacePadding;
+    }
+
+    public int getZeroPadding() {
+        return zeroPadding;
+    }
+
+    public int getPrecision() {
+        return precision;
     }
 
     public char getType() {
         return type;
     }
+
 }

@@ -70,13 +70,48 @@ public class FormatParser {
                         node = new WriteByteNode((byte) '%');
                         break;
                     case 's':
-                        node = WriteBytesNodeGen.create(ReadStringNodeGen.create(context, true, "to_s", false, new SourceNode()));
+                        node = WriteBytesNodeGen.create(ReadStringNodeGen.create(
+                                context, true, "to_s", false, new ByteList(), new SourceNode()));
                         break;
                     case 'd':
                     case 'i':
                     case 'u':
+                    case 'x':
+                    case 'X':
+                        final int spacePadding = directive.getSpacePadding();
+
+                        final int zeroPadding;
+
+                        /*
+                         * Precision and zero padding both set zero padding -
+                         * but precision has priority and explicit zero padding
+                         * is actually ignored if it's set.
+                         */
+
+                        if (directive.getPrecision() != FormatDirective.DEFAULT) {
+                            zeroPadding = directive.getPrecision();
+                        } else {
+                            zeroPadding = directive.getZeroPadding();
+                        }
+
+                        final char format;
+
+                        switch (directive.getType()) {
+                            case 'd':
+                            case 'i':
+                            case 'u':
+                                format = 'd';
+                                break;
+                            case 'x':
+                            case 'X':
+                                format = directive.getType();
+                                break;
+                            default:
+                                throw new UnsupportedOperationException();
+                        }
+
                         node = WriteBytesNodeGen.create(
-                                FormatIntegerNodeGen.create(
+                                FormatIntegerNodeGen.create(spacePadding, zeroPadding, format,
                                         ToIntegerNodeGen.create(
                                                 ReadValueNodeGen.create(new SourceNode()))));
                         break;

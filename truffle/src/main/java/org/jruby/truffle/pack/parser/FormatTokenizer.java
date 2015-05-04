@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.pack.parser;
 
-import org.jruby.truffle.pack.runtime.exceptions.FormatException;
 import org.jruby.util.ByteList;
 
 /**
@@ -18,6 +17,8 @@ import org.jruby.util.ByteList;
  * are {@link Integer}.
  */
 public class FormatTokenizer {
+
+    private static final String TYPE_CHARS = "%sdiuxX";
 
     private final ByteList format;
     private int position;
@@ -66,10 +67,51 @@ public class FormatTokenizer {
 
         position++;
 
+        final int spacePadding;
+        final int zeroPadding;
+
+        if (format.charAt(position) == ' ') {
+            position++;
+            spacePadding = readInt();
+            zeroPadding = FormatDirective.DEFAULT;
+        } else {
+            spacePadding = FormatDirective.DEFAULT;
+
+            if (format.charAt(position) == '0') {
+                position++;
+                zeroPadding = readInt();
+            } else {
+                zeroPadding = FormatDirective.DEFAULT;
+            }
+        }
+
+        final int precision;
+
+        if (format.charAt(position) == '.') {
+            position++;
+            precision = readInt();
+        } else {
+            precision = FormatDirective.DEFAULT;
+        }
+
         final char type = format.charAt(position);
         position++;
 
-        return new FormatDirective(type);
+        if (TYPE_CHARS.indexOf(type) == -1) {
+            throw new UnsupportedOperationException(format.toString());
+        }
+
+        return new FormatDirective(spacePadding, zeroPadding, precision, type);
+    }
+
+    private int readInt() {
+        final int start = position;
+
+        while (Character.isDigit(format.charAt(position))) {
+            position++;
+        }
+
+        return Integer.parseInt(format.subSequence(start, position).toString());
     }
 
 }
