@@ -9,6 +9,11 @@
  */
 package org.jruby.truffle.pack.parser;
 
+/*
+ * A single format directive from a printf-style format string.
+ *
+ * %[space padding][zero padding][.precision]type
+ */
 public class FormatDirective {
 
     public static final int DEFAULT = -1;

@@ -11,7 +11,6 @@ package org.jruby.truffle.pack.nodes.write;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
-import org.jruby.util.ByteList;
 
 /**
  * Simply write a single bytes.

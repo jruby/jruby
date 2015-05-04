@@ -12,9 +12,8 @@ package org.jruby.truffle.pack.parser;
 import org.jruby.util.ByteList;
 
 /**
- * Tokenizes a pack format expression into a stream of objects. All tokens
- * are represented as {@link Character} objects except for count tokens which
- * are {@link Integer}.
+ * Tokenizes a format expression into a stream of {@link String} and
+ * {@link FormatDirective} objects.
  */
 public class FormatTokenizer {
 

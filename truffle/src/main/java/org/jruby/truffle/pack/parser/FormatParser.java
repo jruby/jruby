@@ -14,16 +14,16 @@ import com.oracle.truffle.api.Truffle;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.PackRootNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
-import org.jruby.truffle.pack.nodes.control.*;
+import org.jruby.truffle.pack.nodes.control.SequenceNode;
 import org.jruby.truffle.pack.nodes.format.FormatFloatNodeGen;
 import org.jruby.truffle.pack.nodes.format.FormatIntegerNodeGen;
 import org.jruby.truffle.pack.nodes.read.LiteralBytesNode;
-import org.jruby.truffle.pack.nodes.read.ReadStringNode;
 import org.jruby.truffle.pack.nodes.read.ReadStringNodeGen;
 import org.jruby.truffle.pack.nodes.read.ReadValueNodeGen;
 import org.jruby.truffle.pack.nodes.type.ToDoubleNodeGen;
 import org.jruby.truffle.pack.nodes.type.ToIntegerNodeGen;
-import org.jruby.truffle.pack.nodes.write.*;
+import org.jruby.truffle.pack.nodes.write.WriteByteNode;
+import org.jruby.truffle.pack.nodes.write.WriteBytesNodeGen;
 import org.jruby.truffle.pack.runtime.PackEncoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Parses a pack format expression into a tree of Truffle nodes.
+ * Parses a format expression into a tree of Truffle nodes.
  */
 public class FormatParser {
 

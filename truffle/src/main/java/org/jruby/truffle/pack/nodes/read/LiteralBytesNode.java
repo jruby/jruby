@@ -25,4 +25,5 @@ public class LiteralBytesNode extends PackNode {
     public Object execute(VirtualFrame frame) {
         return bytes;
     }
+
 }
