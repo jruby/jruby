@@ -483,6 +483,9 @@ public class RubyModule extends RubyObject {
         // First, we count the parents
         int parentCount = 0;
         for (RubyModule p = getParent() ; p != null && p != objectClass ; p = p.getParent()) {
+            // Break out of cyclic namespaces like C::A = C2; C2::A = C (jruby/jruby#2314)
+            if (p == this) break;
+
             parentCount++;
         }
 
@@ -491,6 +494,9 @@ public class RubyModule extends RubyObject {
         int i = parentCount - 1;
         int totalLength = name.length() + parentCount * 2; // name length + enough :: for all parents
         for (RubyModule p = getParent() ; p != null && p != objectClass ; p = p.getParent(), i--) {
+            // Break out of cyclic namespaces like C::A = C2; C2::A = C (jruby/jruby#2314)
+            if (p == this) break;
+
             String pName = p.getBaseName();
 
             // This is needed when the enclosing class or module is a singleton.
