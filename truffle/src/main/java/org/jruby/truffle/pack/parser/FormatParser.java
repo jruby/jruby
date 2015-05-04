@@ -118,8 +118,12 @@ public class FormatParser {
                                                 ReadValueNodeGen.create(new SourceNode()))));
                         break;
                     case 'f':
+                    case 'g':
+                    case 'G':
                         node = WriteBytesNodeGen.create(
-                                FormatFloatNodeGen.create(directive.getSpacePadding(), directive.getZeroPadding(), directive.getPrecision(),
+                                FormatFloatNodeGen.create(directive.getSpacePadding(),
+                                        directive.getZeroPadding(), directive.getPrecision(),
+                                        directive.getType(),
                                         ToDoubleNodeGen.create(
                                                 ReadValueNodeGen.create(new SourceNode()))));
                         break;
