@@ -28,6 +28,7 @@ public abstract class ExceptionPrimitiveNodes {
 
         protected final int ENOENT = Errno.ENOENT.intValue();
         protected final int EBADF = Errno.EBADF.intValue();
+        protected final int EEXIST = Errno.EEXIST.intValue();
 
         public ExceptionErrnoErrorPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -46,6 +47,11 @@ public abstract class ExceptionPrimitiveNodes {
         @Specialization(guards = "errno == EBADF")
         public RubyException ebadf(RubyNilClass message, int errno) {
             return getContext().getCoreLibrary().badFileDescriptor(this);
+        }
+
+        @Specialization(guards = "errno == EEXIST")
+        public RubyException eexist(RubyString message, int errno) {
+            return getContext().getCoreLibrary().fileExistsError(message.toString(), this);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -73,7 +79,7 @@ public abstract class ExceptionPrimitiveNodes {
         }
 
         public static boolean isExceptionSupported(int errno) {
-            return Errno.ENOENT.intValue() == errno || Errno.EBADF.intValue() == errno;
+            return Errno.ENOENT.intValue() == errno || Errno.EBADF.intValue() == errno || Errno.EEXIST.intValue() == errno;
         }
 
     }

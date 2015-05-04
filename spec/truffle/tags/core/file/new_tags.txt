@@ -1,1 +1,0 @@
-fails:File.new raises an Errorno::EEXIST if the file exists when create a new file with File::CREAT|File::EXCL
