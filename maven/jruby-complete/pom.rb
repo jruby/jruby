@@ -97,7 +97,7 @@ project 'JRuby Complete' do
 
       plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
         execute_goals( 'attach-artifact',
-                       :id => 'attach javadocs and sources artifacts',
+                       :id => 'attach-artifacts',
                        'artifacts' => [ { 'file' =>  '${project.build.directory}/jruby-core-${project.version}-sources.jar',
                                           'classifier' =>  'sources' },
                                         { 'file' =>  '${project.build.directory}/jruby-core-${project.version}-javadoc.jar',

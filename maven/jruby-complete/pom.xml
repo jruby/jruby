@@ -187,7 +187,7 @@
             <artifactId>build-helper-maven-plugin</artifactId>
             <executions>
               <execution>
-                <id>attach javadocs and sources artifacts</id>
+                <id>attach-artifacts</id>
                 <phase>package</phase>
                 <goals>
                   <goal>attach-artifact</goal>
