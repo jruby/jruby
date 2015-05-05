@@ -14,6 +14,7 @@ CONFIG = {
   'exeext' => '',
   'EXEEXT' => 'rubytruffle',
   'ruby_version' => '2.2.0',
-  'libdir' => "#{Truffle::Primitive.home_directory}/lib/ruby/truffle"
+  'libdir' => "#{Truffle::Primitive.home_directory}/lib/ruby/truffle",
+  'host_os' => Truffle::Primitive.host_os
 }
 end
