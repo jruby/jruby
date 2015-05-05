@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
-    <version>1.7.20</version>
+    <version>1.7.21-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-dist</artifactId>
   <packaging>pom</packaging>
@@ -78,7 +78,7 @@
           </execution>
         </executions>
         <configuration>
-          <finalName>jruby-dist-1.7.20</finalName>
+          <finalName>jruby-dist-1.7.21-SNAPSHOT</finalName>
           <tarLongFileMode>gnu</tarLongFileMode>
           <descriptors>
             <descriptor>src/main/assembly/jruby.xml</descriptor>
