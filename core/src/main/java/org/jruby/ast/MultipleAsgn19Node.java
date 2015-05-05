@@ -48,7 +48,7 @@ public class MultipleAsgn19Node extends AssignableNode {
     }
 
     public NodeType getNodeType() {
-        return NodeType.MULTIPLEASGN19NODE;
+        return NodeType.MULTIPLEASGNNODE;
     }
 
     public <T> T accept(NodeVisitor<T> iVisitor) {

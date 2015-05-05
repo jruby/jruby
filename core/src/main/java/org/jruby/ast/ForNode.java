@@ -68,11 +68,6 @@ public class ForNode extends IterNode {
         return iterNode;
     }
 
-    @Override
-    public int getArgumentType() {
-        return BlockBody.asArgumentType(BlockBody.getArgumentTypeWackyHack(this));
-    }
-
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor

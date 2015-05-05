@@ -1834,11 +1834,6 @@ public class BodyTranslator extends Translator {
     }
 
     @Override
-    public RubyNode visitMultipleAsgnNode(org.jruby.ast.MultipleAsgnNode node) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public RubyNode visitMultipleAsgnNode(org.jruby.ast.MultipleAsgn19Node node) {
         final SourceSection sourceSection = translate(node.getPosition());
 

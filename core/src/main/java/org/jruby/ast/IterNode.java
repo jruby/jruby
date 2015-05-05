@@ -71,10 +71,6 @@ public class IterNode extends Node {
         this.scope = scope;
     }
 
-    public int getArgumentType() {
-        return BlockBody.asArgumentType(varNode.getNodeType());
-    }
-
     public NodeType getNodeType() {
         return NodeType.ITERNODE;
     }

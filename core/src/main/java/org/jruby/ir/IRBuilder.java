@@ -421,7 +421,7 @@ public class IRBuilder {
             case MATCH3NODE: return buildMatch3((Match3Node) node);
             case MATCHNODE: return buildMatch((MatchNode) node);
             case MODULENODE: return buildModule((ModuleNode) node);
-            case MULTIPLEASGN19NODE: return buildMultipleAsgn19((MultipleAsgn19Node) node);
+            case MULTIPLEASGNNODE: return buildMultipleAsgn19((MultipleAsgn19Node) node);
             case NEWLINENODE: return buildNewline((NewlineNode) node);
             case NEXTNODE: return buildNext((NextNode) node);
             case NTHREFNODE: return buildNthRef((NthRefNode) node);
@@ -641,7 +641,7 @@ public class IRBuilder {
     // Non-arg masgn (actually a nested masgn)
     public void buildVersionSpecificAssignment(Node node, Variable v) {
         switch (node.getNodeType()) {
-        case MULTIPLEASGN19NODE: {
+        case MULTIPLEASGNNODE: {
             Variable tmp = createTemporaryVariable();
             addInstr(new ToAryInstr(tmp, v));
             buildMultipleAsgn19Assignment((MultipleAsgn19Node)node, null, tmp);
@@ -717,7 +717,7 @@ public class IRBuilder {
 
         // Argh!  For-loop bodies and regular iterators are different in terms of block-args!
         switch (node.getNodeType()) {
-            case MULTIPLEASGN19NODE: {
+            case MULTIPLEASGNNODE: {
                 ListNode sourceArray = ((MultipleAsgn19Node) node).getPre();
                 int i = 0;
                 for (Node an: sourceArray.childNodes()) {
@@ -1380,8 +1380,8 @@ public class IRBuilder {
         // FIXME: Do we still have MASGN and MASGN19?
         switch (node.getNodeType()) {
         case CLASSVARASGNNODE: case CLASSVARDECLNODE: case CONSTDECLNODE:
-        case DASGNNODE: case GLOBALASGNNODE: case LOCALASGNNODE: case MULTIPLEASGNNODE:
-        case MULTIPLEASGN19NODE: case OPASGNNODE: case OPASGNANDNODE: case OPASGNORNODE:
+        case DASGNNODE: case GLOBALASGNNODE: case LOCALASGNNODE:
+        case MULTIPLEASGNNODE: case OPASGNNODE: case OPASGNANDNODE: case OPASGNORNODE:
         case OPELEMENTASGNNODE: case INSTASGNNODE:
             return new FrozenString("assignment");
         case ORNODE: case ANDNODE:
@@ -1790,7 +1790,7 @@ public class IRBuilder {
                 }
                 break;
             }
-            case MULTIPLEASGN19NODE: {
+            case MULTIPLEASGNNODE: {
                 MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
                 Variable v = createTemporaryVariable();
                 addArgReceiveInstr(v, argIndex, post, numPreReqd, numPostRead);
@@ -1993,7 +1993,7 @@ public class IRBuilder {
                 else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
                 break;
             }
-            case MULTIPLEASGN19NODE: {
+            case MULTIPLEASGNNODE: {
                 MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
                 if (!isMasgnRoot) {
                     v = createTemporaryVariable();
