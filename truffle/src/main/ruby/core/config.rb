@@ -10,7 +10,6 @@ module RbConfig
 CONFIG = {
   'ruby_install_name' => 'rubytruffle',
   'RUBY_INSTALL_NAME' => 'rubytruffle',
-  'host_os' => File::ALT_SEPARATOR.nil? ? 'unknown' : 'mswin32',
   'exeext' => '',
   'EXEEXT' => 'rubytruffle',
   'ruby_version' => '2.2.0',
