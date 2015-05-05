@@ -54,7 +54,7 @@ json/test_json_generate.rb
 json/test_json_generic_object.rb
 json/test_json_string_matching.rb
 # json/test_json_unicode.rb
-# logger/test_logger.rb # library not added, needs file
+logger/test_logger.rb
 matrix/test_matrix.rb
 matrix/test_vector.rb
 # monitor/test_monitor.rb # Undefined methods start and join
