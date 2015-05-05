@@ -44,6 +44,7 @@ import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
+import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.ClassVarAsgnNode;
@@ -112,7 +113,6 @@ import org.jruby.ast.XStrNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZArrayNode;
 import org.jruby.ast.ZSuperNode;
-import org.jruby.ast.ZYieldNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
@@ -147,7 +147,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 152 "-"
+					// line 151 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -3431,13 +3431,13 @@ states[316] = new ParserState() {
 };
 states[317] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new ZYieldNode(((ISourcePosition)yyVals[-2+yyTop]));
+                    yyVal = new YieldNode(((ISourcePosition)yyVals[-2+yyTop]), null);
     return yyVal;
   }
 };
 states[318] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new ZYieldNode(((ISourcePosition)yyVals[0+yyTop]));
+                    yyVal = new YieldNode(((ISourcePosition)yyVals[0+yyTop]), null);
     return yyVal;
   }
 };
@@ -5244,7 +5244,7 @@ states[634] = new ParserState() {
   }
 };
 }
-					// line 2514 "RubyParser.y"
+					// line 2513 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5259,4 +5259,4 @@ states[634] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 9789 "-"
+					// line 9788 "-"
