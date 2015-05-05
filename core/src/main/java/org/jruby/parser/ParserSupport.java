@@ -985,7 +985,7 @@ public class ParserSupport {
                     lexer.getCurrentLine(), "Block argument should not be given.");
         }
 
-        return new YieldNode(position, node, false);
+        return new YieldNode(position, node);
     }
     
     public NumericNode negateInteger(NumericNode integerNode) {

@@ -13,6 +13,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class ZYieldNode extends YieldNode {
     public ZYieldNode(ISourcePosition position) {
-        super(position, null, true);
+        super(position, null);
     }
 }
