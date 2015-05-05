@@ -951,6 +951,11 @@ public class CoreLibrary {
         return new RubyException(getErrnoClass(Errno.ENOTEMPTY), context.makeString(String.format("Directory not empty - %s", path)), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException permissionDeniedError(String path, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(getErrnoClass(Errno.EACCES), context.makeString(String.format("Permission denied - %s", path)), RubyCallStack.getBacktrace(currentNode));
+    }
+
     public RubyException rangeError(int code, RubyEncoding encoding, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return rangeError(String.format("invalid codepoint %x in %s", code, encoding.getEncoding()), currentNode);
