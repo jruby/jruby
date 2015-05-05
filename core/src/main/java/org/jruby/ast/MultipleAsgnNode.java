@@ -49,13 +49,13 @@ public class MultipleAsgnNode extends AssignableNode {
     public NodeType getNodeType() {
         return NodeType.MULTIPLEASGNNODE;
     }
-    
+
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
     public <T> T accept(NodeVisitor<T> iVisitor) {
-        return iVisitor.visitMultipleAsgnNode(this);
+        return null;
     }
 
     /**
