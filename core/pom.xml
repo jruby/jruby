@@ -105,12 +105,12 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.12</version>
+      <version>3.0.13-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.8.7</version>
+      <version>0.8.8-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>

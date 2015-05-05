@@ -308,6 +308,22 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "rename", isModuleFunction = true, required = 2)
+    public abstract static class RenameNode extends CoreMethodArrayArgumentsNode {
+
+        public RenameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int rename(RubyString path, RubyString other) {
+            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
+            final String otherString = RubyEncoding.decodeUTF8(other.getByteList().getUnsafeBytes(), other.getByteList().getBegin(), other.getByteList().getRealSize());
+            return posix().rename(pathString, otherString);
+        }
+
+    }
+
     @CoreMethod(names = "rmdir", isModuleFunction = true, required = 1)
     public abstract static class RmdirNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
 
