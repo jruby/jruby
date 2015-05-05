@@ -658,10 +658,39 @@ public class CharsetTranscoder extends Transcoder {
                 didEncode = true;
                 
                 coderResult = encoder.encode(inChars, state.outBytes, endOfInput);
-                
-                if (coderResult.isError() && coderResult.isUnmappable()) {
-                    // skip bad char
-                    char badChar = inChars.get();
+
+                // CON 20150429: jruby/jruby#2856
+                //
+                // This logic used to only happen for unmappable chars, because under
+                // normal circumstances a CharBuffer should always contain valid chars.
+                //
+                // However, on Java 7 (u67 and u75 at least) it appears that either:
+                //
+                // a. "bad" chars have gotten into the char array (malformed)
+                // b. unmappable characters are instead being reported as malformed
+                // c. the UTF-16 decoder is finding broken surrogate pairs (underflow)
+                //    either because the original UTF-16 transcoder allowed them or
+                //    because error-handling has changed in OpenJDK.
+                //
+                // None of these cases appear to happen on Java 8u20. While exploring
+                // the above issue on Java 7u67 I saw both malformed and underflow.
+                //
+                // The best we can do here is treat all failures as unmappable.
+
+                if (coderResult.isError() || coderResult.isUnderflow()) {
+
+                    // Errors should always have the bad char at inChars.position, so we skip
+                    // that char and handle as error.
+                    // Underflow of a surrogate pair will act like an error if (hasRemaining)
+                    // or return to decode logic to get the missing half or finish up.
+                    char badChar;
+                    if (inChars.hasRemaining()) {
+                        badChar = inChars.get();
+                    } else if (coderResult.isUnderflow()) {
+                        return true;
+                    } else {
+                        throw runtime.newEncodingError("BUG: only errors and underflow should get here");
+                    }
 
                     if (actions.onUnmappableCharacter == CodingErrorAction.REPORT) {
                         result = new RubyCoderResult(stringFromCoderResult(coderResult, flags, false), inEncoding, outEncoding, Character.toString(badChar).getBytes(decoder.charset()), null);
@@ -671,15 +700,14 @@ public class CharsetTranscoder extends Transcoder {
                     if (actions.onUnmappableCharacter == CodingErrorAction.REPLACE) {
                         if (undefHexCharRef) {
                             // replace with hex entity
-                            if (!putReplacement(state, "&#x" + Integer.toHexString(badChar).toUpperCase() + ";", flags)) return false;
+                            if (!putReplacement(state, "&#x" + Integer.toHexString(badChar).toUpperCase() + ";", flags))
+                                return false;
                         } else {
                             if (!putReplacement(state, replaceString, flags)) return false;
                         }
                     }
-                } else {
-                    if (coderResult == CoderResult.OVERFLOW) {
-                        if (!growBuffer(state, flags)) return false;
-                    }
+                } else if (coderResult == CoderResult.OVERFLOW && !growBuffer(state, flags)) {
+                    return false;
                 }
             }
 
