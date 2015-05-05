@@ -31,7 +31,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Arity;
 
 /**
  *
@@ -40,19 +39,12 @@ public class MultipleAsgn19Node extends AssignableNode {
     private final ListNode pre;
     private final Node rest;
     private final ListNode post;
-    private final Arity arity;
 
     public MultipleAsgn19Node(ISourcePosition position, ListNode pre, Node rest, ListNode post) {
         super(position);
         this.pre = pre;
         this.rest = rest;
         this.post = post;
-
-        if (getRest() != null) {
-            arity = Arity.required(getPreCount() + getPostCount());
-        } else {
-            arity = Arity.fixed(getPreCount() + getPostCount());
-        }
     }
 
     public NodeType getNodeType() {
@@ -81,11 +73,6 @@ public class MultipleAsgn19Node extends AssignableNode {
 
     public ListNode getPost() {
         return post;
-    }
-
-    @Override
-    public Arity getArity() {
-        return arity;
     }
 
     public List<Node> childNodes() {
