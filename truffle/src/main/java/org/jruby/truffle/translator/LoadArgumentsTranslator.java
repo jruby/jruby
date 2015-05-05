@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.types.INameNode;
@@ -318,7 +319,7 @@ public class LoadArgumentsTranslator extends Translator {
     @Override
     public RubyNode visitArrayNode(org.jruby.ast.ArrayNode node) {
         // (ArrayNode 0, (MultipleAsgn19Node 0, (ArrayNode 0, (LocalAsgnNode:a 0, ), (LocalAsgnNode:b 0, )), null, null)))
-        if (node.size() == 1 && node.get(0) instanceof org.jruby.ast.MultipleAsgn19Node) {
+        if (node.size() == 1 && node.get(0) instanceof MultipleAsgnNode) {
             return node.childNodes().get(0).accept(this);
         } else {
             return defaultVisit(node);
@@ -326,7 +327,7 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     @Override
-    public RubyNode visitMultipleAsgnNode(org.jruby.ast.MultipleAsgn19Node node) {
+    public RubyNode visitMultipleAsgnNode(MultipleAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         // (MultipleAsgn19Node 0, (ArrayNode 0, (LocalAsgnNode:a 0, ), (LocalAsgnNode:b 0, )), null, null))

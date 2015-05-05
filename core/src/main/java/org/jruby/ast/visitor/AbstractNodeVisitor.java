@@ -354,7 +354,7 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
-    public T visitMultipleAsgnNode(MultipleAsgn19Node node) {
+    public T visitMultipleAsgnNode(MultipleAsgnNode node) {
         return defaultVisit(node);
     }
 

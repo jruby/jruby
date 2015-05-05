@@ -36,7 +36,6 @@ package org.jruby.runtime;
 import org.jruby.EvalType;
 import org.jruby.RubyArray;
 import org.jruby.RubyProc;
-import org.jruby.ast.NodeType;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;

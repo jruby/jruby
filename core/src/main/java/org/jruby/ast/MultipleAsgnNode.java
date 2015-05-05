@@ -35,12 +35,12 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  *
  */
-public class MultipleAsgn19Node extends AssignableNode {
+public class MultipleAsgnNode extends AssignableNode {
     private final ListNode pre;
     private final Node rest;
     private final ListNode post;
 
-    public MultipleAsgn19Node(ISourcePosition position, ListNode pre, Node rest, ListNode post) {
+    public MultipleAsgnNode(ISourcePosition position, ListNode pre, Node rest, ListNode post) {
         super(position);
         this.pre = pre;
         this.rest = rest;

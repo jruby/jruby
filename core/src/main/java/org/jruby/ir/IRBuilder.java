@@ -421,7 +421,7 @@ public class IRBuilder {
             case MATCH3NODE: return buildMatch3((Match3Node) node);
             case MATCHNODE: return buildMatch((MatchNode) node);
             case MODULENODE: return buildModule((ModuleNode) node);
-            case MULTIPLEASGNNODE: return buildMultipleAsgn19((MultipleAsgn19Node) node);
+            case MULTIPLEASGNNODE: return buildMultipleAsgn19((MultipleAsgnNode) node);
             case NEWLINENODE: return buildNewline((NewlineNode) node);
             case NEXTNODE: return buildNext((NextNode) node);
             case NTHREFNODE: return buildNthRef((NthRefNode) node);
@@ -544,7 +544,7 @@ public class IRBuilder {
     }
 
     // Non-arg masgn
-    public Operand buildMultipleAsgn19(MultipleAsgn19Node multipleAsgnNode) {
+    public Operand buildMultipleAsgn19(MultipleAsgnNode multipleAsgnNode) {
         Operand  values = build(multipleAsgnNode.getValueNode());
         Variable ret = getValueInTemporaryVariable(values);
         Variable tmp = createTemporaryVariable();
@@ -644,7 +644,7 @@ public class IRBuilder {
         case MULTIPLEASGNNODE: {
             Variable tmp = createTemporaryVariable();
             addInstr(new ToAryInstr(tmp, v));
-            buildMultipleAsgn19Assignment((MultipleAsgn19Node)node, null, tmp);
+            buildMultipleAsgn19Assignment((MultipleAsgnNode)node, null, tmp);
             break;
         }
         default:
@@ -718,7 +718,7 @@ public class IRBuilder {
         // Argh!  For-loop bodies and regular iterators are different in terms of block-args!
         switch (node.getNodeType()) {
             case MULTIPLEASGNNODE: {
-                ListNode sourceArray = ((MultipleAsgn19Node) node).getPre();
+                ListNode sourceArray = ((MultipleAsgnNode) node).getPre();
                 int i = 0;
                 for (Node an: sourceArray.childNodes()) {
                     // Use 1.8 mode version for this
@@ -1791,7 +1791,7 @@ public class IRBuilder {
                 break;
             }
             case MULTIPLEASGNNODE: {
-                MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
+                MultipleAsgnNode childNode = (MultipleAsgnNode) node;
                 Variable v = createTemporaryVariable();
                 addArgReceiveInstr(v, argIndex, post, numPreReqd, numPostRead);
                 if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.req, "");
@@ -1994,7 +1994,7 @@ public class IRBuilder {
                 break;
             }
             case MULTIPLEASGNNODE: {
-                MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
+                MultipleAsgnNode childNode = (MultipleAsgnNode) node;
                 if (!isMasgnRoot) {
                     v = createTemporaryVariable();
                     if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
@@ -2016,7 +2016,7 @@ public class IRBuilder {
     //
     // Ex: a,b,*c=v  is a regular assignment and in this case, the "values" operand will be non-null
     // Ex: { |a,b,*c| ..} is the argument passing case
-    public void buildMultipleAsgn19Assignment(final MultipleAsgn19Node multipleAsgnNode, Operand argsArray, Operand values) {
+    public void buildMultipleAsgn19Assignment(final MultipleAsgnNode multipleAsgnNode, Operand argsArray, Operand values) {
         final ListNode masgnPre = multipleAsgnNode.getPre();
 
         // Build assignments for specific named arguments

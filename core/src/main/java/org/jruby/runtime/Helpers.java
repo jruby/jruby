@@ -11,7 +11,7 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.LocalAsgnNode;
-import org.jruby.ast.MultipleAsgn19Node;
+import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.UnnamedRestArgNode;
@@ -2510,7 +2510,7 @@ public class Helpers {
             for (Node preNode : argsNode.getPre().childNodes()) {
                 if (added) builder.append(';');
                 added = true;
-                if (preNode instanceof MultipleAsgn19Node) {
+                if (preNode instanceof MultipleAsgnNode) {
                     builder.append("nil");
                 } else {
                     builder.append("q").append(((ArgumentNode)preNode).getName());
@@ -2548,7 +2548,7 @@ public class Helpers {
             for (Node postNode : argsNode.getPost().childNodes()) {
                 if (added) builder.append(';');
                 added = true;
-                if (postNode instanceof MultipleAsgn19Node) {
+                if (postNode instanceof MultipleAsgnNode) {
                     builder.append("nil");
                 } else {
                     builder.append("q").append(((ArgumentNode)postNode).getName());
