@@ -34,16 +34,14 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Arity;
 
 /** 
  * Represents an instance variable accessor.
  */
-public class InstVarNode extends Node implements IArityNode, INameNode {
+public class InstVarNode extends Node implements INameNode {
     private String name;
 
     public InstVarNode(ISourcePosition position, String name) {
@@ -62,13 +60,6 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitInstVarNode(this);
     }
-
-	/**
-	 * A variable accessor takes no arguments.
-	 */
-	public Arity getArity() {
-		return Arity.noArguments();
-	}
 	
     /**
      * Gets the name.

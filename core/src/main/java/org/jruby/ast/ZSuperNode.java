@@ -32,15 +32,13 @@
 package org.jruby.ast;
 
 import java.util.List;
-import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Arity;
 
 /**
  * a call to 'super' with no arguments in a method.
  */
-public class ZSuperNode extends Node implements IArityNode, BlockAcceptingNode {
+public class ZSuperNode extends Node implements BlockAcceptingNode {
     private Node iterNode;
 
     public ZSuperNode(ISourcePosition position) {
@@ -57,13 +55,6 @@ public class ZSuperNode extends Node implements IArityNode, BlockAcceptingNode {
      **/
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitZSuperNode(this);
-    }
-	
-    /**
-     * 'super' can take any number of arguments.
-     */
-    public Arity getArity() {
-        return Arity.optional();
     }
     
     public List<Node> childNodes() {

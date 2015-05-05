@@ -35,7 +35,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Arity;
 
 public class MultipleAsgnNode extends AssignableNode {
     private final ListNode pre;
@@ -70,10 +69,6 @@ public class MultipleAsgnNode extends AssignableNode {
     public ListNode getPre() {
         return pre;
     }
-
-    public int getPreCount() {
-        return pre == null ? 0 : pre.size();
-    }
     
     /**
      * Gets the argsNode.
@@ -85,18 +80,6 @@ public class MultipleAsgnNode extends AssignableNode {
 
     public Node getRest() {
         return rest;
-    }
-    
-    /**
-     * Number of arguments is dependent on headNodes size
-     */
-    @Override
-    public Arity getArity() {
-        if (rest != null) {
-            return Arity.required(pre == null ? 0 : pre.size());
-        }
-        
-        return Arity.fixed(pre.size());
     }
     
     public List<Node> childNodes() {
