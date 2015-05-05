@@ -1245,29 +1245,8 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void Match2Instr(Match2Instr match2instr) {
-        visit(match2instr.getReceiver());
-        jvmMethod().loadContext();
-        visit(match2instr.getArg());
-        jvmAdapter().invokevirtual(p(RubyRegexp.class), "op_match19", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
-        jvmStoreLocal(match2instr.getResult());
-    }
-
-    @Override
-    public void Match3Instr(Match3Instr match3instr) {
-        jvmMethod().loadContext();
-        visit(match3instr.getReceiver());
-        visit(match3instr.getArg());
-        jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "match3", sig(IRubyObject.class, ThreadContext.class, RubyRegexp.class, IRubyObject.class));
-        jvmStoreLocal(match3instr.getResult());
-    }
-
-    @Override
-    public void MatchInstr(MatchInstr matchinstr) {
-        visit(matchinstr.getReceiver());
-        jvmMethod().loadContext();
-        jvmAdapter().invokevirtual(p(RubyRegexp.class), "op_match2_19", sig(IRubyObject.class, ThreadContext.class));
-        jvmStoreLocal(matchinstr.getResult());
+    public void MatchInstr(MatchInstr matchInstr) {
+        compileCallCommon(jvmMethod(), "=~", matchInstr.getCallArgs(), matchInstr.getReceiver(), 1, null, false, CallType.NORMAL, matchInstr.getResult(), false);
     }
 
     @Override

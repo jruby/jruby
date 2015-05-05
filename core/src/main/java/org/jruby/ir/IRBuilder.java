@@ -2659,14 +2659,17 @@ public class IRBuilder {
     public Operand buildMatch(MatchNode matchNode) {
         Operand regexp = build(matchNode.getRegexpNode());
 
-        return addResultInstr(new MatchInstr(createTemporaryVariable(), regexp));
+        Variable tempLastLine = createTemporaryVariable();
+        addResultInstr(new GetGlobalVariableInstr(tempLastLine, "$_"));
+        return addResultInstr(new MatchInstr(createTemporaryVariable(), regexp, tempLastLine));
     }
 
     public Operand buildMatch2(Match2Node matchNode) {
         Operand receiver = build(matchNode.getReceiverNode());
         Operand value    = build(matchNode.getValueNode());
         Variable result  = createTemporaryVariable();
-        addInstr(new Match2Instr(result, receiver, value));
+        addInstr(new MatchInstr(result, receiver, value));
+
         if (matchNode instanceof Match2CaptureNode) {
             Match2CaptureNode m2c = (Match2CaptureNode)matchNode;
             for (int slot:  m2c.getScopeOffsets()) {
@@ -2690,10 +2693,11 @@ public class IRBuilder {
     }
 
     public Operand buildMatch3(Match3Node matchNode) {
-        Operand receiver = build(matchNode.getReceiverNode());
-        Operand value = build(matchNode.getValueNode());
+        // This reversal is intentional
+        Operand receiver = build(matchNode.getValueNode());
+        Operand value = build(matchNode.getReceiverNode());
 
-        return addResultInstr(new Match3Instr(createTemporaryVariable(), receiver, value));
+        return addResultInstr(new MatchInstr(createTemporaryVariable(), receiver, value));
     }
 
     private Operand getContainerFromCPath(Colon3Node cpath) {

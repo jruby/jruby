@@ -236,8 +236,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case MASGN_REQD: return ReqdArgMultipleAsgnInstr.decode(this);
             case MASGN_REST: return RestArgMultipleAsgnInstr.decode(this);
             case MATCH: return MatchInstr.decode(this);
-            case MATCH2: return Match2Instr.decode(this);
-            case MATCH3: return Match3Instr.decode(this);
             case NONLOCAL_RETURN: return NonlocalReturnInstr.decode(this);
             case NOP: return NopInstr.NOP;
             case NORESULT_CALL:
