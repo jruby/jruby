@@ -49,6 +49,9 @@ class MSpecScript
 
     # infinite loop on some examples
     # "^spec/ruby/core/string/gsub_spec.rb",
+
+    # require etc, linux only spec
+    "^spec/ruby/core/io/advise_spec.rb"
   ]
 
   core += [
