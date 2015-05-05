@@ -57,7 +57,9 @@ import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.io.BadDescriptorException;
+import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
+import org.jruby.util.io.Stream;
 
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 
@@ -804,7 +806,16 @@ public class RubyGlobal {
                 // HACK: in order to have stdout/err act like ttys and flush always,
                 // we set anything assigned to stdout/stderr to sync
                 try {
-                    io.getOpenFile().getWriteStreamSafe().setSync(true);
+                    OpenFile of = io.getOpenFile();
+                    Stream write = of == null ? null : of.getWriteStreamSafe();
+
+                    if (write != null) {
+                        write.setSync(true);
+                    } else {
+                        // this is either a bogus IO subclass (see jruby/jruby#2373) or it is
+                        // a stream not really open for write; either way, we can't do anything
+                        // about its sync here.
+                    }
                 } catch (BadDescriptorException e) {
                     throw runtime.newErrnoEBADFError();
                 }
