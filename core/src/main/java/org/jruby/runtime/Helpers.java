@@ -18,18 +18,15 @@ import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.backtrace.BacktraceData;
@@ -647,15 +644,6 @@ public class Helpers {
         return (RubyArray) value;
     }
 
-    public static IRubyObject fetchClassVariable(Ruby runtime, StaticScope scope,
-            IRubyObject self, String name) {
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(runtime, scope);
-
-        if (rubyClass == null) rubyClass = self.getMetaClass();
-
-        return rubyClass.getClassVar(name);
-    }
-
     public static IRubyObject nullToNil(IRubyObject value, ThreadContext context) {
         return value != null ? value : context.nil;
     }
@@ -687,28 +675,6 @@ public class Helpers {
         } else {
             throw context.runtime.newTypeError(rubyModule + " is not a class/module");
         }
-    }
-
-    public static IRubyObject setClassVariable(Ruby runtime, StaticScope scope,
-            IRubyObject self, String name, IRubyObject value) {
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(runtime, scope);
-
-        if (rubyClass == null) rubyClass = self.getMetaClass();
-
-        rubyClass.setClassVar(name, value);
-
-        return value;
-    }
-
-    public static IRubyObject declareClassVariable(Ruby runtime, StaticScope scope, IRubyObject self, String name, IRubyObject value) {
-        // FIXME: This isn't quite right; it shouldn't evaluate the value if it's going to throw the error
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(runtime, scope);
-
-        if (rubyClass == null) throw runtime.newTypeError("no class/module to define class variable");
-
-        rubyClass.setClassVar(name, value);
-
-        return value;
     }
 
     public static void handleArgumentSizes(ThreadContext context, Ruby runtime, int given, int required, int opt, int rest) {
