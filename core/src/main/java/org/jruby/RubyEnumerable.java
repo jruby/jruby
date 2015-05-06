@@ -140,10 +140,10 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "count")
     public static IRubyObject count(ThreadContext context, IRubyObject self, final Block block) {
-        return countCommon(context, self, block, block.arity());
+        return countCommon(context, self, block);
     }
 
-    private static IRubyObject countCommon(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
+    private static IRubyObject countCommon(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.runtime;
         final int result[] = new int[] { 0 };
         
