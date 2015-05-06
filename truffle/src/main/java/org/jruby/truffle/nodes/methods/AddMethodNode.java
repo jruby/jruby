@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.methods;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -39,7 +40,7 @@ public class AddMethodNode extends RubyNode {
 
     @Override
     public RubySymbol execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         final Object receiverObject = receiver.execute(frame);
 
@@ -67,8 +68,6 @@ public class AddMethodNode extends RubyNode {
     }
 
     private static Visibility getVisibility(Frame frame, String name) {
-        notDesignedForCompilation();
-
         if (ModuleOperations.isMethodPrivateFromName(name)) {
             return Visibility.PRIVATE;
         } else {
@@ -77,8 +76,6 @@ public class AddMethodNode extends RubyNode {
     }
 
     private static Visibility getVisibility(Frame frame) {
-        notDesignedForCompilation();
-
         while (frame != null) {
             Visibility visibility = findVisibility(frame);
             if (visibility != null) {
