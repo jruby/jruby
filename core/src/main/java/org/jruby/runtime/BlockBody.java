@@ -36,7 +36,6 @@ package org.jruby.runtime;
 import org.jruby.EvalType;
 import org.jruby.RubyArray;
 import org.jruby.RubyProc;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -47,7 +46,6 @@ public abstract class BlockBody {
     // FIXME: Maybe not best place, but move it to a good home
     public static final int ZERO_ARGS = 0;
     public static final int MULTIPLE_ASSIGNMENT = 1;
-    public static final int ARRAY = 2;
     public static final int SINGLE_RESTARG = 3;
 
     public static final String[] EMPTY_PARAMETER_LIST = new String[0];
@@ -229,23 +227,14 @@ public abstract class BlockBody {
         }
         case PROC: {
             if (args.length == 1 && args[0] instanceof RubyArray) {
-                if (argumentType == MULTIPLE_ASSIGNMENT && argumentType != SINGLE_RESTARG) {
+                if (argumentType == MULTIPLE_ASSIGNMENT) {
                     args = ((RubyArray) args[0]).toJavaArray();
                 }
             }
             break;
         }
         case LAMBDA:
-            if (argumentType == ARRAY && args.length != 1) {
-                context.runtime.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + getSignature().arityValue() + ")");
-                if (args.length == 0) {
-                    args = context.runtime.getSingleNilArray();
-                } else {
-                    args = new IRubyObject[] {context.runtime.newArrayNoCopy(args)};
-                }
-            } else {
-                getSignature().checkArity(context.runtime, args);
-            }
+            getSignature().checkArity(context.runtime, args);
             break;
         }
 
