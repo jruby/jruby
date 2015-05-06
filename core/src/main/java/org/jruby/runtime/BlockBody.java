@@ -189,6 +189,7 @@ public abstract class BlockBody {
      *
      * @return the arity
      */
+    @Deprecated
     public abstract Arity arity();
 
     /**
