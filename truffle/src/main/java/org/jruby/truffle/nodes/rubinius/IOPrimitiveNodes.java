@@ -116,12 +116,40 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public int truncate(RubyString path, int offset) {
+        public int truncate(RubyString path, int length) {
+            return truncate(path, (long) length);
+        }
+
+        @Specialization
+        public int truncate(RubyString path, long length) {
             final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
-            return posix().truncate(pathString, offset);
+            return posix().truncate(pathString, length);
         }
 
     }
+
+    @RubiniusPrimitive(name = "io_ftruncate")
+    public static abstract class IOFTruncatePrimitiveNode extends RubiniusPrimitiveNode {
+
+        public IOFTruncatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int ftruncate(VirtualFrame frame, RubyBasicObject io, int length) {
+            return ftruncate(frame, io, (long) length);
+        }
+
+        @Specialization
+        public int ftruncate(VirtualFrame frame, RubyBasicObject io, long length) {
+            final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
+            return posix().ftruncate(fd, length);
+        }
+
+    }
+
+
+
 
     @RubiniusPrimitive(name = "io_fnmatch", needsSelf = false)
     public static abstract class IOFNMatchPrimitiveNode extends RubiniusPrimitiveNode {
