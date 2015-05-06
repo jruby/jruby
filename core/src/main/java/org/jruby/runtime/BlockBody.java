@@ -231,14 +231,14 @@ public abstract class BlockBody {
         }
         case LAMBDA:
             if (argumentType == ARRAY && args.length != 1) {
-                context.runtime.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + arity().getValue() + ")");
+                context.runtime.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + getSignature().arityValue() + ")");
                 if (args.length == 0) {
                     args = context.runtime.getSingleNilArray();
                 } else {
                     args = new IRubyObject[] {context.runtime.newArrayNoCopy(args)};
                 }
             } else {
-                arity().checkArity(context.runtime, args);
+                getSignature().checkArity(context.runtime, args);
             }
             break;
         }

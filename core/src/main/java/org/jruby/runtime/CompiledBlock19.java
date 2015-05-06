@@ -75,7 +75,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
         this.parameterList = parameterList;
-        this.needsSplat = Helpers.needsSplat19(arity().required(), !arity().isFixed());
+        this.needsSplat = Helpers.needsSplat19(signature.required(), !signature.isFixed());
     }
 
     @Deprecated
@@ -181,7 +181,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
     }
 
     private IRubyObject[] setupBlockArgs(IRubyObject value, Block.Type type, boolean alreadyArray) {
-        return Helpers.restructureBlockArgs19(value, arity(), type, needsSplat, alreadyArray);
+        return Helpers.restructureBlockArgs19(value, getSignature(), type, needsSplat, alreadyArray);
     }
 
     public String getFile() {

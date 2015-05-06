@@ -181,8 +181,7 @@ public class InlineCloneInfo extends CloneInfo {
         yieldSites.add(new Tuple<BasicBlock, YieldInstr>(bb, i));
     }
 
-    public void setupYieldArgsAndYieldResult(YieldInstr yi, BasicBlock yieldBB, Arity blockArity) {
-        int     blockArityValue = blockArity.getValue();
+    public void setupYieldArgsAndYieldResult(YieldInstr yi, BasicBlock yieldBB, int blockArityValue) {
         Operand yieldInstrArg = yi.getYieldArg();
 
         if ((yieldInstrArg == UndefinedValue.UNDEFINED) || (blockArityValue == 0)) {

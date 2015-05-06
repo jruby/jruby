@@ -2748,8 +2748,8 @@ public class Helpers {
     // . Array with multiple values and NO rest should extract args if there are more than one argument
     // Note: In 1.9 alreadyArray is only relevent from our internal Java code in core libs.  We never use it
     // from interpreter or JIT.  FIXME: Change core lib consumers to stop using alreadyArray param.
-    public static IRubyObject[] restructureBlockArgs19(IRubyObject value, Arity arity, Block.Type type, boolean needsSplat, boolean alreadyArray) {
-        if (!type.checkArity && arity == Arity.NO_ARGUMENTS) return IRubyObject.NULL_ARRAY;
+    public static IRubyObject[] restructureBlockArgs19(IRubyObject value, Signature signature, Block.Type type, boolean needsSplat, boolean alreadyArray) {
+        if (!type.checkArity && signature == Signature.NO_ARGUMENTS) return IRubyObject.NULL_ARRAY;
 
         if (value != null && !(value instanceof RubyArray) && needsSplat) value = Helpers.aryToAry(value);
 

@@ -265,7 +265,7 @@ public class CFGInliner {
 
         // Allocate new inliner object to reset variable and label rename maps
         ii = ii.cloneForInliningClosure(cl);
-        ii.setupYieldArgsAndYieldResult(yield, yieldBB, cl.getBlockBody().arity());
+        ii.setupYieldArgsAndYieldResult(yield, yieldBB, cl.getBlockBody().getSignature().arityValue());
 
         // 2. Merge closure cfg into the current cfg
         CFG closureCFG = cl.getCFG();
