@@ -1823,11 +1823,6 @@ public class Helpers {
         return argsResult;
     }
 
-    public static IRubyObject unsplatValue19IfArityOne(IRubyObject argsResult, Block block) {
-        if (block.isGiven() && block.arity().getValue() > 1) argsResult = Helpers.unsplatValue19(argsResult);
-        return argsResult;
-    }
-
     public static IRubyObject[] splatToArguments(IRubyObject value) {
         Ruby runtime = value.getRuntime();
 
