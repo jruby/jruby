@@ -93,7 +93,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     }
 
     private IRubyObject yieldSpecificMultiArgsCommon(ThreadContext context, IRubyObject[] args, Binding binding, Type type) {
-        int blockArity = arity().getValue();
+        int blockArity = getSignature().arityValue();
         if (blockArity == 0) {
             args = IRubyObject.NULL_ARRAY; // discard args
         } else if (blockArity == 1) {
@@ -119,7 +119,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     public IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
         IRubyObject[] args;
 
-        int blockArity = arity().getValue();
+        int blockArity = getSignature().arityValue();
 
         // For lambdas, independent of whether there is a REST arg or not, if # required args is 1,
         // the value is passed through unmodified even when it is an array!
@@ -164,7 +164,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
             if (args.length == 1) {
                 // Convert value to arg-array, unwrapping where necessary
                 args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], signature.arity(), (type == Type.NORMAL) && (args[0] instanceof RubyArray));
-            } else if (arity().getValue() == 1 && !getSignature().restKwargs()) {
+            } else if (getSignature().arityValue() == 1 && !getSignature().restKwargs()) {
                // discard excess arguments
                 args = (args.length == 0) ? context.runtime.getSingleNilArray() : new IRubyObject[] { args[0] };
             }
