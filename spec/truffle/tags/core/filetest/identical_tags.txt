@@ -1,3 +1,0 @@
-fails:FileTest.identical? returns true for a file and its link
-fails:FileTest.identical? accepts an object that has a #to_path method
-fails:FileTest.identical? returns true if both named files are identical

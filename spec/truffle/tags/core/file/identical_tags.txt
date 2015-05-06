@@ -1,3 +1,0 @@
-fails:File.identical? returns true for a file and its link
-fails:File.identical? accepts an object that has a #to_path method
-fails:File.identical? returns true if both named files are identical

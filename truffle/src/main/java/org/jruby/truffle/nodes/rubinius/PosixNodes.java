@@ -30,6 +30,21 @@ import java.nio.charset.StandardCharsets;
 @CoreClass(name = "Rubinius::FFI::Platform::POSIX")
 public abstract class PosixNodes {
 
+    @CoreMethod(names = "access", isModuleFunction = true, required = 2)
+    public abstract static class AccessNode extends CoreMethodArrayArgumentsNode {
+
+        public AccessNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int access(RubyString path, int mode) {
+            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
+            return posix().access(pathString, mode);
+        }
+
+    }
+
     @CoreMethod(names = "chmod", isModuleFunction = true, required = 2)
     public abstract static class ChmodNode extends CoreMethodArrayArgumentsNode {
 
