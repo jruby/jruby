@@ -394,7 +394,7 @@ public class Helpers {
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(methodMissing, callType);
+        return new MethodMissingMethod(methodMissing, visibility, callType);
     }
 
     public static DynamicMethod selectMethodMissing(ThreadContext context, RubyClass selfClass, Visibility visibility, String name, CallType callType) {
@@ -408,7 +408,7 @@ public class Helpers {
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(methodMissing, callType);
+        return new MethodMissingMethod(methodMissing, visibility, callType);
     }
 
     public static DynamicMethod selectMethodMissing(RubyClass selfClass, Visibility visibility, String name, CallType callType) {
@@ -422,7 +422,7 @@ public class Helpers {
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(methodMissing, callType);
+        return new MethodMissingMethod(methodMissing, visibility, callType);
     }
 
     public static final Map<String, String> map(String... keyValues) {
@@ -440,15 +440,17 @@ public class Helpers {
     private static class MethodMissingMethod extends DynamicMethod {
         private final DynamicMethod delegate;
         private final CallType lastCallStatus;
+        private final Visibility lastVisibility;
 
-        public MethodMissingMethod(DynamicMethod delegate, CallType lastCallStatus) {
+        public MethodMissingMethod(DynamicMethod delegate, Visibility lastVisibility, CallType lastCallStatus) {
             this.delegate = delegate;
             this.lastCallStatus = lastCallStatus;
+            this.lastVisibility = lastVisibility;
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            context.setLastCallStatus(lastCallStatus);
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
             return this.delegate.call(context, self, clazz, "method_missing", prepareMethodMissingArgs(args, context, name), block);
         }
 
