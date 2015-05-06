@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Fcntl;
+import org.jruby.RubyEncoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -102,6 +103,22 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public int open(RubyString path, int mode, int permission) {
             return posix().open(path.getByteList(), mode, permission);
+        }
+
+    }
+
+
+    @RubiniusPrimitive(name = "io_truncate", needsSelf = false)
+    public static abstract class IOTruncatePrimitiveNode extends RubiniusPrimitiveNode {
+
+        public IOTruncatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int truncate(RubyString path, int offset) {
+            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
+            return posix().truncate(pathString, offset);
         }
 
     }
