@@ -7,7 +7,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class NullBlockBody extends BlockBody {
     public NullBlockBody() {
-        super(ZERO_ARGS);
+        super(ZERO_ARGS, null);
     }
 
     @Override
@@ -64,10 +64,6 @@ public class NullBlockBody extends BlockBody {
     }
 
     public void setStaticScope(StaticScope newScope) {
-    }
-
-    public Signature getSignature() {
-        return null;
     }
 
     @Override

@@ -53,13 +53,16 @@ public abstract class BlockBody {
     public static final String[] EMPTY_PARAMETER_LIST = new String[0];
     
     protected final int argumentType;
+    protected final Signature signature;
 
-    public BlockBody(int argumentType) {
+    public BlockBody(int argumentType, Signature signature) {
         this.argumentType = argumentType;
+        this.signature = signature;
     }
 
-    // FIXME: Push all impls down so this is single concrete impl
-    public abstract Signature getSignature();
+    public Signature getSignature() {
+        return signature;
+    }
 
     public void setEvalType(EvalType evalType) {
         System.err.println("setEvalType unimplemented in " + this.getClass().getName());
@@ -190,7 +193,9 @@ public abstract class BlockBody {
      * @return the arity
      */
     @Deprecated
-    public abstract Arity arity();
+    public Arity arity() {
+        return signature.arity();
+    }
 
     /**
      * Is the current block a real yield'able block instead a null one

@@ -9,14 +9,10 @@ public abstract class ContextAwareBlockBody extends BlockBody {
     /** The static scope for the block body */
     protected StaticScope scope;
 
-    /** The 'Arity' of the block */
-    protected final Signature signature;
-
     public ContextAwareBlockBody(StaticScope scope, Signature signature, int argumentType) {
-        super(argumentType);
+        super(argumentType, signature);
 
         this.scope = scope;
-        this.signature = signature;
     }
 
     public ContextAwareBlockBody(StaticScope scope, Arity arity, int argumentType) {
@@ -38,13 +34,5 @@ public abstract class ContextAwareBlockBody extends BlockBody {
 
     public void setStaticScope(StaticScope newScope) {
         this.scope = newScope;
-    }
-
-    public Signature getSignature() {
-        return signature;
-    }
-
-    public Arity arity() {
-        return signature.arity();
     }
 }
