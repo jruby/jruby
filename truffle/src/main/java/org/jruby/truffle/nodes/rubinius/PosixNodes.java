@@ -221,7 +221,7 @@ public abstract class PosixNodes {
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
             for (int n = 0; n < buffer.length; n++) {
-                UnsafeHolder.U.putInt(address + n * Unsafe.ARRAY_BYTE_INDEX_SCALE, buffer[n]);
+                UnsafeHolder.U.putByte(address + n * Unsafe.ARRAY_BYTE_INDEX_SCALE, buffer[n]);
             }
             return result;
         }
