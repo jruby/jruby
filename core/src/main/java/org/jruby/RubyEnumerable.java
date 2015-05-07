@@ -107,6 +107,13 @@ public class RubyEnumerable {
     }
 
     public static IRubyObject callEach19(Ruby runtime, ThreadContext context, IRubyObject self,
+                                         Signature signature, BlockCallback callback) {
+        return Helpers.invoke(context, self, "each", CallBlock19.newCallClosure(self, runtime.getEnumerable(),
+                signature, callback, context));
+    }
+
+    @Deprecated
+    public static IRubyObject callEach19(Ruby runtime, ThreadContext context, IRubyObject self,
             Arity arity, BlockCallback callback) {
         return Helpers.invoke(context, self, "each", CallBlock19.newCallClosure(self, runtime.getEnumerable(),
                 arity, callback, context));
@@ -140,10 +147,10 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "count")
     public static IRubyObject count(ThreadContext context, IRubyObject self, final Block block) {
-        return countCommon(context, self, block, block.arity());
+        return countCommon(context, self, block);
     }
 
-    private static IRubyObject countCommon(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
+    private static IRubyObject countCommon(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.runtime;
         final int result[] = new int[] { 0 };
         
@@ -802,7 +809,7 @@ public class RubyEnumerable {
         if (block.isGiven()) {
             final RubyArray result = runtime.newArray();
 
-            callEach19(runtime, context, self, block.arity(), new BlockCallback() {
+            callEach19(runtime, context, self, block.getSignature(), new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg;
                     boolean newAry = false;
@@ -1593,10 +1600,15 @@ public class RubyEnumerable {
     
     @JRubyMethod(name = "any?")
     public static IRubyObject any_p(ThreadContext context, IRubyObject self, final Block block) {
-        return any_pCommon(context, self, block, block.arity());
+        return any_pCommon(context, self, block);
     }
-    
+
+    @Deprecated
     public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
+        return any_pCommon(context, self, block);
+    }
+
+    public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.runtime;
 
         try {
@@ -1942,7 +1954,7 @@ public class RubyEnumerable {
                         IRubyObject packedArgs = packEnumValues(runtime, largs);
                         IRubyObject v;
                         if(arg.state.isNil()) {
-                            if (arg.categorize.getBlock().arity().getValue() == 1) {
+                            if (arg.categorize.getBlock().getSignature().arityValue() == 1) {
                                 // if chunk's categorize block has arity one, we pass it the packed args
                                 v = arg.categorize.callMethod(ctx, "call", packedArgs);
                             } else {

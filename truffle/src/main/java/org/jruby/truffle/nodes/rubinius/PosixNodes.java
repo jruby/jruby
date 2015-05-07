@@ -30,6 +30,21 @@ import java.nio.charset.StandardCharsets;
 @CoreClass(name = "Rubinius::FFI::Platform::POSIX")
 public abstract class PosixNodes {
 
+    @CoreMethod(names = "access", isModuleFunction = true, required = 2)
+    public abstract static class AccessNode extends CoreMethodArrayArgumentsNode {
+
+        public AccessNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int access(RubyString path, int mode) {
+            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
+            return posix().access(pathString, mode);
+        }
+
+    }
+
     @CoreMethod(names = "chmod", isModuleFunction = true, required = 2)
     public abstract static class ChmodNode extends CoreMethodArrayArgumentsNode {
 
@@ -304,6 +319,22 @@ public abstract class PosixNodes {
         @Specialization
         public int minor(int dev) {
             return (dev & 16777215);
+        }
+
+    }
+
+    @CoreMethod(names = "rename", isModuleFunction = true, required = 2)
+    public abstract static class RenameNode extends CoreMethodArrayArgumentsNode {
+
+        public RenameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int rename(RubyString path, RubyString other) {
+            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
+            final String otherString = RubyEncoding.decodeUTF8(other.getByteList().getUnsafeBytes(), other.getByteList().getBegin(), other.getByteList().getRealSize());
+            return posix().rename(pathString, otherString);
         }
 
     }

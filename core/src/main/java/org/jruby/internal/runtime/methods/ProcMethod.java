@@ -77,7 +77,7 @@ public class ProcMethod extends DynamicMethod implements PositionAware, MethodAr
     
     @Override
     public Arity getArity() {
-        return proc.getBlock().arity();
+        return proc.getBlock().getSignature().arity();
     }
 
     public String getFile() {

@@ -1586,7 +1586,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         makeShared();
 
         // don't expose shared array to ruby
-        final boolean specificArity = (block.arity().isFixed()) && (block.arity().required() != 1);
+        Signature signature = block.getSignature();
+        final boolean specificArity = signature.isFixed() && signature.required() != 1;
         
         for (; localRealLength >= size; localRealLength -= size) {
             block.yield(context, window);

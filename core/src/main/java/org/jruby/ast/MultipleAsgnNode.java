@@ -1,5 +1,4 @@
-/*
- ***** BEGIN LICENSE BLOCK *****
+/***** BEGIN LICENSE BLOCK *****
  * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -12,10 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2008 Thomas E Enebo <enebo@acm.org>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -35,36 +31,32 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Arity;
 
+/**
+ *
+ */
 public class MultipleAsgnNode extends AssignableNode {
     private final ListNode pre;
     private final Node rest;
-    
-    public MultipleAsgnNode(ISourcePosition position, ListNode pre, Node rest) {
+    private final ListNode post;
+
+    public MultipleAsgnNode(ISourcePosition position, ListNode pre, Node rest, ListNode post) {
         super(position);
         this.pre = pre;
         this.rest = rest;
+        this.post = post;
     }
 
     public NodeType getNodeType() {
         return NodeType.MULTIPLEASGNNODE;
     }
-    
-    /**
-     * Accept for the visitor pattern.
-     * @param iVisitor the visitor
-     **/
+
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitMultipleAsgnNode(this);
     }
 
-    /**
-     * Gets the headNode.
-     * @return Returns a ListNode
-     */
-    public ListNode getHeadNode() {
-        return pre;
+    public Node getRest() {
+        return rest;
     }
 
     public ListNode getPre() {
@@ -74,37 +66,16 @@ public class MultipleAsgnNode extends AssignableNode {
     public int getPreCount() {
         return pre == null ? 0 : pre.size();
     }
-    
-    /**
-     * Gets the argsNode.
-     * @return Returns a INode
-     */
-    public Node getArgsNode() {
-        return rest;
+
+    public int getPostCount() {
+        return post == null ? 0 : post.size();
     }
 
-    public Node getRest() {
-        return rest;
+    public ListNode getPost() {
+        return post;
     }
-    
-    /**
-     * Number of arguments is dependent on headNodes size
-     */
-    @Override
-    public Arity getArity() {
-        if (rest != null) {
-            return Arity.required(pre == null ? 0 : pre.size());
-        }
-        
-        return Arity.fixed(pre.size());
-    }
-    
+
     public List<Node> childNodes() {
         return Node.createList(pre, rest, getValueNode());
-    }
-
-    @Override
-    public boolean needsDefinitionCheck() {
-        return false;
     }
 }

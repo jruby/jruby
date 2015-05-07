@@ -5,7 +5,7 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.IterNode;
-import org.jruby.ast.MultipleAsgn19Node;
+import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
@@ -194,8 +194,8 @@ public class Signature {
         Node var = iter.getVarNode();
 
         // ForNode can aggregate either a single node (required = 1) or masgn
-        if (var instanceof MultipleAsgn19Node) {
-            MultipleAsgn19Node masgn = (MultipleAsgn19Node)var;
+        if (var instanceof MultipleAsgnNode) {
+            MultipleAsgnNode masgn = (MultipleAsgnNode)var;
 
             Rest rest = Rest.NONE;
             if (masgn.getRest() != null) {

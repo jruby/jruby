@@ -101,7 +101,6 @@ public interface NodeVisitor<T> {
     public T visitLocalAsgnNode(LocalAsgnNode iVisited);
     public T visitLocalVarNode(LocalVarNode iVisited);
     public T visitMultipleAsgnNode(MultipleAsgnNode iVisited);
-    public T visitMultipleAsgnNode(MultipleAsgn19Node iVisited);
     public T visitMatch2Node(Match2Node iVisited);
     public T visitMatch3Node(Match3Node iVisited);
     public T visitMatchNode(MatchNode iVisited);

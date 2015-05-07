@@ -10,10 +10,10 @@ module RbConfig
 CONFIG = {
   'ruby_install_name' => 'rubytruffle',
   'RUBY_INSTALL_NAME' => 'rubytruffle',
-  'host_os' => File::ALT_SEPARATOR.nil? ? 'unknown' : 'mswin32',
   'exeext' => '',
   'EXEEXT' => 'rubytruffle',
   'ruby_version' => '2.2.0',
-  'libdir' => "#{Truffle::Primitive.home_directory}/lib/ruby/truffle"
+  'libdir' => "#{Truffle::Primitive.home_directory}/lib/ruby/truffle",
+  'host_os' => Truffle::Primitive.host_os
 }
 end

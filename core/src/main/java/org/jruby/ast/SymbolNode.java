@@ -54,15 +54,7 @@ import org.jruby.util.ByteList;
  */
 public class SymbolNode extends Node implements ILiteralNode, INameNode {
     private String name;
-    private RubySymbol symbol;
     private Encoding encoding;
-
-    public SymbolNode(ISourcePosition position, String name) {
-        super(position, false);
-
-        this.name = name;
-        this.encoding = null;
-    }
 
     public SymbolNode(ISourcePosition position, ByteList value) {
         super(position, false);
@@ -97,13 +89,5 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode {
 
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-
-    public RubySymbol getSymbol(Ruby runtime) {
-        RubySymbol sym;
-        if ((sym = symbol) != null) return sym;
-        sym = runtime.fastNewSymbol(name);
-        if (encoding != null) sym.associateEncoding(encoding);
-        return symbol = sym;
     }
 }

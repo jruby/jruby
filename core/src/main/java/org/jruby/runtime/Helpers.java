@@ -11,25 +11,22 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.LocalAsgnNode;
-import org.jruby.ast.MultipleAsgn19Node;
+import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.backtrace.BacktraceData;
@@ -295,7 +292,7 @@ public class Helpers {
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(methodMissing, callType);
+        return new MethodMissingMethod(methodMissing, visibility, callType);
     }
 
     public static DynamicMethod selectMethodMissing(ThreadContext context, RubyClass selfClass, Visibility visibility, String name, CallType callType) {
@@ -309,7 +306,7 @@ public class Helpers {
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(methodMissing, callType);
+        return new MethodMissingMethod(methodMissing, visibility, callType);
     }
 
     public static DynamicMethod selectMethodMissing(RubyClass selfClass, Visibility visibility, String name, CallType callType) {
@@ -323,7 +320,7 @@ public class Helpers {
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(methodMissing, callType);
+        return new MethodMissingMethod(methodMissing, visibility, callType);
     }
 
     public static final Map<String, String> map(String... keyValues) {
@@ -445,15 +442,17 @@ public class Helpers {
     private static class MethodMissingMethod extends DynamicMethod {
         private final DynamicMethod delegate;
         private final CallType lastCallStatus;
+        private final Visibility lastVisibility;
 
-        public MethodMissingMethod(DynamicMethod delegate, CallType lastCallStatus) {
+        public MethodMissingMethod(DynamicMethod delegate, Visibility lastVisibility, CallType lastCallStatus) {
             this.delegate = delegate;
             this.lastCallStatus = lastCallStatus;
+            this.lastVisibility = lastVisibility;
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            context.setLastCallStatus(lastCallStatus);
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
             return this.delegate.call(context, self, clazz, "method_missing", prepareMethodMissingArgs(args, context, name), block);
         }
 
@@ -647,15 +646,6 @@ public class Helpers {
         return (RubyArray) value;
     }
 
-    public static IRubyObject fetchClassVariable(Ruby runtime, StaticScope scope,
-            IRubyObject self, String name) {
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(runtime, scope);
-
-        if (rubyClass == null) rubyClass = self.getMetaClass();
-
-        return rubyClass.getClassVar(name);
-    }
-
     public static IRubyObject nullToNil(IRubyObject value, ThreadContext context) {
         return value != null ? value : context.nil;
     }
@@ -687,28 +677,6 @@ public class Helpers {
         } else {
             throw context.runtime.newTypeError(rubyModule + " is not a class/module");
         }
-    }
-
-    public static IRubyObject setClassVariable(Ruby runtime, StaticScope scope,
-            IRubyObject self, String name, IRubyObject value) {
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(runtime, scope);
-
-        if (rubyClass == null) rubyClass = self.getMetaClass();
-
-        rubyClass.setClassVar(name, value);
-
-        return value;
-    }
-
-    public static IRubyObject declareClassVariable(Ruby runtime, StaticScope scope, IRubyObject self, String name, IRubyObject value) {
-        // FIXME: This isn't quite right; it shouldn't evaluate the value if it's going to throw the error
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(runtime, scope);
-
-        if (rubyClass == null) throw runtime.newTypeError("no class/module to define class variable");
-
-        rubyClass.setClassVar(name, value);
-
-        return value;
     }
 
     public static void handleArgumentSizes(ThreadContext context, Ruby runtime, int given, int required, int opt, int rest) {
@@ -1855,11 +1823,6 @@ public class Helpers {
         return argsResult;
     }
 
-    public static IRubyObject unsplatValue19IfArityOne(IRubyObject argsResult, Block block) {
-        if (block.isGiven() && block.arity().getValue() > 1) argsResult = Helpers.unsplatValue19(argsResult);
-        return argsResult;
-    }
-
     public static IRubyObject[] splatToArguments(IRubyObject value) {
         Ruby runtime = value.getRuntime();
 
@@ -2544,7 +2507,7 @@ public class Helpers {
             for (Node preNode : argsNode.getPre().childNodes()) {
                 if (added) builder.append(';');
                 added = true;
-                if (preNode instanceof MultipleAsgn19Node) {
+                if (preNode instanceof MultipleAsgnNode) {
                     builder.append("nil");
                 } else {
                     builder.append("q").append(((ArgumentNode)preNode).getName());
@@ -2582,7 +2545,7 @@ public class Helpers {
             for (Node postNode : argsNode.getPost().childNodes()) {
                 if (added) builder.append(';');
                 added = true;
-                if (postNode instanceof MultipleAsgn19Node) {
+                if (postNode instanceof MultipleAsgnNode) {
                     builder.append("nil");
                 } else {
                     builder.append("q").append(((ArgumentNode)postNode).getName());
@@ -2780,8 +2743,8 @@ public class Helpers {
     // . Array with multiple values and NO rest should extract args if there are more than one argument
     // Note: In 1.9 alreadyArray is only relevent from our internal Java code in core libs.  We never use it
     // from interpreter or JIT.  FIXME: Change core lib consumers to stop using alreadyArray param.
-    public static IRubyObject[] restructureBlockArgs19(IRubyObject value, Arity arity, Block.Type type, boolean needsSplat, boolean alreadyArray) {
-        if (!type.checkArity && arity == Arity.NO_ARGUMENTS) return IRubyObject.NULL_ARRAY;
+    public static IRubyObject[] restructureBlockArgs19(IRubyObject value, Signature signature, Block.Type type, boolean needsSplat, boolean alreadyArray) {
+        if (!type.checkArity && signature == Signature.NO_ARGUMENTS) return IRubyObject.NULL_ARRAY;
 
         if (value != null && !(value instanceof RubyArray) && needsSplat) value = Helpers.aryToAry(value);
 

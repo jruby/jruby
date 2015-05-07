@@ -26,3 +26,12 @@ fails:Process.setrlimit when passed a String coerces 'RSS' into RLIMIT_RSS
 fails:Process.setrlimit when passed a String raises ArgumentError when passed an unknown resource
 fails:Process.setrlimit when passed on Object calls #to_str to convert to a String
 fails:Process.setrlimit when passed on Object calls #to_int if #to_str does not return a String
+fails:Process.setrlimit when passed a Symbol coerces :RTPRIO into RLIMIT_RTPRIO
+fails:Process.setrlimit when passed a Symbol coerces :SIGPENDING into RLIMIT_SIGPENDING
+fails:Process.setrlimit when passed a Symbol coerces :MSGQUEUE into RLIMIT_MSGQUEUE
+fails:Process.setrlimit when passed a Symbol coerces :NICE into RLIMIT_NICE
+fails:Process.setrlimit when passed a String coerces 'RTPRIO' into RLIMIT_RTPRIO
+fails:Process.setrlimit when passed a String coerces 'SIGPENDING' into RLIMIT_SIGPENDING
+fails:Process.setrlimit when passed a String coerces 'MSGQUEUE' into RLIMIT_MSGQUEUE
+fails:Process.setrlimit when passed a String coerces 'NICE' into RLIMIT_NICE
+

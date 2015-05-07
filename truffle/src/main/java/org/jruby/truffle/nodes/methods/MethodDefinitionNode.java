@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
@@ -41,7 +42,7 @@ public class MethodDefinitionNode extends RubyNode {
     }
 
     public InternalMethod executeMethod(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         final MaterializedFrame declarationFrame;
 
@@ -50,12 +51,6 @@ public class MethodDefinitionNode extends RubyNode {
         } else {
             declarationFrame = null;
         }
-
-        return executeMethod(frame, declarationFrame);
-    }
-
-    public InternalMethod executeMethod(VirtualFrame frame, MaterializedFrame declarationFrame) {
-        notDesignedForCompilation();
 
         return new InternalMethod(sharedMethodInfo, name, null, null, false, callTarget, declarationFrame);
     }

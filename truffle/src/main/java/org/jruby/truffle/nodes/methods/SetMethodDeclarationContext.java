@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.methods;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -34,7 +35,7 @@ public class SetMethodDeclarationContext extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         FrameSlot slot = frame.getFrameDescriptor().findOrAddFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID, "visibility for " + what, FrameSlotKind.Object);
         Object oldVisibility = frame.getValue(slot);

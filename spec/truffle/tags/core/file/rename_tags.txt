@@ -1,2 +1,0 @@
-fails:File.rename renames a file
-fails:File.rename raises an Errno::ENOENT if the source does not exist

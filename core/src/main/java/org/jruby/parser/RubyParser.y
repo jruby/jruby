@@ -74,7 +74,7 @@ import org.jruby.ast.LambdaNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.LiteralNode;
 import org.jruby.ast.ModuleNode;
-import org.jruby.ast.MultipleAsgn19Node;
+import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NextNode;
 import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.NilNode;
@@ -110,7 +110,6 @@ import org.jruby.ast.XStrNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZArrayNode;
 import org.jruby.ast.ZSuperNode;
-import org.jruby.ast.ZYieldNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
@@ -250,7 +249,7 @@ public class RubyParser {
 %type <BlockArgNode> opt_f_block_arg f_block_arg
 %type <IterNode> brace_block do_block cmd_brace_block
    // ENEBO: missing mhls_entry
-%type <MultipleAsgn19Node> mlhs mlhs_basic 
+%type <MultipleAsgnNode> mlhs mlhs_basic 
 %type <RescueBodyNode> opt_rescue
 %type <AssignableNode> var_lhs
 %type <LiteralNode> fsym
@@ -587,50 +586,50 @@ command        : fcall command_args %prec tLOWEST {
                     $$ = new NextNode($1, support.ret_args($2, $1));
                 }
 
-// MultipleAssig19Node:mlhs - [!null]
+// MultipleAssigNode:mlhs - [!null]
 mlhs            : mlhs_basic
                 | tLPAREN mlhs_inner rparen {
                     $$ = $2;
                 }
 
-// MultipleAssign19Node:mlhs_entry - mlhs w or w/o parens [!null]
+// MultipleAssignNode:mlhs_entry - mlhs w or w/o parens [!null]
 mlhs_inner      : mlhs_basic {
                     $$ = $1;
                 }
                 | tLPAREN mlhs_inner rparen {
-                    $$ = new MultipleAsgn19Node($1, support.newArrayNode($1, $2), null, null);
+                    $$ = new MultipleAsgnNode($1, support.newArrayNode($1, $2), null, null);
                 }
 
-// MultipleAssign19Node:mlhs_basic - multiple left hand side (basic because used in multiple context) [!null]
+// MultipleAssignNode:mlhs_basic - multiple left hand side (basic because used in multiple context) [!null]
 mlhs_basic      : mlhs_head {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, null, null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, null, null);
                 }
                 | mlhs_head mlhs_item {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1.add($2), null, null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1.add($2), null, null);
                 }
                 | mlhs_head tSTAR mlhs_node {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, $3, (ListNode) null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, $3, (ListNode) null);
                 }
                 | mlhs_head tSTAR mlhs_node ',' mlhs_post {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, $3, $5);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, $3, $5);
                 }
                 | mlhs_head tSTAR {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, new StarNode(lexer.getPosition()), null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, new StarNode(lexer.getPosition()), null);
                 }
                 | mlhs_head tSTAR ',' mlhs_post {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, new StarNode(lexer.getPosition()), $4);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, new StarNode(lexer.getPosition()), $4);
                 }
                 | tSTAR mlhs_node {
-                    $$ = new MultipleAsgn19Node($2.getPosition(), null, $2, null);
+                    $$ = new MultipleAsgnNode($2.getPosition(), null, $2, null);
                 }
                 | tSTAR mlhs_node ',' mlhs_post {
-                    $$ = new MultipleAsgn19Node($2.getPosition(), null, $2, $4);
+                    $$ = new MultipleAsgnNode($2.getPosition(), null, $2, $4);
                 }
                 | tSTAR {
-                      $$ = new MultipleAsgn19Node(lexer.getPosition(), null, new StarNode(lexer.getPosition()), null);
+                      $$ = new MultipleAsgnNode(lexer.getPosition(), null, new StarNode(lexer.getPosition()), null);
                 }
                 | tSTAR ',' mlhs_post {
-                      $$ = new MultipleAsgn19Node(lexer.getPosition(), null, new StarNode(lexer.getPosition()), $3);
+                      $$ = new MultipleAsgnNode(lexer.getPosition(), null, new StarNode(lexer.getPosition()), $3);
                 }
 
 mlhs_item       : mlhs_node
@@ -1377,10 +1376,10 @@ primary         : literal
                     $$ = support.new_yield($1, $3);
                 }
                 | kYIELD tLPAREN2 rparen {
-                    $$ = new ZYieldNode($1);
+                    $$ = new YieldNode($1, null);
                 }
                 | kYIELD {
-                    $$ = new ZYieldNode($1);
+                    $$ = new YieldNode($1, null);
                 }
                 | kDEFINED opt_nl tLPAREN2 expr rparen {
                     $$ = support.new_defined($1, $4);
@@ -1561,31 +1560,31 @@ f_marg_list     : f_marg {
                 }
 
 f_margs         : f_marg_list {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, null, null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, null, null);
                 }
                 | f_marg_list ',' tSTAR f_norm_arg {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, support.assignableLabelOrIdentifier($4, null), null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, support.assignableLabelOrIdentifier($4, null), null);
                 }
                 | f_marg_list ',' tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, support.assignableLabelOrIdentifier($4, null), $6);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, support.assignableLabelOrIdentifier($4, null), $6);
                 }
                 | f_marg_list ',' tSTAR {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, new StarNode(lexer.getPosition()), null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, new StarNode(lexer.getPosition()), null);
                 }
                 | f_marg_list ',' tSTAR ',' f_marg_list {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, new StarNode(lexer.getPosition()), $5);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, new StarNode(lexer.getPosition()), $5);
                 }
                 | tSTAR f_norm_arg {
-                    $$ = new MultipleAsgn19Node(lexer.getPosition(), null, support.assignableLabelOrIdentifier($2, null), null);
+                    $$ = new MultipleAsgnNode(lexer.getPosition(), null, support.assignableLabelOrIdentifier($2, null), null);
                 }
                 | tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = new MultipleAsgn19Node(lexer.getPosition(), null, support.assignableLabelOrIdentifier($2, null), $4);
+                    $$ = new MultipleAsgnNode(lexer.getPosition(), null, support.assignableLabelOrIdentifier($2, null), $4);
                 }
                 | tSTAR {
-                    $$ = new MultipleAsgn19Node(lexer.getPosition(), null, new StarNode(lexer.getPosition()), null);
+                    $$ = new MultipleAsgnNode(lexer.getPosition(), null, new StarNode(lexer.getPosition()), null);
                 }
                 | tSTAR ',' f_marg_list {
-                    $$ = new MultipleAsgn19Node(support.getPosition($3), null, null, $3);
+                    $$ = new MultipleAsgnNode(support.getPosition($3), null, null, $3);
                 }
 
 block_args_tail : f_block_kwarg ',' f_kwrest opt_f_block_arg {

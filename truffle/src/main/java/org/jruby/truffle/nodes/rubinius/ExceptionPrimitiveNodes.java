@@ -29,6 +29,7 @@ public abstract class ExceptionPrimitiveNodes {
         protected final int ENOENT = Errno.ENOENT.intValue();
         protected final int EBADF = Errno.EBADF.intValue();
         protected final int EEXIST = Errno.EEXIST.intValue();
+        protected final int EACCES = Errno.EACCES.intValue();
 
         public ExceptionErrnoErrorPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -59,6 +60,11 @@ public abstract class ExceptionPrimitiveNodes {
             return getContext().getCoreLibrary().fileExistsError("nil", this);
         }
 
+        @Specialization(guards = "errno == EACCES")
+        public RubyException eacces(RubyString message, int errno) {
+            return getContext().getCoreLibrary().permissionDeniedError(message.toString(), this);
+        }
+
 
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "!isExceptionSupported(errno)")
@@ -85,7 +91,7 @@ public abstract class ExceptionPrimitiveNodes {
         }
 
         public static boolean isExceptionSupported(int errno) {
-            return Errno.ENOENT.intValue() == errno || Errno.EBADF.intValue() == errno || Errno.EEXIST.intValue() == errno;
+            return Errno.ENOENT.intValue() == errno || Errno.EBADF.intValue() == errno || Errno.EEXIST.intValue() == errno || Errno.EACCES.intValue() == errno;
         }
 
     }

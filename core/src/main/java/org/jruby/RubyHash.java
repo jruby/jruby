@@ -51,6 +51,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
@@ -742,7 +743,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     private void checkDefaultProcArity(IRubyObject proc) {
-        int n = ((RubyProc)proc).getBlock().arity().getValue();
+        int n = ((RubyProc)proc).getBlock().getSignature().arityValue();
 
         if(((RubyProc)proc).getBlock().type == Block.Type.LAMBDA && n != 2 && (n >= 0 || n < -3)) {
             if(n < 0) n = -n-1;
@@ -1325,7 +1326,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     public RubyHash eachCommon(final ThreadContext context, final Block block) {
-        if (block.arity() == Arity.TWO_ARGUMENTS) {
+        if (block.getSignature() == Signature.TWO_ARGUMENTS) {
             iteratorVisitAll(new Visitor() {
                 @Override
                 public void visit(IRubyObject key, IRubyObject value) {
@@ -1879,7 +1880,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if (!block.isGiven()) return context.runtime.getTrue();
 
-        if (block.arity().getValue() > 1)
+        if (block.getSignature().arityValue() > 1)
             return any_p_i_fast(context, block);
 
         return any_p_i(context, block);

@@ -1304,9 +1304,9 @@ public class BodyTranslator extends Translator {
         } else if (node instanceof org.jruby.ast.DAsgnNode) {
             final org.jruby.ast.DAsgnNode dAsgnNode = (org.jruby.ast.DAsgnNode) node;
             return new org.jruby.ast.DAsgnNode(node.getPosition(), dAsgnNode.getName(), 0, rhs);
-        } else if (node instanceof org.jruby.ast.MultipleAsgn19Node) {
-            final org.jruby.ast.MultipleAsgn19Node multAsgnNode = (org.jruby.ast.MultipleAsgn19Node) node;
-            final org.jruby.ast.MultipleAsgn19Node newNode = new org.jruby.ast.MultipleAsgn19Node(node.getPosition(), multAsgnNode.getPre(), multAsgnNode.getRest(), multAsgnNode.getPost());
+        } else if (node instanceof MultipleAsgnNode) {
+            final MultipleAsgnNode multAsgnNode = (MultipleAsgnNode) node;
+            final MultipleAsgnNode newNode = new MultipleAsgnNode(node.getPosition(), multAsgnNode.getPre(), multAsgnNode.getRest(), multAsgnNode.getPost());
             newNode.setValueNode(rhs);
             return newNode;
         } else if (node instanceof org.jruby.ast.InstAsgnNode) {
@@ -1834,12 +1834,7 @@ public class BodyTranslator extends Translator {
     }
 
     @Override
-    public RubyNode visitMultipleAsgnNode(org.jruby.ast.MultipleAsgnNode node) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public RubyNode visitMultipleAsgnNode(org.jruby.ast.MultipleAsgn19Node node) {
+    public RubyNode visitMultipleAsgnNode(MultipleAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final org.jruby.ast.ListNode preArray = node.getPre();

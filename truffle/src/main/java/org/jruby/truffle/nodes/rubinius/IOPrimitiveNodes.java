@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Fcntl;
+import org.jruby.RubyEncoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -105,6 +106,50 @@ public abstract class IOPrimitiveNodes {
         }
 
     }
+
+
+    @RubiniusPrimitive(name = "io_truncate", needsSelf = false)
+    public static abstract class IOTruncatePrimitiveNode extends RubiniusPrimitiveNode {
+
+        public IOTruncatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int truncate(RubyString path, int length) {
+            return truncate(path, (long) length);
+        }
+
+        @Specialization
+        public int truncate(RubyString path, long length) {
+            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
+            return posix().truncate(pathString, length);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "io_ftruncate")
+    public static abstract class IOFTruncatePrimitiveNode extends RubiniusPrimitiveNode {
+
+        public IOFTruncatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int ftruncate(VirtualFrame frame, RubyBasicObject io, int length) {
+            return ftruncate(frame, io, (long) length);
+        }
+
+        @Specialization
+        public int ftruncate(VirtualFrame frame, RubyBasicObject io, long length) {
+            final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
+            return posix().ftruncate(fd, length);
+        }
+
+    }
+
+
+
 
     @RubiniusPrimitive(name = "io_fnmatch", needsSelf = false)
     public static abstract class IOFNMatchPrimitiveNode extends RubiniusPrimitiveNode {

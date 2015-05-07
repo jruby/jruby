@@ -36,9 +36,6 @@ package org.jruby.runtime;
 import org.jruby.EvalType;
 import org.jruby.RubyArray;
 import org.jruby.RubyProc;
-import org.jruby.ast.IterNode;
-import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.NodeType;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -56,13 +53,16 @@ public abstract class BlockBody {
     public static final String[] EMPTY_PARAMETER_LIST = new String[0];
     
     protected final int argumentType;
+    protected final Signature signature;
 
-    public BlockBody(int argumentType) {
+    public BlockBody(int argumentType, Signature signature) {
         this.argumentType = argumentType;
+        this.signature = signature;
     }
 
-    // FIXME: Push all impls down so this is single concrete impl
-    public abstract Signature getSignature();
+    public Signature getSignature() {
+        return signature;
+    }
 
     public void setEvalType(EvalType evalType) {
         System.err.println("setEvalType unimplemented in " + this.getClass().getName());
@@ -192,7 +192,10 @@ public abstract class BlockBody {
      *
      * @return the arity
      */
-    public abstract Arity arity();
+    @Deprecated
+    public Arity arity() {
+        return signature.arity();
+    }
 
     /**
      * Is the current block a real yield'able block instead a null one
@@ -212,23 +215,6 @@ public abstract class BlockBody {
      * get The line number for this block
      */
     public abstract int getLine();
-
-    /**
-     * Compiled codes way of examining arguments
-     *
-     * @param nodeId to be considered
-     * @return something not linked to AST and a constant to make compiler happy
-     */
-    public static int asArgumentType(NodeType nodeId) {
-        if (nodeId == null) return ZERO_ARGS;
-
-        switch (nodeId) {
-        case ZEROARGNODE: return ZERO_ARGS;
-        case MULTIPLEASGNNODE: return MULTIPLE_ASSIGNMENT;
-        case SVALUENODE: return SINGLE_RESTARG;
-        }
-        return ARRAY;
-    }
 
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
         switch (type) {
@@ -251,14 +237,14 @@ public abstract class BlockBody {
         }
         case LAMBDA:
             if (argumentType == ARRAY && args.length != 1) {
-                context.runtime.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + arity().getValue() + ")");
+                context.runtime.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + getSignature().arityValue() + ")");
                 if (args.length == 0) {
                     args = context.runtime.getSingleNilArray();
                 } else {
                     args = new IRubyObject[] {context.runtime.newArrayNoCopy(args)};
                 }
             } else {
-                arity().checkArity(context.runtime, args);
+                getSignature().checkArity(context.runtime, args);
             }
             break;
         }
@@ -268,27 +254,6 @@ public abstract class BlockBody {
 
     public String[] getParameterList() {
         return EMPTY_PARAMETER_LIST;
-    }
-
-    /**
-     * This is only for 'for' iters since 1.9+ blocks are only ever ArgsNode instances for their vars.
-     */
-    // FIXME: Change this to only be ForNode or encapsulate into ForNode altogether once non-9k runtimes removed.
-    public static NodeType getArgumentTypeWackyHack(IterNode iterNode) {
-        NodeType argsNodeId = null;
-        if (iterNode.getVarNode() != null && iterNode.getVarNode().getNodeType() != NodeType.ZEROARGNODE) {
-            // if we have multiple asgn with just *args, need a special type for that
-            argsNodeId = iterNode.getVarNode().getNodeType();
-            if (argsNodeId == NodeType.MULTIPLEASGNNODE) {
-                MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode)iterNode.getVarNode();
-                if (multipleAsgnNode.getHeadNode() == null && multipleAsgnNode.getArgsNode() != null) {
-                    // FIXME: This is gross. Don't do this.
-                    argsNodeId = NodeType.SVALUENODE;
-                }
-            }
-        }
-
-        return argsNodeId;
     }
 
     public static final BlockBody NULL_BODY = new NullBlockBody();

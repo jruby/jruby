@@ -36,7 +36,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * lightweight block logic within Java code.
  */
 public class CallBlock extends BlockBody {
-    private final Signature signature;
     private final BlockCallback callback;
     private final StaticScope dummyScope;
 
@@ -56,8 +55,7 @@ public class CallBlock extends BlockBody {
     }
 
     private CallBlock(Signature signature, BlockCallback callback, ThreadContext context) {
-        super(BlockBody.SINGLE_RESTARG);
-        this.signature = signature;
+        super(BlockBody.SINGLE_RESTARG, signature);
         this.callback = callback;
         this.dummyScope = context.runtime.getStaticScopeFactory().getDummyScope();
     }
@@ -100,14 +98,6 @@ public class CallBlock extends BlockBody {
 
     public void setStaticScope(StaticScope newScope) {
         // ignore
-    }
-
-    public Signature getSignature() {
-        return signature;
-    }
-
-    public Arity arity() {
-        return signature.arity();
     }
 
     public String getFile() {

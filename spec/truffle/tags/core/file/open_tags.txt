@@ -1,6 +1,3 @@
-fails:File.open raises an Errorno::EEXIST if the file exists when open with File::CREAT|File::EXCL
-fails:File.open raises an Errno::EACCES when opening non-permitted file
-fails:File.open raises an Errno::EACCES when opening read-only file
 fails:File.open opens a file for binary read-write starting at the beginning of the file
 fails:File.open raises a SystemCallError if passed an invalid Integer type
 fails:File.open with a block does not raise error when file is closed inside the block

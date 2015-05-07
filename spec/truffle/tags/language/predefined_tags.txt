@@ -11,3 +11,4 @@ windows:The predefined global constant STDOUT has the encodings set by #set_enco
 windows:The predefined global constant STDERR has the encodings set by #set_encoding
 fails:Predefined global $_ is set to the last line read by e.g. StringIO#gets
 fails:Predefined global $_ is set at the method-scoped level rather than block-scoped
+fails:Global variable $0 actually sets the program name

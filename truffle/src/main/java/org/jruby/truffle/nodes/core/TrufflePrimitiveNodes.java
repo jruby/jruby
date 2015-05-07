@@ -20,6 +20,7 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyGC;
+import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -596,6 +597,20 @@ public abstract class TrufflePrimitiveNodes {
         @Specialization
         public RubyString homeDirectory() {
             return getContext().makeString(getContext().getRuntime().getJRubyHome());
+        }
+
+    }
+
+    @CoreMethod(names = "host_os", onSingleton = true)
+    public abstract static class HostOSNode extends CoreMethodNode {
+
+        public HostOSNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyString hostOS() {
+            return getContext().makeString(RbConfigLibrary.getOSName());
         }
 
     }

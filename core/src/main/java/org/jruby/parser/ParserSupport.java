@@ -750,26 +750,8 @@ public class ParserSupport {
     // FIXME: Currently this is passing in position of receiver
     public Node new_opElementAsgnNode(Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
         ISourcePosition position = lexer.tokline;  // FIXME: ruby_sourceline in new lexer.
-        Node newNode = null;
 
-        if (argsNode instanceof ArrayNode) {
-            ArrayNode array = (ArrayNode) argsNode;
-
-            if (array.size() == 1) {
-                if (operatorName.equals("||")) {
-                    newNode = new OpElementOneArgOrAsgnNode(position, receiverNode, operatorName, array, valueNode);
-                } else if (operatorName.equals("&&")) {
-
-                    newNode = new OpElementOneArgAndAsgnNode(position, receiverNode, operatorName, array, valueNode);
-                } else {
-                    newNode = new OpElementOneArgAsgnNode(position, receiverNode, operatorName, array, valueNode);
-                }
-            }
-        }
-
-        if (newNode == null) {
-            newNode = new OpElementAsgnNode(position, receiverNode, operatorName, argsNode, valueNode);
-        }
+        Node newNode = new OpElementAsgnNode(position, receiverNode, operatorName, argsNode, valueNode);
 
         fixpos(newNode, receiverNode);
 
@@ -1003,7 +985,7 @@ public class ParserSupport {
                     lexer.getCurrentLine(), "Block argument should not be given.");
         }
 
-        return new Yield19Node(position, node); 
+        return new YieldNode(position, node);
     }
     
     public NumericNode negateInteger(NumericNode integerNode) {

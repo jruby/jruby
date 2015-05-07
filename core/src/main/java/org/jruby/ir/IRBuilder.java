@@ -421,7 +421,7 @@ public class IRBuilder {
             case MATCH3NODE: return buildMatch3((Match3Node) node);
             case MATCHNODE: return buildMatch((MatchNode) node);
             case MODULENODE: return buildModule((ModuleNode) node);
-            case MULTIPLEASGN19NODE: return buildMultipleAsgn19((MultipleAsgn19Node) node);
+            case MULTIPLEASGNNODE: return buildMultipleAsgn19((MultipleAsgnNode) node);
             case NEWLINENODE: return buildNewline((NewlineNode) node);
             case NEXTNODE: return buildNext((NextNode) node);
             case NTHREFNODE: return buildNthRef((NthRefNode) node);
@@ -544,7 +544,7 @@ public class IRBuilder {
     }
 
     // Non-arg masgn
-    public Operand buildMultipleAsgn19(MultipleAsgn19Node multipleAsgnNode) {
+    public Operand buildMultipleAsgn19(MultipleAsgnNode multipleAsgnNode) {
         Operand  values = build(multipleAsgnNode.getValueNode());
         Variable ret = getValueInTemporaryVariable(values);
         Variable tmp = createTemporaryVariable();
@@ -641,10 +641,10 @@ public class IRBuilder {
     // Non-arg masgn (actually a nested masgn)
     public void buildVersionSpecificAssignment(Node node, Variable v) {
         switch (node.getNodeType()) {
-        case MULTIPLEASGN19NODE: {
+        case MULTIPLEASGNNODE: {
             Variable tmp = createTemporaryVariable();
             addInstr(new ToAryInstr(tmp, v));
-            buildMultipleAsgn19Assignment((MultipleAsgn19Node)node, null, tmp);
+            buildMultipleAsgn19Assignment((MultipleAsgnNode)node, null, tmp);
             break;
         }
         default:
@@ -717,8 +717,8 @@ public class IRBuilder {
 
         // Argh!  For-loop bodies and regular iterators are different in terms of block-args!
         switch (node.getNodeType()) {
-            case MULTIPLEASGN19NODE: {
-                ListNode sourceArray = ((MultipleAsgn19Node) node).getPre();
+            case MULTIPLEASGNNODE: {
+                ListNode sourceArray = ((MultipleAsgnNode) node).getPre();
                 int i = 0;
                 for (Node an: sourceArray.childNodes()) {
                     // Use 1.8 mode version for this
@@ -1380,8 +1380,8 @@ public class IRBuilder {
         // FIXME: Do we still have MASGN and MASGN19?
         switch (node.getNodeType()) {
         case CLASSVARASGNNODE: case CLASSVARDECLNODE: case CONSTDECLNODE:
-        case DASGNNODE: case GLOBALASGNNODE: case LOCALASGNNODE: case MULTIPLEASGNNODE:
-        case MULTIPLEASGN19NODE: case OPASGNNODE: case OPASGNANDNODE: case OPASGNORNODE:
+        case DASGNNODE: case GLOBALASGNNODE: case LOCALASGNNODE:
+        case MULTIPLEASGNNODE: case OPASGNNODE: case OPASGNANDNODE: case OPASGNORNODE:
         case OPELEMENTASGNNODE: case INSTASGNNODE:
             return new FrozenString("assignment");
         case ORNODE: case ANDNODE:
@@ -1790,8 +1790,8 @@ public class IRBuilder {
                 }
                 break;
             }
-            case MULTIPLEASGN19NODE: {
-                MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
+            case MULTIPLEASGNNODE: {
+                MultipleAsgnNode childNode = (MultipleAsgnNode) node;
                 Variable v = createTemporaryVariable();
                 addArgReceiveInstr(v, argIndex, post, numPreReqd, numPostRead);
                 if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.req, "");
@@ -1993,8 +1993,8 @@ public class IRBuilder {
                 else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
                 break;
             }
-            case MULTIPLEASGN19NODE: {
-                MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
+            case MULTIPLEASGNNODE: {
+                MultipleAsgnNode childNode = (MultipleAsgnNode) node;
                 if (!isMasgnRoot) {
                     v = createTemporaryVariable();
                     if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
@@ -2016,7 +2016,7 @@ public class IRBuilder {
     //
     // Ex: a,b,*c=v  is a regular assignment and in this case, the "values" operand will be non-null
     // Ex: { |a,b,*c| ..} is the argument passing case
-    public void buildMultipleAsgn19Assignment(final MultipleAsgn19Node multipleAsgnNode, Operand argsArray, Operand values) {
+    public void buildMultipleAsgn19Assignment(final MultipleAsgnNode multipleAsgnNode, Operand argsArray, Operand values) {
         final ListNode masgnPre = multipleAsgnNode.getPre();
 
         // Build assignments for specific named arguments
@@ -2659,14 +2659,17 @@ public class IRBuilder {
     public Operand buildMatch(MatchNode matchNode) {
         Operand regexp = build(matchNode.getRegexpNode());
 
-        return addResultInstr(new MatchInstr(createTemporaryVariable(), regexp));
+        Variable tempLastLine = createTemporaryVariable();
+        addResultInstr(new GetGlobalVariableInstr(tempLastLine, "$_"));
+        return addResultInstr(new MatchInstr(createTemporaryVariable(), regexp, tempLastLine));
     }
 
     public Operand buildMatch2(Match2Node matchNode) {
         Operand receiver = build(matchNode.getReceiverNode());
         Operand value    = build(matchNode.getValueNode());
         Variable result  = createTemporaryVariable();
-        addInstr(new Match2Instr(result, receiver, value));
+        addInstr(new MatchInstr(result, receiver, value));
+
         if (matchNode instanceof Match2CaptureNode) {
             Match2CaptureNode m2c = (Match2CaptureNode)matchNode;
             for (int slot:  m2c.getScopeOffsets()) {
@@ -2690,10 +2693,11 @@ public class IRBuilder {
     }
 
     public Operand buildMatch3(Match3Node matchNode) {
-        Operand receiver = build(matchNode.getReceiverNode());
-        Operand value = build(matchNode.getValueNode());
+        // This reversal is intentional
+        Operand receiver = build(matchNode.getValueNode());
+        Operand value = build(matchNode.getReceiverNode());
 
-        return addResultInstr(new Match3Instr(createTemporaryVariable(), receiver, value));
+        return addResultInstr(new MatchInstr(createTemporaryVariable(), receiver, value));
     }
 
     private Operand getContainerFromCPath(Colon3Node cpath) {
