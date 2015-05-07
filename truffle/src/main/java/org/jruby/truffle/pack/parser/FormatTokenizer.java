@@ -73,6 +73,12 @@ public class FormatTokenizer {
             position++;
             spacePadding = readInt();
             zeroPadding = FormatDirective.DEFAULT;
+        } else if (format.charAt(position) == '0') {
+            spacePadding = FormatDirective.DEFAULT;
+            zeroPadding = readInt();
+        } else if (Character.isDigit(format.charAt(position))) {
+            spacePadding = readInt();
+            zeroPadding = FormatDirective.DEFAULT;
         } else {
             spacePadding = FormatDirective.DEFAULT;
 
