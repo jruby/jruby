@@ -174,7 +174,12 @@ public class JVMVisitor extends IRVisitor {
             }
 
             // ensure there's at least one instr per block
-            if (bb.getInstrs().size() == 0) m.adapter.nop();
+            /* FIXME: (CON 20150507) This used to filter blocks that had no instructions and only emit nop for them,
+                      but this led to BBs with no *bytecode-emitting* instructions failing to have a nop and triggering
+                      verification errors when we attached an exception-handling range to them (because the leading
+                      label failed to anchor anywhere, or anchored the same place as the trailing label). Until we can
+                      detect that a BB will not emit any code, we return to always emitting the nop. */
+            m.adapter.nop();
 
             // visit remaining instrs
             for (Instr instr : bb.getInstrs()) {

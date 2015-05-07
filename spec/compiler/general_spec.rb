@@ -1040,5 +1040,20 @@ modes.each do |mode|
         expect(x).to eq(32)
       end
     end
+
+    it "handles nested [], loops, and break" do
+      run('def foo
+             while 1
+               "x"[0]
+               while 1
+                 raise "ok"
+                 break
+               end
+             end
+           end
+           foo rescue $!') do |x|
+        expect(x.message).to eq("ok")
+      end
+    end
   end
 end
