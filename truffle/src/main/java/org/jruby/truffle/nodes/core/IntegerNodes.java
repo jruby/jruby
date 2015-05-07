@@ -116,7 +116,6 @@ public abstract class IntegerNodes {
 
         @Specialization
         public Object downto(VirtualFrame frame, int from, double to, RubyProc block) {
-            notDesignedForCompilation();
             return downto(frame, from, (int) Math.ceil(to), block);
         }
 
@@ -139,8 +138,6 @@ public abstract class IntegerNodes {
 
         @Specialization
         public RubyArray times(VirtualFrame frame, int n, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
             final int[] array = new int[n];
 
             for (int i = 0; i < n; i++) {
@@ -214,8 +211,6 @@ public abstract class IntegerNodes {
 
         @Specialization
         public Object times(VirtualFrame frame, RubyBignum n, RubyProc block) {
-            notDesignedForCompilation();
-
             if (fixnumOrBignum == null) {
                 CompilerDirectives.transferToInterpreter();
                 fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
@@ -309,14 +304,11 @@ public abstract class IntegerNodes {
 
         @Specialization
         public Object upto(VirtualFrame frame, int from, double to, RubyProc block) {
-            notDesignedForCompilation();
             return upto(frame, from, (int) Math.floor(to), block);
         }
 
         @Specialization
         public Object upto(VirtualFrame frame, long from, long to, RubyProc block) {
-            notDesignedForCompilation();
-
             int count = 0;
 
             try {

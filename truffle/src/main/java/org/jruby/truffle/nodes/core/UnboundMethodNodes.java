@@ -77,7 +77,8 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public RubyMethod bind(VirtualFrame frame, RubyUnboundMethod unboundMethod, Object object) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
+
             RubyModule module = unboundMethod.getMethod().getDeclaringModule();
             // the (redundant) instanceof is to satisfy FindBugs with the following cast
             if (module instanceof RubyClass && !ModuleOperations.canBindMethodTo(module, metaClass(frame, object))) {
@@ -103,8 +104,6 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public RubySymbol name(RubyUnboundMethod unboundMethod) {
-            notDesignedForCompilation();
-
             return getContext().getSymbol(unboundMethod.getMethod().getName());
         }
 
@@ -146,10 +145,9 @@ public abstract class UnboundMethodNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object sourceLocation(RubyUnboundMethod unboundMethod) {
-            notDesignedForCompilation();
-
             SourceSection sourceSection = unboundMethod.getMethod().getSharedMethodInfo().getSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {

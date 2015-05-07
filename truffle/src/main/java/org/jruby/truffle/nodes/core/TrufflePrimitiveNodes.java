@@ -57,8 +57,6 @@ public abstract class TrufflePrimitiveNodes {
              * this method, that is then the binding of the caller of the caller.
              */
 
-            notDesignedForCompilation();
-
             final Memo<Integer> frameCount = new Memo<>(0);
 
             final MaterializedFrame frame = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<MaterializedFrame>() {
@@ -92,8 +90,6 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public RubyString sourceOfCaller() {
-            notDesignedForCompilation();
-
             final Memo<Integer> frameCount = new Memo<>(0);
 
             final String source = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<String>() {
@@ -136,6 +132,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public long gcTime() {
             return RubyGC.getCollectionTime();
@@ -164,6 +161,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyNilClass assertNotCompiled() {
             throw new RaiseException(getContext().getCoreLibrary().runtimeError("Truffle::Primitive.assert_not_compiled can only be called lexically", this));
@@ -178,10 +176,9 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyNilClass dumpCallStack() {
-            notDesignedForCompilation();
-
             for (String line : Backtrace.DEBUG_FORMATTER.format(getContext(), null, RubyCallStack.getBacktrace(this))) {
                 System.err.println(line);
             }
@@ -213,10 +210,9 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString fullTree() {
-            notDesignedForCompilation();
-
             return getContext().makeString(NodeUtil.printTreeToString(Truffle.getRuntime().getCallerFrame().getCallNode().getRootNode()));
         }
 
@@ -231,8 +227,6 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public RubyString javaClassOf(Object value) {
-            notDesignedForCompilation();
-
             return getContext().makeString(value.getClass().getName());
         }
 
@@ -245,10 +239,9 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString dumpString(RubyString string) {
-            notDesignedForCompilation();
-
             final StringBuilder builder = new StringBuilder();
             builder.append("\"");
 
@@ -270,10 +263,9 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString sourceAttributionTree() {
-            notDesignedForCompilation();
-
             return getContext().makeString(NodeUtil.printSourceAttributionTree(Truffle.getRuntime().getCallerFrame().getCallNode().getRootNode()));
         }
 
@@ -288,8 +280,6 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public RubyString storageClass(RubyArray array) {
-            notDesignedForCompilation();
-
             if (array.getStore() == null) {
                 return getContext().makeString("null");
             } else {
@@ -299,8 +289,6 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public RubyString storageClass(RubyHash hash) {
-            notDesignedForCompilation();
-
             if (hash.getStore() == null) {
                 return getContext().makeString("null");
             } else {
@@ -332,10 +320,9 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object parseTree(VirtualFrame frame) {
-            notDesignedForCompilation();
-
             final org.jruby.ast.Node parseTree = RubyCallStack.getCallingMethod(frame).getSharedMethodInfo().getParseTree();
 
             if (parseTree == null) {
@@ -354,10 +341,9 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString tree() {
-            notDesignedForCompilation();
-
             return getContext().makeString(NodeUtil.printCompactTreeToString(Truffle.getRuntime().getCallerFrame().getCallNode().getRootNode()));
         }
 
@@ -370,6 +356,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public boolean graal() {
             return Truffle.getRuntime().getName().toLowerCase(Locale.ENGLISH).contains("graal");
@@ -398,6 +385,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString graalVersion() {
             return getContext().makeString(System.getProperty("graal.version", "unknown"));
@@ -428,6 +416,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyHash coverageResult() {
             if (getContext().getCoverageTracker() == null) {

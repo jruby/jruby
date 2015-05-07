@@ -33,7 +33,6 @@ public abstract class MainNodes {
 
         @Specialization
         public RubyModule doPublic(VirtualFrame frame, Object[] args) {
-            notDesignedForCompilation();
             final RubyClass object = getContext().getCoreLibrary().getObjectClass();
             return publicNode.executePublic(frame, object, args);
         }
@@ -51,7 +50,6 @@ public abstract class MainNodes {
 
         @Specialization
         public RubyModule doPrivate(VirtualFrame frame, Object[] args) {
-            notDesignedForCompilation();
             final RubyClass object = getContext().getCoreLibrary().getObjectClass();
             return privateNode.executePrivate(frame, object, args);
         }

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
@@ -33,10 +34,9 @@ public abstract class ObjectSpaceNodes {
             return id2Ref((long) id);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object id2Ref(long id) {
-            notDesignedForCompilation();
-
             if (id == ObjectIDOperations.NIL) {
                 return nil();
             } else if (id == ObjectIDOperations.TRUE) {
@@ -85,7 +85,7 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public int eachObject(VirtualFrame frame, UndefinedPlaceholder ofClass, RubyProc block) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             int count = 0;
 
@@ -101,7 +101,7 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public int eachObject(VirtualFrame frame, RubyClass ofClass, RubyProc block) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             int count = 0;
 
@@ -128,10 +128,9 @@ public abstract class ObjectSpaceNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyArray defineFinalizer(Object object, RubyProc finalizer) {
-            notDesignedForCompilation();
-
             getContext().getObjectSpaceManager().defineFinalizer((RubyBasicObject) object, finalizer);
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), 0, finalizer);
         }
@@ -144,10 +143,9 @@ public abstract class ObjectSpaceNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object undefineFinalizer(Object object) {
-            notDesignedForCompilation();
-
             getContext().getObjectSpaceManager().undefineFinalizer((RubyBasicObject) object);
             return object;
         }
