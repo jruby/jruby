@@ -44,18 +44,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  * The executable body portion of a closure.
  */
 public abstract class BlockBody {
-    // FIXME: Maybe not best place, but move it to a good home
-    public static final int ZERO_ARGS = 0;
-    public static final int MULTIPLE_ASSIGNMENT = 1;
-    public static final int SINGLE_RESTARG = 3;
-
     public static final String[] EMPTY_PARAMETER_LIST = new String[0];
     
-    protected final int argumentType;
     protected final Signature signature;
 
-    public BlockBody(int argumentType, Signature signature) {
-        this.argumentType = argumentType;
+    public BlockBody(Signature signature) {
         this.signature = signature;
     }
 
@@ -119,10 +112,6 @@ public abstract class BlockBody {
     public IRubyObject yield(ThreadContext context, IRubyObject value,
             Binding binding, Block.Type type, Block block) {
         return yield(context, value, binding, type);
-    }
-
-    public int getArgumentType() {
-        return argumentType;
     }
 
     public IRubyObject call(ThreadContext context, Binding binding, Block.Type type) {

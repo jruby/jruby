@@ -73,7 +73,7 @@ public class CompiledBlock extends ContextAwareBlockBody {
     }
 
     public CompiledBlock(Signature signature, StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        super(scope, signature, argumentType);
+        super(scope, signature);
 
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
@@ -159,15 +159,10 @@ public class CompiledBlock extends ContextAwareBlockBody {
     }
 
     protected IRubyObject setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
-        switch (argumentType) {
-        case ZERO_ARGS:
-            return null;
-        case MULTIPLE_ASSIGNMENT:
-        case SINGLE_RESTARG:
-            return value;
-        default:
-            return defaultArgsLogic(context.runtime, value);
-        }
+        if (signature == Signature.NO_ARGUMENTS) return null;
+        if (!signature.isFixed() || signature.required() > 1) return value;
+
+        return defaultArgsLogic(context.runtime, value);
     }
     
     private IRubyObject defaultArgsLogic(Ruby ruby, IRubyObject value) {
@@ -189,15 +184,10 @@ public class CompiledBlock extends ContextAwareBlockBody {
     }
 
     protected IRubyObject setupBlockArg(Ruby ruby, IRubyObject value, IRubyObject self) {
-        switch (argumentType) {
-        case ZERO_ARGS:
-            return null;
-        case MULTIPLE_ASSIGNMENT:
-        case SINGLE_RESTARG:
-            return ArgsUtil.convertToRubyArray(ruby, value, hasMultipleArgsHead);
-        default:
-            return defaultArgLogic(ruby, value);
-        }
+        if (signature == Signature.NO_ARGUMENTS) return null;
+        if (!signature.isFixed() || signature.required() > 1) return ArgsUtil.convertToRubyArray(ruby, value, hasMultipleArgsHead);
+
+        return defaultArgLogic(ruby, value);
     }
     
     private IRubyObject defaultArgLogic(Ruby ruby, IRubyObject value) {

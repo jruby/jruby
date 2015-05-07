@@ -419,7 +419,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
     public IRubyObject to_proc(ThreadContext context) {
         StaticScope scope = context.runtime.getStaticScopeFactory().getDummyScope();
         final CallSite site = new FunctionalCachingCallSite(symbol);
-        BlockBody body = new ContextAwareBlockBody(scope, Signature.OPTIONAL, BlockBody.SINGLE_RESTARG) {
+        BlockBody body = new ContextAwareBlockBody(scope, Signature.OPTIONAL) {
             private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block block) {
                 if (array.isEmpty()) {
                     throw context.runtime.newArgumentError("no receiver given");

@@ -38,12 +38,10 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.ProcMethod;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.CompiledBlockCallback19;
-import org.jruby.runtime.CompiledBlockLight;
 import org.jruby.runtime.CompiledBlockLight19;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
@@ -210,24 +208,15 @@ public class RubyMethod extends AbstractRubyMethod {
         BlockBody body;
         if (method instanceof IRMethodArgs) {
             Signature signature = ((IRMethodArgs) method).getSignature();
-            int argumentType = resolveArgumentType(signature.isFixed(), signature.required());
-            body = CompiledBlockLight19.newCompiledBlockLight(((IRMethodArgs) method).getSignature(),
-                    runtime.getStaticScopeFactory().getDummyScope(), callback, false, argumentType, JRubyLibrary.MethodExtensions.methodParameters(runtime, method));
+            body = CompiledBlockLight19.newCompiledBlockLight(signature,
+                    runtime.getStaticScopeFactory().getDummyScope(), callback, false, -1, JRubyLibrary.MethodExtensions.methodParameters(runtime, method));
         } else {
-            Arity arity = method.getArity();
-            int argumentType = resolveArgumentType(arity.isFixed(), arity.required());
             body = CompiledBlockLight19.newCompiledBlockLight(method.getArity(),
-                    runtime.getStaticScopeFactory().getDummyScope(), callback, false, argumentType, JRubyLibrary.MethodExtensions.methodParameters(runtime, method));
+                    runtime.getStaticScopeFactory().getDummyScope(), callback, false, -1, JRubyLibrary.MethodExtensions.methodParameters(runtime, method));
         }
         Block b = new Block(body, context.currentBinding(receiver, Visibility.PUBLIC));
         
         return RubyProc.newProc(runtime, b, Block.Type.LAMBDA);
-    }
-
-    private int resolveArgumentType(boolean isFixed, int required) {
-        if (!isFixed) return BlockBody.MULTIPLE_ASSIGNMENT;
-        if (required > 0) return BlockBody.MULTIPLE_ASSIGNMENT;
-        return BlockBody.ZERO_ARGS;
     }
 
     @JRubyMethod

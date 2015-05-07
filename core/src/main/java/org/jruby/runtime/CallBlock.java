@@ -55,7 +55,7 @@ public class CallBlock extends BlockBody {
     }
 
     private CallBlock(Signature signature, BlockCallback callback, ThreadContext context) {
-        super(BlockBody.SINGLE_RESTARG, signature);
+        super(signature);
         this.callback = callback;
         this.dummyScope = context.runtime.getStaticScopeFactory().getDummyScope();
     }

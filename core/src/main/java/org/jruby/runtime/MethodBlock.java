@@ -65,8 +65,8 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
     }
 
     public MethodBlock(RubyMethod method, StaticScope staticScope) {
-        super(staticScope, Arity.createArity((int) method.arity().getLongValue()), BlockBody.SINGLE_RESTARG);
-        
+        super(staticScope, Signature.from(Arity.createArity(method.arity().getIntValue())));
+
         this.method = method;
         String filename = method.getFilename();
         if (filename == null) filename = "(method)";

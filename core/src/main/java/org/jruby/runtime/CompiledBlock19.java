@@ -70,7 +70,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
     }
 
     public CompiledBlock19(Signature signature, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {
-        super(scope, signature, argumentType);
+        super(scope, signature);
 
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;

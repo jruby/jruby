@@ -16,7 +16,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     protected ThreadLocal<EvalType> evalType;
 
     public IRBlockBody(StaticScope staticScope, String[] parameterList, String fileName, int lineNumber, Signature signature) {
-        super(staticScope, signature, -1);
+        super(staticScope, signature);
         this.parameterList = parameterList;
         this.fileName = fileName;
         this.lineNumber = lineNumber;

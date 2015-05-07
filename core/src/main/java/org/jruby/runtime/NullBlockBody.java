@@ -7,7 +7,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class NullBlockBody extends BlockBody {
     public NullBlockBody() {
-        super(ZERO_ARGS, Signature.NO_ARGUMENTS);
+        super(Signature.NO_ARGUMENTS);
     }
 
     @Override

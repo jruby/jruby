@@ -28,7 +28,7 @@ public abstract class JavaInternalBlockBody extends BlockBody {
      * For blocks which cannot be executed in parallel.
      */
     public JavaInternalBlockBody(Ruby runtime, ThreadContext originalContext, String methodName, Signature signature) {
-        super(BlockBody.SINGLE_RESTARG, signature);
+        super(signature);
         
         this.originalContext = originalContext;
         this.methodName = methodName;
