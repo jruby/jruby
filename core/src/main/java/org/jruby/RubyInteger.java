@@ -44,6 +44,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -141,7 +142,7 @@ public abstract class RubyInteger extends RubyNumeric {
     private static void fixnumUpto(ThreadContext context, long from, long to, Block block) {
         // We must avoid "i++" integer overflow when (to == Long.MAX_VALUE).
         Ruby runtime = context.runtime;
-        if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+        if (block.getSignature() == Signature.NO_ARGUMENTS) {
             IRubyObject nil = runtime.getNil();
             long i;
             for (i = from; i < to; i++) {
@@ -204,7 +205,7 @@ public abstract class RubyInteger extends RubyNumeric {
     private static void fixnumDownto(ThreadContext context, long from, long to, Block block) {
         // We must avoid "i--" integer overflow when (to == Long.MIN_VALUE).
         Ruby runtime = context.runtime;
-        if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+        if (block.getSignature() == Signature.NO_ARGUMENTS) {
             IRubyObject nil = runtime.getNil();
             long i;
             for (i = from; i > to; i--) {

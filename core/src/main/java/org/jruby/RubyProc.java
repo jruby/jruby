@@ -241,9 +241,6 @@ public class RubyProc extends RubyObject implements DataType {
     public static IRubyObject[] prepareArgs(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject[] args) {
         Signature signature = blockBody.getSignature();
 
-        // FIXME: which blocks have no signature (and no arity before that?)
-        if (signature == null) return args;
-
         if (args == null) return IRubyObject.NULL_ARRAY;
 
         if (type == Block.Type.LAMBDA) {

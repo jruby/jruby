@@ -286,8 +286,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             long lvalue = this.value;
             boolean checkArity = block.type.checkArity;
             
-            if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS ||
-                    block.getSignature() == Signature.NO_ARGUMENTS) {
+            if (block.getSignature() == Signature.NO_ARGUMENTS) {
                 if (checkArity) {
                     // must pass arg
                     IRubyObject nil = runtime.getNil();

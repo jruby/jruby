@@ -216,8 +216,6 @@ public abstract class BlockBody {
     public abstract int getLine();
 
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
-        if (signature == null) return args;  // For NullBlockBody
-
         if (type == Block.Type.LAMBDA) {
             signature.checkArity(context.runtime, args);
         } else {

@@ -559,7 +559,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 runtime.getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
             }
 
-            if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+            if (block.getSignature() == Signature.NO_ARGUMENTS) {
                 IRubyObject nil = runtime.getNil();
                 for (int i = 0; i < ilen; i++) {
                     store(i, block.yield(context, nil));
