@@ -313,7 +313,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     @JRubyMethod(name = "===", required = 1)
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return super.op_equal(context, other);
+        return context.runtime.newBoolean(this == other);
+    }
+
+    @JRubyMethod(name = "==", required = 1)
+    @Override
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+        return context.runtime.newBoolean(this == other);
     }
 
     @Deprecated
