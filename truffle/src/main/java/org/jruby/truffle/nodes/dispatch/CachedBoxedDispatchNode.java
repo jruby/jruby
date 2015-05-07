@@ -166,10 +166,9 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
     @Override
     public String toString() {
-        return String.format("CachedBoxedDispatchNode(:%s, %s@%x, %s, %s)",
+        return String.format("CachedBoxedDispatchNode(:%s, %s@%x, %s)",
                 getCachedNameAsSymbol().toString(),
                 expectedClass.getName(), expectedClass.hashCode(),
-                value == null ? "null" : DebugOperations.inspect(getContext(), value),
                 method == null ? "null" : method.toString());
     }
 
