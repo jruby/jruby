@@ -99,14 +99,12 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object doCatch(VirtualFrame frame, Object tag, RubyProc block) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             try {
                 return dispatchNode.dispatch(frame, block, tag);
             } catch (ThrowException e) {
                 if (areSame(frame, e.getTag(), tag)) {
-                    notDesignedForCompilation();
-
                     if (clearExceptionVariableNode == null) {
                         CompilerDirectives.transferToInterpreter();
                         clearExceptionVariableNode = insert(
@@ -157,7 +155,6 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public RubyString vmGetModuleName(RubyModule module) {
-            notDesignedForCompilation();
             return getContext().makeString(module.getName());
         }
 
@@ -335,7 +332,6 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object vmSingletonClassObject(Object object) {
-            notDesignedForCompilation();
             return object instanceof RubyClass && ((RubyClass) object).isSingleton();
         }
 
@@ -350,8 +346,6 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object doThrow(Object tag, Object value) {
-            notDesignedForCompilation();
-
             throw new ThrowException(tag, value);
         }
 

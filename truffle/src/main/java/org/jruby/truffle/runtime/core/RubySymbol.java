@@ -52,8 +52,6 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
     public RubyProc toProc(SourceSection sourceSection, final Node currentNode) {
         // TODO(CS): cache this?
 
-        RubyNode.notDesignedForCompilation();
-
         final RubyContext context = getContext();
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, symbol, true, null, false);
@@ -72,8 +70,6 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
     }
 
     public org.jruby.RubySymbol getJRubySymbol() {
-        RubyNode.notDesignedForCompilation();
-
         return getContext().getRuntime().newSymbol(bytes);
     }
 

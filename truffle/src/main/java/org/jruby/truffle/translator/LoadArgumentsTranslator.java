@@ -18,7 +18,6 @@ import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.truffle.nodes.ReadNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.array.PrimitiveArrayNodeFactory;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;

@@ -118,10 +118,9 @@ public abstract class StringPrimitiveNodes {
             taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyArray stringAwkSplit(RubyString string, int lim) {
-            notDesignedForCompilation();
-
             final List<RubyString> ret = new ArrayList<>();
             final ByteList value = string.getByteList();
             final boolean limit = lim > 0;
@@ -535,21 +534,18 @@ public abstract class StringPrimitiveNodes {
                     new ByteList(new byte[]{(byte) code}, encoding.getEncoding()));
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "!isSimple(code, encoding)")
         public RubyString stringFromCodepoint(int code, RubyEncoding encoding) {
-            notDesignedForCompilation();
-
             final int length;
 
             try {
                 length = encoding.getEncoding().codeToMbcLength(code);
             } catch (EncodingException e) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
 
             if (length <= 0) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
 
@@ -569,8 +565,6 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public RubyString stringFromCodepointSimple(long code, RubyEncoding encoding) {
-            notDesignedForCompilation();
-
             if (code < Integer.MIN_VALUE || code > Integer.MAX_VALUE) {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException();
@@ -594,8 +588,6 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public Object stringToF(RubyString string) {
-            notDesignedForCompilation();
-
             try {
                 return Double.parseDouble(string.toString());
             } catch (NumberFormatException e) {
@@ -707,10 +699,9 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object stringCharacterIndex(RubyString string, RubyString pattern, int offset) {
-            notDesignedForCompilation();
-
             if (offset < 0) {
                 return nil();
             }
@@ -1089,10 +1080,9 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object stringToInum(RubyString string, int fixBase, boolean strict) {
-            notDesignedForCompilation();
-
             try {
                 final org.jruby.RubyInteger result = ConvertBytes.byteListToInum19(getContext().getRuntime(),
                         string.getByteList(),
@@ -1100,7 +1090,6 @@ public abstract class StringPrimitiveNodes {
                         strict);
 
                 return getContext().toTruffle(result);
-
             } catch (org.jruby.exceptions.RaiseException e) {
                 throw new RaiseException(getContext().toTruffle(e.getException(), this));
             }
@@ -1117,7 +1106,6 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public RubyString stringByteAppend(RubyString string, RubyString other) {
-            notDesignedForCompilation();
             string.getByteList().append(other.getByteList());
             return string;
         }

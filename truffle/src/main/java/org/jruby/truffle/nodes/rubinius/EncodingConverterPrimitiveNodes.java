@@ -11,6 +11,7 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
@@ -198,7 +199,7 @@ public abstract class EncodingConverterPrimitiveNodes {
 
         @Specialization
         public Object encodingConverterLastError(VirtualFrame frame, RubyEncodingConverter encodingConverter) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             final EConv ec = encodingConverter.getEConv();
             final EConv.LastError lastError = ec.lastError;
@@ -248,7 +249,7 @@ public abstract class EncodingConverterPrimitiveNodes {
 
         @Specialization
         public Object encodingConverterLastError(RubyEncodingConverter encodingConverter) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             final EConv ec = encodingConverter.getEConv();
 

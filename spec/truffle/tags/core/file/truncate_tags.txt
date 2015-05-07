@@ -1,2 +1,1 @@
-fails:File.truncate raises an Errno::EINVAL if the length argument is not valid
 fails:File#truncate raises an IOError if file is closed

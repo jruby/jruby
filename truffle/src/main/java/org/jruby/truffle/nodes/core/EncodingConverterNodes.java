@@ -45,8 +45,6 @@ public abstract class EncodingConverterNodes {
         @TruffleBoundary
         @Specialization
         public RubyNilClass initialize(RubyEncodingConverter self, Object source, Object destination, Object options) {
-            notDesignedForCompilation();
-
             // Adapted from RubyConverter - see attribution there
 
             Ruby runtime = getContext().getRuntime();

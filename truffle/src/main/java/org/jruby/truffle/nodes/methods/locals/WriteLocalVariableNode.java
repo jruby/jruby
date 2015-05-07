@@ -15,7 +15,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.WriteNode;
+import org.jruby.truffle.translator.WriteNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 @NodeChild(value = "rhs", type = RubyNode.class)

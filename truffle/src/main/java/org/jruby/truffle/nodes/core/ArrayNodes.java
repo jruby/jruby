@@ -22,7 +22,6 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.CoreSourceSection;
@@ -270,13 +269,13 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public Object mulObject(VirtualFrame frame, RubyArray array, RubyString string) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
             return ruby(frame, "join(sep)", "sep", string);
         }
 
         @Specialization(guards = {"!isRubyString(object)"})
         public Object mulObjectCount(VirtualFrame frame, RubyArray array, Object object) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
             if (respondToToStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null, null}));
@@ -466,7 +465,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "!isRubyArray(value)", "!isUndefinedPlaceholder(value)" })
         public Object setObject(VirtualFrame frame, RubyArray array, int start, int length, Object value) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             if (length < 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -557,7 +556,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object setOtherArray(VirtualFrame frame, RubyArray array, int start, int length, RubyArray value) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             if (length < 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -862,7 +861,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "areBothIntegerFixnum(array, other)")
         public RubyArray concatIntegerFixnum(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             final int newSize = array.getSize() + other.getSize();
             int[] store = (int[]) array.getStore();
@@ -878,7 +877,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "areBothLongFixnum(array, other)")
         public RubyArray concatLongFixnum(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             final int newSize = array.getSize() + other.getSize();
             long[] store = (long[]) array.getStore();
@@ -894,7 +893,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "areBothFloat(array, other)")
         public RubyArray concatDouble(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             final int newSize = array.getSize() + other.getSize();
             double[] store = (double[]) array.getStore();
@@ -910,7 +909,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "areBothObject(array, other)")
         public RubyArray concatObject(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             final int size = array.getSize();
             final int newSize = size + other.getSize();
@@ -927,7 +926,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray concat(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             final int newSize = array.getSize() + other.getSize();
 
@@ -1081,7 +1080,7 @@ public abstract class ArrayNodes {
 
         @Specialization(contains = "deleteAtIntegerFixnumInBounds", guards = "isIntegerFixnum(array)")
         public Object deleteAtIntegerFixnum(RubyArray array, int index) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             int normalizedIndex = index;
 
@@ -1123,7 +1122,7 @@ public abstract class ArrayNodes {
 
         @Specialization(contains = "deleteAtLongFixnumInBounds", guards = "isLongFixnum(array)")
         public Object deleteAtLongFixnum(RubyArray array, int index) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             int normalizedIndex = index;
 
@@ -1165,7 +1164,7 @@ public abstract class ArrayNodes {
 
         @Specialization(contains = "deleteAtFloatInBounds", guards = "isFloat(array)")
         public Object deleteAtFloat(RubyArray array, int index) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             int normalizedIndex = index;
 
@@ -1207,7 +1206,7 @@ public abstract class ArrayNodes {
 
         @Specialization(contains = "deleteAtObjectInBounds", guards = "isObject(array)")
         public Object deleteAtObject(RubyArray array, int index) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             int normalizedIndex = index;
 
@@ -1849,14 +1848,14 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray initialize(RubyArray array, RubyArray copy, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
             array.setStore(copy.slowToArray(), copy.getSize());
             return array;
         }
 
         @Specialization
         public RubyArray initialize(RubyArray array, RubyArray copy, UndefinedPlaceholder defaultValue, RubyProc block) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
             array.setStore(copy.slowToArray(), copy.getSize());
             return array;
         }
@@ -2046,7 +2045,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object inject(VirtualFrame frame, RubyArray array, RubySymbol symbol, UndefinedPlaceholder unused) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             final Object[] store = array.slowToArray();
 
@@ -2081,7 +2080,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isNull(array)", "isIntIndexAndOtherSingleObjectArg(array, values)"})
         public Object insertNull(RubyArray array, Object[] values) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
             final int index = (int) values[0];
             if (index < 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -2108,7 +2107,7 @@ public abstract class ArrayNodes {
 
         @Specialization(contains = {"insert", "insertNull"})
         public Object insertBoxed(VirtualFrame frame, RubyArray array, Object[] values) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
             if (values.length == 1) {
                 return array;
             }
@@ -3451,7 +3450,7 @@ public abstract class ArrayNodes {
 
                     final Object value = store[n];
 
-                    notDesignedForCompilation();
+                    CompilerDirectives.transferToInterpreter();
 
                     if (! yieldIsTruthy(frame, block,  new Object[]{value})) {
                         selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
@@ -3484,7 +3483,7 @@ public abstract class ArrayNodes {
 
                     final Object value = store[n];
 
-                    notDesignedForCompilation();
+                    CompilerDirectives.transferToInterpreter();
 
                     if (! yieldIsTruthy(frame, block, value)) {
                         selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
@@ -3759,7 +3758,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isOtherNull(array, other)")
         public RubyArray replace(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             array.setStore(null, 0);
             return array;
@@ -3767,7 +3766,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isOtherIntegerFixnum(array, other)")
         public RubyArray replaceIntegerFixnum(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             array.setStore(Arrays.copyOf((int[]) other.getStore(), other.getSize()), other.getSize());
             return array;
@@ -3775,7 +3774,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isOtherLongFixnum(array, other)")
         public RubyArray replaceLongFixnum(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             array.setStore(Arrays.copyOf((long[]) other.getStore(), other.getSize()), other.getSize());
             return array;
@@ -3783,7 +3782,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isOtherFloat(array, other)")
         public RubyArray replaceFloat(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             array.setStore(Arrays.copyOf((double[]) other.getStore(), other.getSize()), other.getSize());
             return array;
@@ -3791,7 +3790,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isOtherObject(array, other)")
         public RubyArray replaceObject(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             array.setStore(Arrays.copyOf((Object[]) other.getStore(), other.getSize()), other.getSize());
             return array;
@@ -3832,7 +3831,7 @@ public abstract class ArrayNodes {
 
                     final Object value = store[n];
 
-                    notDesignedForCompilation();
+                    CompilerDirectives.transferToInterpreter();
 
                     if (yieldIsTruthy(frame, block,  new Object[]{value})) {
                         selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
@@ -3865,7 +3864,7 @@ public abstract class ArrayNodes {
 
                     final Object value = store[n];
 
-                    notDesignedForCompilation();
+                    CompilerDirectives.transferToInterpreter();
 
                     if (yieldIsTruthy(frame, block, value)) {
                         selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
@@ -4488,7 +4487,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray unshift(RubyArray array, Object... args) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             array.slowUnshift(args);
             return array;

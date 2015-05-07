@@ -265,14 +265,6 @@ public abstract class RubyNode extends Node {
         return context;
     }
 
-    // notDesignedForCompilation() helper
-
-    // TODO CS 30-Apr-15 inline this when we think it's working well
-
-    public static void notDesignedForCompilation() {
-        CompilerDirectives.transferToInterpreter();
-    }
-
     // ruby() helper
 
     protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {

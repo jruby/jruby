@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -32,14 +33,14 @@ public abstract class ArrayDropTailNode extends RubyNode {
 
     @Specialization(guards = "isNull(array)")
     public RubyArray getHeadNull(RubyArray array) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         return new RubyArray(getContext().getCoreLibrary().getArrayClass());
     }
 
     @Specialization(guards = "isIntegerFixnum(array)")
     public RubyArray getHeadIntegerFixnum(RubyArray array) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         if (index >= array.getSize()) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
@@ -50,7 +51,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
 
     @Specialization(guards = "isLongFixnum(array)")
     public RubyArray geHeadLongFixnum(RubyArray array) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         if (index >= array.getSize()) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
@@ -62,7 +63,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
 
     @Specialization(guards = "isFloat(array)")
     public RubyArray getHeadFloat(RubyArray array) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         if (index >= array.getSize()) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
@@ -74,7 +75,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
 
     @Specialization(guards = "isObject(array)")
     public RubyArray getHeadObject(RubyArray array) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         if (index >= array.getSize()) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
@@ -84,10 +85,9 @@ public abstract class ProcessNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int kill(RubySymbol signalName, int pid) {
-            notDesignedForCompilation();
-
             int self = posix().getpid();
 
             if (self == pid) {
@@ -111,8 +111,6 @@ public abstract class ProcessNodes {
 
         @Specialization
         public int pid() {
-            notDesignedForCompilation();
-
             return posix().getpid();
         }
 

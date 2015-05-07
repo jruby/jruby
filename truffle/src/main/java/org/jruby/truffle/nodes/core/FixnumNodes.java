@@ -572,7 +572,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object mod(long a, RubyBignum b) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             // TODO(CS): why are we getting this case?
 

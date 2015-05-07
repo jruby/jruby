@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.ASCIIEncoding;
@@ -37,7 +38,7 @@ public class InteroplatedRegexpNode extends RubyNode {
 
     @Override
     public RubyRegexp executeRubyRegexp(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         final org.jruby.RubyString[] strings = new org.jruby.RubyString[children.length];
 

@@ -7,18 +7,19 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes;
+package org.jruby.truffle.translator;
+
+import org.jruby.truffle.nodes.RubyNode;
 
 /**
- * Interface for all nodes which read something, providing a method to transform them to write the
+ * Interface for all nodes which write something, providing a method to transform them to read the
  * same thing.
  */
-public interface ReadNode {
+public interface WriteNode {
 
     /**
-     * Return a new node that performs the equivalent write operation to this node's read, using the
-     * supplied node for the right-hand-side.
+     * Return a new node that performs the equivalent read operation to this node's write.
      */
-    RubyNode makeWriteNode(RubyNode rhs);
+    RubyNode makeReadNode();
 
 }

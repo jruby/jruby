@@ -48,7 +48,7 @@ public abstract class FiberNodes {
 
         @Specialization
         protected Object transfer(VirtualFrame frame, RubyFiber fiber, boolean isYield, Object[] args) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             if (!fiber.isAlive()) {
                 throw new RaiseException(getContext().getCoreLibrary().deadFiberCalledError(this));
@@ -76,7 +76,7 @@ public abstract class FiberNodes {
 
         @Specialization
         public RubyNilClass initialize(RubyFiber fiber, RubyProc block) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             fiber.initialize(block);
             return nil();

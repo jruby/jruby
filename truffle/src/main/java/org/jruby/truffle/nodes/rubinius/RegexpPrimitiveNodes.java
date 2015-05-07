@@ -37,8 +37,6 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization
         public RubyRegexp initialize(RubyRegexp regexp, RubyString pattern, int options) {
-            notDesignedForCompilation();
-
             regexp.initialize(this, pattern.getByteList(), options);
             return regexp;
         }
@@ -52,17 +50,14 @@ public abstract class RegexpPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object searchRegion(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
-            notDesignedForCompilation();
-
             if (regexp.getRegex() == null) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
             }
 
             if (string.scanForCodeRange() == StringSupport.CR_BROKEN) {
-                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(
                         String.format("invalid byte sequence in %s", string.getByteList().getEncoding()), this));
             }
@@ -83,8 +78,6 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization
         public Object setLastMatch(RubyClass regexpClass, Object matchData) {
-            notDesignedForCompilation();
-
             getContext().getThreadManager().getCurrentThread().getThreadLocals().getObjectType().setInstanceVariable(
                     getContext().getThreadManager().getCurrentThread().getThreadLocals(), "$~", matchData);
 

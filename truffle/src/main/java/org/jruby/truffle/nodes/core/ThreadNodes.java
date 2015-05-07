@@ -86,8 +86,6 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyNilClass initialize(RubyThread thread, RubyProc block) {
-            notDesignedForCompilation();
-
             thread.initialize(getContext(), this, block);
             return nil();
         }
@@ -103,8 +101,6 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyThread join(RubyThread thread, UndefinedPlaceholder timeout) {
-            notDesignedForCompilation();
-
             thread.join();
             return thread;
         }
@@ -116,15 +112,11 @@ public abstract class ThreadNodes {
 
         @Specialization
         public Object join(RubyThread thread, int timeout) {
-            notDesignedForCompilation();
-
             return joinMillis(thread, timeout * 1000);
         }
 
         @Specialization
         public Object join(RubyThread thread, double timeout) {
-            notDesignedForCompilation();
-
             return joinMillis(thread, (int) (timeout * 1000.0));
         }
 
@@ -223,8 +215,6 @@ public abstract class ThreadNodes {
 
         @Specialization
         public Object status(RubyThread self) {
-            notDesignedForCompilation();
-
             // TODO: slightly hackish
             if (self.getStatus() == Status.DEAD) {
                 if (self.getException() != null) {
@@ -248,8 +238,6 @@ public abstract class ThreadNodes {
 
         @Specialization
         public boolean stop(RubyThread self) {
-            notDesignedForCompilation();
-
             return self.getStatus() == Status.DEAD || self.getStatus() == Status.SLEEP;
         }
 
@@ -264,10 +252,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public Object value(RubyThread self) {
-            notDesignedForCompilation();
-
             self.join();
-
             return self.getValue();
         }
 
@@ -282,8 +267,6 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyThread wakeup(final RubyThread thread) {
-            notDesignedForCompilation();
-
             if (thread.getStatus() == Status.DEAD) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().threadError("killed thread", this));

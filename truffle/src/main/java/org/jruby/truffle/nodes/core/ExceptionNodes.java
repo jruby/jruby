@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -31,7 +32,7 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public RubyNilClass initialize(RubyException exception, UndefinedPlaceholder message) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             exception.initialize(getContext().makeString(""));
             return nil();
@@ -39,7 +40,7 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public RubyNilClass initialize(RubyException exception, RubyString message) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             exception.initialize(message);
             return nil();

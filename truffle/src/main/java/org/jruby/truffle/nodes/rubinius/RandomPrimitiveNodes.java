@@ -38,8 +38,6 @@ public abstract class RandomPrimitiveNodes {
 
         @Specialization
         public long randomizerSeed(RubyBasicObject random) {
-            notDesignedForCompilation();
-
             return System.currentTimeMillis();
         }
 
@@ -54,8 +52,6 @@ public abstract class RandomPrimitiveNodes {
 
         @Specialization
         public double randomizerRandFloat(RubyBasicObject random) {
-            notDesignedForCompilation();
-
             return Math.random();
         }
 
@@ -70,15 +66,11 @@ public abstract class RandomPrimitiveNodes {
 
         @Specialization
         public long randomizerRandInt(RubyBasicObject random, Integer limit) {
-            notDesignedForCompilation();
-
             return RandomPrimitiveHelper.randomInt(getContext().getRuntime().getCurrentContext().getRuntime(), limit);
         }
 
         @Specialization
         public long randomizerRandInt(RubyBasicObject random, Long limit) {
-            notDesignedForCompilation();
-
             return RandomPrimitiveHelper.randomInt(getContext().getRuntime().getCurrentContext().getRuntime(), limit);
         }
     }
@@ -90,10 +82,9 @@ public abstract class RandomPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyBignum randomizerGenSeed(RubyBasicObject random) {
-            notDesignedForCompilation();
-
             BigInteger integer = RandomPrimitiveHelper.randomSeed(getContext().getRuntime().getCurrentContext().getRuntime());
             return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), integer);
         }

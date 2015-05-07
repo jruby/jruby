@@ -219,7 +219,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isRubyString(b)")
         public Object compare(VirtualFrame frame, RubyString a, Object b) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             if (respondToToStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -343,7 +343,6 @@ public abstract class StringNodes {
 
         @Specialization(guards = {"!isInteger(other)", "!isLong(other)", "!isRubyBignum(other)", "!isRubyString(other)"})
         public Object concat(VirtualFrame frame, RubyString string, Object other) {
-            notDesignedForCompilation();
             return ruby(frame, "concat StringValue(other)", "other", other);
         }
 
@@ -503,8 +502,6 @@ public abstract class StringNodes {
 
         @Specialization
         public Object slice(VirtualFrame frame, RubyString string, RubyString matchStr, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
             if (includeNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 includeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -565,10 +562,9 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public boolean asciiOnly(RubyString string) {
-            notDesignedForCompilation();
-
             if (!string.getByteList().getEncoding().isAsciiCompatible()) {
                 return false;
             }
@@ -697,10 +693,9 @@ public abstract class StringNodes {
             sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { null });
         }
 
+        @TruffleBoundary
         @Specialization
         public Object chopBang(VirtualFrame frame, RubyString string) {
-            notDesignedForCompilation();
-
             if (sizeNode.executeInteger(frame, string) == 0) {
                 return nil();
             }
@@ -734,8 +729,6 @@ public abstract class StringNodes {
 
         @Specialization
         public int count(VirtualFrame frame, RubyString string, Object[] otherStrings) {
-            notDesignedForCompilation();
-
             if (string.getByteList().getRealSize() == 0) {
                 return 0;
             }
@@ -748,9 +741,8 @@ public abstract class StringNodes {
             return countSlow(frame, string, otherStrings);
         }
 
+        @TruffleBoundary
         private int countSlow(VirtualFrame frame, RubyString string, Object[] args) {
-            notDesignedForCompilation();
-
             RubyString[] otherStrings = new RubyString[args.length];
 
             for (int i = 0; i < args.length; i++) {
@@ -870,9 +862,8 @@ public abstract class StringNodes {
             return deleteBangSlow(frame, string, otherStrings);
         }
 
+        @TruffleBoundary
         private Object deleteBangSlow(VirtualFrame frame, RubyString string, Object... args) {
-            notDesignedForCompilation();
-
             RubyString[] otherStrings = new RubyString[args.length];
 
             for (int i = 0; i < args.length; i++) {
@@ -1148,8 +1139,6 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public RubyString inspect(RubyString string) {
-            notDesignedForCompilation();
-
             final org.jruby.RubyString inspected = (org.jruby.RubyString) org.jruby.RubyString.inspect19(getContext().getRuntime(), string.getByteList());
             return getContext().makeString(inspected.getByteList());
         }
@@ -1341,10 +1330,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object match(VirtualFrame frame, RubyString string, RubyString regexpString) {
-            notDesignedForCompilation();
-
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.getByteList(), Option.DEFAULT);
-
             return regexpMatchNode.call(frame, regexp, "match", null, string);
         }
 
@@ -1556,10 +1542,9 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString strip(RubyString string) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             // Hacky implementation to get something working
-
             return getContext().makeString(string.toString().trim());
         }
 
@@ -1624,30 +1609,24 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyArray scan(RubyString string, RubyString regexpString, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.getByteList(), Option.DEFAULT);
             return scan(string, regexp, block);
         }
 
         @Specialization
         public RubyString scan(VirtualFrame frame, RubyString string, RubyString regexpString, RubyProc block) {
-            notDesignedForCompilation();
-
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.getByteList(), Option.DEFAULT);
             return scan(frame, string, regexp, block);
         }
 
         @Specialization
         public RubyArray scan(RubyString string, RubyRegexp regexp, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) regexp.scan(string));
         }
 
         @Specialization
         public RubyString scan(VirtualFrame frame, RubyString string, RubyRegexp regexp, RubyProc block) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             // TODO (nirvdrum 12-Jan-15) Figure out a way to make this not just a complete copy & paste of RubyRegexp#scan.
 
@@ -1860,10 +1839,9 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString succ(RubyString string) {
-            notDesignedForCompilation();
-
             if (string.length() > 0) {
                 return getContext().makeString(string.getLogicalClass(), StringSupport.succCommon(getContext().getRuntime(), string.getByteList()));
             } else {
@@ -1879,10 +1857,9 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString succBang(RubyString string) {
-            notDesignedForCompilation();
-
             if (string.getByteList().getRealSize() > 0) {
                 string.set(StringSupport.succCommon(getContext().getRuntime(), string.getByteList()));
             }
@@ -2011,8 +1988,6 @@ public abstract class StringNodes {
 
         @Specialization
         public RubySymbol toSym(RubyString string) {
-            notDesignedForCompilation();
-
             return getContext().getSymbol(string.getByteList());
         }
     }
@@ -2326,10 +2301,8 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString clear(RubyString string) {
-            notDesignedForCompilation();
             ByteList empty = ByteList.EMPTY_BYTELIST;
             empty.setEncoding(string.getByteList().getEncoding());
-
             string.set(empty);
             return string;
         }

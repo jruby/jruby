@@ -146,10 +146,9 @@ public abstract class RegexpNodes {
 
         public abstract RubyString executeEscape(VirtualFrame frame, RubyString pattern);
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString escape(RubyString pattern) {
-            notDesignedForCompilation();
-
             return getContext().makeString(org.jruby.RubyRegexp.quote19(new ByteList(pattern.getByteList()), true).toString());
         }
 
@@ -231,15 +230,13 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int options(RubyRegexp regexp) {
-            notDesignedForCompilation();
-
             if (notYetInitializedProfile.profile(regexp.getRegex() == null)) {
-                CompilerDirectives.transferToInterpreter();
-
                 throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
             }
+
             if(regexp.getOptions() != null){
                 return regexp.getOptions().toOptions();
             }
@@ -256,19 +253,15 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString quote(RubyString raw) {
-            notDesignedForCompilation();
-
             boolean isAsciiOnly = raw.getByteList().getEncoding().isAsciiCompatible() && raw.scanForCodeRange() == CR_7BIT;
-
             return getContext().makeString(org.jruby.RubyRegexp.quote19(raw.getByteList(), isAsciiOnly));
         }
 
         @Specialization
         public RubyString quote(RubySymbol raw) {
-            notDesignedForCompilation();
-
             return quote(raw.toRubyString());
         }
 

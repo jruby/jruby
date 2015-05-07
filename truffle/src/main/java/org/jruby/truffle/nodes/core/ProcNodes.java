@@ -101,10 +101,9 @@ public abstract class ProcNodes {
             return nil();
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyNilClass initialize(VirtualFrame frame, RubyProc proc, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
+        public RubyNilClass initialize(RubyProc proc, UndefinedPlaceholder block) {
             final Memo<Integer> frameCount = new Memo<>(0);
 
             // The parent will be the Proc.new call.  We need to go an extra level up in order to get the parent
@@ -178,10 +177,9 @@ public abstract class ProcNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object sourceLocation(RubyProc proc) {
-            notDesignedForCompilation();
-
             SourceSection sourceSection = proc.getSharedMethodInfo().getSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {

@@ -138,29 +138,7 @@ public class RubyBasicObject implements TruffleObject {
         return objectID;
     }
 
-    @CompilerDirectives.TruffleBoundary
-    public void setInstanceVariables(Map<Object, Object> instanceVariables) {
-        RubyNode.notDesignedForCompilation();
-
-        assert instanceVariables != null;
-
-        getObjectType().setInstanceVariables(this, instanceVariables);
-    }
-
-
-    public Map<Object, Object>  getInstanceVariables() {
-        RubyNode.notDesignedForCompilation();
-
-        return getObjectType().getInstanceVariables(this);
-    }
-
-    public Object[] getFieldNames() {
-        return getObjectType().getFieldNames(this);
-    }
-
     public Object getInstanceVariable(String name) {
-        RubyNode.notDesignedForCompilation();
-
         final Object value = getObjectType().getInstanceVariable(this, name);
 
         if (value == null) {
