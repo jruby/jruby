@@ -40,7 +40,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public Object getIndex(RubyMatchData matchData, int index) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             final Object[] values = matchData.getValues();
             final int normalizedIndex = RubyArray.normalizeIndex(values.length, index);
@@ -54,7 +54,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public Object getIndex(RubyMatchData matchData, RubySymbol index) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             try {
                 final int i = matchData.getBackrefNumber(index.getSymbolBytes());
@@ -70,7 +70,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public Object getIndex(RubyMatchData matchData, RubyString index) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             try {
                 final int i = matchData.getBackrefNumber(index.getByteList());
@@ -87,7 +87,7 @@ public abstract class MatchDataNodes {
 
         @Specialization(guards = {"!isRubySymbol(index)", "!isRubyString(index)", "!isIntegerFixnumRange(index)"})
         public Object getIndex(VirtualFrame frame, RubyMatchData matchData, Object index) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -122,7 +122,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public Object begin(RubyMatchData matchData, int index) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             if (badIndexProfile.profile((index < 0) || (index >= matchData.getNumberOfRegions()))) {
                 CompilerDirectives.transferToInterpreter();
@@ -146,7 +146,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public RubyArray toA(RubyMatchData matchData) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getCaptures());
         }
@@ -163,7 +163,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public Object end(RubyMatchData matchData, int index) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             if (badIndexProfile.profile((index < 0) || (index >= matchData.getNumberOfRegions()))) {
                 CompilerDirectives.transferToInterpreter();
@@ -228,7 +228,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public RubyArray toA(RubyMatchData matchData) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getValues());
         }
@@ -243,7 +243,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public RubyString toS(RubyMatchData matchData) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             final ByteList bytes = matchData.getGlobal().getByteList().dup();
             return getContext().makeString(bytes);
@@ -259,7 +259,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public RubyArray valuesAt(RubyMatchData matchData, Object[] args) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             final int[] indicies = new int[args.length];
 

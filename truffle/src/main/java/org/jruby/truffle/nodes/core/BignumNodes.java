@@ -580,7 +580,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public RubyArray coerce(RubyBignum a, int b) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
             // b is converted to a Bignum here in other implementations.
@@ -590,7 +590,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public RubyArray coerce(RubyBignum a, long b) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
             // b is converted to a Bignum here in other implementations.
@@ -600,7 +600,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public RubyArray coerce(RubyBignum a, RubyBignum b) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             Object[] store = new Object[] { b, a };
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);

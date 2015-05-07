@@ -181,7 +181,7 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object instanceEval(VirtualFrame frame, Object receiver, RubyString string, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             return getContext().instanceEval(string.getByteList(), receiver, this);
         }
@@ -202,7 +202,7 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, RubyProc block) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             return yieldWithModifiedSelf(frame, block, receiver, arguments);
         }
@@ -225,14 +225,14 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object methodMissing(Object self, Object[] args, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             return methodMissing(self, args, (RubyProc) null);
         }
 
         @Specialization
         public Object methodMissing(Object self, Object[] args, RubyProc block) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             final RubySymbol name = (RubySymbol) args[0];
             final Object[] sentArgs = ArrayUtils.extractRange(args, 1, args.length);

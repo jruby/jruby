@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameSlot;
@@ -36,7 +37,7 @@ public abstract class BindingNodes {
 
         @Specialization
         public Object initializeCopy(RubyBinding self, RubyBinding from) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             if (self == from) {
                 return self;
@@ -67,7 +68,7 @@ public abstract class BindingNodes {
 
         @Specialization
         public Object localVariableGet(RubyBinding binding, RubySymbol symbol) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             final MaterializedFrame frame = binding.getFrame();
 
@@ -91,7 +92,7 @@ public abstract class BindingNodes {
 
         @Specialization
         public Object localVariableSetNode(RubyBinding binding, RubySymbol symbol, Object value) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             // TODO(CS): temporary hack for $_
             if (symbol.toString().equals("$_")) {
@@ -126,7 +127,7 @@ public abstract class BindingNodes {
 
         @Specialization
         public RubyArray localVariables(RubyBinding binding) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
