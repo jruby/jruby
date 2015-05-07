@@ -18,7 +18,9 @@ import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.unsafe.UnsafeHolder;
+import sun.misc.Unsafe;
 
 public abstract class PointerPrimitiveNodes {
 
@@ -168,6 +170,25 @@ public abstract class PointerPrimitiveNodes {
 
         protected boolean isSigned(boolean signed) {
             return signed;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "pointer_read_string")
+    public static abstract class PointerReadStringPrimitiveNode extends ReadAddressPrimitiveNode {
+
+        public PointerReadStringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyString readString(RubyBasicObject pointer, int length) {
+            final long address = getAddress(pointer);
+            final byte[] bytes = new byte[length];
+            for (int n = 0; n < bytes.length; n++) {
+                bytes[n] = UnsafeHolder.U.getByte(address + n * Unsafe.ARRAY_BYTE_INDEX_SCALE);
+            }
+            return getContext().makeString(bytes);
         }
 
     }
