@@ -296,10 +296,6 @@ public class IRClosure extends IRScope {
         super.setName(getLexicalParent().getName() + name);
     }
 
-    public Arity getArity() {
-        return signature.arity();
-    }
-
     public Signature getSignature() {
         return signature;
     }
