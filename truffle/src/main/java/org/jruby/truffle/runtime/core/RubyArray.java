@@ -53,8 +53,6 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     public static RubyArray fromObject(RubyClass arrayClass, Object object) {
-        RubyNode.notDesignedForCompilation();
-
         final Object store;
 
         if (object instanceof Integer) {
@@ -75,8 +73,6 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     private static Object storeFromObjects(Object... objects) {
-        RubyNode.notDesignedForCompilation();
-
         if (objects.length == 0) {
             return null;
         }
@@ -145,8 +141,6 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     public Object[] slowToArray() {
-        RubyNode.notDesignedForCompilation();
-
         return Arrays.copyOf(ArrayUtils.box(store), size);
     }
 
@@ -165,8 +159,6 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     public void slowUnshift(Object... values) {
-        RubyNode.notDesignedForCompilation();
-
         final Object[] newStore = new Object[size + values.length];
         System.arraycopy(values, 0, newStore, 0, values.length);
         ArrayUtils.copy(store, newStore, values.length, size);
@@ -174,8 +166,6 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     public void slowPush(Object value) {
-        RubyNode.notDesignedForCompilation();
-
         store = Arrays.copyOf(ArrayUtils.box(store), size + 1);
         ((Object[]) store)[size] = value;
         size++;

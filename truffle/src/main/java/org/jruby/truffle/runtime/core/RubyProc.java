@@ -85,8 +85,6 @@ public class RubyProc extends RubyBasicObject {
     }
 
     public Object rootCall(Object... args) {
-        RubyNode.notDesignedForCompilation();
-
         // TODO(CS): handle exceptions in here?
 
         return getCallTargetForType().call(RubyArguments.pack(getMethod(), declarationFrame, self, block, args));

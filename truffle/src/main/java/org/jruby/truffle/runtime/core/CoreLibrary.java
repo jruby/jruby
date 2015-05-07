@@ -359,8 +359,6 @@ public class CoreLibrary {
     }
 
     private void initializeGlobalVariables() {
-        RubyNode.notDesignedForCompilation();
-
         RubyBasicObject globals = globalVariablesObject;
 
         globals.getObjectType().setInstanceVariable(globals, "$LOAD_PATH", new RubyArray(arrayClass));
@@ -420,8 +418,6 @@ public class CoreLibrary {
     }
 
     private void initializeSignalConstants() {
-        RubyNode.notDesignedForCompilation();
-
         Object[] signals = new Object[SignalOperations.SIGNALS_LIST.size()];
 
         int i = 0;
@@ -576,8 +572,6 @@ public class CoreLibrary {
     }
 
     public RubyClass getMetaClass(Object object) {
-        RubyNode.notDesignedForCompilation();
-
         if (object instanceof RubyBasicObject) {
             return ((RubyBasicObject) object).getMetaClass();
         } else if (object instanceof Boolean) {
@@ -601,8 +595,6 @@ public class CoreLibrary {
     }
 
     public RubyClass getLogicalClass(Object object) {
-        RubyNode.notDesignedForCompilation();
-
         if (object instanceof RubyBasicObject) {
             return ((RubyBasicObject) object).getLogicalClass();
         } else if (object instanceof Boolean) {
@@ -629,8 +621,6 @@ public class CoreLibrary {
      * Convert a value to a {@code Float}, without doing any lookup.
      */
     public static double toDouble(Object value) {
-        RubyNode.notDesignedForCompilation();
-
         assert value != null;
 
         if (value instanceof RubyNilClass) {

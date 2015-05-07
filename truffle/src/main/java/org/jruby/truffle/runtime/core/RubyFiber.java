@@ -112,8 +112,6 @@ public class RubyFiber extends RubyBasicObject {
     }
 
     public void initialize(final RubyProc block) {
-        RubyNode.notDesignedForCompilation();
-
         name = "Ruby Fiber@" + block.getSharedMethodInfo().getSourceSection().getShortDescription();
         final Thread thread = new Thread(new Runnable() {
             @Override
@@ -146,8 +144,6 @@ public class RubyFiber extends RubyBasicObject {
     }
 
     protected void run(final Runnable task) {
-        RubyNode.notDesignedForCompilation();
-
         start();
         try {
             task.run();
@@ -190,8 +186,6 @@ public class RubyFiber extends RubyBasicObject {
      * message.
      */
     private Object[] waitForResume() {
-        RubyNode.notDesignedForCompilation();
-
         final FiberMessage message = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<FiberMessage>() {
             @Override
             public FiberMessage block() throws InterruptedException {
@@ -223,8 +217,6 @@ public class RubyFiber extends RubyBasicObject {
      * received.
      */
     private void resume(RubyFiber fiber, boolean yield, Object... args) {
-        RubyNode.notDesignedForCompilation();
-
         sendMessageTo(fiber, new FiberResumeMessage(yield, this, args));
     }
 
@@ -236,8 +228,6 @@ public class RubyFiber extends RubyBasicObject {
 
     public void shutdown() {
         assert !isRootFiber;
-        RubyNode.notDesignedForCompilation();
-
         sendMessageTo(this, new FiberExitMessage());
     }
 
