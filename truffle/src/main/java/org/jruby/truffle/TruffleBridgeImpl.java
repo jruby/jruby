@@ -117,9 +117,9 @@ public class TruffleBridgeImpl implements TruffleBridge {
         // We don't want JRuby's stdlib paths, but we do want any extra paths set by -I and things like that
 
         final List<String> excludedLibPaths = new ArrayList<>();
-        excludedLibPaths.add(new File(home, "lib/ruby/2.2/site_ruby").toString());
-        excludedLibPaths.add(new File(home, "lib/ruby/shared").toString());
-        excludedLibPaths.add(new File(home, "lib/ruby/stdlib").toString());
+        excludedLibPaths.add(new File(home, "lib/ruby/2.2/site_ruby").toString().replace('\\', '/'));
+        excludedLibPaths.add(new File(home, "lib/ruby/shared").toString().replace('\\', '/'));
+        excludedLibPaths.add(new File(home, "lib/ruby/stdlib").toString().replace('\\', '/'));
 
         for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
             if (!excludedLibPaths.contains(path.toString())) {
