@@ -7,11 +7,12 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes;
+package org.jruby.truffle.nodes.constants;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
