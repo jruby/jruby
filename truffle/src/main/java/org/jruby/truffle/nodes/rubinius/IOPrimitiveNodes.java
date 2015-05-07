@@ -122,12 +122,13 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public int truncate(RubyString path, long length) {
-            if (length < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().invalidArgumentError(Long.toString(length), this));
-            }
             final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
-            return posix().truncate(pathString, length);
+            final int result = posix().truncate(pathString, length);
+            if (result == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+            return result;
         }
 
     }
