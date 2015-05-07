@@ -139,10 +139,9 @@ public abstract class FixnumPrimitiveNodes {
             }
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object pow(long a, RubyBignum b) {
-            notDesignedForCompilation();
-
             if (a == 0) {
                 return 0;
             }

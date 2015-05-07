@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
@@ -26,9 +27,9 @@ public abstract class SymbolPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public boolean symbolIsConstant(RubySymbol symbol) {
-            notDesignedForCompilation();
             final String string = symbol.toString();
             return string.length() > 0 && Character.isUpperCase(string.charAt(0));
         }

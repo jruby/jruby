@@ -32,10 +32,9 @@ public abstract class FloatPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyArray dToA(double value) {
-            notDesignedForCompilation();
-
             String string = String.format(Locale.ENGLISH, "%.9f", value);
 
             if (string.toLowerCase(Locale.ENGLISH).contains("e")) {

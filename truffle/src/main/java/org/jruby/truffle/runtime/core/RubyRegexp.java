@@ -430,14 +430,11 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     public static Regex compile(Node currentNode, RubyContext context, ByteList bytes, int options) {
-        RubyNode.notDesignedForCompilation();
         return compile(currentNode, context, bytes.bytes(), bytes.getEncoding(), options);
     }
 
     @TruffleBoundary
     public static Regex compile(Node currentNode, RubyContext context, byte[] bytes, Encoding encoding, int options) {
-        RubyNode.notDesignedForCompilation();
-
         try {
             return new Regex(bytes, 0, bytes.length, options, encoding, Syntax.RUBY);
         } catch (ValueException e) {
