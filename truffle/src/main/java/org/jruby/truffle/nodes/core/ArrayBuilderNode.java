@@ -381,6 +381,7 @@ public abstract class ArrayBuilderNode extends Node {
         private final int expectedLength;
 
         @CompilerDirectives.CompilationFinal private boolean hasAppendedObjectArray = false;
+        @CompilerDirectives.CompilationFinal private boolean hasAppendedIntArray = false;
 
         public ObjectArrayBuilderNode(RubyContext context, int expectedLength) {
             super(context);
@@ -432,9 +433,21 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             }
 
+            if (hasAppendedIntArray && otherStore instanceof int[]) {
+                final Object[] objectStore = (Object[]) store;
+                final int[] otherIntStore = (int[]) otherStore;
+
+                for (int n = 0; n < array.getSize(); n++) {
+                    objectStore[index + n] = otherIntStore[n];
+                }
+
+                return store;
+            }
+
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
             if (otherStore instanceof int[]) {
+                hasAppendedIntArray = true;
                 for (int n = 0; n < array.getSize(); n++) {
                     ((Object[]) store)[index + n] = ((int[]) otherStore)[n];
                 }
