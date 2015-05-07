@@ -8,6 +8,7 @@ module JRuby
     java_import org.jruby.util.ShellLauncher
     java_import java.lang.ProcessBuilder
     java_import org.jruby.runtime.builtin.IRubyObject
+    java_import org.jruby.platform.Platform
 
     Redirect = ProcessBuilder::Redirect
     LaunchConfig = ShellLauncher::LaunchConfig
@@ -18,7 +19,10 @@ module JRuby
 
       config = LaunchConfig.new(JRuby.runtime, [command].to_java(IRubyObject), false)
 
-      if config.should_run_in_shell?
+      use_shell = Platform::IS_WINDOWS ? config.should_run_in_shell : false
+      use_shell |= ShellLauncher.should_use_shell(command)
+
+      if use_shell
         config.verify_executable_for_shell
       else
         config.verify_executable_for_direct
@@ -26,6 +30,7 @@ module JRuby
 
       pb = ProcessBuilder.new(config.exec_args)
       pb.redirect_input(Redirect::INHERIT)
+      pb.redirect_error(Redirect::INHERIT)
       pb.environment(ShellLauncher.get_current_env(JRuby.runtime))
       pb.directory(JFile.new(JRuby.runtime.current_directory))
       process = pb.start

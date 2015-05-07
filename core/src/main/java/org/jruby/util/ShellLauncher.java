@@ -1619,7 +1619,7 @@ public class ShellLauncher {
         return RbConfigLibrary.jrubyShell();
     }
 
-    private static boolean shouldUseShell(String command) {
+    public static boolean shouldUseShell(String command) {
         boolean useShell = false;
         for (char c : command.toCharArray()) {
             if (c != ' ' && !Character.isLetter(c) && "*?{}[]<>()~&|\\$;'`\"\n".indexOf(c) != -1) {
