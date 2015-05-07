@@ -81,7 +81,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Type type) {
         if (arg0 instanceof RubyArray) {
 		    // Unwrap the array arg
-            IRubyObject[] args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature.arity(), true);
+            IRubyObject[] args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature.arityValue(), true);
 
             // FIXME: arity error is aginst new args but actual error shows arity of original args.
             if (type == Type.LAMBDA) signature.checkArity(context.runtime, args);
