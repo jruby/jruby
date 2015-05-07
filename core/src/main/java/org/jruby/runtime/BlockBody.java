@@ -36,6 +36,7 @@ package org.jruby.runtime;
 import org.jruby.EvalType;
 import org.jruby.RubyArray;
 import org.jruby.RubyProc;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -215,27 +216,20 @@ public abstract class BlockBody {
     public abstract int getLine();
 
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
-        switch (type) {
-        case NORMAL: {
-//            assert false : "can this happen?";
-            if (args.length == 1 && args[0] instanceof RubyArray) {
-                if (argumentType == MULTIPLE_ASSIGNMENT || argumentType == SINGLE_RESTARG) {
-                    args = ((RubyArray) args[0]).toJavaArray();
-                }
-                break;
+        if (signature == null) return args;  // For NullBlockBody
+
+        if (type == Block.Type.LAMBDA) {
+            signature.checkArity(context.runtime, args);
+        } else {
+            // SSS FIXME: How is it even possible to "call" a NORMAL block?
+            // I thought only procs & lambdas can be called, and blocks are yielded to.
+            if (args.length == 1) {
+                // Convert value to arg-array, unwrapping where necessary
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], signature.arity(), (type == Block.Type.NORMAL) && (args[0] instanceof RubyArray));
+            } else if (getSignature().arityValue() == 1 && !getSignature().restKwargs()) {
+                // discard excess arguments
+                args = args.length == 0 ? context.runtime.getSingleNilArray() : new IRubyObject[] { args[0] };
             }
-        }
-        case PROC: {
-            if (args.length == 1 && args[0] instanceof RubyArray) {
-                if (argumentType == MULTIPLE_ASSIGNMENT) {
-                    args = ((RubyArray) args[0]).toJavaArray();
-                }
-            }
-            break;
-        }
-        case LAMBDA:
-            getSignature().checkArity(context.runtime, args);
-            break;
         }
 
         return args;
