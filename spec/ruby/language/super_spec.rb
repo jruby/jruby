@@ -161,4 +161,9 @@ describe "The super keyword" do
   it "invokes methods from a chain of anonymous modules" do
     Super::AnonymousModuleIncludedTwice.new.a([]).should == ["anon", "anon", "non-anon"]
   end
+
+  it "can accept a block but still pass the original arguments" do
+    Super::ZSuperWithBlock::B.new.a.should == 14
+  end
+
 end

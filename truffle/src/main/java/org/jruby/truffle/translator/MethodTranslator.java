@@ -272,8 +272,7 @@ class MethodTranslator extends BodyTranslator {
 
         if (node.getIterNode() != null) {
             currentCallMethodName = environment.getNamedMethodName();
-            node.getIterNode().accept(this);
-            blockNode = null;
+            blockNode = node.getIterNode().accept(this);
         } else {
             blockNode = null;
         }
