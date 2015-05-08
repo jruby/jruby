@@ -206,13 +206,14 @@ public class RubyMethod extends AbstractRubyMethod {
         };
 
         BlockBody body;
+        String[] parameterList = JRubyLibrary.MethodExtensions.methodParameters(runtime, method);
         if (method instanceof IRMethodArgs) {
             Signature signature = ((IRMethodArgs) method).getSignature();
             body = CompiledBlockLight19.newCompiledBlockLight(signature,
-                    runtime.getStaticScopeFactory().getDummyScope(), callback, false, -1, JRubyLibrary.MethodExtensions.methodParameters(runtime, method));
+                    runtime.getStaticScopeFactory().getDummyScope(), callback, false, -1, parameterList);
         } else {
             body = CompiledBlockLight19.newCompiledBlockLight(method.getArity(),
-                    runtime.getStaticScopeFactory().getDummyScope(), callback, false, -1, JRubyLibrary.MethodExtensions.methodParameters(runtime, method));
+                    runtime.getStaticScopeFactory().getDummyScope(), callback, false, -1, parameterList);
         }
         Block b = new Block(body, context.currentBinding(receiver, Visibility.PUBLIC));
         

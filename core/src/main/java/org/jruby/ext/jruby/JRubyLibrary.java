@@ -189,18 +189,7 @@ public class JRubyLibrary implements Library {
             if (method instanceof MethodArgs2) {
                 return ((MethodArgs2) method).getParameterList();
             } else if (method instanceof IRMethodArgs) {
-                String[] argsDesc = ((IRMethodArgs) method).getParameterList();
-
-                for (int i = 0; i < argsDesc.length; i++) {
-                    String argType = argsDesc[i];
-                    i++;
-                    String argName = argsDesc[i];
-                    if (argName.isEmpty()) {
-                        argsArray.add(argType);
-                    } else {
-                        argsArray.add(argType + argName);
-                    }
-                }
+                return Helpers.irMethodArgsToParameters(((IRMethodArgs) method).getParameterList());
             } else {
                 if (method.getArity() == Arity.OPTIONAL) {
                     argsArray.add("r");
