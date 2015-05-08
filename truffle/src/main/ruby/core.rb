@@ -22,6 +22,7 @@ require_relative 'core/rubinius/api/shims/tuple'
 require_relative 'core/rubinius/api/shims/metrics'
 require_relative 'core/rubinius/api/shims/module'
 require_relative 'core/rubinius/api/shims/fixnum'
+require_relative 'core/rubinius/api/shims/type'
 
 # Load alpha.rb
 
@@ -231,6 +232,7 @@ require_relative 'core/string'
 require_relative 'core/thread'
 require_relative 'core/unbound_method'
 require_relative 'core/library'
+require_relative 'core/type'
 
 # Dirty fixes we'd like to get rid of soon
 require_relative 'core/shims'
