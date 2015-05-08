@@ -2206,6 +2206,13 @@ public class IRBuilder {
 
      * ****************************************************************/
     public Operand buildEnsureNode(EnsureNode ensureNode) {
+        // Save $! in a temp var so it can be restored when the exception gets handled.
+        Variable savedGlobalException = createTemporaryVariable();
+        addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
+
+        // prepare $!-clearing ensure block
+        EnsureBlockInfo lastErrorReset = resetLastErrorPreamble(savedGlobalException);
+
         Node bodyNode = ensureNode.getBodyNode();
 
         // ------------ Build the body of the ensure block ------------
@@ -2233,7 +2240,7 @@ public class IRBuilder {
         activeRescuers.push(ebi.dummyRescueBlockLabel);
 
         // Generate IR for code being protected
-        Operand rv = bodyNode instanceof RescueNode ? buildRescueInternal((RescueNode) bodyNode, ebi) : build(bodyNode);
+        Operand rv = bodyNode instanceof RescueNode ? buildRescueInternal((RescueNode) bodyNode, ebi, savedGlobalException) : build(bodyNode);
 
         // End of protected region
         addInstr(new ExceptionRegionEndMarkerInstr());
@@ -2270,6 +2277,9 @@ public class IRBuilder {
 
         // End label for the exception region
         addInstr(new LabelInstr(ebi.end));
+
+        // close out the $!-clearing region
+        resetLastErrorPostamble(lastErrorReset);
 
         return rv;
     }
@@ -3014,19 +3024,79 @@ public class IRBuilder {
     }
 
     public Operand buildRescue(RescueNode node) {
-        return buildRescueInternal(node, null);
+        // Save $! in a temp var so it can be restored when the exception gets handled.
+        Variable savedGlobalException = createTemporaryVariable();
+        addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
+
+        // prepare $!-clearing ensure block
+        EnsureBlockInfo lastErrorReset = resetLastErrorPreamble(savedGlobalException);
+
+        // build the rescue itself
+        Operand rv = buildRescueInternal(node, null, savedGlobalException);
+
+        // close out the $!-clearing region
+        resetLastErrorPostamble(lastErrorReset);
+
+        return rv;
     }
 
-    private Operand buildRescueInternal(RescueNode rescueNode, EnsureBlockInfo ensure) {
+    private void resetLastErrorPostamble(EnsureBlockInfo lastErrorReset) {
+        addInstr(new ExceptionRegionEndMarkerInstr());
+        activeRescuers.pop();
+
+        // We don't reset $! for normal exit, but we do need to jump past the outer finally
+        addInstr(new JumpInstr(lastErrorReset.end));
+
+        // Pop the current ensure block info node
+        activeEnsureBlockStack.pop();
+
+        // ------------ Emit the ensure body alongwith dummy rescue block ------------
+        // Now build the dummy rescue block that
+        // catches all exceptions thrown by the body
+        Variable exc2 = createTemporaryVariable();
+        addInstr(new LabelInstr(lastErrorReset.dummyRescueBlockLabel));
+        addInstr(new ReceiveJRubyExceptionInstr(exc2));
+
+        // Now emit the ensure body's stashed instructions
+        lastErrorReset.emitBody(this);
+
+        // Return (rethrow exception/end)
+        // rethrows the caught exception from the dummy ensure block
+        addInstr(new ThrowExceptionInstr(exc2));
+
+        // End label for the exception region
+        addInstr(new LabelInstr(lastErrorReset.end));
+    }
+
+    private EnsureBlockInfo resetLastErrorPreamble(Variable savedGlobalException) {
+        EnsureBlockInfo lastErrorReset = new EnsureBlockInfo(scope,
+                null,
+                getCurrentLoop(),
+                activeRescuers.peek());
+
+        lastErrorReset.addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+
+        // ------------ Build the protected region ------------
+        activeEnsureBlockStack.push(lastErrorReset);
+
+        // Start of protected region
+        addInstr(new LabelInstr(lastErrorReset.regionStart));
+        addInstr(new ExceptionRegionStartMarkerInstr(lastErrorReset.dummyRescueBlockLabel));
+        activeRescuers.push(lastErrorReset.dummyRescueBlockLabel);
+        return lastErrorReset;
+    }
+
+    private Operand buildRescueInternal(RescueNode rescueNode, EnsureBlockInfo ensure, Variable savedGlobalException) {
+        // Wrap the entire begin+rescue+ensure+else with $!-resetting "finally" logic
+
+        // Save $! in a temp var so it can be restored when the exception gets handled.
+        addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
+        if (ensure != null) ensure.savedGlobalException = savedGlobalException;
+
         // Labels marking start, else, end of the begin-rescue(-ensure)-end block
         Label rBeginLabel = ensure == null ? getNewLabel() : ensure.regionStart;
         Label rEndLabel   = ensure == null ? getNewLabel() : ensure.end;
         Label rescueLabel = getNewLabel(); // Label marking start of the first rescue code.
-
-        // Save $! in a temp var so it can be restored when the exception gets handled.
-        Variable savedGlobalException = createTemporaryVariable();
-        addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
-        if (ensure != null) ensure.savedGlobalException = savedGlobalException;
 
         addInstr(new LabelInstr(rBeginLabel));
 
@@ -3102,7 +3172,6 @@ public class IRBuilder {
         // End label -- only if there is no ensure block!  With an ensure block, you end at ensureEndLabel.
         if (ensure == null) addInstr(new LabelInstr(rEndLabel));
 
-        activeRescueBlockStack.pop();
         return rv;
     }
 
