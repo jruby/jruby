@@ -91,7 +91,7 @@ public class BodyTranslator extends Translator {
     public boolean useClassVariablesAsIfInClass = false;
     private boolean translatingNextExpression = false;
     private boolean translatingWhile = false;
-    private String currentCallMethodName = null;
+    protected String currentCallMethodName = null;
 
     private boolean privately = false;
 

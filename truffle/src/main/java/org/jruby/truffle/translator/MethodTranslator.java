@@ -268,7 +268,17 @@ class MethodTranslator extends BodyTranslator {
             environment.setNeedsDeclarationFrame();
         }
 
-        return new GeneralSuperReCallNode(context, sourceSection, environment.isBlock());
+        final RubyNode blockNode;
+
+        if (node.getIterNode() != null) {
+            currentCallMethodName = environment.getNamedMethodName();
+            node.getIterNode().accept(this);
+            blockNode = null;
+        } else {
+            blockNode = null;
+        }
+
+        return new GeneralSuperReCallNode(context, sourceSection, environment.isBlock(), blockNode);
     }
 
     @Override
