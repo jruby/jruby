@@ -17,14 +17,13 @@ import java.lang.invoke.MethodHandle;
 
 import org.jruby.runtime.Helpers;
 
-public class CompiledIRMethod extends JavaMethod implements IRMethodArgs, MethodArgs2, PositionAware {
+public class CompiledIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware {
     protected final MethodHandle variable;
 
     protected final MethodHandle specific;
     protected final int specificArity;
 
     protected final IRScope method;
-    private String[] parameterList;
     private final StaticScope staticScope;
     private final boolean hasExplicitCallProtocol;
     private final boolean hasKwargs;
@@ -73,9 +72,7 @@ public class CompiledIRMethod extends JavaMethod implements IRMethodArgs, Method
     }
 
     public String[] getParameterList() {
-        if (parameterList != null) return parameterList;
-
-        return parameterList = Helpers.irMethodArgsToParameters(((IRMethod)method).getArgDesc());
+        return ((IRMethod)method).getArgDesc();
     }
 
     @Override
