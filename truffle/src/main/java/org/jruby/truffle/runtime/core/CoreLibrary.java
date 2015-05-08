@@ -854,6 +854,11 @@ public class CoreLibrary {
         return nameError(String.format("method `%s' for %s is private", name, module.getName()), name, currentNode);
     }
 
+    public RubyException nameErrorLocalVariableNotDefined(String name, RubyBinding binding, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return nameError(String.format("local variable `%s' not defined for %s", name, binding.toString()), name, currentNode);
+    }
+
     public RubyException noMethodError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         RubyException noMethodError = new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
