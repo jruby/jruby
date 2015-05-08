@@ -281,25 +281,32 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "alias_method", required = 2)
-    public abstract static class AliasMethodNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "newName"),
+            @NodeChild(type = RubyNode.class, value = "oldName")
+    })
+    public abstract static class AliasMethodNode extends CoreMethodNode {
 
         public AliasMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyModule aliasMethod(RubyModule module, RubySymbol newName, RubySymbol oldName) {
-            CompilerDirectives.transferToInterpreter();
+        @CreateCast("newName")
+        public RubyNode coercetNewNameToString(RubyNode newName) {
+            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), newName);
+        }
 
-            module.alias(this, newName.toString(), oldName.toString());
-            return module;
+        @CreateCast("oldName")
+        public RubyNode coerceOldNameToString(RubyNode oldName) {
+            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), oldName);
         }
 
         @Specialization
-        public RubyModule aliasMethod(RubyModule module, RubyString newName, RubyString oldName) {
+        public RubyModule aliasMethod(RubyModule module, String newName, String oldName) {
             CompilerDirectives.transferToInterpreter();
 
-            module.alias(this, newName.toString(), oldName.toString());
+            module.alias(this, newName, oldName);
             return module;
         }
 
