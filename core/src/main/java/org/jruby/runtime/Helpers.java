@@ -2513,7 +2513,7 @@ public class Helpers {
                 if (preNode instanceof MultipleAsgnNode) {
                     builder.append("nil");
                 } else {
-                    builder.append("q").append(((ArgumentNode)preNode).getName());
+                    builder.append('q').append(((ArgumentNode)preNode).getName());
                 }
             }
         }
@@ -2522,7 +2522,7 @@ public class Helpers {
             for (Node optNode : argsNode.getOptArgs().childNodes()) {
                 if (added) builder.append(';');
                 added = true;
-                builder.append("o");
+                builder.append('o');
                 if (optNode instanceof OptArgNode) {
                     builder.append(((OptArgNode)optNode).getName());
                 } else if (optNode instanceof LocalAsgnNode) {
@@ -2540,7 +2540,7 @@ public class Helpers {
             if (restArg instanceof UnnamedRestArgNode) {
                 if (((UnnamedRestArgNode) restArg).isStar()) builder.append("R");
             } else {
-                builder.append("r").append(restArg.getName());
+                builder.append('r').append(restArg.getName());
             }
         }
 
@@ -2551,7 +2551,7 @@ public class Helpers {
                 if (postNode instanceof MultipleAsgnNode) {
                     builder.append("nil");
                 } else {
-                    builder.append("q").append(((ArgumentNode)postNode).getName());
+                    builder.append('q').append(((ArgumentNode)postNode).getName());
                 }
             }
         }
@@ -2562,9 +2562,9 @@ public class Helpers {
                     if (added) builder.append(';');
                     added = true;
                     if (isRequiredKeywordArgumentValueNode(asgnNode)) {
-                        builder.append("K").append(((INameNode) asgnNode).getName());
+                        builder.append('K').append(((INameNode) asgnNode).getName());
                     } else {
-                        builder.append("k").append(((INameNode) asgnNode).getName());
+                        builder.append('k').append(((INameNode) asgnNode).getName());
                     }
                 }
             }
@@ -2573,14 +2573,14 @@ public class Helpers {
         if (argsNode.getKeyRest() != null) {
             if (added) builder.append(';');
             added = true;
-            builder.append("e").append(argsNode.getKeyRest().getName());
+            builder.append('e').append(argsNode.getKeyRest().getName());
         }
 
 
         if (argsNode.getBlock() != null) {
             if (added) builder.append(';');
             added = true;
-            builder.append("b").append(argsNode.getBlock().getName());
+            builder.append('b').append(argsNode.getBlock().getName());
         }
 
         if (!added) {
