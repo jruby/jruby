@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.ast.MethodDefNode;
+import org.jruby.internal.runtime.methods.IRMethodArgs;
+import org.jruby.internal.runtime.methods.IRMethodArgs.ArgumentDescriptor;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.representations.BasicBlock;
@@ -13,8 +15,8 @@ import org.jruby.parser.StaticScope;
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
 
-    // Argument description of the form [:req, "a"], [:opt, "b"] ..
-    private String[] argDesc;
+    // Argument description
+    private ArgumentDescriptor[] argDesc;
 
     // Signatures to the jitted versions of this method
     private Map<Integer, MethodType> signatures;
@@ -64,14 +66,14 @@ public class IRMethod extends IRScope {
         return isInstanceMethod ? IRScopeType.INSTANCE_METHOD : IRScopeType.CLASS_METHOD;
     }
 
-    public String[] getArgDesc() {
+    public ArgumentDescriptor[] getArgDesc() {
         return argDesc;
     }
 
     /**
      * Set upon completion of IRBuild of this IRMethod.
      */
-    public void setArgDesc(String[] argDesc) {
+    public void setArgDesc(ArgumentDescriptor[] argDesc) {
         this.argDesc = argDesc;
     }
 

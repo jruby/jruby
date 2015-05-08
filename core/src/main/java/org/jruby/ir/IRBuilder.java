@@ -8,6 +8,8 @@ import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
+import org.jruby.internal.runtime.methods.IRMethodArgs.ArgumentDescriptor;
+import org.jruby.internal.runtime.methods.IRMethodArgs.ArgumentType;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
@@ -294,7 +296,7 @@ public class IRBuilder {
         this.activeRescuers.push(Label.UNRESCUED_REGION_LABEL);
     }
 
-    public void addArgumentDescription(IRMethodArgs.ArgType type, String name) {
+    public void addArgumentDescription(ArgumentType type, String name) {
         if (argumentDescriptions == null) argumentDescriptions = new ArrayList<>();
 
         argumentDescriptions.add(type.toString());
@@ -1728,12 +1730,16 @@ public class IRBuilder {
         // If the method can receive non-local returns
         if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
 
-        String[] argDesc;
+        ArgumentDescriptor[] argDesc;
         if (argumentDescriptions == null) {
             argDesc = NO_ARG_DESCS;
         } else {
-            argDesc = new String[argumentDescriptions.size()];
-            argumentDescriptions.toArray(argDesc);
+            argDesc = new ArgumentDescriptor[argumentDescriptions.size() / 2];
+            for (int i = 0; i < argumentDescriptions.size();) {
+                argDesc[i / 2] = new ArgumentDescriptor(
+                        ArgumentType.valueOf(argumentDescriptions.get(i++)),
+                        argumentDescriptions.get(i++));
+            }
         }
 
         ((IRMethod) scope).setArgDesc(argDesc);
@@ -1741,7 +1747,7 @@ public class IRBuilder {
         return scope.allocateInterpreterContext(instructions);
     }
 
-    static final String[] NO_ARG_DESCS = new String[0];
+    static final ArgumentDescriptor[] NO_ARG_DESCS = new ArgumentDescriptor[0];
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
         return new IRMethod(manager, scope, defNode, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
@@ -1782,7 +1788,7 @@ public class IRBuilder {
             case ARGUMENTNODE: {
                 ArgumentNode a = (ArgumentNode)node;
                 String argName = a.getName();
-                if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.req, argName);
+                if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.req, argName);
                 // Ignore duplicate "_" args in blocks
                 // (duplicate _ args are named "_$0")
                 if (!argName.equals("_$0")) {
@@ -1794,7 +1800,7 @@ public class IRBuilder {
                 MultipleAsgnNode childNode = (MultipleAsgnNode) node;
                 Variable v = createTemporaryVariable();
                 addArgReceiveInstr(v, argIndex, post, numPreReqd, numPostRead);
-                if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.req, "");
+                if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.req, "");
                 Variable tmp = createTemporaryVariable();
                 addInstr(new ToAryInstr(tmp, v));
                 buildMultipleAsgn19Assignment(childNode, tmp, null);
@@ -1847,7 +1853,7 @@ public class IRBuilder {
                 OptArgNode n = (OptArgNode)optArgs.get(j);
                 String argName = n.getName();
                 Variable av = getNewLocalVariable(argName, 0);
-                if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.opt, argName);
+                if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
                 addInstr(new ReceiveOptArgInstr(av, signature.required(), signature.pre(), j));
                 addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, go to default
@@ -1862,7 +1868,7 @@ public class IRBuilder {
             // For this code, there is no argument name available from the ruby code.
             // So, we generate an implicit arg name
             String argName = argsNode.getRestArgNode().getName();
-            if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.rest, argName == null ? "" : argName);
+            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.rest, argName == null ? "" : argName);
             argName = (argName == null || argName.equals("")) ? "*" : argName;
 
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
@@ -1891,7 +1897,7 @@ public class IRBuilder {
         if (blockArg != null) {
             String blockArgName = blockArg.getName();
             Variable blockVar = getLocalVariable(blockArgName, 0);
-            if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.block, blockArgName);
+            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.block, blockArgName);
             Variable tmp = createTemporaryVariable();
             addInstr(new LoadImplicitClosureInstr(tmp));
             addInstr(new ReifyClosureInstr(blockVar, tmp));
@@ -1955,7 +1961,7 @@ public class IRBuilder {
         if (keyRest != null) {
             String argName = keyRest.getName();
             Variable av = getNewLocalVariable(argName, 0);
-            if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.keyrest, argName);
+            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.keyrest, argName);
             addInstr(new ReceiveKeywordRestArgInstr(av, required));
         }
 
@@ -1965,9 +1971,9 @@ public class IRBuilder {
 
     private void addKeyArgDesc(AssignableNode kasgn, String argName) {
         if (isRequiredKeywordArgumentValue(kasgn)) {
-            addArgumentDescription(IRMethodArgs.ArgType.keyreq, argName);
+            addArgumentDescription(ArgumentType.keyreq, argName);
         } else {
-            addArgumentDescription(IRMethodArgs.ArgType.key, argName);
+            addArgumentDescription(ArgumentType.key, argName);
         }
     }
 

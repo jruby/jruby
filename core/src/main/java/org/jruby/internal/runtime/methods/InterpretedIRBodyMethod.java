@@ -20,8 +20,8 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
     }
 
     @Override
-    public String[] getArgsDesc() {
-        return new String[0];
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return ArgumentDescriptor.EMPTY_ARRAY;
     }
 
     @Override

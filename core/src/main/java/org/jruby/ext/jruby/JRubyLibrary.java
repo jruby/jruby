@@ -33,10 +33,8 @@ package org.jruby.ext.jruby;
 import java.util.ArrayList;
 import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -154,42 +152,19 @@ public class JRubyLibrary implements Library {
         public static IRubyObject methodArgs(IRubyObject recv) {
             Ruby runtime = recv.getRuntime();
             AbstractRubyMethod rubyMethod = (AbstractRubyMethod)recv;
-            RubyArray argsArray = RubyArray.newArray(runtime);
             DynamicMethod method = rubyMethod.getMethod().getRealMethod();
-            RubySymbol rest = runtime.newSymbol("rest");
 
-            if (method instanceof MethodArgs2) {
-                return Helpers.parameterListToParameters(runtime, ((MethodArgs2) method).getParameterList(), true);
-            } else if (method instanceof IRMethodArgs) {
-                String[] argsDesc = ((IRMethodArgs) method).getArgsDesc();
-
-                for (int i = 0; i < argsDesc.length; i++) {
-                    RubySymbol argType = runtime.newSymbol(argsDesc[i]);
-                    i++;
-                    String argName = argsDesc[i];
-                    if (argName.isEmpty()) {
-                        argsArray.append(RubyArray.newArray(runtime, argType));
-                    } else {
-                        argsArray.append(RubyArray.newArray(runtime, argType, runtime.newSymbol(argName)));
-                    }
-                }
-            } else {
-                if (method.getArity() == Arity.OPTIONAL) {
-                    argsArray.append(RubyArray.newArray(runtime, rest));
-                }
-            }
-
-            return argsArray;
+            return Helpers.parameterListToParameters(runtime, methodParameters(method), true);
         }
         
-        public static String[] methodParameters(Ruby runtime, DynamicMethod method) {
+        public static String[] methodParameters(DynamicMethod method) {
             ArrayList<String> argsArray = new ArrayList<String>();
             method = method.getRealMethod();
 
             if (method instanceof MethodArgs2) {
                 return ((MethodArgs2) method).getParameterList();
             } else if (method instanceof IRMethodArgs) {
-                return Helpers.irMethodArgsToParameters(((IRMethodArgs) method).getArgsDesc());
+                return Helpers.irMethodArgsToParameters(((IRMethodArgs) method).getArgumentDescriptors());
             } else {
                 if (method.getArity() == Arity.OPTIONAL) {
                     argsArray.add("r");

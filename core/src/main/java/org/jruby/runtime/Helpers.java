@@ -22,6 +22,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
+import org.jruby.internal.runtime.methods.IRMethodArgs.ArgumentDescriptor;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.JavaClass;
@@ -948,7 +949,7 @@ public class Helpers {
         }
 
         if (currentThrowable instanceof RaiseException) {
-            return isExceptionHandled(((RaiseException)currentThrowable).getException(), throwables, context);
+            return isExceptionHandled(((RaiseException) currentThrowable).getException(), throwables, context);
         } else {
             if (throwables.length == 0) {
                 // no rescue means StandardError, which rescues Java exceptions
@@ -2499,6 +2500,7 @@ public class Helpers {
         return ((RubyArray) Helpers.ensureRubyArray(runtime, first).dup()).concat(secondArgs);
     }
 
+    /** Use an ArgsNode (used for blocks) to generate packed prefix form arguments descriptor */
     public static String encodeParameterList(ArgsNode argsNode) {
         StringBuilder builder = new StringBuilder();
 
@@ -2587,21 +2589,7 @@ public class Helpers {
         return builder.toString();
     }
 
-    public static String encodeParameterList(List<String[]> args) {
-        if (args.size() == 0) return "NONE";
-
-        StringBuilder builder = new StringBuilder();
-
-        boolean added = false;
-        for (String[] desc : args) {
-            if (added) builder.append(';');
-            builder.append(desc[0]).append(desc[1]);
-            added = true;
-        }
-
-        return builder.toString();
-    }
-
+    /** Convert a parameter list from prefix format to "Array of Array" format */
     public static RubyArray parameterListToParameters(Ruby runtime, String[] parameterList, boolean isLambda) {
         RubyArray parms = RubyArray.newEmptyArray(runtime);
 
@@ -2658,21 +2646,11 @@ public class Helpers {
         return parms;
     }
 
-    public static String[] irMethodArgsToParameters(String[] argDesc) {
+    /** Convert IR parameter list to prefix form */
+    public static String[] irMethodArgsToParameters(ArgumentDescriptor[] argDesc) {
         String[] tmp = new String[argDesc.length];
         for (int i = 0; i < tmp.length; i++) {
-            String type = argDesc[i];
-            i++;
-            String name = argDesc[i];
-            if (type.equals("keyreq")) {
-                tmp[i] = "K" + name;
-            } else if (type.equals("keyrest")) {
-                tmp[i] = "e" + name;
-            } else if (type.equals("req")) {
-                tmp[i] = "q" + name;
-            } else {
-                tmp[i] = type.charAt(0) + name;
-            }
+            tmp[i] = argDesc[i].toShortDesc();
         }
 
         return tmp;
@@ -2935,7 +2913,7 @@ public class Helpers {
     public static void rewriteStackTrace(final Ruby runtime, final Throwable e) {
         final StackTraceElement[] javaTrace = e.getStackTrace();
         BacktraceData backtraceData = runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(runtime.getCurrentContext(), javaTrace);
-        e.setStackTrace( RaiseException.javaTraceFromRubyTrace(backtraceData.getBacktrace(runtime)) );
+        e.setStackTrace(RaiseException.javaTraceFromRubyTrace(backtraceData.getBacktrace(runtime)));
     }
 
     public static String stringJoin(String delimiter, String[] strings) {
@@ -2967,6 +2945,22 @@ public class Helpers {
 
     private static boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
         return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueNode;
+    }
+
+    @Deprecated
+    public static String encodeParameterList(List<String[]> args) {
+        if (args.size() == 0) return "NONE";
+
+        StringBuilder builder = new StringBuilder();
+
+        boolean added = false;
+        for (String[] desc : args) {
+            if (added) builder.append(';');
+            builder.append(desc[0]).append(desc[1]);
+            added = true;
+        }
+
+        return builder.toString();
     }
 
 }

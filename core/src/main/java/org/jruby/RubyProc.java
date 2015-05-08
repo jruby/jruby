@@ -45,7 +45,6 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
-import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -345,8 +344,6 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod
     public IRubyObject parameters(ThreadContext context) {
         BlockBody body = this.getBlock().getBody();
-
-        if (body instanceof MethodBlock) return ((MethodBlock) body).getMethod().parameters(context);
 
         return Helpers.parameterListToParameters(context.runtime,
                 body.getParameterList(), isLambda());

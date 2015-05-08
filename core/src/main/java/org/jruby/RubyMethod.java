@@ -206,7 +206,7 @@ public class RubyMethod extends AbstractRubyMethod {
         };
 
         BlockBody body;
-        String[] parameterList = JRubyLibrary.MethodExtensions.methodParameters(runtime, method);
+        String[] parameterList = JRubyLibrary.MethodExtensions.methodParameters(method);
         if (method instanceof IRMethodArgs) {
             Signature signature = ((IRMethodArgs) method).getSignature();
             body = CompiledBlockLight19.newCompiledBlockLight(signature,

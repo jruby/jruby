@@ -71,7 +71,7 @@ public class CompiledIRMethod extends DynamicMethod implements IRMethodArgs, Pos
         return staticScope.getSignature();
     }
 
-    public String[] getArgsDesc() {
+    public ArgumentDescriptor[] getArgumentDescriptors() {
         return ((IRMethod)method).getArgDesc();
     }
 
