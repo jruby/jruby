@@ -15,6 +15,7 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.UnnamedRestArgNode;
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.common.IRubyWarnings.ID;
@@ -2561,9 +2562,9 @@ public class Helpers {
                     if (added) builder.append(';');
                     added = true;
                     if (isRequiredKeywordArgumentValueNode(asgnNode)) {
-                        builder.append("K").append(((DAsgnNode) asgnNode).getName());
+                        builder.append("K").append(((INameNode) asgnNode).getName());
                     } else {
-                        builder.append("k").append(((DAsgnNode) asgnNode).getName());
+                        builder.append("k").append(((INameNode) asgnNode).getName());
                     }
                 }
             }
