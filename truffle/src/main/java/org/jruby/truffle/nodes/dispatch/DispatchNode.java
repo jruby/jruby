@@ -94,7 +94,7 @@ public abstract class DispatchNode extends RubyNode {
         // Check for methods that are explicitly undefined
 
         if (method.isUndefined()) {
-            throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnReceiver(name, receiver, this));
+            return null;
         }
 
         // Check visibility
