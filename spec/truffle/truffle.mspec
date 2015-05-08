@@ -51,7 +51,10 @@ class MSpecScript
     # "^spec/ruby/core/string/gsub_spec.rb",
 
     # require etc, linux only spec
-    "^spec/ruby/core/io/advise_spec.rb"
+    "^spec/ruby/core/io/advise_spec.rb",
+
+    # Problem parsing required kwargs in Proc#parameters
+    "^spec/ruby/core/proc/parameters_spec.rb"
   ]
 
   core += [
