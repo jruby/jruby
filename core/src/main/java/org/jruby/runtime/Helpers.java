@@ -2668,6 +2668,8 @@ public class Helpers {
                 tmp[i] = "K" + name;
             } else if (type.equals("keyrest")) {
                 tmp[i] = "e" + name;
+            } else if (type.equals("req")) {
+                tmp[i] = "q" + name;
             } else {
                 tmp[i] = type.charAt(0) + name;
             }
