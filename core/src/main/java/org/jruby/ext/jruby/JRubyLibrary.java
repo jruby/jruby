@@ -161,7 +161,7 @@ public class JRubyLibrary implements Library {
             if (method instanceof MethodArgs2) {
                 return Helpers.parameterListToParameters(runtime, ((MethodArgs2) method).getParameterList(), true);
             } else if (method instanceof IRMethodArgs) {
-                String[] argsDesc = ((IRMethodArgs) method).getParameterList();
+                String[] argsDesc = ((IRMethodArgs) method).getArgsDesc();
 
                 for (int i = 0; i < argsDesc.length; i++) {
                     RubySymbol argType = runtime.newSymbol(argsDesc[i]);
@@ -189,7 +189,7 @@ public class JRubyLibrary implements Library {
             if (method instanceof MethodArgs2) {
                 return ((MethodArgs2) method).getParameterList();
             } else if (method instanceof IRMethodArgs) {
-                return Helpers.irMethodArgsToParameters(((IRMethodArgs) method).getParameterList());
+                return Helpers.irMethodArgsToParameters(((IRMethodArgs) method).getArgsDesc());
             } else {
                 if (method.getArity() == Arity.OPTIONAL) {
                     argsArray.add("r");

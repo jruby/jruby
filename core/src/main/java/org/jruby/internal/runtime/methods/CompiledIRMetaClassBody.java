@@ -24,7 +24,7 @@ public class CompiledIRMetaClassBody extends CompiledIRMethod {
         this.popDynScope = this.pushNewDynScope || reuseParentDynScope;
     }
 
-    public String[] getParameterList() {
+    public String[] getArgsDesc() {
         return new String[0];
     }
 

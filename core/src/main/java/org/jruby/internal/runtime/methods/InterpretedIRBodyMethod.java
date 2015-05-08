@@ -20,7 +20,7 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
     }
 
     @Override
-    public String[] getParameterList() {
+    public String[] getArgsDesc() {
         return new String[0];
     }
 
