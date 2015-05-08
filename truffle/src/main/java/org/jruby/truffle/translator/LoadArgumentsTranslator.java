@@ -192,7 +192,13 @@ public class LoadArgumentsTranslator extends Translator {
 
             if (dAsgnNode.getValueNode() == null) {
                 defaultValue = new NilLiteralNode(context, sourceSection);
-            } else {
+            } else if (dAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
+                /*
+                 * This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
+                 * the semantic action of executing this node is to report an error, and we do the same thing.
+                 */
+                defaultValue = new MissingKeywordArgumentNode(context, sourceSection, name);
+            }else {
                 defaultValue = dAsgnNode.getValueNode().accept(this);
             }
         } else {
