@@ -1,33 +1,22 @@
 package org.jruby.internal.runtime.methods;
 
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Signature;
 
+/**
+ * Represents a method object that can return a Signature and an array of ArgumentDescriptors.
+ */
 public interface IRMethodArgs {
     // FIXME: Should get pushed to DynamicMethod
+
+    /**
+     * Get the Signature for this method.
+     */
     public Signature getSignature();
+
+    /**
+     * Get the array of ArgumentDescriptors that represent the arguments to this method.
+     */
     public ArgumentDescriptor[] getArgumentDescriptors();
 
-    public enum ArgumentType {
-        key, keyreq, keyrest, block, opt, rest, req
-    }
-
-    public class ArgumentDescriptor {
-        public final ArgumentType type;
-        public final String name;
-        public static final ArgumentDescriptor[] EMPTY_ARRAY = new ArgumentDescriptor[0];
-
-        public ArgumentDescriptor(ArgumentType type, String name) {
-            this.type = type;
-            this.name = name;
-        }
-
-        public String toShortDesc() {
-            switch (type) {
-                case keyreq: return "K" + name;
-                case keyrest: return "e" + name;
-                case req: return "q" + name;
-                default: return type.name().charAt(0) + name;
-            }
-        }
-    }
 }

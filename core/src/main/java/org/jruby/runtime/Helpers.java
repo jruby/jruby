@@ -23,7 +23,6 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
-import org.jruby.internal.runtime.methods.IRMethodArgs.ArgumentDescriptor;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.JavaClass;
@@ -2595,50 +2594,22 @@ public class Helpers {
         RubyArray parms = RubyArray.newEmptyArray(runtime);
 
         for (String param : parameterList) {
-            if (param == null) continue; // FIXME: How does this happen?
             if (param.equals("NONE")) break;
+            if (param.equals("nil")) param = "n"; // make length 1 so we don't look for a name
 
-            RubyArray elem = RubyArray.newEmptyArray(runtime);
-            if (param.equals("nil")) {
-                // marker for masgn args (the parens in "a, b, (c, d)"
-                elem.add(RubySymbol.newSymbol(runtime, isLambda ? "req" : "opt"));
-                parms.add(elem);
-                continue;
-            }
+            ArgumentType type = ArgumentType.valueOf(param.charAt(0));
 
-            if (param.length() == 0) System.out.println(Arrays.toString(parameterList));
-            if (param.charAt(0) == 'q') {
-                // required/normal arg
-                elem.add(RubySymbol.newSymbol(runtime, isLambda ? "req" : "opt"));
-            } else if (param.charAt(0) == 'r') {
-                // named rest arg
-                elem.add(RubySymbol.newSymbol(runtime, "rest"));
-            } else if (param.charAt(0) == 'R') {
-                // unnamed rest arg (star)
-                elem.add(RubySymbol.newSymbol(runtime, "rest"));
-                parms.add(elem);
-                continue;
-            } else if (param.charAt(0) == 'o') {
-                // optional arg
-                elem.add(RubySymbol.newSymbol(runtime, "opt"));
-                if (param.length() == 1) {
-                    // no name; continue
-                    parms.add(elem);
-                    continue;
-                }
-            } else if (param.charAt(0) == 'b') {
-                // block arg
-                elem.add(RubySymbol.newSymbol(runtime, "block"));
-            } else if (param.charAt(0) == 'k') {
-                elem.add(RubySymbol.newSymbol(runtime, "key"));
-            } else if (param.charAt(0) == 'K') {
-                elem.add(RubySymbol.newSymbol(runtime, "keyreq"));
-            } else if (param.charAt(0) == 'e') {
-                elem.add(RubySymbol.newSymbol(runtime, "keyrest"));
-            }
+            // for lambdas, we call required args optional
+            if (type == ArgumentType.req && !isLambda) type = ArgumentType.opt;
 
+            RubySymbol typeSym = RubySymbol.newSymbol(runtime, type.name());
+
+            // 'R', 'o', 'n' forms can get here without a name
+            RubyArray elem;
             if (param.length() > 1) {
-                elem.add(RubySymbol.newSymbol(runtime, param.substring(1)));
+                elem = RubyArray.newArray(runtime, typeSym, RubySymbol.newSymbol(runtime, param.substring(1)));
+            } else {
+                elem = RubyArray.newArray(runtime, typeSym);
             }
 
             parms.add(elem);
@@ -2651,7 +2622,7 @@ public class Helpers {
     public static String[] irMethodArgsToParameters(ArgumentDescriptor[] argDesc) {
         String[] tmp = new String[argDesc.length];
         for (int i = 0; i < tmp.length; i++) {
-            tmp[i] = argDesc[i].toShortDesc();
+            tmp[i] = argDesc[i].toPrefixForm();
         }
 
         return tmp;
