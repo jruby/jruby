@@ -149,6 +149,8 @@ module Commands
     puts '    --asm          show assembly (implies --graal)'
     puts '    --server       run an instrumentation server on port 8080'
     puts '    --igv          make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
+    puts 'jt e 14 + 2                                    evaluate an expression'
+    puts 'jt puts 14 + 2                                 evaluate and print an expression'
     puts 'jt test                                        run all mri tests and specs'
     puts 'jt test mri                                    run mri tests'
     puts 'jt test specs                                  run all specs'
@@ -240,6 +242,14 @@ module Commands
     raw_sh env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args
   end
   alias ruby run
+
+  def e(*args)
+    run '-e', args.join(' ')
+  end
+
+  def puts(*args)
+    e 'puts', *args
+  end
 
   def test_mri(*args)
     env_vars = {
