@@ -22,7 +22,6 @@ require_relative 'core/rubinius/api/shims/tuple'
 require_relative 'core/rubinius/api/shims/metrics'
 require_relative 'core/rubinius/api/shims/module'
 require_relative 'core/rubinius/api/shims/fixnum'
-require_relative 'core/rubinius/api/shims/type'
 
 # Load alpha.rb
 
