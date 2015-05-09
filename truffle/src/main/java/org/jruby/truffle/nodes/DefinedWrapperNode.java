@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,13 +13,16 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
 
-public class AssignmentWrapperNode extends RubyNode {
+public class DefinedWrapperNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public AssignmentWrapperNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    private final String definition;
+
+    public DefinedWrapperNode(RubyContext context, SourceSection sourceSection, RubyNode child, String definition) {
         super(context, sourceSection);
         this.child = child;
+        this.definition = definition;
     }
 
     @Override
@@ -29,7 +32,7 @@ public class AssignmentWrapperNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return getContext().makeString("assignment");
+        return getContext().makeString(definition);
     }
 
 }

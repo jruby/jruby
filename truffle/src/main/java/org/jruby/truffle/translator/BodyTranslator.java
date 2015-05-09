@@ -26,7 +26,6 @@ import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.DefinedNode;
-import org.jruby.truffle.nodes.control.ForNode;
 import org.jruby.truffle.nodes.core.array.*;
 import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.cast.LambdaNode;
@@ -1302,9 +1301,7 @@ public class BodyTranslator extends Translator {
         final RubyNode translated = callNode.accept(this);
         translatingForStatement = false;
 
-        // TODO (eregon, 20 Apr. 2015): We could just get rid of ForNode here since it seems useless.
-        // isDefined() should work anyway since the callNode has a block and that is always defined as "expression".
-        return new ForNode(context, translated.getSourceSection(), translated);
+        return translated;
     }
 
     private static org.jruby.ast.Node setRHS(org.jruby.ast.Node node, org.jruby.ast.Node rhs) {
@@ -2093,7 +2090,7 @@ public class BodyTranslator extends Translator {
             result = new NilLiteralNode(context, sourceSection);
         }
 
-        return new AssignmentWrapperNode(context, sourceSection, result);
+        return new DefinedWrapperNode(context, sourceSection, result, "assignment");
     }
 
     private RubyNode translateDummyAssignment(org.jruby.ast.Node dummyAssignment, RubyNode rhs) {
@@ -2227,7 +2224,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node lhs = node.getFirstNode();
         final org.jruby.ast.Node rhs = node.getSecondNode();
 
-        return new AssignmentWrapperNode(context, sourceSection, new AndNode(context, sourceSection, lhs.accept(this), rhs.accept(this)));
+        return new DefinedWrapperNode(context, sourceSection, new AndNode(context, sourceSection, lhs.accept(this), rhs.accept(this)), "assignment");
     }
 
     @Override
@@ -2248,7 +2245,9 @@ public class BodyTranslator extends Translator {
             RubyNode lhs = readMethod.accept(this);
             RubyNode rhs = writeMethod.accept(this);
 
-            return new AssignmentWrapperNode(context, sourceSection, SequenceNode.sequence(context, sourceSection, writeReceiverToTemp.accept(this), new OrNode(context, sourceSection, lhs, rhs)));
+            return new DefinedWrapperNode(context, sourceSection,
+                    SequenceNode.sequence(context, sourceSection, writeReceiverToTemp.accept(this), new OrNode(context, sourceSection, lhs, rhs)),
+                    "assignment");
         }
 
         /*
@@ -2294,7 +2293,9 @@ public class BodyTranslator extends Translator {
             lhs = new AndNode(context, lhs.getSourceSection(), defined, lhs);
         }
 
-        return new AssignmentWrapperNode(context, sourceSection, new OrNode(context, sourceSection, lhs, rhs));
+        return new DefinedWrapperNode(context, sourceSection,
+                new OrNode(context, sourceSection, lhs, rhs),
+                "assignment");
     }
 
     @Override
