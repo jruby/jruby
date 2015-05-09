@@ -7,6 +7,7 @@ import java.nio.charset.Charset;
 
 import jnr.constants.platform.Errno;
 import org.jruby.*;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.DAsgnNode;
@@ -2522,6 +2523,12 @@ public class Helpers {
         } else {
             return new ArgumentDescriptor[]{new ArgumentDescriptor(ArgumentType.rest)};
         }
+    }
+
+    public static IRubyObject methodToParameters(Ruby runtime, AbstractRubyMethod recv) {
+        DynamicMethod method = recv.getMethod().getRealMethod();
+
+        return argumentDescriptorsToParameters(runtime, methodToArgumentDescriptors(method), true);
     }
 
     public static RubyString getDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name) {

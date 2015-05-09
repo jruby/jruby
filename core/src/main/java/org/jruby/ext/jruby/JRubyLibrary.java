@@ -144,14 +144,6 @@ public class JRubyLibrary implements Library {
     }
     
     public static class MethodExtensions {
-        @JRubyMethod(name = "args")
-        public static IRubyObject methodArgs(IRubyObject recv) {
-            Ruby runtime = recv.getRuntime();
-            AbstractRubyMethod rubyMethod = (AbstractRubyMethod)recv;
-            DynamicMethod method = rubyMethod.getMethod().getRealMethod();
-
-            return Helpers.argumentDescriptorsToParameters(runtime, Helpers.methodToArgumentDescriptors(method), true);
-        }
 
     }
 }

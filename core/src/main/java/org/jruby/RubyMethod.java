@@ -31,7 +31,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.AliasMethod;
@@ -290,7 +289,7 @@ public class RubyMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public IRubyObject parameters(ThreadContext context) {
-        return JRubyLibrary.MethodExtensions.methodArgs(this);
+        return Helpers.methodToParameters(context.runtime, this);
     }
 
     @JRubyMethod(optional = 1)

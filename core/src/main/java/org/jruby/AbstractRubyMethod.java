@@ -32,10 +32,10 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -135,7 +135,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod(name = "parameters")
     public IRubyObject parameters(ThreadContext context) {
-        return JRubyLibrary.MethodExtensions.methodArgs(this);
+        return Helpers.methodToParameters(context.runtime, this);
     }
 
     protected IRubyObject super_method(ThreadContext context, IRubyObject receiver, RubyModule superClass) {
