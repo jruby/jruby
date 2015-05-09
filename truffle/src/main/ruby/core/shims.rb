@@ -36,10 +36,18 @@ end
 
 if STDOUT.tty?
   STDOUT.sync = true
+else
+  at_exit do
+    STDOUT.flush
+  end
 end
 
 if STDERR.tty?
   STDERR.sync = true
+else
+  at_exit do
+    STDERR.flush
+  end
 end
 
 ARGF = Object.new
