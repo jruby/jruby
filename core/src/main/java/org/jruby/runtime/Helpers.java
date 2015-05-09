@@ -2470,7 +2470,14 @@ public class Helpers {
             }
         }
 
-        if (argsNode.getKeyRest() != null) descs.add(new ArgumentDescriptor(ArgumentType.keyrest, argsNode.getKeyRest().getName()));
+        if (argsNode.getKeyRest() != null) {
+            String argName = argsNode.getKeyRest().getName();
+            if (argName == null || argName.length() == 0) {
+                descs.add(new ArgumentDescriptor(ArgumentType.anonkeyrest, argName));
+            } else {
+                descs.add(new ArgumentDescriptor(ArgumentType.keyrest, argsNode.getKeyRest().getName()));
+            }
+        }
         if (argsNode.getBlock() != null) descs.add(new ArgumentDescriptor(ArgumentType.block, argsNode.getBlock().getName()));
 
         return descs.toArray(new ArgumentDescriptor[descs.size()]);

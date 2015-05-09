@@ -16,7 +16,8 @@ public enum ArgumentType {
     req("req", "q", false),
     anonreq("req", "n", true),
     anonopt("opt", "O", true),
-    anonrest("rest", "R", true);
+    anonrest("rest", "R", true),
+    anonkeyrest("keyrest", "N", true);
 
     ArgumentType(String symbolicName, String prefix, boolean anonymous) {
         this.symbolicName = symbolicName;

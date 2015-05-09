@@ -1799,7 +1799,7 @@ public class IRBuilder {
                 MultipleAsgnNode childNode = (MultipleAsgnNode) node;
                 Variable v = createTemporaryVariable();
                 addArgReceiveInstr(v, argIndex, post, numPreReqd, numPostRead);
-                if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.req, "");
+                if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.anonreq, null);
                 Variable tmp = createTemporaryVariable();
                 addInstr(new ToAryInstr(tmp, v));
                 buildMultipleAsgn19Assignment(childNode, tmp, null);
@@ -1963,8 +1963,13 @@ public class IRBuilder {
         KeywordRestArgNode keyRest = argsNode.getKeyRest();
         if (keyRest != null) {
             String argName = keyRest.getName();
+            ArgumentType type = ArgumentType.keyrest;
+
+            // anonymous keyrest
+            if (argName == null || argName.length() == 0) type = ArgumentType.anonkeyrest;
+
             Variable av = getNewLocalVariable(argName, 0);
-            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.keyrest, argName);
+            if (scope instanceof IRMethod) addArgumentDescription(type, argName);
             addInstr(new ReceiveKeywordRestArgInstr(av, required));
         }
 
