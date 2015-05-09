@@ -147,10 +147,15 @@ class MSpecScript
     "^spec/ruby/library/prime/each_spec.rb",
   ]
 
+  set :truffle, [
+    "spec/truffle/specs"
+  ]
+
   set :tags_patterns, [
                         [%r(^.*/language/),     'spec/truffle/tags/language/'],
                         [%r(^.*/core/),         'spec/truffle/tags/core/'],
                         [%r(^.*/library/),      'spec/truffle/tags/library/'],
+                        [%r(^.*/truffle/),      'spec/truffle/tags/truffle/'],
                         [/_spec.rb$/,           '_tags.txt']
                       ]
 
@@ -164,6 +169,6 @@ class MSpecScript
   MSpec.disable_feature :fork
   MSpec.enable_feature :generator
 
-  set :files, get(:language) + get(:core) + get(:library)
+  set :files, get(:language) + get(:core) + get(:library) + get(:truffle)
 
 end

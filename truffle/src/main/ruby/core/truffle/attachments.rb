@@ -38,7 +38,7 @@ module Truffle
     # Truffle::Attachments.detach __FILE__, 21
     # ```
     def self.detach(file, line)
-      Truffle::Primitive.attach file, line
+      Truffle::Primitive.detach file, line
     end
 
   end
