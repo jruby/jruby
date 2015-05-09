@@ -2214,9 +2214,16 @@ public class IRBuilder {
           L3:
 
      * ****************************************************************/
-    public Operand buildEnsureNode(EnsureNode ensureNode) {
-        Node bodyNode = ensureNode.getBodyNode();
+    public Operand buildEnsureNode(final EnsureNode ensureNode) {
+        CodeBlock ensureCodeBuilder = new CodeBlock() {
+            public Operand run() {
+                return (ensureNode.getEnsureNode() == null) ? manager.getNil() : build(ensureNode.getEnsureNode());
+            };
+        };
+        return buildEnsureInternal(ensureNode.getBodyNode(), ensureCodeBuilder);
+    }
 
+    public Operand buildEnsureInternal(Node ensureBodyNode, CodeBlock ensureCodeBuilder) {
         // ------------ Build the body of the ensure block ------------
         //
         // The ensure code is built first so that when the protected body is being built,
@@ -2225,12 +2232,12 @@ public class IRBuilder {
         // Push a new ensure block node onto the stack of ensure bodies being built
         // The body's instructions are stashed and emitted later.
         EnsureBlockInfo ebi = new EnsureBlockInfo(scope,
-            (bodyNode instanceof RescueNode) ? (RescueNode)bodyNode : null,
+            (ensureBodyNode instanceof RescueNode) ? (RescueNode)ensureBodyNode : null,
             getCurrentLoop(),
             activeRescuers.peek());
 
         ensureBodyBuildStack.push(ebi);
-        Operand ensureRetVal = (ensureNode.getEnsureNode() == null) ? manager.getNil() : build(ensureNode.getEnsureNode());
+        Operand ensureRetVal = ensureCodeBuilder.run();
         ensureBodyBuildStack.pop();
 
         // ------------ Build the protected region ------------
@@ -2242,7 +2249,7 @@ public class IRBuilder {
         activeRescuers.push(ebi.dummyRescueBlockLabel);
 
         // Generate IR for code being protected
-        Operand rv = bodyNode instanceof RescueNode ? buildRescueInternal((RescueNode) bodyNode, ebi) : build(bodyNode);
+        Operand rv = ensureBodyNode instanceof RescueNode ? buildRescueInternal((RescueNode) ensureBodyNode, ebi) : build(ensureBodyNode);
 
         // End of protected region
         addInstr(new ExceptionRegionEndMarkerInstr());
@@ -2250,7 +2257,7 @@ public class IRBuilder {
 
         // Clone the ensure body and jump to the end.
         // Don't bother if the protected body ended in a return.
-        if (rv != U_NIL && !(bodyNode instanceof RescueNode)) {
+        if (rv != U_NIL && !(ensureBodyNode instanceof RescueNode)) {
             ebi.cloneIntoHostScope(this);
             addInstr(new JumpInstr(ebi.end));
         }
@@ -3023,7 +3030,17 @@ public class IRBuilder {
     }
 
     public Operand buildRescue(RescueNode node) {
-        return buildRescueInternal(node, null);
+        final Variable savedGlobalException = createTemporaryVariable();
+        addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
+
+        CodeBlock ensureBodyBuilder = new CodeBlock() {
+            public Operand run() {
+                // Restore "$!"
+                addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+                return manager.getNil();
+            };
+        };
+        return buildEnsureInternal(node, ensureBodyBuilder);
     }
 
     private Operand buildRescueInternal(RescueNode rescueNode, EnsureBlockInfo ensure) {
