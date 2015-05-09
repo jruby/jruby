@@ -823,6 +823,10 @@ public final class Ruby implements Constantizable {
     }
 
     public IRubyObject runScript(Script script, boolean wrap) {
+        if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
+            throw new UnsupportedOperationException();
+        }
+
         ThreadContext context = getCurrentContext();
 
         try {
@@ -847,18 +851,15 @@ public final class Ruby implements Constantizable {
     }
 
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
-       if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
-           assert parseResult instanceof RootNode;
-           assert self == getTopSelf();
-           getTruffleContext().execute((RootNode) parseResult);
-           return getNil();
-       } else {
-           try {
-               return Interpreter.getInstance().execute(this, parseResult, self);
-           } catch (JumpException.ReturnJump rj) {
-               return (IRubyObject) rj.getValue();
-           }
-       }
+        if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
+            throw new UnsupportedOperationException();
+        }
+
+        try {
+            return Interpreter.getInstance().execute(this, parseResult, self);
+        } catch (JumpException.ReturnJump rj) {
+            return (IRubyObject) rj.getValue();
+        }
    }
 
     public IRubyObject runInterpreter(ThreadContext context, Node rootNode, IRubyObject self) {
@@ -941,7 +942,7 @@ public final class Ruby implements Constantizable {
         return truffleBridge;
     }
 
-    public void shutdownTruffleContext() {
+    public void shutdownTruffleContextIfRunning() {
         synchronized (truffleContextMonitor) {
             if (truffleContext != null) {
                 truffleContext.shutdown();

@@ -400,8 +400,7 @@ public class Main {
 
             runtime.runFromMain(in, filename);
 
-            runtime.shutdownTruffleContext();
-
+            runtime.shutdownTruffleContextIfRunning();
         } catch (RaiseException rj) {
             return new Status(handleRaiseException(rj));
         }
