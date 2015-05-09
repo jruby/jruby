@@ -26,9 +26,9 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ArraySliceNodeGen;
 import org.jruby.truffle.nodes.literal.ArrayLiteralNode;
 import org.jruby.truffle.nodes.literal.NilLiteralNode;
-import org.jruby.truffle.nodes.methods.arguments.*;
-import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeGen;
-import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeGen;
+import org.jruby.truffle.nodes.arguments.*;
+import org.jruby.truffle.nodes.locals.ReadLocalVariableNodeGen;
+import org.jruby.truffle.nodes.locals.WriteLocalVariableNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.*;

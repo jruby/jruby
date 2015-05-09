@@ -20,7 +20,7 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
-import org.jruby.truffle.nodes.methods.arguments.*;
+import org.jruby.truffle.nodes.arguments.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
