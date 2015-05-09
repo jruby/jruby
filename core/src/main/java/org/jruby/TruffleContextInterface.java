@@ -12,7 +12,7 @@ package org.jruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
-public interface TruffleBridge {
+public interface TruffleContextInterface {
 
     enum BacktraceFormatter {
         MRI,

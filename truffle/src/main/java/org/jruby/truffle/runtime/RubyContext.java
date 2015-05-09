@@ -28,7 +28,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
-import org.jruby.TruffleBridge;
+import org.jruby.TruffleContextInterface;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyNode;
@@ -39,10 +39,7 @@ import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
-import org.jruby.truffle.nodes.rubinius.ByteArrayNodesFactory;
-import org.jruby.truffle.nodes.rubinius.PosixNodesFactory;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
-import org.jruby.truffle.nodes.rubinius.RubiniusTypeNodesFactory;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -64,7 +61,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * The global state of a running Ruby system.
  */
-public class RubyContext extends ExecutionContext implements TruffleBridge {
+public class RubyContext extends ExecutionContext implements TruffleContextInterface {
 
     private static RubyContext latestInstance;
 
