@@ -17,7 +17,9 @@ import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.Shape;
+import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.tools.CoverageTracker;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
@@ -26,14 +28,22 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
+import org.jruby.TruffleBridge;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.TopLevelRaiseHandler;
+import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
+import org.jruby.truffle.nodes.rubinius.ByteArrayNodesFactory;
+import org.jruby.truffle.nodes.rubinius.PosixNodesFactory;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
+import org.jruby.truffle.nodes.rubinius.RubiniusTypeNodesFactory;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -46,15 +56,15 @@ import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
 import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
-import java.util.Locale;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The global state of a running Ruby system.
  */
-public class RubyContext extends ExecutionContext {
+public class RubyContext extends ExecutionContext implements TruffleBridge {
 
     private static RubyContext latestInstance;
 
@@ -157,6 +167,71 @@ public class RubyContext extends ExecutionContext {
         attachmentsManager = new AttachmentsManager(this);
         sourceManager = new SourceManager(this);
         rubiniusConfiguration = new RubiniusConfiguration(this);
+
+        // Give the core library manager a chance to tweak some of those methods
+
+        coreLibrary.initializeAfterMethodsAdded();
+
+        // Set program arguments
+
+        for (IRubyObject arg : ((org.jruby.RubyArray) runtime.getObject().getConstant("ARGV")).toJavaArray()) {
+            assert arg != null;
+
+            coreLibrary.getArgv().slowPush(makeString(arg.toString()));
+        }
+
+        // Set the load path
+
+        final RubyArray loadPath = (RubyArray) coreLibrary.getGlobalVariablesObject().getInstanceVariable("$:");
+
+        final String home = runtime.getInstanceConfig().getJRubyHome();
+
+        // We don't want JRuby's stdlib paths, but we do want any extra paths set by -I and things like that
+
+        final List<String> excludedLibPaths = new ArrayList<>();
+        excludedLibPaths.add(new File(home, "lib/ruby/2.2/site_ruby").toString().replace('\\', '/'));
+        excludedLibPaths.add(new File(home, "lib/ruby/shared").toString().replace('\\', '/'));
+        excludedLibPaths.add(new File(home, "lib/ruby/stdlib").toString().replace('\\', '/'));
+
+        for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
+            if (!excludedLibPaths.contains(path.toString())) {
+                loadPath.slowPush(makeString(new File(path.toString()).getAbsolutePath()));
+            }
+        }
+
+        // Load our own stdlib path
+
+        // Libraries copied unmodified from MRI
+        loadPath.slowPush(makeString(new File(home, "lib/ruby/truffle/mri").toString()));
+
+        // Our own implementations
+        loadPath.slowPush(makeString(new File(home, "lib/ruby/truffle/truffle").toString()));
+
+        // Libraries from RubySL
+        for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
+                "rubysl-complex", "rubysl-date", "rubysl-pathname",
+                "rubysl-tempfile", "rubysl-socket")) {
+            loadPath.slowPush(makeString(new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
+        }
+
+        // Shims
+        loadPath.slowPush(makeString(new File(home, "lib/ruby/truffle/shims").toString()));
+
+        // Load libraries required from the command line (-r LIBRARY)
+        for (String requiredLibrary : runtime.getInstanceConfig().getRequiredLibraries()) {
+            try {
+                featureManager.require(requiredLibrary, null);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } catch (RaiseException e) {
+                // Translate LoadErrors for JRuby since we're outside an ExceptionTranslatingNode.
+                if (e.getRubyException().getLogicalClass() == coreLibrary.getLoadErrorClass()) {
+                    throw runtime.newLoadError(e.getRubyException().getMessage().toString(), requiredLibrary);
+                } else {
+                    throw e;
+                }
+            }
+        }
     }
 
     public Shape getEmptyShape() {
@@ -294,7 +369,7 @@ public class RubyContext extends ExecutionContext {
         return id;
     }
 
-    public void shutdown() {
+    public void innertShutdown() {
         atExitManager.run();
 
         if (instrumentationServerManager != null) {
@@ -565,4 +640,49 @@ public class RubyContext extends ExecutionContext {
     public POSIX getPosix() {
         return posix;
     }
+
+    @Override
+    public Object execute(final Object self, final org.jruby.ast.RootNode rootNode) {
+        coreLibrary.getGlobalVariablesObject().getObjectType().setInstanceVariable(
+                coreLibrary.getGlobalVariablesObject(), "$0",
+                toTruffle(runtime.getGlobalVariables().get("$0")));
+
+        final String inputFile = rootNode.getPosition().getFile();
+        final Source source;
+
+        if (inputFile.equals("-e")) {
+            // Assume UTF-8 for the moment
+            source = Source.fromBytes(runtime.getInstanceConfig().inlineScript(), "-e", new BytesDecoder.UTF8BytesDecoder());
+        } else {
+            source = sourceManager.forFile(inputFile);
+        }
+
+        featureManager.setMainScriptSource(source);
+
+        load(source, null, new NodeWrapper() {
+            @Override
+            public RubyNode wrap(RubyNode node) {
+                RubyContext context = node.getContext();
+                SourceSection sourceSection = node.getSourceSection();
+                return SequenceNode.sequence(context, sourceSection,
+                        new SetTopLevelBindingNode(context, sourceSection),
+                        new TopLevelRaiseHandler(context, sourceSection, node));
+            }
+        });
+        return coreLibrary.getNilObject();
+    }
+
+    @Override
+    public void shutdown() {
+        try {
+            innertShutdown();
+        } catch (RaiseException e) {
+            final RubyException rubyException = e.getRubyException();
+
+            for (String line : Backtrace.DISPLAY_FORMATTER.format(e.getRubyException().getContext(), rubyException, rubyException.getBacktrace())) {
+                System.err.println(line);
+            }
+        }
+    }
+    
 }

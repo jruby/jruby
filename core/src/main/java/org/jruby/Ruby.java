@@ -922,7 +922,7 @@ public final class Ruby implements Constantizable {
         final Class<?> clazz;
 
         try {
-            clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.TruffleBridgeImpl");
+            clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.runtime.RubyContext");
         } catch (Exception e) {
             throw new UnsupportedOperationException("Truffle classes not available", e);
         }
@@ -935,8 +935,6 @@ public final class Ruby implements Constantizable {
         } catch (Exception e) {
             throw new UnsupportedOperationException("Error while calling the constructor of TruffleBridgeImpl", e);
         }
-
-        truffleBridge.init();
 
         return truffleBridge;
     }

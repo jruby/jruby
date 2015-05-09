@@ -20,8 +20,6 @@ public interface TruffleBridge {
         IMPL_DEBUG
     }
 
-    void init();
-
     Object execute(Object self, org.jruby.ast.RootNode rootNode);
 
     Object toTruffle(IRubyObject object);
