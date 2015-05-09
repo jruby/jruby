@@ -2215,21 +2215,14 @@ public class IRBuilder {
 
      * ****************************************************************/
     public Operand buildEnsureNode(final EnsureNode ensureNode) {
+        return buildEnsureInternal(ensureNode.getBodyNode(), ensureNode.getEnsureNode());
+    }
+
+    public Operand buildEnsureInternal(Node ensureBodyNode, Node ensurerNode) {
+        // Save $!
         final Variable savedGlobalException = createTemporaryVariable();
         addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
 
-        CodeBlock ensureCodeBuilder = new CodeBlock() {
-            public Operand run() {
-                Operand retVal = (ensureNode.getEnsureNode() == null) ? manager.getNil() : build(ensureNode.getEnsureNode());
-                // Restore "$!"
-                addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
-                return retVal;
-            };
-        };
-        return buildEnsureInternal(ensureNode.getBodyNode(), ensureCodeBuilder);
-    }
-
-    public Operand buildEnsureInternal(Node ensureBodyNode, CodeBlock ensureCodeBuilder) {
         // ------------ Build the body of the ensure block ------------
         //
         // The ensure code is built first so that when the protected body is being built,
@@ -2243,7 +2236,9 @@ public class IRBuilder {
             activeRescuers.peek());
 
         ensureBodyBuildStack.push(ebi);
-        Operand ensureRetVal = ensureCodeBuilder.run();
+        Operand ensureRetVal = ensurerNode == null ? manager.getNil() : build(ensurerNode);
+        // Restore $!
+        addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
         ensureBodyBuildStack.pop();
 
         // ------------ Build the protected region ------------
@@ -3036,23 +3031,13 @@ public class IRBuilder {
     }
 
     public Operand buildRescue(RescueNode node) {
-        final Variable savedGlobalException = createTemporaryVariable();
-        addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
-
-        CodeBlock ensureBodyBuilder = new CodeBlock() {
-            public Operand run() {
-                // Restore "$!"
-                addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
-                return manager.getNil();
-            };
-        };
-        return buildEnsureInternal(node, ensureBodyBuilder);
+        return buildEnsureInternal(node, null);
     }
 
     private Operand buildRescueInternal(RescueNode rescueNode, EnsureBlockInfo ensure) {
         // Labels marking start, else, end of the begin-rescue(-ensure)-end block
-        Label rBeginLabel = ensure == null ? getNewLabel() : ensure.regionStart;
-        Label rEndLabel   = ensure == null ? getNewLabel() : ensure.end;
+        Label rBeginLabel = ensure.regionStart;
+        Label rEndLabel   = ensure.end;
         Label rescueLabel = getNewLabel(); // Label marking start of the first rescue code.
 
         // Save $! in a temp var so it can be restored when the exception gets handled.
