@@ -152,12 +152,12 @@ class MSpecScript
   ]
 
   set :tags_patterns, [
-                        [%r(^.*/language/),     'spec/truffle/tags/language/'],
-                        [%r(^.*/core/),         'spec/truffle/tags/core/'],
-                        [%r(^.*/library/),      'spec/truffle/tags/library/'],
-                        [%r(^.*/truffle/),      'spec/truffle/tags/truffle/'],
-                        [/_spec.rb$/,           '_tags.txt']
-                      ]
+    [%r(^.*/language/),                 'spec/truffle/tags/language/'],
+    [%r(^.*/core/),                     'spec/truffle/tags/core/'],
+    [%r(^.*/library/),                  'spec/truffle/tags/library/'],
+    [%r(^.*/truffle/specs/truffle),     'spec/truffle/tags/truffle/'],
+    [/_spec.rb$/,                       '_tags.txt']
+  ]
 
   if windows?
     # exclude specs tagged with 'windows'
