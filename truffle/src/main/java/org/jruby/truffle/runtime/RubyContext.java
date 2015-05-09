@@ -639,7 +639,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     @Override
-    public Object execute(final Object self, final org.jruby.ast.RootNode rootNode) {
+    public Object execute(final org.jruby.ast.RootNode rootNode) {
         coreLibrary.getGlobalVariablesObject().getObjectType().setInstanceVariable(
                 coreLibrary.getGlobalVariablesObject(), "$0",
                 toTruffle(runtime.getGlobalVariables().get("$0")));

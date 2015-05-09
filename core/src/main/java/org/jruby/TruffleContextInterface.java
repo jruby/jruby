@@ -9,9 +9,6 @@
  */
 package org.jruby;
 
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-
 public interface TruffleContextInterface {
 
     enum BacktraceFormatter {
@@ -20,9 +17,7 @@ public interface TruffleContextInterface {
         IMPL_DEBUG
     }
 
-    Object execute(Object self, org.jruby.ast.RootNode rootNode);
-
-    Object toTruffle(IRubyObject object);
+    Object execute(org.jruby.ast.RootNode rootNode);
 
     void shutdown();
     

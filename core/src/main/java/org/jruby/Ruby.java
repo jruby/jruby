@@ -849,7 +849,8 @@ public final class Ruby implements Constantizable {
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
        if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
            assert parseResult instanceof RootNode;
-           getTruffleContext().execute(getTruffleContext().toTruffle(self), (RootNode) parseResult);
+           assert self == getTopSelf();
+           getTruffleContext().execute((RootNode) parseResult);
            return getNil();
        } else {
            try {
@@ -865,7 +866,8 @@ public final class Ruby implements Constantizable {
 
         if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
             assert rootNode instanceof RootNode;
-            getTruffleContext().execute(getTruffleContext().toTruffle(self), (RootNode) rootNode);
+            assert self == getTopSelf();
+            getTruffleContext().execute((RootNode) rootNode);
             return getNil();
         } else {
             try {
