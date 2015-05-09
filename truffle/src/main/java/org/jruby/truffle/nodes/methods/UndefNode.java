@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.methods;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
@@ -29,7 +30,7 @@ public class UndefNode extends RubyNode {
 
     @Override
     public void executeVoid(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         final RubyModule moduleObject;
 
@@ -45,7 +46,7 @@ public class UndefNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         executeVoid(frame);
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
 }

@@ -173,7 +173,7 @@ class Time
   end
 
   def to_f
-    to_r.to_f
+    seconds + nsec * 0.000000001 # Truffle: optimized
   end
 
   def +(other)

@@ -1,4 +1,0 @@
-fails:Enumerable#sort yields elements to the provided block
-fails:Enumerable#sort sorts enumerables that contain nils
-fails:Enumerable#sort compare values returned by block with 0
-fails:Enumerable#sort raises an error if objects can't be compared

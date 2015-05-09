@@ -1,6 +1,3 @@
-fails:Encoding::Converter.search_convpath returns multiple encoding pairs when direct conversion is impossible
-fails:Encoding::Converter.search_convpath indicates if crlf_newline conversion would occur
-fails:Encoding::Converter.search_convpath raises an Encoding::ConverterNotFoundError if no conversion path exists
 slow:Encoding::Converter.search_convpath returns an Array
 slow:Encoding::Converter.search_convpath returns each encoding pair as a sub-Array
 slow:Encoding::Converter.search_convpath returns each encoding as an Encoding object

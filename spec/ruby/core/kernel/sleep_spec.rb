@@ -7,15 +7,15 @@ describe "Kernel#sleep" do
   end
 
   it "accepts a Float" do
-    sleep(0.1).should be_close(0, 1)
+    sleep(0.1).should be_close(0, 2)
   end
 
   it "accepts a Fixnum" do
-    sleep(0).should be_close(0, 1)
+    sleep(0).should be_close(0, 2)
   end
 
   it "accepts a Rational" do
-    sleep(Rational(1, 9)).should be_close(0, 1)
+    sleep(Rational(1, 9)).should be_close(0, 2)
   end
 
   it "raises an ArgumentError when passed a negative duration" do

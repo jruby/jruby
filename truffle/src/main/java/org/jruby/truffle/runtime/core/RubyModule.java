@@ -13,15 +13,9 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
-
-import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.*;
@@ -113,7 +107,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     protected RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, Node currentNode) {
-        super(selfClass, context);
+        super(context, selfClass, LAYOUT.newInstance(context.getEmptyShape()));
         this.context = context;
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
@@ -145,8 +139,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     private void updateAnonymousChildrenModules() {
-        RubyNode.notDesignedForCompilation();
-
         for (Entry<String, RubyConstant> entry : constants.entrySet()) {
             RubyConstant constant = entry.getValue();
             if (constant.getValue() instanceof RubyModule) {
@@ -159,12 +151,14 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     @TruffleBoundary
-    public void initCopy(RubyModule other) {
+    public void initCopy(RubyModule from) {
         // Do not copy name, the copy is an anonymous module
-        this.parentModule = other.parentModule;
-        this.methods.putAll(other.methods);
-        this.constants.putAll(other.constants);
-        this.classVariables.putAll(other.classVariables);
+        this.parentModule = from.parentModule;
+        if (parentModule != null)
+            parentModule.getActualModule().addDependent(this);
+        this.methods.putAll(from.methods);
+        this.constants.putAll(from.constants);
+        this.classVariables.putAll(from.classVariables);
     }
 
     /** If this instance is a module and not a class. */
@@ -174,8 +168,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void include(Node currentNode, RubyModule module) {
-        RubyNode.notDesignedForCompilation();
-
         checkFrozen(currentNode);
 
         // We need to traverse the module chain in reverse order
@@ -197,6 +189,14 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      */
     @TruffleBoundary
     public void setConstant(Node currentNode, String name, Object value) {
+        if (getContext().getCoreLibrary().isLoadingRubyCore()) {
+            final RubyConstant currentConstant = constants.get(name);
+
+            if (currentConstant != null) {
+                return;
+            }
+        }
+
         if (value instanceof RubyModule) {
             ((RubyModule) value).getAdoptedByLexicalParent(this, name, currentNode);
         } else {
@@ -210,8 +210,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     private void setConstantInternal(Node currentNode, String name, Object value, boolean autoload) {
-        RubyNode.notDesignedForCompilation();
-
         checkFrozen(currentNode);
 
         RubyConstant previous = constants.get(name);
@@ -228,8 +226,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public RubyConstant removeConstant(Node currentNode, String name) {
-        RubyNode.notDesignedForCompilation();
-
         checkFrozen(currentNode);
         RubyConstant oldConstant = constants.remove(name);
         newLexicalVersion();
@@ -238,8 +234,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void setClassVariable(Node currentNode, String variableName, Object value) {
-        RubyNode.notDesignedForCompilation();
-
         checkFrozen(currentNode);
 
         classVariables.put(variableName, value);
@@ -247,8 +241,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void removeClassVariable(Node currentNode, String variableName) {
-        RubyNode.notDesignedForCompilation();
-
         checkFrozen(currentNode);
 
         classVariables.remove(variableName);
@@ -256,19 +248,27 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void addMethod(Node currentNode, InternalMethod method) {
-        RubyNode.notDesignedForCompilation();
-
         assert method != null;
+
+        if (getContext().getCoreLibrary().isLoadingRubyCore()) {
+            final InternalMethod currentMethod = methods.get(method.getName());
+
+            if (currentMethod != null && currentMethod.getSharedMethodInfo().getSourceSection() instanceof CoreSourceSection) {
+                return;
+            }
+        }
 
         checkFrozen(currentNode);
         methods.put(method.getName(), method.withDeclaringModule(this));
         newVersion();
+
+        if (context.getCoreLibrary().isLoaded() && !method.isUndefined()) {
+            DebugOperations.send(context, this, "method_added", null, context.getSymbolTable().getSymbol(method.getName()));
+        }
     }
 
     @TruffleBoundary
     public void removeMethod(Node currentNode, String methodName) {
-        RubyNode.notDesignedForCompilation();
-
         checkFrozen(currentNode);
 
         methods.remove(methodName);
@@ -277,7 +277,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void undefMethod(Node currentNode, String methodName) {
-        RubyNode.notDesignedForCompilation();
         final InternalMethod method = ModuleOperations.lookupMethod(this, methodName);
         if (method == null) {
             throw new UnsupportedOperationException();
@@ -288,7 +287,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void undefMethod(Node currentNode, InternalMethod method) {
-        RubyNode.notDesignedForCompilation();
         addMethod(currentNode, method.undefined());
     }
 
@@ -297,50 +295,51 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      * Used for alias_method, visibility changes, etc.
      */
     @TruffleBoundary
-    private InternalMethod deepMethodSearch(String name) {
+    public InternalMethod deepMethodSearch(String name) {
         InternalMethod method = ModuleOperations.lookupMethod(this, name);
-
-        // Also search on Object if we are a Module. JRuby calls it deepMethodSearch().
-        if (method == null && isOnlyAModule()) { // TODO: handle undefined methods
-            method = ModuleOperations.lookupMethod(context.getCoreLibrary().getObjectClass(), name);
+        if (method != null && !method.isUndefined()) {
+            return method;
         }
 
-        return method;
+        // Also search on Object if we are a Module. JRuby calls it deepMethodSearch().
+        if (isOnlyAModule()) { // TODO: handle undefined methods
+            method = ModuleOperations.lookupMethod(context.getCoreLibrary().getObjectClass(), name);
+
+            if (method != null && !method.isUndefined()) {
+                return method;
+            }
+        }
+
+        return null;
     }
 
     @TruffleBoundary
     public void alias(Node currentNode, String newName, String oldName) {
-        RubyNode.notDesignedForCompilation();
-
         InternalMethod method = deepMethodSearch(oldName);
 
         if (method == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError(oldName, this, currentNode));
+            throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnModule(oldName, this, currentNode));
         }
 
-        addMethod(currentNode, method.withNewName(newName));
+        addMethod(currentNode, method.withName(newName));
     }
 
     @TruffleBoundary
-    public void changeConstantVisibility(Node currentNode, RubySymbol constant, boolean isPrivate) {
-        RubyNode.notDesignedForCompilation();
-
-        RubyConstant rubyConstant = ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, this, constant.toString());
+    public void changeConstantVisibility(Node currentNode, String name, boolean isPrivate) {
         checkFrozen(currentNode);
+        RubyConstant rubyConstant = constants.get(name);
 
         if (rubyConstant != null) {
             rubyConstant.setPrivate(isPrivate);
             newLexicalVersion();
         } else {
-            throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(this, constant.toString(), currentNode));
+            throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(this, name, currentNode));
         }
     }
 
     @TruffleBoundary
     public void appendFeatures(Node currentNode, RubyModule other) {
-        RubyNode.notDesignedForCompilation();
-
         // TODO(CS): check only run once
         other.include(currentNode, this);
     }
@@ -352,8 +351,10 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public String getName() {
         if (name != null) {
             return name;
+        } else if (logicalClass == this) {
+            return "#<cyclic>";
         } else {
-            return "#<" + logicalClass.getName() + ":0x" + Long.toHexString(getObjectID()) + ">";
+            return "#<" + logicalClass.getName() + ":0x" + Long.toHexString(verySlowGetObjectID()) + ">";
         }
     }
 
@@ -367,14 +368,10 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     public void newVersion() {
-        RubyNode.notDesignedForCompilation();
-
         newVersion(new HashSet<RubyModule>(), false);
     }
 
     public void newLexicalVersion() {
-        RubyNode.notDesignedForCompilation();
-
         newVersion(new HashSet<RubyModule>(), true);
     }
 
@@ -398,75 +395,16 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     public void addDependent(RubyModule dependent) {
-        RubyNode.notDesignedForCompilation();
-
         dependents.add(dependent);
     }
 
     public void addLexicalDependent(RubyModule lexicalChild) {
-        RubyNode.notDesignedForCompilation();
-
         if (lexicalChild != this)
             lexicalDependents.add(lexicalChild);
     }
 
     public Assumption getUnmodifiedAssumption() {
-        RubyNode.notDesignedForCompilation();
-
         return unmodifiedAssumption.getAssumption();
-    }
-
-    public static void setCurrentVisibility(Visibility visibility) {
-        RubyNode.notDesignedForCompilation();
-
-        final Frame callerFrame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
-
-        assert callerFrame != null;
-        assert callerFrame.getFrameDescriptor() != null;
-
-        final FrameSlot visibilitySlot = callerFrame.getFrameDescriptor().findOrAddFrameSlot(
-                RubyModule.VISIBILITY_FRAME_SLOT_ID, "visibility for frame", FrameSlotKind.Object);
-
-        callerFrame.setObject(visibilitySlot, visibility);
-    }
-
-    public void visibilityMethod(Node currentNode, Object[] arguments, Visibility visibility) {
-        RubyNode.notDesignedForCompilation();
-
-        if (arguments.length == 0) {
-            setCurrentVisibility(visibility);
-        } else {
-            for (Object arg : arguments) {
-                final String methodName;
-
-                if (arg instanceof RubySymbol) {
-                    methodName = ((RubySymbol) arg).toString();
-                } else if (arg instanceof RubyString) {
-                    methodName = ((RubyString) arg).toString();
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-
-                final InternalMethod method = deepMethodSearch(methodName);
-
-                if (method == null) {
-                    throw new RuntimeException("Couldn't find method " + arg.toString());
-                }
-
-                /*
-                 * If the method was already defined in this class, that's fine
-                 * {@link addMethod} will overwrite it, otherwise we do actually
-                 * want to add a copy of the method with a different visibility
-                 * to this module.
-                 */
-                if (visibility == Visibility.MODULE_FUNCTION) {
-                    addMethod(currentNode, method.withVisibility(Visibility.PRIVATE));
-                    getSingletonClass(currentNode).addMethod(currentNode, method.withVisibility(Visibility.PUBLIC));
-                } else {
-                    addMethod(currentNode, method.withVisibility(visibility));
-                }
-            }
-        }
     }
 
     public Map<String, RubyConstant> getConstants() {
@@ -581,6 +519,31 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
                 return new IncludedModulesIterator(top);
             }
         };
+    }
+
+    public static interface MethodFilter {
+
+        boolean filter(InternalMethod method);
+
+    }
+
+    public Collection<RubySymbol> filterMethods(boolean includeAncestors, MethodFilter filter) {
+        final Map<String, InternalMethod> allMethods;
+        if (includeAncestors) {
+            allMethods = ModuleOperations.getAllMethods(this);
+        } else {
+            allMethods = getMethods();
+        }
+        final Map<String, InternalMethod> methods = ModuleOperations.withoutUndefinedMethods(allMethods);
+
+        final Set<RubySymbol> filtered = new HashSet<>();
+        for (InternalMethod method : methods.values()) {
+            if (filter.filter(method)) {
+                filtered.add(getContext().getSymbolTable().getSymbol(method.getName()));
+            }
+        }
+
+        return filtered;
     }
 
     public static class ModuleAllocator implements Allocator {

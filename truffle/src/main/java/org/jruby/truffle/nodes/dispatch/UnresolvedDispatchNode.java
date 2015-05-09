@@ -9,12 +9,16 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import java.util.concurrent.Callable;
-
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.interop.messages.Argument;
+import com.oracle.truffle.interop.messages.Read;
+import com.oracle.truffle.interop.messages.Receiver;
+import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
@@ -22,13 +26,10 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.util.cli.Options;
+
+import java.util.concurrent.Callable;
 
 public final class UnresolvedDispatchNode extends DispatchNode {
 
@@ -90,11 +91,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
                 } else {
                     depth++;
-                    if (isRubyBasicObject(receiverObject)) {
+                    if (receiverObject instanceof RubyBasicObject) {
                         newDispathNode = doRubyBasicObject(frame, first, receiverObject, methodName, argumentsObjects);
                     }
-                    else if (isForeign(receiverObject)) {
-                        return createForeign(argumentsObjects, first, methodName);
+                    else if (RubyGuards.isForeignObject(receiverObject)) {
+                        newDispathNode = createForeign(argumentsObjects, first, methodName);
                     } else {
                         newDispathNode = doUnboxedObject(frame, first, receiverObject, methodName);
                     }
@@ -108,12 +109,9 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         return dispatch.executeDispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
     }
 
-    private boolean isForeign(Object receiverObject) {
-        return false;
-    }
-
     private DispatchNode createForeign(Object argumentsObjects, DispatchNode first, Object methodName) {
-        throw new UnsupportedOperationException();
+        Object[] args = (Object[]) argumentsObjects;
+        return new CachedForeignDispatchNode(getContext(), first, methodName, args.length);
     }
 
     private DispatchNode doUnboxedObject(
@@ -231,6 +229,17 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     }
 
     private DispatchNode tryMultilanguage(VirtualFrame frame, DispatchNode first,  Object methodName, Object argumentsObjects) {
+        if (getContext().getMultilanguageObject() != null) {
+            CompilerAsserts.neverPartOfCompilation();
+            TruffleObject multilanguageObject = getContext().getMultilanguageObject();
+            ForeignObjectAccessNode readLanguage = ForeignObjectAccessNode.getAccess(Read.create(Receiver.create(), Argument.create()));
+            TruffleObject language = (TruffleObject) readLanguage.executeForeign(frame, multilanguageObject, methodName);
+            Object[] arguments = (Object[]) argumentsObjects;
+            if (language != null) {
+                // EXECUTE(READ(...),...) on language
+                return new CachedForeignGlobalDispatchNode(getContext(), first, methodName, language, arguments.length);
+            }
+        }
         return null;
     }
 

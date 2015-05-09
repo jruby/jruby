@@ -15,7 +15,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -35,11 +34,6 @@ public abstract class ProcCastNode extends RubyNode {
         toProc = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    public ProcCastNode(ProcCastNode prev) {
-        super(prev);
-        toProc = prev.toProc;
-    }
-
     @Specialization
     public RubyNilClass doNil(RubyNilClass nil) {
         return nil;
@@ -52,8 +46,6 @@ public abstract class ProcCastNode extends RubyNode {
 
     @Specialization
     public RubyProc doObject(VirtualFrame frame, RubyBasicObject object) {
-        notDesignedForCompilation();
-
         return (RubyProc) toProc.call(frame, object, "to_proc", null);
     }
 

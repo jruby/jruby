@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.literal;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
@@ -32,7 +33,7 @@ public class ConcatHashLiteralNode extends RubyNode {
 
     @Override
     public RubyHash executeRubyHash(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         final List<KeyValue> keyValues = new ArrayList<>();
 

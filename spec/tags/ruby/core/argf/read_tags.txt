@@ -1,0 +1,12 @@
+fails:ARGF.read reads the contents of a file
+fails:ARGF.read treats first nil argument as no length limit
+fails:ARGF.read treats second nil argument as no output buffer
+fails:ARGF.read treats second argument as an output buffer
+fails:ARGF.read reads a number of bytes from the first file
+fails:ARGF.read reads from a single file consecutively
+fails:ARGF.read reads the contents of two files
+fails:ARGF.read reads the contents of one file and some characters from the second
+fails:ARGF.read reads across two files consecutively
+fails:ARGF.read reads the contents of the same file twice
+fails:ARGF.read reads the contents of a special device file
+fails:ARGF.read reads the contents of the file with default encoding

@@ -757,7 +757,7 @@ public class ShellLauncher {
     }
 
     private static Process popenShared(Ruby runtime, IRubyObject[] strings, Map env) throws IOException {
-        return popenShared(runtime, strings, env, false);
+        return popenShared(runtime, strings, env, true);
     }
 
     private static Process popenShared(Ruby runtime, IRubyObject[] strings, Map env, boolean addShell) throws IOException {
@@ -785,8 +785,7 @@ public class ShellLauncher {
             LaunchConfig lc = new LaunchConfig(runtime, strings, false);
             boolean useShell = Platform.IS_WINDOWS ? lc.shouldRunInShell() : false;
             if (addShell) for (String arg : args) useShell |= shouldUseShell(arg);
-            
-            // CON: popen is a case where I think we should just always shell out.
+
             if (strings.length == 1) {
                 if (useShell) {
                     // single string command, pass to sh to expand wildcards
@@ -1390,7 +1389,7 @@ public class ShellLauncher {
         for (int i = 0; i < originalArgs.length; i++) {
             if (hasGlobCharacter(originalArgs[i])) {
                 // FIXME: Encoding lost here
-                List<ByteList> globs = Dir.push_glob(runtime.getPosix(), runtime.getCurrentDirectory(),
+                List<ByteList> globs = Dir.push_glob(runtime, runtime.getCurrentDirectory(),
                         new ByteList(originalArgs[i].getBytes()), 0);
 
                 for (ByteList glob: globs) {

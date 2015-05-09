@@ -1,49 +1,7 @@
 fails:IO#readlines raises an IOError if the stream is closed
-fails:IO#readlines when passed no arguments returns an Array containing lines based on $/
-fails:IO#readlines when passed no arguments updates self's position
-fails:IO#readlines when passed no arguments updates self's lineno based on the number of lines read
-fails:IO#readlines when passed no arguments does not change $_
-fails:IO#readlines when passed no arguments returns an empty Array when self is at the end
-fails:IO#readlines when passed nil returns the remaining content as one line starting at the current position
-fails:IO#readlines when passed an empty String returns an Array containing all paragraphs
-fails:IO#readlines when passed a separator returns an Array containing lines based on the separator
-fails:IO#readlines when passed a separator returns an empty Array when self is at the end
-fails:IO#readlines when passed a separator updates self's lineno based on the number of lines read
-fails:IO#readlines when passed a separator updates self's position based on the number of characters read
-fails:IO#readlines when passed a separator does not change $_
-fails:IO#readlines when passed a separator tries to convert the passed separator to a String using #to_str
 fails:IO#readlines when passed a string that starts with a | gets data from the standard out of the subprocess
 fails:IO#readlines when passed a string that starts with a | gets data from a fork when passed -
-fails:IO#readlines raises an IOError if the stream is opened for append only
-fails:IO#readlines raises an IOError if the stream is opened for write only
-fails:IO.readlines raises an Errno::ENOENT if the file does not exist
-fails:IO.readlines yields a single string with entire content when the separator is nil
-fails:IO.readlines yields a sequence of paragraphs when the separator is an empty string
-fails:IO.readlines when passed name calls #to_path to convert the name
-fails:IO.readlines when passed name defaults to $/ as the separator
-fails:IO.readlines when passed name, object calls #to_str to convert the object to a separator
-fails:IO.readlines when passed name, object when the object is a Fixnum defaults to $/ as the separator
 fails:IO.readlines when passed name, object when the object is a Fixnum uses the object as a limit if it is a Fixnum
-fails:IO.readlines when passed name, object when the object is a String uses the value as the separator
 fails:IO.readlines when passed name, object when the object is a String accepts non-ASCII data as separator
-fails:IO.readlines when passed name, object when the object is a Hash uses the value as the options hash
-fails:IO.readlines when passed name, object, object when the first object is a Fixnum uses the second object as an options Hash
-fails:IO.readlines when passed name, object, object when the first object is a Fixnum calls #to_hash to convert the second object to a Hash
-fails:IO.readlines when passed name, object, object when the first object is a String uses the second object as a limit if it is a Fixnum
-fails:IO.readlines when passed name, object, object when the first object is a String calls #to_int to convert the second object
-fails:IO.readlines when passed name, object, object when the first object is a String uses the second object as an options Hash
-fails:IO.readlines when passed name, object, object when the first object is a String calls #to_hash to convert the second object to a Hash
-fails:IO.readlines when passed name, object, object when the first object is not a String or Fixnum calls #to_str to convert the object to a String
-fails:IO.readlines when passed name, object, object when the first object is not a String or Fixnum uses the second object as a limit if it is a Fixnum
-fails:IO.readlines when passed name, object, object when the first object is not a String or Fixnum calls #to_int to convert the second object
-fails:IO.readlines when passed name, object, object when the first object is not a String or Fixnum uses the second object as an options Hash
-fails:IO.readlines when passed name, object, object when the first object is not a String or Fixnum calls #to_hash to convert the second object to a Hash
-fails:IO.readlines when passed name, separator, limit, options calls #to_path to convert the name object
-fails:IO.readlines when passed name, separator, limit, options calls #to_str to convert the separator object
-fails:IO.readlines when passed name, separator, limit, options calls #to_int to convert the limit argument
-fails:IO.readlines when passed name, separator, limit, options calls #to_hash to convert the options object
-fails:IO.readlines encodes lines using the default external encoding
-fails:IO.readlines encodes lines using the default internal encoding, when set
-fails:IO.readlines ignores the default internal encoding if the external encoding is ASCII-8BIT
 windows:IO.readlines does not change $_
 windows:IO.readlines raises TypeError if the first parameter is nil

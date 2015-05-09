@@ -21,7 +21,7 @@ public class RaiseException extends RuntimeException {
 
     // TODO CS 1-Mar-15 shouldn't this be a ControlFlowException?
 
-    private transient final RubyException rubyException;
+    private final RubyException rubyException;
 
     public RaiseException(RubyException rubyException) {
         this.rubyException = rubyException;

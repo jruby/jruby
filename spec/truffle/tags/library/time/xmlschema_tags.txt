@@ -1,0 +1,1 @@
+fails:Time.xmlschema parses ISO-8601 strings

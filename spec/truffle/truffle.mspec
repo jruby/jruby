@@ -17,32 +17,14 @@ class MSpecScript
     # Can't load these - so tags aren't enough to exclude them. The problem is
     # either fixtures or syntax. Some of them are probably easy fixes.
 
-    # as_superuser, as_user, Process.euid
-    "^spec/ruby/core/file/chown_spec.rb",
-    "^spec/ruby/core/file/lchown_spec.rb",
-    "^spec/ruby/core/process/euid_spec.rb",
-    "^spec/ruby/core/process/kill_spec.rb",
-    "^spec/ruby/core/process/setpriority_spec.rb",
-    "^spec/ruby/core/process/uid_spec.rb",
+    # This seems to hang sometimes on Travis
+    "^spec/ruby/core/signal",
 
     # require 'socket'
     "^spec/ruby/core/file/socket_spec.rb",
 
-    # FileTest in describe
-    "^spec/ruby/core/filetest",
-
-    # STDOUT.tty?
-    "^spec/ruby/core/io/tty_spec.rb",
-    "^spec/ruby/core/io/isatty_spec.rb",
-
     # require 'fcntl'
     "^spec/ruby/core/io/reopen_spec.rb",
-
-    # __method__ in fixtures
-    "^spec/ruby/core/kernel/__method___spec.rb",
-
-    # autoload in describe
-    "^spec/ruby/core/kernel/autoload_spec.rb",
 
     # seem side-effecting when not run in isolation
     "^spec/ruby/core/marshal/dump_spec.rb",
@@ -67,6 +49,9 @@ class MSpecScript
 
     # infinite loop on some examples
     # "^spec/ruby/core/string/gsub_spec.rb",
+
+    # require etc, linux only spec
+    "^spec/ruby/core/io/advise_spec.rb"
   ]
 
   core += [
@@ -99,16 +84,73 @@ class MSpecScript
   
   set :core, core
 
-  set :rubysl, [
-    "spec/truffle/spec/rubysl/rubysl-erb/spec",
-    "spec/truffle/spec/rubysl/rubysl-set/spec",
-    "spec/truffle/spec/rubysl/rubysl-strscan/spec"
+  set :library, [
+    "spec/ruby/library/abbrev",
+    "spec/ruby/library/base64",
+    "spec/ruby/library/complex",
+    "spec/ruby/library/conditionvariable",
+    "spec/ruby/library/date",
+    "spec/ruby/library/datetime",
+    "spec/ruby/library/delegate",
+    "spec/ruby/library/cgi",
+    "spec/ruby/library/erb",
+    "spec/ruby/library/getoptlong",
+    "spec/ruby/library/matrix",
+    "spec/ruby/library/logger",
+    "spec/ruby/library/observer",
+    "spec/ruby/library/open3",
+    "spec/ruby/library/openstruct",
+    "spec/ruby/library/pathname",
+    "spec/ruby/library/prime",
+    "spec/ruby/library/scanf",
+    "spec/ruby/library/set",
+    "spec/ruby/library/shellwords",
+    "spec/ruby/library/singleton",
+    "spec/ruby/library/stringio",
+    "spec/ruby/library/stringscanner",
+    "spec/ruby/library/tempfile",
+    "spec/ruby/library/thread",
+    "spec/ruby/library/time",
+    "spec/ruby/library/tmpdir",
+    "spec/ruby/library/uri",
+
+    # Not yet explored
+    "^spec/ruby/library/bigdecimal",
+    "^spec/ruby/library/continuation",
+    "^spec/ruby/library/csv",
+    "^spec/ruby/library/digest",
+    "^spec/ruby/library/drb",
+    "^spec/ruby/library/etc",
+    "^spec/ruby/library/expect",
+    "^spec/ruby/library/fiber",
+    "^spec/ruby/library/ipaddr",
+    "^spec/ruby/library/mathn",
+    "^spec/ruby/library/net",
+    "^spec/ruby/library/openssl",
+    "^spec/ruby/library/readline",
+    "^spec/ruby/library/resolv",
+    "^spec/ruby/library/rexml",
+    "^spec/ruby/library/securerandom",
+    "^spec/ruby/library/syslog",
+    "^spec/ruby/library/timeout",
+    "^spec/ruby/library/weakref",
+    "^spec/ruby/library/win32ole",
+    "^spec/ruby/library/zlib",
+    "^spec/ruby/library/yaml",
+    "^spec/ruby/library/socket",
+
+    # Load issues with 'delegate'.
+    "^spec/ruby/library/delegate/delegate_class/instance_method_spec.rb",
+    "^spec/ruby/library/delegate/delegator/protected_methods_spec.rb",
+
+    # LoadError for `load "prime.rb"`
+    "^spec/ruby/library/prime/each_spec.rb",
   ]
 
   set :tags_patterns, [
                         [%r(^.*/language/),     'spec/truffle/tags/language/'],
                         [%r(^.*/core/),         'spec/truffle/tags/core/'],
-                        [%r(^.*/rubysl/),       'spec/truffle/tags/rubysl/'],
+                        [%r(^.*/library/),      'spec/truffle/tags/library/'],
                         [/_spec.rb$/,           '_tags.txt']
                       ]
 
@@ -122,6 +164,6 @@ class MSpecScript
   MSpec.disable_feature :fork
   MSpec.enable_feature :generator
 
-  set :files, get(:language) + get(:core) + get(:rubysl)
+  set :files, get(:language) + get(:core) + get(:library)
 
 end

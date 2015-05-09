@@ -9,34 +9,27 @@
  */
 package org.jruby.truffle.nodes.array;
 
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 
-import java.util.Arrays;
-
 @NodeChildren({
         @NodeChild(value="array", type=RubyNode.class),
         @NodeChild(value="requiredCapacity", type=RubyNode.class)
 })
-@ImportGuards(ArrayGuards.class)
+@ImportStatic(ArrayGuards.class)
 public abstract class GeneralizeArrayNode extends RubyNode {
 
     public GeneralizeArrayNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-    }
-
-    public GeneralizeArrayNode(GeneralizeArrayNode prev) {
-        super(prev);
     }
 
     public abstract Object executeGeneralize(VirtualFrame frame, RubyArray array, int requiredCapacity);
@@ -44,7 +37,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     // TODO CS 9-Feb-15 should use ArrayUtils.capacity?
 
     @Specialization(
-            guards={"isNullArray"}
+            guards={"isNullArray(array)"}
     )
     public RubyArray generalizeNull(RubyArray array, int requiredCapacity) {
         array.setStore(new Object[requiredCapacity], array.getSize());
@@ -52,7 +45,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isIntArray"}
+            guards={"isIntArray(array)"}
     )
     public RubyArray generalizeInt(RubyArray array, int requiredCapacity) {
         final int[] intStore = (int[]) array.getStore();
@@ -61,7 +54,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isLongArray"}
+            guards={"isLongArray(array)"}
     )
     public RubyArray generalizeLong(RubyArray array, int requiredCapacity) {
         final long[] intStore = (long[]) array.getStore();
@@ -70,7 +63,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isDoubleArray"}
+            guards={"isDoubleArray(array)"}
     )
     public RubyArray generalizeDouble(RubyArray array, int requiredCapacity) {
         final double[] intStore = (double[]) array.getStore();

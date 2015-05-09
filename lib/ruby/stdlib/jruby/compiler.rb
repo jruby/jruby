@@ -162,6 +162,9 @@ module JRuby::Compiler
           IRWriter.persist(stream, scope)
           string = String.from_java_bytes(bytes.to_byte_array, 'BINARY')
 
+          # bust it up into 32k-1 chunks
+          pieces = string.scan(/.{1,32767}/m)
+
           cls = ClassWriter.new(ClassWriter::COMPUTE_MAXS | ClassWriter::COMPUTE_FRAMES)
           cls.visit(
               Opcodes::V1_7,
@@ -185,7 +188,17 @@ module JRuby::Compiler
           main.astore(1)
           main.aload(1)
           main.aload(1)
-          main.ldc(string)
+
+          # put String back together
+          main.newobj("java/lang/StringBuilder")
+          main.dup
+          main.invokespecial("java/lang/StringBuilder", "<init>", "()V")
+          pieces.each do |piece|
+            main.ldc(piece)
+            main.invokevirtual("java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;")
+          end
+          main.invokevirtual("java/lang/Object", "toString", "()Ljava/lang/String;")
+
           main.ldc("ISO-8859-1")
           main.invokevirtual("java/lang/String", "getBytes", "(Ljava/lang/String;)[B")
           main.invokestatic("org/jruby/ir/runtime/IRRuntimeHelpers", "decodeScopeFromBytes", "(Lorg/jruby/Ruby;[B)Lorg/jruby/ir/IRScope;")

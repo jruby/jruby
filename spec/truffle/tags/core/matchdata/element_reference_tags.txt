@@ -1,2 +1,1 @@
 fails:MatchData#[] supports accessors [start, length]
-fails:MatchData#[] supports ranges [start..end]

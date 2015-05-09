@@ -33,12 +33,6 @@ public abstract class AliasNode extends RubyNode {
         this.oldName = oldName;
     }
 
-    public AliasNode(AliasNode prev) {
-        super(prev);
-        newName = prev.newName;
-        oldName = prev.oldName;
-    }
-
     public Object noClass() {
         CompilerDirectives.transferToInterpreter();
         throw new RaiseException(getContext().getCoreLibrary().typeErrorNoClassToMakeAlias(this));
@@ -71,15 +65,15 @@ public abstract class AliasNode extends RubyNode {
 
     @Specialization
     public Object alias(RubyModule module) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         module.alias(this, newName, oldName);
         return null;
     }
 
-    @Specialization(guards = {"!isRubyModule", "!isRubyBignum"})
+    @Specialization(guards = {"!isRubyModule(object)", "!isRubyBignum(object)"})
     public Object alias(RubyBasicObject object) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         object.getSingletonClass(this).alias(this, newName, oldName);
         return null;

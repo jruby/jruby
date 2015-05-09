@@ -1,4 +1,3 @@
-fails:Module#alias_method converts the names using #to_str
 fails:Module#alias_method is a private method
 fails:Module#alias_method aliasing special methods keeps initialize private when aliasing
 fails:Module#alias_method aliasing special methods keeps initialize_copy private when aliasing

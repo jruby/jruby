@@ -982,7 +982,7 @@ public class RubyFloat extends RubyNumeric {
             result = RubyFloat.newFloat(input.getRuntime(), Double.POSITIVE_INFINITY);
         } else {
             result = RubyFloat.newFloat(input.getRuntime(),
-                    ConvertDouble.byteListToDouble(value, false));
+                    ConvertDouble.byteListToDouble19(value, false));
         }
         input.registerLinkTarget(result);
         return result;

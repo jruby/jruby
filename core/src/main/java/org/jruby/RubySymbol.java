@@ -52,6 +52,7 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ContextAwareBlockBody;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
@@ -238,8 +239,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
 
         RubyString str = RubyString.newString(runtime, result); 
         // TODO: 1.9 rb_enc_symname_p
-        if (isPrintable() && isSymbolName19(symbol)) return str;
-            
+        Encoding resenc = runtime.getDefaultInternalEncoding();
+        if (resenc == null) {
+            resenc = runtime.getDefaultExternalEncoding();
+        }
+
+        if (isPrintable() && (resenc.equals(symbolBytes.getEncoding()) || str.isAsciiOnly()) && isSymbolName19(symbol)) {
+            return str;
+        }
+    
         str = (RubyString)str.inspect19();
         ByteList bytes = str.getByteList();
         bytes.set(0, ':');
@@ -274,7 +282,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
     @JRubyMethod(name = "===", required = 1)
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return super.op_equal(context, other);
+        return context.runtime.newBoolean(this == other);
+    }
+
+    @JRubyMethod(name = "==", required = 1)
+    @Override
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+        return context.runtime.newBoolean(this == other);
     }
 
     @Deprecated
@@ -411,7 +425,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
     public IRubyObject to_proc(ThreadContext context) {
         StaticScope scope = context.runtime.getStaticScopeFactory().getDummyScope();
         final CallSite site = new FunctionalCachingCallSite(symbol);
-        BlockBody body = new ContextAwareBlockBody(scope, Arity.OPTIONAL, BlockBody.SINGLE_RESTARG) {
+        BlockBody body = new ContextAwareBlockBody(scope, Signature.OPTIONAL) {
             private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block block) {
                 if (array.isEmpty()) {
                     throw context.runtime.newArgumentError("no receiver given");
@@ -477,11 +491,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
     }
     
     private static boolean isIdentStart(char c) {
-        return ((c >= 'a' && c <= 'z')|| (c >= 'A' && c <= 'Z') || c == '_');
+        return ((c >= 'a' && c <= 'z')|| (c >= 'A' && c <= 'Z') || c == '_' || !(c < 128));
     }
     
     private static boolean isIdentChar(char c) {
-        return ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c == '_');
+        return ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c == '_' || !(c < 128));
     }
     
     private static boolean isIdentifier(String s) {
@@ -533,7 +547,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
             
             if (!enc.isPrint(c)) return false;
             
-            p += codeLength(runtime, enc, c);
+            p += codeLength(enc, c);
         }
         
         return true;

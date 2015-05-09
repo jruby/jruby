@@ -1,9 +1,5 @@
 fails:String#unpack with format 'N' ignores whitespace in the format string
 fails:String#unpack with format 'N' calls #to_str to coerce the directives string
 fails:String#unpack with format 'N' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'N' raises an ArgumentError when the format modifier is '_'
-fails:String#unpack with format 'N' raises an ArgumentError when the format modifier is '!'
 fails:String#unpack with format 'n' calls #to_str to coerce the directives string
 fails:String#unpack with format 'n' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'n' raises an ArgumentError when the format modifier is '_'
-fails:String#unpack with format 'n' raises an ArgumentError when the format modifier is '!'

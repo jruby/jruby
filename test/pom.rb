@@ -16,31 +16,15 @@ def truffle_spec_config(spec_type, generate_report)
     '<arg value="-J-Xmx1G" />' +
     '<arg value="spec/mspec/bin/mspec" />' +
     '<arg value="run" />' +
-    (generate_report ? '<arg value="-f" /><arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />' : '') +
-    '<arg value="-t" />' +
-    # Workaround for RubySpec #292
-    '<arg value="spec/truffle/spec-wrapper" />' +
-    #'<arg value="bin/jruby" />' +
-    #'<arg value="-T" />' +
-    #'<arg value="-X+T" />' +
-    #'<arg value="-T" />' +
-    #'<arg value="-Xparser.warn.useless_use_of=false" />' +
-    #'<arg value="-T" />' +
-    #'<arg value="-Xparser.warn.not_reached=false" />' +
-    #'<arg value="-T" />' +
-    #'<arg value="-Xparser.warn.grouped_expressions=false" />' +
-    #'<arg value="-T" />' +
-    #'<arg value="-Xparser.warn.shadowing_local=false" />' +
-    #'<arg value="-T" />' +
-    #'<arg value="-Xparser.warn.regex_condition=false" />' +
-    #'<arg value="-T" />' +
-    #'<arg value="-Xparser.warn.argument_prefix=false" />' +
-    #'<arg value="-T" />' +
-    #'<arg value="-J-ea" />' +
     '<arg value="--config" />' +
     '<arg value="spec/truffle/truffle.mspec" />' +
     '<arg value="--excl-tag" />' +
     '<arg value="fails" />' +
+    (if generate_report
+      '<arg value="--format" /><arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />'
+    else
+      '<arg value="--format" /><arg value="specdoc" />' # Need lots of output to keep Travis happy
+    end) +
     "<arg value=\":#{spec_type}\" />" +
     '</exec>' +
   '</target>'
@@ -237,13 +221,13 @@ project 'JRuby Integration Tests' do
 
   end
 
-  profile 'truffle-specs-rubysl' do
+  profile 'truffle-specs-library' do
 
     plugin :antrun do
       execute_goals( 'run',
                      :id => 'rake',
                      :phase => 'test',
-                     :configuration => [ xml( truffle_spec_config(:rubysl, false) ) ] )
+                     :configuration => [ xml( truffle_spec_config(:library, false) ) ] )
     end
 
   end
@@ -292,7 +276,7 @@ project 'JRuby Integration Tests' do
 
   end
 
-  profile 'truffle-specs-rubysl-report' do
+  profile 'truffle-specs-library-report' do
 
     plugin :antrun do
       dependency 'org.apache.ant', 'ant-junit', '${ant.version}'
@@ -300,7 +284,7 @@ project 'JRuby Integration Tests' do
       execute_goals( 'run',
                      :id => 'rake',
                      :phase => 'test',
-                     :configuration => [ xml( truffle_spec_config(:rubysl, true) ) ] )
+                     :configuration => [ xml( truffle_spec_config(:library, true) ) ] )
 
       execute_goals( 'run',
                      :id => 'junit-report-generation',
@@ -325,10 +309,28 @@ project 'JRuby Integration Tests' do
                         '<exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">' +
                           '<arg value="-J-server" />' +
                           '<arg value="-X+T" />' +
-                          '<arg value="-Xtruffle.debug.enable_assert_constant=true" />' +
                           '<arg value="test/truffle/pe/pe.rb" />' +
                         '</exec>' +
                       '</target>' ) ] )
+    end
+
+  end
+
+
+  profile 'truffle-mri-tests' do
+
+    plugin :antrun do
+      execute_goals('run',
+                    :id => 'rake',
+                    :phase => 'test',
+                    :configuration => [xml(
+                                           '<target>' +
+                                               '<exec dir="${jruby.home}" executable="ruby" failonerror="true">' +
+                                               '<arg value="tool/jt.rb" />' +
+                                               '<arg value="test" />' +
+                                               '<arg value="mri" />' +
+                                               '</exec>' +
+                                               '</target>')])
     end
 
   end

@@ -11,6 +11,7 @@ package org.jruby.truffle.translator;
 
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.translator.TranslatorEnvironment.BlockID;
 
 /**
  * Translator environment, unique per parse/translation.
@@ -18,9 +19,11 @@ import org.jruby.truffle.runtime.RubyContext;
 public class ParseEnvironment {
 
     private LexicalScope lexicalScope;
+    private long nextReturnID;
 
     public ParseEnvironment(RubyContext context) {
         lexicalScope = context.getRootLexicalScope();
+        nextReturnID = 0;
     }
 
     public LexicalScope getLexicalScope() {
@@ -33,6 +36,20 @@ public class ParseEnvironment {
 
     public void popLexicalScope() {
         lexicalScope = lexicalScope.getParent();
+    }
+
+    public long allocateReturnID() {
+        if (nextReturnID == Long.MAX_VALUE) {
+            throw new RuntimeException("Return IDs exhausted");
+        }
+
+        final long allocated = nextReturnID;
+        nextReturnID++;
+        return allocated;
+    }
+
+    public BlockID allocateBlockID() {
+        return new BlockID();
     }
 
 }

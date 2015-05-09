@@ -1,2 +1,3 @@
 fails:Module#name is set with a conditional assignment to a nested constant
 fails:Module#name preserves the encoding in which the class was defined
+fails:Module#name is nil for a nested module created with the module keyword

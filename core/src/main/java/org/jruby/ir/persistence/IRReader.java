@@ -66,17 +66,17 @@ public class IRReader {
 
         IRScope parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
         Signature signature;
+
         if (type == IRScopeType.CLOSURE || type == IRScopeType.FOR) {
-            signature = Signature.decode(decoder.decodeInt());
+            signature = Signature.decode(decoder.decodeLong());
         } else {
             signature = Signature.OPTIONAL;
         }
-        int argumentType = type == IRScopeType.CLOSURE ? decoder.decodeInt() : -1;
         StaticScope parentScope = parent == null ? null : parent.getStaticScope();
         // FIXME: It seems wrong we have static scope + local vars both being persisted.  They must have the same values
         // and offsets?
         StaticScope staticScope = decodeStaticScope(decoder, parentScope);
-        IRScope scope = createScope(manager, type, name, line, parent, signature, argumentType, staticScope);
+        IRScope scope = createScope(manager, type, name, line, parent, signature, staticScope);
 
         scope.setTemporaryVariableCount(tempVarsCount);
         // FIXME: Replace since we are defining this...perhaps even make a persistence constructor
@@ -120,14 +120,13 @@ public class IRReader {
     private static StaticScope decodeStaticScope(IRReaderDecoder decoder, StaticScope parentScope) {
         StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, decoder.decodeStaticScopeType(), decoder.decodeStringArray());
 
-        scope.setRequiredArgs(decoder.decodeInt()); // requiredArgs has no constructor ...
+        scope.setSignature(decoder.decodeSignature());
 
         return scope;
     }
 
     public static IRScope createScope(IRManager manager, IRScopeType type, String name, int line,
-            IRScope lexicalParent, Signature signature, int argumentType,
-            StaticScope staticScope) {
+            IRScope lexicalParent, Signature signature, StaticScope staticScope) {
 
         switch (type) {
         case CLASS_BODY:

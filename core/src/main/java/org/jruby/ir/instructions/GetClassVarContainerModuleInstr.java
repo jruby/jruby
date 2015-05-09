@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -45,6 +46,10 @@ public class GetClassVarContainerModuleInstr extends ResultBaseInstr implements 
         super.encode(e);
         e.encode(getStartingScope());
         e.encode(getObject());
+    }
+
+    public static GetClassVarContainerModuleInstr decode(IRReaderDecoder d) {
+        return new GetClassVarContainerModuleInstr(d.decodeVariable(), d.decodeOperand(), d.decodeVariable());
     }
 
     @Override

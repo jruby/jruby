@@ -28,6 +28,19 @@
 
 module Kernel
 
+  def Array(obj)
+    ary = Rubinius::Type.check_convert_type obj, Array, :to_ary
+
+    return ary if ary
+
+    if array = Rubinius::Type.check_convert_type(obj, Array, :to_a)
+      array
+    else
+      [obj]
+    end
+  end
+  module_function :Array
+
   def Complex(*args)
     Rubinius.privately do
       Complex.convert(*args)
@@ -75,6 +88,57 @@ module Kernel
   end
   private :FloatValue
 
+  def Hash(obj)
+    return {} if obj.nil? || obj == []
+
+    if hash = Rubinius::Type.check_convert_type(obj, Hash, :to_hash)
+      return hash
+    end
+
+    raise TypeError, "can't convert #{obj.class} into Hash"
+  end
+  module_function :Hash
+
+  def Integer(obj, base=nil)
+    if obj.kind_of? String
+      if obj.empty?
+        raise ArgumentError, "invalid value for Integer: (empty string)"
+      else
+        base ||= 0
+        return obj.to_inum(base, true)
+      end
+    end
+
+    if base
+      raise ArgumentError, "base is only valid for String values"
+    end
+
+    case obj
+      when Integer
+        obj
+      when Float
+        if obj.nan? or obj.infinite?
+          raise FloatDomainError, "unable to coerce #{obj} to Integer"
+        else
+          obj.to_int
+        end
+      when NilClass
+        raise TypeError, "can't convert nil into Integer"
+      else
+        # Can't use coerce_to or try_convert because I think there is an
+        # MRI bug here where it will return the value without checking
+        # the return type.
+        if obj.respond_to? :to_int
+          if val = obj.to_int
+            return val
+          end
+        end
+
+        Rubinius::Type.coerce_to obj, Integer, :to_i
+    end
+  end
+  module_function :Integer
+
   ##
   # MRI uses a macro named StringValue which has essentially the same
   # semantics as obj.coerce_to(String, :to_str), but rather than using that
@@ -106,6 +170,22 @@ module Kernel
     singleton_class.send(:define_method, *args, &block)
   end
 
+  def extend(*modules)
+    raise ArgumentError, "wrong number of arguments (0 for 1+)" if modules.empty?
+    Rubinius.check_frozen
+
+    modules.reverse_each do |mod|
+      Rubinius.privately do
+        mod.extend_object self
+      end
+
+      Rubinius.privately do
+        mod.extended self
+      end
+    end
+    self
+  end
+
   def itself
     self
   end
@@ -133,5 +213,97 @@ module Kernel
     nil
   end
   module_function :warn
+
+  def srand(seed=undefined)
+    if undefined.equal? seed
+      seed = Thread.current.randomizer.generate_seed
+    end
+    seed = Rubinius::Type.coerce_to seed, Integer, :to_int
+    Thread.current.randomizer.swap_seed seed
+  end
+  module_function :srand
+
+  def tap
+    yield self
+    self
+  end
+
+  def test(cmd, file1, file2=nil)
+    case cmd
+      when ?d
+        File.directory? file1
+      when ?e
+        File.exist? file1
+      when ?f
+        File.file? file1
+      when ?l
+        File.symlink? file1
+      when ?r
+        File.readable? file1
+      when ?R
+        File.readable_real? file1
+      when ?w
+        File.writable? file1
+      when ?W
+        File.writable_real? file1
+      when ?A
+        File.atime file1
+      when ?C
+        File.ctime file1
+      when ?M
+        File.mtime file1
+      else
+        raise NotImplementedError, "command ?#{cmd.chr} not implemented"
+    end
+  end
+  module_function :test
+
+  def open(obj, *rest, &block)
+    if obj.respond_to?(:to_open)
+      obj = obj.to_open(*rest)
+
+      if block_given?
+        return yield(obj)
+      else
+        return obj
+      end
+    end
+
+    path = Rubinius::Type.coerce_to_path obj
+
+    if path.kind_of? String and path.prefix? '|'
+      return IO.popen(path[1..-1], *rest, &block)
+    end
+
+    File.open(path, *rest, &block)
+  end
+  module_function :open
+
+  def p(*a)
+    return nil if a.empty?
+    a.each { |obj| $stdout.puts obj.inspect }
+    $stdout.flush
+
+    a.size == 1 ? a.first : a
+  end
+  module_function :p
+
+  def puts(*a)
+    $stdout.puts(*a)
+    nil
+  end
+  module_function :puts
+
+  def loop
+    return to_enum(:loop) unless block_given?
+
+    begin
+      while true
+        yield
+      end
+    rescue StopIteration
+    end
+  end
+  module_function :loop
 
 end

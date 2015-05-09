@@ -16,37 +16,28 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
-
+import org.jruby.ast.ArgsNode;
+import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.nodes.objects.ClassNode;
-import org.jruby.truffle.nodes.objects.ClassNodeFactory;
+import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyMethod;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.core.RubyUnboundMethod;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "Method")
 public abstract class MethodNodes {
 
     @CoreMethod(names = { "==", "eql?" }, required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
+    public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child protected ReferenceEqualNode referenceEqualNode;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
         }
 
         protected boolean areSame(VirtualFrame frame, Object left, Object right) {
@@ -62,7 +53,7 @@ public abstract class MethodNodes {
             return areSame(frame, a.getReceiver(), b.getReceiver()) && a.getMethod() == b.getMethod();
         }
 
-        @Specialization(guards = "!isRubyMethod(arguments[1])")
+        @Specialization(guards = "!isRubyMethod(b)")
         public boolean equal(RubyMethod a, Object b) {
             return false;
         }
@@ -70,14 +61,10 @@ public abstract class MethodNodes {
     }
 
     @CoreMethod(names = "arity")
-    public abstract static class ArityNode extends CoreMethodNode {
+    public abstract static class ArityNode extends CoreMethodArrayArgumentsNode {
 
         public ArityNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ArityNode(ArityNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -88,7 +75,7 @@ public abstract class MethodNodes {
     }
 
     @CoreMethod(names = "call", needsBlock = true, argumentsAsArray = true)
-    public abstract static class CallNode extends CoreMethodNode {
+    public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IndirectCallNode callNode;
 
@@ -97,13 +84,8 @@ public abstract class MethodNodes {
             callNode = Truffle.getRuntime().createIndirectCallNode();
         }
 
-        public CallNode(CallNode prev) {
-            super(prev);
-            callNode = prev.callNode;
-        }
-
         @Specialization
-        public Object call(VirtualFrame frame, RubyMethod method, Object[] arguments, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public Object call(VirtualFrame frame, RubyMethod method, Object[] arguments, UndefinedPlaceholder block) {
             return doCall(frame, method, arguments, null);
         }
 
@@ -125,34 +107,26 @@ public abstract class MethodNodes {
     }
 
     @CoreMethod(names = "name")
-    public abstract static class NameNode extends CoreMethodNode {
+    public abstract static class NameNode extends CoreMethodArrayArgumentsNode {
 
         public NameNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public NameNode(NameNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubySymbol name(RubyMethod method) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
-            return getContext().newSymbol(method.getMethod().getName());
+            return getContext().getSymbol(method.getMethod().getName());
         }
 
     }
 
     @CoreMethod(names = "owner")
-    public abstract static class OwnerNode extends CoreMethodNode {
+    public abstract static class OwnerNode extends CoreMethodArrayArgumentsNode {
 
         public OwnerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public OwnerNode(OwnerNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -162,15 +136,31 @@ public abstract class MethodNodes {
 
     }
 
-    @CoreMethod(names = "receiver")
-    public abstract static class ReceiverNode extends CoreMethodNode {
+    @CoreMethod(names = "parameters")
+    public abstract static class ParametersNode extends CoreMethodArrayArgumentsNode {
 
-        public ReceiverNode(RubyContext context, SourceSection sourceSection) {
+        public ParametersNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ReceiverNode(ReceiverNode prev) {
-            super(prev);
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyArray parameters(RubyMethod method) {
+            final ArgsNode argsNode = method.getMethod().getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
+
+            final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
+
+            return (RubyArray) getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
+                    argsDesc, true));
+        }
+
+    }
+
+    @CoreMethod(names = "receiver")
+    public abstract static class ReceiverNode extends CoreMethodArrayArgumentsNode {
+
+        public ReceiverNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
         }
 
         @Specialization
@@ -181,24 +171,20 @@ public abstract class MethodNodes {
     }
 
     @CoreMethod(names = "source_location")
-    public abstract static class SourceLocationNode extends CoreMethodNode {
+    public abstract static class SourceLocationNode extends CoreMethodArrayArgumentsNode {
 
         public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public SourceLocationNode(SourceLocationNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object sourceLocation(RubyMethod method) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             SourceSection sourceSection = method.getMethod().getSharedMethodInfo().getSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 RubyString file = getContext().makeString(sourceSection.getSource().getName());
                 return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
@@ -209,26 +195,45 @@ public abstract class MethodNodes {
     }
 
     @CoreMethod(names = "unbind")
-    public abstract static class UnbindNode extends CoreMethodNode {
+    public abstract static class UnbindNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ClassNode classNode;
 
         public UnbindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = ClassNodeFactory.create(context, sourceSection, null);
-        }
-
-        public UnbindNode(UnbindNode prev) {
-            super(prev);
-            classNode = prev.classNode;
+            classNode = ClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
-        public RubyUnboundMethod unbind(RubyMethod method) {
-            notDesignedForCompilation();
+        public RubyUnboundMethod unbind(VirtualFrame frame, RubyMethod method) {
+            CompilerDirectives.transferToInterpreter();
 
-            RubyClass receiverClass = classNode.executeGetClass(method.getReceiver());
+            RubyClass receiverClass = classNode.executeGetClass(frame, method.getReceiver());
             return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), receiverClass, method.getMethod());
+        }
+
+    }
+
+    @CoreMethod(names = "to_proc")
+    public abstract static class ToProcNode extends CoreMethodArrayArgumentsNode {
+
+        public ToProcNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyProc toProc(RubyMethod method) {
+            return new RubyProc(
+                    getContext().getCoreLibrary().getProcClass(),
+                    RubyProc.Type.LAMBDA,
+                    method.getMethod().getSharedMethodInfo(),
+                    method.getMethod().getCallTarget(),
+                    method.getMethod().getCallTarget(),
+                    method.getMethod().getCallTarget(),
+                    method.getMethod().getDeclarationFrame(),
+                    method.getMethod(),
+                    method.getReceiver(),
+                    null);
         }
 
     }

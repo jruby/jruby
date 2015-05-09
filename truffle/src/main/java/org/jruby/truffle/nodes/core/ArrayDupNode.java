@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -25,40 +25,36 @@ import java.util.Arrays;
  * Dup an array, without using any method lookup. This isn't a call - it's an operation on a core class.
  */
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
-@ImportGuards(ArrayGuards.class)
+@ImportStatic(ArrayGuards.class)
 public abstract class ArrayDupNode extends RubyNode {
 
     public ArrayDupNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
-    public ArrayDupNode(ArrayDupNode prev) {
-        super(prev);
-    }
-
     public abstract RubyArray executeDup(VirtualFrame frame, RubyArray array);
 
-    @Specialization(guards = "isNull")
+    @Specialization(guards = "isNull(from)")
     public RubyArray dupNull(RubyArray from) {
         return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
     }
 
-    @Specialization(guards = "isIntegerFixnum")
+    @Specialization(guards = "isIntegerFixnum(from)")
     public RubyArray dupIntegerFixnum(RubyArray from) {
         return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((int[]) from.getStore(), from.getSize()), from.getSize());
     }
 
-    @Specialization(guards = "isLongFixnum")
+    @Specialization(guards = "isLongFixnum(from)")
     public RubyArray dupLongFixnum(RubyArray from) {
         return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((long[]) from.getStore(), from.getSize()), from.getSize());
     }
 
-    @Specialization(guards = "isFloat")
+    @Specialization(guards = "isFloat(from)")
     public RubyArray dupFloat(RubyArray from) {
         return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((double[]) from.getStore(), from.getSize()), from.getSize());
     }
 
-    @Specialization(guards = "isObject")
+    @Specialization(guards = "isObject(from)")
     public RubyArray dupObject(RubyArray from) {
         return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) from.getStore(), from.getSize()), from.getSize());
     }

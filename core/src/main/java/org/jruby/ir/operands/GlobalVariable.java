@@ -2,6 +2,7 @@ package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -23,6 +24,10 @@ public class GlobalVariable extends Reference {
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         return context.runtime.getGlobalVariables().get(getName());
+    }
+
+    public static GlobalVariable decode(IRReaderDecoder d) {
+        return new GlobalVariable(d.decodeString());
     }
 
     @Override

@@ -3,12 +3,14 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Kernel#puts" do
   before :each do
+    @before_separator = $/
     @stdout = $stdout
     @name = tmp("kernel_puts.txt")
     $stdout = new_io @name
   end
 
   after :each do
+    $/ = @before_separator
     $stdout.close
     $stdout = @stdout
     rm_r @name
@@ -81,7 +83,6 @@ describe "Kernel#puts" do
     $stdout.should_receive(:write).with("5")
     $stdout.should_receive(:write).with("\n")
     Kernel.puts(5).should == nil
-    $/ = "\n"
   end
 end
 

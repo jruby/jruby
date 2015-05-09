@@ -19,7 +19,7 @@
 # Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
 # Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
 # Copyright (C) 2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
-# 
+#
 # Alternatively, the contents of this file may be used under the terms of
 # either of the GNU General Public License Version 2 or later (the "GPL"),
 # or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -34,7 +34,6 @@
 ###### END LICENSE BLOCK ######
 
 # These are loads so they don't pollute LOADED_FEATURES
-load 'jruby/java/java_module.rb'
 load 'jruby/java/java_package_module_template.rb'
 load 'jruby/java/java_utilities.rb'
 

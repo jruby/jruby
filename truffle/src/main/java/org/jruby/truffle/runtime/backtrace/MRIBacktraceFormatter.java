@@ -12,9 +12,13 @@ package org.jruby.truffle.runtime.backtrace;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.CoreSourceSection;
+import org.jruby.truffle.runtime.DebugOperations;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.core.RubyString;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +37,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
                     lines.add(String.format("%s (%s)", exception.getMessage(), exception.getLogicalClass().getName()));
                 }
             } else {
-                lines.add(formatInLine(activations, exception));
+                lines.add(formatInLine(context, activations, exception));
 
                 for (int n = 1; n < activations.size(); n++) {
                     lines.add(formatFromLine(activations, n));
@@ -46,39 +50,48 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         }
     }
 
-    private static String formatInLine(List<Activation> activations, RubyException exception) {
+    private static String formatInLine(RubyContext context, List<Activation> activations, RubyException exception) {
         final StringBuilder builder = new StringBuilder();
 
-        final SourceSection sourceSection = activations.get(0).getCallNode().getEncapsulatingSourceSection();
+        final Activation activation = activations.get(0);
+        final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
         final SourceSection reportedSourceSection;
         final String reportedName;
 
         if (sourceSection instanceof CoreSourceSection) {
             reportedSourceSection = nextUserSourceSection(activations, 1);
-            reportedName = ((CoreSourceSection) sourceSection).getMethodName();
+            reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
         } else {
             reportedSourceSection = sourceSection;
             reportedName = reportedSourceSection.getIdentifier();
         }
 
-        if (reportedSourceSection == null) {
-            throw new IllegalStateException("Call node has no encapsulating source section");
+        if (reportedSourceSection == null || reportedSourceSection.getSource() == null) {
+            builder.append("???");
+        } else {
+            builder.append(reportedSourceSection.getSource().getName());
+            builder.append(":");
+            builder.append(reportedSourceSection.getStartLine());
+            builder.append(":in `");
+            builder.append(reportedName);
+            builder.append("'");
         }
-
-        if (reportedSourceSection.getSource() == null) {
-            throw new IllegalStateException("Call node source section " + reportedSourceSection + " has no source");
-        }
-
-        builder.append(reportedSourceSection.getSource().getName());
-        builder.append(":");
-        builder.append(reportedSourceSection.getStartLine());
-        builder.append(":in `");
-        builder.append(reportedName);
-        builder.append("'");
 
         if (exception != null) {
+            String message;
+            try {
+                Object messageObject = DebugOperations.send(context, exception, "message", null);
+                if (messageObject instanceof RubyString) {
+                    message = messageObject.toString();
+                } else {
+                    message = exception.getMessage().toString();
+                }
+            } catch (RaiseException e) {
+                message = exception.getMessage().toString();
+            }
+
             builder.append(": ");
-            builder.append(exception.getMessage());
+            builder.append(message);
             builder.append(" (");
             builder.append(exception.getLogicalClass().getName());
             builder.append(")");
@@ -92,13 +105,14 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
     }
 
     public static String formatCallerLine(List<Activation> activations, int n) {
-        final SourceSection sourceSection = activations.get(n).getCallNode().getEncapsulatingSourceSection();
+        final Activation activation = activations.get(n);
+        final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
         final SourceSection reportedSourceSection;
         final String reportedName;
 
         if (sourceSection instanceof CoreSourceSection) {
             reportedSourceSection = activations.get(n + 1).getCallNode().getEncapsulatingSourceSection();
-            reportedName = ((CoreSourceSection) sourceSection).getMethodName();
+            reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
         } else {
             reportedSourceSection = sourceSection;
             reportedName = sourceSection.getIdentifier();
@@ -106,7 +120,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
 
         final StringBuilder builder = new StringBuilder();
         if (reportedSourceSection instanceof NullSourceSection) {
-            builder.append("NullSourceSection");
+            builder.append("???");
         } else {
             builder.append(reportedSourceSection.getSource().getName());
             builder.append(":");

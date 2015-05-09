@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -13,10 +14,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
     private final int required;
     private final int opt;
-    private final int rest;
+    private final boolean rest;
     private final int numArgs;
 
-    public RaiseArgumentErrorInstr(int required, int opt, int rest, int numArgs) {
+    public RaiseArgumentErrorInstr(int required, int opt, boolean rest, int numArgs) {
         super(Operation.RAISE_ARGUMENT_ERROR, EMPTY_OPERANDS);
 
         this.required = required;
@@ -42,7 +43,7 @@ public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
         return required;
     }
 
-    public int getRest() {
+    public boolean getRest() {
         return rest;
     }
 
@@ -58,6 +59,10 @@ public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
         e.encode(getOpt());
         e.encode(getRest());
         e.encode(getNumArgs());
+    }
+
+    public static RaiseArgumentErrorInstr decode(IRReaderDecoder d) {
+        return new RaiseArgumentErrorInstr(d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt());
     }
 
     @Override

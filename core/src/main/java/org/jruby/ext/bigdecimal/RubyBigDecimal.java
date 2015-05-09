@@ -153,9 +153,9 @@ public class RubyBigDecimal extends RubyNumeric {
         return null;
     }
 
-    private final boolean isNaN;
-    private final int infinitySign;
-    private final int zeroSign;
+    private boolean isNaN;
+    private int infinitySign;
+    private int zeroSign;
     private BigDecimal value;
 
     public BigDecimal getValue() {
@@ -592,6 +592,27 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod
     public RubyFixnum hash() {
         return getRuntime().newFixnum(value.stripTrailingZeros().hashCode());
+    }
+
+    @Override
+    @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
+    public IRubyObject initialize_copy(IRubyObject original) {
+        if (this == original) return this;
+
+        checkFrozen();
+
+        if (!(original instanceof RubyBigDecimal)) {
+            throw getRuntime().newTypeError("wrong argument class");
+        }
+
+        RubyBigDecimal origRbd = (RubyBigDecimal)original;
+
+        this.isNaN = origRbd.isNaN;
+        this.infinitySign = origRbd.infinitySign;
+        this.zeroSign = origRbd.zeroSign;
+        this.value = origRbd.value;
+
+        return this;
     }
 
     public IRubyObject op_mod(ThreadContext context, IRubyObject arg) {

@@ -9,11 +9,9 @@ describe :string_chars, :shared => true do
     a.should == ['h', 'e', 'l', 'l', 'o']
   end
 
-  ruby_bug 'redmine #1487', '1.9.1' do
-    it "returns self" do
-      s = StringSpecs::MyString.new "hello"
-      s.send(@method){}.should equal(s)
-    end
+  it "returns self" do
+    s = StringSpecs::MyString.new "hello"
+    s.send(@method){}.should equal(s)
   end
 
 
@@ -69,6 +67,18 @@ describe :string_chars, :shared => true do
         "\xAD".force_encoding('SJIS'),
         "\xA2".force_encoding('SJIS')
       ]
+    end
+
+    it "taints resulting strings when self is tainted" do
+      str = "hello"
+
+      str.send(@method) do |x|
+        x.tainted?.should == false
+      end
+
+      str.dup.taint.send(@method) do |x|
+        x.tainted?.should == true
+      end
     end
   end
 end

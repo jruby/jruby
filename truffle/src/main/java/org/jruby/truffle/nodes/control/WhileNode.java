@@ -16,19 +16,16 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RepeatingNode;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RedoException;
 
 public final class WhileNode extends RubyNode {
 
     @Child private LoopNode loopNode;
-    private final BranchProfile breakUsed = BranchProfile.create();
 
     private WhileNode(RubyContext context, SourceSection sourceSection, RepeatingNode repeatingNode) {
         super(context, sourceSection);
@@ -47,14 +44,8 @@ public final class WhileNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        try {
-            loopNode.executeLoop(frame);
-        } catch (BreakException e) {
-            breakUsed.enter();
-            return e.getResult();
-        }
-
-        return getContext().getCoreLibrary().getNilObject();
+        loopNode.executeLoop(frame);
+        return nil();
     }
     
     private static abstract class WhileRepeatingBaseNode extends Node implements RepeatingNode {
@@ -69,7 +60,7 @@ public final class WhileNode extends RubyNode {
 
         public WhileRepeatingBaseNode(RubyContext context, RubyNode condition, RubyNode body) {
             this.context = context;
-            this.condition = BooleanCastNodeFactory.create(context, condition.getSourceSection(), condition);
+            this.condition = BooleanCastNodeGen.create(context, condition.getSourceSection(), condition);
             this.body = body;
         }
     }

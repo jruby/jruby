@@ -46,16 +46,20 @@ import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
+
+import static org.jruby.lexer.LexingCommon.*;
 
 /** 
  *
@@ -746,26 +750,8 @@ public class ParserSupport {
     // FIXME: Currently this is passing in position of receiver
     public Node new_opElementAsgnNode(Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
         ISourcePosition position = lexer.tokline;  // FIXME: ruby_sourceline in new lexer.
-        Node newNode = null;
 
-        if (argsNode instanceof ArrayNode) {
-            ArrayNode array = (ArrayNode) argsNode;
-
-            if (array.size() == 1) {
-                if (operatorName.equals("||")) {
-                    newNode = new OpElementOneArgOrAsgnNode(position, receiverNode, operatorName, array, valueNode);
-                } else if (operatorName.equals("&&")) {
-
-                    newNode = new OpElementOneArgAndAsgnNode(position, receiverNode, operatorName, array, valueNode);
-                } else {
-                    newNode = new OpElementOneArgAsgnNode(position, receiverNode, operatorName, array, valueNode);
-                }
-            }
-        }
-
-        if (newNode == null) {
-            newNode = new OpElementAsgnNode(position, receiverNode, operatorName, argsNode, valueNode);
-        }
+        Node newNode = new OpElementAsgnNode(position, receiverNode, operatorName, argsNode, valueNode);
 
         fixpos(newNode, receiverNode);
 
@@ -999,7 +985,7 @@ public class ParserSupport {
                     lexer.getCurrentLine(), "Block argument should not be given.");
         }
 
-        return new Yield19Node(position, node); 
+        return new YieldNode(position, node);
     }
     
     public NumericNode negateInteger(NumericNode integerNode) {
@@ -1055,10 +1041,17 @@ public class ParserSupport {
 
     public Node new_args(ISourcePosition position, ListNode pre, ListNode optional, RestArgNode rest,
             ListNode post, ArgsTailHolder tail) {
-        if (tail == null) return new ArgsNode(position, pre, optional, rest, post, (BlockArgNode) null);
+        ArgsNode argsNode;
+        if (tail == null) {
+            argsNode = new ArgsNode(position, pre, optional, rest, post, null);
+        } else {
+            argsNode = new ArgsNode(position, pre, optional, rest, post,
+                    tail.getKeywordArgs(), tail.getKeywordRestArgNode(), tail.getBlockArg());
+        }
 
-        return new ArgsNode(position, pre, optional, rest, post, 
-                tail.getKeywordArgs(), tail.getKeywordRestArgNode(), tail.getBlockArg());
+        getCurrentScope().setSignature(Signature.from(argsNode));
+
+        return argsNode;
     }
     
     public ArgsTailHolder new_args_tail(ISourcePosition position, ListNode keywordArg, 
@@ -1222,8 +1215,13 @@ public class ParserSupport {
     // MRI: reg_fragment_check
     public void regexpFragmentCheck(RegexpNode end, ByteList value) {
         setRegexpEncoding(end, value);
-        RubyRegexp.preprocessCheck(configuration.getRuntime(), value);
+        try {
+            RubyRegexp.preprocessCheck(configuration.getRuntime(), value);
+        } catch (RaiseException re) {
+            compile_error(re.getMessage());
+        }
     }        // 1.9 mode overrides to do extra checking...
+
     private List<Integer> allocateNamedLocals(RegexpNode regexpNode) {
         RubyRegexp pattern = RubyRegexp.newRegexp(configuration.getRuntime(), regexpNode.getValue(), regexpNode.getOptions());
         pattern.setLiteral();
@@ -1254,10 +1252,10 @@ public class ParserSupport {
 
     // TODO: Put somewhere more consolidated (similiar
     private char optionsEncodingChar(Encoding optionEncoding) {
-        if (optionEncoding == RubyLexer.USASCII_ENCODING) return 'n';
+        if (optionEncoding == USASCII_ENCODING) return 'n';
         if (optionEncoding == org.jcodings.specific.EUCJPEncoding.INSTANCE) return 'e';
         if (optionEncoding == org.jcodings.specific.SJISEncoding.INSTANCE) return 's';
-        if (optionEncoding == RubyLexer.UTF8_ENCODING) return 'u';
+        if (optionEncoding == UTF8_ENCODING) return 'u';
 
         return ' ';
     }
@@ -1295,15 +1293,15 @@ public class ParserSupport {
 
             value.setEncoding(optionsEncoding);
         } else if (options.isEncodingNone()) {
-            if (value.getEncoding() == RubyLexer.ASCII8BIT_ENCODING && !is7BitASCII(value)) {
+            if (value.getEncoding() == ASCII8BIT_ENCODING && !is7BitASCII(value)) {
                 compileError(optionsEncoding, value.getEncoding());
             }
-            value.setEncoding(RubyLexer.ASCII8BIT_ENCODING);
-        } else if (lexer.getEncoding() == RubyLexer.USASCII_ENCODING) {
+            value.setEncoding(ASCII8BIT_ENCODING);
+        } else if (lexer.getEncoding() == USASCII_ENCODING) {
             if (!is7BitASCII(value)) {
-                value.setEncoding(RubyLexer.USASCII_ENCODING); // This will raise later
+                value.setEncoding(USASCII_ENCODING); // This will raise later
             } else {
-                value.setEncoding(RubyLexer.ASCII8BIT_ENCODING);
+                value.setEncoding(ASCII8BIT_ENCODING);
             }
         }
     }    

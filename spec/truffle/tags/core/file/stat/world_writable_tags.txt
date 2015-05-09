@@ -1,6 +1,0 @@
-fails:File::Stat.world_writable? returns nil if the file is chmod 600
-fails:File::Stat.world_writable? returns nil if the file is chmod 000
-fails:File::Stat.world_writable? returns nil if the file is chmod 700
-fails:File::Stat.world_writable? returns a Fixnum if the file is chmod 777
-fails:File::Stat.world_writable? returns a Fixnum if the file is a directory and chmod 777
-fails:File::Stat.world_writable? coerces the argument with #to_path

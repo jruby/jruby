@@ -16,7 +16,10 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.dispatch.DispatchNode;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -44,37 +47,31 @@ public abstract class ArrayCastNode extends RubyNode {
         this.nilBehavior = nilBehavior;
     }
 
-    public ArrayCastNode(ArrayCastNode prev) {
-        super(prev);
-        toArrayNode = prev.toArrayNode;
-        nilBehavior = prev.nilBehavior;
-    }
-
     protected abstract RubyNode getChild();
 
     @Specialization
     public RubyNilClass cast(boolean value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(int value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(long value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(double value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(RubyBignum value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
@@ -89,7 +86,7 @@ public abstract class ArrayCastNode extends RubyNode {
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             case ARRAY_WITH_NIL:
-                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), getContext().getCoreLibrary().getNilObject());
+                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());
 
             case NIL:
                 return nil;
@@ -101,14 +98,12 @@ public abstract class ArrayCastNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = {"!isRubyNilClass", "!isRubyArray"})
+    @Specialization(guards = {"!isRubyNilClass(object)", "!isRubyArray(object)"})
     public Object cast(VirtualFrame frame, RubyBasicObject object) {
-        notDesignedForCompilation();
-
         final Object result = toArrayNode.call(frame, object, "to_ary", null, new Object[]{});
 
         if (result == DispatchNode.MISSING) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         if (!(result instanceof RubyArray)) {

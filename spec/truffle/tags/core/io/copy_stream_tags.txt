@@ -1,4 +1,3 @@
-fails:IO.copy_stream from an IO raises an IOError if the source IO is not open for reading
 fails:IO.copy_stream from an IO does not close the source IO
 fails:IO.copy_stream from an IO does not change the IO offset when an offset is specified
 fails:IO.copy_stream from an IO does change the IO offset when an offset is not specified
@@ -6,29 +5,24 @@ fails:IO.copy_stream from an IO to a file name copies the entire IO contents to 
 fails:IO.copy_stream from an IO to a file name returns the number of bytes copied
 fails:IO.copy_stream from an IO to a file name copies only length bytes when specified
 fails:IO.copy_stream from an IO to a file name calls #to_path to convert on object to a file name
-fails:IO.copy_stream from an IO to a file name raises a TypeError if #to_path does not return a String
 fails:IO.copy_stream from an IO to a file name copies only length bytes from the offset
 fails:IO.copy_stream from an IO to an IO copies the entire IO contents to the IO
 fails:IO.copy_stream from an IO to an IO returns the number of bytes copied
 fails:IO.copy_stream from an IO to an IO starts writing at the destination IO's current position
 fails:IO.copy_stream from an IO to an IO leaves the destination IO position at the last write
-fails:IO.copy_stream from an IO to an IO raises an IOError if the destination IO is not open for writing
 fails:IO.copy_stream from an IO to an IO does not close the destination IO
 fails:IO.copy_stream from an IO to an IO copies only length bytes when specified
 fails:IO.copy_stream from an IO to an IO copies only length bytes from the offset
 fails:IO.copy_stream from a file name calls #to_path to convert on object to a file name
-fails:IO.copy_stream from a file name raises a TypeError if #to_path does not return a String
 fails:IO.copy_stream from a file name to a file name copies the entire IO contents to the file
 fails:IO.copy_stream from a file name to a file name returns the number of bytes copied
 fails:IO.copy_stream from a file name to a file name copies only length bytes when specified
 fails:IO.copy_stream from a file name to a file name calls #to_path to convert on object to a file name
-fails:IO.copy_stream from a file name to a file name raises a TypeError if #to_path does not return a String
 fails:IO.copy_stream from a file name to a file name copies only length bytes from the offset
 fails:IO.copy_stream from a file name to an IO copies the entire IO contents to the IO
 fails:IO.copy_stream from a file name to an IO returns the number of bytes copied
 fails:IO.copy_stream from a file name to an IO starts writing at the destination IO's current position
 fails:IO.copy_stream from a file name to an IO leaves the destination IO position at the last write
-fails:IO.copy_stream from a file name to an IO raises an IOError if the destination IO is not open for writing
 fails:IO.copy_stream from a file name to an IO does not close the destination IO
 fails:IO.copy_stream from a file name to an IO copies only length bytes when specified
 fails:IO.copy_stream from a file name to an IO copies only length bytes from the offset
@@ -38,15 +32,12 @@ fails:IO.copy_stream from a pipe IO to a file name copies the entire IO contents
 fails:IO.copy_stream from a pipe IO to a file name returns the number of bytes copied
 fails:IO.copy_stream from a pipe IO to a file name copies only length bytes when specified
 fails:IO.copy_stream from a pipe IO to a file name calls #to_path to convert on object to a file name
-fails:IO.copy_stream from a pipe IO to a file name raises a TypeError if #to_path does not return a String
 fails:IO.copy_stream from a pipe IO to an IO copies the entire IO contents to the IO
 fails:IO.copy_stream from a pipe IO to an IO returns the number of bytes copied
 fails:IO.copy_stream from a pipe IO to an IO starts writing at the destination IO's current position
 fails:IO.copy_stream from a pipe IO to an IO leaves the destination IO position at the last write
-fails:IO.copy_stream from a pipe IO to an IO raises an IOError if the destination IO is not open for writing
 fails:IO.copy_stream from a pipe IO to an IO does not close the destination IO
 fails:IO.copy_stream from a pipe IO to an IO copies only length bytes when specified
 fails:IO.copy_stream with non-IO Objects calls #readpartial on the source Object if defined
-fails:IO.copy_stream with non-IO Objects calls #read on the source Object
 fails:IO.copy_stream with non-IO Objects calls #write on the destination Object
 fails:IO.copy_stream with non-IO Objects does not call #pos on the source if no offset is given

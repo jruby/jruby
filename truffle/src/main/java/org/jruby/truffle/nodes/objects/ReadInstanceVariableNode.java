@@ -16,8 +16,7 @@ import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
-
-import org.jruby.truffle.nodes.ReadNode;
+import org.jruby.truffle.translator.ReadNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -40,7 +39,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     }
 
     @Override
-    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeInteger(VirtualFrame frame) throws UnexpectedResultException {
         final Object receiverObject = receiver.execute(frame);
 
         if (receiverObject instanceof RubyBasicObject) {
@@ -49,12 +48,12 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             // TODO(CS): need to put this onto the fast path?
 
             CompilerDirectives.transferToInterpreter();
-            throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
+            throw new UnexpectedResultException(nil());
         }
     }
 
     @Override
-    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
         final Object receiverObject = receiver.execute(frame);
 
         if (receiverObject instanceof RubyBasicObject) {
@@ -63,12 +62,12 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             // TODO(CS): need to put this onto the fast path?
 
             CompilerDirectives.transferToInterpreter();
-            throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
+            throw new UnexpectedResultException(nil());
         }
     }
 
     @Override
-    public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
+    public double executeDouble(VirtualFrame frame) throws UnexpectedResultException {
         final Object receiverObject = receiver.execute(frame);
 
         if (receiverObject instanceof RubyBasicObject) {
@@ -77,7 +76,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             // TODO(CS): need to put this onto the fast path?
 
             CompilerDirectives.transferToInterpreter();
-            throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
+            throw new UnexpectedResultException(nil());
         }
     }
 
@@ -90,19 +89,19 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
             if (value == null) {
                 nullProfile.enter();
-                value = getContext().getCoreLibrary().getNilObject();
+                value = nil();
             }
 
             return value;
         } else {
             primitiveProfile.enter();
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
     }
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         if (isGlobal) {
             final RubyBasicObject receiverValue = (RubyBasicObject) receiver.execute(frame);
@@ -110,13 +109,13 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             if (readNode.getName().equals("$~") || readNode.getName().equals("$!")) {
                 return getContext().makeString("global-variable");
             } else if (readNode.isSet(receiverValue)) {
-                if (readNode.execute(receiverValue) == getContext().getCoreLibrary().getNilObject()) {
-                    return getContext().getCoreLibrary().getNilObject();
+                if (readNode.execute(receiverValue) == nil()) {
+                    return nil();
                 } else {
                     return getContext().makeString("global-variable");
                 }
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
@@ -133,7 +132,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             if (storageLocation != null) {
                 return context.makeString("instance-variable");
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         } else {
             return false;

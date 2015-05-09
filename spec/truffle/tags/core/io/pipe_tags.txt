@@ -1,25 +1,6 @@
-fails:IO.pipe creates a two-ended pipe
-fails:IO.pipe returns two IO objects
-fails:IO.pipe returns instances of a subclass when called on a subclass
-fails:IO.pipe passed a block yields two IO objects
-fails:IO.pipe passed a block returns the result of the block
 fails:IO.pipe passed a block closes both IO objects
 fails:IO.pipe passed a block closes both IO objects when the block raises
 fails:IO.pipe passed a block allows IO objects to be closed within the block
-fails:IO.pipe sets the external encoding of the read end to the default when passed no arguments
-fails:IO.pipe sets the internal encoding of the read end to the default when passed no arguments
-fails:IO.pipe sets the internal encoding to nil if the same as the external
-fails:IO.pipe sets the external encoding of the read end when passed an Encoding argument
-fails:IO.pipe sets the external and internal encodings of the read end when passed two Encoding arguments
-fails:IO.pipe sets the external encoding of the read end when passed the name of an Encoding
 fails:IO.pipe accepts 'bom|' prefix for external encoding
-fails:IO.pipe sets the external and internal encodings specified as a String and separated with a colon
 fails:IO.pipe accepts 'bom|' prefix for external encoding when specifying 'external:internal'
-fails:IO.pipe sets the external and internal encoding when passed two String arguments
 fails:IO.pipe accepts an options Hash with one String encoding argument
-fails:IO.pipe accepts an options Hash with two String encoding arguments
-fails:IO.pipe calls #to_hash to convert an options argument
-fails:IO.pipe calls #to_str to convert the first argument to a String
-fails:IO.pipe calls #to_str to convert the second argument to a String
-fails:IO.pipe sets no external encoding for the write end
-fails:IO.pipe sets no internal encoding for the write end

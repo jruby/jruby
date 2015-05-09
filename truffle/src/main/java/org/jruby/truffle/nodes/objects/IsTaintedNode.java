@@ -29,11 +29,6 @@ public abstract class IsTaintedNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public IsTaintedNode(IsTaintedNode prev) {
-        super(prev);
-        readTaintNode = prev.readTaintNode;
-    }
-
     public abstract boolean executeIsTainted(Object object);
 
     @Specialization
@@ -61,7 +56,7 @@ public abstract class IsTaintedNode extends RubyNode {
         return false;
     }
 
-    @Specialization(guards = "!isRubySymbol")
+    @Specialization(guards = "!isRubySymbol(object)")
     public boolean isTainted(RubyBasicObject object) {
         if (readTaintNode == null) {
             CompilerDirectives.transferToInterpreter();

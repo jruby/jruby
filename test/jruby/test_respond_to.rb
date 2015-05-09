@@ -107,3 +107,24 @@ class TestRespondToViaMethodMissing < Test::Unit::TestCase
     end
   end
 end
+
+class TestRespondToMissingFastPath < Test::Unit::TestCase
+  class Duration
+    def initialize
+      @value = 10
+    end
+
+    def respond_to_missing?(method, include_private=false)
+      @value.respond_to?(method, include_private)
+    end
+
+    def method_missing(method, *args, &block)
+      @value.send(method, *args, &block)
+    end
+  end
+
+  def test_respond_to_doesnt_fastpath_if_respond_to_missing_exists
+    obj = Duration.new
+    assert(10 * obj == 100)
+  end
+end

@@ -14,7 +14,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
-import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyRange;
@@ -113,10 +112,10 @@ public class FixnumLowerNode extends RubyNode {
     }
 
     @Override
-    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeInteger(VirtualFrame frame) throws UnexpectedResultException {
         try {
             if (hasNeededToLowerLongFixnum) {
-                final long value = super.executeLongFixnum(frame);
+                final long value = super.executeLong(frame);
 
                 if (canLower(value)) {
                     return lower(value);
@@ -124,7 +123,7 @@ public class FixnumLowerNode extends RubyNode {
                     throw new UnexpectedResultException(value);
                 }
             } else {
-                return super.executeIntegerFixnum(frame);
+                return super.executeInteger(frame);
             }
         } catch (UnexpectedResultException e) {
             if (e.getResult() instanceof Long && canLower((long) e.getResult())) {
@@ -140,7 +139,7 @@ public class FixnumLowerNode extends RubyNode {
     }
 
     @Override
-    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
         throw new RuntimeException();
     }
 

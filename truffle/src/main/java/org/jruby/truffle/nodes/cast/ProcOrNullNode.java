@@ -14,7 +14,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.RubyTypesGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -30,12 +29,8 @@ public abstract class ProcOrNullNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ProcOrNullNode(ProcOrNullNode prev) {
-        super(prev);
-    }
-
     @Specialization
-    public Object doNil(@SuppressWarnings("unused") RubyNilClass nil) {
+    public Object doNil(RubyNilClass nil) {
         return null;
     }
 
@@ -48,8 +43,7 @@ public abstract class ProcOrNullNode extends RubyNode {
     public final RubyProc executeRubyProc(VirtualFrame frame) {
         final Object proc = execute(frame);
 
-        // The standard asRubyProc test doesn't allow for null
-        assert proc == null || RubyTypesGen.RUBYTYPES.isRubyProc(proc);
+        assert proc == null || proc instanceof RubyProc;
 
         return (RubyProc) proc;
     }

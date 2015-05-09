@@ -13,9 +13,8 @@ import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyString;
 
 @CoreClass(name = "FalseClass")
 public abstract class FalseClassNodes {
@@ -25,10 +24,6 @@ public abstract class FalseClassNodes {
 
         public AndNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public AndNode(AndNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -44,12 +39,8 @@ public abstract class FalseClassNodes {
             super(context, sourceSection);
         }
 
-        public OrXorNode(OrXorNode prev) {
-            super(prev);
-        }
-
         @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
-            return BooleanCastNodeFactory.create(getContext(), getSourceSection(), operand);
+            return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
         }
 
         @Specialization

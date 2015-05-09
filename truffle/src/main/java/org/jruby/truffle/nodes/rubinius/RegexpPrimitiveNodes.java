@@ -9,12 +9,17 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import org.joni.Matcher;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.*;
-
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import org.joni.Matcher;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.core.RubyRegexp;
+import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.util.StringSupport;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Regexp} class.
@@ -30,36 +35,34 @@ public abstract class RegexpPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public RegexpInitializePrimitiveNode(RegexpInitializePrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyRegexp initialize(RubyRegexp regexp, RubyString pattern, int options) {
-            notDesignedForCompilation();
-
-            regexp.initialize(this, pattern.getBytes(), options);
+            regexp.initialize(this, pattern.getByteList(), options);
             return regexp;
         }
 
     }
 
-    @RubiniusPrimitive(name = "regexp_search_region")
+    @RubiniusPrimitive(name = "regexp_search_region", lowerFixnumParameters = {1, 2})
     public static abstract class RegexpSearchRegionPrimitiveNode extends RubiniusPrimitiveNode {
 
         public RegexpSearchRegionPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public RegexpSearchRegionPrimitiveNode(RegexpSearchRegionPrimitiveNode prev) {
-            super(prev);
-        }
-
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object searchRegion(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
-            notDesignedForCompilation();
+            if (regexp.getRegex() == null) {
+                throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
+            }
 
-            final Matcher matcher = regexp.getRegex().matcher(string.getBytes().bytes());
+            if (string.scanForCodeRange() == StringSupport.CR_BROKEN) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(
+                        String.format("invalid byte sequence in %s", string.getByteList().getEncoding()), this));
+            }
+
+            final Matcher matcher = regexp.getRegex().matcher(string.getByteList().bytes());
 
             return regexp.matchCommon(string, false, false, matcher, start, end);
         }
@@ -73,15 +76,9 @@ public abstract class RegexpPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public RegexpSetLastMatchPrimitiveNode(RegexpSetLastMatchPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object setLastMatch(RubyClass regexpClass, Object matchData) {
-            notDesignedForCompilation();
-
-            getContext().getThreadManager().getCurrentThread().getThreadLocals().getOperations().setInstanceVariable(
+            getContext().getThreadManager().getCurrentThread().getThreadLocals().getObjectType().setInstanceVariable(
                     getContext().getThreadManager().getCurrentThread().getThreadLocals(), "$~", matchData);
 
             return matchData;
@@ -96,14 +93,10 @@ public abstract class RegexpPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public RegexpSetBlockLastMatchPrimitiveNode(RegexpSetBlockLastMatchPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass setBlockLastMatch(RubyClass regexpClass) {
             // TODO CS 7-Mar-15 what does this do?
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

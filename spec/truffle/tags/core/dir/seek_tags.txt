@@ -1,2 +1,0 @@
-fails:Dir#seek returns the Dir instance
-fails:Dir#seek moves the read position to a previously obtained position

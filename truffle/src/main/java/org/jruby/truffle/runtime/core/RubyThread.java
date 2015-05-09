@@ -17,14 +17,9 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
+import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
-import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager.ObjectGraphVisitor;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
-
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +35,8 @@ import java.util.concurrent.locks.Lock;
 public class RubyThread extends RubyBasicObject {
 
     private final ThreadManager manager;
+
+    private final FiberManager fiberManager;
 
     private String name;
 
@@ -57,12 +54,11 @@ public class RubyThread extends RubyBasicObject {
 
     private final List<Lock> ownedLocks = new ArrayList<>(); // Always accessed by the same underlying Java thread.
 
-    private final List<Runnable> deferredSafepointActions = new ArrayList<>();
-
     public RubyThread(RubyClass rubyClass, ThreadManager manager) {
         super(rubyClass);
         this.manager = manager;
         threadLocals = new RubyBasicObject(rubyClass.getContext().getCoreLibrary().getObjectClass());
+        fiberManager = new FiberManager(this, manager);
     }
 
     public void initialize(RubyContext context, Node currentNode, final RubyProc block) {
@@ -86,15 +82,12 @@ public class RubyThread extends RubyBasicObject {
 
     public void run(final RubyContext context, Node currentNode, String info, Runnable task) {
         name = "Ruby Thread@" + info;
-        thread = Thread.currentThread();
-        thread.setName(name);
+        Thread.currentThread().setName(name);
 
-        manager.registerThread(this);
-        context.getSafepointManager().enterThread();
-        manager.enterGlobalLock(this);
-
+        start();
         try {
-            task.run();
+            RubyFiber fiber = getRootFiber();
+            fiber.run(task);
         } catch (ThreadExitException e) {
             value = context.getCoreLibrary().getNilObject();
             return;
@@ -103,15 +96,19 @@ public class RubyThread extends RubyBasicObject {
         } catch (ReturnException e) {
             exception = context.getCoreLibrary().unexpectedReturn(currentNode);
         } finally {
-            cleanup(context);
+            cleanup();
         }
     }
 
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
-    public void cleanup(RubyContext context) {
+    public void start() {
+        thread = Thread.currentThread();
+        manager.registerThread(this);
+    }
+
+    // Only used by the main thread which cannot easily wrap everything inside a try/finally.
+    public void cleanup() {
         status = Status.ABORTING;
-        manager.leaveGlobalLock();
-        context.getSafepointManager().leaveThread();
         manager.unregisterThread(this);
 
         status = Status.DEAD;
@@ -120,8 +117,17 @@ public class RubyThread extends RubyBasicObject {
         finished.countDown();
     }
 
-    public void setRootThread(Thread thread) {
-        this.thread = thread;
+    public void shutdown() {
+        fiberManager.shutdown();
+        throw new ThreadExitException();
+    }
+
+    public Thread getRootFiberJavaThread() {
+        return thread;
+    }
+
+    public Thread getCurrentFiberJavaThread() {
+        return fiberManager.getCurrentFiber().getJavaThread();
     }
 
     public void join() {
@@ -153,7 +159,8 @@ public class RubyThread extends RubyBasicObject {
         return joined;
     }
 
-    public void interrupt() {
+    public void wakeup() {
+        status = Status.RUN;
         Thread t = thread;
         if (t != null) {
             t.interrupt();
@@ -165,8 +172,6 @@ public class RubyThread extends RubyBasicObject {
     }
 
     public void releasedLock(Lock lock) {
-        RubyNode.notDesignedForCompilation();
-
         // TODO: this is O(ownedLocks.length).
         ownedLocks.remove(lock);
     }
@@ -197,10 +202,6 @@ public class RubyThread extends RubyBasicObject {
         return exception;
     }
 
-    public void exit() {
-        throw new ThreadExitException();
-    }
-
     public String getName() {
         return name;
     }
@@ -209,8 +210,16 @@ public class RubyThread extends RubyBasicObject {
         this.name = name;
     }
 
-    public List<Runnable> getDeferredSafepointActions() {
-        return deferredSafepointActions;
+    public ThreadManager getThreadManager() {
+        return manager;
+    }
+
+    public FiberManager getFiberManager() {
+        return fiberManager;
+    }
+
+    public RubyFiber getRootFiber() {
+        return fiberManager.getRootFiber();
     }
 
     public static class ThreadAllocator implements Allocator {

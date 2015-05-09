@@ -34,7 +34,7 @@ describe EqualElementMatcher do
     EqualElementMatcher.new("A", {"HREF" => "http://example.com"}, "Example").matches?('<A HREF="http://example.com"></A>').should be_false
     EqualElementMatcher.new("A", {"HREF" => "http://example.com"}, "Example").matches?('<A HREF="http://example.com">Test</A>').should be_false
   end
-  
+
   it "can match unclosed elements" do
     EqualElementMatcher.new("BASE", nil, nil, :not_closed => true).matches?('<BASE>').should be_true
     EqualElementMatcher.new("BASE", {"HREF" => "http://example.com"}, nil, :not_closed => true).matches?('<BASE HREF="http://example.com">').should be_true

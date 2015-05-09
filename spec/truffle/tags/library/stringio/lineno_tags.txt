@@ -1,0 +1,1 @@
+fails:StringIO#lineno= sets the current line number, but has no impact on the position

@@ -12,19 +12,16 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.interop.ForeignAccessFactory;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.HiddenKey;
-import com.oracle.truffle.api.object.Layout;
-import com.oracle.truffle.api.object.Property;
-import com.oracle.truffle.api.object.Shape;
-
+import com.oracle.truffle.api.object.*;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.RubyOperations;
+import org.jruby.truffle.runtime.object.RubyObjectType;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
@@ -33,7 +30,7 @@ import java.util.Map;
 /**
  * Represents the Ruby {@code BasicObject} class - the root of the Ruby class hierarchy.
  */
-public class RubyBasicObject {
+public class RubyBasicObject implements TruffleObject {
 
     public static final HiddenKey OBJECT_ID_IDENTIFIER = new HiddenKey("object_id");
     public static final HiddenKey TAINTED_IDENTIFIER = new HiddenKey("tainted?");
@@ -49,11 +46,15 @@ public class RubyBasicObject {
     @CompilationFinal protected RubyClass metaClass;
 
     public RubyBasicObject(RubyClass rubyClass) {
-        this(rubyClass, rubyClass.getContext());
+        this(rubyClass, LAYOUT.newInstance(rubyClass.getContext().getEmptyShape()));
     }
 
-    public RubyBasicObject(RubyClass rubyClass, RubyContext context) {
-        dynamicObject = LAYOUT.newInstance(context.getEmptyShape());
+    public RubyBasicObject(RubyClass rubyClass, DynamicObject dynamicObject) {
+        this(rubyClass.getContext(), rubyClass, dynamicObject);
+    }
+
+    public RubyBasicObject(RubyContext context, RubyClass rubyClass, DynamicObject dynamicObject) {
+        this.dynamicObject = dynamicObject;
 
         if (rubyClass != null) {
             unsafeSetLogicalClass(rubyClass);
@@ -62,6 +63,10 @@ public class RubyBasicObject {
 
     protected void unsafeSetLogicalClass(RubyClass newLogicalClass) {
         assert logicalClass == null;
+        unsafeChangeLogicalClass(newLogicalClass);
+    }
+
+    public void unsafeChangeLogicalClass(RubyClass newLogicalClass) {
         logicalClass = newLogicalClass;
         metaClass = newLogicalClass;
     }
@@ -76,12 +81,12 @@ public class RubyBasicObject {
 
     @Deprecated
     public void freeze() {
-        DebugOperations.verySlowFreeze(this);
+        DebugOperations.verySlowFreeze(getContext(), this);
     }
 
     @Deprecated
     public void checkFrozen(Node currentNode) {
-        if (DebugOperations.verySlowIsFrozen(this)) {
+        if (DebugOperations.verySlowIsFrozen(getContext(), this)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName(), currentNode));
         }
@@ -110,17 +115,17 @@ public class RubyBasicObject {
         }
 
         metaClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass, attached,
-                String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), getObjectID()));
+                String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), verySlowGetObjectID()));
 
-        if (DebugOperations.verySlowIsFrozen(this)) {
-            DebugOperations.verySlowFreeze(metaClass);
+        if (DebugOperations.verySlowIsFrozen(getContext(), this)) {
+            DebugOperations.verySlowFreeze(getContext(), metaClass);
         }
 
         return metaClass;
     }
 
     @CompilerDirectives.TruffleBoundary
-    public long getObjectID() {
+    public long verySlowGetObjectID() {
         // TODO(CS): we should specialise on reading this in the #object_id method and anywhere else it's used
         Property property = dynamicObject.getShape().getProperty(OBJECT_ID_IDENTIFIER);
 
@@ -133,35 +138,8 @@ public class RubyBasicObject {
         return objectID;
     }
 
-    @CompilerDirectives.TruffleBoundary
-    public void setInstanceVariables(Map<Object, Object> instanceVariables) {
-        RubyNode.notDesignedForCompilation();
-
-        assert instanceVariables != null;
-
-        getOperations().setInstanceVariables(this, instanceVariables);
-    }
-
-
-    public Map<Object, Object>  getInstanceVariables() {
-        RubyNode.notDesignedForCompilation();
-
-        return getOperations().getInstanceVariables(this);
-    }
-
-    public Object[] getFieldNames() {
-        return getOperations().getFieldNames(this);
-    }
-
-    public void extend(RubyModule module, Node currentNode) {
-        RubyNode.notDesignedForCompilation();
-        getSingletonClass(currentNode).include(currentNode, module);
-    }
-
     public Object getInstanceVariable(String name) {
-        RubyNode.notDesignedForCompilation();
-
-        final Object value = getOperations().getInstanceVariable(this, name);
+        final Object value = getObjectType().getInstanceVariable(this, name);
 
         if (value == null) {
             return getContext().getCoreLibrary().getNilObject();
@@ -171,14 +149,19 @@ public class RubyBasicObject {
     }
 
     public boolean isFieldDefined(String name) {
-        return getOperations().isFieldDefined(this, name);
+        return getObjectType().isFieldDefined(this, name);
+    }
+
+    @Override
+    public ForeignAccessFactory getForeignAccessFactory() {
+        return new BasicForeignAccessFactory(getContext());
     }
 
     public final void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         if (visitor.visit(this)) {
             metaClass.visitObjectGraph(visitor);
 
-            for (Object instanceVariable : getOperations().getInstanceVariables(this).values()) {
+            for (Object instanceVariable : getObjectType().getInstanceVariables(this).values()) {
                 if (instanceVariable instanceof RubyBasicObject) {
                     ((RubyBasicObject) instanceVariable).visitObjectGraph(visitor);
                 }
@@ -203,8 +186,8 @@ public class RubyBasicObject {
         return dynamicObject.getShape();
     }
 
-    public RubyOperations getOperations() {
-        return (RubyOperations) dynamicObject.getShape().getObjectType();
+    public RubyObjectType getObjectType() {
+        return (RubyObjectType) dynamicObject.getShape().getObjectType();
     }
 
     public RubyClass getLogicalClass() {
@@ -224,6 +207,12 @@ public class RubyBasicObject {
             return new RubyBasicObject(rubyClass);
         }
 
+    }
+
+    @Override
+    public String toString() {
+        CompilerAsserts.neverPartOfCompilation("should never use RubyBasicObject#toString to implement Ruby functionality");
+        return String.format("RubyBasicObject@%x<logicalClass=%s>", System.identityHashCode(this), logicalClass.getName());
     }
 
 }

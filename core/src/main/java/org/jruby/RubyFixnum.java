@@ -40,12 +40,12 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.Constantizable;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -286,8 +286,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             long lvalue = this.value;
             boolean checkArity = block.type.checkArity;
             
-            if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS ||
-                    block.arity() == Arity.NO_ARGUMENTS) {
+            if (block.getSignature() == Signature.NO_ARGUMENTS) {
                 if (checkArity) {
                     // must pass arg
                     IRubyObject nil = runtime.getNil();

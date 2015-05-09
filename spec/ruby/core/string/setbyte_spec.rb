@@ -84,4 +84,22 @@ describe "String#setbyte" do
   it "raises a TypeError unless the second argument is an Integer" do
     lambda { "a".setbyte(0,'a') }.should raise_error(TypeError)
   end
+
+  it "calls #to_int to convert the index" do
+    index = mock("setbyte index")
+    index.should_receive(:to_int).and_return(1)
+
+    str = "hat"
+    str.setbyte(index, "i".ord)
+    str.should == "hit"
+  end
+
+  it "calls to_int to convert the value" do
+    value = mock("setbyte value")
+    value.should_receive(:to_int).and_return("i".ord)
+
+    str = "hat"
+    str.setbyte(1, value)
+    str.should == "hit"
+  end
 end

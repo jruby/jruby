@@ -1,11 +1,10 @@
 package org.jruby.internal.runtime.methods;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -22,8 +21,8 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
     }
 
     @Override
-    public String[] getParameterList() {
-        return new String[0];
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return ArgumentDescriptor.EMPTY_ARRAY;
     }
 
     @Override

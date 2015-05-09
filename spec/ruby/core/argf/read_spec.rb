@@ -2,7 +2,6 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "ARGF.read" do
   before :each do
-   
     @file1_name = fixture __FILE__, "file1.txt"
     @file2_name = fixture __FILE__, "file2.txt"
     @stdin_name = fixture __FILE__, "stdin.txt"

@@ -1,2 +1,1 @@
 fails:YAML.load does not escape symbols
-fails:YAML.load fails on invalid keys

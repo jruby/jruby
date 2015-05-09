@@ -40,7 +40,6 @@ import org.jruby.javasupport.binding.AssignedName;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.*;
 import org.jruby.util.collections.ClassValue;
 
 import java.lang.reflect.Member;
@@ -104,11 +103,17 @@ public abstract class JavaSupport {
 
     public abstract RubyClass getJavaConstructorClass();
 
-    public abstract Map<Set<?>, JavaProxyClass> getJavaProxyClassCache();
+    public abstract RubyClass getJavaProxyConstructorClass();
 
-    public abstract ClassValue<ThreadLocal<RubyModule>> getUnfinishedProxyClassCache();
+    public abstract Map<Set<?>, JavaProxyClass> getJavaProxyClassCache();
 
     public abstract ClassValue<Map<String, AssignedName>> getStaticAssignedNames();
 
     public abstract ClassValue<Map<String, AssignedName>> getInstanceAssignedNames();
+
+    public abstract void beginProxy(Class cls, RubyModule proxy);
+
+    public abstract void endProxy(Class cls);
+
+    public abstract RubyModule getUnfinishedProxy(Class cls);
 }

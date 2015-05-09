@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 
@@ -83,7 +82,6 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
 
         if (isSplatted) {
             // TODO(CS): need something better to splat the arguments array
-            notDesignedForCompilation();
             final RubyArray argumentsArray = (RubyArray) argumentsObjects[0];
             return callNode.call(frame, RubyArguments.pack(superMethod, superMethod.getDeclarationFrame(), self, blockObject,argumentsArray.slowToArray()));
         } else {

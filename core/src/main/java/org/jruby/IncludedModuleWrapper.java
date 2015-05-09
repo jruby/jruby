@@ -205,4 +205,22 @@ public class IncludedModuleWrapper extends IncludedModule {
     public IRubyObject getAutoloadConstant(String name) {
         return origin.getAutoloadConstant(name);
     }
+
+    @Override
+    protected DynamicMethod searchMethodCommon(String name) {
+        // IncludedModuleWrapper needs to search prepended modules too, so search until we find methodLocation
+        RubyModule module = origin;
+        RubyModule methodLoc = origin.getMethodLocation();
+
+        for (; module != methodLoc; module = module.getSuperClass()) {
+            DynamicMethod method = module.getMethods().get(name);
+            if (method != null) return method.isNull() ? null : method;
+        }
+
+        // one last search for method location
+        DynamicMethod method = module.getMethods().get(name);
+        if (method != null) return method.isNull() ? null : method;
+
+        return null;
+    }
 }

@@ -28,6 +28,14 @@ public class TraceType {
         this.format = format;
     }
 
+    public Gather getGather() {
+        return gather;
+    }
+
+    public Format getFormat() {
+        return format;
+    }
+
     /**
      * Get a normal Ruby backtrace, using the current Gather type.
      *
@@ -60,20 +68,20 @@ public class TraceType {
             LOG.info("  " + element.getFileName() + ":" + element.getLineNumber() + " in " + element.getMethodName());
         }
     }
-    
+
     public static void dumpException(RubyException exception) {
         LOG.info("Exception raised: {} : {}", exception.getMetaClass(), exception);
     }
-    
+
     public static void dumpBacktrace(RubyException exception) {
         Ruby runtime = exception.getRuntime();
         System.err.println("Backtrace generated:\n" + Format.JRUBY.printBacktrace(exception, runtime.getPosix().isatty(FileDescriptor.err)));
     }
-    
+
     public static void dumpCaller(RubyArray trace) {
         LOG.info("Caller backtrace generated:\n" + trace);
     }
-    
+
     public static void dumpCaller(RubyStackTraceElement[] trace) {
         LOG.info("Caller backtrace generated:\n" + Arrays.toString(trace));
     }
@@ -86,13 +94,13 @@ public class TraceType {
         if (style.equalsIgnoreCase("raw")) return new TraceType(Gather.RAW, Format.JRUBY);
         else if (style.equalsIgnoreCase("ruby_framed")) return new TraceType(Gather.NORMAL, Format.JRUBY);
         else if (style.equalsIgnoreCase("normal")) return new TraceType(Gather.NORMAL, Format.JRUBY);
-        // deprecated, just uses jruby format now
+            // deprecated, just uses jruby format now
         else if (style.equalsIgnoreCase("rubinius")) return new TraceType(Gather.NORMAL, Format.JRUBY);
         else if (style.equalsIgnoreCase("full")) return new TraceType(Gather.FULL, Format.JRUBY);
         else if (style.equalsIgnoreCase("mri")) return new TraceType(Gather.NORMAL, Format.MRI);
         else return new TraceType(Gather.NORMAL, Format.JRUBY);
     }
-    
+
     public enum Gather {
         /**
          * Full raw backtraces with all Java frames included.
@@ -113,7 +121,7 @@ public class TraceType {
          */
         FULL {
             public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
-        return new BacktraceData(
+                return new BacktraceData(
                         javaTrace,
                         context.createBacktrace2(0, nativeException),
                         true,
@@ -183,7 +191,7 @@ public class TraceType {
         /**
          * Gather backtrace data for an integrated trace if the current gather type is "NORMAL", otherwise use the
          * current gather type.
-         * 
+         *
          * @param context
          * @param javaTrace
          * @return
@@ -194,7 +202,7 @@ public class TraceType {
             if (useGather == NORMAL) {
                 useGather = INTEGRATED;
             }
-            
+
             BacktraceData data = useGather.getBacktraceData(context, javaTrace, false);
 
             context.runtime.incrementBacktraceCount();
@@ -205,7 +213,7 @@ public class TraceType {
 
         public abstract BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException);
     }
-    
+
     public enum Format {
         /**
          * Formatting like C Ruby
@@ -213,6 +221,10 @@ public class TraceType {
         MRI {
             public String printBacktrace(RubyException exception, boolean console) {
                 return printBacktraceMRI(exception, console);
+            }
+
+            public void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color) {
+                renderBacktraceMRI(elts, buffer, color);
             }
         },
 
@@ -223,9 +235,14 @@ public class TraceType {
             public String printBacktrace(RubyException exception, boolean console) {
                 return printBacktraceJRuby(exception, console);
             }
+
+            public void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color) {
+                renderBacktraceJRuby(elts, buffer, color);
+            }
         };
 
         public abstract String printBacktrace(RubyException exception, boolean console);
+        public abstract void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color);
     }
 
     protected static String printBacktraceMRI(RubyException exception, boolean console) {
@@ -304,16 +321,9 @@ public class TraceType {
 
     protected static String printBacktraceJRuby(RubyException exception, boolean console) {
         Ruby runtime = exception.getRuntime();
-        RubyStackTraceElement[] frames = exception.getBacktraceElements();
-        if (frames == null) frames = new RubyStackTraceElement[0];
-
-        // find longest method name
-        int longestMethod = 0;
-        for (RubyStackTraceElement frame : frames) {
-            longestMethod = Math.max(longestMethod, frame.getMethodName().length());
-        }
 
         StringBuilder buffer = new StringBuilder();
+        boolean color = console && runtime.getInstanceConfig().getBacktraceColor();
 
         // exception line
         String message = exception.message(runtime.getCurrentContext()).toString();
@@ -325,8 +335,21 @@ public class TraceType {
                 .append(": ")
                 .append(message)
                 .append('\n');
-        
-        boolean color = console && runtime.getInstanceConfig().getBacktraceColor();
+
+        RubyStackTraceElement[] frames = exception.getBacktraceElements();
+        if (frames == null) frames = RubyStackTraceElement.EMPTY_ARRAY;
+        renderBacktraceJRuby(frames, buffer, color);
+
+
+        return buffer.toString();
+    }
+
+    private static void renderBacktraceJRuby(RubyStackTraceElement[] frames, StringBuilder buffer, boolean color) {
+        // find longest method name
+        int longestMethod = 0;
+        for (RubyStackTraceElement frame : frames) {
+            longestMethod = Math.max(longestMethod, frame.getMethodName().length());
+        }
 
         // backtrace lines
         boolean first = true;
@@ -341,7 +364,7 @@ public class TraceType {
                 }
                 first = false;
             }
-            
+
             buffer.append("  ");
 
             // method name
@@ -355,16 +378,28 @@ public class TraceType {
                     .append(frame.getFileName())
                     .append(':')
                     .append(frame.getLineNumber());
-            
+
             if (color) {
                 buffer.append(CLEAR_COLOR);
             }
-            
+
             buffer
                     .append('\n');
         }
+    }
 
-        return buffer.toString();
+    private static void renderBacktraceMRI(RubyStackTraceElement[] trace, StringBuilder buffer, boolean color) {
+        for (int i = 0; i < trace.length; i++) {
+            RubyStackTraceElement element = trace[i];
+
+            buffer
+                    .append(element.getFileName())
+                    .append(':')
+                    .append(element.getLineNumber())
+                    .append(":in `")
+                    .append(element.getMethodName())
+                    .append("'\n");
+        }
     }
 
     public static IRubyObject generateMRIBacktrace(Ruby runtime, RubyStackTraceElement[] trace) {

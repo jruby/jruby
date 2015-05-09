@@ -108,17 +108,21 @@ public class IRWriter {
 
     private static void persistScopeLabelIndices(IRScope scope, IRWriterEncoder file) {
         Map<String,Integer> labelIndices = scope.getVarIndices();
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("LABEL_SIZE: " + labelIndices.size());
         file.encode(labelIndices.size());
         for (String key : labelIndices.keySet()) {
+            if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("LABEL: " + key);
             file.encode(key);
             file.encode(labelIndices.get(key).intValue());
+            if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("LABEL(num): " + labelIndices.get(key).intValue());
         }
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("DONE LABELS: " + labelIndices.size());
     }
 
-    // {type,[variables],required_args}
+    // {type,[variables],signature}
     private static void persistStaticScope(IRWriterEncoder file, StaticScope staticScope) {
         file.encode(staticScope.getType());
         file.encode(staticScope.getVariables());
-        file.encode(staticScope.getRequiredArgs());
+        file.encode(staticScope.getSignature());
     }
 }

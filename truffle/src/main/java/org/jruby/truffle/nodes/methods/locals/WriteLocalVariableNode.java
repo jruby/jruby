@@ -15,7 +15,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.WriteNode;
+import org.jruby.truffle.translator.WriteNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 @NodeChild(value = "rhs", type = RubyNode.class)
@@ -25,35 +25,31 @@ public abstract class WriteLocalVariableNode extends FrameSlotNode implements Wr
         super(context, sourceSection, frameSlot);
     }
 
-    protected WriteLocalVariableNode(WriteLocalVariableNode prev) {
-        this(prev.getContext(), prev.getSourceSection(), prev.frameSlot);
-    }
-
-    @Specialization(guards = "isBooleanKind")
+    @Specialization(guards = "isBooleanKind(frame)")
     public boolean doFixnum(VirtualFrame frame, boolean value) {
         setBoolean(frame, value);
         return value;
     }
 
-    @Specialization(guards = "isFixnumKind")
+    @Specialization(guards = "isFixnumKind(frame)")
     public int doFixnum(VirtualFrame frame, int value) {
         setFixnum(frame, value);
         return value;
     }
 
-    @Specialization(guards = "isLongFixnumKind")
+    @Specialization(guards = "isLongFixnumKind(frame)")
     public long doLongFixnum(VirtualFrame frame, long value) {
         setLongFixnum(frame, value);
         return value;
     }
 
-    @Specialization(guards = "isFloatKind")
+    @Specialization(guards = "isFloatKind(frame)")
     public double doFloat(VirtualFrame frame, double value) {
         setFloat(frame, value);
         return value;
     }
 
-    @Specialization(guards = "isObjectKind")
+    @Specialization(guards = "isObjectKind(frame)")
     public Object doObject(VirtualFrame frame, Object value) {
         setObject(frame, value);
         return value;
@@ -61,7 +57,7 @@ public abstract class WriteLocalVariableNode extends FrameSlotNode implements Wr
 
     @Override
     public RubyNode makeReadNode() {
-        return ReadLocalVariableNodeFactory.create(getContext(), getSourceSection(), frameSlot);
+        return ReadLocalVariableNodeGen.create(getContext(), getSourceSection(), frameSlot);
     }
 
     @Override

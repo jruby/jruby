@@ -31,6 +31,7 @@
 package org.jruby.parser;
 
 public interface ReOptions {
+    int RE_OPTION_NONE         = 0;
     int RE_OPTION_IGNORECASE   = 1;
     int RE_OPTION_EXTENDED     = 2;
     int RE_OPTION_MULTILINE    = 4;

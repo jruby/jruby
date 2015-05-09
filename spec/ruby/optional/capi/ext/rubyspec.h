@@ -5,9 +5,29 @@
  * with version incompatibilities.
  */
 
-#include "rubyspec_version.h"
+#include <ruby.h>
+#ifdef HAVE_RUBY_VERSION_H
+# include <ruby/version.h>
+#else
+# include <version.h>
+#endif
 
-#if RUBY_VERSION_MAJOR >=2 && RUBY_VERSION_MINOR >= 1
+#ifndef RUBY_VERSION_MAJOR
+#define RUBY_VERSION_MAJOR RUBY_API_VERSION_MAJOR
+#define RUBY_VERSION_MINOR RUBY_API_VERSION_MINOR
+#define RUBY_VERSION_TEENY RUBY_API_VERSION_TEENY
+#endif
+
+#define RUBY_VERSION_BEFORE(major,minor,teeny) \
+  ((RUBY_VERSION_MAJOR < (major)) || \
+   (RUBY_VERSION_MAJOR == (major) && RUBY_VERSION_MINOR < (minor)) || \
+   (RUBY_VERSION_MAJOR == (major) && RUBY_VERSION_MINOR == (minor) && RUBY_VERSION_TEENY < (teeny)))
+
+#if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 2)
+#define RUBY_VERSION_IS_2_2
+#endif
+
+#if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 1)
 #define RUBY_VERSION_IS_2_1
 #endif
 
@@ -63,6 +83,9 @@
 #define HAVE_RB_ARY_NEW                    1
 #define HAVE_RB_ARY_NEW2                   1
 #define HAVE_RB_ARY_NEW3                   1
+#ifdef RUBY_VERSION_IS_2_1
+#define HAVE_RB_ARY_NEW_FROM_ARGS          1
+#endif
 #define HAVE_RB_ARY_NEW4                   1
 #define HAVE_RB_ARY_POP                    1
 #define HAVE_RB_ARY_PUSH                   1
@@ -70,6 +93,7 @@
 #define HAVE_RB_ARY_SHIFT                  1
 #define HAVE_RB_ARY_STORE                  1
 #define HAVE_RB_ARY_CONCAT                 1
+#define HAVE_RB_ARY_PLUS                   1
 #define HAVE_RB_ARY_TO_ARY                 1
 #ifdef RUBY_VERSION_IS_1_9
 #define HAVE_RB_ARY_SUBSEQ                 1
@@ -85,10 +109,12 @@
 #define HAVE_RB_MEM_CLEAR                  1
 
 /* Bignum */
+#if RUBY_VERSION_BEFORE(2,2,0)
 #define HAVE_RBIGNUM_NEGATIVE_P            1
 #define HAVE_RBIGNUM_POSITIVE_P            1
 #define HAVE_RBIGNUM_SIGN                  1
 #define HAVE_RBIGNUM_LEN                   1
+#endif
 #define HAVE_RB_BIG2DBL                    1
 #define HAVE_RB_DBL2BIG                    1
 #define HAVE_RB_BIG2LL                     1
@@ -362,6 +388,7 @@
 
 #ifdef RUBY_VERSION_IS_2_0
 #define HAVE_RB_FD_FIX_CLOEXEC             1
+#define HAVE_RB_CLOEXEC_OPEN               1
 #endif
 
 /* Kernel */
@@ -457,7 +484,7 @@
 #define HAVE_OBJ_INFECT                    1
 #define HAVE_RB_ANY_TO_S                   1
 #define HAVE_RB_ATTR_GET                   1
-#define HAVE_RB_OBJ_INSTANCE_VARIABLES	   1
+#define HAVE_RB_OBJ_INSTANCE_VARIABLES     1
 #define HAVE_RB_CHECK_ARRAY_TYPE           1
 #define HAVE_RB_CHECK_CONVERT_TYPE         1
 #ifdef RUBY_VERSION_IS_1_8_7
@@ -517,8 +544,10 @@
 #define HAVE_RB_RATIONAL_NEW               1
 #define HAVE_RB_RATIONAL_NEW1              1
 #define HAVE_RB_RATIONAL_NEW2              1
+#ifdef RUBY_VERSION_IS_2_2
 #define HAVE_RB_RATIONAL_NUM               1
 #define HAVE_RB_RATIONAL_DEN               1
+#endif
 
 /* Regexp */
 #define HAVE_RB_BACKREF_GET                1
@@ -605,7 +634,9 @@
 
 /* Thread */
 #define HAVE_RB_THREAD_ALONE               1
+#if RUBY_VERSION_BEFORE(2,2,0)
 #define HAVE_RB_THREAD_BLOCKING_REGION     1
+#endif
 #ifdef RUBY_VERSION_IS_2_0
 #define HAVE_RB_THREAD_CALL_WITHOUT_GVL    1
 #define HAVE_RB_THREAD_CALL_WITHOUT_GVL2   1
@@ -613,7 +644,9 @@
 #define HAVE_RB_THREAD_CURRENT             1
 #define HAVE_RB_THREAD_LOCAL_AREF          1
 #define HAVE_RB_THREAD_LOCAL_ASET          1
+#if RUBY_VERSION_BEFORE(2,2,0)
 #define HAVE_RB_THREAD_SELECT              1
+#endif
 #define HAVE_RB_THREAD_WAIT_FOR            1
 #define HAVE_RB_THREAD_WAKEUP              1
 #define HAVE_RB_THREAD_CREATE              1

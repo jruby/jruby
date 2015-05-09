@@ -1,8 +1,0 @@
-fails:Array#pack with format 'V' ignores whitespace in the format string
-fails:Array#pack with format 'V' calls #to_str to coerce the directives string
-fails:Array#pack with format 'V' taints the output string if the format string is tainted
-fails:Array#pack with format 'V' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'v' ignores whitespace in the format string
-fails:Array#pack with format 'v' calls #to_str to coerce the directives string
-fails:Array#pack with format 'v' taints the output string if the format string is tainted
-fails:Array#pack with format 'v' calls #to_int to convert the pack argument to an Integer

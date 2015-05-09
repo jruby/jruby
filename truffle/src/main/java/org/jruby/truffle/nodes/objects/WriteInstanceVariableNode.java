@@ -13,9 +13,8 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.WriteNode;
+import org.jruby.truffle.translator.WriteNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -37,12 +36,12 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
     }
 
     @Override
-    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeInteger(VirtualFrame frame) throws UnexpectedResultException {
         final Object object = receiver.execute(frame);
 
         if (object instanceof RubyBasicObject) {
             try {
-                final int value = rhs.executeIntegerFixnum(frame);
+                final int value = rhs.executeInteger(frame);
 
                 writeNode.execute((RubyBasicObject) object, value);
                 return value;
@@ -57,12 +56,12 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
     }
 
     @Override
-    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
         final Object object = receiver.execute(frame);
 
         if (object instanceof RubyBasicObject) {
             try {
-                final long value = rhs.executeLongFixnum(frame);
+                final long value = rhs.executeLong(frame);
 
                 writeNode.execute((RubyBasicObject) object, value);
                 return value;
@@ -77,12 +76,12 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
     }
 
     @Override
-    public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
+    public double executeDouble(VirtualFrame frame) throws UnexpectedResultException {
         final Object object = receiver.execute(frame);
 
         if (object instanceof RubyBasicObject) {
             try {
-                final double value = rhs.executeFloat(frame);
+                final double value = rhs.executeDouble(frame);
 
                 writeNode.execute((RubyBasicObject) object, value);
                 return value;

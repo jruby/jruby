@@ -8,6 +8,21 @@
 
 module Rubinius
 
+  L64 = true
+  CPU = "jvm"
+  SIZEOF_LONG = 8
+  WORDSIZE = 8
+
+  # Pretend to be Linux for the purposes of the FFI - doesn't make a difference anyway at this stage
+
+  def self.windows?
+    false
+  end
+
+  def self.darwin?
+    false
+  end
+
   def self.mathn_loaded?
     false
   end
@@ -21,6 +36,14 @@ module Rubinius
     end
 
   end
+
+  module FFI
+    class DynamicLibrary
+    end
+  end
+
+  # jnr-posix hard codes this value
+  PATH_MAX = 1024
 
 end
 

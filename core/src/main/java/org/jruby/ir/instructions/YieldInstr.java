@@ -6,6 +6,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -57,6 +58,10 @@ public class YieldInstr extends ResultBaseInstr implements FixedArityInstr {
         e.encode(getBlockArg());
         e.encode(getYieldArg());
         e.encode(isUnwrapArray());
+    }
+
+    public static YieldInstr decode(IRReaderDecoder d) {
+        return new YieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
     }
 
     @Interp

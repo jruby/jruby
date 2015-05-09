@@ -1,0 +1,5 @@
+fails:Tempfile#close when passed no argument or [false] closes self
+fails:Tempfile#close when passed [true] closes self
+fails:Tempfile#close when passed [true] unlinks self
+fails:Tempfile#close! closes self
+fails:Tempfile#close! unlinks self

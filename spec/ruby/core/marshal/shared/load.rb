@@ -1,10 +1,17 @@
 require File.expand_path('../../fixtures/marshal_data', __FILE__)
-require File.expand_path('../../../time/fixtures/methods', __FILE__)
 require 'stringio'
 
 describe :marshal_load, :shared => true do
-  before :all do
-    @num_self_class = 1
+  ruby_version_is ""..."2.1" do
+    before :all do
+      @num_self_class = 0
+    end
+  end
+
+  ruby_version_is "2.1" do
+    before :all do
+      @num_self_class = 1
+    end
   end
 
   it "raises an ArgumentError when the dumped data is truncated" do
@@ -45,6 +52,26 @@ describe :marshal_load, :shared => true do
     Marshal.send(@method, "\x04\b[\tu:\x10UserDefined\x18\x04\b[\aI\"\nstuff\x06:\x06EF@\x06u:\x18UserDefinedWithIvar>\x04\b[\bI\"\nstuff\a:\x06EF:\t@foo:\x18UserDefinedWithIvarI\"\tmore\x06;\x00F@\a@\x06@\a", myproc)
 
     arr.should == [o1, o2, o1, o2, obj]
+  end
+
+  it "loads an array containing an object with _dump that returns an immediate value, followed by multiple instances of another object" do
+    str = "string"
+
+    marshaled_obj = Marshal.send(@method, "\004\b[\bu:\031UserDefinedImmediate\000\"\vstring@\a")
+
+    marshaled_obj.should == [nil, str, str]
+  end
+
+  it "does not set instance variables of an object with user-defined _dump/_load" do
+    # this string represents: <#UserPreviouslyDefinedWithInitializedIvar @field2=7 @field1=6>
+    dump_str = "\004\bu:-UserPreviouslyDefinedWithInitializedIvar\a:\f@field2i\f:\f@field1i\v"
+
+    UserPreviouslyDefinedWithInitializedIvar.should_receive(:_load).and_return(UserPreviouslyDefinedWithInitializedIvar.new)
+    marshaled_obj = Marshal.send(@method, dump_str)
+
+    marshaled_obj.should be_an_instance_of(UserPreviouslyDefinedWithInitializedIvar)
+    marshaled_obj.field1.should be_nil
+    marshaled_obj.field2.should be_nil
   end
 
   it "loads an array containing objects having marshal_dump method, and with proc" do
@@ -154,11 +181,13 @@ describe :marshal_load, :shared => true do
       y.first.tainted?.should be_false
     end
 
-    it "does not taint Bignums" do
-      x = [bignum_value]
-      y = Marshal.send(@method, Marshal.dump(x).taint)
-      y.tainted?.should be_true
-      y.first.tainted?.should be_false
+    ruby_bug "#8945", "2.1" do
+      it "does not taint Bignums" do
+        x = [bignum_value]
+        y = Marshal.send(@method, Marshal.dump(x).taint)
+        y.tainted?.should be_true
+        y.first.tainted?.should be_false
+      end
     end
 
     it "does not taint Floats" do
@@ -683,20 +712,16 @@ describe :marshal_load, :shared => true do
     end
   end
 
-  describe "when a class with the same name as the dumped one exists outside the namespace" do
+  describe "when a class does not exist in the namespace" do
     before(:each) do
       NamespaceTest.send(:const_set, :SameName, Class.new)
       @data = Marshal.dump(NamespaceTest::SameName.new)
       NamespaceTest.send(:remove_const, :SameName)
     end
 
-    it "raises a NameError" do
-      lambda { Marshal.send(@method, @data) }.should raise_error(NameError)
-    end
-
-    it "invokes Module#const_missing" do
-      NamespaceTest.should_receive(:const_missing).with(:SameName).and_raise(NameError)
-      lambda { Marshal.send(@method, @data) }.should raise_error(NameError)
+    it "raises an ArgumentError" do
+      message = "undefined class/module NamespaceTest::SameName"
+      lambda { Marshal.send(@method, @data) }.should raise_error(ArgumentError, message)
     end
   end
 

@@ -1,0 +1,2 @@
+fails:StringIO#each_byte returns nil
+fails:StringIO#each_byte yields a LocalJumpError when passed no block

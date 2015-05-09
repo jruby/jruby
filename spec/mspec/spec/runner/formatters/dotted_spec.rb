@@ -17,7 +17,7 @@ end
 describe DottedFormatter, "#register" do
   before :each do
     @formatter = DottedFormatter.new
-    MSpec.stub!(:register)
+    MSpec.stub(:register)
   end
 
   it "registers self with MSpec for appropriate actions" do
@@ -29,8 +29,8 @@ describe DottedFormatter, "#register" do
   end
 
   it "creates TimerAction and TallyAction" do
-    timer = mock("timer")
-    tally = mock("tally")
+    timer = double("timer")
+    tally = double("tally")
     timer.should_receive(:register)
     tally.should_receive(:register)
     tally.should_receive(:counter)
@@ -221,15 +221,15 @@ end
 
 describe DottedFormatter, "#finish" do
   before :each do
-    @tally = mock("tally").as_null_object
-    TallyAction.stub!(:new).and_return(@tally)
-    @timer = mock("timer").as_null_object
-    TimerAction.stub!(:new).and_return(@timer)
+    @tally = double("tally").as_null_object
+    TallyAction.stub(:new).and_return(@tally)
+    @timer = double("timer").as_null_object
+    TimerAction.stub(:new).and_return(@timer)
 
     $stdout = @out = IOStub.new
     context = ContextState.new "Class#method"
     @state = ExampleState.new(context, "runs")
-    MSpec.stub!(:register)
+    MSpec.stub(:register)
     @formatter = DottedFormatter.new
     @formatter.register
   end
@@ -248,7 +248,7 @@ describe DottedFormatter, "#finish" do
 
   it "prints a backtrace for an exception" do
     exc = ExceptionState.new @state, nil, MSpecExampleError.new("broken")
-    exc.stub!(:backtrace).and_return("path/to/some/file.rb:35:in method")
+    exc.stub(:backtrace).and_return("path/to/some/file.rb:35:in method")
     @formatter.exception exc
     @formatter.after @state
     @formatter.finish
@@ -269,7 +269,7 @@ describe DottedFormatter, "#finish" do
 
   it "prints errors, backtraces, elapsed time, and tallies" do
     exc = ExceptionState.new @state, nil, MSpecExampleError.new("broken")
-    exc.stub!(:backtrace).and_return("path/to/some/file.rb:35:in method")
+    exc.stub(:backtrace).and_return("path/to/some/file.rb:35:in method")
     @formatter.exception exc
     @timer.should_receive(:format).and_return("Finished in 2.0 seconds")
     @tally.should_receive(:format).and_return("1 example, 1 failure")

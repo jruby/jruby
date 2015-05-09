@@ -1,7 +1,4 @@
-fails:Module#public is a private method
 fails:Module#public on a superclass method calls the redefined method
-fails:Module#public makes a private Object instance method public in Kernel
-fails:Module#public raises a NameError when given an undefined name
 fails:Module#public without arguments stops setting visibility if the body encounters other visibility setters without arguments
 fails:Module#public without arguments does not affect method definitions when itself is inside an eval and method definitions are outside
 fails:Module#public without arguments affects evaled method definitions when itself is outside the eval

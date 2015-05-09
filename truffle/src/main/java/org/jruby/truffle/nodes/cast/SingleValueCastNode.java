@@ -9,14 +9,15 @@
  */
 package org.jruby.truffle.nodes.cast;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyNilClass;
-
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.source.SourceSection;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class SingleValueCastNode extends RubyNode {
@@ -25,26 +26,21 @@ public abstract class SingleValueCastNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public SingleValueCastNode(SingleValueCastNode prev) {
-        super(prev);
-    }
+    public abstract Object executeSingleValue(VirtualFrame frame, Object[] args);
 
-    public abstract Object executeSingleValue(Object[] args);
-
-    @Specialization(guards = "noArguments")
+    @Specialization(guards = "noArguments(args)")
     protected RubyNilClass castNil(Object[] args) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
-    @Specialization(guards = "singleArgument")
+    @Specialization(guards = "singleArgument(args)")
     protected Object castSingle(Object[] args) {
         return args[0];
     }
-    
-    @Specialization(guards = { "!noArguments", "!singleArgument" })
-    protected RubyArray castMany(Object[] args) {
-        notDesignedForCompilation();
 
+    @CompilerDirectives.TruffleBoundary
+    @Specialization(guards = { "!noArguments(args)", "!singleArgument(args)" })
+    protected RubyArray castMany(Object[] args) {
         return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
     }
 

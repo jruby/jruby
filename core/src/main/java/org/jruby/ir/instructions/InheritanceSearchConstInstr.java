@@ -5,6 +5,7 @@ import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -76,6 +77,10 @@ public class InheritanceSearchConstInstr extends ResultBaseInstr implements Fixe
         e.encode(getCurrentModule());
         e.encode(getConstName());
         e.encode(isNoPrivateConsts());
+    }
+
+    public static InheritanceSearchConstInstr decode(IRReaderDecoder d) {
+        return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.decodeBoolean());
     }
 
     @Override

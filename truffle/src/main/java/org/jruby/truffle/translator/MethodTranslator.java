@@ -19,15 +19,17 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
-import org.jruby.truffle.nodes.methods.arguments.*;
+import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
+import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.nodes.methods.arguments.ShouldDestructureNode;
 import org.jruby.truffle.nodes.methods.locals.FlipFlopStateNode;
-import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeFactory;
+import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeGen;
 import org.jruby.truffle.nodes.respondto.RespondToNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperCallNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperReCallNode;
@@ -46,7 +48,7 @@ class MethodTranslator extends BodyTranslator {
 
     public RubyNode compileFunctionNode(SourceSection sourceSection, String methodName, ArgsNode argsNode, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
         if (PRINT_PARSE_TREE_METHOD_NAMES.contains(methodName)) {
-            System.err.println(methodName);
+            System.err.println(sourceSection + " " + methodName);
             System.err.println(sharedMethodInfo.getParseTree().toString(true, 0));
         }
 
@@ -69,7 +71,7 @@ class MethodTranslator extends BodyTranslator {
          */
 
         if (isBlock && argsNode.childNodes().size() == 2 && argsNode.getRestArgNode() instanceof org.jruby.ast.UnnamedRestArgNode) {
-            arityForCheck = new Arity(arity.getRequired(), 0, false, false);
+            arityForCheck = new Arity(arity.getRequired(), 0, false, false, false, 0);
         } else {
             arityForCheck = arity;
         }
@@ -112,9 +114,9 @@ class MethodTranslator extends BodyTranslator {
 
             if (shouldConsiderDestructuringArrayArg) {
                 final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
-                final RubyNode castArrayNode = ArrayCastNodeFactory.create(context, sourceSection, readArrayNode);
+                final RubyNode castArrayNode = ArrayCastNodeGen.create(context, sourceSection, readArrayNode);
                 final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
-                final RubyNode writeArrayNode = WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot, castArrayNode);
+                final RubyNode writeArrayNode = WriteLocalVariableNodeGen.create(context, sourceSection, arraySlot, castArrayNode);
 
                 final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
                 destructureArgumentsTranslator.pushArraySlot(arraySlot);
@@ -161,7 +163,6 @@ class MethodTranslator extends BodyTranslator {
                     new CatchBreakAsProcErrorNode(context, sourceSection, body),
                     NodeUtil.cloneNode(body));
         } else {
-            body = new CatchBreakAsReturnNode(context, sourceSection, body);
             body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID());
         }
 
@@ -177,16 +178,17 @@ class MethodTranslator extends BodyTranslator {
                 context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 
         if (PRINT_AST_METHOD_NAMES.contains(methodName)) {
-            System.err.println(methodName);
+            System.err.println(sourceSection + " " + methodName);
             NodeUtil.printCompactTree(System.err, rootNode);
         }
 
         if (PRINT_FULL_AST_METHOD_NAMES.contains(methodName)) {
-            System.err.println(methodName);
+            System.err.println(sourceSection + " " + methodName);
             NodeUtil.printTree(System.err, rootNode);
         }
 
         if (isBlock) {
+            // Blocks
             final RubyRootNode newRootNodeForBlocks = rootNode.cloneRubyRootNode();
 
             for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForBlocks, BehaveAsBlockNode.class)) {
@@ -197,6 +199,9 @@ class MethodTranslator extends BodyTranslator {
                 behaveAsProcNode.replace(behaveAsProcNode.getNotAsProc());
             }
 
+            final CallTarget callTargetAsBlock = Truffle.getRuntime().createCallTarget(newRootNodeForBlocks);
+
+            // Procs
             final RubyRootNode newRootNodeForProcs = rootNode.cloneRubyRootNode();
 
             for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForProcs, BehaveAsBlockNode.class)) {
@@ -209,8 +214,7 @@ class MethodTranslator extends BodyTranslator {
 
             final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
 
-            final CallTarget callTargetAsBlock = Truffle.getRuntime().createCallTarget(newRootNodeForBlocks);
-
+            // Methods
             final RubyRootNode newRootNodeForMethods = rootNode.cloneRubyRootNode();
 
             for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForMethods, BehaveAsBlockNode.class)) {
@@ -232,7 +236,7 @@ class MethodTranslator extends BodyTranslator {
             final CallTarget callTargetAsMethod = Truffle.getRuntime().createCallTarget(newRootNodeWithCatchReturn);
 
             return new BlockDefinitionNode(context, sourceSection, environment.getSharedMethodInfo(),
-                    environment.needsDeclarationFrame(), callTargetAsBlock, callTargetAsProc, callTargetAsMethod);
+                    environment.needsDeclarationFrame(), callTargetAsBlock, callTargetAsProc, callTargetAsMethod, environment.getBlockID());
         } else {
             return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(),
                     environment.needsDeclarationFrame(), Truffle.getRuntime().createCallTarget(rootNode));
@@ -242,7 +246,8 @@ class MethodTranslator extends BodyTranslator {
     public static Arity getArity(org.jruby.ast.ArgsNode argsNode) {
         final int minimum = argsNode.getRequiredArgsCount();
         final int maximum = argsNode.getMaxArgumentsCount();
-        return new Arity(minimum, argsNode.getOptionalArgsCount(), maximum == -1, argsNode.hasKwargs());
+        // TODO CS 19-Mar-15 collect up the keyword argument names here
+        return new Arity(minimum, argsNode.getOptionalArgsCount(), maximum == -1, argsNode.hasKwargs(), argsNode.hasKeyRest(), argsNode.countKeywords(), argsNode);
     }
 
     @Override
@@ -263,7 +268,16 @@ class MethodTranslator extends BodyTranslator {
             environment.setNeedsDeclarationFrame();
         }
 
-        return new GeneralSuperReCallNode(context, sourceSection, environment.isBlock());
+        final RubyNode blockNode;
+
+        if (node.getIterNode() != null) {
+            currentCallMethodName = environment.getNamedMethodName();
+            blockNode = node.getIterNode().accept(this);
+        } else {
+            blockNode = null;
+        }
+
+        return new GeneralSuperReCallNode(context, sourceSection, environment.isBlock(), blockNode);
     }
 
     @Override

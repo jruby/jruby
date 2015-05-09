@@ -12,9 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
-import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeUtil;
-
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -33,7 +31,6 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -61,13 +58,14 @@ public abstract class CoreMethodNodeManager {
         final RubyContext context = rubyObjectClass.getContext();
 
         RubyModule module;
+        String fullName = methodDetails.getClassAnnotation().name();
 
-        if (methodDetails.getClassAnnotation().name().equals("main")) {
+        if (fullName.equals("main")) {
             module = context.getCoreLibrary().getMainObject().getSingletonClass(null);
         } else {
             module = rubyObjectClass;
 
-            for (String moduleName : methodDetails.getClassAnnotation().name().split("::")) {
+            for (String moduleName : fullName.split("::")) {
                 final RubyConstant constant = ModuleOperations.lookupConstant(context, LexicalScope.NONE, module, moduleName);
 
                 if (constant == null) {
@@ -78,7 +76,7 @@ public abstract class CoreMethodNodeManager {
             }
         }
 
-        assert module != null : methodDetails.getClassAnnotation().name();
+        assert module != null : fullName;
 
         final CoreMethod anno = methodDetails.getMethodAnnotation();
 
@@ -115,20 +113,19 @@ public abstract class CoreMethodNodeManager {
         }
     }
 
-    private static void addMethod(RubyModule module, RubyRootNode rootNode, List<String> names, Visibility visibility) {
+    private static void addMethod(RubyModule module, RubyRootNode rootNode, List<String> names, final Visibility originalVisibility) {
         for (String name : names) {
             final RubyRootNode rootNodeCopy = NodeUtil.cloneNode(rootNode);
 
-            final CoreMethodNode coreMethodNode = NodeUtil.findFirstNodeInstance(rootNodeCopy, CoreMethodNode.class);
-
-            if (coreMethodNode != null) {
-                coreMethodNode.setName(name);
+            Visibility visibility = originalVisibility;
+            if (ModuleOperations.isMethodPrivateFromName(name)) {
+                visibility = Visibility.PRIVATE;
             }
 
             final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
                     Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
 
-            module.addMethod(null, method.withVisibility(visibility).withNewName(name));
+            module.addMethod(null, method.withVisibility(visibility).withName(name));
         }
     }
 
@@ -144,7 +141,7 @@ public abstract class CoreMethodNodeManager {
             optional = methodDetails.getMethodAnnotation().optional();
         }
 
-        final Arity arity = new Arity(required,  optional, methodDetails.getMethodAnnotation().argumentsAsArray(), false);
+        final Arity arity = new Arity(required,  optional, methodDetails.getMethodAnnotation().argumentsAsArray(), false, false, 0);
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, arity, methodDetails.getIndicativeName(), false, null, true);
 
@@ -175,7 +172,7 @@ public abstract class CoreMethodNodeManager {
                 }
 
                 if (ArrayUtils.contains(methodDetails.getMethodAnnotation().raiseIfFrozenParameters(), n)) {
-                    readArgumentNode = new FixnumLowerNode(readArgumentNode);
+                    readArgumentNode = new RaiseIfFrozenNode(readArgumentNode);
                 }
 
                 argumentsNodes.add(readArgumentNode);
@@ -205,64 +202,23 @@ public abstract class CoreMethodNodeManager {
             }
         }
 
-        verifyNoAmbiguousDefaultArguments(methodDetails);
-
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         RubyNode sequence = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
 
-        if (methodDetails.getMethodAnnotation().taintFromSelf() || methodDetails.getMethodAnnotation().taintFromParameters().length > 0) {
+        if (methodDetails.getMethodAnnotation().returnsEnumeratorIfNoBlock()) {
+            // TODO BF 3-18-2015 Handle multiple method names correctly
+            sequence = new ReturnEnumeratorIfNoBlockNode(methodDetails.getMethodAnnotation().names()[0], sequence);
+        }
+
+        if (methodDetails.getMethodAnnotation().taintFromSelf() || methodDetails.getMethodAnnotation().taintFromParameter() != -1) {
             sequence = new TaintResultNode(methodDetails.getMethodAnnotation().taintFromSelf(),
-                                           methodDetails.getMethodAnnotation().taintFromParameters(),
+                                           methodDetails.getMethodAnnotation().taintFromParameter(),
                                            sequence);
         }
 
         final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, sequence, methodDetails.getMethodAnnotation().unsupportedOperationBehavior());
 
         return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode);
-    }
-
-    private static boolean verifyNoAmbiguousDefaultArguments(MethodDetails methodDetails) {
-        boolean success = true;
-
-        if (methodDetails.getMethodAnnotation().optional() > 0) {
-            int opt = methodDetails.getMethodAnnotation().optional();
-            int argc = methodDetails.getNodeFactory().getExecutionSignature().size();
-            Class<?> node = methodDetails.getNodeFactory().getNodeClass();
-
-            boolean undefined = false, object = false;
-
-            for (int i = 1; i <= opt; i++) {
-                for (Method method : node.getDeclaredMethods()) {
-                    if (method.isAnnotationPresent(Specialization.class)) {
-                        // use getParameterTypes().length to ignore optional VirtualFrame in front.
-                        Class<?> c = method.getParameterTypes()[method.getParameterTypes().length - i];
-                        if (c == UndefinedPlaceholder.class) {
-                            undefined |= true;
-                        } else if (c == Object.class) {
-                            String[] guards = method.getAnnotation(Specialization.class).guards();
-                            boolean guarded = false;
-                            for (String guard : guards) {
-                                if (guard.equals("!isUndefinedPlaceholder(arguments[" + (argc - i) + "])")) {
-                                    guarded = true;
-                                }
-                            }
-                            object |= (guarded == false);
-                        }
-                    }
-                }
-
-                if (undefined && object) {
-                    success = false;
-                    System.err.println("Ambiguous default argument " + (argc - i) + " in " + node.getCanonicalName());
-                }
-            }
-        }
-
-        if (!success) {
-            throw new RuntimeException("Found ambiguous arguments");
-        }
-
-        return success;
     }
 
     public static class MethodDetails {

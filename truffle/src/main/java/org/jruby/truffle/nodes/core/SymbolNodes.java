@@ -13,30 +13,18 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.Ruby;
-import org.jruby.RubyObject;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyEncoding;
-import org.jruby.truffle.runtime.core.RubyNilClass;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
 
     @CoreMethod(names = {"==", "==="}, required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
+    public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -44,7 +32,8 @@ public abstract class SymbolNodes {
             return a == b;
         }
 
-        @Specialization(guards = "!isRubySymbol(arguments[1])")
+
+        @Specialization(guards = "!isRubySymbol(b)")
         public boolean equal(RubySymbol a, Object b) {
             return false;
         }
@@ -52,45 +41,34 @@ public abstract class SymbolNodes {
     }
 
     @CoreMethod(names = "<=>", required = 1)
-    public abstract static class CompareNode extends CoreMethodNode {
+    public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public CompareNode(CompareNode prev) {
-            super(prev);
-        }
-
+        @TruffleBoundary
         @Specialization
         public int compare(RubySymbol a, RubySymbol b) {
-            notDesignedForCompilation();
-
             return a.getByteList().cmp(b.getByteList());
         }
 
-        @Specialization(guards = "!isRubySymbol(arguments[1])")
+        @Specialization(guards = "!isRubySymbol(other)")
         public RubyNilClass compare(RubySymbol symbol,  Object other) {
-            notDesignedForCompilation();
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
     }
 
     @CoreMethod(names = "all_symbols", onSingleton = true)
-    public abstract static class AllSymbolsNode extends CoreMethodNode {
+    public abstract static class AllSymbolsNode extends CoreMethodArrayArgumentsNode {
 
         public AllSymbolsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public AllSymbolsNode(AllSymbolsNode prev) {
-            super(prev);
-        }
-
+        @TruffleBoundary
         @Specialization
         public RubyArray allSymbols() {
-            notDesignedForCompilation();
-
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (RubySymbol s : getContext().getSymbolTable().allSymbols()) {
@@ -102,121 +80,89 @@ public abstract class SymbolNodes {
     }
 
     @CoreMethod(names = "capitalize")
-    public abstract static class CapitalizeNode extends CoreMethodNode {
+    public abstract static class CapitalizeNode extends CoreMethodArrayArgumentsNode {
 
         public CapitalizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public CapitalizeNode(CapitalizeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubySymbol capitalize(RubySymbol symbol) {
-            notDesignedForCompilation();
             final ByteList byteList = SymbolNodesHelper.capitalize(symbol.getByteList());
-            return getContext().newSymbol(byteList);
+            return getContext().getSymbol(byteList);
         }
 
     }
 
     @CoreMethod(names = "casecmp", required = 1)
-    public abstract static class CaseCompareNode extends CoreMethodNode {
+    public abstract static class CaseCompareNode extends CoreMethodArrayArgumentsNode {
 
         public CaseCompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public CaseCompareNode(CaseCompareNode prev) {
-            super(prev);
-        }
-
+        @TruffleBoundary
         @Specialization
         public int caseCompare(RubySymbol symbol, RubySymbol other) {
-            notDesignedForCompilation();
-
             return symbol.getByteList().caseInsensitiveCmp(other.getByteList());
         }
 
-        @Specialization(guards = "!isRubySymbol(arguments[1])")
+        @Specialization(guards = "!isRubySymbol(other)")
         public RubyNilClass caseCompare(RubySymbol symbol,  Object other) {
-            notDesignedForCompilation();
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
 
     @CoreMethod(names = "downcase")
-    public abstract static class DowncaseNode extends CoreMethodNode {
+    public abstract static class DowncaseNode extends CoreMethodArrayArgumentsNode {
 
         public DowncaseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public DowncaseNode(DowncaseNode prev) {
-            super(prev);
-        }
-
+        @TruffleBoundary
         @Specialization
         public RubySymbol downcase(RubySymbol symbol) {
-            notDesignedForCompilation();
-
             final ByteList byteList = SymbolNodesHelper.downcase(symbol.getByteList());
-            return getContext().newSymbol(byteList);
+            return getContext().getSymbol(byteList);
         }
 
     }
 
     @CoreMethod(names = "empty?")
-    public abstract static class EmptyNode extends CoreMethodNode {
+    public abstract static class EmptyNode extends CoreMethodArrayArgumentsNode {
 
         public EmptyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public EmptyNode(EmptyNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean empty(RubySymbol symbol) {
-            notDesignedForCompilation();
-
             return symbol.toString().isEmpty();
         }
 
     }
 
     @CoreMethod(names = "encoding")
-    public abstract static class EncodingNode extends CoreMethodNode {
+    public abstract static class EncodingNode extends CoreMethodArrayArgumentsNode {
 
         public EncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public EncodingNode(EncodingNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyEncoding encoding(RubySymbol symbol) {
-            notDesignedForCompilation();
-
             return RubyEncoding.getEncoding(symbol.getByteList().getEncoding());
         }
 
     }
 
     @CoreMethod(names = "hash")
-    public abstract static class HashNode extends CoreMethodNode {
+    public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
         public HashNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public HashNode(HashNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -227,14 +173,10 @@ public abstract class SymbolNodes {
     }
 
     @CoreMethod(names = "intern")
-    public abstract static class InternNode extends CoreMethodNode {
+    public abstract static class InternNode extends CoreMethodArrayArgumentsNode {
 
         public InternNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InternNode(InternNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -245,34 +187,25 @@ public abstract class SymbolNodes {
     }
 
     @CoreMethod(names = "to_proc")
-    public abstract static class ToProcNode extends CoreMethodNode {
+    public abstract static class ToProcNode extends CoreMethodArrayArgumentsNode {
 
         public ToProcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ToProcNode(ToProcNode prev) {
-            super(prev);
-        }
-
+        @TruffleBoundary
         @Specialization
         public RubyProc toProc(RubySymbol symbol) {
-            notDesignedForCompilation();
-
             // TODO(CS): this should be doing all kinds of caching
             return symbol.toProc(Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection(), this);
         }
     }
 
     @CoreMethod(names = "to_sym")
-    public abstract static class ToSymNode extends CoreMethodNode {
+    public abstract static class ToSymNode extends CoreMethodArrayArgumentsNode {
 
         public ToSymNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToSymNode(ToSymNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -283,14 +216,10 @@ public abstract class SymbolNodes {
     }
 
     @CoreMethod(names = { "to_s", "id2name" })
-    public abstract static class ToSNode extends CoreMethodNode {
+    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToSNode(ToSNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -301,34 +230,25 @@ public abstract class SymbolNodes {
     }
 
     @CoreMethod(names = "inspect")
-    public abstract static class InspectNode extends CoreMethodNode {
+    public abstract static class InspectNode extends CoreMethodArrayArgumentsNode {
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public InspectNode(InspectNode prev) {
-            super(prev);
-        }
-
+        @TruffleBoundary
         @Specialization
         public RubyString inspect(RubySymbol symbol) {
-            notDesignedForCompilation();
-
             return getContext().makeString(symbol.getJRubySymbol().inspect(getContext().getRuntime().getCurrentContext()).asString().decodeString());
         }
 
     }
 
     @CoreMethod(names = {"size", "length"})
-    public abstract static class SizeNode extends CoreMethodNode {
+    public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SizeNode(SizeNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -339,43 +259,31 @@ public abstract class SymbolNodes {
     }
 
     @CoreMethod(names = { "swapcase"})
-    public abstract static class SwapcaseNode extends CoreMethodNode {
+    public abstract static class SwapcaseNode extends CoreMethodArrayArgumentsNode {
 
         public SwapcaseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public SwapcaseNode(SwapcaseNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubySymbol swapcase(RubySymbol symbol) {
-            notDesignedForCompilation();
-
             final ByteList byteList = SymbolNodesHelper.swapcase(symbol.getByteList());
-            return getContext().newSymbol(byteList);
+            return getContext().getSymbol(byteList);
         }
 
     }
 
     @CoreMethod(names = "upcase")
-    public abstract static class UpcaseNode extends CoreMethodNode {
+    public abstract static class UpcaseNode extends CoreMethodArrayArgumentsNode {
 
         public UpcaseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public UpcaseNode(UpcaseNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubySymbol upcase(RubySymbol symbol) {
-            notDesignedForCompilation();
-
             final ByteList byteList = SymbolNodesHelper.upcase(symbol.getByteList());
-            return getContext().newSymbol(byteList);
+            return getContext().getSymbol(byteList);
         }
 
     }

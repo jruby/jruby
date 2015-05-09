@@ -15,7 +15,10 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.dispatch.DispatchNode;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -35,36 +38,31 @@ public abstract class HashCastNode extends RubyNode {
         toHashNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
     }
 
-    public HashCastNode(HashCastNode prev) {
-        super(prev);
-        toHashNode = prev.toHashNode;
-    }
-
     protected abstract RubyNode getChild();
 
     @Specialization
     public RubyNilClass cast(boolean value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(int value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(long value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(double value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(RubyBignum value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
@@ -77,14 +75,12 @@ public abstract class HashCastNode extends RubyNode {
         return nil;
     }
 
-    @Specialization(guards = {"!isRubyNilClass", "!isRubyHash"})
+    @Specialization(guards = {"!isRubyNilClass(object)", "!isRubyHash(object)"})
     public Object cast(VirtualFrame frame, RubyBasicObject object) {
-        notDesignedForCompilation();
-
         final Object result = toHashNode.call(frame, object, "to_hash", null, new Object[]{});
 
         if (result == DispatchNode.MISSING) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         if (!(result instanceof RubyHash)) {

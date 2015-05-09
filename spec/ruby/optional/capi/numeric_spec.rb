@@ -164,10 +164,12 @@ describe "CApiNumericSpecs" do
       @s.rb_int2num(5).should == 5
     end
 
-    # INT2NUM used to use `long` prior to MRI 1.9. With 1.9 it has been changed
-    # to use `int` instead.
-    it "converts 0xFFFFFFFF to -1" do
-      @s.rb_int2num(0xFFFFFFFF).should == -1
+    platform_is_not :wordsize => 32 do
+      # INT2NUM used to use `long` prior to MRI 1.9. With 1.9 it has been changed
+      # to use `int` instead.
+      it "converts 0xFFFFFFFF to -1" do
+        @s.rb_int2num(0xFFFFFFFF).should == -1
+      end
     end
   end
 

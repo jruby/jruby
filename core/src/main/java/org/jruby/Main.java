@@ -283,8 +283,6 @@ public class Main {
         }
 
         try {
-            doSetContextClassLoader(runtime);
-
             if (in == null) {
                 // no script to run, return success
                 return new Status();
@@ -454,18 +452,6 @@ public class Main {
         }
     }
 
-    private void doSetContextClassLoader(Ruby runtime) {
-        // set thread context JRuby classloader here, for the main thread
-        try {
-            Thread.currentThread().setContextClassLoader(runtime.getJRubyClassLoader());
-        } catch (SecurityException se) {
-            // can't set TC classloader
-            if (runtime.getInstanceConfig().isVerbose()) {
-                config.getError().println("WARNING: Security restrictions disallowed setting context classloader for main thread.");
-            }
-        }
-    }
-
     private void doProcessArguments(InputStream in) {
         config.processArguments(config.parseShebangOptions(in));
     }
@@ -517,7 +503,7 @@ public class Main {
      * @param rj
      * @return
      */
-    private static int handleRaiseException(RaiseException rj) {
+    protected static int handleRaiseException(RaiseException rj) {
         RubyException raisedException = rj.getException();
         Ruby runtime = raisedException.getRuntime();
         if (runtime.getSystemExit().isInstance(raisedException)) {

@@ -1,0 +1,3 @@
+fails:StringIO#read when passed length, buffer raises a TypeError when passed a frozen String as buffer
+fails:StringIO#read when passed length, buffer returns a String in ASCII-8BIT ignoring the encoding of the source String and buffer
+fails:StringIO#read when passed length returns nil when passed 0 and no data remains

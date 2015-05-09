@@ -7,7 +7,7 @@ class BeNilMatcher
   def failure_message
     ["Expected #{@actual.inspect}", "to be nil"]
   end
-  
+
   def negative_failure_message
     ["Expected #{@actual.inspect}", "not to be nil"]
   end

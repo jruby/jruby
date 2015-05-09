@@ -32,10 +32,12 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
-import org.jruby.ast.ArgsNode;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.PositionAware;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -44,7 +46,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author jpetersen
  */
-public class ProcMethod extends DynamicMethod implements PositionAware, MethodArgs2 {
+public class ProcMethod extends DynamicMethod implements PositionAware, IRMethodArgs {
     private RubyProc proc;
 
     /**
@@ -57,9 +59,6 @@ public class ProcMethod extends DynamicMethod implements PositionAware, MethodAr
         this.proc = proc;
     }
 
-    /**
-     * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
-     */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
         return proc.call(context, args, self, block);
     }
@@ -77,7 +76,7 @@ public class ProcMethod extends DynamicMethod implements PositionAware, MethodAr
     
     @Override
     public Arity getArity() {
-        return proc.getBlock().arity();
+        return proc.getBlock().getSignature().arity();
     }
 
     public String getFile() {
@@ -88,7 +87,13 @@ public class ProcMethod extends DynamicMethod implements PositionAware, MethodAr
         return proc.getBlock().getBody().getLine();
     }
 
-    public String[] getParameterList() {
-        return proc.getBlock().getBody().getParameterList();
+    @Override
+    public Signature getSignature() {
+        return proc.getBlock().getBody().getSignature();
+    }
+
+    @Override
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return proc.getBlock().getBody().getArgumentDescriptors();
     }
 }

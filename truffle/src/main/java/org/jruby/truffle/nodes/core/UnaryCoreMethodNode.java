@@ -15,14 +15,10 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 @NodeChild(value = "operand", type = RubyNode.class)
-public abstract class UnaryCoreMethodNode extends RubyNode {
+public abstract class UnaryCoreMethodNode extends CoreMethodNode {
 
     public UnaryCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-    }
-
-    public UnaryCoreMethodNode(UnaryCoreMethodNode prev) {
-        super(prev);
     }
 
     public abstract RubyNode getOperand();

@@ -16,28 +16,21 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
-import org.jruby.truffle.runtime.util.Consumer;
 
 @CoreClass(name = "Thread")
 public abstract class ThreadNodes {
 
     @CoreMethod(names = "alive?")
-    public abstract static class AliveNode extends CoreMethodNode {
+    public abstract static class AliveNode extends CoreMethodArrayArgumentsNode {
 
         public AliveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public AliveNode(AliveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -48,124 +41,82 @@ public abstract class ThreadNodes {
     }
 
     @CoreMethod(names = "current", onSingleton = true)
-    public abstract static class CurrentNode extends CoreMethodNode {
+    public abstract static class CurrentNode extends CoreMethodArrayArgumentsNode {
 
         public CurrentNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public CurrentNode(CurrentNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyThread current() {
-            notDesignedForCompilation();
-
             return getContext().getThreadManager().getCurrentThread();
         }
 
     }
 
-    @CoreMethod(names = "exit", onSingleton = true)
-    public abstract static class ExitModuleNode extends CoreMethodNode {
-
-        public ExitModuleNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ExitModuleNode(ExitModuleNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyNilClass exit() {
-            getContext().getThreadManager().getCurrentThread().exit();
-            return getContext().getCoreLibrary().getNilObject();
-        }
-
-    }
-
     @CoreMethod(names = { "kill", "exit", "terminate" })
-    public abstract static class KillNode extends CoreMethodNode {
+    public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
 
         public KillNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public KillNode(KillNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public RubyThread kill(final RubyThread thread) {
-            getContext().getSafepointManager().pauseAllThreadsAndExecute(this, new SafepointAction() {
+        public RubyThread kill(final RubyThread rubyThread) {
+            final Thread toKill = rubyThread.getRootFiberJavaThread();
 
+            getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new SafepointAction() {
                 @Override
                 public void run(RubyThread currentThread, Node currentNode) {
-                    if (currentThread == thread) {
-                        currentThread.exit();
-                    }
+                    currentThread.shutdown();
                 }
-
             });
 
-            return thread;
+            return rubyThread;
         }
 
     }
 
     @CoreMethod(names = "initialize", needsBlock = true)
-    public abstract static class InitializeNode extends CoreMethodNode {
+    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass initialize(RubyThread thread, RubyProc block) {
-            notDesignedForCompilation();
-
             thread.initialize(getContext(), this, block);
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
 
     @CoreMethod(names = "join", optional = 1)
-    public abstract static class JoinNode extends CoreMethodNode {
+    public abstract static class JoinNode extends CoreMethodArrayArgumentsNode {
 
         public JoinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public JoinNode(JoinNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyThread join(RubyThread thread, UndefinedPlaceholder timeout) {
-            notDesignedForCompilation();
-
             thread.join();
             return thread;
         }
 
         @Specialization
-        public Object join(RubyThread thread, int timeout) {
-            notDesignedForCompilation();
+        public RubyThread join(RubyThread thread, RubyNilClass timeout) {
+            return join(thread, UndefinedPlaceholder.INSTANCE);
+        }
 
+        @Specialization
+        public Object join(RubyThread thread, int timeout) {
             return joinMillis(thread, timeout * 1000);
         }
 
         @Specialization
         public Object join(RubyThread thread, double timeout) {
-            notDesignedForCompilation();
-
             return joinMillis(thread, (int) (timeout * 1000.0));
         }
 
@@ -173,21 +124,17 @@ public abstract class ThreadNodes {
             if (self.join(timeoutInMillis)) {
                 return self;
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
     }
 
     @CoreMethod(names = "main", onSingleton = true)
-    public abstract static class MainNode extends CoreMethodNode {
+    public abstract static class MainNode extends CoreMethodArrayArgumentsNode {
 
         public MainNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public MainNode(MainNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -198,7 +145,7 @@ public abstract class ThreadNodes {
     }
 
     @CoreMethod(names = "pass", onSingleton = true)
-    public abstract static class PassNode extends CoreMethodNode {
+    public abstract static class PassNode extends CoreMethodArrayArgumentsNode {
 
         @Child ThreadPassNode threadPassNode;
 
@@ -207,32 +154,22 @@ public abstract class ThreadNodes {
             threadPassNode = new ThreadPassNode(context, sourceSection);
         }
 
-        public PassNode(PassNode prev) {
-            super(prev);
-            threadPassNode = prev.threadPassNode;
-        }
-
         @Specialization
         public RubyNilClass pass(VirtualFrame frame) {
             threadPassNode.executeVoid(frame);
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
 
     @CoreMethod(names = "raise", required = 1, optional = 1)
-    public abstract static class RaiseNode extends CoreMethodNode {
+    public abstract static class RaiseNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode initialize;
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public RaiseNode(RaiseNode prev) {
-            super(prev);
-            initialize = prev.initialize;
+            initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
         @Specialization
@@ -257,63 +194,31 @@ public abstract class ThreadNodes {
 
             final RaiseException exceptionWrapper = new RaiseException((RubyException) exception);
 
-            getContext().getSafepointManager().pauseAllThreadsAndExecute(this, new SafepointAction() {
-
+            getContext().getSafepointManager().pauseThreadAndExecuteLater(thread.getCurrentFiberJavaThread(), this, new SafepointAction() {
                 @Override
                 public void run(RubyThread currentThread, Node currentNode) {
-                    if (currentThread == thread) {
-                        throw exceptionWrapper;
-                    }
+                    throw exceptionWrapper;
                 }
-
             });
 
-            return getContext().getCoreLibrary().getNilObject();
-        }
-
-    }
-
-    @CoreMethod(names = "run")
-    public abstract static class RunNode extends CoreMethodNode {
-
-        public RunNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public RunNode(RunNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyThread run(final RubyThread thread) {
-            notDesignedForCompilation();
-
-            thread.interrupt();
-
-            return thread;
+            return nil();
         }
 
     }
 
     @CoreMethod(names = "status")
-    public abstract static class StatusNode extends CoreMethodNode {
+    public abstract static class StatusNode extends CoreMethodArrayArgumentsNode {
 
         public StatusNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public StatusNode(StatusNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object status(RubyThread self) {
-            notDesignedForCompilation();
-
             // TODO: slightly hackish
             if (self.getStatus() == Status.DEAD) {
                 if (self.getException() != null) {
-                    return getContext().getCoreLibrary().getNilObject();
+                    return nil();
                 } else {
                     return false;
                 }
@@ -325,64 +230,50 @@ public abstract class ThreadNodes {
     }
 
     @CoreMethod(names = "stop?")
-    public abstract static class StopNode extends CoreMethodNode {
+    public abstract static class StopNode extends CoreMethodArrayArgumentsNode {
 
         public StopNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public StopNode(StopNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean stop(RubyThread self) {
-            notDesignedForCompilation();
-
             return self.getStatus() == Status.DEAD || self.getStatus() == Status.SLEEP;
         }
 
     }
 
     @CoreMethod(names = "value")
-    public abstract static class ValueNode extends CoreMethodNode {
+    public abstract static class ValueNode extends CoreMethodArrayArgumentsNode {
 
         public ValueNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ValueNode(ValueNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object value(RubyThread self) {
-            notDesignedForCompilation();
-
             self.join();
-
             return self.getValue();
         }
 
     }
 
-    @CoreMethod(names = "wakeup")
-    public abstract static class WakeupNode extends CoreMethodNode {
+    @CoreMethod(names = { "wakeup", "run" })
+    public abstract static class WakeupNode extends CoreMethodArrayArgumentsNode {
 
         public WakeupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public WakeupNode(WakeupNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyThread wakeup(final RubyThread thread) {
-            notDesignedForCompilation();
+            if (thread.getStatus() == Status.DEAD) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().threadError("killed thread", this));
+            }
 
             // TODO: should only interrupt sleep
-            thread.interrupt();
+            thread.wakeup();
 
             return thread;
         }

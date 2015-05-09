@@ -42,6 +42,14 @@ describe "C-API Array function" do
     end
   end
 
+  ruby_version_is "2.1" do
+    describe "rb_ary_new_from_args" do
+      it "returns an array with the passed cardinality and varargs" do
+        @s.rb_ary_new_from_args(1,2,3).should == [1,2,3]
+      end
+    end
+  end
+
   describe "rb_ary_new4" do
     it "returns returns an array with the passed values" do
       @s.rb_ary_new4(1,2,3).should == [1,2,3]
@@ -179,6 +187,12 @@ describe "C-API Array function" do
     end
   end
 
+  describe "rb_ary_plus" do
+    it "adds two arrays together" do
+      @s.rb_ary_plus([10], [20]).should == [10, 20]
+    end
+  end
+
   describe "RARRAY_PTR" do
     it "returns a pointer to a C array of the array's elements" do
       a = [1, 2, 3]
@@ -302,7 +316,7 @@ describe "C-API Array function" do
   end
 
   describe "rb_ary_freeze" do
-    it "freezes the object exactly like Object#freeze" do
+    it "freezes the object exactly like Kernel#freeze" do
       ary = [1,2]
       @s.rb_ary_freeze(ary)
       ary.frozen?.should be_true

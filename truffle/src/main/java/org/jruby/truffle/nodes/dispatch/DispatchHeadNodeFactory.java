@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 
 public class DispatchHeadNodeFactory {
@@ -60,12 +59,7 @@ public class DispatchHeadNodeFactory {
     }
 
     public static CallDispatchHeadNode createMethodCallOnSelf(RubyContext context) {
-        return new CallDispatchHeadNode(
-                context,
-                true,
-                false,
-                MissingBehavior.CALL_METHOD_MISSING,
-                null);
+        return createMethodCall(context, true);
     }
 
 }

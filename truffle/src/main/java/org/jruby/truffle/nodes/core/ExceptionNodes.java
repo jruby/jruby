@@ -9,12 +9,13 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
-import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -23,61 +24,75 @@ import org.jruby.truffle.runtime.core.RubyString;
 public abstract class ExceptionNodes {
 
     @CoreMethod(names = "initialize", optional = 1)
-    public abstract static class InitializeNode extends CoreMethodNode {
+    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass initialize(RubyException exception, UndefinedPlaceholder message) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
-            exception.initialize(getContext().makeString(" "), RubyCallStack.getBacktrace(this));
-            return getContext().getCoreLibrary().getNilObject();
+            exception.initialize(getContext().makeString(""));
+            return nil();
         }
 
         @Specialization
         public RubyNilClass initialize(RubyException exception, RubyString message) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
-            exception.initialize(message, RubyCallStack.getBacktrace(this));
-            return getContext().getCoreLibrary().getNilObject();
+            exception.initialize(message);
+            return nil();
         }
 
     }
 
     @CoreMethod(names = "backtrace")
-    public abstract static class BacktraceNode extends CoreMethodNode {
+    public abstract static class BacktraceNode extends CoreMethodArrayArgumentsNode {
 
         public BacktraceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public BacktraceNode(BacktraceNode prev) {
-            super(prev);
+        @Specialization
+        public Object backtrace(RubyException exception) {
+            if (exception.getBacktrace() == null) {
+                return nil();
+            } else {
+                return exception.asRubyStringArray();
+            }
+        }
+
+    }
+
+    @RubiniusOnly
+    @CoreMethod(names = "capture_backtrace!", optional = 1)
+    public abstract static class CaptureBacktraceNode extends CoreMethodArrayArgumentsNode {
+
+        public CaptureBacktraceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
         }
 
         @Specialization
-        public RubyArray backtrace(RubyException exception) {
-            return exception.asRubyStringArray();
+        public RubyNilClass captureBacktrace(RubyException exception, UndefinedPlaceholder offset) {
+            return captureBacktrace(exception, 1);
+        }
+
+        @Specialization
+        public RubyNilClass captureBacktrace(RubyException exception, int offset) {
+            Backtrace backtrace = RubyCallStack.getBacktrace(this, offset);
+            exception.setBacktrace(backtrace);
+            return nil();
         }
 
     }
 
     @CoreMethod(names = "message")
-    public abstract static class MessageNode extends CoreMethodNode {
+    public abstract static class MessageNode extends CoreMethodArrayArgumentsNode {
 
         public MessageNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public MessageNode(MessageNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -88,19 +103,19 @@ public abstract class ExceptionNodes {
     }
 
     @CoreMethod(names = "to_s")
-    public abstract static class ToSNode extends CoreMethodNode {
+    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ToSNode(ToSNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString toS(RubyException exception) {
-            return getContext().makeString(exception.getLogicalClass().getName());
+            if (exception.getMessage().length() == 0) {
+                return getContext().makeString(exception.getLogicalClass().getName());
+            } else {
+                return getContext().makeString(exception.getMessage().getByteList());
+            }
         }
 
     }

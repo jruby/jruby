@@ -9,15 +9,21 @@ project 'JRuby Truffle' do
               'tesla.dump.readonly' => true,
 
               'jruby.basedir' => '${basedir}/..' )
+  
+  repository( 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/releases/',
+              :id => 'truffle' ) do
+    releases 'true'
+    snapshots 'false'
+  end
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
-  jar 'com.oracle:truffle:0.6'
-  jar 'com.oracle:truffle-dsl-processor:0.6', :scope => 'provided'
+  jar 'com.oracle:truffle:0.7'
+  jar 'com.oracle:truffle-dsl-processor:0.7', :scope => 'provided'
 
   plugin( :compiler,
           'encoding' => 'utf-8',
-          'debug' => 'false',
+          'debug' => 'true',
           'verbose' => 'false',
           'showWarnings' => 'true',
           'showDeprecation' => 'true',
@@ -56,7 +62,9 @@ project 'JRuby Truffle' do
         execute_goals( 'shade',
                        :id => 'pack jruby-truffle-complete.jar',
                        :phase => 'verify',
-                       :artifactSet => { :includes => [ 'com.oracle:truffle' ] },
+                       :artifactSet => { :includes => [
+                          'com.oracle:truffle',
+                          'com.oracle:truffle-interop' ] },
                        :shadedArtifactAttached =>  'true',
                        :shadedClassifierName =>  'complete' )
       end

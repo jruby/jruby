@@ -31,25 +31,22 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.ProcMethod;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.CompiledBlockCallback19;
-import org.jruby.runtime.CompiledBlockLight19;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.MethodBlockBody;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.PositionAware;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.DataType;
 
 /** 
  * The RubyMethod class represents a RubyMethod object.
@@ -136,7 +133,14 @@ public class RubyMethod extends AbstractRubyMethod {
      */
     @JRubyMethod
     public RubyFixnum arity() {
-        return getRuntime().newFixnum(method.getArity().getValue());
+        int value;
+        if (method instanceof IRMethodArgs) {
+            value = ((IRMethodArgs) method).getSignature().arityValue();
+        } else {
+            value = method.getArity().getValue();
+        }
+
+        return getRuntime().newFixnum(value);
     }
 
     @JRubyMethod(name = "==", required = 1)
@@ -179,36 +183,22 @@ public class RubyMethod extends AbstractRubyMethod {
      * 
      */
     @JRubyMethod
-    public IRubyObject to_proc(ThreadContext context, Block unusedBlock) {
+    public IRubyObject to_proc(ThreadContext context) {
         Ruby runtime = context.runtime;
-        CompiledBlockCallback19 callback = new CompiledBlockCallback19() {
-            @Override
-            public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-                return method.call(context, receiver, originModule, originName, args, block);
-            }
 
-            @Override
-            public String getFile() {
-                return getFilename();
-            }
-
-            @Override
-            public int getLine() {
-                return RubyMethod.this.getLine();
-            }
-        };
-        int argumentType;
-        if (method.getArity().isFixed()) {
-            if (method.getArity().required() > 0) {
-                argumentType = BlockBody.MULTIPLE_ASSIGNMENT;
-            } else {
-                argumentType = BlockBody.ZERO_ARGS;
-            }
+        MethodBlockBody body;
+        Signature signature;
+        ArgumentDescriptor[] argsDesc;
+        if (method instanceof IRMethodArgs) {
+            signature = ((IRMethodArgs) method).getSignature();
+            argsDesc = ((IRMethodArgs) method).getArgumentDescriptors();
         } else {
-            argumentType = BlockBody.MULTIPLE_ASSIGNMENT;
+            signature = Signature.from(method.getArity());
+            argsDesc = Helpers.methodToArgumentDescriptors(method);
         }
-        BlockBody body = CompiledBlockLight19.newCompiledBlockLight(method.getArity(), runtime.getStaticScopeFactory().getDummyScope(), callback, false, argumentType, JRubyLibrary.MethodExtensions.methodParameters(runtime, method));
-        Block b = new Block(body, context.currentBinding(receiver, Visibility.PUBLIC));
+
+        body = new MethodBlockBody(runtime.getStaticScopeFactory().getDummyScope(), signature, method, argsDesc, receiver, originModule, originName, getFilename(), getLine());
+        Block b = MethodBlockBody.createMethodBlock(body);
         
         return RubyProc.newProc(runtime, b, Block.Type.LAMBDA);
     }
@@ -299,12 +289,12 @@ public class RubyMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public IRubyObject parameters(ThreadContext context) {
-        return JRubyLibrary.MethodExtensions.methodArgs(this);
+        return Helpers.methodToParameters(context.runtime, this);
     }
 
     @JRubyMethod(optional = 1)
     public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
-        return to_proc(context, Block.NULL_BLOCK).callMethod(context, "curry", args);
+        return to_proc(context).callMethod(context, "curry", args);
     }
 
     @JRubyMethod
@@ -320,5 +310,6 @@ public class RubyMethod extends AbstractRubyMethod {
         }
         return name(context);
     }
+
 }
 

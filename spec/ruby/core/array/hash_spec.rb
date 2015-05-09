@@ -11,37 +11,33 @@ describe "Array#hash" do
     end
   end
 
-  ruby_bug "#", "1.8.6.277" do
-    it "properly handles recursive arrays" do
-      empty = ArraySpecs.empty_recursive_array
-      empty.hash.should be_kind_of(Integer)
+  it "properly handles recursive arrays" do
+    empty = ArraySpecs.empty_recursive_array
+    empty.hash.should be_kind_of(Fixnum)
 
-      array = ArraySpecs.recursive_array
-      array.hash.should be_kind_of(Integer)
-    end
+    array = ArraySpecs.recursive_array
+    array.hash.should be_kind_of(Fixnum)
   end
 
-  ruby_bug "redmine #1852", "1.9.1" do
-    it "returns the same hash for equal recursive arrays" do
-      rec = []; rec << rec
-      rec.hash.should == [rec].hash
-      rec.hash.should == [[rec]].hash
-      # This is because rec.eql?([[rec]])
-      # Remember that if two objects are eql?
-      # then the need to have the same hash
-      # Check the Array#eql? specs!
-    end
+  it "returns the same hash for equal recursive arrays" do
+    rec = []; rec << rec
+    rec.hash.should == [rec].hash
+    rec.hash.should == [[rec]].hash
+    # This is because rec.eql?([[rec]])
+    # Remember that if two objects are eql?
+    # then the need to have the same hash
+    # Check the Array#eql? specs!
+  end
 
-    it "returns the same hash for equal recursive arrays through hashes" do
-      h = {} ; rec = [h] ; h[:x] = rec
-      rec.hash.should == [h].hash
-      rec.hash.should == [{:x => rec}].hash
-      # Like above, this is because rec.eql?([{:x => rec}])
-    end
+  it "returns the same hash for equal recursive arrays through hashes" do
+    h = {} ; rec = [h] ; h[:x] = rec
+    rec.hash.should == [h].hash
+    rec.hash.should == [{:x => rec}].hash
+    # Like above, this is because rec.eql?([{:x => rec}])
   end
 
   #  Too much of an implementation detail? -rue
-  not_compliant_on :rubinius do
+  not_compliant_on :rubinius, :opal do
     it "calls to_int on result of calling hash on each element" do
       ary = Array.new(5) do
         # Can't use should_receive here because it calls hash()

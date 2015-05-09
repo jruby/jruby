@@ -1,15 +1,3 @@
-fails:Kernel#test is a private method
-fails:Kernel#test returns true when passed ?f if the argument is a regular file
-fails:Kernel#test returns true when passed ?e if the argument is a file
-fails:Kernel#test returns true when passed ?d if the argument is a directory
-fails:Kernel#test returns true when passed ?l if the argument is a symlink
-fails:Kernel#test returns true when passed ?r if the argument is readable by the effective uid
-fails:Kernel#test returns true when passed ?R if the argument is readable by the real uid
-fails:Kernel#test returns true when passed ?w if the argument is readable by the effective uid
-fails:Kernel#test returns true when passed ?W if the argument is readable by the real uid
-fails:Kernel#test calls #to_path on second argument when passed ?f and a filename
-fails:Kernel#test calls #to_path on second argument when passed ?e and a filename
-fails:Kernel#test calls #to_path on second argument when passed ?d and a directory
 fails:Kernel#test time commands returns the last access time for the provided file when passed ?A
 fails:Kernel#test time commands returns the time at which the file was created when passed ?C
 fails:Kernel#test time commands returns the time at which the file was modified when passed ?M

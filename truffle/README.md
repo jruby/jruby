@@ -35,7 +35,6 @@ Download a build of Graal:
 
 * http://lafo.ssw.uni-linz.ac.at/graalvm/openjdk-8-graalvm-b132-macosx-x86_64-0.6.tar.gz
 * http://lafo.ssw.uni-linz.ac.at/graalvm/openjdk-8-graalvm-b132-linux-x86_64-0.6.tar.gz
-* http://lafo.ssw.uni-linz.ac.at/graalvm/openjdk-8-graalvm-b132-windows-x86_64-0.5.tar.gz
 
 You can then run JRuby with GraalVM
 
@@ -68,8 +67,8 @@ fannkuch, and also kernels from two real-word Ruby gems,
 ## Research
 
 * [Chris Seaton's blog posts](http://www.chrisseaton.com/rubytruffle/)
-* M. Grimmer, C. Seaton, T. Würthinger, H. Mössenböck. Dynamically Composing Languages in a Modular Way: Supporting C Extensions for Dynamic Languages. In Proceedings of the 14th International Conference on Modularity, 2015. (to appear)
-* A. Wöß, C. Wirth, D. Bonetta, C. Seaton, C. Humer, and H. Mössenböck. [An object storage model for the Truffle language implementation framework](http://dl.acm.org/citation.cfm?id=2647517). In Proceedings of the International Conference on Principles and Practices of Programming on the Java Platform (PPPJ), 2014.
+* M. Grimmer, C. Seaton, T. Würthinger, H. Mössenböck. [Dynamically Composing Languages in a Modular Way: Supporting C Extensions for Dynamic Languages](http://www.chrisseaton.com/rubytruffle/modularity15/rubyextensions.pdf). In Proceedings of the 14th International Conference on Modularity, 2015.
+* A. Wöß, C. Wirth, D. Bonetta, C. Seaton, C. Humer, and H. Mössenböck. [An object storage model for the Truffle language implementation framework](http://www.chrisseaton.com/rubytruffle/pppj14-om/pppj14-om.pdf). In Proceedings of the International Conference on Principles and Practices of Programming on the Java Platform (PPPJ), 2014.
 * C. Seaton, M. L. Van De Vanter, and M. Haupt. [Debugging at full speed](http://www.lifl.fr/dyla14/papers/dyla14-3-Debugging_at_Full_Speed.pdf). In Proceedings of the 8th Workshop on Dynamic Languages and Applications (DYLA), 2014.
 
 Also see the [Ruby Bibliography](http://rubybib.org), and

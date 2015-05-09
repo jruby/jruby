@@ -49,7 +49,7 @@ public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
             newProperty = currentProperty;
             newProperty.setSafe(object.getDynamicObject(), value, null);
         } else {
-            object.getOperations().setInstanceVariable(object, name, value);
+            object.getObjectType().setInstanceVariable(object, name, value);
             newShape = object.getDynamicObject().getShape();
             newProperty = newShape.getProperty(name);
 
@@ -59,7 +59,9 @@ public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
         }
 
         location = newProperty.getLocation();
-        assert location.canSet(object.getDynamicObject(), value);
+        
+        // MG: is this assertion misplaced?
+        // assert location.canSet(object.getDynamicObject(), value);
 
         final WriteObjectFieldChainNode writeNode;
 

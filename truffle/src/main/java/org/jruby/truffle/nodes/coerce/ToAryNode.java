@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
 package org.jruby.truffle.nodes.coerce;
 
 import com.oracle.truffle.api.CompilerDirectives;
@@ -22,19 +31,13 @@ public abstract class ToAryNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ToAryNode(ToAryNode prev) {
-        super(prev);
-    }
-
     @Specialization
     public RubyArray coerceRubyArray(RubyArray rubyArray) {
         return rubyArray;
     }
 
-    @Specialization(guards = "!isRubyArray")
+    @Specialization(guards = "!isRubyArray(object)")
     public RubyArray coerceObject(VirtualFrame frame, Object object) {
-        notDesignedForCompilation();
-
         if (toAryNode == null) {
             CompilerDirectives.transferToInterpreter();
             toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));

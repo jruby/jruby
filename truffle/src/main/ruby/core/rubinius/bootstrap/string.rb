@@ -38,9 +38,24 @@ class String
     raise PrimitiveFailure, "String.pattern primitive failed"
   end
 
+  def substring(start, count)
+    Rubinius.primitive :string_substring
+    raise PrimitiveFailure, "String#substring primitive failed"
+  end
+
   def find_string(pattern, start)
     Rubinius.primitive :string_index
     raise PrimitiveFailure, "String#find_string primitive failed"
+  end
+
+  def find_string_reverse(pattern, start)
+    Rubinius.primitive :string_rindex
+    raise PrimitiveFailure, "String#find_string_reverse primitive failed"
+  end
+
+  def chr_at(byte)
+    Rubinius.primitive :string_chr_at
+    raise ArgumentError, "String#chr_at primitive failed"
   end
 
   def byteslice(index_or_range, length=undefined)
@@ -83,6 +98,11 @@ class String
 
   def num_bytes
     @num_bytes
+  end
+  
+  def byte_append(str)
+    Rubinius.primitive :string_byte_append
+    raise TypeError, "String#byte_append primitive only accepts Strings"
   end
 
 end

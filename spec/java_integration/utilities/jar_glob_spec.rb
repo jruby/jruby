@@ -160,7 +160,7 @@ CODE
     end
 
     it "does not encode URIs for jars on a filesystem" do
-      require 'spaces test/test.jar'
+      require './spaces test/test.jar'
       require 'spaces_file'
       $foo_dir.should_not match(/%20/)
     end

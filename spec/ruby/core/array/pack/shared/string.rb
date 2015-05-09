@@ -71,7 +71,7 @@ describe :array_pack_string, :shared => true do
     f = pack_format("*")
     [ [["\u{3042 3044 3046 3048}", 0x2000B].pack(f+"U"),       Encoding::ASCII_8BIT],
       [["abcde\xd1", "\xFF\xFe\x81\x82"].pack(f+"u"),          Encoding::ASCII_8BIT],
-      [[encode("a", "ascii"), "\xFF\xFe\x81\x82"].pack(f+"u"), Encoding::ASCII_8BIT],
+      [["a".force_encoding("ascii"), "\xFF\xFe\x81\x82"].pack(f+"u"), Encoding::ASCII_8BIT],
       # under discussion [ruby-dev:37294]
       [["\u{3042 3044 3046 3048}", 1].pack(f+"N"),             Encoding::ASCII_8BIT]
     ].should be_computed_by(:encoding)

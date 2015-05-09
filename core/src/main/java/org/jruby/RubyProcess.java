@@ -43,6 +43,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -100,7 +101,20 @@ public class RubyProcess {
         // TODO: other clock types
         process.defineConstant("CLOCK_REALTIME", RubySymbol.newSymbol(runtime, CLOCK_REALTIME));
         process.defineConstant("CLOCK_MONOTONIC", RubySymbol.newSymbol(runtime, CLOCK_MONOTONIC));
-        
+
+        RubyClass tmsStruct = RubyStruct.newInstance(
+                runtime.getStructClass(),
+                new IRubyObject[]{
+                        runtime.newString("Tms"),
+                        runtime.newSymbol("utime"),
+                        runtime.newSymbol("stime"),
+                        runtime.newSymbol("cutime"),
+                        runtime.newSymbol("cstime")},
+                Block.NULL_BLOCK);
+
+        process.defineConstant("Tms", tmsStruct);
+        runtime.setTmsStruct(tmsStruct);
+
         return process;
     }
     
@@ -1101,7 +1115,7 @@ public class RubyProcess {
         return RubyThread.newInstance(
                 runtime.getThread(),
                 IRubyObject.NULL_ARRAY,
-                CallBlock.newCallClosure(recv, (RubyModule)recv, Arity.NO_ARGUMENTS, callback, context));
+                CallBlock.newCallClosure(recv, (RubyModule)recv, Signature.NO_ARGUMENTS, callback, context));
     }
 
     @Deprecated

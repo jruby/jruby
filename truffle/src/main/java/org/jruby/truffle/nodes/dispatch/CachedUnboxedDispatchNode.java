@@ -10,9 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
@@ -55,6 +53,11 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
                 indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
             } else {
                 callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+
+                if (method.getDeclaringModule().getName().equals("TruffleInterop")) {
+                    insert(callNode);
+                    callNode.cloneCallTarget();
+                }
             }
         }
     }

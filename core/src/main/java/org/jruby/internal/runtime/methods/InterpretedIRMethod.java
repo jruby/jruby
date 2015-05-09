@@ -1,6 +1,5 @@
 package org.jruby.internal.runtime.methods;
 
-import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.compiler.FullBuildSource;
@@ -9,10 +8,12 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.PositionAware;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -26,7 +27,7 @@ import org.jruby.util.log.LoggerFactory;
 public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, FullBuildSource {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
-    private Arity arity;
+    private Signature signature;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
     protected final IRScope method;
@@ -38,7 +39,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone, method.getName());
         this.method = method;
         this.method.getStaticScope().determineModule();
-        this.arity = calculateArity();
+        this.signature = getStaticScope().getSignature();
 
         // FIXME: Enable no full build promotion option (perhaps piggy back JIT threshold)
     }
@@ -55,21 +56,18 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         return method.getStaticScope();
     }
 
-    public String[] getParameterList() {
+    public ArgumentDescriptor[] getArgumentDescriptors() {
         ensureInstrsReady(); // Make sure method is minimally built before returning this info
-        return ((IRMethod) method).getArgDesc();
+        return ((IRMethod) method).getArgumentDescriptors();
     }
 
-    private Arity calculateArity() {
-        StaticScope s = method.getStaticScope();
-        if (s.getOptionalArgs() > 0 || s.getRestArg() >= 0) return Arity.required(s.getRequiredArgs());
-
-        return Arity.createArity(s.getRequiredArgs());
+    public Signature getSignature() {
+        return signature;
     }
 
     @Override
     public Arity getArity() {
-        return arity;
+        return signature.arity();
     }
 
     protected void post(InterpreterContext ic, ThreadContext context) {

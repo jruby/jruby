@@ -21,6 +21,8 @@ import org.jruby.parser.StaticScope;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -61,6 +63,8 @@ public abstract class IRScope implements ParseResult {
     private static final Collection<IRClosure> NO_CLOSURES = Collections.unmodifiableCollection(new ArrayList<IRClosure>(0));
 
     private static AtomicInteger globalScopeCount = new AtomicInteger();
+    // Argument description
+    protected ArgumentDescriptor[] argDesc = ArgumentDescriptor.EMPTY_ARRAY;
 
     /** Unique global scope id */
     private int scopeId;
@@ -183,10 +187,15 @@ public abstract class IRScope implements ParseResult {
         flags.add(REQUIRES_DYNSCOPE);
         flags.add(USES_ZSUPER);
 
+        // We only can compute this once since 'module X; using A; class B; end; end' vs
+        // 'module X; class B; using A; end; end'.  First case B can see refinements and in second it cannot.
+        if (parentMaybeUsingRefinements()) flags.add(MAYBE_USING_REFINEMENTS);
+
         this.localVars = new HashMap<>();
         this.scopeId = globalScopeCount.getAndIncrement();
 
         setupLexicalContainment();
+        this.argDesc = null;
     }
 
     private void setupLexicalContainment() {
@@ -257,10 +266,7 @@ public abstract class IRScope implements ParseResult {
         flags.add(MAYBE_USING_REFINEMENTS);
     }
 
-    // FIXME: This is somewhat expensive to walk all parent scopes for refined scopes but
-    // the life cycle of when to do this walking makes wonder if I can just stuff this into
-    // computeScopeFlags?
-    public boolean maybeUsingRefinements() {
+    public boolean parentMaybeUsingRefinements() {
         for (IRScope s = this; s != null; s = s.getLexicalParent()) {
             if (s.getFlags().contains(MAYBE_USING_REFINEMENTS)) return true;
 
@@ -269,6 +275,10 @@ public abstract class IRScope implements ParseResult {
         }
 
         return false;
+    }
+
+    public boolean maybeUsingRefinements() {
+        return getFlags().contains(MAYBE_USING_REFINEMENTS);
     }
 
     /**
@@ -770,6 +780,17 @@ public abstract class IRScope implements ParseResult {
 
     public LocalVariable lookupExistingLVar(String name) {
         return localVars.get(name);
+    }
+
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return argDesc;
+    }
+
+    /**
+     * Set upon completion of IRBuild of this IRMethod.
+     */
+    public void setArgumentDescriptors(ArgumentDescriptor[] argDesc) {
+        this.argDesc = argDesc;
     }
 
     protected LocalVariable findExistingLocalVariable(String name, int depth) {

@@ -10,14 +10,18 @@
 package org.jruby.truffle.nodes.cast;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayDupNode;
-import org.jruby.truffle.nodes.core.ArrayDupNodeFactory;
-import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.core.ArrayDupNodeGen;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.dispatch.DispatchNode;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -47,21 +51,11 @@ public abstract class SplatCastNode extends RubyNode {
         super(context, sourceSection);
         this.nilBehavior = nilBehavior;
         // Calling private #to_a is allowed for the *splat operator.
-        dup = ArrayDupNodeFactory.create(context, sourceSection, null);
+        dup = ArrayDupNodeGen.create(context, sourceSection, null);
         respondToToA = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
-        respondToCast = BooleanCastNodeFactory.create(context, sourceSection, null);
+        respondToCast = BooleanCastNodeGen.create(context, sourceSection, null);
         toA = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         this.useToAry = useToAry;
-    }
-
-    public SplatCastNode(SplatCastNode prev) {
-        super(prev);
-        dup = prev.dup;
-        nilBehavior = prev.nilBehavior;
-        respondToToA = prev.respondToToA;
-        respondToCast = prev.respondToCast;
-        toA = prev.toA;
-        useToAry = prev.useToAry;
     }
 
     protected abstract RubyNode getChild();
@@ -73,7 +67,7 @@ public abstract class SplatCastNode extends RubyNode {
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             case ARRAY_WITH_NIL:
-                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), getContext().getCoreLibrary().getNilObject());
+                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());
 
             default: {
                 CompilerAsserts.neverPartOfCompilation();
@@ -89,10 +83,8 @@ public abstract class SplatCastNode extends RubyNode {
         return dup.executeDup(frame, array);
     }
 
-    @Specialization(guards = {"!isRubyNilClass", "!isRubyArray"})
+    @Specialization(guards = {"!isRubyNilClass(object)", "!isRubyArray(object)"})
     public RubyArray splat(VirtualFrame frame, Object object) {
-        notDesignedForCompilation();
-
         final String method;
 
         if (useToAry) {
@@ -109,6 +101,7 @@ public abstract class SplatCastNode extends RubyNode {
             if (array instanceof RubyArray) {
                 return (RubyArray) array;
             } else if (array instanceof RubyNilClass || array == DispatchNode.MISSING) {
+                CompilerDirectives.transferToInterpreter();
                 return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
             } else {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertTo(

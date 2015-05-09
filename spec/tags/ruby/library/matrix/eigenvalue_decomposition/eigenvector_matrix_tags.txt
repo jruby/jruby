@@ -1,1 +1,0 @@
-fails:Matrix::EigenvalueDecomposition#eigenvector_matrix returns a complex eigenvector matrix given a rotation matrix

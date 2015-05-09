@@ -12,15 +12,9 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager.ObjectGraphVisitor;
-
-import java.util.Collections;
-import java.util.Set;
-import java.util.WeakHashMap;
 
 /**
  * Represents the Ruby {@code Class} class. Note that most of the functionality you might associate
@@ -32,19 +26,18 @@ public class RubyClass extends RubyModule {
     @CompilationFinal Allocator allocator;
 
     private final boolean isSingleton;
-    private final Set<RubyClass> subClasses = Collections.newSetFromMap(new WeakHashMap<RubyClass, Boolean>());
     private final RubyModule attached;
 
     /**
      * This constructor supports initialization and solves boot-order problems and should not
      * normally be used from outside this class.
      */
-    public static RubyClass createBootClass(RubyContext context, RubyClass classClass, String name) {
-        return new RubyClass(context, classClass, null, null, name, false, null);
+    public static RubyClass createBootClass(RubyContext context, RubyClass classClass, String name, Allocator allocator) {
+        return new RubyClass(context, classClass, null, null, name, false, null, allocator);
     }
 
-    public RubyClass(RubyContext context, RubyModule lexicalParent, RubyClass superclass, String name) {
-        this(context, superclass.getLogicalClass(), lexicalParent, superclass, name, false, null);
+    public RubyClass(RubyContext context, RubyModule lexicalParent, RubyClass superclass, String name, Allocator allocator) {
+        this(context, superclass.getLogicalClass(), lexicalParent, superclass, name, false, null, allocator);
         // Always create a class singleton class for normal classes for consistency.
         ensureSingletonConsistency();
     }
@@ -52,20 +45,21 @@ public class RubyClass extends RubyModule {
     protected static RubyClass createSingletonClassOfObject(RubyContext context, RubyClass superclass, RubyModule attached, String name) {
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
-        return new RubyClass(context, superclass.getLogicalClass(), null, superclass, name, true, attached).ensureSingletonConsistency();
+        // Allocator is null here, we cannot create instances of singleton classes.
+        return new RubyClass(context, superclass.getLogicalClass(), null, superclass, name, true, attached, null).ensureSingletonConsistency();
     }
 
-    protected RubyClass(RubyContext context, RubyClass classClass, RubyModule lexicalParent, RubyClass superclass, String name, boolean isSingleton, RubyModule attached) {
+    private RubyClass(RubyContext context, RubyClass classClass, RubyModule lexicalParent, RubyClass superclass, String name, boolean isSingleton, RubyModule attached, Allocator allocator) {
         super(context, classClass, lexicalParent, name, null);
 
         assert isSingleton || attached == null;
 
+        this.allocator = allocator;
         this.isSingleton = isSingleton;
         this.attached = attached;
 
         if (superclass != null) {
             unsafeSetSuperclass(superclass);
-            allocator = superclass.allocator;
         }
     }
 
@@ -75,30 +69,24 @@ public class RubyClass extends RubyModule {
         allocator = superclass.allocator;
     }
 
-    public void setAllocator(Allocator allocator) {
-        this.allocator = allocator;
-    }
-
     /**
      * This method supports initialization and solves boot-order problems and should not normally be
      * used.
      */
     protected void unsafeSetSuperclass(RubyClass superClass) {
-        RubyNode.notDesignedForCompilation();
-
         assert parentModule == null;
 
         parentModule = superClass;
         superClass.addDependent(this);
-        superClass.subClasses.add(this);
 
         newVersion();
     }
 
-    @Override
-    public void initCopy(RubyModule other) {
-        super.initCopy(other);
-        assert other instanceof RubyClass;
+    public void initCopy(RubyClass from) {
+        super.initCopy(from);
+        this.allocator = ((RubyClass) from).allocator;
+        // isSingleton is false as we cannot copy a singleton class.
+        // and therefore attached is null.
     }
 
     private RubyClass ensureSingletonConsistency() {
@@ -129,7 +117,7 @@ public class RubyClass extends RubyModule {
         }
 
         metaClass = new RubyClass(getContext(),
-                getLogicalClass(), null, singletonSuperclass, String.format("#<Class:%s>", getName()), true, this);
+                getLogicalClass(), null, singletonSuperclass, String.format("#<Class:%s>", getName()), true, this, null);
 
         return metaClass;
     }
@@ -166,7 +154,7 @@ public class RubyClass extends RubyModule {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyClass(context, context.getCoreLibrary().getClassClass(), null, null, null, false, null);
+            return new RubyClass(context, context.getCoreLibrary().getClassClass(), null, null, null, false, null, null);
         }
 
     }

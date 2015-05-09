@@ -49,10 +49,9 @@ public class JavaProxyReflectionObject extends RubyObject {
         super(runtime, metaClass, false);
     }
 
-    protected static void registerRubyMethods(Ruby runtime, RubyClass result) {
-        result.defineAnnotatedMethods(JavaProxyReflectionObject.class);
-
-        result.getMetaClass().defineAlias("__j_allocate","allocate");
+    protected static void registerRubyMethods(Ruby runtime, RubyClass klass) {
+        klass.defineAnnotatedMethods(JavaProxyReflectionObject.class);
+        klass.getMetaClass().defineAlias("__j_allocate", "allocate");
     }
 
     @Deprecated
@@ -154,20 +153,26 @@ public class JavaProxyReflectionObject extends RubyObject {
     // utility methods
     //
 
-    protected RubyArray buildRubyArray(IRubyObject[] constructors) {
-        RubyArray result = getRuntime().newArray(constructors.length);
-        for (int i = 0; i < constructors.length; i++) {
-            result.append(constructors[i]);
+    @Deprecated
+    protected RubyArray buildRubyArray(IRubyObject[] elements) {
+        RubyArray result = getRuntime().newArray(elements.length);
+        for (int i = 0; i < elements.length; i++) {
+            result.append(elements[i]);
         }
         return result;
     }
 
-    protected RubyArray buildRubyArray(Class[] classes) {
-        RubyArray result = getRuntime().newArray(classes.length);
-        for (int i = 0; i < classes.length; i++) {
-            result.append(JavaClass.get(getRuntime(), classes[i]));
-        }
-        return result;
+    @Deprecated
+    protected RubyArray buildRubyArray(final Class<?>[] classes) {
+        return JavaClass.toRubyArray(getRuntime(), classes);
+    }
+
+    final RubyArray toRubyArray(final IRubyObject[] elements) {
+        return RubyArray.newArrayNoCopy(getRuntime(), elements);
+    }
+
+    final RubyArray toRubyArray(final Class<?>[] classes) {
+        return JavaClass.toRubyArray(getRuntime(), classes);
     }
 
 }

@@ -1,3 +1,1 @@
 fails:Enumerator::Lazy#reject calls the block with a gathered array when yield with multiple arguments
-fails:Enumerator::Lazy#reject when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times
-fails:Enumerator::Lazy#reject on a nested Lazy when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times

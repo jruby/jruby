@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
@@ -21,6 +22,10 @@ public class ReceiveSelfInstr extends ResultBaseInstr implements FixedArityInstr
         // receive-self will disappear after inlining and all uses of %self will be replaced by the call receiver
         // FIXME: What about 'self' in closures??
         return null;
+    }
+
+    public static ReceiveSelfInstr decode(IRReaderDecoder d) {
+        return new ReceiveSelfInstr(d.decodeVariable());
     }
 
     @Override

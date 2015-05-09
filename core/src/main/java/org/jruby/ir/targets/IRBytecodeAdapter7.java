@@ -38,7 +38,7 @@ import static org.jruby.util.CodegenUtils.sig;
  *
  * @author headius
  */
-public class IRBytecodeAdapter7 extends IRBytecodeAdapter {
+public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
 
     public IRBytecodeAdapter7(SkinnyMethodAdapter adapter, Signature signature, ClassData classData) {
         super(adapter, signature, classData);
@@ -54,14 +54,14 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter {
         adapter.invokedynamic("flote", sig(JVM.OBJECT, ThreadContext.class), FloatObjectSite.BOOTSTRAP, d);
     }
 
-    public void pushString(ByteList bl) {
+    public void pushString(ByteList bl, int cr) {
         loadContext();
-        adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString());
+        adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr);
     }
 
-    public void pushFrozenString(ByteList bl) {
+    public void pushFrozenString(ByteList bl, int cr) {
         loadContext();
-        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString());
+        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr);
     }
 
     public void pushByteList(ByteList bl) {
@@ -121,8 +121,12 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter {
         adapter.invokedynamic("encoding", sig(RubyEncoding.class, ThreadContext.class), Bootstrap.contextValueString(), new String(encoding.getName()));
     }
 
-    public void invokeOther(String name, int arity, boolean hasClosure) {
+    public void invokeOther(String name, int arity, boolean hasClosure, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
+        if (isPotentiallyRefined) {
+            super.invokeOther(name, arity, hasClosure, isPotentiallyRefined);
+            return;
+        }
 
         if (hasClosure) {
             if (arity == -1) {
@@ -163,8 +167,12 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter {
             0);
     }
 
-    public void invokeSelf(String name, int arity, boolean hasClosure, CallType callType) {
+    public void invokeSelf(String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
+        if (isPotentiallyRefined) {
+            super.invokeSelf(name, arity, hasClosure, callType, isPotentiallyRefined);
+            return;
+        }
 
         String action = callType == CallType.FUNCTIONAL ? "callFunctional" : "callVariable";
         if (hasClosure) {

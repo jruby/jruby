@@ -2,6 +2,7 @@ package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.Encoding;
 import org.jruby.*;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
@@ -32,6 +33,7 @@ import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -172,6 +174,11 @@ public class JVMVisitor extends IRVisitor {
             }
 
             // ensure there's at least one instr per block
+            /* FIXME: (CON 20150507) This used to filter blocks that had no instructions and only emit nop for them,
+                      but this led to BBs with no *bytecode-emitting* instructions failing to have a nop and triggering
+                      verification errors when we attached an exception-handling range to them (because the leading
+                      label failed to anchor anywhere, or anchored the same place as the trailing label). Until we can
+                      detect that a BB will not emit any code, we return to always emitting the nop. */
             m.adapter.nop();
 
             // visit remaining instrs
@@ -196,11 +203,10 @@ public class JVMVisitor extends IRVisitor {
         if (aritySplit) {
             StaticScope argScope = method.getStaticScope();
             if (argScope.isArgumentScope() &&
-                    argScope.getOptionalArgs() == 0 &&
-                    argScope.getRestArg() == -1 &&
-                    !method.receivesKeywordArgs()) {
+                    argScope.getSignature().isFixed() &&
+                    !argScope.getSignature().hasKwargs()) {
                 // we have only required arguments...emit a signature appropriate to that arity
-                String[] args = new String[argScope.getRequiredArgs()];
+                String[] args = new String[argScope.getSignature().required()];
                 Class[] types = Helpers.arrayOf(Class.class, args.length, IRubyObject.class);
                 for (int i = 0; i < args.length; i++) {
                     args[i] = "arg" + i;
@@ -258,7 +264,7 @@ public class JVMVisitor extends IRVisitor {
         Signature specificSig = signatureFor(method, true);
         if (specificSig != null) {
             emitScope(method, name, specificSig, true);
-            method.addNativeSignature(method.getStaticScope().getRequiredArgs(), specificSig.type());
+            method.addNativeSignature(method.getStaticScope().getSignature().required(), specificSig.type());
         }
     }
 
@@ -406,7 +412,8 @@ public class JVMVisitor extends IRVisitor {
                 null,
                 false,
                 attrAssignInstr.getReceiver() instanceof Self ? CallType.FUNCTIONAL : CallType.NORMAL,
-                null);
+                null,
+                attrAssignInstr.isPotentiallyRefined());
     }
 
     @Override
@@ -624,7 +631,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelf();
 
         ByteList csByteList = new ByteList();
-        jvmMethod().pushString(csByteList);
+        jvmMethod().pushString(csByteList, StringSupport.CR_BROKEN);
 
         for (Operand p : instr.getOperands()) {
             // visit piece and ensure it's a string
@@ -645,7 +652,7 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().invokeinterface(p(IRubyObject.class), "setFrozen", sig(void.class, boolean.class));
 
         // invoke the "`" method on self
-        jvmMethod().invokeSelf("`", 1, false, CallType.FUNCTIONAL);
+        jvmMethod().invokeSelf("`", 1, false, CallType.FUNCTIONAL, false);
         jvmStoreLocal(instr.getResult());
     }
 
@@ -711,7 +718,7 @@ public class JVMVisitor extends IRVisitor {
     public void BuildCompoundStringInstr(BuildCompoundStringInstr compoundstring) {
         ByteList csByteList = new ByteList();
         csByteList.setEncoding(compoundstring.getEncoding());
-        jvmMethod().pushString(csByteList);
+        jvmMethod().pushString(csByteList, StringSupport.CR_UNKNOWN);
         for (Operand p : compoundstring.getPieces()) {
 //            if ((p instanceof StringLiteral) && (compoundstring.isSameEncodingAndCodeRange((StringLiteral)p))) {
 //                jvmMethod().pushByteList(((StringLiteral)p).bytelist);
@@ -778,10 +785,10 @@ public class JVMVisitor extends IRVisitor {
         CallType callType = callInstr.getCallType();
         Variable result = callInstr.getResult();
 
-        compileCallCommon(m, name, args, receiver, numArgs, closure, hasClosure, callType, result);
+        compileCallCommon(m, name, args, receiver, numArgs, closure, hasClosure, callType, result, callInstr.isPotentiallyRefined());
     }
 
-    private void compileCallCommon(IRBytecodeAdapter m, String name, Operand[] args, Operand receiver, int numArgs, Operand closure, boolean hasClosure, CallType callType, Variable result) {
+    private void compileCallCommon(IRBytecodeAdapter m, String name, Operand[] args, Operand receiver, int numArgs, Operand closure, boolean hasClosure, CallType callType, Variable result, boolean isPotentiallyRefined) {
         m.loadContext();
         m.loadSelf(); // caller
         visit(receiver);
@@ -807,13 +814,13 @@ public class JVMVisitor extends IRVisitor {
 
         switch (callType) {
             case FUNCTIONAL:
-                m.invokeSelf(name, arity, hasClosure, CallType.FUNCTIONAL);
+                m.invokeSelf(name, arity, hasClosure, CallType.FUNCTIONAL, isPotentiallyRefined);
                 break;
             case VARIABLE:
-                m.invokeSelf(name, arity, hasClosure, CallType.VARIABLE);
+                m.invokeSelf(name, arity, hasClosure, CallType.VARIABLE, isPotentiallyRefined);
                 break;
             case NORMAL:
-                m.invokeOther(name, arity, hasClosure);
+                m.invokeOther(name, arity, hasClosure, isPotentiallyRefined);
                 break;
         }
 
@@ -831,8 +838,8 @@ public class JVMVisitor extends IRVisitor {
         visit(checkargsarrayarityinstr.getArgsArray());
         jvmAdapter().pushInt(checkargsarrayarityinstr.required);
         jvmAdapter().pushInt(checkargsarrayarityinstr.opt);
-        jvmAdapter().pushInt(checkargsarrayarityinstr.rest);
-        jvmMethod().invokeStatic(Type.getType(Helpers.class), Method.getMethod("void irCheckArgsArrayArity(org.jruby.runtime.ThreadContext, org.jruby.RubyArray, int, int, int)"));
+        jvmAdapter().pushBoolean(checkargsarrayarityinstr.rest);
+        jvmMethod().invokeStatic(Type.getType(Helpers.class), Method.getMethod("void irCheckArgsArrayArity(org.jruby.runtime.ThreadContext, org.jruby.RubyArray, int, int, boolean)"));
     }
 
     @Override
@@ -847,7 +854,8 @@ public class JVMVisitor extends IRVisitor {
             jvmAdapter().ldc(checkarityinstr.rest);
             jvmAdapter().ldc(checkarityinstr.receivesKeywords);
             jvmAdapter().ldc(checkarityinstr.restKey);
-            jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, Object[].class, int.class, int.class, int.class, boolean.class, int.class));
+            jvmMethod().loadBlockType();
+            jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, Object[].class, int.class, int.class, boolean.class, boolean.class, int.class, Block.Type.class));
         }
     }
 
@@ -1242,29 +1250,8 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void Match2Instr(Match2Instr match2instr) {
-        visit(match2instr.getReceiver());
-        jvmMethod().loadContext();
-        visit(match2instr.getArg());
-        jvmAdapter().invokevirtual(p(RubyRegexp.class), "op_match19", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
-        jvmStoreLocal(match2instr.getResult());
-    }
-
-    @Override
-    public void Match3Instr(Match3Instr match3instr) {
-        jvmMethod().loadContext();
-        visit(match3instr.getReceiver());
-        visit(match3instr.getArg());
-        jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "match3", sig(IRubyObject.class, ThreadContext.class, RubyRegexp.class, IRubyObject.class));
-        jvmStoreLocal(match3instr.getResult());
-    }
-
-    @Override
-    public void MatchInstr(MatchInstr matchinstr) {
-        visit(matchinstr.getReceiver());
-        jvmMethod().loadContext();
-        jvmAdapter().invokevirtual(p(RubyRegexp.class), "op_match2_19", sig(IRubyObject.class, ThreadContext.class));
-        jvmStoreLocal(matchinstr.getResult());
+    public void MatchInstr(MatchInstr matchInstr) {
+        compileCallCommon(jvmMethod(), "=~", matchInstr.getCallArgs(), matchInstr.getReceiver(), 1, null, false, CallType.NORMAL, matchInstr.getResult(), false);
     }
 
     @Override
@@ -1289,7 +1276,7 @@ public class JVMVisitor extends IRVisitor {
         boolean hasClosure = closure != null;
         CallType callType = noResultCallInstr.getCallType();
 
-        compileCallCommon(m, name, args, receiver, numArgs, closure, hasClosure, callType, null);
+        compileCallCommon(m, name, args, receiver, numArgs, closure, hasClosure, callType, null, noResultCallInstr.isPotentiallyRefined());
     }
 
     @Override
@@ -1543,12 +1530,13 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ReceivePostReqdArgInstr(ReceivePostReqdArgInstr instr) {
+        jvmMethod().loadContext();
         jvmMethod().loadArgs();
         jvmAdapter().pushInt(instr.preReqdArgsCount);
         jvmAdapter().pushInt(instr.postReqdArgsCount);
         jvmAdapter().pushInt(instr.getArgIndex());
         jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
-        jvmMethod().invokeIRHelper("receivePostReqdArg", sig(IRubyObject.class, IRubyObject[].class, int.class, int.class, int.class, boolean.class));
+        jvmMethod().invokeIRHelper("receivePostReqdArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class, int.class, int.class, boolean.class));
         jvmStoreLocal(instr.getResult());
     }
 
@@ -1565,8 +1553,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ReceiveSelfInstr(ReceiveSelfInstr receiveselfinstr) {
-        jvmMethod().loadSelf();
-        jvmStoreLocal(receiveselfinstr.getResult());
+        // noop...self is passed in
     }
 
     @Override
@@ -1989,8 +1976,19 @@ public class JVMVisitor extends IRVisitor {
     public void DynamicSymbol(DynamicSymbol dynamicsymbol) {
         jvmMethod().loadRuntime();
         visit(dynamicsymbol.getSymbolName());
+        jvmAdapter().dup();
+
+        // get symbol name
         jvmAdapter().invokeinterface(p(IRubyObject.class), "asJavaString", sig(String.class));
-        jvmAdapter().invokevirtual(p(Ruby.class), "newSymbol", sig(RubySymbol.class, String.class));
+        jvmAdapter().swap();
+
+        // get encoding of symbol name
+        jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
+        jvmAdapter().invokevirtual(p(RubyString.class), "getByteList", sig(ByteList.class));
+        jvmAdapter().invokevirtual(p(ByteList.class), "getEncoding", sig(Encoding.class));
+
+        // keeps encoding of symbol name
+        jvmAdapter().invokevirtual(p(Ruby.class), "newSymbol", sig(RubySymbol.class, String.class, Encoding.class));
     }
 
     @Override
@@ -2000,7 +1998,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void FrozenString(FrozenString frozen) {
-        jvmMethod().pushFrozenString(frozen.getByteList());
+        jvmMethod().pushFrozenString(frozen.getByteList(), frozen.getCodeRange());
     }
 
     @Override
@@ -2129,7 +2127,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void StringLiteral(StringLiteral stringliteral) {
-        jvmMethod().pushString(stringliteral.getByteList());
+        jvmMethod().pushString(stringliteral.getByteList(), stringliteral.getCodeRange());
     }
 
     @Override

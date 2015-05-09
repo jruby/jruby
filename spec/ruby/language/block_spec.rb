@@ -49,30 +49,42 @@ describe "A block yielded a single" do
       result.should == [1, 2, [], 3, 2, {x: 9}]
     end
 
-    it "calls #to_hash on the last element if keyword arguments are present" do
-      obj = mock("destructure block keyword arguments")
-      obj.should_receive(:to_hash).and_return({x: 9})
-
-      result = m([1, 2, 3, obj]) { |a, *b, c, **k| [a, b, c, k] }
-      result.should == [1, [2], 3, {x: 9}]
+    it "treats hashes with symbol keys as keyword arguments" do
+      result = m([a: 10]) { |a = nil, **b| [a, b] }
+      result.should == [nil, a: 10]
     end
 
-    it "assigns the last element to a non-keyword argument if #to_hash returns nil" do
-      obj = mock("destructure block keyword arguments")
-      obj.should_receive(:to_hash).and_return(nil)
-
-      result = m([1, 2, 3, obj]) { |a, *b, c, **k| [a, b, c, k] }
-      result.should == [1, [2, 3], obj, {}]
+    ruby_bug "#10685", "2.2.0.0" do
+      it "does not treat hashes with string keys as keyword arguments" do
+        result = m(["a" => 10]) { |a = nil, **b| [a, b] }
+        result.should == [{"a" => 10}, {}]
+      end
     end
 
-    it "calls #to_hash on the element that maps to the keyword arguments" do
-      x = mock("destructure matching block keyword argument")
-      x.should_receive(:to_hash).and_return({x: 9})
-      y = mock("destructure non-matching block keyword argument")
-      y.should_not_receive(:to_hash)
+    ruby_version_is "2.1" do
+      it "calls #to_hash on the last element if keyword arguments are present" do
+        obj = mock("destructure block keyword arguments")
+        obj.should_receive(:to_hash).and_return({x: 9})
 
-      result = m([1, 2, 3, x, 4, 5, y]) { |a, b=5, c, **k| [a, b, c, k] }
-      result.should == [1, 2, 3, {x: 9}]
+        result = m([1, 2, 3, obj]) { |a, *b, c, **k| [a, b, c, k] }
+        result.should == [1, [2], 3, {x: 9}]
+      end
+
+      it "assigns the last element to a non-keyword argument if #to_hash returns nil" do
+        obj = mock("destructure block keyword arguments")
+        obj.should_receive(:to_hash).and_return(nil)
+
+        result = m([1, 2, 3, obj]) { |a, *b, c, **k| [a, b, c, k] }
+        result.should == [1, [2, 3], obj, {}]
+      end
+
+      it "calls #to_hash on the last element when there are more arguments than parameters" do
+        x = mock("destructure matching block keyword argument")
+        x.should_receive(:to_hash).and_return({x: 9})
+
+        result = m([1, 2, 3, {y: 9}, 4, 5, x]) { |a, b=5, c, **k| [a, b, c, k] }
+        result.should == [1, 2, 3, {x: 9}]
+      end
     end
 
     it "raises a TypeError if #to_hash does not return a Hash" do

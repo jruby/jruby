@@ -13,16 +13,13 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-
-import org.jruby.truffle.nodes.core.FixnumOrBignumNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
-import org.jruby.truffle.nodes.objects.IsTaintedNodeFactory;
+import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
-import org.jruby.truffle.nodes.objects.TaintNodeFactory;
-import org.jruby.truffle.runtime.ObjectIDOperations;
+import org.jruby.truffle.nodes.objects.TaintNodeGen;
+import org.jruby.truffle.runtime.object.ObjectIDOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 
 /**
@@ -37,10 +34,6 @@ public abstract class ObjectPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public ObjectIDPrimitiveNode(ObjectIDPrimitiveNode prev) {
-            super(prev);
-        }
-
         public abstract Object executeObjectID(VirtualFrame frame, Object value);
 
         @Specialization
@@ -48,12 +41,12 @@ public abstract class ObjectPrimitiveNodes {
             return ObjectIDOperations.NIL;
         }
 
-        @Specialization(guards = "isTrue")
+        @Specialization(guards = "isTrue(value)")
         public int objectIDTrue(boolean value) {
             return ObjectIDOperations.TRUE;
         }
 
-        @Specialization(guards = "!isTrue")
+        @Specialization(guards = "!isTrue(value)")
         public int objectIDFalse(boolean value) {
             return ObjectIDOperations.FALSE;
         }
@@ -95,7 +88,8 @@ public abstract class ObjectPrimitiveNodes {
 
         @Specialization
         public long objectID(RubyBasicObject object) {
-            return object.getObjectID();
+            // TODO: CS 22-Mar-15 need to write this using nodes
+            return object.verySlowGetObjectID();
         }
 
         protected boolean isSmallFixnum(long fixnum) {
@@ -114,17 +108,11 @@ public abstract class ObjectPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public ObjectInfectPrimitiveNode(ObjectInfectPrimitiveNode prev) {
-            super(prev);
-            isTaintedNode = prev.isTaintedNode;
-            taintNode = prev.taintNode;
-        }
-
         @Specialization
         public Object objectInfect(Object host, Object source) {
             if (isTaintedNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                isTaintedNode = insert(IsTaintedNodeFactory.create(getContext(), getSourceSection(), null));
+                isTaintedNode = insert(IsTaintedNodeGen.create(getContext(), getSourceSection(), null));
             }
             
             if (isTaintedNode.executeIsTainted(source)) {
@@ -132,7 +120,7 @@ public abstract class ObjectPrimitiveNodes {
                 
                 if (taintNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    taintNode = insert(TaintNodeFactory.create(getContext(), getSourceSection(), null));
+                    taintNode = insert(TaintNodeGen.create(getContext(), getSourceSection(), null));
                 }
                 
                 taintNode.executeTaint(host);

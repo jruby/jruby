@@ -16,7 +16,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -30,14 +29,10 @@ import org.jruby.truffle.runtime.core.RubyProc;
 public abstract class ClassNodes {
 
     @CoreMethod(names = "allocate")
-    public abstract static class AllocateNode extends CoreMethodNode {
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public AllocateNode(AllocateNode prev) {
-            super(prev);
         }
 
         public abstract RubyBasicObject executeAllocate(VirtualFrame frame, RubyClass rubyClass);
@@ -54,53 +49,41 @@ public abstract class ClassNodes {
     }
 
     @CoreMethod(names = "new", needsBlock = true, argumentsAsArray = true)
-    public abstract static class NewNode extends CoreMethodNode {
+    public abstract static class NewNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateNode allocateNode;
+        @Child private CallDispatchHeadNode allocateNode;
         @Child private CallDispatchHeadNode initialize;
-        @CompilerDirectives.CompilationFinal private boolean isCached = true;
-        @CompilerDirectives.CompilationFinal private RubyClass cachedClass;
 
         public NewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateNode = ClassNodesFactory.AllocateNodeFactory.create(context, sourceSection, new RubyNode[]{null});
+            allocateNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
             initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
-        public NewNode(NewNode prev) {
-            super(prev);
-            allocateNode = prev.allocateNode;
-            initialize = prev.initialize;
-        }
-
         @Specialization
-        public RubyBasicObject newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public Object newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, UndefinedPlaceholder block) {
             return doNewInstance(frame, rubyClass, args, null);
         }
 
         @Specialization
-        public RubyBasicObject newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
+        public Object newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
             return doNewInstance(frame, rubyClass, args, block);
         }
 
-        private RubyBasicObject doNewInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
-            final RubyBasicObject instance = allocateNode.executeAllocate(frame, rubyClass);
+        private Object doNewInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
+            final Object instance = allocateNode.call(frame, rubyClass, "allocate", null);
             initialize.call(frame, instance, "initialize", block, args);
             return instance;
         }
     }
 
     @CoreMethod(names = "initialize", optional = 1, needsBlock = true)
-    public abstract static class InitializeNode extends CoreMethodNode {
+    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ModuleNodes.InitializeNode moduleInitializeNode;
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
         }
 
         void moduleInitialize(VirtualFrame frame, RubyClass rubyClass, RubyProc block) {
@@ -137,37 +120,34 @@ public abstract class ClassNodes {
     }
 
     @CoreMethod(names = "inherited", required = 1, visibility = Visibility.PRIVATE)
-    public abstract static class InheritedNode extends CoreMethodNode {
+    public abstract static class InheritedNode extends CoreMethodArrayArgumentsNode {
 
         public InheritedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public InheritedNode(InheritedNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass inherited(Object subclass) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
 
     @CoreMethod(names = "superclass")
-    public abstract static class SuperClassNode extends CoreMethodNode {
+    public abstract static class SuperClassNode extends CoreMethodArrayArgumentsNode {
 
         public SuperClassNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public SuperClassNode(SuperClassNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public RubyClass getSuperClass(RubyClass rubyClass) {
-            return rubyClass.getSuperClass();
+        public Object getSuperClass(RubyClass rubyClass) {
+            RubyClass superclass = rubyClass.getSuperClass();
+            if (superclass == null) {
+                return nil();
+            } else {
+                return superclass;
+            }
         }
     }
 }

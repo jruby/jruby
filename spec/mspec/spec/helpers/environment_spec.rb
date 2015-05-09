@@ -8,23 +8,27 @@ describe "#env" do
   end
 
   it "calls `env` on non-Windows" do
-    PlatformGuard.stub!(:windows?).and_return(false)
+    PlatformGuard.stub(:windows?).and_return(false)
+    PlatformGuard.stub(:opal?).and_return(false)
     should_receive(:`).with("env").and_return("one=two\nthree=four")
     env
   end
 
   it "calls `cmd.exe /C set` on Windows" do
-    PlatformGuard.stub!(:windows?).and_return(true)
+    PlatformGuard.stub(:windows?).and_return(true)
     should_receive(:`).with("cmd.exe /C set").and_return("one=two\nthree=four")
     env
   end
 
-  it "returns the current user's environment variables" do
-    PlatformGuard.stub!(:windows?).and_return(false)
+  it "returns the current user's environment variables on non-Windows, non-Opal platforms" do
+    PlatformGuard.stub(:windows?).and_return(false)
+    PlatformGuard.stub(:opal?).and_return(false)
     should_receive(:`).with("env").and_return("one=two\nthree=four")
     env.should == {"one" => "two", "three" => "four"}
+  end
 
-    PlatformGuard.stub!(:windows?).and_return(true)
+  it "returns the current user's environment variables on Windows" do
+    PlatformGuard.stub(:windows?).and_return(true)
     should_receive(:`).with("cmd.exe /C set").and_return("five=six\nseven=eight")
     env.should == {"five" => "six", "seven" => "eight"}
   end
@@ -40,23 +44,27 @@ describe "#username" do
   end
 
   it "calls `cmd.exe /C ECHO %USERNAME%` on Windows" do
-    PlatformGuard.stub!(:windows?).and_return(true)
+    PlatformGuard.stub(:windows?).and_return(true)
     should_receive(:`).with("cmd.exe /C ECHO %USERNAME%").and_return("john")
     username
   end
 
   it "calls `env` on non-Windows" do
-    PlatformGuard.stub!(:windows?).and_return(false)
+    PlatformGuard.stub(:windows?).and_return(false)
+    PlatformGuard.stub(:opal?).and_return(false)
     should_receive(:`).with("whoami").and_return("john")
     username
   end
 
-  it "returns the user's username" do
-    PlatformGuard.stub!(:windows?).and_return(true)
+  it "returns the user's username on Windows" do
+    PlatformGuard.stub(:windows?).and_return(true)
     should_receive(:`).with("cmd.exe /C ECHO %USERNAME%").and_return("johnonwin")
     username.should == "johnonwin"
+  end
 
-    PlatformGuard.stub!(:windows?).and_return(false)
+  it "returns the user's username on non-Windows, non-Opal platforms" do
+    PlatformGuard.stub(:windows?).and_return(false)
+    PlatformGuard.stub(:opal?).and_return(false)
     should_receive(:`).with("whoami").and_return("john")
     username.should == "john"
   end

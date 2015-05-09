@@ -1,5 +1,0 @@
-fails:Array#pack with format 'w' ignores whitespace in the format string
-fails:Array#pack with format 'w' calls #to_str to coerce the directives string
-fails:Array#pack with format 'w' taints the output string if the format string is tainted
-fails:Array#pack with format 'w' encodes a BER-compressed integer
-fails:Array#pack with format 'w' calls #to_int to convert the pack argument to an Integer

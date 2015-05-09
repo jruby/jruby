@@ -24,15 +24,27 @@
     <dependency>
       <groupId>com.oracle</groupId>
       <artifactId>truffle</artifactId>
-      <version>0.6</version>
+      <version>0.7</version>
     </dependency>
     <dependency>
       <groupId>com.oracle</groupId>
       <artifactId>truffle-dsl-processor</artifactId>
-      <version>0.6</version>
+      <version>0.7</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
+  <repositories>
+    <repository>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>truffle</id>
+      <url>http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/releases/</url>
+    </repository>
+  </repositories>
   <build>
     <defaultGoal>package</defaultGoal>
     <resources>
@@ -68,7 +80,7 @@
         </executions>
         <configuration>
           <encoding>utf-8</encoding>
-          <debug>false</debug>
+          <debug>true</debug>
           <verbose>false</verbose>
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
@@ -114,6 +126,7 @@
                   <artifactSet>
                     <includes>
                       <include>com.oracle:truffle</include>
+                      <include>com.oracle:truffle-interop</include>
                     </includes>
                   </artifactSet>
                   <shadedArtifactAttached>true</shadedArtifactAttached>
@@ -142,6 +155,7 @@
                   <artifactSet>
                     <includes>
                       <include>com.oracle:truffle</include>
+                      <include>com.oracle:truffle-interop</include>
                     </includes>
                   </artifactSet>
                   <shadedArtifactAttached>true</shadedArtifactAttached>
@@ -170,6 +184,7 @@
                   <artifactSet>
                     <includes>
                       <include>com.oracle:truffle</include>
+                      <include>com.oracle:truffle-interop</include>
                     </includes>
                   </artifactSet>
                   <shadedArtifactAttached>true</shadedArtifactAttached>
@@ -198,6 +213,7 @@
                   <artifactSet>
                     <includes>
                       <include>com.oracle:truffle</include>
+                      <include>com.oracle:truffle-interop</include>
                     </includes>
                   </artifactSet>
                   <shadedArtifactAttached>true</shadedArtifactAttached>

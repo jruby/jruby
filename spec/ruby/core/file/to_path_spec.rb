@@ -3,7 +3,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 describe "File#to_path" do
   before :each do
     @name = "file_to_path"
-    @path = encode tmp(@name), "euc-jp"
+    @path = tmp(@name)
     touch @path
   end
 
@@ -39,8 +39,11 @@ describe "File#to_path" do
     end
   end
 
-  it "preserves the encoding of the path" do
-    @file = File.new @path
-    @file.to_path.encoding.should == Encoding.find("euc-jp")
+  with_feature :encoding do
+    it "preserves the encoding of the path" do
+      path = @path.force_encoding("euc-jp")
+      @file = File.new path
+      @file.to_path.encoding.should == Encoding.find("euc-jp")
+    end
   end
 end

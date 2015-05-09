@@ -60,12 +60,14 @@ public @interface CoreMethod {
 
     boolean taintFromSelf() default false;
 
-    int[] taintFromParameters() default {};
+    int taintFromParameter() default -1;
 
     boolean raiseIfFrozenSelf() default false;
 
     int[] raiseIfFrozenParameters() default {};
 
     UnsupportedOperationBehavior unsupportedOperationBehavior() default UnsupportedOperationBehavior.TYPE_ERROR;
+
+    boolean returnsEnumeratorIfNoBlock() default false;
 
 }

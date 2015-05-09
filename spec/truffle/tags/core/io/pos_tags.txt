@@ -1,7 +1,4 @@
-fails:IO#pos gets the offset
 fails:IO#pos raises IOError on closed stream
 fails:IO#pos resets #eof?
-fails:IO#pos= sets the offset
-fails:IO#pos= converts arguments to Integers
 fails:IO#pos= does not accept Bignums that don't fit in a C long
 fails:IO#pos= raises IOError on closed stream

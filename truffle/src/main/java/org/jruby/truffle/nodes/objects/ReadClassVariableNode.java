@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.objects;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -30,7 +31,7 @@ public class ReadClassVariableNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         final RubyModule moduleObject = lexicalScope.getLiveModule();
 
@@ -39,7 +40,7 @@ public class ReadClassVariableNode extends RubyNode {
         if (value == null) {
             // TODO(CS): is this right?
             // TODO: NameError!
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         return value;
@@ -52,7 +53,7 @@ public class ReadClassVariableNode extends RubyNode {
         final Object value = ModuleOperations.lookupClassVariable(moduleObject, name);
 
         if (value == null) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         } else {
             return getContext().makeString("class variable");
         }

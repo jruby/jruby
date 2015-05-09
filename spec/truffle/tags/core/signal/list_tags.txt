@@ -1,0 +1,3 @@
+fails:Signal.list doesn't contain other signals than in 1.8
+fails:Signal.list redefines CLD with CHLD if defined
+fails:Signal.list includes the EXIT key with a value of zero

@@ -13,9 +13,9 @@ end
 describe TagListAction, "#===" do
   before :each do
     tag = SpecTag.new "fails:description"
-    MSpec.stub!(:read_tags).and_return([tag])
-    @filter = mock("MatchFilter").as_null_object
-    MatchFilter.stub!(:new).and_return(@filter)
+    MSpec.stub(:read_tags).and_return([tag])
+    @filter = double("MatchFilter").as_null_object
+    MatchFilter.stub(:new).and_return(@filter)
     @action = TagListAction.new
     @action.load
   end
@@ -73,7 +73,7 @@ describe TagListAction, "#load" do
   end
 
   it "does not create a MatchFilter if there are no matching tags" do
-    MSpec.stub!(:read_tags).and_return([])
+    MSpec.stub(:read_tags).and_return([])
     MatchFilter.should_not_receive(:new)
     TagListAction.new(["fails"]).load
   end
@@ -84,8 +84,8 @@ describe TagListAction, "#after" do
     @stdout = $stdout
     $stdout = IOStub.new
 
-    @state = mock("ExampleState")
-    @state.stub!(:description).and_return("str")
+    @state = double("ExampleState")
+    @state.stub(:description).and_return("str")
 
     @action = TagListAction.new
   end
@@ -109,7 +109,7 @@ end
 
 describe TagListAction, "#register" do
   before :each do
-    MSpec.stub!(:register)
+    MSpec.stub(:register)
     @action = TagListAction.new
   end
 
@@ -131,7 +131,7 @@ end
 
 describe TagListAction, "#unregister" do
   before :each do
-    MSpec.stub!(:unregister)
+    MSpec.stub(:unregister)
     @action = TagListAction.new
   end
 

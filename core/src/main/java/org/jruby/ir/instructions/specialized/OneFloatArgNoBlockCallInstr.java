@@ -17,8 +17,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class OneFloatArgNoBlockCallInstr extends CallInstr {
     private final double flote;
 
-    public OneFloatArgNoBlockCallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args) {
-        super(Operation.CALL_1D, callType, result, name, receiver, args, null);
+    public OneFloatArgNoBlockCallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args,
+                                       boolean potentiallyRefined) {
+        super(Operation.CALL_1D, callType, result, name, receiver, args, null, potentiallyRefined);
 
         assert args.length == 1;
 
@@ -28,7 +29,7 @@ public class OneFloatArgNoBlockCallInstr extends CallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new OneFloatArgNoBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getName(),
-                getReceiver().cloneForInlining(ii), cloneCallArgs(ii));
+                getReceiver().cloneForInlining(ii), cloneCallArgs(ii), isPotentiallyRefined());
     }
 
     public double getFloatArg() {

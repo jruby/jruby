@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
@@ -13,8 +22,6 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
 import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.Random;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Random} class.
@@ -29,14 +36,8 @@ public abstract class RandomPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public RandomizerSeedPrimitiveNode(RandomizerSeedPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public long randomizerSeed(RubyBasicObject random) {
-            notDesignedForCompilation();
-
             return System.currentTimeMillis();
         }
 
@@ -49,14 +50,8 @@ public abstract class RandomPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public RandomizerRandFloatPrimitiveNode(RandomizerRandFloatPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public double randomizerRandFloat(RubyBasicObject random) {
-            notDesignedForCompilation();
-
             return Math.random();
         }
 
@@ -69,21 +64,13 @@ public abstract class RandomPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public RandomizerRandIntPrimitiveNode(RandomizerRandIntPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public long randomizerRandInt(RubyBasicObject random, Integer limit) {
-            notDesignedForCompilation();
-
             return RandomPrimitiveHelper.randomInt(getContext().getRuntime().getCurrentContext().getRuntime(), limit);
         }
 
         @Specialization
         public long randomizerRandInt(RubyBasicObject random, Long limit) {
-            notDesignedForCompilation();
-
             return RandomPrimitiveHelper.randomInt(getContext().getRuntime().getCurrentContext().getRuntime(), limit);
         }
     }
@@ -95,14 +82,9 @@ public abstract class RandomPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public RandomizerGenSeedPrimitiveNode(RandomizerGenSeedPrimitiveNode prev) {
-            super(prev);
-        }
-
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyBignum randomizerGenSeed(RubyBasicObject random) {
-            notDesignedForCompilation();
-
             BigInteger integer = RandomPrimitiveHelper.randomSeed(getContext().getRuntime().getCurrentContext().getRuntime());
             return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), integer);
         }

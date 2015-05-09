@@ -1,4 +1,3 @@
-fails:String#sub with pattern, replacement treats \+ as an empty string if there was no captures
-fails:String#sub with pattern and block sets $~ for access from the block
-fails:String#sub! with pattern and block sets $~ for access from the block
-fails:String#sub! with pattern and block raises a RuntimeError if the string is modified while substituting
+fails(regexp):String#sub with pattern and block sets $~ for access from the block
+fails(regexp):String#sub! with pattern and block sets $~ for access from the block
+fails(regexp):String#sub! with pattern and block raises a RuntimeError if the string is modified while substituting

@@ -1,0 +1,5 @@
+fails:CGI::HtmlExtension#html when passed no arguments includes the passed block when passed a block
+fails:CGI::HtmlExtension#html when passed 'PRETTY' includes the passed block when passed a block
+fails:CGI::HtmlExtension#html when each HTML generation returns the doctype declaration for HTML3
+fails:CGI::HtmlExtension#html when each HTML generation returns the doctype declaration for HTML4
+fails:CGI::HtmlExtension#html when each HTML generation returns the doctype declaration for the Transitional version of HTML4

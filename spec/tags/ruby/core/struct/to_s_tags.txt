@@ -1,1 +1,0 @@
-fails:Struct#to_s returns a string representation without the class name for anonymous structs

@@ -10,7 +10,7 @@
   <artifactId>jruby-core</artifactId>
   <name>JRuby Core</name>
   <properties>
-    <version.ruby>2.2.1</version.ruby>
+    <version.ruby>2.2.2</version.ruby>
     <prawn.dir>${test.dir}/prawn</prawn.dir>
     <spec.tags.dir>${spec.dir}/tags</spec.tags.dir>
     <pkg.dir>${build.dir}/pkg</pkg.dir>
@@ -21,9 +21,8 @@
     <installer.gems>${jruby.win32ole.gem}</installer.gems>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <prawn.git.repo>git://github.com/sandal/prawn.git</prawn.git.repo>
-    <version.ruby.minor>0</version.ruby.minor>
+    <version.ruby.minor>2</version.ruby.minor>
     <tzdata.version>2013d</tzdata.version>
-    <version.ruby.patchlevel>0</version.ruby.patchlevel>
     <install4j.executable>/Applications/install4j 4/bin/install4jc</install4j.executable>
     <jay.bin>jay</jay.bin>
     <dest.lib.dir>${lib.dir}</dest.lib.dir>
@@ -42,7 +41,7 @@
     <parser.dir>core/src/main/java/org/jruby/parser</parser.dir>
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <rubyspec.dir>${spec.dir}/ruby</rubyspec.dir>
-    <version.ruby.revision>49005</version.ruby.revision>
+    <version.ruby.revision>50293</version.ruby.revision>
     <jruby.test.memory>3G</jruby.test.memory>
     <mspec.dir>${spec.dir}/mspec</mspec.dir>
     <build.date>${maven.build.timestamp}</build.date>
@@ -91,7 +90,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
-      <version>0.7</version>
+      <version>0.9</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -101,22 +100,22 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
-      <version>0.6</version>
+      <version>0.8</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.10</version>
+      <version>3.0.13-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.8.6</version>
+      <version>0.8.8-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>2.0.2</version>
+      <version>2.0.3</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -132,17 +131,17 @@
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>2.1.5</version>
+      <version>2.1.6</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>bytelist</artifactId>
-      <version>1.0.12</version>
+      <version>1.0.13</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.13-SNAPSHOT</version>
+      <version>1.0.13</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -547,467 +546,32 @@
               </transformers>
             </configuration>
           </execution>
+          <execution>
+            <id>shade the asm classes</id>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <artifactSet>
+                <includes>
+                  <include>com.github.jnr:jnr-ffi</include>
+                  <include>org.ow2.asm:*</include>
+                </includes>
+              </artifactSet>
+              <relocations>
+                <relocation>
+                  <pattern>org.objectweb</pattern>
+                  <shadedPattern>org.jruby.org.objectweb</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
     </plugins>
   </build>
   <profiles>
-    <profile>
-      <id>osgi</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>pack jruby-core-noasm.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>noasm</shadedClassifierName>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                </configuration>
-              </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>dist</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>pack jruby-core-noasm.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>noasm</shadedClassifierName>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                </configuration>
-              </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>jruby-jars</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>pack jruby-core-noasm.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>noasm</shadedClassifierName>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                </configuration>
-              </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>main</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>pack jruby-core-noasm.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>noasm</shadedClassifierName>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                </configuration>
-              </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>all</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>pack jruby-core-noasm.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>noasm</shadedClassifierName>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                </configuration>
-              </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>complete</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>pack jruby-core-noasm.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>noasm</shadedClassifierName>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                </configuration>
-              </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>release</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>pack jruby-core-noasm.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>noasm</shadedClassifierName>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                </configuration>
-              </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>jruby_complete_jar_extended</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>pack jruby-core-noasm.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>noasm</shadedClassifierName>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                </configuration>
-              </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
     <profile>
       <id>jruby.bash</id>
       <activation>

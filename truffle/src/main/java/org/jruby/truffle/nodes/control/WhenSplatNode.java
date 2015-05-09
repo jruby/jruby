@@ -9,11 +9,13 @@
  */
 package org.jruby.truffle.nodes.control;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 
@@ -32,14 +34,14 @@ public class WhenSplatNode extends RubyNode {
 
     @Override
     public boolean executeBoolean(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         final Object caseExpression = readCaseExpression.execute(frame);
 
         final RubyArray array;
 
         try {
-            array = splat.executeArray(frame);
+            array = splat.executeRubyArray(frame);
         } catch (UnexpectedResultException e) {
             throw new UnsupportedOperationException(e);
         }

@@ -1,0 +1,1 @@
+fails:StringIO#reopen when passed [Object, Integer] raises a TypeError when trying to reopen self with a frozen String in truncate-mode

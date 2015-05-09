@@ -30,7 +30,7 @@ describe :enumerator_lazy_to_enum, :shared => true do
   end
 
   it "passes given arguments to wrapped method" do
-    @infinite.send(@method, :each_slice, 2).map { |assoc| assoc.first * assoc.last }.first(4).should == [0, 6, 20, 42] 
+    @infinite.send(@method, :each_slice, 2).map { |assoc| assoc.first * assoc.last }.first(4).should == [0, 6, 20, 42]
   end
 
   it "used by some parent's methods though returning Lazy" do

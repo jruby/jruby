@@ -97,6 +97,32 @@ class Float < Numeric
     end
   end
 
+  # MODIFIED name to call from java
+  def round_internal(ndigits=0)
+    ndigits = Rubinius::Type.coerce_to(ndigits, Integer, :to_int)
+
+    if ndigits == 0
+      return Rubinius.invoke_primitive :float_round, self
+    elsif ndigits < 0
+      return truncate.round ndigits
+    end
+
+    return self if infinite? or nan?
+
+    _, exp = Math.frexp(self)
+
+    if ndigits >= (Float::DIG + 2) - (exp > 0 ? exp / 4 : exp / 3 - 1)
+      return self
+    end
+
+    if ndigits < -(exp > 0 ? exp / 3 + 1 : exp / 4)
+      return 0.0
+    end
+
+    f = 10**ndigits
+    Rubinius.invoke_primitive(:float_round, self * f) / f.to_f
+  end
+
   def dtoa
     Rubinius.primitive :float_dtoa
     raise PrimitiveFailure, "Fload#dtoa primitive failed"

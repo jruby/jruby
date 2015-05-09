@@ -10,7 +10,7 @@ describe "IO#inspect" do
       o.close
     end
   end
-  
+
   it "contains \"(closed)\" if the stream is closed" do
     begin
       i, o = IO.pipe

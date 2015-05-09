@@ -32,18 +32,13 @@ public abstract class ArrayWriteDenormalizedNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ArrayWriteDenormalizedNode(ArrayWriteDenormalizedNode prev) {
-        super(prev);
-        writeNode = prev.writeNode;
-    }
-
     public abstract Object executeWrite(VirtualFrame frame, RubyArray array, int index, Object value);
 
     @Specialization
     public Object write(VirtualFrame frame, RubyArray array, int index, Object value) {
         if (writeNode == null) {
             CompilerDirectives.transferToInterpreter();
-            writeNode = insert(ArrayWriteNormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+            writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
         }
 
         final int normalizedIndex = array.normalizeIndex(index);

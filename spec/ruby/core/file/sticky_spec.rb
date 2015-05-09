@@ -25,7 +25,7 @@ describe "File.sticky?" do
       filename = tmp("i_exist")
       touch(filename)
       system "chmod +t #{filename}"
-    
+
       File.sticky?(filename).should == true
 
       rm_r filename

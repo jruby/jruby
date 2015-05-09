@@ -12,8 +12,8 @@ module ProcessSpecs
 
     def wait_for_daemon
       10.times do
-        return true if File.exists? @signal and
-                       File.exists? @data and
+        return true if File.exist? @signal and
+                       File.exist? @data and
                        File.size? @data
         sleep 0.1
       end
@@ -29,7 +29,7 @@ module ProcessSpecs
 
       wait_for_daemon
 
-      return unless File.exists? @data
+      return unless File.exist? @data
 
       File.open(@data, "rb") { |f| return f.read.chomp }
     end
@@ -47,7 +47,7 @@ module ProcessSpecs
         args = [@pid_file, scenario, ruby_exe]
         @result = ruby_exe @script, :args => args
       end
-      Thread.pass until File.exists? @pid_file
+      Thread.pass until File.exist? @pid_file
       while @pid.nil? || @pid == 0
         @pid = IO.read(@pid_file).chomp.to_i
       end

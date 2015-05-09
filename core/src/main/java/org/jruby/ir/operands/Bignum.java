@@ -2,6 +2,7 @@ package org.jruby.ir.operands;
 
 import org.jruby.RubyBignum;
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
 
@@ -49,6 +50,10 @@ public class Bignum extends ImmutableLiteral {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(value.toString());
+    }
+
+    public static Bignum decode(IRReaderDecoder d) {
+        return new Bignum(new BigInteger(d.decodeString()));
     }
 
     @Override

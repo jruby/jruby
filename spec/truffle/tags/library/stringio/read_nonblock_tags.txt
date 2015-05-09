@@ -1,0 +1,5 @@
+fails:StringIO#read_nonblock when passed length, buffer raises a TypeError when passed a frozen String as buffer
+fails:StringIO#read_nonblock when passed length, buffer returns a String in ASCII-8BIT ignoring the encoding of the source String and buffer
+fails:StringIO#read_nonblock when passed length returns a String in ASCII-8BIT encoding when passed a length > 0
+fails:StringIO#read_nonblock when passed length returns an empty String in ASCII-8BIT encoding when passed length == 0
+fails:StringIO#read_nonblock when passed length raises an EOFError when passed 0 and no data remains

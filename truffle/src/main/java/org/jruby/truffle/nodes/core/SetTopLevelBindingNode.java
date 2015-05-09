@@ -26,7 +26,7 @@ public class SetTopLevelBindingNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final RubyBinding binding = new RubyBinding(getContext().getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
         getContext().getCoreLibrary().getObjectClass().setConstant(this, "TOPLEVEL_BINDING", binding);
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
 }

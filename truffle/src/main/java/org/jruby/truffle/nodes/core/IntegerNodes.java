@@ -17,20 +17,18 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
-import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
 
 import java.math.BigInteger;
 
 @CoreClass(name = "Integer")
 public abstract class IntegerNodes {
 
-    @CoreMethod(names = "downto", needsBlock = true, required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(names = "downto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class DownToNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = BranchProfile.create();
@@ -39,10 +37,6 @@ public abstract class IntegerNodes {
 
         public DownToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DownToNode(DownToNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -60,9 +54,6 @@ public abstract class IntegerNodes {
                         try {
                             yield(frame, block, i);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -77,12 +68,54 @@ public abstract class IntegerNodes {
                 }
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
+        }
+
+        @Specialization
+        public Object downto(VirtualFrame frame, long from, int to, RubyProc block) {
+            return downto(frame, from, (long) to, block);
+        }
+
+        @Specialization
+        public Object downto(VirtualFrame frame, int from, long to, RubyProc block) {
+            return downto(frame, (long) from, to, block);
+        }
+
+        @Specialization
+        public Object downto(VirtualFrame frame, long from, long to, RubyProc block) {
+            // TODO BJF 22-Apr-2015 how to handle reportLoopCount(long)
+            int count = 0;
+
+            try {
+                outer:
+                for (long i = from; i >= to; i--) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, i);
+                            continue outer;
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return nil();
         }
 
         @Specialization
         public Object downto(VirtualFrame frame, int from, double to, RubyProc block) {
-            notDesignedForCompilation();
             return downto(frame, from, (int) Math.ceil(to), block);
         }
 
@@ -90,6 +123,8 @@ public abstract class IntegerNodes {
 
     @CoreMethod(names = "times", needsBlock = true)
     public abstract static class TimesNode extends YieldingCoreMethodNode {
+
+        // TODO CS 2-May-15 we badly need OSR in this node
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
@@ -101,15 +136,8 @@ public abstract class IntegerNodes {
             super(context, sourceSection);
         }
 
-        public TimesNode(TimesNode prev) {
-            super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
-        }
-
         @Specialization
         public RubyArray times(VirtualFrame frame, int n, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
             final int[] array = new int[n];
 
             for (int i = 0; i < n; i++) {
@@ -133,9 +161,6 @@ public abstract class IntegerNodes {
                         try {
                             yield(frame, block, i);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -167,9 +192,6 @@ public abstract class IntegerNodes {
                         try {
                             yield(frame, block, i);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -189,8 +211,6 @@ public abstract class IntegerNodes {
 
         @Specialization
         public Object times(VirtualFrame frame, RubyBignum n, RubyProc block) {
-            notDesignedForCompilation();
-
             if (fixnumOrBignum == null) {
                 CompilerDirectives.transferToInterpreter();
                 fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
@@ -201,9 +221,6 @@ public abstract class IntegerNodes {
                     try {
                         yield(frame, block, fixnumOrBignum.fixnumOrBignum(i));
                         continue outer;
-                    } catch (BreakException e) {
-                        breakProfile.enter();
-                        return e.getResult();
                     } catch (NextException e) {
                         nextProfile.enter();
                         continue outer;
@@ -219,14 +236,10 @@ public abstract class IntegerNodes {
     }
 
     @CoreMethod(names = {"to_i", "to_int"})
-    public abstract static class ToINode extends CoreMethodNode {
+    public abstract static class ToINode extends CoreMethodArrayArgumentsNode {
 
         public ToINode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToINode(ToINode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -246,7 +259,7 @@ public abstract class IntegerNodes {
 
     }
 
-    @CoreMethod(names = "upto", needsBlock = true, required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(names = "upto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class UpToNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = BranchProfile.create();
@@ -255,10 +268,6 @@ public abstract class IntegerNodes {
 
         public UpToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public UpToNode(UpToNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -276,9 +285,6 @@ public abstract class IntegerNodes {
                         try {
                             yield(frame, block, i);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -293,19 +299,16 @@ public abstract class IntegerNodes {
                 }
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         @Specialization
         public Object upto(VirtualFrame frame, int from, double to, RubyProc block) {
-            notDesignedForCompilation();
             return upto(frame, from, (int) Math.floor(to), block);
         }
 
         @Specialization
         public Object upto(VirtualFrame frame, long from, long to, RubyProc block) {
-            notDesignedForCompilation();
-
             int count = 0;
 
             try {
@@ -319,9 +322,6 @@ public abstract class IntegerNodes {
                         try {
                             yield(frame, block, i);
                             continue outer;
-                        } catch (BreakException e) {
-                            breakProfile.enter();
-                            return e.getResult();
                         } catch (NextException e) {
                             nextProfile.enter();
                             continue outer;
@@ -336,7 +336,7 @@ public abstract class IntegerNodes {
                 }
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

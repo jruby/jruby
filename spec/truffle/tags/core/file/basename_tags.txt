@@ -1,7 +1,3 @@
-fails:File.basename returns the basename of a path (basic cases)
-fails:File.basename returns the last component of the filename
-fails:File.basename accepts an object that has a #to_path method
-fails:File.basename returns the extension for a multibyte filename
 fails(windows):File.basename returns the basename for windows
 fails(windows):File.basename returns basename windows unc
 fails(windows):File.basename returns basename windows forward slash

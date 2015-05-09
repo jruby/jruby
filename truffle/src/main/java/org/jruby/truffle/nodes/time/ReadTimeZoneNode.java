@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.time;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -32,8 +31,17 @@ public class ReadTimeZoneNode extends RubyNode {
 
     @Override
     public RubyString executeRubyString(VirtualFrame frame) {
-        // TODO CS 4-Mar-15 cast
-        return (RubyString) hashNode.call(frame, getContext().getCoreLibrary().getENV(), "[]", null, TZ);
+        final Object tz = hashNode.call(frame, getContext().getCoreLibrary().getENV(), "[]", null, TZ);
+
+        // TODO CS 4-May-15 not sure how TZ ends up being nil
+
+        if (tz == nil()) {
+            return getContext().makeString("UTC");
+        } else if (tz instanceof RubyString) {
+            return (RubyString) tz;
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Override

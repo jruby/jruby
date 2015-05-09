@@ -237,14 +237,14 @@ public abstract class IRBytecodeAdapter {
      *
      * @param bl ByteList for the String to push
      */
-    public abstract void pushString(ByteList bl);
+    public abstract void pushString(ByteList bl, int cr);
 
     /**
      * Stack required: none
      *
      * @param bl ByteList for the String to push
      */
-    public abstract void pushFrozenString(ByteList bl);
+    public abstract void pushFrozenString(ByteList bl, int cr);
 
     /**
      * Stack required: none
@@ -307,7 +307,7 @@ public abstract class IRBytecodeAdapter {
      * @param arity arity of the call
      * @param hasClosure whether a closure will be on the stack for passing
      */
-    public abstract void invokeOther(String name, int arity, boolean hasClosure);
+    public abstract void invokeOther(String name, int arity, boolean hasClosure, boolean isPotentiallyRefined);
 
     /**
      * Invoke a fixnum-receiving method on an object other than self.
@@ -338,7 +338,7 @@ public abstract class IRBytecodeAdapter {
      * @param hasClosure whether a closure will be on the stack for passing
      * @param callType
      */
-    public abstract void invokeSelf(String name, int arity, boolean hasClosure, CallType callType);
+    public abstract void invokeSelf(String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined);
 
     /**
      * Invoke a superclass method from an instance context.
@@ -500,6 +500,6 @@ public abstract class IRBytecodeAdapter {
     private int variableCount = 0;
     private Map<Integer, Type> variableTypes = new HashMap<Integer, Type>();
     private Map<Integer, String> variableNames = new HashMap<Integer, String>();
-    private final Signature signature;
+    protected final Signature signature;
     private final ClassData classData;
 }

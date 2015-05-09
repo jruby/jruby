@@ -14,7 +14,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.ReadNode;
+import org.jruby.truffle.translator.ReadNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.translator.BodyTranslator;
@@ -27,10 +27,6 @@ public abstract class ReadLocalVariableNode extends FrameSlotNode implements Rea
 
     public ReadLocalVariableNode(RubyContext context, SourceSection sourceSection, FrameSlot slot) {
         super(context, sourceSection, slot);
-    }
-
-    public ReadLocalVariableNode(ReadLocalVariableNode prev) {
-        this(prev.getContext(), prev.getSourceSection(), prev.frameSlot);
     }
 
     @Specialization(rewriteOn = {FrameSlotTypeException.class})
@@ -65,7 +61,7 @@ public abstract class ReadLocalVariableNode extends FrameSlotNode implements Rea
 
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
-        return WriteLocalVariableNodeFactory.create(getContext(), getSourceSection(), frameSlot, rhs);
+        return WriteLocalVariableNodeGen.create(getContext(), getSourceSection(), frameSlot, rhs);
     }
 
     public static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Arrays.asList("$~"));
@@ -74,10 +70,10 @@ public abstract class ReadLocalVariableNode extends FrameSlotNode implements Rea
     public Object isDefined(VirtualFrame frame) {
         // TODO(CS): copy and paste of ReadLevelVariableNode
         if (BodyTranslator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(frameSlot.getIdentifier())) {
-            if (ALWAYS_DEFINED_GLOBALS.contains(frameSlot.getIdentifier()) || doValue(frame) != getContext().getCoreLibrary().getNilObject()) {
+            if (ALWAYS_DEFINED_GLOBALS.contains(frameSlot.getIdentifier()) || doValue(frame) != nil()) {
                 return getContext().makeString("global-variable");
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         } else {
             return getContext().makeString("local-variable");

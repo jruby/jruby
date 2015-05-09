@@ -9,12 +9,10 @@
  */
 package org.jruby.truffle;
 
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.TruffleBridge;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyNode;
@@ -22,20 +20,21 @@ import org.jruby.truffle.nodes.TopLevelRaiseHandler;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodesFactory;
+import org.jruby.truffle.nodes.rubinius.PosixNodesFactory;
+import org.jruby.truffle.nodes.rubinius.RubiniusTypeNodesFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.runtime.util.FileUtils;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
-import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class TruffleBridgeImpl implements TruffleBridge {
@@ -55,10 +54,6 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
     @Override
     public void init() {
-        if (Options.TRUFFLE_PRINT_RUNTIME.load()) {
-            runtime.getInstanceConfig().getError().println("jruby: using " + Truffle.getRuntime().getName());
-        }
-
         // Bring in core method nodes
 
         RubyClass rubyObjectClass = truffleContext.getCoreLibrary().getObjectClass();
@@ -67,23 +62,19 @@ public class TruffleBridgeImpl implements TruffleBridge {
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, BindingNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, BignumNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ClassNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, DirNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ExceptionNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, FalseClassNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, FiberNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, FileNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, FixnumNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, FloatNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, HashNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, IntegerNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, IONodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, KernelNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, MainNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, MatchDataNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, MathNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ModuleNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, MutexNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, NumericNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ObjectSpaceNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ProcessNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ProcNodesFactory.getFactories());
@@ -93,13 +84,17 @@ public class TruffleBridgeImpl implements TruffleBridge {
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, SymbolNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ThreadNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, TrueClassNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, PrimitiveNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, TrufflePrimitiveNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, EncodingNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, EncodingConverterNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, TruffleInteropNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, MethodNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, UnboundMethodNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ByteArrayNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, TimeNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, PosixNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, RubiniusTypeNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ThreadBacktraceLocationNodesFactory.getFactories());
 
         // Give the core library manager a chance to tweak some of those methods
 
@@ -122,9 +117,9 @@ public class TruffleBridgeImpl implements TruffleBridge {
         // We don't want JRuby's stdlib paths, but we do want any extra paths set by -I and things like that
 
         final List<String> excludedLibPaths = new ArrayList<>();
-        excludedLibPaths.add(new File(home, "lib/ruby/2.2/site_ruby").toString());
-        excludedLibPaths.add(new File(home, "lib/ruby/shared").toString());
-        excludedLibPaths.add(new File(home, "lib/ruby/stdlib").toString());
+        excludedLibPaths.add(new File(home, "lib/ruby/2.2/site_ruby").toString().replace('\\', '/'));
+        excludedLibPaths.add(new File(home, "lib/ruby/shared").toString().replace('\\', '/'));
+        excludedLibPaths.add(new File(home, "lib/ruby/stdlib").toString().replace('\\', '/'));
 
         for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
             if (!excludedLibPaths.contains(path.toString())) {
@@ -137,8 +132,15 @@ public class TruffleBridgeImpl implements TruffleBridge {
         // Libraries copied unmodified from MRI
         loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/mri").toString()));
 
+        // Our own implementations
+        loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/truffle").toString()));
+
         // Libraries from RubySL
-        loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/rubysl/rubysl-strscan/lib").toString()));
+        for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
+                "rubysl-complex", "rubysl-date", "rubysl-pathname",
+                "rubysl-tempfile", "rubysl-socket")) {
+            loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
+        }
 
         // Shims
         loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/shims").toString()));
@@ -149,23 +151,24 @@ public class TruffleBridgeImpl implements TruffleBridge {
                 truffleContext.getFeatureManager().require(requiredLibrary, null);
             } catch (IOException e) {
                 throw new RuntimeException(e);
+            } catch (RaiseException e) {
+                // Translate LoadErrors for JRuby since we're outside an ExceptionTranslatingNode.
+                if (e.getRubyException().getLogicalClass() == truffleContext.getCoreLibrary().getLoadErrorClass()) {
+                    throw truffleContext.getRuntime().newLoadError(e.getRubyException().getMessage().toString(), requiredLibrary);
+                } else {
+                    throw e;
+                }
             }
-        }
-
-        // Hook
-
-        if (truffleContext.getHooks() != null) {
-            truffleContext.getHooks().afterInit(truffleContext);
         }
     }
 
     @Override
     public Object execute(final Object self, final org.jruby.ast.RootNode rootNode) {
-	return execute(TranslatorDriver.ParserContext.TOP_LEVEL, self, null, rootNode);
+        return execute(TranslatorDriver.ParserContext.TOP_LEVEL, self, null, rootNode);
     }
 
     public Object execute(final TranslatorDriver.ParserContext parserContext, final Object self, final MaterializedFrame parentFrame, final org.jruby.ast.RootNode rootNode) {
-        truffleContext.getCoreLibrary().getGlobalVariablesObject().getOperations().setInstanceVariable(
+        truffleContext.getCoreLibrary().getGlobalVariablesObject().getObjectType().setInstanceVariable(
                 truffleContext.getCoreLibrary().getGlobalVariablesObject(), "$0",
                 truffleContext.toTruffle(runtime.getGlobalVariables().get("$0")));
 
@@ -176,10 +179,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
             // Assume UTF-8 for the moment
             source = Source.fromBytes(runtime.getInstanceConfig().inlineScript(), "-e", new BytesDecoder.UTF8BytesDecoder());
         } else {
-            final byte[] bytes = FileUtils.readAllBytesInterruptedly(truffleContext, inputFile);
-
-            // Assume UTF-8 for the moment
-            source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());
+            source = truffleContext.getSourceManager().forFile(inputFile);
         }
 
         truffleContext.getFeatureManager().setMainScriptSource(source);

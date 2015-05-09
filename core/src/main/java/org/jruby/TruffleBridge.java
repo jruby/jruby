@@ -10,6 +10,7 @@
 package org.jruby;
 
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public interface TruffleBridge {
 

@@ -12,7 +12,6 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.MaterializedFrame;
-
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -86,8 +85,6 @@ public class RubyProc extends RubyBasicObject {
     }
 
     public Object rootCall(Object... args) {
-        RubyNode.notDesignedForCompilation();
-
         // TODO(CS): handle exceptions in here?
 
         return getCallTargetForType().call(RubyArguments.pack(getMethod(), declarationFrame, self, block, args));

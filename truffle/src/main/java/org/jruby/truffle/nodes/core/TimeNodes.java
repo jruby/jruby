@@ -13,87 +13,76 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyTime;
 
 @CoreClass(name = "Time")
 public abstract class TimeNodes {
 
     // Not a core method, used to simulate Rubinius @is_gmt.
-    @NodeChild(value = "self")
-    public abstract static class InternalGMTNode extends RubyNode {
+    @NodeChild(type = RubyNode.class, value = "self")
+    public abstract static class InternalGMTNode extends CoreMethodNode {
 
         public InternalGMTNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public InternalGMTNode(InternalGMTNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean internalGMT(RubyTime time) {
-            // TODO CS 15-Feb-15 we've ended up with both null and nil here - should simplify
-            return (time.getOffset() == null || time.getOffset() == getContext().getCoreLibrary().getNilObject()) && (time.getDateTime().getZone().equals(DateTimeZone.UTC) || time.getDateTime().getZone().getOffset(time.getDateTime().getMillis()) == 0);
+            return time.getOffset() == nil() &&
+                    (time.getDateTime().getZone().equals(DateTimeZone.UTC) ||
+                     time.getDateTime().getZone().getOffset(time.getDateTime().getMillis()) == 0);
         }
     }
 
     // Not a core method, used to simulate Rubinius @is_gmt.
-    @NodeChildren({ @NodeChild("self"), @NodeChild("isGMT") })
-    public abstract static class InternalSetGMTNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "self"),
+            @NodeChild(type = RubyNode.class, value = "isGMT")
+    })
+    public abstract static class InternalSetGMTNode extends CoreMethodNode {
 
         public InternalSetGMTNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public InternalSetGMTNode(InternalSetGMTNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public boolean internalSetGMT(RubyTime time, Object setGMT) {
-            throw new UnsupportedOperationException("_set_gmt" + setGMT.getClass());
+        public boolean internalSetGMT(RubyTime time, boolean isGMT) {
+            if (isGMT) {
+                time.setDateTime(time.getDateTime().withZone(DateTimeZone.UTC));
+            } else {
+                // Do nothing I guess - we can't change it to another zone, as what zone would that be?
+            }
+
+            return isGMT;
         }
     }
 
     // Not a core method, used to simulate Rubinius @offset.
-    @NodeChild(value = "self")
-    public abstract static class InternalOffsetNode extends RubyNode {
+    @NodeChild(type = RubyNode.class, value = "self")
+    public abstract static class InternalOffsetNode extends CoreMethodNode {
 
         public InternalOffsetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public InternalOffsetNode(InternalOffsetNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object internalOffset(RubyTime time) {
-            final Object offset = time.getOffset();
-            
-            if (offset == null) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return offset;
-            }
+            return time.getOffset();
         }
     }
 
     // Not a core method, used to simulate Rubinius @offset.
-    @NodeChildren({ @NodeChild("self"), @NodeChild("offset") })
-    public abstract static class InternalSetOffsetNode extends RubyNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "self"),
+            @NodeChild(type = RubyNode.class, value = "offset")
+    })
+    public abstract static class InternalSetOffsetNode extends CoreMethodNode {
 
         public InternalSetOffsetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InternalSetOffsetNode(InternalSetOffsetNode prev) {
-            super(prev);
         }
 
         @Specialization

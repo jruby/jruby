@@ -11,14 +11,15 @@ package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
-import org.jruby.truffle.nodes.conversion.ToJavaStringNodeFactory;
+import org.jruby.truffle.nodes.conversion.ToJavaStringNodeGen;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
-import org.jruby.truffle.nodes.conversion.ToSymbolNodeFactory;
+import org.jruby.truffle.nodes.conversion.ToSymbolNodeGen;
+import org.jruby.truffle.nodes.objects.MetaClassNode;
+import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -27,6 +28,7 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 
 public class UncachedDispatchNode extends DispatchNode {
 
@@ -36,6 +38,7 @@ public class UncachedDispatchNode extends DispatchNode {
     @Child private IndirectCallNode callNode;
     @Child private ToSymbolNode toSymbolNode;
     @Child private ToJavaStringNode toJavaStringNode;
+    @Child private MetaClassNode metaClassNode;
 
     private final BranchProfile constantMissingProfile = BranchProfile.create();
     private final BranchProfile methodMissingProfile = BranchProfile.create();
@@ -45,8 +48,9 @@ public class UncachedDispatchNode extends DispatchNode {
         this.ignoreVisibility = ignoreVisibility;
         this.missingBehavior = missingBehavior;
         callNode = Truffle.getRuntime().createIndirectCallNode();
-        toSymbolNode = ToSymbolNodeFactory.create(context, null, null);
-        toJavaStringNode = ToJavaStringNodeFactory.create(context, null, null);
+        toSymbolNode = ToSymbolNodeGen.create(context, null, null);
+        toJavaStringNode = ToJavaStringNodeGen.create(context, null, null);
+        metaClassNode = MetaClassNodeGen.create(context, null, null);
     }
 
     @Override
@@ -73,7 +77,7 @@ public class UncachedDispatchNode extends DispatchNode {
 
             constantMissingProfile.enter();
 
-            final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
+            final RubyClass callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(frame, RubyArguments.getSelf(frame.getArguments()));
 
             final InternalMethod missingMethod = lookup(callerClass, receiverObject, "const_missing", ignoreVisibility);
 
@@ -93,7 +97,7 @@ public class UncachedDispatchNode extends DispatchNode {
                             null,
                             new Object[]{toSymbolNode.executeRubySymbol(frame, name)}));
         } else {
-            final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
+            final RubyClass callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(frame, RubyArguments.getSelf(frame.getArguments()));
 
             final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, name),
                     ignoreVisibility);
@@ -141,7 +145,7 @@ public class UncachedDispatchNode extends DispatchNode {
 
                 modifiedArgumentsObjects[0] = toSymbolNode.executeRubySymbol(frame, name);
 
-                RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
+                ArrayUtils.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
 
                 return callNode.call(
                         frame,

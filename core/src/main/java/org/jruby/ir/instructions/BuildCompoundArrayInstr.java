@@ -5,6 +5,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -49,6 +50,10 @@ public class BuildCompoundArrayInstr extends ResultBaseInstr {
         e.encode(getAppendingArg());
         e.encode(getAppendedArg());
         e.encode(isArgsPush());
+    }
+
+    public static BuildCompoundArrayInstr decode(IRReaderDecoder d) {
+        return new BuildCompoundArrayInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
     }
 
     @Override

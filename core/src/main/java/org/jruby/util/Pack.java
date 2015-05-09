@@ -76,7 +76,6 @@ public class Pack {
     private static final String PACK_IGNORE_NULL_CODES = "cCiIlLnNqQsSvV";
     private static final String PACK_IGNORE_NULL_CODES_WITH_MODIFIERS = "lLsS";
     private static final String sTooFew = "too few arguments";
-    private static final byte[] hex_table;
     private static final byte[] uu_table;
     private static final byte[] b64_table;
     private static final byte[] sHexDigits;
@@ -103,7 +102,6 @@ public class Pack {
     }    
 
     static {
-        hex_table = ByteList.plain("0123456789ABCDEF");
         uu_table =
             ByteList.plain("`!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_");
         b64_table =
@@ -474,6 +472,25 @@ public class Pack {
         return result;
     }
 
+    public static void encodeUM(Ruby runtime, ByteList lCurElemString, int occurrences, boolean ignoreStar, char type, ByteList result) {
+        if (occurrences == 0 && type == 'm' && !ignoreStar) {
+            encodes(runtime, result, lCurElemString.getUnsafeBytes(),
+                    lCurElemString.getBegin(), lCurElemString.length(),
+                    lCurElemString.length(), (byte) type, false);
+            return;
+        }
+
+        occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
+        if (lCurElemString.length() == 0) return;
+
+        byte[] charsToEncode = lCurElemString.getUnsafeBytes();
+        for (int i = 0; i < lCurElemString.length(); i += occurrences) {
+            encodes(runtime, result, charsToEncode,
+                    i + lCurElemString.getBegin(), lCurElemString.length() - i,
+                    occurrences, (byte)type, true);
+        }
+    }
+
     /**
      * encodes a String in base64 or its uuencode variant.
      * appends the result of the encoding in a StringBuffer
@@ -529,61 +546,6 @@ public class Pack {
             io2Append.append(lPadding);
         }
         if (tailLf) {
-            io2Append.append('\n');
-        }
-        return io2Append;
-    }
-
-    /**
-     * encodes a String with the Quoted printable, MIME encoding (see RFC2045).
-     * appends the result of the encoding in a StringBuffer
-     * @param io2Append The StringBuffer which should receive the result
-     * @param i2Encode The String to encode
-     * @param iLength The max number of characters to encode
-     * @return the io2Append buffer
-     **/
-    private static ByteList qpencode(ByteList io2Append, ByteList i2Encode, int iLength) {
-        io2Append.ensure(1024);
-        int lCurLineLength = 0;
-        int lPrevChar = -1;
-        byte[] l2Encode = i2Encode.getUnsafeBytes();
-        try {
-            int end = i2Encode.getBegin() + i2Encode.getRealSize();
-            for (int i = i2Encode.getBegin(); i < end; i++) {
-                int lCurChar = l2Encode[i] & 0xff;
-                if (lCurChar > 126 || (lCurChar < 32 && lCurChar != '\n' && lCurChar != '\t') || lCurChar == '=') {
-                    io2Append.append('=');
-                    io2Append.append(hex_table[lCurChar >>> 4]);
-                    io2Append.append(hex_table[lCurChar & 0x0f]);
-                    lCurLineLength += 3;
-                    lPrevChar = -1;
-                } else if (lCurChar == '\n') {
-                    if (lPrevChar == ' ' || lPrevChar == '\t') {
-                        io2Append.append('=');
-                        io2Append.append(lCurChar);
-                    }
-                    io2Append.append(lCurChar);
-                    lCurLineLength = 0;
-                    lPrevChar = lCurChar;
-                } else {
-                    io2Append.append(lCurChar);
-                    lCurLineLength++;
-                    lPrevChar = lCurChar;
-                }
-                if (lCurLineLength > iLength) {
-                    io2Append.append('=');
-                    io2Append.append('\n');
-                    lCurLineLength = 0;
-                    lPrevChar = '\n';
-                }
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            //normal exit, this should be faster than a test at each iterations for string with more than
-            //about 40 char
-        }
-
-        if (lCurLineLength > 0) {
-            io2Append.append('=');
             io2Append.append('\n');
         }
         return io2Append;
@@ -1135,61 +1097,116 @@ public class Pack {
                     int index = 0;
                     int s = -1;
 
-                    while (encode.hasRemaining()) {
-                        a = b = c = d = -1;
-                        
-                        // obtain a
-                        s = safeGet(encode);
-                        while (((a = b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                            s = safeGet(encode);
+                    if (occurrences == 0){
+                        if (encode.remaining()%4 != 0) {
+                            throw runtime.newArgumentError("invalid base64");
                         }
-                        if (a == -1) break;
-                        
-                        // obtain b
-                        s = safeGet(encode);
-                        while (((b = b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                            s = safeGet(encode);
-                        }
-                        if (b == -1) break;
-                        
-                        // obtain c
-                        s = safeGet(encode);
-                        while (((c = b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                            if (s == '=') break;
-                            s = safeGet(encode);
-                        }
-                        if ((s == '=') || c == -1) {
-                            if (s == '=') {
-                                encode.position(encode.position() - 1);
-                            }
-                            break;
-                        }
-                        
-                        // obtain d
-                        s = safeGet(encode);
-                        while (((d = b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                            if (s == '=') break;
-                            s = safeGet(encode);
-                        }
-                        if ((s == '=') || d == -1) {
-                            if (s == '=') {
-                                encode.position(encode.position() - 1);
-                            }
-                            break;
-                        }
+                        while (encode.hasRemaining() && s != '=') {
+                            a = b = c = -1;
+                            d = -2;
 
-                        // calculate based on a, b, c and d
-                        lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
-                        lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
-                        lElem[index++] = (byte)((c << 6 | d) & 255);
-                    }
+                            // obtain a
+                            s = safeGet(encode);
+                            a = b64_xtable[s];
+                            if (a == -1) throw runtime.newArgumentError("invalid base64");
 
-                    if (a != -1 && b != -1) {
-                        if (c == -1 && s == '=') {
-                            lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
-                        } else if(c != -1 && s == '=') {
+                            // obtain b
+                            s = safeGet(encode);
+                            b = b64_xtable[s];
+                            if (b == -1) throw runtime.newArgumentError("invalid base64");
+
+                            // obtain c
+                            s = safeGet(encode);
+                            c = b64_xtable[s];
+                            if (s == '=') {
+                                if (safeGet(encode) != '=') throw runtime.newArgumentError("invalid base64");
+                                break;
+                            }
+                            if (c == -1) throw runtime.newArgumentError("invalid base64");
+
+                            // obtain d
+                            s = safeGet(encode);
+                            d = b64_xtable[s];
+                            if (s == '=') break;
+                            if (d == -1) throw runtime.newArgumentError("invalid base64");
+
+                            // calculate based on a, b, c and d
                             lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
                             lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
+                            lElem[index++] = (byte)((c << 6 | d) & 255);
+                        }
+
+                        if (encode.hasRemaining()) throw runtime.newArgumentError("invalid base64");
+
+                        if (a != -1 && b != -1) {
+                            if (c == -1 && s == '=') {
+                                if ((b & 15) > 0) throw runtime.newArgumentError("invalid base64");
+                                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+                            } else if(c != -1 && s == '=') {
+                                if ((c & 3) > 0) throw runtime.newArgumentError("invalid base64");
+                                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+                                lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
+                            }
+                        }
+                    }
+                    else {
+
+                        while (encode.hasRemaining()) {
+                            a = b = c = d = -1;
+
+                            // obtain a
+                            s = safeGet(encode);
+                            while (((a = b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                                s = safeGet(encode);
+                            }
+                            if (a == -1) break;
+
+                            // obtain b
+                            s = safeGet(encode);
+                            while (((b = b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                                s = safeGet(encode);
+                            }
+                            if (b == -1) break;
+
+                            // obtain c
+                            s = safeGet(encode);
+                            while (((c = b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                                if (s == '=') break;
+                                s = safeGet(encode);
+                            }
+                            if ((s == '=') || c == -1) {
+                                if (s == '=') {
+                                    encode.position(encode.position() - 1);
+                                }
+                                break;
+                            }
+
+                            // obtain d
+                            s = safeGet(encode);
+                            while (((d = b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                                if (s == '=') break;
+                                s = safeGet(encode);
+                            }
+                            if ((s == '=') || d == -1) {
+                                if (s == '=') {
+                                    encode.position(encode.position() - 1);
+                                }
+                                break;
+                            }
+
+                            // calculate based on a, b, c and d
+                            lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+                            lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
+                            lElem[index++] = (byte)((c << 6 | d) & 255);
+                        }
+
+                        if (a != -1 && b != -1) {
+                            if (c == -1 && s == '=') {
+                                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+                            } else if(c != -1 && s == '=') {
+                                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+                                lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
+                            }
                         }
                     }
                     result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index,
@@ -1940,22 +1957,7 @@ public class Pack {
                         IRubyObject from = list.eltInternal(idx++);
                         if (from == runtime.getNil()) throw runtime.newTypeError(from, "Integer");
                         lCurElemString = from.convertToString().getByteList();
-                        if (occurrences == 0 && type == 'm' && !ignoreStar) {
-                            encodes(runtime, result, lCurElemString.getUnsafeBytes(),
-                                    lCurElemString.getBegin(), lCurElemString.length(),
-                                    lCurElemString.length(), (byte)type, false);
-                            break;
-                        }
-
-                        occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
-                        if (lCurElemString.length() == 0) break;
-
-                        byte[] charsToEncode = lCurElemString.getUnsafeBytes();
-                        for (int i = 0; i < lCurElemString.length(); i += occurrences) {
-                            encodes(runtime, result, charsToEncode,
-                                    i + lCurElemString.getBegin(), lCurElemString.length() - i,
-                                    occurrences, (byte)type, true);
-                        }
+                        encodeUM(runtime, lCurElemString, occurrences, ignoreStar, (char) type, result);
                     }
                     break;
                 case 'M' : {
@@ -1968,7 +1970,7 @@ public class Pack {
                            occurrences = 72;
                        }
 
-                       qpencode(result, lCurElemString, occurrences);
+                       PackUtils.qpencode(result, lCurElemString, occurrences);
                     }
                     break;
                 case 'U' :
@@ -2119,7 +2121,7 @@ public class Pack {
      */
     private static void encodeIntLittleEndian(ByteList result, int s) {
         result.append((byte) (s & 0xff)).append((byte) ((s >> 8) & 0xff));
-        result.append((byte) ((s>>16) & 0xff)).append((byte) ((s>>24) &0xff));
+        result.append((byte) ((s>>16) & 0xff)).append((byte) ((s >> 24) & 0xff));
     }
 
     /**
@@ -2325,4 +2327,5 @@ public class Pack {
     private static void encodeShortBigEndian(ByteList result, int s) {
         result.append((byte) ((s & 0xff00) >> 8)).append((byte) (s & 0xff));
     }
+
 }

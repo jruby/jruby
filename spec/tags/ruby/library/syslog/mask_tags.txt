@@ -1,8 +1,4 @@
-fails:Syslog.mask returns the log priority mask
-fails:Syslog.mask defaults to 255
-fails:Syslog.mask returns nil if the log is closed
 fails:Syslog.mask persists if the log is reopened
-fails:Syslog.mask= sets the log priority mask
 fails:Syslog.mask= raises an error if the log is closed
 fails:Syslog.mask= only accepts numbers
 fails:Syslog.mask= persists if the log is reopened

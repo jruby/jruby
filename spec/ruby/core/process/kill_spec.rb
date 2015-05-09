@@ -62,14 +62,6 @@ describe "Process.kill" do
   end
 end
 
-as_user do
-  describe "Process.kill" do
-    it "raises an Errno::EPERM if permission is denied" do
-      lambda { Process.kill("SIGKILL", 1) }.should raise_error(Errno::EPERM)
-    end
-  end
-end
-
 describe "Process.kill" do
   before :each do
     @sp1 = ProcessSpecs::Signalizer.new

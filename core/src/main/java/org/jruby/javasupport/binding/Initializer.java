@@ -7,6 +7,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
@@ -34,6 +35,7 @@ import static org.jruby.runtime.Visibility.PUBLIC;
 */
 public abstract class Initializer {
     protected final Ruby runtime;
+    protected final JavaSupport javaSupport;
     protected final Class javaClass;
 
     private static final Logger LOG = LoggerFactory.getLogger("Initializer");
@@ -68,6 +70,7 @@ public abstract class Initializer {
 
     public Initializer(Ruby runtime, Class javaClass) {
         this.runtime = runtime;
+        this.javaSupport = runtime.getJavaSupport();
         this.javaClass = javaClass;
     }
 
@@ -380,28 +383,6 @@ public abstract class Initializer {
     }
 
     public abstract RubyModule initialize(RubyModule proxy);
-
-    public void initializeBase(RubyModule proxy) {
-        proxy.addMethod("__jsend!", new org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock(proxy, PUBLIC) {
-            @Override
-            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                String callName = args[0].asJavaString();
-
-                DynamicMethod method = self.getMetaClass().searchMethod(callName);
-                int v = method.getArity().getValue();
-
-                IRubyObject[] newArgs = new IRubyObject[args.length - 1];
-                System.arraycopy(args, 1, newArgs, 0, newArgs.length);
-
-                if(v < 0 || v == (newArgs.length)) {
-                    return Helpers.invoke(context, self, callName, newArgs, Block.NULL_BLOCK);
-                } else {
-                    RubyClass superClass = self.getMetaClass().getSuperClass();
-                    return Helpers.invokeAs(context, superClass, self, callName, newArgs, Block.NULL_BLOCK);
-                }
-            }
-        });
-    }
 
     public static class State {
 

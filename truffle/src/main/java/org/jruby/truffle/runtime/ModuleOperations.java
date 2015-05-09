@@ -10,16 +10,19 @@
 package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.util.IdUtil;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public abstract class ModuleOperations {
 
@@ -34,9 +37,15 @@ public abstract class ModuleOperations {
     }
 
     public static boolean assignableTo(RubyClass thisClass, RubyModule otherClass) {
-        RubyNode.notDesignedForCompilation();
-
         return includesModule(thisClass, otherClass);
+    }
+
+    public static boolean canBindMethodTo(RubyModule origin, RubyModule module) {
+        if (!(origin instanceof RubyClass)) {
+            return true;
+        } else {
+            return ((module instanceof RubyClass) && ModuleOperations.assignableTo((RubyClass) module, origin));
+        }
     }
 
     @TruffleBoundary
@@ -48,10 +57,8 @@ public abstract class ModuleOperations {
         // Look in the current module
         constants.putAll(module.getConstants());
 
-        // TODO(eregon): Look in lexical scope?
-
         // Look in ancestors
-        for (RubyModule ancestor : module.parentAncestors()) {
+        for (RubyModule ancestor : module.includedModules()) {
             for (Map.Entry<String, RubyConstant> constant : ancestor.getConstants().entrySet()) {
                 if (!constants.containsKey(constant.getKey())) {
                     constants.put(constant.getKey(), constant.getValue());
@@ -131,25 +138,70 @@ public abstract class ModuleOperations {
         return null;
     }
 
-    @TruffleBoundary
-    public static Map<String, InternalMethod> getAllMethods(RubyModule module) {
+    public static RubyConstant lookupScopedConstant(RubyContext context, RubyModule module, String fullName, boolean inherit, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
 
+        int start = 0, next;
+        if (fullName.startsWith("::")) {
+            module = context.getCoreLibrary().getObjectClass();
+            start += 2;
+        }
+
+        while ((next = fullName.indexOf("::", start)) != -1) {
+            String segment = fullName.substring(start, next);
+            RubyConstant constant = lookupConstantWithInherit(context, module, segment, inherit, currentNode);
+            if (constant == null) {
+                return null;
+            } else if (constant.getValue() instanceof RubyModule) {
+                module = (RubyModule) constant.getValue();
+            } else {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(context.getCoreLibrary().typeError(fullName.substring(0, next) + " does not refer to class/module", currentNode));
+            }
+            start = next + 2;
+        }
+
+        String lastSegment = fullName.substring(start);
+        return lookupConstantWithInherit(context, module, lastSegment, inherit, currentNode);
+    }
+
+    private static RubyConstant lookupConstantWithInherit(RubyContext context, RubyModule module, String name, boolean inherit, Node currentNode) {
+        if (!IdUtil.isValidConstantName19(name)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(context.getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, currentNode));
+        }
+
+        if (inherit) {
+            return ModuleOperations.lookupConstant(context, LexicalScope.NONE, module, name);
+        } else {
+            return module.getConstants().get(name);
+        }
+    }
+
+    @TruffleBoundary
+    public static Map<String, InternalMethod> getAllMethods(RubyModule module) {
         final Map<String, InternalMethod> methods = new HashMap<>();
 
-        // Look in the current module
-        methods.putAll(module.getMethods());
-
-        // Look in ancestors
-        for (RubyModule ancestor : module.parentAncestors()) {
-            for (Map.Entry<String, InternalMethod> method : ancestor.getMethods().entrySet()) {
-                if (!methods.containsKey(method.getKey())) {
-                    methods.put(method.getKey(), method.getValue());
+        for (RubyModule ancestor : module.ancestors()) {
+            for (InternalMethod method : ancestor.getMethods().values()) {
+                if (!methods.containsKey(method.getName())) {
+                    methods.put(method.getName(), method);
                 }
             }
         }
 
         return methods;
+    }
+
+    @TruffleBoundary
+    public static Map<String, InternalMethod> withoutUndefinedMethods(Map<String, InternalMethod> methods) {
+        Map<String, InternalMethod> definedMethods = new HashMap<>();
+        for (Entry<String, InternalMethod> method : methods.entrySet()) {
+            if (!method.getValue().isUndefined()) {
+                definedMethods.put(method.getKey(), method.getValue());
+            }
+        }
+        return definedMethods;
     }
 
     @TruffleBoundary
@@ -279,6 +331,14 @@ public abstract class ModuleOperations {
         // Not existing class variable - set in the current module
 
         module.setClassVariable(currentNode, name, value);
+    }
+
+    public static boolean isMethodPrivateFromName(String name) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        return (name.equals("initialize") || name.equals("initialize_copy") ||
+                name.equals("initialize_clone") || name.equals("initialize_dup") ||
+                name.equals("respond_to_missing?"));
     }
 
 }

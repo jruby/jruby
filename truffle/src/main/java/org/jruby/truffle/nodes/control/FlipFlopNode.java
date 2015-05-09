@@ -9,12 +9,12 @@
  */
 package org.jruby.truffle.nodes.control;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.methods.locals.FlipFlopStateNode;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -28,16 +28,14 @@ public class FlipFlopNode extends RubyNode {
 
     public FlipFlopNode(RubyContext context, SourceSection sourceSection, RubyNode begin, RubyNode end, FlipFlopStateNode stateNode, boolean exclusive) {
         super(context, sourceSection);
-        this.begin = BooleanCastNodeFactory.create(context, sourceSection, begin);
-        this.end = BooleanCastNodeFactory.create(context, sourceSection, end);
+        this.begin = BooleanCastNodeGen.create(context, sourceSection, begin);
+        this.end = BooleanCastNodeGen.create(context, sourceSection, end);
         this.stateNode = stateNode;
         this.exclusive = exclusive;
     }
 
     @Override
     public boolean executeBoolean(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         if (exclusive) {
             if (stateNode.getState(frame)) {
                 if (end.executeBoolean(frame)) {

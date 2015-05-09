@@ -1,1 +1,0 @@
-fails:Enumerable#find_index returns the first index for which the block is not false

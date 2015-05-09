@@ -1,3 +1,1 @@
-fails:IO#isatty returns true if this stream is a terminal device (TTY)
-fails:IO#isatty returns false if this stream is not a terminal device (TTY)
 fails:IO#isatty raises IOError on closed stream

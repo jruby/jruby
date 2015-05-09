@@ -49,24 +49,30 @@ describe :string_each_line, :shared => true do
     a.should == ["hello\nworld\n\n\n", "and\nuniverse\n\n\n\n\n", "dog"]
   end
 
-  it "uses $/ as the separator when none is given" do
-    [
-      "", "x", "x\ny", "x\ry", "x\r\ny", "x\n\r\r\ny",
-      "hello hullo bello"
-    ].each do |str|
-      ["", "llo", "\n", "\r", nil].each do |sep|
-        begin
+  describe "uses $/" do
+    before :each do
+      @before_separator = $/
+    end
+
+    after :each do
+      $/ = @before_separator
+    end
+
+    it "as the separator when none is given" do
+      [
+        "", "x", "x\ny", "x\ry", "x\r\ny", "x\n\r\r\ny",
+        "hello hullo bello"
+      ].each do |str|
+        ["", "llo", "\n", "\r", nil].each do |sep|
           expected = []
           str.send(@method, sep) { |x| expected << x }
 
-          old_rec_sep, $/ = $/, sep
+          $/ = sep
 
           actual = []
           str.send(@method) { |x| actual << x }
 
           actual.should == expected
-        ensure
-          $/ = old_rec_sep
         end
       end
     end

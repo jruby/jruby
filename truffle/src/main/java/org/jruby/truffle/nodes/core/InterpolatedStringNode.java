@@ -17,9 +17,9 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.ToSNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
-import org.jruby.truffle.nodes.objects.IsTaintedNodeFactory;
+import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
-import org.jruby.truffle.nodes.objects.TaintNodeFactory;
+import org.jruby.truffle.nodes.objects.TaintNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -39,8 +39,8 @@ public final class InterpolatedStringNode extends RubyNode {
     public InterpolatedStringNode(RubyContext context, SourceSection sourceSection, ToSNode[] children) {
         super(context, sourceSection);
         this.children = children;
-        isTaintedNode = IsTaintedNodeFactory.create(context, sourceSection, null);
-        taintNode = TaintNodeFactory.create(context, sourceSection, null);
+        isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
+        taintNode = TaintNodeGen.create(context, sourceSection, null);
     }
 
     @ExplodeLoop
@@ -78,7 +78,7 @@ public final class InterpolatedStringNode extends RubyNode {
                 try {
                     builder.append19(getContext().toJRuby(string));
                 } catch (org.jruby.exceptions.RaiseException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(builder.getEncoding().getCharsetName(), string.getBytes().getEncoding().getCharsetName(), this));
+                    throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(builder.getEncoding().getCharsetName(), string.getByteList().getEncoding().getCharsetName(), this));
                 }
             }
         }

@@ -109,9 +109,10 @@ VALUE sws_typed_get_struct_data_ptr(VALUE self, VALUE obj) {
 }
 
 VALUE sws_typed_change_struct(VALUE self, VALUE obj, VALUE new_val) {
-  struct sample_typed_wrapped_struct* new_struct = (struct sample_typed_wrapped_struct *)malloc(sizeof(struct sample_typed_wrapped_struct));
+  struct sample_typed_wrapped_struct *old_struct, *new_struct;
+  new_struct = (struct sample_typed_wrapped_struct *)malloc(sizeof(struct sample_typed_wrapped_struct));
   new_struct->foo = FIX2INT(new_val);
-  struct sample_typed_wrapped_struct* old_struct = RTYPEDDATA(obj)->data;
+  old_struct = RTYPEDDATA(obj)->data;
   free(old_struct);
   RTYPEDDATA(obj)->data = new_struct;
   return Qnil;

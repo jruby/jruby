@@ -14,8 +14,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
-import org.jruby.truffle.runtime.util.Consumer;
-
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
@@ -32,22 +30,12 @@ public class ProcSignalHandler implements SignalHandler {
 
     @Override
     public void handle(Signal signal) {
-        // TODO: just make this a normal Ruby thread once we don't have the global lock anymore
-        context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(null, new SafepointAction() {
-
+        Thread mainThread = context.getThreadManager().getRootThread().getCurrentFiberJavaThread();
+        context.getSafepointManager().pauseMainThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
             @Override
             public void run(RubyThread thread, Node currentNode) {
-                if (thread == context.getThreadManager().getRootThread()) {
-                    context.getThreadManager().enterGlobalLock(thread);
-                    try {
-                        // assumes this proc does not re-enter the SafepointManager.
-                        proc.rootCall();
-                    } finally {
-                        context.getThreadManager().leaveGlobalLock();
-                    }
-                }
+                proc.rootCall();
             }
-
         });
     }
 

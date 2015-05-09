@@ -1,1 +1,0 @@
-fails:File::Stat#rdev returns the number of the device this file represents which the file exists

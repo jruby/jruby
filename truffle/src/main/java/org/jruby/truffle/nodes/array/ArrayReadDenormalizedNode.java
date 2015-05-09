@@ -31,18 +31,13 @@ public abstract class ArrayReadDenormalizedNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ArrayReadDenormalizedNode(ArrayReadDenormalizedNode prev) {
-        super(prev);
-        readNode = prev.readNode;
-    }
-
     public abstract Object executeRead(VirtualFrame frame, RubyArray array, int index);
 
     @Specialization
     public Object read(VirtualFrame frame, RubyArray array, int index) {
         if (readNode == null) {
             CompilerDirectives.transferToInterpreter();
-            readNode = insert(ArrayReadNormalizedNodeFactory.create(getContext(), getSourceSection(), null, null));
+            readNode = insert(ArrayReadNormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
         }
 
         final int normalizedIndex = array.normalizeIndex(index);

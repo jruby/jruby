@@ -146,7 +146,6 @@ public abstract class ArrayBuilderNode extends Node {
         private final int expectedLength;
 
         @CompilerDirectives.CompilationFinal private boolean hasAppendedIntegerArray = false;
-        @CompilerDirectives.CompilationFinal private boolean hasAppendedObjectArray = false;
 
         public IntegerArrayBuilderNode(RubyContext context, int expectedLength) {
             super(context);
@@ -200,11 +199,6 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             }
 
-            if (hasAppendedObjectArray && otherStore instanceof Object[]) {
-                System.arraycopy(otherStore, 0, store, index, array.getSize());
-                return store;
-            }
-
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
             if (otherStore instanceof int[]) {
@@ -213,13 +207,13 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             }
 
-            if (otherStore instanceof Object[]) {
-                hasAppendedObjectArray = true;
-                System.arraycopy(otherStore, 0, store, index, array.getSize());
-                return store;
-            }
+            CompilerDirectives.transferToInterpreter();
 
-            throw new UnsupportedOperationException(array.getStore().getClass().getName());
+            replace(new ObjectArrayBuilderNode(getContext(), expectedLength));
+            final Object[] newStore = ArrayUtils.box((int[]) store);
+            System.arraycopy(otherStore, 0, newStore, index, array.getSize());
+
+            return newStore;
         }
 
         @Override
@@ -387,6 +381,7 @@ public abstract class ArrayBuilderNode extends Node {
         private final int expectedLength;
 
         @CompilerDirectives.CompilationFinal private boolean hasAppendedObjectArray = false;
+        @CompilerDirectives.CompilationFinal private boolean hasAppendedIntArray = false;
 
         public ObjectArrayBuilderNode(RubyContext context, int expectedLength) {
             super(context);
@@ -438,11 +433,21 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             }
 
+            if (hasAppendedIntArray && otherStore instanceof int[]) {
+                final Object[] objectStore = (Object[]) store;
+                final int[] otherIntStore = (int[]) otherStore;
+
+                for (int n = 0; n < array.getSize(); n++) {
+                    objectStore[index + n] = otherIntStore[n];
+                }
+
+                return store;
+            }
+
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
             if (otherStore instanceof int[]) {
-                // TODO CS 5-Feb-15 hack to get things working with empty int[] store
-
+                hasAppendedIntArray = true;
                 for (int n = 0; n < array.getSize(); n++) {
                     ((Object[]) store)[index + n] = ((int[]) otherStore)[n];
                 }
@@ -451,20 +456,16 @@ public abstract class ArrayBuilderNode extends Node {
             }
 
             if (otherStore instanceof long[]) {
-                // TODO CS 5-Feb-15 hack to get things working with empty long[] store
-
-                if (((long[]) otherStore).length > 0) {
-                    throw new UnsupportedOperationException();
+                for (int n = 0; n < array.getSize(); n++) {
+                    ((Object[]) store)[index + n] = ((long[]) otherStore)[n];
                 }
 
                 return store;
             }
 
             if (otherStore instanceof double[]) {
-                // TODO CS 5-Feb-15 hack to get things working with empty double[] store
-
-                if (((double[]) otherStore).length > 0) {
-                    throw new UnsupportedOperationException();
+                for (int n = 0; n < array.getSize(); n++) {
+                    ((Object[]) store)[index + n] = ((double[]) otherStore)[n];
                 }
 
                 return store;
@@ -481,6 +482,10 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object append(Object store, int index, Object value) {
+            if (index >= ((Object[]) store).length) {
+                new Exception().printStackTrace();
+            }
+
             ((Object[]) store)[index] = value;
             return store;
         }

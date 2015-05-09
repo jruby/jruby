@@ -3,10 +3,9 @@ package org.jruby.runtime;
 import org.jruby.EvalType;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.representations.CFG;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -17,17 +16,24 @@ public class CompiledIRBlockBody extends IRBlockBody {
     protected final MethodHandle handle;
     protected boolean pushScope;
     protected boolean reuseParentScope;
+    protected boolean usesKwargs;
 
     public CompiledIRBlockBody(MethodHandle handle, IRScope closure, long encodedSignature) {
-        super(closure.getStaticScope(), ((IRClosure)closure).getParameterList(), closure.getFileName(), closure.getLineNumber(), Signature.decode(encodedSignature));
+        super(closure.getStaticScope(), closure.getFileName(), closure.getLineNumber(), Signature.decode(encodedSignature));
         this.handle = handle;
         this.closure = (IRClosure)closure;
         // FIXME: duplicated from InterpreterContext
         this.reuseParentScope = closure.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
         this.pushScope = !closure.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !this.reuseParentScope;
+        this.usesKwargs = closure.receivesKeywordArgs();
 
         // Done in the interpreter (WrappedIRClosure) but we do it here
         closure.getStaticScope().determineModule();
+    }
+
+    @Override
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return closure.getArgumentDescriptors();
     }
 
     protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block) {
@@ -61,6 +67,8 @@ public class CompiledIRBlockBody extends IRBlockBody {
             context.pushScope(prevScope);
         }
         this.evalType.set(EvalType.NONE);
+
+        if (usesKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, getSignature().required(), args);
 
         try {
             return (IRubyObject)handle.invokeExact(context, getStaticScope(), self, args, block, binding.getMethod(), type);

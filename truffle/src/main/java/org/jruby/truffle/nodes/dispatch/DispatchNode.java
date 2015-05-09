@@ -10,12 +10,8 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -45,11 +41,6 @@ public abstract class DispatchNode extends RubyNode {
         super(context, null);
         this.dispatchAction = dispatchAction;
         assert dispatchAction != null;
-    }
-
-    public DispatchNode(DispatchNode prev) {
-        super(prev);
-        dispatchAction = prev.dispatchAction;
     }
 
     protected abstract boolean guard(Object methodName, Object receiver);
@@ -103,7 +94,7 @@ public abstract class DispatchNode extends RubyNode {
         // Check for methods that are explicitly undefined
 
         if (method.isUndefined()) {
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, getContext().getCoreLibrary().getLogicalClass(receiver), this));
+            return null;
         }
 
         // Check visibility
@@ -150,6 +141,10 @@ public abstract class DispatchNode extends RubyNode {
 
     public DispatchAction getDispatchAction() {
         return dispatchAction;
+    }
+
+    public boolean couldOptimizeKeywordArguments() {
+        return false;
     }
 
 }

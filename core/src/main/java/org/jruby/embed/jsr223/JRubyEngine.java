@@ -52,7 +52,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
 
-    private final ScriptingContainer container;
+    final ScriptingContainer container;
     private JRubyEngineFactory factory;
     private ScriptContext context;
 

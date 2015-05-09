@@ -16,10 +16,10 @@ static VALUE integer_spec_rb_integer_pack(VALUE self, VALUE value,
 #endif
 
 void Init_integer_spec() {
+#ifdef HAVE_RB_INTEGER_PACK
   VALUE cls;
   cls = rb_define_class("CApiIntegerSpecs", rb_cObject);
 
-#ifdef HAVE_RB_INTEGER_PACK
   rb_define_const(cls, "MSWORD", INT2NUM(INTEGER_PACK_MSWORD_FIRST));
   rb_define_const(cls, "LSWORD", INT2NUM(INTEGER_PACK_LSWORD_FIRST));
   rb_define_const(cls, "MSBYTE", INT2NUM(INTEGER_PACK_MSBYTE_FIRST));

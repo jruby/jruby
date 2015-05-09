@@ -1,3 +1,1 @@
 fails:Enumerator::Lazy#drop_while calls the block with initial values when yield with multiple arguments
-fails:Enumerator::Lazy#drop_while when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times
-fails:Enumerator::Lazy#drop_while on a nested Lazy when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times

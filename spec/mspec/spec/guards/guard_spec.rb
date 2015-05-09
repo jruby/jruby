@@ -146,23 +146,23 @@ describe SpecGuard, "#yield?" do
   end
 
   it "returns #match? if neither report nor verify mode are true" do
-    @guard.stub!(:match?).and_return(false)
+    @guard.stub(:match?).and_return(false)
     @guard.yield?.should == false
-    @guard.stub!(:match?).and_return(true)
+    @guard.stub(:match?).and_return(true)
     @guard.yield?.should == true
   end
 
   it "returns #match? if invert is true and neither report nor verify mode are true" do
-    @guard.stub!(:match?).and_return(false)
+    @guard.stub(:match?).and_return(false)
     @guard.yield?(true).should == true
-    @guard.stub!(:match?).and_return(true)
+    @guard.stub(:match?).and_return(true)
     @guard.yield?(true).should == false
   end
 end
 
 describe SpecGuard, "#===" do
   it "returns true" do
-    anything = mock("anything")
+    anything = double("anything")
     SpecGuard.new.===(anything).should == true
   end
 end
@@ -331,12 +331,12 @@ describe SpecGuard, "#platform? on JRuby" do
   end
 
   it "returns true when arg is :windows and RUBY_PLATFORM contains 'java' and os?(:windows) is true" do
-    RbConfig::CONFIG.stub!(:[]).and_return('mswin32')
+    RbConfig::CONFIG.stub(:[]).and_return('mswin32')
     @guard.platform?(:windows).should == true
   end
 
   it "returns true when RUBY_PLATFORM contains 'java' and os?(argument) is true" do
-    RbConfig::CONFIG.stub!(:[]).and_return('amiga')
+    RbConfig::CONFIG.stub(:[]).and_return('amiga')
     @guard.platform?(:amiga).should == true
   end
 end
@@ -358,7 +358,7 @@ end
 describe SpecGuard, "#os?" do
   before :each do
     @guard = SpecGuard.new
-    RbConfig::CONFIG.stub!(:[]).and_return('unreal')
+    RbConfig::CONFIG.stub(:[]).and_return('unreal')
   end
 
   it "returns true if argument matches RbConfig::CONFIG['host_os']" do
@@ -378,22 +378,22 @@ describe SpecGuard, "#os?" do
   end
 
   it "returns true when arg is :windows and RbConfig::CONFIG['host_os'] contains 'mswin'" do
-    RbConfig::CONFIG.stub!(:[]).and_return('i386-mswin32')
+    RbConfig::CONFIG.stub(:[]).and_return('i386-mswin32')
     @guard.os?(:windows).should == true
   end
 
   it "returns true when arg is :windows and RbConfig::CONFIG['host_os'] contains 'mingw'" do
-    RbConfig::CONFIG.stub!(:[]).and_return('i386-mingw32')
+    RbConfig::CONFIG.stub(:[]).and_return('i386-mingw32')
     @guard.os?(:windows).should == true
   end
 
   it "returns false when arg is not :windows and RbConfig::CONFIG['host_os'] contains 'mswin'" do
-    RbConfig::CONFIG.stub!(:[]).and_return('i386-mingw32')
+    RbConfig::CONFIG.stub(:[]).and_return('i386-mingw32')
     @guard.os?(:linux).should == false
   end
 
   it "returns false when arg is not :windows and RbConfig::CONFIG['host_os'] contains 'mingw'" do
-    RbConfig::CONFIG.stub!(:[]).and_return('i386-mingw32')
+    RbConfig::CONFIG.stub(:[]).and_return('i386-mingw32')
     @guard.os?(:linux).should == false
   end
 end
@@ -422,29 +422,29 @@ end
 describe SpecGuard, "#match?" do
   before :each do
     @guard = SpecGuard.new
-    SpecGuard.stub!(:new).and_return(@guard)
+    SpecGuard.stub(:new).and_return(@guard)
   end
 
   it "returns true if #platform? or #implementation? return true" do
-    @guard.stub!(:implementation?).and_return(true)
-    @guard.stub!(:platform?).and_return(false)
+    @guard.stub(:implementation?).and_return(true)
+    @guard.stub(:platform?).and_return(false)
     @guard.match?.should == true
 
-    @guard.stub!(:implementation?).and_return(false)
-    @guard.stub!(:platform?).and_return(true)
+    @guard.stub(:implementation?).and_return(false)
+    @guard.stub(:platform?).and_return(true)
     @guard.match?.should == true
   end
 
   it "returns false if #platform? and #implementation? return false" do
-    @guard.stub!(:implementation?).and_return(false)
-    @guard.stub!(:platform?).and_return(false)
+    @guard.stub(:implementation?).and_return(false)
+    @guard.stub(:platform?).and_return(false)
     @guard.match?.should == false
   end
 end
 
 describe SpecGuard, "#unregister" do
   before :each do
-    MSpec.stub!(:unregister)
+    MSpec.stub(:unregister)
     @guard = SpecGuard.new
   end
 

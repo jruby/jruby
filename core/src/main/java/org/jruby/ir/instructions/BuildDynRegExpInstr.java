@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -14,13 +15,18 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RegexpOptions;
 
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
 // Represents a dynamic regexp in Ruby
 // Ex: /#{a}#{b}/
 public class BuildDynRegExpInstr extends ResultBaseInstr {
     final private RegexpOptions options;
 
     // Cached regexp
-    private RubyRegexp rubyRegexp;
+    private volatile RubyRegexp rubyRegexp;
+
+    private static final AtomicReferenceFieldUpdater<BuildDynRegExpInstr, RubyRegexp> UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(BuildDynRegExpInstr.class, RubyRegexp.class, "rubyRegexp");
 
     public BuildDynRegExpInstr(Variable result, Operand[] pieces, RegexpOptions options) {
         super(Operation.BUILD_DREGEXP, result, pieces);
@@ -66,6 +72,11 @@ public class BuildDynRegExpInstr extends ResultBaseInstr {
         e.encode(getOptions().toEmbeddedOptions());
     }
 
+    public static BuildDynRegExpInstr decode(IRReaderDecoder d) {
+        return new BuildDynRegExpInstr(d.decodeVariable(),
+                d.decodeOperandArray(),RegexpOptions.fromEmbeddedOptions(d.decodeInt()));
+    }
+
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // FIXME (from RegexpNode.java): 1.9 should care about internal or external encoding and not kcode.
@@ -75,7 +86,13 @@ public class BuildDynRegExpInstr extends ResultBaseInstr {
             RubyString   pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
             RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
             re.setLiteral();
-            rubyRegexp = re;
+            if (options.isOnce()) {
+                // Atomically update this, so we only see one instance cached ever.
+                // See MRI's ruby/test_regexp.rb, test_once_multithread
+                UPDATER.compareAndSet(this, null, re);
+            } else {
+                rubyRegexp = re;
+            }
         }
 
         return rubyRegexp;

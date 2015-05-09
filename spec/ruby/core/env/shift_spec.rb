@@ -27,6 +27,7 @@ end
 with_feature :encoding do
   describe "ENV.shift" do
     before :each do
+      @orig = ENV.to_hash
       @external = Encoding.default_external
       @internal = Encoding.default_internal
 
@@ -36,6 +37,7 @@ with_feature :encoding do
     after :each do
       Encoding.default_external = @external
       Encoding.default_internal = @internal
+      ENV.replace @orig
     end
 
     it "uses the locale encoding if Encoding.default_internal is nil" do

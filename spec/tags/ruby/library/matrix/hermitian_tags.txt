@@ -1,1 +1,0 @@
-fails:Matrix.hermitian? returns false for a matrix with complex values on the diagonal

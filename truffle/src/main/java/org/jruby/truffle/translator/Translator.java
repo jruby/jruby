@@ -12,17 +12,12 @@ package org.jruby.truffle.translator;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.lexer.yacc.DetailedSourcePosition;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.cli.Options;
 
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor<RubyNode> {
 
@@ -43,29 +38,22 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     }
 
     protected SourceSection translate(org.jruby.lexer.yacc.ISourcePosition sourcePosition) {
-        return translate(source, sourcePosition);
+        return translate(source, sourcePosition, getIdentifier());
     }
 
-    public SourceSection translate(Source source, org.jruby.lexer.yacc.ISourcePosition sourcePosition) {
+    protected SourceSection translate(org.jruby.lexer.yacc.ISourcePosition sourcePosition, String identifier) {
+        return translate(source, sourcePosition, identifier);
+    }
+
+    private SourceSection translate(Source source, org.jruby.lexer.yacc.ISourcePosition sourcePosition, String identifier) {
         if (sourcePosition == InvalidSourcePosition.INSTANCE) {
             if (parentSourceSection.peek() == null) {
                 throw new UnsupportedOperationException("Truffle doesn't want invalid positions - find a way to give me a real position!");
             } else {
                 return parentSourceSection.peek();
             }
-        } else if (sourcePosition instanceof DetailedSourcePosition) {
-            final DetailedSourcePosition detailedSourcePosition = (DetailedSourcePosition) sourcePosition;
-
-            try {
-                return source.createSection(getIdentifier(), detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
-            } catch (IllegalArgumentException e) {
-                // In some cases we still get bad offsets with the detailed source positions
-                return source.createSection(getIdentifier(), sourcePosition.getLine() + 1);
-            }
-        } else if (Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load()) {
-            return source.createSection(getIdentifier(), sourcePosition.getLine() + 1);
         } else {
-            throw new UnsupportedOperationException("Truffle needs detailed source positions unless you know what you are doing and set truffle.allow_simple_source_sections - got " + sourcePosition.getClass());
+            return source.createSection(identifier, sourcePosition.getLine() + 1);
         }
     }
 

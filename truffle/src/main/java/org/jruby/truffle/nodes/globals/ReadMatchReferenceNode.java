@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.globals;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -31,12 +32,12 @@ public class ReadMatchReferenceNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         final Object match = getContext().getThreadManager().getCurrentThread().getThreadLocals().getInstanceVariable("$~");
 
-        if (match == null || match == getContext().getCoreLibrary().getNilObject()) {
-            return getContext().getCoreLibrary().getNilObject();
+        if (match == null || match == nil()) {
+            return nil();
         }
 
         final RubyMatchData matchData = (RubyMatchData) match;
@@ -45,7 +46,7 @@ public class ReadMatchReferenceNode extends RubyNode {
             final Object[] values = matchData.getValues();
 
             if (index >= values.length) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 return values[index];
             }
@@ -59,11 +60,11 @@ public class ReadMatchReferenceNode extends RubyNode {
             final Object[] values = matchData.getValues();
 
             for (int n = values.length - 1; n >= 0; n--)
-                if (values[n] != getContext().getCoreLibrary().getNilObject()) {
+                if (values[n] != nil()) {
                     return values[n];
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         } else {
             throw new UnsupportedOperationException();
         }
@@ -71,12 +72,10 @@ public class ReadMatchReferenceNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        notDesignedForCompilation();
-
-        if (execute(frame) != getContext().getCoreLibrary().getNilObject()) {
+        if (execute(frame) != nil()) {
             return getContext().makeString("global-variable");
         } else {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
     }
 

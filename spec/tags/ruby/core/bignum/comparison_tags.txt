@@ -1,1 +1,0 @@
-fails:Bignum#<=> with an Object raises an exception if #coerce raises a non-StandardError exception

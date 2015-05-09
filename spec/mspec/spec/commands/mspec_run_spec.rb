@@ -18,10 +18,10 @@ describe MSpecRun, "#options" do
 
     @argv = ["a", "b"]
     @options, @config = new_option
-    MSpecOptions.stub!(:new).and_return(@options)
+    MSpecOptions.stub(:new).and_return(@options)
 
     @script = MSpecRun.new
-    @script.stub!(:config).and_return(@config)
+    @script.stub(:config).and_return(@config)
   end
 
   after :each do
@@ -142,7 +142,7 @@ end
 describe MSpecRun, "#run" do
   before :each do
     @script = MSpecRun.new
-    @script.stub!(:exit)
+    @script.stub(:exit)
     @spec_dir = File.expand_path(File.dirname(__FILE__)+"/fixtures")
     @file_patterns = [
       @spec_dir+"/level2",
@@ -179,7 +179,7 @@ describe MSpecRun, "#run" do
   end
 
   it "exits with the exit code registered with MSpec" do
-    MSpec.stub!(:exit_code).and_return(7)
+    MSpec.stub(:exit_code).and_return(7)
     @script.should_receive(:exit).with(7)
     @script.run
   end

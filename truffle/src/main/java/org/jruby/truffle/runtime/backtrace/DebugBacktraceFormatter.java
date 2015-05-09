@@ -18,12 +18,15 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class DebugBacktraceFormatter implements BacktraceFormatter {
+
+    private static final int BACKTRACE_MAX_VALUE_LENGTH = Options.TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH.load();
 
     @Override
     public String[] format(RubyContext context, RubyException exception, Backtrace backtrace) {
@@ -74,10 +77,10 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
         final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
         if (sourceSection instanceof CoreSourceSection) {
-            final CoreSourceSection coreSourceSection = (CoreSourceSection) sourceSection;
-            builder.append(coreSourceSection.getClassName());
+            final InternalMethod method = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments());
+            builder.append(method.getDeclaringModule().getName());
             builder.append("#");
-            builder.append(coreSourceSection.getMethodName());
+            builder.append(method.getName());
         } else {
             builder.append(sourceSection.getSource().getName());
             builder.append(":");
@@ -98,10 +101,10 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
         try {
             final String string = DebugOperations.inspect(context, value);
 
-            if (string.length() <= Options.TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH.load()) {
+            if (string.length() <= BACKTRACE_MAX_VALUE_LENGTH) {
                 return string;
             } else {
-                return string.substring(0, Options.TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH.load()) + "…";
+                return string.substring(0, BACKTRACE_MAX_VALUE_LENGTH) + "…";
             }
         } catch (Throwable t) {
             return "*error*";

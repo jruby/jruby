@@ -35,6 +35,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
+import org.jruby.RubyNumeric;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -347,7 +348,23 @@ public class Numeric {
         if (x instanceof RubyFixnum) return ((RubyFixnum)x).getLongValue() == 1;
         return x.callMethod(context, "==", RubyFixnum.one(context.runtime)).isTrue();
     }
-    
+
+   /** f_minus_one_p
+    *
+    */
+    public static boolean f_minus_one_p(ThreadContext context, IRubyObject x) {
+        if (x instanceof RubyFixnum) return ((RubyFixnum)x).getLongValue() == -1;
+        return x.callMethod(context, "==", RubyFixnum.minus_one(context.runtime)).isTrue();
+    }
+
+   /** f_odd_p
+    *
+    */
+    public static boolean f_odd_p(ThreadContext context, IRubyObject integer) {
+        Ruby runtime = context.runtime;
+        return (((RubyFixnum) integer.callMethod(context, "%", RubyFixnum.two(runtime))).getLongValue() != 0);
+    }
+
     /** i_gcd
      * 
      */
@@ -496,6 +513,14 @@ public class Numeric {
 
     public static boolean k_inexact_p(IRubyObject x) {
         return x instanceof RubyFloat;
+    }
+
+    public static boolean k_integer_p(IRubyObject x) {
+        return x instanceof RubyInteger;
+    }
+
+    public static boolean k_numeric_p(IRubyObject x) {
+        return x instanceof RubyNumeric;
     }
 
     public static final class ComplexPatterns {

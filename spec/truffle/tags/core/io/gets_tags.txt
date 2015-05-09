@@ -1,42 +1,6 @@
-fails:IO#gets with ASCII separator returns the separator's character representation
 fails:IO#gets assigns the returned line to $_
-fails:IO#gets returns nil if called at the end of the stream
 fails:IO#gets raises IOError on closed stream
-fails:IO#gets with no separator returns the next line of string that is separated by $/
-fails:IO#gets with no separator returns tainted strings
-fails:IO#gets with no separator updates lineno with each invocation
-fails:IO#gets with no separator updates $. with each invocation
-fails:IO#gets with nil separator returns the entire contents
-fails:IO#gets with nil separator returns tainted strings
-fails:IO#gets with nil separator updates lineno with each invocation
-fails:IO#gets with nil separator updates $. with each invocation
-fails:IO#gets with an empty String separator returns the next paragraph
-fails:IO#gets with an empty String separator reads until the beginning of the next paragraph
-fails:IO#gets with an empty String separator returns tainted strings
-fails:IO#gets with an empty String separator updates lineno with each invocation
-fails:IO#gets with an empty String separator updates $. with each invocation
-fails:IO#gets with an arbitrary String separator reads up to and including the separator
-fails:IO#gets with an arbitrary String separator returns tainted strings
-fails:IO#gets with an arbitrary String separator updates lineno with each invocation
-fails:IO#gets with an arbitrary String separator updates $. with each invocation
-fails:IO#gets raises an IOError if the stream is opened for append only
-fails:IO#gets raises an IOError if the stream is opened for writing only
-fails:IO#gets calls #to_int to convert a single object argument to an Integer limit
-fails:IO#gets calls #to_int to convert the second object argument to an Integer limit
-fails:IO#gets calls #to_str to convert the first argument to a String when passed a limit
-fails:IO#gets reads to the default seperator when passed a single argument greater than the number of bytes to the separator
-fails:IO#gets reads limit bytes when passed a single argument less than the number of bytes to the default separator
-fails:IO#gets reads limit bytes when passed nil and a limit
-fails:IO#gets reads all bytes when the limit is higher than the available bytes
-fails:IO#gets reads until the next paragraph when passed '' and a limit greater than the next paragraph
-fails:IO#gets reads limit bytes when passed '' and a limit less than the next paragraph
-fails:IO#gets reads all bytes when pass a separator and reading more than all bytes
 fails:IO#gets reads limit bytes and extra bytes when limit is reached not at character boundary
 fails:IO#gets read limit bytes and extra bytes with maximum of 16
-fails:IO#gets uses the default external encoding
-fails:IO#gets uses the IO object's external encoding, when set
-fails:IO#gets transcodes into the default internal encoding
-fails:IO#gets transcodes into the IO object's internal encoding, when set
-fails:IO#gets overwrites the default external encoding with the IO object's own external encoding
-fails:IO#gets ignores the internal encoding if the default external encoding is ASCII-8BIT
 fails:IO#gets ignores the internal encoding if the IO object's external encoding is ASCII-8BIT
+fails:IO#gets transcodes to internal encoding if the IO object's external encoding is ASCII-8BIT

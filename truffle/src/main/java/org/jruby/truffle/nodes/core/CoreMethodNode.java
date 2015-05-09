@@ -9,40 +9,16 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
-@NodeChild(value = "arguments", type = RubyNode[].class)
+@GenerateNodeFactory
 public abstract class CoreMethodNode extends RubyNode {
-
-    @CompilerDirectives.CompilationFinal private String name;
 
     public CoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-    }
-
-    public CoreMethodNode(CoreMethodNode prev) {
-        super(prev);
-        name = prev.name;
-    }
-
-    public String getName() {
-        if (name == null) {
-            throw new UnsupportedOperationException();
-        }
-
-        return name;
-    }
-
-    public void setName(String name) {
-        if (this.name != null) {
-            throw new UnsupportedOperationException();
-        }
-
-        this.name = name;
     }
 
 }

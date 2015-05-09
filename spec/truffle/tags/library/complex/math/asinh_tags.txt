@@ -1,0 +1,2 @@
+fails:Math#asinh returns the inverse hyperbolic sin for Complex numbers
+fails:Math.asinh returns the inverse hyperbolic sin for Complex numbers

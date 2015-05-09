@@ -9,10 +9,9 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import org.jruby.truffle.runtime.RubyContext;
-
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 
 /**
@@ -21,27 +20,19 @@ import org.jruby.truffle.runtime.core.*;
 public abstract class EncodingPrimitiveNodes {
 
     @RubiniusPrimitive(name = "encoding_get_object_encoding", needsSelf = false)
-    public static abstract class EncodingGetObjectEncodingPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class EncodingGetObjectEncodingNode extends RubiniusPrimitiveNode {
 
-        public EncodingGetObjectEncodingPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public EncodingGetObjectEncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EncodingGetObjectEncodingPrimitiveNode(EncodingGetObjectEncodingPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
         public RubyEncoding encodingGetObjectEncoding(RubyString string) {
-            notDesignedForCompilation();
-
-            return RubyEncoding.getEncoding(string.getBytes().getEncoding());
+            return RubyEncoding.getEncoding(string.getByteList().getEncoding());
         }
 
         @Specialization
         public RubyEncoding encodingGetObjectEncoding(RubySymbol symbol) {
-            notDesignedForCompilation();
-
             return RubyEncoding.getEncoding(symbol.getSymbolBytes().getEncoding());
         }
 
@@ -50,10 +41,10 @@ public abstract class EncodingPrimitiveNodes {
             return encoding;
         }
 
-        @Specialization(guards = {"!isRubyString", "!isRubySymbol", "!isRubyEncoding"})
+        @Specialization(guards = {"!isRubyString(object)", "!isRubySymbol(object)", "!isRubyEncoding(object)"})
         public RubyNilClass encodingGetObjectEncoding(RubyBasicObject object) {
             // TODO(CS, 26 Jan 15) something to do with __encoding__ here?
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

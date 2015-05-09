@@ -64,21 +64,19 @@ describe "Array#<=>" do
     (lhs <=> rhs).should == +1
   end
 
-  ruby_bug "#", "1.8.6.277" do
-    it "properly handles recursive arrays" do
-      empty = ArraySpecs.empty_recursive_array
-      (empty <=> empty).should == 0
-      (empty <=> []).should == 1
-      ([] <=> empty).should == -1
+  it "properly handles recursive arrays" do
+    empty = ArraySpecs.empty_recursive_array
+    (empty <=> empty).should == 0
+    (empty <=> []).should == 1
+    ([] <=> empty).should == -1
 
-      (ArraySpecs.recursive_array <=> []).should == 1
-      ([] <=> ArraySpecs.recursive_array).should == -1
+    (ArraySpecs.recursive_array <=> []).should == 1
+    ([] <=> ArraySpecs.recursive_array).should == -1
 
-      (ArraySpecs.recursive_array <=> ArraySpecs.empty_recursive_array).should == nil
+    (ArraySpecs.recursive_array <=> ArraySpecs.empty_recursive_array).should == nil
 
-      array = ArraySpecs.recursive_array
-      (array <=> array).should == 0
-    end
+    array = ArraySpecs.recursive_array
+    (array <=> array).should == 0
   end
 
   it "tries to convert the passed argument to an Array using #to_ary" do
@@ -93,9 +91,7 @@ describe "Array#<=>" do
     ([5, 6, 7] <=> obj).should == 0
   end
 
-  ruby_bug "redmine:2276", "1.9.1" do
-    it "returns nil when the argument is not array-like" do
-      ([] <=> false).should be_nil
-    end
+  it "returns nil when the argument is not array-like" do
+    ([] <=> false).should be_nil
   end
 end

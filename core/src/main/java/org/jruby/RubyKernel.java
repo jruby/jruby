@@ -99,17 +99,21 @@ import static org.jruby.anno.FrameField.*;
 public class RubyKernel {
     public final static Class<?> IRUBY_OBJECT = IRubyObject.class;
 
-    public static abstract class MethodMissingMethod extends JavaMethodNBlock {
-        public MethodMissingMethod(RubyModule implementationClass) {
+    public static class MethodMissingMethod extends JavaMethodNBlock {
+        private final Visibility visibility;
+        private final CallType callType;
+
+        public MethodMissingMethod(RubyModule implementationClass, Visibility visibility, CallType callType) {
             super(implementationClass, Visibility.PRIVATE, CallConfiguration.FrameFullScopeNone);
+
+            this.callType = callType;
+            this.visibility = visibility;
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            return methodMissing(context, self, clazz, name, args, block);
+            return RubyKernel.methodMissing(context, self, name, visibility, callType, args, block);
         }
-
-        public abstract IRubyObject methodMissing(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block);
 
     }
     public static RubyModule createKernelModule(Ruby runtime) {
@@ -118,42 +122,13 @@ public class RubyKernel {
 
         module.defineAnnotatedMethods(RubyKernel.class);
         
-        module.setFlag(RubyObject.USER7_F, false); //Kernel is the only Module that doesn't need an implementor
+        module.setFlag(RubyObject.USER7_F, false); //Kernel is the only normal Module that doesn't need an implementor
 
-        runtime.setPrivateMethodMissing(new MethodMissingMethod(module) {
-            @Override
-            public IRubyObject methodMissing(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                return RubyKernel.methodMissing(context, self, name, PRIVATE, CallType.NORMAL, args, block);
-            }
-        });
-
-        runtime.setProtectedMethodMissing(new MethodMissingMethod(module) {
-            @Override
-            public IRubyObject methodMissing(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                return RubyKernel.methodMissing(context, self, name, PROTECTED, CallType.NORMAL, args, block);
-            }
-        });
-
-        runtime.setVariableMethodMissing(new MethodMissingMethod(module) {
-            @Override
-            public IRubyObject methodMissing(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                return RubyKernel.methodMissing(context, self, name, PUBLIC, CallType.VARIABLE, args, block);
-            }
-        });
-
-        runtime.setSuperMethodMissing(new MethodMissingMethod(module) {
-            @Override
-            public IRubyObject methodMissing(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                return RubyKernel.methodMissing(context, self, name, PUBLIC, CallType.SUPER, args, block);
-            }
-        });
-
-        runtime.setNormalMethodMissing(new MethodMissingMethod(module) {
-            @Override
-            public IRubyObject methodMissing(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                return RubyKernel.methodMissing(context, self, name, PUBLIC, CallType.NORMAL, args, block);
-            }
-        });
+        runtime.setPrivateMethodMissing(new MethodMissingMethod(module, PRIVATE, CallType.NORMAL));
+        runtime.setProtectedMethodMissing(new MethodMissingMethod(module, PROTECTED, CallType.NORMAL));
+        runtime.setVariableMethodMissing(new MethodMissingMethod(module, PUBLIC, CallType.VARIABLE));
+        runtime.setSuperMethodMissing(new MethodMissingMethod(module, PUBLIC, CallType.SUPER));
+        runtime.setNormalMethodMissing(new MethodMissingMethod(module, PUBLIC, CallType.NORMAL));
 
         recacheBuiltinMethods(runtime);
 
@@ -1990,7 +1965,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "singleton_methods", optional = 1)
     public static RubyArray singleton_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        return ((RubyBasicObject)self).singleton_methods19(context, args);
+        return ((RubyBasicObject)self).singleton_methods(context, args);
     }
 
     @JRubyMethod(name = "method", required = 1)

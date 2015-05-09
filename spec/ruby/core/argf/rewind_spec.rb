@@ -28,15 +28,13 @@ describe "ARGF.rewind" do
     end
   end
 
-  ruby_bug "#1693", "1.8" do
-    it "resets ARGF.lineno to 0" do
-      argv [@file2_name] do
-        ARGF.lineno = 0
-        ARGF.gets;
-        ARGF.lineno.should > 0
-        ARGF.rewind;
-        ARGF.lineno.should == 0
-      end
+  it "resets ARGF.lineno to 0" do
+    argv [@file2_name] do
+      ARGF.lineno = 0
+      ARGF.gets;
+      ARGF.lineno.should > 0
+      ARGF.rewind;
+      ARGF.lineno.should == 0
     end
   end
 

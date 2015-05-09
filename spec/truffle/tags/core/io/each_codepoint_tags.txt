@@ -1,6 +1,4 @@
-fails:IO#each_codepoint returns an Enumerator when passed no block
 fails:IO#each_codepoint yields each codepoint
-fails:IO#each_codepoint yields each codepoint starting from the current position
 fails:IO#each_codepoint raises an error if reading invalid sequence
 fails:IO#each_codepoint does not change $_
 fails:IO#each_codepoint raises an IOError when self is not readable

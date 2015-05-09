@@ -6,7 +6,7 @@ describe Object, "#with_block_device" do
     ScratchPad.clear
 
     @guard = BlockDeviceGuard.new
-    BlockDeviceGuard.stub!(:new).and_return(@guard)
+    BlockDeviceGuard.stub(:new).and_return(@guard)
   end
 
   platform_is_not :freebsd, :windows do

@@ -1,4 +1,1 @@
-fails:IO#readchar returns the next string from the stream
-fails:IO#readchar raises an EOFError when invoked at the end of the stream
 fails:IO#readchar raises IOError on closed stream
-fails:IO#readchar raises EOFError on empty stream

@@ -1,7 +1,2 @@
-fails:File.umask returns a Fixnum
-fails:File.umask returns the current umask value for the process
-fails:File.umask invokes to_int on non-integer argument
-fails:File.umask always succeeds with any integer values
-fails:File.umask raises ArgumentError when more than one argument is provided
 fails(windows):File.umask returns the current umask value for this process (basic)
 fails(windows):File.umask returns the current umask value for this process

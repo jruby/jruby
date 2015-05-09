@@ -5,6 +5,7 @@ import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -47,6 +48,10 @@ public class SetCapturedVarInstr extends ResultBaseInstr implements FixedArityIn
         super.encode(e);
         e.encode(getMatch2Result());
         e.encode(getVarName());
+    }
+
+    public static SetCapturedVarInstr decode(IRReaderDecoder d) {
+        return new SetCapturedVarInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
     }
 
     @Interp

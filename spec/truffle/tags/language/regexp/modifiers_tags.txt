@@ -1,1 +1,2 @@
 fails(inherited):Regexps with modifers supports ASII/Unicode modifiers
+fails:Regexps with modifers supports /o (once)

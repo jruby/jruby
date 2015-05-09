@@ -4,6 +4,7 @@ import org.jruby.RubyArray;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -15,9 +16,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class CheckArgsArrayArityInstr extends Instr implements FixedArityInstr {
     public final int required;
     public final int opt;
-    public final int rest;
+    public final boolean rest;
 
-    public CheckArgsArrayArityInstr(Operand argsArray, int required, int opt, int rest) {
+    public CheckArgsArrayArityInstr(Operand argsArray, int required, int opt, boolean rest) {
         super(Operation.CHECK_ARGS_ARRAY_ARITY, new Operand[] { argsArray });
 
         this.required = required;
@@ -37,6 +38,10 @@ public class CheckArgsArrayArityInstr extends Instr implements FixedArityInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new CheckArgsArrayArityInstr(getArgsArray().cloneForInlining(ii), required, opt, rest);
+    }
+
+    public static CheckArgsArrayArityInstr decode(IRReaderDecoder d) {
+        return new CheckArgsArrayArityInstr(d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeBoolean());
     }
 
     @Override

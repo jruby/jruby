@@ -38,9 +38,9 @@ public abstract class CachedDispatchNode extends DispatchNode {
         if (cachedName instanceof RubySymbol) {
             cachedNameAsSymbol = (RubySymbol) cachedName;
         } else if (cachedName instanceof RubyString) {
-            cachedNameAsSymbol = context.newSymbol(((RubyString) cachedName).getBytes());
+            cachedNameAsSymbol = context.getSymbol(((RubyString) cachedName).getByteList());
         } else if (cachedName instanceof String) {
-            cachedNameAsSymbol = context.newSymbol((String) cachedName);
+            cachedNameAsSymbol = context.getSymbol((String) cachedName);
         } else {
             throw new UnsupportedOperationException();
         }
@@ -48,14 +48,6 @@ public abstract class CachedDispatchNode extends DispatchNode {
         this.indirect = indirect;
 
         this.next = next;
-    }
-
-    public CachedDispatchNode(CachedDispatchNode prev) {
-        super(prev);
-        cachedName = prev.cachedName;
-        cachedNameAsSymbol = prev.cachedNameAsSymbol;
-        next = prev.next;
-        indirect = prev.indirect;
     }
 
     @Override
@@ -76,7 +68,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
             // TODO(CS, 11-Jan-15) this just repeats the above guard...
             return cachedName == methodName;
         } else if (cachedName instanceof RubyString) {
-            return (methodName instanceof RubyString) && ((RubyString) cachedName).getBytes().equal(((RubyString) methodName).getBytes());
+            return (methodName instanceof RubyString) && ((RubyString) cachedName).getByteList().equal(((RubyString) methodName).getByteList());
         } else {
             throw new UnsupportedOperationException();
         }
@@ -89,5 +81,4 @@ public abstract class CachedDispatchNode extends DispatchNode {
     public boolean isIndirect() {
         return indirect;
     }
-
 }

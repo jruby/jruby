@@ -10,16 +10,23 @@
 package org.jruby.truffle.runtime.control;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
+import org.jruby.truffle.translator.TranslatorEnvironment.BlockID;
 
 /**
  * Controls a break from a control structure or method.
  */
 public final class BreakException extends ControlFlowException {
 
+    private final BlockID blockID;
     private final Object result;
 
-    public BreakException(Object result) {
+    public BreakException(BlockID blockID, Object result) {
+        this.blockID = blockID;
         this.result = result;
+    }
+
+    public BlockID getBlockID() {
+        return blockID;
     }
 
     public Object getResult() {

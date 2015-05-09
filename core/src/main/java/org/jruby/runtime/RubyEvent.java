@@ -40,5 +40,9 @@ public enum RubyEvent {
     public String getName(){
         return event_name;
     }
+
+    public static RubyEvent fromOrdinal(int value) {
+        return value < 0 || value >= values().length ? null : values()[value];
+    }
 }
 

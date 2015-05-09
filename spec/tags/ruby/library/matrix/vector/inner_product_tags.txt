@@ -1,1 +1,0 @@
-fails:Vector#inner_product uses the conjugate of its argument

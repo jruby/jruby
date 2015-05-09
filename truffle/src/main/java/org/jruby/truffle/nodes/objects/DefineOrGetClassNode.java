@@ -14,16 +14,13 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
-import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyString;
 
 /**
  * Define a new class, or get the existing one of the same name.
@@ -49,21 +46,20 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         final RubyContext context = getContext();
 
         // Look for a current definition of the class, or create a new one
 
         RubyModule lexicalParent = getLexicalParentModule(frame);
-        final RubyConstant constant = lookupForExistingModule(frame, lexicalParent);
+        final RubyConstant constant = lookupForExistingModule(lexicalParent);
 
         RubyClass definingClass;
         RubyClass superClassObject = getRubySuperClass(frame, context);
 
         if (constant == null) {
-            definingClass = new RubyClass(context, lexicalParent, superClassObject, name);
-            definingClass.setAllocator(superClassObject.getAllocator());
+            definingClass = new RubyClass(context, lexicalParent, superClassObject, name, superClassObject.getAllocator());
             callInherited(frame, superClassObject, definingClass);
         } else {
             if (constant.getValue() instanceof RubyClass) {

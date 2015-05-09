@@ -240,7 +240,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <env value="" key="JRUBY_OPTS" />
                       <arg value="-S" />
                       <arg value="rake" />
@@ -269,7 +269,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="java" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="java">
                       <arg value="-cp" />
                       <arg value="core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar" />
                       <arg value="org.jruby.Main" />
@@ -310,7 +310,7 @@
                       <arg value="test/mri/ruby/test_file.rb" />
                       <arg value="test/mri/ruby/test_file_exhaustive.rb" />
                       <arg value="test/mri/ruby/test_fixnum.rb" />
-<!--                      <arg value="test/mri/ruby/test_flip.rb" /> -->
+                      <arg value="test/mri/ruby/test_flip.rb" />
                       <arg value="test/mri/ruby/test_float.rb" />
                       <arg value="test/mri/ruby/test_fnmatch.rb" />
                       <arg value="test/mri/ruby/test_gc.rb" />
@@ -347,6 +347,7 @@
                       <arg value="test/mri/ruby/test_rational.rb" />
                       <arg value="test/mri/ruby/test_rational2.rb" />
                       <arg value="test/mri/ruby/test_readpartial.rb" />
+                      <arg value="test/mri/ruby/test_regexp.rb" />
                       <arg value="test/mri/ruby/test_require.rb" />
                       <arg value="test/mri/ruby/test_rubyoptions.rb" />
                       <arg value="test/mri/ruby/test_signal.rb" />
@@ -510,7 +511,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="java" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="java">
                       <arg value="-cp" />
                       <arg value="core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar" />
                       <arg value="org.jruby.Main" />
@@ -547,7 +548,6 @@
                       <arg value="test/jruby/test_env.rb" />
                       <arg value="test/jruby/test_etc.rb" />
                       <arg value="test/jruby/test_file.rb" />
-<!--                      <arg value="test/jruby/test_flip.rb" /> -->
                       <arg value="test/jruby/test_frame_self.rb" />
                       <arg value="test/jruby/test_hash.rb" />
                       <arg value="test/jruby/test_higher_javasupport.rb" />
@@ -600,7 +600,6 @@
                       <arg value="test/jruby/test_irubyobject_java_passing.rb" />
                       <arg value="test/jruby/test_jruby_object_input_stream.rb" />
                       <arg value="test/jruby/test_jar_on_load_path.rb" />
-                      <arg value="test/jruby/test_jruby_ext.rb" />
                       <arg value="test/jruby/test_jruby_core_ext.rb" />
                       <arg value="test/jruby/test_thread_context_frame_dereferences_unreachable_variables.rb" />
                       <arg value="test/jruby/test_context_classloader.rb" />
@@ -628,7 +627,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="java" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="java">
                       <arg value="-cp" />
                       <arg value="core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar" />
                       <arg value="org.jruby.Main" />
@@ -673,7 +672,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -687,12 +686,12 @@
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
-                      <arg value="-t" />
-                      <arg value="spec/truffle/spec-wrapper" />
                       <arg value="--config" />
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
                       <arg value="fails" />
+                      <arg value="--format" />
+                      <arg value="specdoc" />
                       <arg value=":language" />
                     </exec>
                   </target>
@@ -718,7 +717,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -732,12 +731,12 @@
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
-                      <arg value="-t" />
-                      <arg value="spec/truffle/spec-wrapper" />
                       <arg value="--config" />
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
                       <arg value="fails" />
+                      <arg value="--format" />
+                      <arg value="specdoc" />
                       <arg value=":core" />
                     </exec>
                   </target>
@@ -749,7 +748,7 @@
       </build>
     </profile>
     <profile>
-      <id>truffle-specs-rubysl</id>
+      <id>truffle-specs-library</id>
       <build>
         <plugins>
           <plugin>
@@ -763,7 +762,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -777,13 +776,13 @@
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
-                      <arg value="-t" />
-                      <arg value="spec/truffle/spec-wrapper" />
                       <arg value="--config" />
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
                       <arg value="fails" />
-                      <arg value=":rubysl" />
+                      <arg value="--format" />
+                      <arg value="specdoc" />
+                      <arg value=":library" />
                     </exec>
                   </target>
                 </configuration>
@@ -808,7 +807,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -822,14 +821,12 @@
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
-                      <arg value="-f" />
-                      <arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />
-                      <arg value="-t" />
-                      <arg value="spec/truffle/spec-wrapper" />
                       <arg value="--config" />
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
                       <arg value="fails" />
+                      <arg value="--format" />
+                      <arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />
                       <arg value=":language" />
                     </exec>
                   </target>
@@ -875,7 +872,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -889,14 +886,12 @@
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
-                      <arg value="-f" />
-                      <arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />
-                      <arg value="-t" />
-                      <arg value="spec/truffle/spec-wrapper" />
                       <arg value="--config" />
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
                       <arg value="fails" />
+                      <arg value="--format" />
+                      <arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />
                       <arg value=":core" />
                     </exec>
                   </target>
@@ -928,7 +923,7 @@
       </build>
     </profile>
     <profile>
-      <id>truffle-specs-rubysl-report</id>
+      <id>truffle-specs-library-report</id>
       <build>
         <plugins>
           <plugin>
@@ -942,7 +937,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -956,15 +951,13 @@
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
-                      <arg value="-f" />
-                      <arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />
-                      <arg value="-t" />
-                      <arg value="spec/truffle/spec-wrapper" />
                       <arg value="--config" />
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
                       <arg value="fails" />
-                      <arg value=":rubysl" />
+                      <arg value="--format" />
+                      <arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />
+                      <arg value=":library" />
                     </exec>
                   </target>
                 </configuration>
@@ -1009,11 +1002,38 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-J-server" />
                       <arg value="-X+T" />
-                      <arg value="-Xtruffle.debug.enable_assert_constant=true" />
                       <arg value="test/truffle/pe/pe.rb" />
+                    </exec>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>truffle-mri-tests</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>rake</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <exec failonerror="true" dir="${jruby.home}" executable="ruby">
+                      <arg value="tool/jt.rb" />
+                      <arg value="test" />
+                      <arg value="mri" />
                     </exec>
                   </target>
                 </configuration>

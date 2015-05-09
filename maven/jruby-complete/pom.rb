@@ -14,18 +14,8 @@ project 'JRuby Complete' do
               'main.basedir' => '${project.parent.parent.basedir}',
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home' )
 
-  unless version =~ /-SNAPSHOT/
-    properties 'jruby.home' => '${basedir}/../..'
-  end
-
   scope :provided do
-    jar( 'org.jruby:jruby-core:${project.version}:noasm',
-         :exclusions => [ 'com.github.jnr:jnr-ffi',
-                          'org.ow2.asm:asm',
-                          'org.ow2.asm:asm-commons',
-                          'org.ow2.asm:asm-analysis',
-                          'org.ow2.asm:asm-util' ] )
-    jar 'org.jruby:jruby-truffle:${project.version}'
+    jar 'org.jruby:jruby-core:${project.version}'
     jar 'org.jruby:jruby-stdlib:${project.version}'
   end
 

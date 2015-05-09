@@ -9,9 +9,13 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.core.FixnumOrBignumNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 
 import java.util.Locale;
@@ -28,14 +32,9 @@ public abstract class FloatPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public FloatDToAPrimitiveNode(FloatDToAPrimitiveNode prev) {
-            super(prev);
-        }
-
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyArray dToA(double value) {
-            notDesignedForCompilation();
-
             String string = String.format(Locale.ENGLISH, "%.9f", value);
 
             if (string.toLowerCase(Locale.ENGLISH).contains("e")) {
@@ -74,14 +73,62 @@ public abstract class FloatPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public FloatNegativePrimitiveNode(FloatNegativePrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean floatNegative(double value) {
             // Edge-cases: 0, NaN and infinity can all be negative
             return (Double.doubleToLongBits(value) >>> 63) == 1;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "float_round")
+    public static abstract class FloatRoundPrimitiveNode extends RubiniusPrimitiveNode {
+
+        @Child private FixnumOrBignumNode fixnumOrBignum;
+
+        private final BranchProfile greaterZero = BranchProfile.create();
+        private final BranchProfile lessZero = BranchProfile.create();
+
+        public FloatRoundPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
+        }
+
+        @Specialization
+        public Object round(double n) {
+            // Algorithm copied from JRuby - not shared as we want to branch profile it
+
+            if (Double.isInfinite(n)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Infinity", this));
+            }
+
+            if (Double.isNaN(n)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().floatDomainError("NaN", this));
+            }
+
+            double f = n;
+
+            if (f > 0.0) {
+                greaterZero.enter();
+
+                f = Math.floor(f);
+
+                if (n - f >= 0.5) {
+                    f += 1.0;
+                }
+            } else if (f < 0.0) {
+                lessZero.enter();
+
+                f = Math.ceil(f);
+
+                if (f - n >= 0.5) {
+                    f -= 1.0;
+                }
+            }
+
+            return fixnumOrBignum.fixnumOrBignum(f);
         }
 
     }

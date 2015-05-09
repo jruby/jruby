@@ -1,6 +1,4 @@
 fails:IO#close closes the stream
-fails:IO#close returns nil
-fails:IO#close raises an IOError reading from a closed IO
 fails:IO#close raises an IOError writing to a closed IO
 fails:IO#close raises an IOError if closed
 fails:IO#close on an IO.popen stream clears #pid

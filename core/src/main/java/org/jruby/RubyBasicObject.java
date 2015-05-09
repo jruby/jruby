@@ -583,33 +583,41 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * Does this object respond to the specified message? Uses a
-     * shortcut if it can be proved that respond_to? haven't been
-     * overridden.
+     * shortcut if it can be proved that respond_to? and respond_to_missing?
+     * haven't been overridden.
      */
     @Override
     public final boolean respondsTo(String name) {
         Ruby runtime = getRuntime();
 
-        DynamicMethod method = getMetaClass().searchMethod("respond_to?");
-        if(method.equals(runtime.getRespondToMethod())) {
+        DynamicMethod respondTo = getMetaClass().searchMethod("respond_to?");
+        DynamicMethod respondToMissing = getMetaClass().searchMethod("respond_to_missing?");
+
+        if(respondTo.equals(runtime.getRespondToMethod()) && respondToMissing.equals(runtime.getRespondToMissingMethod())) {
             // fastest path; builtin respond_to? which just does isMethodBound
             return getMetaClass().isMethodBound(name, false);
-        } else if (!method.isUndefined()) {
-            // medium path, invoke user's respond_to? if defined
+        } else if (!(respondTo.isUndefined() && respondToMissing.isUndefined())) {
+            // medium path, invoke user's respond_to?/respond_to_missing? if defined
+            DynamicMethod method;
+            String methodName;
+            if (respondTo.isUndefined()) {
+                method = respondToMissing;
+                methodName = "respond_to_missing?";
+            } else {
+                method = respondTo;
+                methodName = "respond_to?";
+            }
 
             // We have to check and enforce arity
             Arity arity = method.getArity();
             ThreadContext context = runtime.getCurrentContext();
             if (arity.isFixed() && arity.required() == 1) {
-                return method.call(context, this, metaClass, "respond_to?", runtime.newSymbol(name)).isTrue();
+                return method.call(context, this, metaClass, methodName, runtime.newSymbol(name)).isTrue();
             } else if (arity.isFixed() && arity.required() != 2) {
-                throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + arity.getValue() + ")");
-            } else {
-
+                throw runtime.newArgumentError(methodName + " must accept 1 or 2 arguments (requires " + arity.getValue() + ")");
             }
 
-            return method.call(context, this, metaClass, "respond_to?", runtime.newSymbol(name), runtime.newBoolean(true)).isTrue();
-
+            return method.call(context, this, metaClass, methodName, runtime.newSymbol(name), runtime.newBoolean(true)).isTrue();
         } else {
             // slowest path, full callMethod to hit method_missing if present, or produce error
             return callMethod(runtime.getCurrentContext(), "respond_to?", runtime.newSymbol(name)).isTrue();
@@ -1489,11 +1497,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     public List<Variable<IRubyObject>> getInstanceVariableList() {
         Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
-        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>(ivarAccessors.size());
         for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
-            Object value = entry.getValue().get(this);
-            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
-            list.add(new VariableEntry<IRubyObject>(entry.getKey(), (IRubyObject)value));
+            final String key = entry.getKey();
+            final Object value = entry.getValue().get(this);
+            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(key)) continue;
+            list.add(new VariableEntry<IRubyObject>(key, (IRubyObject) value));
         }
         return list;
     }
@@ -1505,11 +1514,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
    public List<String> getInstanceVariableNameList() {
         Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<String>(ivarAccessors.size());
         for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
-            Object value = entry.getValue().get(this);
-            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
-            list.add(entry.getKey());
+            final String key = entry.getKey();
+            final Object value = entry.getValue().get(this);
+            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(key)) continue;
+            list.add(key);
         }
         return list;
     }
@@ -2276,12 +2286,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         Set<String> seen = new HashSet<String>();
 
         if (getMetaClass().isSingleton()) {
-            getMetaClass().populateInstanceMethodNames(seen, methods, PRIVATE, true, useSymbols, false);
+            getMetaClass().populateInstanceMethodNames(seen, methods, PRIVATE, false, true, false);
             if (all) {
-                getMetaClass().getSuperClass().populateInstanceMethodNames(seen, methods, PRIVATE, true, useSymbols, true);
+                getMetaClass().getSuperClass().populateInstanceMethodNames(seen, methods, PRIVATE, false, true, true);
             }
         } else if (all) {
-            getMetaClass().populateInstanceMethodNames(seen, methods, PRIVATE, true, useSymbols, true);
+            getMetaClass().populateInstanceMethodNames(seen, methods, PRIVATE, false, true, true);
         } else {
             // do nothing, leave empty
         }
@@ -2299,11 +2309,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  in the receiver will be listed.
      */
     public IRubyObject public_methods(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().public_instance_methods(trueIfNoArgument(context, args));
+        return getMetaClass().instanceMethods(args, PUBLIC, true, false);
     }
 
     public IRubyObject public_methods19(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().public_instance_methods19(trueIfNoArgument(context, args));
+        return getMetaClass().instanceMethods(args, PUBLIC, true, false);
     }
 
     /** rb_obj_protected_methods
@@ -2319,11 +2329,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  {@link RubyModule#protected_instance_methods} method.
      */
     public IRubyObject protected_methods(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().protected_instance_methods(trueIfNoArgument(context, args));
+        return getMetaClass().instanceMethods(args, PROTECTED, true, false);
     }
 
     public IRubyObject protected_methods19(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().protected_instance_methods19(trueIfNoArgument(context, args));
+        return getMetaClass().instanceMethods(args, PROTECTED, true, false);
     }
 
     /** rb_obj_private_methods
@@ -2339,16 +2349,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  {@link RubyModule#private_instance_methods} method.
      */
     public IRubyObject private_methods(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().private_instance_methods(trueIfNoArgument(context, args));
+        return getMetaClass().instanceMethods(args, PRIVATE, true, false);
     }
 
     public IRubyObject private_methods19(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().private_instance_methods19(trueIfNoArgument(context, args));
-    }
-
-    // FIXME: If true array is common enough we should pre-allocate and stick somewhere
-    private IRubyObject[] trueIfNoArgument(ThreadContext context, IRubyObject[] args) {
-        return args.length == 0 ? new IRubyObject[] { context.runtime.getTrue() } : args;
+        return getMetaClass().instanceMethods(args, PRIVATE, true, false);
     }
 
     /** rb_obj_singleton_methods
@@ -2385,55 +2390,42 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     // TODO: This is almost RubyModule#instance_methods on the metaClass.  Perhaps refactor.
     public RubyArray singleton_methods(ThreadContext context, IRubyObject[] args) {
-        return singletonMethods(context, args, methodsCollector);
-    }
-
-    public RubyArray singleton_methods19(ThreadContext context, IRubyObject[] args) {
-        return singletonMethods(context, args, methodsCollector19);
-    }
-
-    private RubyArray singletonMethods(ThreadContext context, IRubyObject[] args, MethodsCollector collect) {
+        Ruby runtime = context.runtime;
         boolean all = true;
         if(args.length == 1) {
             all = args[0].isTrue();
         }
 
-        if (getMetaClass().isSingleton()) {
-            IRubyObject[] methodsArgs = new IRubyObject[]{context.runtime.getFalse()};
-            RubyArray singletonMethods = collect.instanceMethods(getMetaClass(), methodsArgs);
+        RubyClass klass = metaClass;
+        RubyModule origin = klass.getMethodLocation();
+
+        if (klass.isSingleton()) {
+            Set<RubySymbol> names = new HashSet<>();
+            for (Map.Entry<String, DynamicMethod> entry : klass.getMethods().entrySet()) {
+                if (entry.getValue().getVisibility() == PRIVATE) continue;
+                // TODO: needs to use method_entry_i logic from MRI
+                names.add(runtime.newSymbol(entry.getKey()));
+            }
 
             if (all) {
-                RubyClass superClass = getMetaClass().getSuperClass();
-                while (superClass.isSingleton() || superClass.isIncluded()) {
-                    singletonMethods.concat(collect.instanceMethods(superClass, methodsArgs));
-                    superClass = superClass.getSuperClass();
+                klass = klass.getSuperClass();
+                while (klass != null && (klass.isSingleton() || klass.isIncluded())) {
+                    if (klass != origin) {
+                        for (Map.Entry<String, DynamicMethod> entry : klass.getMethods().entrySet()) {
+                            if (entry.getValue().getVisibility() == PRIVATE) continue;
+                            // TODO: needs to use method_entry_i logic from MRI
+                            names.add(runtime.newSymbol(entry.getKey()));
+                        }
+                    }
+                    klass = klass.getSuperClass();
                 }
             }
 
-            singletonMethods.uniq_bang(context);
-            return singletonMethods;
+            return RubyArray.newArray(runtime, names);
         }
 
         return context.runtime.newEmptyArray();
     }
-
-    private abstract static class MethodsCollector {
-        public abstract RubyArray instanceMethods(RubyClass rubyClass, IRubyObject[] args);
-    };
-
-    private static final MethodsCollector methodsCollector = new MethodsCollector() {
-        @Override
-        public RubyArray instanceMethods(RubyClass rubyClass, IRubyObject[] args) {
-            return rubyClass.instance_methods(args);
-        }
-    };
-
-    private static final MethodsCollector methodsCollector19 = new MethodsCollector() {
-        @Override
-        public RubyArray instanceMethods(RubyClass rubyClass, IRubyObject[] args) {
-            return rubyClass.instance_methods19(args);
-        }
-    };
 
     /** rb_obj_method
      *

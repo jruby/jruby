@@ -31,10 +31,6 @@ public abstract class WrapInThreadLocalNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public WrapInThreadLocalNode(WrapInThreadLocalNode prev) {
-        super(prev);
-    }
-
     @Specialization
     public ThreadLocal<?> wrap(Object value) {
         return wrap(getContext(), value);

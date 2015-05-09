@@ -19,31 +19,24 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBinding;
-import org.jruby.truffle.runtime.core.RubyNilClass;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.Memo;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
 
     @CoreMethod(names = "arity")
-    public abstract static class ArityNode extends CoreMethodNode {
+    public abstract static class ArityNode extends CoreMethodArrayArgumentsNode {
 
         public ArityNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ArityNode(ArityNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -54,14 +47,10 @@ public abstract class ProcNodes {
     }
 
     @CoreMethod(names = "binding")
-    public abstract static class BindingNode extends CoreMethodNode {
+    public abstract static class BindingNode extends CoreMethodArrayArgumentsNode {
 
         public BindingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public BindingNode(BindingNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -75,19 +64,14 @@ public abstract class ProcNodes {
 
     }
 
-    @CoreMethod(names = {"call", "[]"}, argumentsAsArray = true, needsBlock = true)
-    public abstract static class CallNode extends CoreMethodNode {
+    @CoreMethod(names = {"call", "[]", "yield"}, argumentsAsArray = true, needsBlock = true)
+    public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldDispatchHeadNode yieldNode;
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             yieldNode = new YieldDispatchHeadNode(context);
-        }
-
-        public CallNode(CallNode prev) {
-            super(prev);
-            yieldNode = prev.yieldNode;
         }
 
         @Specialization
@@ -103,14 +87,10 @@ public abstract class ProcNodes {
     }
 
     @CoreMethod(names = "initialize", needsBlock = true)
-    public abstract static class InitializeNode extends CoreMethodNode {
+    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -119,13 +99,12 @@ public abstract class ProcNodes {
                     block.getCallTargetForProcs(), block.getCallTargetForMethods(), block.getDeclarationFrame(),
                     block.getMethod(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyNilClass initialize(VirtualFrame frame, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
+        public RubyNilClass initialize(RubyProc proc, UndefinedPlaceholder block) {
             final Memo<Integer> frameCount = new Memo<>(0);
 
             // The parent will be the Proc.new call.  We need to go an extra level up in order to get the parent
@@ -159,14 +138,10 @@ public abstract class ProcNodes {
     }
 
     @CoreMethod(names = "lambda?")
-    public abstract static class LambdaNode extends CoreMethodNode {
+    public abstract static class LambdaNode extends CoreMethodArrayArgumentsNode {
 
         public LambdaNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public LambdaNode(LambdaNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -177,14 +152,10 @@ public abstract class ProcNodes {
     }
 
     @CoreMethod(names = "parameters")
-    public abstract static class ParametersNode extends CoreMethodNode {
+    public abstract static class ParametersNode extends CoreMethodArrayArgumentsNode {
 
         public ParametersNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ParametersNode(ParametersNode prev) {
-            super(prev);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -192,33 +163,28 @@ public abstract class ProcNodes {
         public RubyArray parameters(RubyProc proc) {
             final ArgsNode argsNode = proc.getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
 
-            final String[] parameters = Helpers.encodeParameterList((ArgsNode) argsNode).split(";");
+            final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
 
-            return (RubyArray) getContext().toTruffle(Helpers.parameterListToParameters(getContext().getRuntime(),
-                    parameters, proc.getType() == RubyProc.Type.LAMBDA));
+            return (RubyArray) getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
+                    argsDesc, proc.getType() == RubyProc.Type.LAMBDA));
         }
 
     }
 
     @CoreMethod(names = "source_location")
-    public abstract static class SourceLocationNode extends CoreMethodNode {
+    public abstract static class SourceLocationNode extends CoreMethodArrayArgumentsNode {
 
         public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public SourceLocationNode(SourceLocationNode prev) {
-            super(prev);
-        }
-
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object sourceLocation(RubyProc proc) {
-            notDesignedForCompilation();
-
             SourceSection sourceSection = proc.getSharedMethodInfo().getSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 RubyString file = getContext().makeString(sourceSection.getSource().getName());
                 return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),

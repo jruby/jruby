@@ -11,8 +11,6 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.nodes.Node;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -26,6 +24,7 @@ public class RubyTime extends RubyBasicObject {
     public RubyTime(RubyClass timeClass, DateTime dateTime, Object offset) {
         super(timeClass);
         this.dateTime = dateTime;
+        assert offset != null;
         this.offset = offset;
     }
 
@@ -51,6 +50,7 @@ public class RubyTime extends RubyBasicObject {
     }
 
     public void setOffset(Object offset) {
+        assert offset != null;
         this.offset = offset;
     }
 

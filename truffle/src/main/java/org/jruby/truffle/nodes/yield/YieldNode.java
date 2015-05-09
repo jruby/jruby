@@ -53,23 +53,24 @@ public class YieldNode extends RubyNode {
         }
 
         if (unsplat) {
-            notDesignedForCompilation();
-
-            // TOOD(CS): what is the error behaviour here?
-            assert argumentsObjects.length == 1;
-            assert argumentsObjects[0] instanceof RubyArray;
-            argumentsObjects = ((RubyArray) argumentsObjects[0]).slowToArray();
+            argumentsObjects = unsplat(argumentsObjects);
         }
 
         return dispatch.dispatch(frame, block, argumentsObjects);
     }
 
+    @CompilerDirectives.TruffleBoundary
+    private Object[] unsplat(Object[] argumentsObjects) {
+        // TOOD(CS): what is the error behaviour here?
+        assert argumentsObjects.length == 1;
+        assert argumentsObjects[0] instanceof RubyArray;
+        return ((RubyArray) argumentsObjects[0]).slowToArray();
+    }
+
     @Override
     public Object isDefined(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         if (RubyArguments.getBlock(frame.getArguments()) == null) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         } else {
             return getContext().makeString("yield");
         }

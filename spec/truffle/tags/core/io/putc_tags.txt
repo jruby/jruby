@@ -1,9 +1,1 @@
-fails:IO#putc calls #to_int to convert an object to an Integer
 fails:IO#putc raises IOError on a closed stream
-fails:IO#putc raises a TypeError when passed nil
-fails:IO#putc raises a TypeError when passed false
-fails:IO#putc raises a TypeError when passed true
-fails:IO#putc with a Fixnum argument writes one character as a String
-fails:IO#putc with a Fixnum argument writes the low byte as a String
-fails:IO#putc with a String argument writes one character
-fails:IO#putc with a String argument writes the first character

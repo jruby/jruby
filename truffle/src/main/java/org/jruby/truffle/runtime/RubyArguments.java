@@ -12,7 +12,7 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
-
+import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -36,9 +36,18 @@ public final class RubyArguments {
         packed[DECLARATION_FRAME_INDEX] = declarationFrame;
         packed[SELF_INDEX] = self;
         packed[BLOCK_INDEX] = block;
-        arraycopy(arguments, 0, packed, RUNTIME_ARGUMENT_COUNT, arguments.length);
+        ArrayUtils.arraycopy(arguments, 0, packed, RUNTIME_ARGUMENT_COUNT, arguments.length);
 
         return packed;
+    }
+    
+    public static Object getOptimizedKeywordArgument(Object[] arguments,
+            int index) {
+        return arguments[arguments.length - 1 + index];
+    }
+
+    public static boolean isKwOptimized(Object[] arguments) {
+        return arguments[arguments.length - 1] instanceof MarkerNode.Marker;
     }
 
     public static InternalMethod getMethod(Object[] arguments) {
@@ -57,27 +66,24 @@ public final class RubyArguments {
         return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT, arguments.length);
     }
 
-    public static Object[] concatUserArguments(Object o, Object[] arguments) {
-        final Object[] concatenatedArguments;
-
-        if (o instanceof Object[]) {
-            Object[] concatArray = (Object[]) o;
-            concatenatedArguments = new Object[concatArray.length + arguments.length - RUNTIME_ARGUMENT_COUNT];
-
-            arraycopy(concatArray, 0, concatenatedArguments, 0, concatArray.length);
-            arraycopy(arguments, RUNTIME_ARGUMENT_COUNT, concatenatedArguments, concatArray.length, getUserArgumentsCount(arguments));
-        } else {
-            concatenatedArguments = new Object[1 + arguments.length - RUNTIME_ARGUMENT_COUNT];
-
-            concatenatedArguments[0] = o;
-            arraycopy(arguments, RUNTIME_ARGUMENT_COUNT, concatenatedArguments, 1, getUserArgumentsCount(arguments));
-        }
-
-        return concatenatedArguments;
+    public static Object[] extractUserArgumentsWithUnshift(Object first, Object[] arguments) {
+        final Object[] range = ArrayUtils.extractRange(arguments, BLOCK_INDEX, arguments.length);
+        range[0] = first;
+        return range;
     }
 
     public static int getUserArgumentsCount(Object[] internalArguments) {
         return internalArguments.length - RUNTIME_ARGUMENT_COUNT;
+    }
+
+    public static int getNamedUserArgumentsCount(Object[] internalArguments) {
+        if (isKwOptimized(internalArguments)) {
+            return getUserArgumentsCount(internalArguments)
+                    - getMethod(internalArguments).getSharedMethodInfo().getArity()
+                            .getKeywordArguments().size() - 1;
+        } else {
+            return getUserArgumentsCount(internalArguments);
+        }
     }
 
     public static Object getUserArgument(Object[] internalArguments, int index) {
@@ -102,13 +108,6 @@ public final class RubyArguments {
 
     public static MaterializedFrame getDeclarationFrame(Object[] arguments) {
         return (MaterializedFrame) arguments[DECLARATION_FRAME_INDEX];
-    }
-
-    @ExplodeLoop
-    public static void arraycopy(Object[] src, int srcPos, Object[] dest, int destPos, int length) {
-        for (int i = 0; i < length; i++) {
-            dest[destPos + i] = src[srcPos + i];
-        }
     }
 
     /**

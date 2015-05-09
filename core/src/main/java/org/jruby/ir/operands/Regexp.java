@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
@@ -40,6 +41,10 @@ public class Regexp extends ImmutableLiteral {
         super.encode(e);
         e.encode(source);
         e.encode(options.toEmbeddedOptions());
+    }
+
+    public static Regexp decode(IRReaderDecoder d) {
+        return new Regexp(d.decodeByteList(), RegexpOptions.fromEmbeddedOptions(d.decodeInt()));
     }
 
     @Override

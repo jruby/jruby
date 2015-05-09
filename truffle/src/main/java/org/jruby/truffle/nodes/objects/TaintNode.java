@@ -29,11 +29,6 @@ public abstract class TaintNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public TaintNode(TaintNode prev) {
-        super(prev);
-        writeTaintNode = prev.writeTaintNode;
-    }
-
     public abstract Object executeTaint(Object object);
 
     @Specialization
@@ -61,7 +56,7 @@ public abstract class TaintNode extends RubyNode {
         return frozen(object);
     }
 
-    @Specialization(guards = "!isRubySymbol")
+    @Specialization(guards = "!isRubySymbol(object)")
     public Object taint(RubyBasicObject object) {
         if (writeTaintNode == null) {
             CompilerDirectives.transferToInterpreter();

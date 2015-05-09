@@ -10,34 +10,16 @@
 package org.jruby.truffle.runtime.hash;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class HashOperations {
-
-    public static final int SMALL_HASH_SIZE = Options.TRUFFLE_HASHES_SMALL.load();
-
-    private static final int[] CAPACITIES = Arrays.copyOf(org.jruby.RubyHash.MRI_PRIMES, org.jruby.RubyHash.MRI_PRIMES.length - 1);
-    private static final int SIGN_BIT_MASK = ~(1 << 31);
-
-    public static int capacityGreaterThan(int size) {
-        for (int capacity : CAPACITIES) {
-            if (capacity > size) {
-                return capacity;
-            }
-        }
-
-        return CAPACITIES[CAPACITIES.length - 1];
-    }
 
     public static RubyHash verySlowFromEntries(RubyContext context, List<KeyValue> entries, boolean byIdentity) {
         return verySlowFromEntries(context.getCoreLibrary().getHashClass(), entries, byIdentity);
@@ -45,10 +27,9 @@ public class HashOperations {
 
     @CompilerDirectives.TruffleBoundary
     public static RubyHash verySlowFromEntries(RubyClass hashClass, List<KeyValue> entries, boolean byIdentity) {
-        RubyNode.notDesignedForCompilation();
-
         final RubyHash hash = new RubyHash(hashClass, null, null, null, 0, null);
         verySlowSetKeyValues(hash, entries, byIdentity);
+        assert HashOperations.verifyStore(hash);
         return hash;
     }
 
@@ -117,8 +98,9 @@ public class HashOperations {
                 entry = entry.getNextInSequence();
             }
         } else if (hash.getStore() instanceof Object[]) {
+            final Object[] store = (Object[]) hash.getStore();
             for (int n = 0; n < hash.getSize(); n++) {
-                keyValues.add(new KeyValue(((Object[]) hash.getStore())[n * 2], ((Object[]) hash.getStore())[n * 2 + 1]));
+                keyValues.add(new KeyValue(PackedArrayStrategy.getKey(store, n), PackedArrayStrategy.getValue(store, n)));
             }
         } else if (hash.getStore() != null) {
             throw new UnsupportedOperationException();
@@ -142,7 +124,7 @@ public class HashOperations {
         }
 
         final Entry[] entries = (Entry[]) hash.getStore();
-        final int bucketIndex = (hashed & SIGN_BIT_MASK) % entries.length;
+        final int bucketIndex = (hashed & BucketsStrategy.SIGN_BIT_MASK) % entries.length;
         Entry entry = entries[bucketIndex];
 
         Entry previousEntry = null;
@@ -159,34 +141,26 @@ public class HashOperations {
             }
 
             if ((boolean) DebugOperations.send(hash.getContext(), key, method, null, entry.getKey())) {
-                return new HashSearchResult(bucketIndex, previousEntry, entry);
+                return new HashSearchResult(hashed, bucketIndex, previousEntry, entry);
             }
 
             previousEntry = entry;
             entry = entry.getNextInLookup();
         }
 
-        return new HashSearchResult(bucketIndex, previousEntry, null);
+        return new HashSearchResult(hashed, bucketIndex, previousEntry, null);
     }
 
-    public static void setAtBucket(RubyHash hash, HashSearchResult hashSearchResult, Object key, Object value) {
+    @CompilerDirectives.TruffleBoundary
+    public static void verySlowSetAtBucket(RubyHash hash, HashSearchResult hashSearchResult, Object key, Object value) {
+        assert verifyStore(hash);
+
+        assert hash.getStore() instanceof Entry[];
+
         if (hashSearchResult.getEntry() == null) {
-            final Entry entry = new Entry(key, value);
+            BucketsStrategy.addNewEntry(hash, hashSearchResult.getHashed(), key, value);
 
-            if (hashSearchResult.getPreviousEntry() == null) {
-                ((Entry[]) hash.getStore())[hashSearchResult.getIndex()] = entry;
-            } else {
-                hashSearchResult.getPreviousEntry().setNextInLookup(entry);
-            }
-
-            if (hash.getFirstInSequence() == null) {
-                hash.setFirstInSequence(entry);
-                hash.setLastInSequence(entry);
-            } else {
-                hash.getLastInSequence().setNextInSequence(entry);
-                entry.setPreviousInSequence(hash.getLastInSequence());
-                hash.setLastInSequence(entry);
-            }
+            assert verifyStore(hash);
         } else {
             final Entry entry = hashSearchResult.getEntry();
 
@@ -194,26 +168,36 @@ public class HashOperations {
 
             // Update the key (it overwrites even it it's eql?) and value
 
+            entry.setHashed(hashSearchResult.getHashed());
             entry.setKey(key);
             entry.setValue(value);
+
+            assert verifyStore(hash);
         }
     }
 
     @CompilerDirectives.TruffleBoundary
     public static boolean verySlowSetInBuckets(RubyHash hash, Object key, Object value, boolean byIdentity) {
+        assert verifyStore(hash);
+
         if (!byIdentity && key instanceof RubyString) {
             key = DebugOperations.send(hash.getContext(), DebugOperations.send(hash.getContext(), key, "dup", null), "freeze", null);
         }
 
         final HashSearchResult hashSearchResult = verySlowFindBucket(hash, key, byIdentity);
-        setAtBucket(hash, hashSearchResult, key, value);
+        verySlowSetAtBucket(hash, hashSearchResult, key, value);
+
+        assert verifyStore(hash);
+
         return hashSearchResult.getEntry() == null;
     }
 
     @CompilerDirectives.TruffleBoundary
     public static void verySlowSetKeyValues(RubyHash hash, List<KeyValue> keyValues, boolean byIdentity) {
+        assert verifyStore(hash);
+
         final int size = keyValues.size();
-        hash.setStore(new Entry[capacityGreaterThan(size)], 0, null, null);
+        hash.setStore(new Entry[BucketsStrategy.capacityGreaterThan(size)], 0, null, null);
 
         int actualSize = 0;
 
@@ -224,9 +208,91 @@ public class HashOperations {
         }
 
         hash.setSize(actualSize);
+
+        assert verifyStore(hash);
     }
 
-    public static int getIndex(int hashed, int entriesLength) {
-        return (hashed & HashOperations.SIGN_BIT_MASK) % entriesLength;
+    public static boolean verifyStore(RubyHash hash) {
+        return verifyStore(hash.getStore(), hash.getSize(), hash.getFirstInSequence(), hash.getLastInSequence());
     }
+
+    public static boolean verifyStore(Object store, int size, Entry firstInSequence, Entry lastInSequence) {
+        assert store == null || store instanceof Object[] || store instanceof Entry[];
+
+        if (store == null) {
+            assert size == 0;
+            assert firstInSequence == null;
+            assert lastInSequence == null;
+        }
+
+        if (store instanceof Entry[]) {
+            assert lastInSequence == null || lastInSequence.getNextInSequence() == null;
+
+            final Entry[] entryStore = (Entry[]) store;
+
+            Entry foundFirst = null;
+            Entry foundLast = null;
+            int foundSizeBuckets = 0;
+
+            for (int n = 0; n < entryStore.length; n++) {
+                Entry entry = entryStore[n];
+
+                while (entry != null) {
+                    foundSizeBuckets++;
+
+                    if (entry == firstInSequence) {
+                        assert foundFirst == null;
+                        foundFirst = entry;
+                    }
+
+                    if (entry == lastInSequence) {
+                        assert foundLast == null;
+                        foundLast = entry;
+                    }
+
+                    entry = entry.getNextInLookup();
+                }
+            }
+
+            assert foundSizeBuckets == size;
+            assert firstInSequence == foundFirst;
+            assert lastInSequence == foundLast;
+
+            int foundSizeSequence = 0;
+            Entry entry = firstInSequence;
+
+            while (entry != null) {
+                foundSizeSequence++;
+
+                if (entry.getNextInSequence() == null) {
+                    assert entry == lastInSequence;
+                } else {
+                    assert entry.getNextInSequence().getPreviousInSequence() == entry;
+                }
+
+                entry = entry.getNextInSequence();
+
+                assert entry != firstInSequence;
+            }
+
+            assert foundSizeSequence == size : String.format("%d %d", foundSizeSequence, size);
+        } else if (store instanceof Object[]) {
+            assert ((Object[]) store).length == PackedArrayStrategy.MAX_ENTRIES * PackedArrayStrategy.ELEMENTS_PER_ENTRY : ((Object[]) store).length;
+
+            final Object[] packedStore = (Object[]) store;
+
+            for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
+                if (n < size) {
+                    assert packedStore[n * 2] != null;
+                    assert packedStore[n * 2 + 1] != null;
+                }
+            }
+
+            assert firstInSequence == null;
+            assert lastInSequence == null;
+        }
+
+        return true;
+    }
+
 }

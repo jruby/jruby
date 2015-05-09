@@ -12,11 +12,15 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrument.Probe;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.Shape;
-import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
-
+import com.oracle.truffle.api.tools.CoverageTracker;
+import jnr.posix.POSIX;
+import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -24,16 +28,18 @@ import org.jruby.Ruby;
 import org.jruby.RubyNil;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.object.ObjectIDOperations;
+import org.jruby.truffle.runtime.object.RubyObjectType;
 import org.jruby.truffle.runtime.subsystems.*;
-import org.jruby.truffle.runtime.util.FileUtils;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
@@ -50,14 +56,21 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class RubyContext extends ExecutionContext {
 
+    private static RubyContext latestInstance;
+
+    private static final boolean TRUFFLE_COVERAGE = Options.TRUFFLE_COVERAGE.load();
+    private static final int INSTRUMENTATION_SERVER_PORT = Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load();
+
     private final Ruby runtime;
+
+    private final POSIX posix;
+
     private final TranslatorDriver translator;
     private final CoreLibrary coreLibrary;
     private final FeatureManager featureManager;
     private final TraceManager traceManager;
     private final ObjectSpaceManager objectSpaceManager;
     private final ThreadManager threadManager;
-    private final FiberManager fiberManager;
     private final AtExitManager atExitManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
     private final Shape emptyShape;
@@ -67,13 +80,19 @@ public class RubyContext extends ExecutionContext {
     private final LexicalScope rootLexicalScope;
     private final CompilerOptions compilerOptions;
     private final RubiniusPrimitiveManager rubiniusPrimitiveManager;
+    private final CoverageTracker coverageTracker;
     private final InstrumentationServerManager instrumentationServerManager;
+    private final AttachmentsManager attachmentsManager;
+    private final SourceManager sourceManager;
+    private final RubiniusConfiguration rubiniusConfiguration;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
     private final boolean runningOnWindows;
 
     public RubyContext(Ruby runtime) {
+        latestInstance = this;
+
         assert runtime != null;
 
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
@@ -86,42 +105,58 @@ public class RubyContext extends ExecutionContext {
             compilerOptions.setOption("MinInliningMaxCallerSize", 5000);
         }
 
+        // TODO CS 28-Feb-15 this is global
+        Probe.registerASTProber(new RubyDefaultASTProber());
+
+        // TODO(CS, 28-Jan-15) this is global
+        // TODO(CS, 28-Jan-15) maybe not do this for core?
+        if (TRUFFLE_COVERAGE) {
+            coverageTracker = new CoverageTracker();
+        } else {
+            coverageTracker = null;
+        }
+
         safepointManager = new SafepointManager(this);
 
         this.runtime = runtime;
-        translator = new TranslatorDriver();
+
+        // JRuby+Truffle uses POSIX for all IO - we need the native version
+        posix = POSIXFactory.getPOSIX(new TrufflePOSIXHandler(this), true);
 
         warnings = new Warnings(this);
 
         // Object space manager needs to come early before we create any objects
         objectSpaceManager = new ObjectSpaceManager(this);
 
-        emptyShape = RubyBasicObject.LAYOUT.createShape(new RubyOperations(this));
+        emptyShape = RubyBasicObject.LAYOUT.createShape(new RubyObjectType(this));
 
         coreLibrary = new CoreLibrary(this);
+        rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
         coreLibrary.initialize();
+
+        translator = new TranslatorDriver(this);
 
         featureManager = new FeatureManager(this);
         traceManager = new TraceManager();
         atExitManager = new AtExitManager();
 
-        // Must initialize threads before fibers
-
         threadManager = new ThreadManager(this);
-        fiberManager = new FiberManager(this);
-
-        rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
+        threadManager.initialize();
 
         rubiniusPrimitiveManager = RubiniusPrimitiveManager.create();
 
-        if (Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load() != 0) {
-            instrumentationServerManager = new InstrumentationServerManager(this, Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load());
+        if (INSTRUMENTATION_SERVER_PORT != 0) {
+            instrumentationServerManager = new InstrumentationServerManager(this, INSTRUMENTATION_SERVER_PORT);
             instrumentationServerManager.start();
         } else {
             instrumentationServerManager = null;
         }
 
         runningOnWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).indexOf("win") >= 0;
+
+        attachmentsManager = new AttachmentsManager(this);
+        sourceManager = new SourceManager(this);
+        rubiniusConfiguration = new RubiniusConfiguration(this);
     }
 
     public Shape getEmptyShape() {
@@ -129,10 +164,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {
-        RubyNode.notDesignedForCompilation();
-
         if (!name.startsWith("@")) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
 
@@ -140,10 +172,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public static String checkClassVariableName(RubyContext context, String name, Node currentNode) {
-        RubyNode.notDesignedForCompilation();
-
         if (!name.startsWith("@@")) {
-            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
 
@@ -162,12 +191,8 @@ public class RubyContext extends ExecutionContext {
         }
     }
 
-    private void loadFileAbsolute(String path, Node currentNode) {
-        final byte[] bytes = FileUtils.readAllBytesInterruptedly(this, path);
-
-        // Assume UTF-8 for the moment
-        final Source source = Source.fromBytes(bytes, path, new BytesDecoder.UTF8BytesDecoder());
-
+    private void loadFileAbsolute(String fileName, Node currentNode) {
+        final Source source = sourceManager.forFile(fileName);
         load(source, currentNode, NodeWrapper.IDENTITY);
     }
 
@@ -195,17 +220,17 @@ public class RubyContext extends ExecutionContext {
 
 
     @CompilerDirectives.TruffleBoundary
-    public RubySymbol newSymbol(String name) {
+    public RubySymbol getSymbol(String name) {
         return symbolTable.getSymbol(name, ASCIIEncoding.INSTANCE);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public RubySymbol newSymbol(String name, Encoding encoding) {
+    public RubySymbol getSymbol(String name, Encoding encoding) {
         return symbolTable.getSymbol(name, encoding);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public RubySymbol newSymbol(ByteList name) {
+    public RubySymbol getSymbol(ByteList name) {
         return symbolTable.getSymbol(name);
     }
 
@@ -225,15 +250,22 @@ public class RubyContext extends ExecutionContext {
     }
 
     @TruffleBoundary
+    public Object eval(String code, RubyBinding binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
+        return eval(ByteList.create(code), binding, ownScopeForAssignments, filename, currentNode);
+    }
+
+    @TruffleBoundary
     public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
         final Source source = Source.fromText(code, filename);
         return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, binding.getSelf(), binding.getFrame(), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
     }
 
+    @TruffleBoundary
     public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, Node currentNode) {
         return eval(code, binding, ownScopeForAssignments, "(eval)", currentNode);
     }
 
+    @TruffleBoundary
     public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, Node currentNode, NodeWrapper wrapper) {
         return execute(source, defaultEncoding, parserContext, self, parentFrame, true, currentNode, wrapper);
     }
@@ -269,8 +301,6 @@ public class RubyContext extends ExecutionContext {
             instrumentationServerManager.shutdown();
         }
 
-        fiberManager.shutdown();
-
         threadManager.shutdown();
     }
 
@@ -302,6 +332,10 @@ public class RubyContext extends ExecutionContext {
         return makeString(stringClass, Character.toString(string), encoding);
     }
 
+    public RubyString makeString(byte[] bytes) {
+        return makeString(new ByteList(bytes));
+    }
+
     public RubyString makeString(ByteList bytes) {
         return makeString(coreLibrary.getStringClass(), bytes);
     }
@@ -310,9 +344,11 @@ public class RubyContext extends ExecutionContext {
         return RubyString.fromByteList(stringClass, bytes);
     }
 
-    public IRubyObject toJRuby(Object object) {
-        RubyNode.notDesignedForCompilation();
+    public Object makeTuple(VirtualFrame frame, CallDispatchHeadNode newTupleNode, Object... values) {
+        return newTupleNode.call(frame, getCoreLibrary().getTupleClass(), "create", null, values);
+    }
 
+    public IRubyObject toJRuby(Object object) {
         if (object instanceof RubyNilClass) {
             return runtime.getNil();
         } else if (object == getCoreLibrary().getKernelModule()) {
@@ -331,14 +367,14 @@ public class RubyContext extends ExecutionContext {
             return toJRuby((RubyString) object);
         } else if (object instanceof RubyArray) {
             return toJRuby((RubyArray) object);
+        } else if (object instanceof RubyEncoding) {
+            return toJRuby((RubyEncoding) object);
         } else {
-            throw getRuntime().newRuntimeError("cannot pass " + object + " to JRuby");
+            throw getRuntime().newRuntimeError("cannot pass " + object + " (" + object.getClass().getName()  + ") to JRuby");
         }
     }
 
     public org.jruby.RubyArray toJRuby(RubyArray array) {
-        RubyNode.notDesignedForCompilation();
-
         final Object[] objects = array.slowToArray();
         final IRubyObject[] store = new IRubyObject[objects.length];
 
@@ -349,10 +385,14 @@ public class RubyContext extends ExecutionContext {
         return runtime.newArray(store);
     }
 
-    public org.jruby.RubyString toJRuby(RubyString string) {
-        final org.jruby.RubyString jrubyString = runtime.newString(string.getBytes().dup());
+    public IRubyObject toJRuby(RubyEncoding encoding) {
+        return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(encoding.getName()));
+    }
 
-        final Object tainted = string.getOperations().getInstanceVariable(string, RubyBasicObject.TAINTED_IDENTIFIER);
+    public org.jruby.RubyString toJRuby(RubyString string) {
+        final org.jruby.RubyString jrubyString = runtime.newString(string.getByteList().dup());
+
+        final Object tainted = string.getObjectType().getInstanceVariable(string, RubyBasicObject.TAINTED_IDENTIFIER);
 
         if (tainted instanceof Boolean && (boolean) tainted) {
             jrubyString.setTaint(true);
@@ -362,8 +402,6 @@ public class RubyContext extends ExecutionContext {
     }
 
     public Object toTruffle(IRubyObject object) {
-        RubyNode.notDesignedForCompilation();
-
         if (object == runtime.getTopSelf()) {
             return getCoreLibrary().getMainObject();
         } else if (object == runtime.getKernel()) {
@@ -378,10 +416,6 @@ public class RubyContext extends ExecutionContext {
             final long value = ((org.jruby.RubyFixnum) object).getLongValue();
 
             if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
-                if (value < Long.MIN_VALUE || value > Long.MAX_VALUE) {
-                    throw new UnsupportedOperationException();
-                }
-
                 return value;
             }
 
@@ -417,7 +451,7 @@ public class RubyContext extends ExecutionContext {
         final RubyString truffleString = new RubyString(getCoreLibrary().getStringClass(), jrubyString.getByteList().dup());
 
         if (jrubyString.isTaint()) {
-            truffleString.getOperations().setInstanceVariable(truffleString, RubyBasicObject.TAINTED_IDENTIFIER, true);
+            truffleString.getObjectType().setInstanceVariable(truffleString, RubyBasicObject.TAINTED_IDENTIFIER, true);
         }
 
         return truffleString;
@@ -427,6 +461,8 @@ public class RubyContext extends ExecutionContext {
         switch (jrubyException.getMetaClass().getName()) {
             case "ArgumentError":
                 return getCoreLibrary().argumentError(jrubyException.getMessage().toString(), currentNode);
+            case "Encoding::CompatibilityError":
+                return getCoreLibrary().encodingCompatibilityError(jrubyException.getMessage().toString(), currentNode);
             case "TypeError":
                 return getCoreLibrary().typeError(jrubyException.getMessage().toString(), currentNode);
         }
@@ -450,10 +486,6 @@ public class RubyContext extends ExecutionContext {
         return objectSpaceManager;
     }
 
-    public FiberManager getFiberManager() {
-        return fiberManager;
-    }
-
     public ThreadManager getThreadManager() {
         return threadManager;
     }
@@ -469,10 +501,6 @@ public class RubyContext extends ExecutionContext {
     @Override
     public String getLanguageShortName() {
         return "ruby";
-    }
-
-    public TruffleHooks getHooks() {
-        return (TruffleHooks) runtime.getInstanceConfig().getTruffleHooks();
     }
 
     public TraceManager getTraceManager() {
@@ -503,4 +531,38 @@ public class RubyContext extends ExecutionContext {
         return rubiniusPrimitiveManager;
     }
 
+    // TODO(mg): we need to find a better place for this:
+    private TruffleObject multilanguageObject;
+
+    public TruffleObject getMultilanguageObject() {
+        return multilanguageObject;
+    }
+
+    public void setMultilanguageObject(TruffleObject multilanguageObject) {
+        this.multilanguageObject = multilanguageObject;
+    }
+
+    public CoverageTracker getCoverageTracker() {
+        return coverageTracker;
+    }
+
+    public static RubyContext getLatestInstance() {
+        return latestInstance;
+    }
+
+    public AttachmentsManager getAttachmentsManager() {
+        return attachmentsManager;
+    }
+
+    public SourceManager getSourceManager() {
+        return sourceManager;
+    }
+
+    public RubiniusConfiguration getRubiniusConfiguration() {
+        return rubiniusConfiguration;
+    }
+
+    public POSIX getPosix() {
+        return posix;
+    }
 }

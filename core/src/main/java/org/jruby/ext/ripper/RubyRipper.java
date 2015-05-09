@@ -35,6 +35,9 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.lexer.ByteListLexerSource;
+import org.jruby.lexer.GetsLexerSource;
+import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -79,17 +82,21 @@ public class RubyRipper extends RubyObject {
         hash.fastASet(runtime.newSymbol("heredoc_end"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("ident"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("ignored_nl"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newSymbol("imaginary"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("int"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("ivar"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("kw"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("label"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newSymbol("label_end"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("lbrace"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("lbracket"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("lparen"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("nl"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("op"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("period"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newSymbol("qsymbols_beg"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("qwords_beg"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newSymbol("rational"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("rbrace"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("rbracket"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("regexp_beg"), runtime.newFixnum(1));
@@ -98,6 +105,7 @@ public class RubyRipper extends RubyObject {
         hash.fastASet(runtime.newSymbol("semicolon"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("sp"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("symbeg"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newSymbol("symbols_beg"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("tlambda"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("tlambeg"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("tstring_beg"), runtime.newFixnum(1));
@@ -129,6 +137,7 @@ public class RubyRipper extends RubyObject {
         hash.fastASet(runtime.newSymbol("assign"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("assign_error"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("assoc_new"), runtime.newFixnum(2));
+        hash.fastASet(runtime.newSymbol("assoc_splat"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("assoclist_from_args"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("bare_assoc_hash"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("begin"), runtime.newFixnum(1));
@@ -185,10 +194,12 @@ public class RubyRipper extends RubyObject {
         hash.fastASet(runtime.newSymbol("opassign"), runtime.newFixnum(3));
         hash.fastASet(runtime.newSymbol("operator_ambiguous"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("param_error"), runtime.newFixnum(1));
-        hash.fastASet(runtime.newSymbol("params"), runtime.newFixnum(5));
+        hash.fastASet(runtime.newSymbol("params"), runtime.newFixnum(7));
         hash.fastASet(runtime.newSymbol("paren"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("parse_error"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("program"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newSymbol("qsymbols_add"), runtime.newFixnum(2));
+        hash.fastASet(runtime.newSymbol("qsymbols_new"), runtime.newFixnum(0));
         hash.fastASet(runtime.newSymbol("qwords_add"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("qwords_new"), runtime.newFixnum(0));
         hash.fastASet(runtime.newSymbol("redo"), runtime.newFixnum(0));
@@ -213,6 +224,8 @@ public class RubyRipper extends RubyObject {
         hash.fastASet(runtime.newSymbol("super"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("symbol"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("symbol_literal"), runtime.newFixnum(1));
+        hash.fastASet(runtime.newSymbol("symbols_add"), runtime.newFixnum(2));
+        hash.fastASet(runtime.newSymbol("symbols_new"), runtime.newFixnum(0));
         hash.fastASet(runtime.newSymbol("top_const_field"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("top_const_ref"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("unary"), runtime.newFixnum(2));
@@ -259,8 +272,8 @@ public class RubyRipper extends RubyObject {
     
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject src,IRubyObject file, IRubyObject line) {
-        filename = filenameAsString(context, file);
-        parser = new Ripper19Parser(context, this, source(context, src, filename.asJavaString(), lineAsInt(context, line)));
+        filename = filenameAsString(context, file).dup();
+        parser = new RipperParser(context, this, source(context, src, filename.asJavaString(), lineAsInt(context, line)));
          
         return context.runtime.getNil();
     }
@@ -283,7 +296,11 @@ public class RubyRipper extends RubyObject {
     public IRubyObject end_seen_p(ThreadContext context) {
         return context.runtime.newBoolean(parser.isEndSeen());
     }
-    
+
+    @JRubyMethod(name = "error?")
+    public IRubyObject error_p(ThreadContext context) {
+        return context.runtime.newBoolean(parser.isError());
+    }
     @JRubyMethod
     public IRubyObject filename(ThreadContext context) {
         return filename;
@@ -303,7 +320,7 @@ public class RubyRipper extends RubyObject {
         parseStarted = true;
         
         try {
-            return (IRubyObject) parser.parse(true);
+            return parser.parse(true);
         } catch (IOException e) {
             System.out.println("ERRROR: " + e);
         } catch (SyntaxException e) {
@@ -328,10 +345,10 @@ public class RubyRipper extends RubyObject {
         DynamicMethod method = src.getMetaClass().searchMethod("gets");
         
         if (method.isUndefined() || method.getVisibility() == Visibility.PRIVATE) {
-            return new ByteListLexerSource(filename, lineno, src.convertToString().getByteList());
+            return new ByteListLexerSource(filename, lineno, src.convertToString().getByteList(), null);
         }
 
-        return new GetsLexerSource(filename, lineno, src);
+        return new GetsLexerSource(filename, lineno, src, null);
     }
     
     private IRubyObject filenameAsString(ThreadContext context, IRubyObject filename) {
@@ -346,7 +363,7 @@ public class RubyRipper extends RubyObject {
         return RubyNumeric.fix2int(line.convertToInteger());
     }
     
-    private RipperParser parser = null;
+    private RipperParserBase parser = null;
     private IRubyObject filename = null;
     private boolean parseStarted = false;
 }

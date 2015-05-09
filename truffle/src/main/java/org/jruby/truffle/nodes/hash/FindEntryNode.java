@@ -11,21 +11,21 @@ package org.jruby.truffle.nodes.hash;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
-import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
-import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.HashSearchResult;
 
 public class FindEntryNode extends RubyNode {
 
-    @Child CallDispatchHeadNode hashNode;
+    @Child HashNode hashNode;
     @Child CallDispatchHeadNode eqlNode;
     @Child BasicObjectNodes.ReferenceEqualNode equalNode;
     
@@ -33,26 +33,16 @@ public class FindEntryNode extends RubyNode {
 
     public FindEntryNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        hashNode = DispatchHeadNodeFactory.createMethodCall(context, true);
+        hashNode = new HashNode(context, sourceSection);
         eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
     }
 
     public HashSearchResult search(VirtualFrame frame, RubyHash hash, Object key) {
-        final Object hashValue = hashNode.call(frame, key, "hash", null);
-
-        final int hashed;
-
-        if (hashValue instanceof Integer) {
-            hashed = (int) hashValue;
-        } else if (hashValue instanceof Long) {
-            hashed = (int) (long) hashValue;
-        } else {
-            throw new UnsupportedOperationException();
-        }
+        final int hashed = hashNode.hash(frame, key);
 
         final Entry[] entries = (Entry[]) hash.getStore();
-        final int index = HashOperations.getIndex(hashed, entries.length);
+        final int index = BucketsStrategy.getBucketIndex(hashed, entries.length);
         Entry entry = entries[index];
 
         Entry previousEntry = null;
@@ -60,11 +50,11 @@ public class FindEntryNode extends RubyNode {
         while (entry != null) {
             if (byIdentityProfile.profile(hash.isCompareByIdentity())) {
                 if (equalNode.executeReferenceEqual(frame, key, entry.getKey())) {
-                    return new HashSearchResult(index, previousEntry, entry);
+                    return new HashSearchResult(hashed, index, previousEntry, entry);
                 }
             } else {
                 if (eqlNode.callBoolean(frame, key, "eql?", null, entry.getKey())) {
-                    return new HashSearchResult(index, previousEntry, entry);
+                    return new HashSearchResult(hashed, index, previousEntry, entry);
                 }
             }
 
@@ -72,7 +62,7 @@ public class FindEntryNode extends RubyNode {
             entry = entry.getNextInLookup();
         }
 
-        return new HashSearchResult(index, previousEntry, null);
+        return new HashSearchResult(hashed, index, previousEntry, null);
     }
 
     @Override

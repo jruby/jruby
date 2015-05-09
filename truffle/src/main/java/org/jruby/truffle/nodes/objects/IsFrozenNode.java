@@ -19,6 +19,8 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBignum;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubySymbol;
 
 @NodeChild(value = "child")
@@ -31,11 +33,6 @@ public abstract class IsFrozenNode extends RubyNode {
     }
 
     public abstract boolean executeIsFrozen(Object object);
-
-    public IsFrozenNode(IsFrozenNode prev) {
-        super(prev);
-        readFrozenNode = prev.readFrozenNode;
-    }
 
     @Specialization
     public boolean isFrozen(boolean object) {
@@ -58,11 +55,21 @@ public abstract class IsFrozenNode extends RubyNode {
     }
 
     @Specialization
+    public boolean isFrozen(RubyNilClass object) {
+        return true;
+    }
+
+    @Specialization
+    public boolean isFrozen(RubyBignum object) {
+        return true;
+    }
+
+    @Specialization
     public boolean isFrozen(RubySymbol object) {
         return true;
     }
 
-    @Specialization(guards = "!isRubySymbol")
+    @Specialization(guards = { "!isRubyNilClass(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
     public boolean isFrozen(RubyBasicObject object) {
         if (readFrozenNode == null) {
             CompilerDirectives.transferToInterpreter();

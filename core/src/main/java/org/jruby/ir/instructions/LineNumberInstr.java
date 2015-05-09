@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
@@ -41,6 +42,10 @@ public class LineNumberInstr extends Instr implements FixedArityInstr {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getLineNumber());
+    }
+
+    public static LineNumberInstr decode(IRReaderDecoder d) {
+        return new LineNumberInstr(d.decodeInt());
     }
 
     @Override

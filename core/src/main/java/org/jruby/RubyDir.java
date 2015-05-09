@@ -154,9 +154,8 @@ public class RubyDir extends RubyObject {
     private static List<ByteList> dirGlobs(ThreadContext context, String cwd, IRubyObject[] args, int flags) {
         List<ByteList> dirs = new ArrayList<ByteList>();
 
-        POSIX posix = context.runtime.getPosix();
         for (int i = 0; i < args.length; i++) {
-            dirs.addAll(Dir.push_glob(posix, cwd, globArgumentAsByteList(context, args[i]), flags));
+            dirs.addAll(Dir.push_glob(context.runtime, cwd, globArgumentAsByteList(context, args[i]), flags));
         }
 
         return dirs;
@@ -195,7 +194,7 @@ public class RubyDir extends RubyObject {
         Ruby runtime = context.runtime;
         List<ByteList> dirs;
         if (args.length == 1) {
-            dirs = Dir.push_glob(runtime.getPosix(), getCWD(runtime), globArgumentAsByteList(context, args[0]), 0);
+            dirs = Dir.push_glob(runtime, getCWD(runtime), globArgumentAsByteList(context, args[0]), 0);
         } else {
             dirs = dirGlobs(context, getCWD(runtime), args, 0);
         }
@@ -221,7 +220,7 @@ public class RubyDir extends RubyObject {
         List<ByteList> dirs;
         IRubyObject tmp = args[0].checkArrayType();
         if (tmp.isNil()) {
-            dirs = Dir.push_glob(runtime.getPosix(), runtime.getCurrentDirectory(), globArgumentAsByteList(context, args[0]), flags);
+            dirs = Dir.push_glob(runtime, runtime.getCurrentDirectory(), globArgumentAsByteList(context, args[0]), flags);
         } else {
             dirs = dirGlobs(context, getCWD(runtime), ((RubyArray) tmp).toJavaArray(), flags);
         }
@@ -283,6 +282,7 @@ public class RubyDir extends RubyObject {
     private static final String[] NO_FILES = new String[] {};
     private static String[] getEntries(ThreadContext context, FileResource dir, String path) {
         if (!dir.isDirectory()) throw context.runtime.newErrnoENOENTError("No such directory: " + path);
+        if (!dir.canRead()) throw context.runtime.newErrnoEACCESError(path);
 
         String[] list = dir.list();
 
@@ -388,10 +388,24 @@ public class RubyDir extends RubyObject {
     public static IRubyObject foreach19(ThreadContext context, IRubyObject recv, IRubyObject arg, Block block) {
         RubyString pathString = RubyFile.get_path(context, arg);
 
-        return foreachCommon(context, recv, context.runtime, pathString, block);
+        return foreachCommon(context, recv, context.runtime, pathString, null, block);
     }
 
-    private static IRubyObject foreachCommon(ThreadContext context, IRubyObject recv, Ruby runtime, RubyString _path, Block block) {
+    @JRubyMethod(name = "foreach", meta = true)
+    public static IRubyObject foreach19(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject enc, Block block) {
+        RubyString pathString = RubyFile.get_path(context, path);
+        RubyEncoding encoding;
+
+        if (enc instanceof RubyEncoding) {
+            encoding = (RubyEncoding) enc;
+        } else {
+            throw context.runtime.newTypeError(enc, context.runtime.getEncoding());
+        }
+
+        return foreachCommon(context, recv, context.runtime, pathString, encoding, block);
+    }
+
+    private static IRubyObject foreachCommon(ThreadContext context, IRubyObject recv, Ruby runtime, RubyString _path, RubyEncoding encoding, Block block) {
         if (block.isGiven()) {
             RubyClass dirClass = runtime.getDir();
             RubyDir dir = (RubyDir) dirClass.newInstance(context, new IRubyObject[]{_path}, block);
@@ -400,7 +414,11 @@ public class RubyDir extends RubyObject {
             return runtime.getNil();
         }
 
-        return enumeratorize(runtime, recv, "foreach", _path);
+        if (encoding == null) {
+            return enumeratorize(runtime, recv, "foreach", _path);
+        } else {
+            return enumeratorize(runtime, recv, "foreach", new IRubyObject[]{_path, encoding});
+        }
     }
 
     /** Returns the current directory. */
@@ -509,20 +527,34 @@ public class RubyDir extends RubyObject {
     /**
      * Executes the block once for each entry in the directory.
      */
-    public IRubyObject each(ThreadContext context, Block block) {
+    public IRubyObject each(ThreadContext context, Encoding enc, Block block) {
         checkDir();
 
         String[] contents = snapshot;
         for (pos = 0; pos < contents.length; pos++) {
-            block.yield(context, getRuntime().newString(contents[pos]));
+            block.yield(context, RubyString.newString(context.runtime, contents[pos], enc));
         }
 
         return this;
     }
 
+    /**
+     * Executes the block once for each entry in the directory.
+     */
+    public IRubyObject each(ThreadContext context, Block block) {
+        return each(context, context.runtime.getDefaultInternalEncoding(), block);
+    }
+
     @JRubyMethod(name = "each")
     public IRubyObject each19(ThreadContext context, Block block) {
         return block.isGiven() ? each(context, block) : enumeratorize(context.runtime, this, "each");
+    }
+
+    @JRubyMethod(name = "each")
+    public IRubyObject each19(ThreadContext context, IRubyObject encoding, Block block) {
+        if (!(encoding instanceof RubyEncoding)) throw context.runtime.newTypeError(encoding, context.runtime.getEncoding());
+
+        return block.isGiven() ? each(context, ((RubyEncoding)encoding).getEncoding(), block) : enumeratorize(context.runtime, this, "each", encoding);
     }
 
     @Override

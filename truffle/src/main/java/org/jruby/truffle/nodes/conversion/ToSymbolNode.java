@@ -25,10 +25,6 @@ public abstract class ToSymbolNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ToSymbolNode(ToSymbolNode prev) {
-        super(prev);
-    }
-
     public abstract RubySymbol executeRubySymbol(VirtualFrame frame, Object object);
 
     // TODO(CS): cache the conversion to a symbol? Or should the user do that themselves?
@@ -40,12 +36,12 @@ public abstract class ToSymbolNode extends RubyNode {
 
     @Specialization
     protected RubySymbol toSymbol(RubyString string) {
-        return getContext().newSymbol(string.getBytes());
+        return getContext().getSymbol(string.getByteList());
     }
 
     @Specialization
     protected RubySymbol toSymbol(String string) {
-        return getContext().newSymbol(string);
+        return getContext().getSymbol(string);
     }
 
 }

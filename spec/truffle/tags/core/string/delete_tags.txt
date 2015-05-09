@@ -1,2 +1,0 @@
-fails:String#delete deletes multibyte characters
-fails:String#delete raises if the given ranges are invalid

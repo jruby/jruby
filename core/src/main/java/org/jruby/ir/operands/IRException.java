@@ -3,6 +3,7 @@ package org.jruby.ir.operands;
 import org.jruby.Ruby;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
@@ -81,6 +82,9 @@ public class IRException extends Operand {
         e.encode((byte) getType().ordinal());
     }
 
+    public static IRException decode(IRReaderDecoder d) {
+        return getExceptionFromOrdinal(d.decodeByte());
+    }
     @Override
     public String toString() {
         return "LocalJumpError:" + getType();

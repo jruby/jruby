@@ -59,7 +59,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'minitest.version' => '5.4.1',
               'ant.version' => '1.9.2',
               'diff-lcs.version' => '1.1.3',
-              'jffi.version' => '1.2.8',
+              'jffi.version' => '1.2.9',
               'rake.version' => '10.1.0',
               'project.build.sourceEncoding' => 'utf-8',
               'jruby-launcher.version' => '1.1.1',
@@ -73,7 +73,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'base.java.version' => '1.7',
               'tesla.dump.readonly' => 'true',
               'rspec-mocks.version' => '2.14.1',
-              'jruby.plugins.version' => '1.0.7',
+              'jruby.plugins.version' => '1.0.9',
               'invoker.skip' => 'true',
               'json.version' => '1.8.0',
               'version.jruby' => '${project.version}',
@@ -82,11 +82,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'main.basedir' => '${project.basedir}',
               'joda.time.version' => '2.5',
               'test-unit.version' => '3.0.3',
-              'power_assert.version' => '0.1.4' )
-
-  unless version =~ /-SNAPSHOT/
-    properties 'jruby.home' => '${basedir}/..'
-  end
+              'power_assert.version' => '0.2.3' )
 
   modules [ 'truffle', 'core', 'lib' ]
 
@@ -177,8 +173,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   [
     'rake', 'exec', 'truffle-specs-language', 'truffle-specs-core',
-    'truffle-specs-rubysl', 'truffle-specs-language-report',
-    'truffle-specs-core-report', 'truffle-specs-rubysl-report', 'truffle-test-pe'
+    'truffle-specs-library', 'truffle-specs-language-report',
+    'truffle-specs-core-report', 'truffle-specs-library-report', 'truffle-test-pe', 'truffle-mri-tests'
   ].each do |name|
     profile name do
 

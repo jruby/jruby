@@ -9,31 +9,49 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
-
+import org.jruby.ast.ArgsNode;
+import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.objects.MetaClassNode;
+import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
+import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyMethod;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.core.RubyUnboundMethod;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.*;
 
 @CoreClass(name = "UnboundMethod")
 public abstract class UnboundMethodNodes {
 
-    @CoreMethod(names = "arity")
-    public abstract static class ArityNode extends CoreMethodNode {
+    @CoreMethod(names = "==", required = 1)
+    public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
-        public ArityNode(RubyContext context, SourceSection sourceSection) {
+        public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ArityNode(ArityNode prev) {
-            super(prev);
+        @Specialization
+        boolean equal(RubyUnboundMethod self, RubyUnboundMethod other) {
+            return self.getMethod() == other.getMethod() && self.getOrigin() == other.getOrigin();
+        }
+
+        @Specialization(guards = "!isRubyUnboundMethod(other)")
+        boolean equal(RubyUnboundMethod self, Object other) {
+            return false;
+        }
+
+    }
+
+    @CoreMethod(names = "arity")
+    public abstract static class ArityNode extends CoreMethodArrayArgumentsNode {
+
+        public ArityNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
         }
 
         @Specialization
@@ -44,53 +62,62 @@ public abstract class UnboundMethodNodes {
     }
 
     @CoreMethod(names = "bind", required = 1)
-    public abstract static class BindNode extends CoreMethodNode {
+    public abstract static class BindNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private MetaClassNode metaClassNode;
 
         public BindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public BindNode(BindNode prev) {
-            super(prev);
+        private RubyClass metaClass(VirtualFrame frame, Object object) {
+            if (metaClassNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                metaClassNode = insert(MetaClassNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            return metaClassNode.executeMetaClass(frame, object);
         }
 
         @Specialization
-        public RubyMethod bind(RubyUnboundMethod unboundMethod, Object object) {
+        public RubyMethod bind(VirtualFrame frame, RubyUnboundMethod unboundMethod, Object object) {
+            CompilerDirectives.transferToInterpreter();
+
+            RubyModule module = unboundMethod.getMethod().getDeclaringModule();
+            // the (redundant) instanceof is to satisfy FindBugs with the following cast
+            if (module instanceof RubyClass && !ModuleOperations.canBindMethodTo(module, metaClass(frame, object))) {
+                CompilerDirectives.transferToInterpreter();
+                if (((RubyClass) module).isSingleton()) {
+                    throw new RaiseException(getContext().getCoreLibrary().typeError("singleton method called for a different object", this));
+                } else {
+                    throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be an instance of " + module.getName(), this));
+                }
+            }
+
             return new RubyMethod(getContext().getCoreLibrary().getMethodClass(), object, unboundMethod.getMethod());
         }
 
     }
 
     @CoreMethod(names = "name")
-    public abstract static class NameNode extends CoreMethodNode {
+    public abstract static class NameNode extends CoreMethodArrayArgumentsNode {
 
         public NameNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public NameNode(NameNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubySymbol name(RubyUnboundMethod unboundMethod) {
-            notDesignedForCompilation();
-
-            return getContext().newSymbol(unboundMethod.getMethod().getName());
+            return getContext().getSymbol(unboundMethod.getMethod().getName());
         }
 
     }
 
     // TODO: We should have an additional method for this but we need to access it for #inspect.
     @CoreMethod(names = "origin", visibility = Visibility.PRIVATE)
-    public abstract static class OriginNode extends CoreMethodNode {
+    public abstract static class OriginNode extends CoreMethodArrayArgumentsNode {
 
         public OriginNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public OriginNode(OriginNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -101,14 +128,10 @@ public abstract class UnboundMethodNodes {
     }
 
     @CoreMethod(names = "owner")
-    public abstract static class OwnerNode extends CoreMethodNode {
+    public abstract static class OwnerNode extends CoreMethodArrayArgumentsNode {
 
         public OwnerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public OwnerNode(OwnerNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -118,25 +141,40 @@ public abstract class UnboundMethodNodes {
 
     }
 
+    @CoreMethod(names = "parameters")
+    public abstract static class ParametersNode extends CoreMethodArrayArgumentsNode {
+
+        public ParametersNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyArray parameters(RubyUnboundMethod method) {
+            final ArgsNode argsNode = method.getMethod().getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
+
+            final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
+
+            return (RubyArray) getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
+                    argsDesc, true));
+        }
+
+    }
+
     @CoreMethod(names = "source_location")
-    public abstract static class SourceLocationNode extends CoreMethodNode {
+    public abstract static class SourceLocationNode extends CoreMethodArrayArgumentsNode {
 
         public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public SourceLocationNode(SourceLocationNode prev) {
-            super(prev);
-        }
-
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object sourceLocation(RubyUnboundMethod unboundMethod) {
-            notDesignedForCompilation();
-
             SourceSection sourceSection = unboundMethod.getMethod().getSharedMethodInfo().getSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 RubyString file = getContext().makeString(sourceSection.getSource().getName());
                 return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),

@@ -28,11 +28,11 @@ public class FloatLiteralNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return executeFloat(frame);
+        return executeDouble(frame);
     }
 
     @Override
-    public double executeFloat(VirtualFrame frame) {
+    public double executeDouble(VirtualFrame frame) {
         return value;
     }
 

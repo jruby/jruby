@@ -67,6 +67,20 @@ class UserDefinedWithIvar
   end
 end
 
+class UserDefinedImmediate
+  def _dump(depth)
+    ''
+  end
+
+  def self._load(data)
+    nil
+  end
+end
+
+class UserPreviouslyDefinedWithInitializedIvar
+  attr_accessor :field1, :field2
+end
+
 class UserMarshal
   attr_reader :data
 
@@ -176,13 +190,13 @@ module MarshalSpec
   rescue => e
     ["Error when building Random marshal data #{e}", ""]
   end
-  
+
   SwappedClass = nil
   def self.set_swapped_class(cls)
     remove_const(:SwappedClass)
     const_set(:SwappedClass, cls)
   end
-  
+
   def self.reset_swapped_class
     set_swapped_class(nil)
   end

@@ -1,0 +1,2 @@
+fails:Pathname#parent has parent of root as root
+fails:Pathname#parent has parent of /usr/ as root

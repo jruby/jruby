@@ -16,7 +16,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.WriteNode;
+import org.jruby.truffle.translator.WriteNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -30,39 +30,35 @@ public abstract class WriteLevelVariableNode extends FrameSlotNode implements Wr
         this.varLevel = level;
     }
 
-    protected WriteLevelVariableNode(WriteLevelVariableNode prev) {
-        this(prev.getContext(), prev.getSourceSection(), prev.frameSlot, prev.varLevel);
-    }
-
-    @Specialization(guards = "isBooleanKind")
+    @Specialization(guards = "isBooleanKind(frame)")
     public boolean doBoolean(VirtualFrame frame, boolean value) {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
         setBoolean(levelFrame, value);
         return value;
     }
 
-    @Specialization(guards = "isFixnumKind")
+    @Specialization(guards = "isFixnumKind(frame)")
     public int doFixnum(VirtualFrame frame, int value) {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
         setFixnum(levelFrame, value);
         return value;
     }
 
-    @Specialization(guards = "isLongFixnumKind")
+    @Specialization(guards = "isLongFixnumKind(frame)")
     public long doLongFixnum(VirtualFrame frame, long value) {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
         setLongFixnum(levelFrame, value);
         return value;
     }
 
-    @Specialization(guards = "isFloatKind")
+    @Specialization(guards = "isFloatKind(frame)")
     public double doFloat(VirtualFrame frame, double value) {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
         setFloat(levelFrame, value);
         return value;
     }
 
-    @Specialization(guards = "isObjectKind")
+    @Specialization(guards = "isObjectKind(frame)")
     public Object doObject(VirtualFrame frame, Object value) {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
         setObject(levelFrame, value);
@@ -71,7 +67,7 @@ public abstract class WriteLevelVariableNode extends FrameSlotNode implements Wr
 
     @Override
     public RubyNode makeReadNode() {
-        return ReadLevelVariableNodeFactory.create(getContext(), getSourceSection(), frameSlot, varLevel);
+        return ReadLevelVariableNodeGen.create(getContext(), getSourceSection(), frameSlot, varLevel);
     }
 
     @Override

@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/methods', __FILE__)
 require File.expand_path('../shared/gm', __FILE__)
 require File.expand_path('../shared/gmtime', __FILE__)
 require File.expand_path('../shared/time_params', __FILE__)

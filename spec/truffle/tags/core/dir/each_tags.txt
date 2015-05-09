@@ -1,4 +1,1 @@
-fails:Dir#each yields each directory entry in succession
-fails:Dir#each returns the directory which remains open
-fails:Dir#each returns an Enumerator if no block given
 fails:Dir#each raises an IOError when called on a closed Dir instance

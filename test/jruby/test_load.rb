@@ -46,6 +46,15 @@ class TestLoad < Test::Unit::TestCase
     assert $loaded_foo_bar
   end
 
+  def test_require_without_current_dir_in_load_path
+    omit( 'old load service will find those files. regular tests switch ruby CWD and work. this test keeps java CWD and ruby CWD the same' )
+    $LOAD_PATH.delete '.'
+    assert_raises(LoadError) { require('test/jruby/dummy') }
+    assert require('./test/jruby/dummy')
+  ensure
+    $LOAD_PATH << '.'
+  end
+
   # JRUBY-3231
   def test_load_with_empty_string_in_loadpath
     begin

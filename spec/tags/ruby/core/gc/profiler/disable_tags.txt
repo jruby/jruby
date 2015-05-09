@@ -1,1 +1,0 @@
-fails:GC::Profiler.disable returns true iff the profiler previously disabled

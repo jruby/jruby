@@ -10,12 +10,11 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.nodes.RubyNode;
@@ -25,7 +24,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
-import org.jruby.util.ByteListHolder;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 
@@ -54,8 +52,6 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
     public RubyProc toProc(SourceSection sourceSection, final Node currentNode) {
         // TODO(CS): cache this?
 
-        RubyNode.notDesignedForCompilation();
-
         final RubyContext context = getContext();
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, symbol, true, null, false);
@@ -74,8 +70,6 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
     }
 
     public org.jruby.RubySymbol getJRubySymbol() {
-        RubyNode.notDesignedForCompilation();
-
         return getContext().getRuntime().newSymbol(bytes);
     }
 
@@ -139,7 +133,13 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
-    public Encoding checkEncoding(ByteListHolder other) {
+    public final void modifyAndKeepCodeRange() {
+        modify();
+        keepCodeRange();
+    }
+
+    @Override
+    public Encoding checkEncoding(CodeRangeable other) {
         // TODO (nirvdrum Jan. 13, 2015): This should check if the encodings are compatible rather than just always succeeding.
         return bytes.getEncoding();
     }

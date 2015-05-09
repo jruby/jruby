@@ -1,1 +1,0 @@
-exclude :test_compile_error, "needs investigation"

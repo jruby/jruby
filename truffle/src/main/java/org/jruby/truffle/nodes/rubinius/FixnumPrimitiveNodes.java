@@ -11,21 +11,17 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BignumNodes;
-import org.jruby.truffle.nodes.core.CoreMethod;
-import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.dispatch.DoesRespondDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyString;
 
 import java.math.BigInteger;
 
@@ -46,39 +42,19 @@ public abstract class FixnumPrimitiveNodes {
             toF = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        public FixnumCoercePrimitiveNode(FixnumCoercePrimitiveNode prev) {
-            super(prev);
-            toFRespond = prev.toFRespond;
-            toF = prev.toF;
-        }
-
         @Specialization
         public RubyArray coerce(int a, int b) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new int[]{b, a}, 2);
         }
 
         @Specialization
-        public RubyArray coerce(int a, RubyString b) {
-            try {
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new double[]{Double.parseDouble(b.toString()), a}, 2);
-            } catch (NumberFormatException e) {
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("invalid value for Float", this));
-            }
+        public RubyArray coerce(long a, int b) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new long[]{b, a}, 2);
         }
 
-        @Specialization(guards = {"!isRubyString(arguments[1])", "!isRubyNilObject(arguments[1])"})
-        public RubyArray coerce(VirtualFrame frame, int a, Object b) {
-            if (toFRespond.doesRespondTo(frame, "to_f", b)) {
-                final Object bFloat = toF.call(frame, b, "to_f", null);
-
-                if (bFloat instanceof Double) {
-                    return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new double[]{(double) bFloat, a}, 2);
-                } else {
-                    throw new RaiseException(getContext().getCoreLibrary().typeError("?", this));
-                }
-            } else {
-                throw new RaiseException(getContext().getCoreLibrary().typeError("?", this));
-            }
+        @Specialization(guards = "!isInteger(b)")
+        public RubyArray coerce(int a, Object b) {
+            return null; // Primitive failure
         }
 
     }
@@ -93,16 +69,12 @@ public abstract class FixnumPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public FixnumPowPrimitiveNode(FixnumPowPrimitiveNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "canShiftIntoInt")
+        @Specialization(guards = "canShiftIntoInt(a, b)")
         public int powTwo(int a, int b) {
             return 1 << b;
         }
 
-        @Specialization(guards = "canShiftIntoInt")
+        @Specialization(guards = "canShiftIntoInt(a, b)")
         public int powTwo(int a, long b) {
             return 1 << b;
         }
@@ -127,12 +99,12 @@ public abstract class FixnumPrimitiveNodes {
             return pow((long) a, b);
         }
 
-        @Specialization(guards = "canShiftIntoLong")
+        @Specialization(guards = "canShiftIntoLong(a, b)")
         public long powTwo(long a, int b) {
             return 1 << b;
         }
 
-        @Specialization(guards = "canShiftIntoLong")
+        @Specialization(guards = "canShiftIntoLong(a, b)")
         public long powTwo(long a, long b) {
             return 1 << b;
         }
@@ -167,10 +139,9 @@ public abstract class FixnumPrimitiveNodes {
             }
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object pow(long a, RubyBignum b) {
-            notDesignedForCompilation();
-
             if (a == 0) {
                 return 0;
             }
@@ -197,12 +168,12 @@ public abstract class FixnumPrimitiveNodes {
             return Double.POSITIVE_INFINITY;
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(b)")
         public Object pow(int a, RubyBasicObject b) {
             return null; // Primitive failure
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(b)")
         public Object pow(long a, RubyBasicObject b) {
             return null; // Primitive failure
         }

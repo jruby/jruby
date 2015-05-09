@@ -14,7 +14,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
@@ -43,12 +42,12 @@ public class DefineOrGetModuleNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         // Look for a current definition of the module, or create a new one
 
         RubyModule lexicalParent = getLexicalParentModule(frame);
-        final RubyConstant constant = lookupForExistingModule(frame, lexicalParent);
+        final RubyConstant constant = lookupForExistingModule(lexicalParent);
 
         RubyModule definingModule;
 
@@ -78,7 +77,7 @@ public class DefineOrGetModuleNode extends RubyNode {
     }
 
     @TruffleBoundary
-    protected RubyConstant lookupForExistingModule(VirtualFrame frame, RubyModule lexicalParent) {
+    protected RubyConstant lookupForExistingModule(RubyModule lexicalParent) {
         RubyConstant constant = lexicalParent.getConstants().get(name);
 
         final RubyClass objectClass = getContext().getCoreLibrary().getObjectClass();
@@ -111,7 +110,7 @@ public class DefineOrGetModuleNode extends RubyNode {
 
             requireNode.require((RubyString) constant.getValue());
 
-            return lookupForExistingModule(frame, lexicalParent);
+            return lookupForExistingModule(lexicalParent);
         }
 
         return constant;

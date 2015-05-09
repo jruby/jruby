@@ -29,6 +29,10 @@ import org.jruby.util.cli.Options;
 
 public class ExceptionTranslatingNode extends RubyNode {
 
+    private static final boolean PRINT_JAVA_EXCEPTIONS = Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load();
+    private static final boolean PRINT_UNCAUGHT_JAVA_EXCEPTIONS = Options.TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA.load();
+    private static final boolean PANIC_ON_JAVA_ASSERT = Options.TRUFFLE_PANIC_ON_JAVA_ASSERT.load();
+
     private final UnsupportedOperationBehavior unsupportedOperationBehavior;
 
     @Child private RubyNode child;
@@ -68,6 +72,9 @@ public class ExceptionTranslatingNode extends RubyNode {
         } catch (UnsupportedSpecializationException exception) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(translate(exception));
+        } catch (org.jruby.exceptions.RaiseException e) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().toTruffle(e.getException(), this));
         } catch (Throwable exception) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(translate(exception));
@@ -75,7 +82,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     private RubyException translate(ArithmeticException exception) {
-        if (Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
+        if (PRINT_JAVA_EXCEPTIONS) {
             exception.printStackTrace();
         }
 
@@ -83,7 +90,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     private RubyException translate(UnsupportedSpecializationException exception) {
-        if (Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
+        if (PRINT_JAVA_EXCEPTIONS) {
             exception.printStackTrace();
         }
 
@@ -95,7 +102,9 @@ public class ExceptionTranslatingNode extends RubyNode {
         for (Object value : exception.getSuppliedValues()) {
             builder.append(" ");
 
-            if (value instanceof RubyBasicObject) {
+            if (value == null) {
+                builder.append("null");
+            } else if (value instanceof RubyBasicObject) {
                 builder.append(((RubyBasicObject) value).getLogicalClass().getName());
                 builder.append("(");
                 builder.append(value.getClass().getName());
@@ -129,7 +138,7 @@ public class ExceptionTranslatingNode extends RubyNode {
                 builder.append(value.getClass().getName());
             }
 
-            if (value instanceof Number) {
+            if (value instanceof Number || value instanceof Boolean) {
                 builder.append("=");
                 builder.append(value.toString());
             }
@@ -146,14 +155,11 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     public RubyException translate(Throwable throwable) {
-        try {
-            if (Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
-                throwable.printStackTrace();
-            }
-        } catch (NullPointerException e) {
+        if (PRINT_JAVA_EXCEPTIONS || PRINT_UNCAUGHT_JAVA_EXCEPTIONS) {
+            throwable.printStackTrace();
         }
 
-        if (Options.TRUFFLE_PANIC_ON_JAVA_ASSERT.load() && throwable instanceof AssertionError) {
+        if (PANIC_ON_JAVA_ASSERT && throwable instanceof AssertionError) {
             DebugOperations.panic(getContext(), this, throwable.toString());
         }
 

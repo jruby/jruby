@@ -1,2 +1,1 @@
-fails:IO#to_i returns the numeric file descriptor of the given IO object
 fails:IO#to_i raises IOError on closed stream

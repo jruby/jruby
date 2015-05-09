@@ -18,13 +18,15 @@ class IO
     @internal
   end
 
-  def set_encoding(external, internal)
-    @external = external
-    @internal = internal
-  end
 end
 
-STDIN = IO.new
+STDIN = File.new(0)
+STDOUT = File.new(1)
+STDERR = File.new(2)
+
+$stdin = STDIN
+$stdout = STDOUT
+$stderr = STDERR
 
 class << STDIN
   def external_encoding
@@ -32,40 +34,19 @@ class << STDIN
   end
 end
 
-STDOUT = IO.new
-$stdout = STDOUT
-
-class << STDOUT
-  def puts(*values)
-    Kernel.send(:puts, *values)
-  end
-
-  def print(*values)
-    Kernel.send(:print, *values)
-  end
-
-  def printf(*values)
-    Kernel.send(:printf, *values)
-  end
-
-  def flush
-    Truffle::Primitive.flush_stdout
-  end
-
-  def sync
-    false
-  end
-
-  def sync=(value)
+if STDOUT.tty?
+  STDOUT.sync = true
+else
+  at_exit do
+    STDOUT.flush
   end
 end
 
-STDERR = IO.new
-$stderr = STDERR
-
-class << STDERR
-  def puts(*values)
-    Kernel.send(:puts, *values)
+if STDERR.tty?
+  STDERR.sync = true
+else
+  at_exit do
+    STDERR.flush
   end
 end
 
@@ -83,83 +64,36 @@ class Regexp
 end
 
 module Rubinius
-
   L64 = true
 
   def extended_modules(object)
     []
   end
-
 end
 
 class Module
-
   def extended_modules(object)
     []
   end
-
 end
 
 class String
   def append(other)
     self << other
   end
-end
 
-module Kernel
-  def inspect
-    ivars = instance_variables
-
-    return to_s if ivars.empty?
-
-    prefix = "#<#{self.class}:0x#{self.object_id.to_s(16)}"
-
-    parts = []
-    ivars.each do |var|
-      parts << "#{var}=#{instance_variable_get(var).inspect}"
-    end
-
-    "#{prefix} #{parts.join(', ')}>"
+  # The version in Rubinius 2.4.1 is broken, but has since been fixed.  We'll monkey-patch here until we update to
+  # a newer Rubinius in order to keep the number of direct source modifications low.
+  def include?(needle)
+    !!find_string(StringValue(needle), 0)
   end
 end
 
 class Rational
-
   alias :__slash__ :/
-
-  def _offset_to_milliseconds
-    (self * 1000).to_i
-  end
-
 end
 
 ENV['TZ'] = 'UTC'
-
-class BasicObject
-
-  def instance_exec(*args)
-    # TODO (nirvdrum 06-Mar-15) Properly implement this.  The stub is just to get the specs even loading.
-  end
-
-end
-
-class Method
-
-  def to_proc
-    proc { |*args|
-      self.call(*args)
-    }
-  end
-
-end
-
-class IO
-
-  def tty?
-    false
-  end
-
-end
 
 class MatchData
   def full
@@ -198,5 +132,90 @@ module Rubinius
     def [](index)
       @array[index]
     end
+  end
+end
+
+# We use Rubinius's encoding subsystem for the most part, but we need to keep JRuby's up to date in case we
+# delegate to any of their methods.  Otherwise, they won't see the updated encoding and return incorrect results.
+class Encoding
+  class << self
+    alias_method :default_external_rubinius=, :default_external=
+
+    def default_external=(enc)
+      self.default_external_rubinius = enc
+      self.default_external_jruby = enc
+    end
+
+    alias_method :default_internal_rubinius=, :default_internal=
+
+    def default_internal=(enc)
+      self.default_internal_rubinius = enc
+      self.default_internal_jruby = enc
+    end
+  end
+end
+
+# We use Rubinius's encoding class hierarchy, but do the encoding conversion in Java.  In order to properly initialize
+# the converter, we need to initialize in both Rubinius and JRuby.
+class Encoding::Converter
+  alias_method :initialize_rubinius, :initialize
+
+  def initialize(*args)
+    initialize_rubinius(*args)
+    initialize_jruby(*args)
+  end
+end
+
+class Rubinius::ByteArray
+
+  alias_method :[], :get_byte
+  alias_method :[]=, :set_byte
+
+end
+
+# Don't apply any synchronization at the moment
+
+module Rubinius
+
+  def self.synchronize(object)
+    yield
+  end
+
+end
+
+module Errno
+
+  # TODO CS 18-Apr-15 this should be a separate class
+  DomainError = EDOM
+
+end
+
+module Math
+  DomainError = Errno::EDOM
+end
+
+$PROGRAM_NAME = $0
+$$ = Process.pid
+
+# IO::printf from Rubinius uses Rubinius::Sprinter
+
+class IO
+
+  def printf(fmt, *args)
+    fmt = StringValue(fmt)
+    write sprintf(fmt, *args)
+  end
+
+end
+
+# Windows probably doesn't have a HOME env var, but Rubinius requires it in places, so we need
+# to construct the value and place it in the hash.
+unless ENV['HOME']
+  if ENV['HOMEDRIVE']
+    ENV['HOME'] = if ENV['HOMEPATH']
+                    ENV['HOMEDRIVE'] + ENV['HOMEPATH']
+                  else
+                    ENV['USERPROFILE']
+                  end
   end
 end

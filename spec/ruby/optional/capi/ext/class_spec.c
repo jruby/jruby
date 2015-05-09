@@ -105,14 +105,14 @@ static VALUE class_spec_cvar_defined(VALUE self, VALUE klass, VALUE id) {
 
 #ifdef HAVE_RB_CVAR_GET
 static VALUE class_spec_cvar_get(VALUE self, VALUE klass, VALUE name) {
-	return rb_cvar_get(klass, rb_intern(StringValuePtr(name)));
+  return rb_cvar_get(klass, rb_intern(StringValuePtr(name)));
 }
 #endif
 
 #ifdef RUBY_VERSION_IS_1_8_EX_1_9
 #ifdef HAVE_RB_CVAR_SET
 static VALUE class_spec_cvar_set(VALUE self, VALUE klass, VALUE name, VALUE val) {
-	rb_cvar_set(klass, rb_intern(StringValuePtr(name)), val, 0);
+  rb_cvar_set(klass, rb_intern(StringValuePtr(name)), val, 0);
   return Qnil;
 }
 #endif
@@ -121,7 +121,7 @@ static VALUE class_spec_cvar_set(VALUE self, VALUE klass, VALUE name, VALUE val)
 #ifdef RUBY_VERSION_IS_1_9
 #ifdef HAVE_RB_CVAR_SET
 static VALUE class_spec_cvar_set(VALUE self, VALUE klass, VALUE name, VALUE val) {
-	rb_cvar_set(klass, rb_intern(StringValuePtr(name)), val);
+  rb_cvar_set(klass, rb_intern(StringValuePtr(name)), val);
   return Qnil;
 }
 #endif
@@ -130,13 +130,13 @@ static VALUE class_spec_cvar_set(VALUE self, VALUE klass, VALUE name, VALUE val)
 
 #ifdef HAVE_RB_CV_GET
 static VALUE class_spec_cv_get(VALUE self, VALUE klass, VALUE name) {
-	return rb_cv_get(klass, StringValuePtr(name));
+  return rb_cv_get(klass, StringValuePtr(name));
 }
 #endif
 
 #ifdef HAVE_RB_CV_SET
 static VALUE class_spec_cv_set(VALUE self, VALUE klass, VALUE name, VALUE val) {
-	rb_cv_set(klass, StringValuePtr(name), val);
+  rb_cv_set(klass, StringValuePtr(name), val);
 
   return Qnil;
 }

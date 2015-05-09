@@ -44,7 +44,7 @@ public class LoadServiceResourceInputStream extends ByteArrayInputStream {
     }
 
     private void bufferEntireStream(InputStream stream) throws IOException {
-        byte[] b = new byte[1024];
+        byte[] b = new byte[16384];
         int bytesRead = 0;
         while ((bytesRead = stream.read(b)) != -1) {
             byte[] newbuf = new byte[buf.length + bytesRead];

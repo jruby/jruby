@@ -1,7 +1,5 @@
-fails:Process.uid returns the correct uid for the user executing this process
 fails:Process.uid also goes by Process::UID.rid
 fails:Process.uid also goes by Process::Sys.getuid
 fails:Process.uid= raises TypeError if not passed an Integer
 fails:Process.uid= raises Errno::ERPERM if run by a non privileged user trying to set the superuser id
 fails:Process.uid= raises Errno::ERPERM if run by a non privileged user trying to set the superuser id from username
-fails:Process.uid= needs to be reviewed for spec completeness

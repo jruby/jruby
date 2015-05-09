@@ -19,10 +19,8 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -51,50 +49,6 @@ public class RuntimeCache {
 
     public final CallSite getCallSite(int index) {
         return callSites[index];
-    }
-
-    /**
-     * descriptor format is
-     *
-     * closure_method_name,arity,varname1;varname2;varname3,has_multi_args_head,arg_type,light
-     *
-     * @param context
-     * @param index
-     * @param descriptor
-     * @return
-     */
-    public final BlockBody getBlockBody(Object scriptObject, ThreadContext context, StaticScope scope, int index, String descriptor) {
-        BlockBody body = blockBodies[index];
-        if (body == null) {
-            return createBlockBody(scriptObject, context, scope, index, descriptor);
-        }
-        return body;
-    }
-
-    /**
-     * descriptor format is
-     *
-     * closure_method_name,arity,varname1;varname2;varname3,has_multi_args_head,arg_type,light
-     *
-     * @param context
-     * @param index
-     * @param descriptor
-     * @return
-     */
-    public final BlockBody getBlockBody19(Object scriptObject, ThreadContext context, StaticScope scope, int index, String descriptor) {
-        BlockBody body = blockBodies[index];
-        if (body == null) {
-            return createBlockBody19(scriptObject, context, scope, index, descriptor);
-        }
-        return body;
-    }
-
-    public final CompiledBlockCallback getBlockCallback(Object scriptObject, int index, String method) {
-        CompiledBlockCallback callback = blockCallbacks[index];
-        if (callback == null) {
-            return createCompiledBlockCallback(scriptObject, index, method);
-        }
-        return callback;
     }
 
     public final RubySymbol getSymbol(ThreadContext context, int index, String name, String encodingName) {
@@ -288,9 +242,7 @@ public class RuntimeCache {
     private static final int BIGINTEGER = REGEXP + 1;
     private static final int VARIABLEREADER = BIGINTEGER + 1;
     private static final int VARIABLEWRITER = VARIABLEREADER + 1;
-    private static final int BLOCKBODY = VARIABLEWRITER + 1;
-    private static final int BLOCKCALLBACK = BLOCKBODY + 1;
-    private static final int METHOD = BLOCKCALLBACK + 1;
+    private static final int METHOD = VARIABLEWRITER + 1;
     private static final int STRING = METHOD + 1;
     private static final int ENCODING = STRING + 1;
     private static final int FROZEN_STRING = ENCODING + 1;
@@ -335,10 +287,6 @@ public class RuntimeCache {
         if (variableReaderCount > 0) initVariableReaders(variableReaderCount);
         int variableWriterCount = getDescriptorValue(descriptor, VARIABLEWRITER);
         if (variableWriterCount > 0) initVariableWriters(variableWriterCount);
-        int blockBodyCount = getDescriptorValue(descriptor, BLOCKBODY);
-        if (blockBodyCount > 0) initBlockBodies(blockBodyCount);
-        int blockCallbackCount = getDescriptorValue(descriptor, BLOCKCALLBACK);
-        if (blockCallbackCount > 0) initBlockCallbacks(blockCallbackCount);
         int methodCount = getDescriptorValue(descriptor, METHOD);
         if (methodCount > 0) initMethodCache(methodCount);
         int stringCount = getDescriptorValue(descriptor, STRING);
@@ -351,14 +299,6 @@ public class RuntimeCache {
 
     private static int getDescriptorValue(String descriptor, int type) {
         return descriptor.charAt(type);
-    }
-
-    public final void initBlockBodies(int size) {
-        blockBodies = new BlockBody[size];
-    }
-
-    public final void initBlockCallbacks(int size) {
-        blockCallbacks = new CompiledBlockCallback[size];
     }
 
     public final void initSymbols(int size) {
@@ -461,21 +401,6 @@ public class RuntimeCache {
             constants[index] = null;
         }
         return value;
-    }
-
-    private BlockBody createBlockBody(Object scriptObject, ThreadContext context, StaticScope scope, int index, String descriptor) throws NumberFormatException {
-        BlockBody body = Helpers.createCompiledBlockBody(context, scriptObject, scope, descriptor);
-        return blockBodies[index] = body;
-    }
-
-    private BlockBody createBlockBody19(Object scriptObject, ThreadContext context, StaticScope scope, int index, String descriptor) throws NumberFormatException {
-        BlockBody body = Helpers.createCompiledBlockBody19(context, scriptObject, scope, descriptor);
-        return blockBodies[index] = body;
-    }
-
-    private CompiledBlockCallback createCompiledBlockCallback(Object scriptObject, int index, String method) {
-        CompiledBlockCallback callback = Helpers.createBlockCallback(scriptObject, method, "(internal)", -1);
-        return blockCallbacks[index] = callback;
     }
 
     public DynamicMethod getMethod(ThreadContext context, RubyClass selfType, int index, String methodName) {
@@ -660,10 +585,6 @@ public class RuntimeCache {
     public CallSite[] callSites = EMPTY_CALLSITES;
     private static final CacheEntry[] EMPTY_CACHEENTRIES = {};
     public CacheEntry[] methodCache = EMPTY_CACHEENTRIES;
-    private static final BlockBody[] EMPTY_BLOCKBODIES = {};
-    public BlockBody[] blockBodies = EMPTY_BLOCKBODIES;
-    private static final CompiledBlockCallback[] EMPTY_COMPILEDBLOCKCALLBACKS = {};
-    public CompiledBlockCallback[] blockCallbacks = EMPTY_COMPILEDBLOCKCALLBACKS;
     private static final RubySymbol[] EMPTY_RUBYSYMBOLS = {};
     public RubySymbol[] symbols = EMPTY_RUBYSYMBOLS;
     private static final ByteList[] EMPTY_BYTELISTS = {};

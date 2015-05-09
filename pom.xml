@@ -117,7 +117,7 @@
     <minitest.version>5.4.1</minitest.version>
     <ant.version>1.9.2</ant.version>
     <diff-lcs.version>1.1.3</diff-lcs.version>
-    <jffi.version>1.2.8</jffi.version>
+    <jffi.version>1.2.9</jffi.version>
     <rake.version>10.1.0</rake.version>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <jruby-launcher.version>1.1.1</jruby-launcher.version>
@@ -133,10 +133,10 @@
     <base.java.version>1.7</base.java.version>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <rspec-mocks.version>2.14.1</rspec-mocks.version>
-    <jruby.plugins.version>1.0.7</jruby.plugins.version>
+    <jruby.plugins.version>1.0.9</jruby.plugins.version>
     <json.version>1.8.0</json.version>
     <invoker.skip>true</invoker.skip>
-    <power_assert.version>0.1.4</power_assert.version>
+    <power_assert.version>0.2.3</power_assert.version>
     <version.jruby>${project.version}</version.jruby>
     <bouncy-castle.version>1.47</bouncy-castle.version>
     <main.basedir>${project.basedir}</main.basedir>
@@ -562,7 +562,7 @@
       </modules>
     </profile>
     <profile>
-      <id>truffle-specs-rubysl</id>
+      <id>truffle-specs-library</id>
       <build>
         <defaultGoal>package</defaultGoal>
       </build>
@@ -589,7 +589,7 @@
       </modules>
     </profile>
     <profile>
-      <id>truffle-specs-rubysl-report</id>
+      <id>truffle-specs-library-report</id>
       <build>
         <defaultGoal>package</defaultGoal>
       </build>
@@ -599,6 +599,15 @@
     </profile>
     <profile>
       <id>truffle-test-pe</id>
+      <build>
+        <defaultGoal>package</defaultGoal>
+      </build>
+      <modules>
+        <module>test</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>truffle-mri-tests</id>
       <build>
         <defaultGoal>package</defaultGoal>
       </build>

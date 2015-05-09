@@ -340,10 +340,6 @@ public class RubyNumeric extends RubyObject {
         return ConvertBytes.byteListToInum(runtime, s, base, strict);
     }
 
-    public static RubyFloat str2fnum(Ruby runtime, RubyString arg) {
-        return str2fnum(runtime,arg,false);
-    }
-
     /**
      * Converts a string representation of a floating-point number to the 
      * numeric value.  Parsing starts at the beginning of the string (after 
@@ -362,10 +358,6 @@ public class RubyNumeric extends RubyObject {
      * @return  a RubyFloat representing the result of the conversion, which
      *          will be 0.0 if the conversion failed.
      */
-    public static RubyFloat str2fnum(Ruby runtime, RubyString arg, boolean strict) {
-        return str2fnumCommon(runtime, arg, strict, biteListCaller18);
-    }
-    
     public static RubyFloat str2fnum19(Ruby runtime, RubyString arg, boolean strict) {
         return str2fnumCommon(runtime, arg, strict, biteListCaller19);
     }
@@ -383,16 +375,9 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
-    private static interface ByteListCaller {
-        public double yield(RubyString arg, boolean strict);
+    private interface ByteListCaller {
+        double yield(RubyString arg, boolean strict);
     }
-
-    private static class ByteListCaller18 implements ByteListCaller {
-        public double yield(RubyString arg, boolean strict) {
-            return ConvertDouble.byteListToDouble(arg.getByteList(),strict);
-        }
-    }
-    private static final ByteListCaller18 biteListCaller18 = new ByteListCaller18();
 
     private static class ByteListCaller19 implements ByteListCaller {
         public double yield(RubyString arg, boolean strict) {
@@ -462,7 +447,7 @@ public class RubyNumeric extends RubyObject {
         Ruby runtime = context.runtime;
         IRubyObject result;
 
-        IRubyObject savedError = runtime.getGlobalVariables().get("$!"); // Svae $!
+        IRubyObject savedError = runtime.getGlobalVariables().get("$!"); // Save $!
 
         if (!other.respondsTo("coerce")) {
             if (err) {

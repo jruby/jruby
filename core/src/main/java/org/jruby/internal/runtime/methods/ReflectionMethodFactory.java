@@ -29,22 +29,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-
-import java.util.ArrayList;
-import java.util.List;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CompiledBlockCallback;
-import org.jruby.runtime.CompiledBlockCallback19;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -52,12 +43,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * This MethodFactory uses reflection to provide method handles. Reflection is
  * typically slower than code-generated handles, but it does provide a simple
  * mechanism for binding in environments where code-generation isn't supported.
  * 
- * @see org.jruby.internal.runtime.methods.MethodFactory
+ * @see org.jruby.runtime.MethodFactory
  */
 public class ReflectionMethodFactory extends MethodFactory {
     private static final Logger LOG = LoggerFactory.getLogger("ReflectionMethodFactory");
@@ -65,10 +61,10 @@ public class ReflectionMethodFactory extends MethodFactory {
     /**
      * Use reflection to provide a method handle for a compiled Ruby method.
      * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
+     * @see org.jruby.runtime.MethodFactory#getCompiledMethod
      */
     public DynamicMethod getCompiledMethodLazily(RubyModule implementationClass,
-            String rubyName, String javaName, Arity arity, Visibility visibility, 
+            String rubyName, String javaName, Visibility visibility,
             StaticScope scope, Object scriptObject, CallConfiguration callConfig,
             ISourcePosition position, String parameterDesc,
             MethodNodes methodNodes) {
@@ -77,7 +73,6 @@ public class ReflectionMethodFactory extends MethodFactory {
                 implementationClass,
                 rubyName,
                 javaName,
-                arity,
                 visibility,
                 scope,
                 scriptObject,
@@ -90,10 +85,10 @@ public class ReflectionMethodFactory extends MethodFactory {
     /**
      * Use reflection to provide a method handle for a compiled Ruby method.
      * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
+     * @see org.jruby.runtime.MethodFactory#getCompiledMethod
      */
     public DynamicMethod getCompiledMethod(RubyModule implementationClass,
-            String rubyName, String javaName, Arity arity, Visibility visibility, 
+            String rubyName, String javaName, Visibility visibility,
             StaticScope scope, Object scriptObject, CallConfiguration callConfig,
             ISourcePosition position, String parameterDesc,
             MethodNodes methodNodes) {
@@ -102,7 +97,6 @@ public class ReflectionMethodFactory extends MethodFactory {
             Method method = scriptClass.getMethod(javaName, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
             return new ReflectedCompiledMethod(
                     implementationClass,
-                    arity,
                     visibility,
                     scope,
                     scriptObject,
@@ -119,7 +113,7 @@ public class ReflectionMethodFactory extends MethodFactory {
      * Use reflection to provide a method handle based on an annotated Java
      * method.
      * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
+     * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
         try {
@@ -148,7 +142,7 @@ public class ReflectionMethodFactory extends MethodFactory {
      * Use reflection to provide a method handle based on an annotated Java
      * method.
      * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
+     * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> descs) {
         try {
@@ -178,80 +172,6 @@ public class ReflectionMethodFactory extends MethodFactory {
             return ic;
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public CompiledBlockCallback getBlockCallback(String method, final String file, final int line, final Object scriptObject) {
-        try {
-            Class scriptClass = scriptObject.getClass();
-            final Method blockMethod = scriptClass.getMethod(method, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class);
-            return new CompiledBlockCallback() {
-                public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject args, Block block) {
-                    try {
-                        return (IRubyObject)blockMethod.invoke(null, scriptObject, context, self, args, block);
-                    } catch (IllegalAccessException ex) {
-                        throw new RuntimeException(ex);
-                    } catch (IllegalArgumentException ex) {
-                        throw new RuntimeException(ex);
-                    } catch (InvocationTargetException ex) {
-                        Throwable cause = ex.getCause();
-                        if (cause instanceof RuntimeException) {
-                            throw (RuntimeException) cause;
-                        } else if (cause instanceof Error) {
-                            throw (Error) cause;
-                        } else {
-                            throw new RuntimeException(ex);
-                        }
-                    }
-                }
-
-                public String getFile() {
-                    return file;
-                }
-
-                public int getLine() {
-                    return line;
-                }
-            };
-        } catch (NoSuchMethodException nsme) {
-            throw new RuntimeException(nsme);
-        }
-    }
-
-    public CompiledBlockCallback19 getBlockCallback19(String method, final String file, final int line, final Object scriptObject) {
-        try {
-            Class scriptClass = scriptObject.getClass();
-            final Method blockMethod = scriptClass.getMethod(method, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
-            return new CompiledBlockCallback19() {
-                public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-                    try {
-                        return (IRubyObject)blockMethod.invoke(null, scriptObject, context, self, args, block);
-                    } catch (IllegalAccessException ex) {
-                        throw new RuntimeException(ex);
-                    } catch (IllegalArgumentException ex) {
-                        throw new RuntimeException(ex);
-                    } catch (InvocationTargetException ex) {
-                        Throwable cause = ex.getCause();
-                        if (cause instanceof RuntimeException) {
-                            throw (RuntimeException) cause;
-                        } else if (cause instanceof Error) {
-                            throw (Error) cause;
-                        } else {
-                            throw new RuntimeException(ex);
-                        }
-                    }
-                }
-
-                public String getFile() {
-                    return file;
-                }
-
-                public int getLine() {
-                    return line;
-                }
-            };
-        } catch (NoSuchMethodException nsme) {
-            throw new RuntimeException(nsme);
         }
     }
 }

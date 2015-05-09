@@ -8,7 +8,7 @@ describe SpecdocFormatter do
   end
 
   it "responds to #register by registering itself with MSpec for appropriate actions" do
-    MSpec.stub!(:register)
+    MSpec.stub(:register)
     MSpec.should_receive(:register).with(:enter, @formatter)
     @formatter.register
   end

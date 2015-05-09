@@ -20,3 +20,4 @@ fails:"A method assigns local variables from method parameters for definition \n
 fails:"A method assigns local variables from method parameters for definition \n    def m(a: def m(a: 1) a end, b:)\n      [a, b]\n    end"
 fails:"A method assigns local variables from method parameters for definition \n    def m(a, b=1, *c, (*d, (e)), f: 2, g:, h:, **k, &l)\n      [a, b, c, d, e, f, g, h, k, l]\n    end"
 fails:"A method assigns local variables from method parameters for definition \n    def m a, b=1, *c, d, e:, f: 2, g:, **k, &l\n      [a, b, c, d, e, f, g, k, l]\n    end"
+fails:"A method assigns local variables from method parameters for definition \n    def m(a = nil, **k) [a, k] end"

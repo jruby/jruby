@@ -10,3 +10,8 @@ example "[3, 1, 2][1]"
 
 # fails because of a call to <=> that is not inlined
 tagged_example "[3, 1, 2].sort[1]"
+
+# why does this fail but the next one work?
+tagged_example "[14].pack('C').getbyte(0)"
+
+example "[14].pack('C').getbyte(0) * 2"

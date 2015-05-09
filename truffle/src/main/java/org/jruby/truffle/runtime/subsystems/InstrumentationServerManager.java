@@ -15,12 +15,10 @@ import com.oracle.truffle.api.nodes.Node;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyThread;
-import org.jruby.truffle.runtime.util.Consumer;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -55,7 +53,7 @@ public class InstrumentationServerManager {
                 try {
                     final StringBuilder builder = new StringBuilder();
 
-                    context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(null, new SafepointAction() {
+                    context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(false, new SafepointAction() {
 
                         @Override
                         public void run(RubyThread thread, Node currentNode) {
@@ -104,23 +102,13 @@ public class InstrumentationServerManager {
             @Override
             public void handle(HttpExchange httpExchange) {
                 try {
-                    context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(null, new SafepointAction() {
-
+                    Thread mainThread = context.getThreadManager().getRootThread().getCurrentFiberJavaThread();
+                    context.getSafepointManager().pauseMainThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
                         @Override
                         public void run(RubyThread thread, final Node currentNode) {
-                            if (thread.getName().equals("main")) {
-                                thread.getDeferredSafepointActions().add(new Runnable() {
-
-                                    @Override
-                                    public void run() {
-                                        new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
-                                                .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), currentNode);
-                                    }
-
-                                });
-                            }
+                            new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
+                                    .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), currentNode);
                         }
-
                     });
 
                     httpExchange.getResponseHeaders().set("Content-Type", "text/plain");

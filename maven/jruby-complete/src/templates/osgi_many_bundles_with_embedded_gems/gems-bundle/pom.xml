@@ -9,7 +9,7 @@
   <name>gems-bundle</name>
   <properties>
     <jruby.home>${project.basedir}/../../../../../../</jruby.home>
-    <jruby.plugins.version>1.0.3</jruby.plugins.version>
+    <jruby.plugins.version>1.0.9</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <tesla.version>0.1.1</tesla.version>

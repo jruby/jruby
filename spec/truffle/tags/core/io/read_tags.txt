@@ -1,29 +1,7 @@
-fails:IO.read reads the contents of a file
-fails:IO.read calls #to_path on non-String arguments
-fails:IO.read accepts an empty options Hash
-fails:IO.read accepts a length, offset, and empty options Hash
-fails:IO.read raises an IOError if the options Hash specifies write mode
-fails:IO.read raises an IOError if the options Hash specifies append only mode
-fails:IO.read reads the file if the options Hash includes read mode
-fails:IO.read reads the file if the options Hash includes read/write mode
-fails:IO.read reads the file if the options Hash includes read/write append mode
-fails:IO.read treats second nil argument as no length limit
-fails:IO.read treats third nil argument as 0
-fails:IO.read reads the contents of a file up to a certain size when specified
-fails:IO.read reads the contents of a file from an offset of a specific size when specified
-fails:IO.read returns nil at end-of-file when length is passed
-fails:IO.read raises an Errno::ENOENT when the requested file does not exist
-fails:IO.read raises a TypeError when not passed a String type
-fails:IO.read raises an ArgumentError when not passed a valid length
-fails:IO.read raises an Errno::EINVAL when not passed a valid offset
-fails:IO.read uses the external encoding specified via the :external_encoding option
-fails:IO.read uses the external encoding specified via the :encoding option
 fails:IO.read from a pipe runs the rest as a subprocess and returns the standard output
 fails:IO.read from a pipe opens a pipe to a fork if the rest is -
 fails:IO.read from a pipe reads only the specified number of bytes requested
 fails:IO.read from a pipe raises Errno::ESPIPE if passed an offset
-fails:IO.read on an empty file returns nil when length is passed
-fails:IO.read on an empty file returns an empty string when no length is passed
 fails:IO#read can be read from consecutively
 fails:IO#read clears the output buffer if there is nothing to read
 fails:IO#read consumes zero bytes when reading zero bytes
@@ -41,55 +19,12 @@ fails:IO#read returns an empty string when the current pos is bigger than the co
 fails:IO#read returns nil at end-of-file with a length
 fails:IO#read with length argument returns nil when the current pos is bigger than the content size
 fails:IO#read raises IOError on closed stream
-fails:IO#read with $KCODE set to UTF-8 ignores unicode encoding
-fails:IO#read in binary mode does not transcode file contents when Encoding.default_internal is set
-fails:IO#read in binary mode does not transcode file contents when an internal encoding is specified
-fails:IO#read in text mode reads data according to the internal encoding
 fails:IO.read with BOM reads a file without a bom
 fails:IO.read with BOM reads a file with a utf-8 bom
 fails:IO.read with BOM reads a file with a utf-16le bom
 fails:IO.read with BOM reads a file with a utf-16be bom
 fails:IO.read with BOM reads a file with a utf-32le bom
 fails:IO.read with BOM reads a file with a utf-32be bom
-fails:IO#read when IO#external_encoding and IO#internal_encoding are nil sets the String encoding to Encoding.default_external
-fails:IO#read with internal encoding not specified does not transcode the String
-fails:IO#read with internal encoding not specified sets the String encoding to the external encoding
-fails:IO#read with internal encoding not specified reads bytes when passed a size
-fails:IO#read with internal encoding not specified returns a String in ASCII-8BIT when passed a size
-fails:IO#read with internal encoding not specified does not change the buffer's encoding when passed a limit
-fails:IO#read with internal encoding not specified trucates the buffer but does not change the buffer's encoding when no data remains
-fails:IO#read with internal encoding specified by open mode returns a transcoded String
-fails:IO#read with internal encoding specified by open mode sets the String encoding to the internal encoding
-fails:IO#read with internal encoding specified by open mode reads bytes when passed a size
-fails:IO#read with internal encoding specified by open mode returns a String in ASCII-8BIT when passed a size
-fails:IO#read with internal encoding specified by open mode does not change the buffer's encoding when passed a limit
-fails:IO#read with internal encoding specified by open mode trucates the buffer but does not change the buffer's encoding when no data remains
-fails:IO#read with internal encoding specified by open mode when passed nil for limit sets the buffer to a transcoded String
-fails:IO#read with internal encoding specified by open mode when passed nil for limit sets the buffer's encoding to the internal encoding
-fails:IO#read with internal encoding specified by mode: option returns a transcoded String
-fails:IO#read with internal encoding specified by mode: option sets the String encoding to the internal encoding
-fails:IO#read with internal encoding specified by mode: option reads bytes when passed a size
-fails:IO#read with internal encoding specified by mode: option returns a String in ASCII-8BIT when passed a size
-fails:IO#read with internal encoding specified by mode: option does not change the buffer's encoding when passed a limit
-fails:IO#read with internal encoding specified by mode: option trucates the buffer but does not change the buffer's encoding when no data remains
-fails:IO#read with internal encoding specified by mode: option when passed nil for limit sets the buffer to a transcoded String
-fails:IO#read with internal encoding specified by mode: option when passed nil for limit sets the buffer's encoding to the internal encoding
-fails:IO#read with internal encoding specified by internal_encoding: option returns a transcoded String
-fails:IO#read with internal encoding specified by internal_encoding: option sets the String encoding to the internal encoding
-fails:IO#read with internal encoding specified by internal_encoding: option reads bytes when passed a size
-fails:IO#read with internal encoding specified by internal_encoding: option returns a String in ASCII-8BIT when passed a size
-fails:IO#read with internal encoding specified by internal_encoding: option does not change the buffer's encoding when passed a limit
-fails:IO#read with internal encoding specified by internal_encoding: option trucates the buffer but does not change the buffer's encoding when no data remains
-fails:IO#read with internal encoding specified by internal_encoding: option when passed nil for limit sets the buffer to a transcoded String
-fails:IO#read with internal encoding specified by internal_encoding: option when passed nil for limit sets the buffer's encoding to the internal encoding
-fails:IO#read with internal encoding specified by encoding: option returns a transcoded String
-fails:IO#read with internal encoding specified by encoding: option sets the String encoding to the internal encoding
-fails:IO#read with internal encoding specified by encoding: option reads bytes when passed a size
-fails:IO#read with internal encoding specified by encoding: option returns a String in ASCII-8BIT when passed a size
-fails:IO#read with internal encoding specified by encoding: option does not change the buffer's encoding when passed a limit
-fails:IO#read with internal encoding specified by encoding: option trucates the buffer but does not change the buffer's encoding when no data remains
-fails:IO#read with internal encoding specified by encoding: option when passed nil for limit sets the buffer to a transcoded String
-fails:IO#read with internal encoding specified by encoding: option when passed nil for limit sets the buffer's encoding to the internal encoding
 fails:IO#read with large data reads all the data at once
 fails:IO#read with large data reads only the requested number of bytes
 fails(windows):IO#read on Windows normalizes line endings in text mode

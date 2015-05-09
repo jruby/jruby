@@ -15,12 +15,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.DebugOperations;
-import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 
@@ -28,14 +26,10 @@ import org.jruby.truffle.runtime.core.*;
 public abstract class FloatNodes {
 
     @CoreMethod(names = "-@")
-    public abstract static class NegNode extends CoreMethodNode {
+    public abstract static class NegNode extends CoreMethodArrayArgumentsNode {
 
         public NegNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public NegNode(NegNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -46,14 +40,10 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "+", required = 1)
-    public abstract static class AddNode extends CoreMethodNode {
+    public abstract static class AddNode extends CoreMethodArrayArgumentsNode {
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public AddNode(AddNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -79,14 +69,10 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "-", required = 1)
-    public abstract static class SubNode extends CoreMethodNode {
+    public abstract static class SubNode extends CoreMethodArrayArgumentsNode {
 
         public SubNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SubNode(SubNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -109,22 +95,18 @@ public abstract class FloatNodes {
             return a - b.bigIntegerValue().doubleValue();
         }
 
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object subCoerced(VirtualFrame frame, double a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :-, b", "b", b);
+        }
+
     }
 
     @CoreMethod(names = "*", required = 1)
-    public abstract static class MulNode extends CoreMethodNode {
-
-        @Child private CallDispatchHeadNode rationalConvertNode;
-        @Child private CallDispatchHeadNode rationalPowNode;
+    public abstract static class MulNode extends CoreMethodArrayArgumentsNode {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public MulNode(MulNode prev) {
-            super(prev);
-            rationalConvertNode = prev.rationalConvertNode;
-            rationalPowNode = prev.rationalPowNode;
         }
 
         @Specialization
@@ -147,38 +129,23 @@ public abstract class FloatNodes {
             return a * b.bigIntegerValue().doubleValue();
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
-        public Object mul(VirtualFrame frame, double a, RubyBasicObject b) {
-            if (rationalConvertNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                rationalConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-                rationalPowNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            final Object aRational = rationalConvertNode.call(frame, getContext().getCoreLibrary().getRationalClass(), "convert", null, a, 1);
-
-            return rationalPowNode.call(frame, aRational, "*", null, b);
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object mulCoerced(VirtualFrame frame, double a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :*, b", "b", b);
         }
 
     }
 
     @CoreMethod(names = "**", required = 1)
-    public abstract static class PowNode extends CoreMethodNode {
+    public abstract static class PowNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode complexConvertNode;
         @Child private CallDispatchHeadNode complexPowNode;
-
-        @Child private CallDispatchHeadNode rationalPowNode;
 
         private final ConditionProfile complexProfile = ConditionProfile.createBinaryProfile();
 
         public PowNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public PowNode(PowNode prev) {
-            super(prev);
-            rationalPowNode = prev.rationalPowNode;
         }
 
         @Specialization
@@ -213,30 +180,20 @@ public abstract class FloatNodes {
             return Math.pow(a, b.bigIntegerValue().doubleValue());
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
-        public Object pow(VirtualFrame frame, double a, RubyBasicObject b) {
-            if (rationalPowNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                rationalPowNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-            }
-
-            return rationalPowNode.call(frame, a, "pow_rational", null, b);
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object powCoerced(VirtualFrame frame, double a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :**, b", "b", b);
         }
 
     }
 
     @CoreMethod(names = {"/", "__slash__"}, required = 1)
-    public abstract static class DivNode extends CoreMethodNode {
+    public abstract static class DivNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode redoCoercedNode;
 
         public DivNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DivNode(DivNode prev) {
-            super(prev);
-            redoCoercedNode = prev.redoCoercedNode;
         }
 
         @Specialization
@@ -260,10 +217,10 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = {
-                "!isInteger(arguments[1])",
-                "!isLong(arguments[1])",
-                "!isDouble(arguments[1])",
-                "!isRubyBignum(arguments[1])"})
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)",
+                "!isRubyBignum(b)"})
         public Object div(VirtualFrame frame, double a, Object b) {
             if (redoCoercedNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -276,16 +233,12 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "%", required = 1)
-    public abstract static class ModNode extends CoreMethodNode {
+    public abstract static class ModNode extends CoreMethodArrayArgumentsNode {
 
         private ConditionProfile lessThanZeroProfile = ConditionProfile.createBinaryProfile();
 
         public ModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ModNode(ModNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -322,18 +275,13 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "divmod", required = 1)
-    public abstract static class DivModNode extends CoreMethodNode {
+    public abstract static class DivModNode extends CoreMethodArrayArgumentsNode {
 
         @Child private GeneralDivModNode divModNode;
 
         public DivModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             divModNode = new GeneralDivModNode(context, sourceSection);
-        }
-
-        public DivModNode(DivModNode prev) {
-            super(prev);
-            divModNode = prev.divModNode;
         }
 
         @Specialization
@@ -359,14 +307,10 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "<", required = 1)
-    public abstract static class LessNode extends CoreMethodNode {
+    public abstract static class LessNode extends CoreMethodArrayArgumentsNode {
 
         public LessNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public LessNode(LessNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -389,25 +333,18 @@ public abstract class FloatNodes {
             return a < b.bigIntegerValue().doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(other)")
         public boolean less(double a, RubyBasicObject other) {
-            throw new RaiseException(new RubyException(
-                    getContext().getCoreLibrary().getArgumentErrorClass(),
-                    getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
-                    RubyCallStack.getBacktrace(this)
-            ));
+            throw new RaiseException(getContext().getCoreLibrary().argumentError(
+                    String.format("comparison of Float with %s failed", other.getLogicalClass().getName()), this));
         }
     }
 
     @CoreMethod(names = "<=", required = 1)
-    public abstract static class LessEqualNode extends CoreMethodNode {
+    public abstract static class LessEqualNode extends CoreMethodArrayArgumentsNode {
 
         public LessEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public LessEqualNode(LessEqualNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -430,27 +367,20 @@ public abstract class FloatNodes {
             return a <= b.bigIntegerValue().doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(other)")
         public boolean less(double a, RubyBasicObject other) {
-            throw new RaiseException(new RubyException(
-                    getContext().getCoreLibrary().getArgumentErrorClass(),
-                    getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
-                    RubyCallStack.getBacktrace(this)
-            ));
+            throw new RaiseException(getContext().getCoreLibrary().argumentError(
+                    String.format("comparison of Float with %s failed", other.getLogicalClass().getName()), this));
         }
     }
 
     @CoreMethod(names = { "==", "===" }, required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
+    public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode fallbackCallNode;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -473,7 +403,7 @@ public abstract class FloatNodes {
             return a == b.bigIntegerValue().doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(b)")
         public Object equal(VirtualFrame frame, double a, RubyBasicObject b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -485,37 +415,33 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "<=>", required = 1)
-    public abstract static class CompareNode extends CoreMethodNode {
+    public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public CompareNode(CompareNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isNaN(arguments[0])")
+        @Specialization(guards = "isNaN(a)")
         public RubyNilClass compareFirstNaN(double a, Object b) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
-        @Specialization(guards = "isNaN(arguments[1])")
+        @Specialization(guards = "isNaN(b)")
         public RubyNilClass compareSecondNaN(Object a, double b) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
-        @Specialization(guards = {"!isNaN(arguments[0])"})
+        @Specialization(guards = {"!isNaN(a)"})
         public int compare(double a, int b) {
             return Double.compare(a, b);
         }
 
-        @Specialization(guards = {"!isNaN(arguments[0])"})
+        @Specialization(guards = {"!isNaN(a)"})
         public int compare(double a, long b) {
             return Double.compare(a, b);
         }
 
-        @Specialization(guards = "isInfinity(arguments[0])")
+        @Specialization(guards = "isInfinity(a)")
         public int compareInfinity(double a, RubyBignum b) {
             if (a < 0) {
                 return -1;
@@ -524,32 +450,28 @@ public abstract class FloatNodes {
             }
         }
 
-        @Specialization(guards = {"!isNaN(arguments[0])", "!isInfinity(arguments[0])"})
+        @Specialization(guards = {"!isNaN(a)", "!isInfinity(a)"})
         public int compare(double a, RubyBignum b) {
             return Double.compare(a, b.bigIntegerValue().doubleValue());
         }
 
-        @Specialization(guards = {"!isNaN(arguments[0])", "!isNaN(arguments[1])"})
+        @Specialization(guards = {"!isNaN(a)", "!isNaN(b)"})
         public int compare(double a, double b) {
             return Double.compare(a, b);
         }
 
-        @Specialization(guards = {"!isNaN(arguments[0])", "!isRubyBignum(arguments[1])"})
+        @Specialization(guards = {"!isNaN(a)", "!isRubyBignum(b)"})
         public RubyNilClass compare(double a, RubyBasicObject b) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
 
     @CoreMethod(names = ">=", required = 1)
-    public abstract static class GreaterEqualNode extends CoreMethodNode {
+    public abstract static class GreaterEqualNode extends CoreMethodArrayArgumentsNode {
 
         public GreaterEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public GreaterEqualNode(GreaterEqualNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -572,25 +494,18 @@ public abstract class FloatNodes {
             return a >= b.bigIntegerValue().doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(other)")
         public boolean less(double a, RubyBasicObject other) {
-            throw new RaiseException(new RubyException(
-                    getContext().getCoreLibrary().getArgumentErrorClass(),
-                    getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
-                    RubyCallStack.getBacktrace(this)
-            ));
+            throw new RaiseException(getContext().getCoreLibrary().argumentError(
+                    String.format("comparison of Float with %s failed", other.getLogicalClass().getName()), this));
         }
     }
 
     @CoreMethod(names = ">", required = 1)
-    public abstract static class GreaterNode extends CoreMethodNode {
+    public abstract static class GreaterNode extends CoreMethodArrayArgumentsNode {
 
         public GreaterNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public GreaterNode(GreaterNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -613,25 +528,18 @@ public abstract class FloatNodes {
             return a > b.bigIntegerValue().doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(other)")
         public boolean less(double a, RubyBasicObject other) {
-            throw new RaiseException(new RubyException(
-                    getContext().getCoreLibrary().getArgumentErrorClass(),
-                    getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
-                    RubyCallStack.getBacktrace(this)
-            ));
+            throw new RaiseException(getContext().getCoreLibrary().argumentError(
+                    String.format("comparison of Float with %s failed", other.getLogicalClass().getName()), this));
         }
     }
 
     @CoreMethod(names = { "abs", "magnitude" })
-    public abstract static class AbsNode extends CoreMethodNode {
+    public abstract static class AbsNode extends CoreMethodArrayArgumentsNode {
 
         public AbsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public AbsNode(AbsNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -642,18 +550,13 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "ceil")
-    public abstract static class CeilNode extends CoreMethodNode {
+    public abstract static class CeilNode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
         public CeilNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
-        }
-
-        public CeilNode(CeilNode prev) {
-            super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
@@ -664,18 +567,13 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "floor")
-    public abstract static class FloorNode extends CoreMethodNode {
+    public abstract static class FloorNode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
         public FloorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
-        }
-
-        public FloorNode(FloorNode prev) {
-            super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
@@ -686,14 +584,10 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "infinite?")
-    public abstract static class InfiniteNode extends CoreMethodNode {
+    public abstract static class InfiniteNode extends CoreMethodArrayArgumentsNode {
 
         public InfiniteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InfiniteNode(InfiniteNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -705,21 +599,17 @@ public abstract class FloatNodes {
                     return 1;
                 }
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
     }
 
     @CoreMethod(names = "nan?")
-    public abstract static class NaNNode extends CoreMethodNode {
+    public abstract static class NaNNode extends CoreMethodArrayArgumentsNode {
 
         public NaNNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public NaNNode(NaNNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -729,8 +619,8 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "round")
-    public abstract static class RoundNode extends CoreMethodNode {
+    @CoreMethod(names = "round", optional = 1)
+    public abstract static class RoundNode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
@@ -742,13 +632,8 @@ public abstract class FloatNodes {
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
         }
 
-        public RoundNode(RoundNode prev) {
-            super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
-        }
-
         @Specialization
-        public Object round(double n) {
+        public Object round(double n, UndefinedPlaceholder undefinedPlaceholder) {
             // Algorithm copied from JRuby - not shared as we want to branch profile it
 
             if (Double.isInfinite(n)) {
@@ -784,10 +669,15 @@ public abstract class FloatNodes {
             return fixnumOrBignum.fixnumOrBignum(f);
         }
 
+        @Specialization(guards = "!isUndefinedPlaceholder(ndigits)")
+        public Object round(VirtualFrame frame, double n, Object ndigits) {
+            return ruby(frame, "round_internal(ndigits)", "ndigits", ndigits);
+        }
+
     }
 
     @CoreMethod(names = { "to_i", "to_int", "truncate" })
-    public abstract static class ToINode extends CoreMethodNode {
+    public abstract static class ToINode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
@@ -796,13 +686,10 @@ public abstract class FloatNodes {
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
         }
 
-        public ToINode(ToINode prev) {
-            super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
-        }
+        public abstract Object executeToI(VirtualFrame frame, double value);
 
         @Specialization
-        public Object toI(double value) {
+        Object toI(double value) {
             if (Double.isInfinite(value)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Infinity", this));
@@ -819,14 +706,10 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = "to_f")
-    public abstract static class ToFNode extends CoreMethodNode {
+    public abstract static class ToFNode extends CoreMethodArrayArgumentsNode {
 
         public ToFNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToFNode(ToFNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -837,14 +720,10 @@ public abstract class FloatNodes {
     }
 
     @CoreMethod(names = {"to_s", "inspect"})
-    public abstract static class ToSNode extends CoreMethodNode {
+    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToSNode(ToSNode prev) {
-            super(prev);
         }
 
         @CompilerDirectives.TruffleBoundary

@@ -16,7 +16,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -27,24 +28,18 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyString;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 
 @CoreClass(name = "Bignum")
 public abstract class BignumNodes {
 
-    public static abstract class BignumCoreMethodNode extends CoreMethodNode {
+    public static abstract class BignumCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
         public BignumCoreMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
-        }
-
-        public BignumCoreMethodNode(BignumCoreMethodNode prev) {
-            super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         public Object fixnumOrBignum(BigInteger value) {
@@ -60,10 +55,6 @@ public abstract class BignumNodes {
             super(context, sourceSection);
         }
 
-        public NegNode(NegNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object neg(RubyBignum value) {
             return fixnumOrBignum(value.bigIntegerValue().negate());
@@ -76,10 +67,6 @@ public abstract class BignumNodes {
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public AddNode(AddNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -111,10 +98,6 @@ public abstract class BignumNodes {
             super(context, sourceSection);
         }
 
-        public SubNode(SubNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object sub(RubyBignum a, int b) {
             return fixnumOrBignum(a.bigIntegerValue().subtract(BigInteger.valueOf(b)));
@@ -142,10 +125,6 @@ public abstract class BignumNodes {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public MulNode(MulNode prev) {
-            super(prev);
         }
 
         @TruffleBoundary
@@ -180,10 +159,6 @@ public abstract class BignumNodes {
             super(context, sourceSection);
         }
 
-        public DivNode(DivNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object div(RubyBignum a, int b) {
             return fixnumOrBignum(a.bigIntegerValue().divide(BigInteger.valueOf(b)));
@@ -206,48 +181,62 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "%", required = 1)
+    @CoreMethod(names = {"%", "modulo"}, required = 1)
     public abstract static class ModNode extends BignumCoreMethodNode {
 
         public ModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ModNode(ModNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object mod(RubyBignum a, int b) {
+            if (b == 0) {
+                throw new ArithmeticException("divide by zero");
+            } else if (b < 0) {
+                final BigInteger bigint = BigInteger.valueOf(b);
+                final BigInteger mod = a.bigIntegerValue().mod(bigint.negate());
+                return fixnumOrBignum(mod.add(bigint));
+            }
             return fixnumOrBignum(a.bigIntegerValue().mod(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object mod(RubyBignum a, long b) {
+            if (b == 0) {
+                throw new ArithmeticException("divide by zero");
+            } else if (b < 0) {
+                final BigInteger bigint = BigInteger.valueOf(b);
+                final BigInteger mod = a.bigIntegerValue().mod(bigint.negate());
+                return fixnumOrBignum(mod.add(bigint));
+            }
             return fixnumOrBignum(a.bigIntegerValue().mod(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object mod(RubyBignum a, RubyBignum b) {
+            final BigInteger bigint = b.bigIntegerValue();
+            final int compare = bigint.compareTo(BigInteger.ZERO);
+            if (compare == 0) {
+                throw new ArithmeticException("divide by zero");
+            } else if (compare < 0) {
+                final BigInteger mod = a.bigIntegerValue().mod(bigint.negate());
+                return fixnumOrBignum(mod.add(bigint));
+            }
             return fixnumOrBignum(a.bigIntegerValue().mod(b.bigIntegerValue()));
+        }
+
+        @Specialization(guards = {"!isInteger(b)", "!isLong(b)", "!isRubyBignum(b)"})
+        public Object mod(VirtualFrame frame, RubyBignum a, Object b) {
+            return ruby(frame, "redo_coerced :%, other", "other", b);
         }
 
     }
 
     @CoreMethod(names = "<", required = 1)
-    public abstract static class LessNode extends CoreMethodNode {
-
-        @Child private CallDispatchHeadNode rationalConvertNode;
-        @Child private CallDispatchHeadNode rationalLessNode;
+    public abstract static class LessNode extends CoreMethodArrayArgumentsNode {
 
         public LessNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public LessNode(LessNode prev) {
-            super(prev);
-            rationalConvertNode = prev.rationalConvertNode;
-            rationalLessNode = prev.rationalLessNode;
         }
 
         @Specialization
@@ -270,29 +259,18 @@ public abstract class BignumNodes {
             return a.bigIntegerValue().compareTo(b.bigIntegerValue()) < 0;
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
-        public Object pow(VirtualFrame frame, Object a, RubyBasicObject b) {
-            if (rationalConvertNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                rationalConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-                rationalLessNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            final Object aRational = rationalConvertNode.call(frame, getContext().getCoreLibrary().getRationalClass(), "convert", null, a, 1);
-
-            return rationalLessNode.call(frame, aRational, "<", null, b);
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object lessCoerced(VirtualFrame frame, RubyBignum a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :<, b", "b", b);
         }
+
     }
 
     @CoreMethod(names = "<=", required = 1)
-    public abstract static class LessEqualNode extends CoreMethodNode {
+    public abstract static class LessEqualNode extends CoreMethodArrayArgumentsNode {
 
         public LessEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public LessEqualNode(LessEqualNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -317,14 +295,13 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = {"==", "eql?"}, required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
+    public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private BooleanCastNode booleanCastNode;
+        @Child private CallDispatchHeadNode reverseCallNode;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -346,19 +323,32 @@ public abstract class BignumNodes {
         public boolean equal(RubyBignum a, RubyBignum b) {
             return a.bigIntegerValue().equals(b.bigIntegerValue());
         }
+
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object equal(VirtualFrame frame, RubyBignum a, RubyBasicObject b) {
+            if (booleanCastNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
+            }
+
+            if (reverseCallNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                reverseCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            final Object reversedResult = reverseCallNode.call(frame, b, "==", null, a);
+
+            return booleanCastNode.executeBoolean(frame, reversedResult);
+        }
     }
 
     @CoreMethod(names = "<=>", required = 1)
-    public abstract static class CompareNode extends CoreMethodNode {
+    public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         private final ConditionProfile negativeInfinityProfile = ConditionProfile.createBinaryProfile();
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CompareNode(CompareNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -387,14 +377,10 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = ">=", required = 1)
-    public abstract static class GreaterEqualNode extends CoreMethodNode {
+    public abstract static class GreaterEqualNode extends CoreMethodArrayArgumentsNode {
 
         public GreaterEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public GreaterEqualNode(GreaterEqualNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -419,14 +405,10 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = ">", required = 1)
-    public abstract static class GreaterNode extends CoreMethodNode {
+    public abstract static class GreaterNode extends CoreMethodArrayArgumentsNode {
 
         public GreaterNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public GreaterNode(GreaterNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -457,10 +439,6 @@ public abstract class BignumNodes {
             super(context, sourceSection);
         }
 
-        public BitAndNode(BitAndNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object bitAnd(RubyBignum a, int b) {
             return fixnumOrBignum(a.bigIntegerValue().and(BigInteger.valueOf(b)));
@@ -484,10 +462,6 @@ public abstract class BignumNodes {
             super(context, sourceSection);
         }
 
-        public BitOrNode(BitOrNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object bitOr(RubyBignum a, int b) {
             return fixnumOrBignum(a.bigIntegerValue().or(BigInteger.valueOf(b)));
@@ -509,10 +483,6 @@ public abstract class BignumNodes {
 
         public BitXOrNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public BitXOrNode(BitXOrNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -540,10 +510,6 @@ public abstract class BignumNodes {
             super(context, sourceSection);
         }
 
-        public LeftShiftNode(LeftShiftNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object leftShift(RubyBignum a, int b) {
             if (b >= 0) {
@@ -565,10 +531,6 @@ public abstract class BignumNodes {
             super(context, sourceSection);
         }
 
-        public RightShiftNode(RightShiftNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object leftShift(RubyBignum a, int b) {
             if (b >= 0) {
@@ -588,10 +550,6 @@ public abstract class BignumNodes {
             super(context, sourceSection);
         }
 
-        public AbsNode(AbsNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object abs(RubyBignum value) {
             return fixnumOrBignum(value.bigIntegerValue().abs());
@@ -600,14 +558,10 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "bit_length")
-    public abstract static class BitLengthNode extends CoreMethodNode {
+    public abstract static class BitLengthNode extends CoreMethodArrayArgumentsNode {
 
         public BitLengthNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public BitLengthNode(BitLengthNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -618,19 +572,15 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "coerce", required = 1)
-    public abstract static class CoerceNode extends CoreMethodNode {
+    public abstract static class CoerceNode extends CoreMethodArrayArgumentsNode {
 
         public CoerceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public CoerceNode(CoerceNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyArray coerce(RubyBignum a, int b) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
             // b is converted to a Bignum here in other implementations.
@@ -640,7 +590,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public RubyArray coerce(RubyBignum a, long b) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
             // b is converted to a Bignum here in other implementations.
@@ -650,7 +600,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public RubyArray coerce(RubyBignum a, RubyBignum b) {
-            notDesignedForCompilation();
+            CompilerDirectives.transferToInterpreter();
 
             Object[] store = new Object[] { b, a };
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
@@ -659,18 +609,13 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "divmod", required = 1)
-    public abstract static class DivModNode extends CoreMethodNode {
+    public abstract static class DivModNode extends CoreMethodArrayArgumentsNode {
 
         @Child private GeneralDivModNode divModNode;
 
         public DivModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             divModNode = new GeneralDivModNode(context, sourceSection);
-        }
-
-        public DivModNode(DivModNode prev) {
-            super(prev);
-            divModNode = prev.divModNode;
         }
 
         @Specialization
@@ -697,10 +642,6 @@ public abstract class BignumNodes {
             super(context, sourceSection);
         }
 
-        public EvenNode(EvenNode prev) {
-            super(prev);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public boolean even(RubyBignum value) {
@@ -710,14 +651,10 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "hash")
-    public abstract static class HashNode extends CoreMethodNode {
+    public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
         public HashNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public HashNode(HashNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -728,14 +665,10 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "size")
-    public abstract static class SizeNode extends CoreMethodNode {
+    public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SizeNode(SizeNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -746,14 +679,10 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "to_f")
-    public abstract static class ToFNode extends CoreMethodNode {
+    public abstract static class ToFNode extends CoreMethodArrayArgumentsNode {
 
         public ToFNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToFNode(ToFNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -764,14 +693,10 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = {"to_s", "inspect"}, optional = 1)
-    public abstract static class ToSNode extends CoreMethodNode {
+    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToSNode(ToSNode prev) {
-            super(prev);
         }
 
         @TruffleBoundary

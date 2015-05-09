@@ -1,0 +1,1 @@
+fails:CGI#http_header CGI#http_header when passed Hash returns a HTTP header based on the Hash's key/value pairs

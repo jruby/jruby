@@ -1,3 +1,0 @@
-fails:Module#extended is called when an object gets extended with self
-fails:Module#extended is called after Module#extend_object
-fails:Module#extended is private in its default implementation

@@ -1,4 +1,1 @@
-fails:File::Stat#grpowned? returns true if the file exist
-fails:File::Stat#grpowned? accepts an object that has a #to_path method
-fails:File::Stat#grpowned? takes non primary groups into account
 fails(windows):File::Stat#grpowned? returns false if the file exist

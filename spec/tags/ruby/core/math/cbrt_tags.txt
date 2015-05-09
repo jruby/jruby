@@ -1,0 +1,4 @@
+fails:Math.cbrt returns the cubic root of the argument
+fails:Math.cbrt raises a TypeError if the argument cannot be coerced with Float()
+fails:Math.cbrt raises a TypeError if the argument is nil
+fails:Math.cbrt accepts any argument that can be coerced with Float()

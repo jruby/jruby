@@ -4,11 +4,13 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -65,8 +67,12 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
         e.encode(postReqdArgsCount);
     }
 
-    public IRubyObject receivePostReqdArg(IRubyObject[] args, boolean acceptsKeywordArgument) {
-        return IRRuntimeHelpers.receivePostReqdArg(args, preReqdArgsCount, postReqdArgsCount, argIndex, acceptsKeywordArgument);
+    public static ReceivePostReqdArgInstr decode(IRReaderDecoder d) {
+        return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt());
+    }
+
+    public IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject[] args, boolean acceptsKeywordArgument) {
+        return IRRuntimeHelpers.receivePostReqdArg(context, args, preReqdArgsCount, postReqdArgsCount, argIndex, acceptsKeywordArgument);
     }
 
     @Override

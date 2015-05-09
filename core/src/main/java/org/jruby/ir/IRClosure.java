@@ -6,11 +6,9 @@ import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.ClosureInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
-import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
@@ -27,9 +25,6 @@ public class IRClosure extends IRScope {
     public final int closureId;    // Unique id for this closure within the nearest ancestor method.
 
     private boolean isBeginEndBlock;
-
-    /** The parameter names, for Proc#parameters */
-    private String[] parameterList;
 
     private Signature signature;
 
@@ -48,7 +43,6 @@ public class IRClosure extends IRScope {
         this.closureId = lexicalParent.getNextClosureId();
         setName(prefix + closureId);
         this.body = null;
-        this.parameterList = new String[] {};
     }
 
     /** Used by cloning code */
@@ -105,16 +99,6 @@ public class IRClosure extends IRScope {
 
     public boolean isBeginEndBlock() {
         return isBeginEndBlock;
-    }
-
-    public void setParameterList(String[] parameterList) {
-        this.parameterList = parameterList;
-
-        if (!getManager().isDryRun()) this.body.setParameterList(parameterList);
-    }
-
-    public String[] getParameterList() {
-        return this.parameterList;
     }
 
     @Override
@@ -250,7 +234,6 @@ public class IRClosure extends IRScope {
     protected IRClosure cloneForInlining(CloneInfo ii, IRClosure clone) {
         // SSS FIXME: This is fragile. Untangle this state.
         // Why is this being copied over to InterpretedIRBlockBody?
-        clone.setParameterList(this.parameterList);
         clone.isBeginEndBlock = this.isBeginEndBlock;
 
         SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
@@ -294,10 +277,6 @@ public class IRClosure extends IRScope {
     public void setName(String name) {
         // We can distinguish closures only with parent scope name
         super.setName(getLexicalParent().getName() + name);
-    }
-
-    public Arity getArity() {
-        return signature.arity();
     }
 
     public Signature getSignature() {

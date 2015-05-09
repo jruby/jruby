@@ -35,7 +35,7 @@ static VALUE numeric_spec_rb_num2dbl(VALUE self, VALUE num) {
 }
 #endif
 
-#ifdef HAVE_RB_NUM2LONG
+#ifdef HAVE_RB_NUM2INT
 static VALUE numeric_spec_rb_num2int(VALUE self, VALUE num) {
   return LONG2NUM(rb_num2int(num));
 }

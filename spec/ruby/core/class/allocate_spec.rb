@@ -32,7 +32,7 @@ describe "Class#allocate" do
 
     klass.allocate.initialized?.should == false
   end
-  
+
   it "raises TypeError for #superclass" do
     lambda do
       Class.allocate.superclass

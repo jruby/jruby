@@ -86,22 +86,6 @@ describe "Numeric#step" do
     end
   end
 
-  describe "Numeric#step with [stop, step] when self and stop are Floats but step is a String" do
-    it "returns an Enumerator if not given a block" do
-      1.1.step(5.1, "1").should be_an_instance_of(enumerator_class)
-      1.1.step(5.1, "0.1").should be_an_instance_of(enumerator_class)
-      1.1.step(5.1, "1/3").should be_an_instance_of(enumerator_class)
-      1.1.step(5.1, "foo").should be_an_instance_of(enumerator_class)
-    end
-
-    it "raises a TypeError if given a block" do
-      lambda { 1.1.step(5.1, "1") {} }.should raise_error(TypeError)
-      lambda { 1.1.step(5.1, "0.1") {} }.should raise_error(TypeError)
-      lambda { 1.1.step(5.1, "1/3") {} }.should raise_error(TypeError)
-      lambda { 1.1.step(5.1, "foo") {} }.should raise_error(TypeError)
-    end
-  end
-
   describe "Numeric#step with [stop, +step] when self, stop and step are Fixnums" do
     it "yields while increasing self by step until stop is reached" do
       1.step(5, 1, &@prc)
@@ -166,12 +150,10 @@ describe "Numeric#step" do
       ScratchPad.recorded.should == []
     end
 
-    ruby_bug "redmine #4576", "1.9.3" do
-      it "is careful about not yielding a value greater than limit" do
-        # As 9*1.3+1.0 == 12.700000000000001 > 12.7, we test:
-        1.0.step(12.7, 1.3, &@prc)
-        ScratchPad.recorded.should eql [1.0, 2.3, 3.6, 4.9, 6.2, 7.5, 8.8, 10.1, 11.4, 12.7]
-      end
+    it "is careful about not yielding a value greater than limit" do
+      # As 9*1.3+1.0 == 12.700000000000001 > 12.7, we test:
+      1.0.step(12.7, 1.3, &@prc)
+      ScratchPad.recorded.should eql [1.0, 2.3, 3.6, 4.9, 6.2, 7.5, 8.8, 10.1, 11.4, 12.7]
     end
   end
 
@@ -191,84 +173,74 @@ describe "Numeric#step" do
       ScratchPad.recorded.should == []
     end
 
-    ruby_bug "redmine #4576", "1.9.3" do
-      it "is careful about not yielding a value smaller than limit" do
-        # As -9*1.3-1.0 == -12.700000000000001 < -12.7, we test:
-        -1.0.step(-12.7, -1.3, &@prc)
-        ScratchPad.recorded.should eql [-1.0, -2.3, -3.6, -4.9, -6.2, -7.5, -8.8, -10.1, -11.4, -12.7]
-      end
+    it "is careful about not yielding a value smaller than limit" do
+      # As -9*1.3-1.0 == -12.700000000000001 < -12.7, we test:
+      -1.0.step(-12.7, -1.3, &@prc)
+      ScratchPad.recorded.should eql [-1.0, -2.3, -3.6, -4.9, -6.2, -7.5, -8.8, -10.1, -11.4, -12.7]
     end
   end
 
   describe "Numeric#step with [stop, +Infinity]" do
-    ruby_bug "#781", "1.8.7" do
-      it "yields once if self < stop" do
-        42.step(100, infinity_value, &@prc)
-        ScratchPad.recorded.should == [42]
-      end
-
-      it "yields once when stop is Infinity" do
-        42.step(infinity_value, infinity_value, &@prc)
-        ScratchPad.recorded.should == [42]
-      end
-
-      it "yields once when self equals stop" do
-        42.step(42, infinity_value, &@prc)
-        ScratchPad.recorded.should == [42]
-      end
-
-      it "yields once when self and stop are Infinity" do
-        (infinity_value).step(infinity_value, infinity_value, &@prc)
-        ScratchPad.recorded.should == [infinity_value]
-      end
+    it "yields once if self < stop" do
+      42.step(100, infinity_value, &@prc)
+      ScratchPad.recorded.should == [42]
     end
 
-    ruby_bug "#3945", "1.9.2.135" do
-      it "does not yield when self > stop" do
-        100.step(42, infinity_value, &@prc)
-        ScratchPad.recorded.should == []
-      end
+    it "yields once when stop is Infinity" do
+      42.step(infinity_value, infinity_value, &@prc)
+      ScratchPad.recorded.should == [42]
+    end
 
-      it "does not yield when stop is -Infinity" do
-        42.step(-infinity_value, infinity_value, &@prc)
-        ScratchPad.recorded.should == []
-      end
+    it "yields once when self equals stop" do
+      42.step(42, infinity_value, &@prc)
+      ScratchPad.recorded.should == [42]
+    end
+
+    it "yields once when self and stop are Infinity" do
+      (infinity_value).step(infinity_value, infinity_value, &@prc)
+      ScratchPad.recorded.should == [infinity_value]
+    end
+
+    it "does not yield when self > stop" do
+      100.step(42, infinity_value, &@prc)
+      ScratchPad.recorded.should == []
+    end
+
+    it "does not yield when stop is -Infinity" do
+      42.step(-infinity_value, infinity_value, &@prc)
+      ScratchPad.recorded.should == []
     end
   end
 
   describe "Numeric#step with [stop, -infinity]" do
-    ruby_bug "#3945", "1.9.2.135" do
-      it "yields once if self > stop" do
-        42.step(6, -infinity_value, &@prc)
-        ScratchPad.recorded.should == [42]
-      end
-
-      it "yields once if stop is -Infinity" do
-        42.step(-infinity_value, -infinity_value, &@prc)
-        ScratchPad.recorded.should == [42]
-      end
-
-      it "yields once when self equals stop" do
-        42.step(42, -infinity_value, &@prc)
-        ScratchPad.recorded.should == [42]
-      end
-
-      it "yields once when self and stop are Infinity" do
-        (infinity_value).step(infinity_value, -infinity_value, &@prc)
-        ScratchPad.recorded.should == [infinity_value]
-      end
+    it "yields once if self > stop" do
+      42.step(6, -infinity_value, &@prc)
+      ScratchPad.recorded.should == [42]
     end
 
-    ruby_bug "#781", "1.8.7" do
-      it "does not yield when self > stop" do
-        42.step(100, -infinity_value, &@prc)
-        ScratchPad.recorded.should == []
-      end
+    it "yields once if stop is -Infinity" do
+      42.step(-infinity_value, -infinity_value, &@prc)
+      ScratchPad.recorded.should == [42]
+    end
 
-      it "does not yield when stop is Infinity" do
-        42.step(infinity_value, -infinity_value, &@prc)
-        ScratchPad.recorded.should == []
-      end
+    it "yields once when self equals stop" do
+      42.step(42, -infinity_value, &@prc)
+      ScratchPad.recorded.should == [42]
+    end
+
+    it "yields once when self and stop are Infinity" do
+      (infinity_value).step(infinity_value, -infinity_value, &@prc)
+      ScratchPad.recorded.should == [infinity_value]
+    end
+
+    it "does not yield when self > stop" do
+      42.step(100, -infinity_value, &@prc)
+      ScratchPad.recorded.should == []
+    end
+
+    it "does not yield when stop is Infinity" do
+      42.step(infinity_value, -infinity_value, &@prc)
+      ScratchPad.recorded.should == []
     end
   end
 

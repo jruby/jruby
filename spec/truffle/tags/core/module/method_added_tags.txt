@@ -1,3 +1,0 @@
-fails:Module#method_added is a private instance method
-fails:Module#method_added returns nil in the default implementation
-fails:Module#method_added is called when a new method is defined in self

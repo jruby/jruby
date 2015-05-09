@@ -10,7 +10,7 @@
 
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
@@ -42,7 +42,7 @@ public class RubiniusSingleBlockArgNode extends RubyNode {
         int userArgumentCount = RubyArguments.getUserArgumentsCount(frame.getArguments());
 
         if (emptyArgsProfile.profile(userArgumentCount == 0)) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         } else {
             if (singleArgProfile.profile(userArgumentCount == 1)) {
                 return RubyArguments.getUserArgument(frame.getArguments(), 0);

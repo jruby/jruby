@@ -77,6 +77,7 @@ class CApiClassSpecs
 
   class A
     C = 1
+    autoload :D, File.expand_path('../path_to_class.rb', __FILE__)
 
     class B
     end

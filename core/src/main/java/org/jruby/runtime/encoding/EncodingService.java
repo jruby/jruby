@@ -137,6 +137,12 @@ public final class EncodingService {
 
     // rb_locale_charmap...mostly
     public Encoding getLocaleEncoding() {
+        final Encoding consoleEncoding = getConsoleEncoding();
+
+        if (consoleEncoding != null) {
+            return consoleEncoding;
+        }
+
         Entry entry = findEncodingOrAliasEntry(new ByteList(Charset.defaultCharset().name().getBytes()));
         return entry == null ? ASCIIEncoding.INSTANCE : entry.getEncoding();
     }

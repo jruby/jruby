@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/methods', __FILE__)
 
 describe "Time#localtime" do
   it "converts self to local time, modifying the receiver" do
@@ -70,7 +69,7 @@ describe "Time#localtime" do
     t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
     t.utc_offset.should == -3600
 
-    with_timezone("US/Eastern") do
+    with_timezone("America/New_York") do
       t.localtime
     end
 

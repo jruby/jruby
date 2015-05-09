@@ -26,15 +26,13 @@ describe "ARGF.lineno" do
     end
   end
 
-  ruby_bug "#1693", "1.8" do
-    it "resets to 0 after the stream is rewound" do
-      argv [@file1, @file2, @file1, @file2] do
-        ARGF.lineno = 0
-        ARGF.lineno.should == 0
-        ARGF.readline
-        ARGF.rewind
-        ARGF.lineno.should == 0
-      end
+  it "resets to 0 after the stream is rewound" do
+    argv [@file1, @file2, @file1, @file2] do
+      ARGF.lineno = 0
+      ARGF.lineno.should == 0
+      ARGF.readline
+      ARGF.rewind
+      ARGF.lineno.should == 0
     end
   end
 

@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.core.RubyNilClass;
 /**
  * Casts a value into a boolean.
  */
-@NodeChild(value = "child", type = RubyNode.class)
+@NodeChild(value = "value", type = RubyNode.class)
 public abstract class BooleanCastNode extends RubyNode {
 
     public BooleanCastNode(RubyContext context, SourceSection sourceSection) {
@@ -32,8 +32,10 @@ public abstract class BooleanCastNode extends RubyNode {
         super(copy.getContext(), copy.getSourceSection());
     }
 
+    public abstract boolean executeBoolean(VirtualFrame frame, Object value);
+
     @Specialization
-    public boolean doNil(@SuppressWarnings("unused") RubyNilClass nil) {
+    public boolean doNil(RubyNilClass nil) {
         return false;
     }
 
@@ -57,19 +59,12 @@ public abstract class BooleanCastNode extends RubyNode {
         return true;
     }
 
-    @Specialization(guards = "!isRubyNilClass")
+    @Specialization(guards = "!isRubyNilClass(object)")
     public boolean doBasicObject(RubyBasicObject object) {
         return true;
     }
 
     @Override
     public abstract boolean executeBoolean(VirtualFrame frame);
-
-    public abstract boolean executeBoolean(VirtualFrame frame, Object value);
-
-    @Override
-    public final Object execute(VirtualFrame frame) {
-        return executeBoolean(frame);
-    }
 
 }

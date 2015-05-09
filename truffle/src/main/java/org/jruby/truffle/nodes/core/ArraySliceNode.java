@@ -9,21 +9,19 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 
-import java.util.Arrays;
-
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
-@ImportGuards(ArrayGuards.class)
+@ImportStatic(ArrayGuards.class)
 public abstract class ArraySliceNode extends RubyNode {
 
     final int from; // positive
@@ -37,22 +35,16 @@ public abstract class ArraySliceNode extends RubyNode {
         this.to = to;
     }
 
-    public ArraySliceNode(ArraySliceNode prev) {
-        super(prev);
-        from = prev.from;
-        to = prev.to;
-    }
-
-    @Specialization(guards = "isNull")
+    @Specialization(guards = "isNull(array)")
     public RubyArray sliceNull(RubyArray array) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         return new RubyArray(getContext().getCoreLibrary().getArrayClass());
     }
 
-    @Specialization(guards = "isIntegerFixnum")
+    @Specialization(guards = "isIntegerFixnum(array)")
     public RubyArray sliceIntegerFixnum(RubyArray array) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
         final int to = array.getSize() + this.to;
 
         if (from >= to) {
@@ -62,9 +54,9 @@ public abstract class ArraySliceNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isLongFixnum")
+    @Specialization(guards = "isLongFixnum(array)")
     public RubyArray sliceLongFixnum(RubyArray array) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
         final int to = array.getSize() + this.to;
 
         if (from >= to) {
@@ -74,9 +66,9 @@ public abstract class ArraySliceNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isFloat")
+    @Specialization(guards = "isFloat(array)")
     public RubyArray sliceFloat(RubyArray array) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
         final int to = array.getSize() + this.to;
 
         if (from >= to) {
@@ -86,9 +78,9 @@ public abstract class ArraySliceNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isObject")
+    @Specialization(guards = "isObject(array)")
     public RubyArray sliceObject(RubyArray array) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
         final int to = array.getSize() + this.to;
 
         if (from >= to) {

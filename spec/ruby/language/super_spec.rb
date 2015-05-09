@@ -62,23 +62,21 @@ describe "The super keyword" do
     Super::S4::B.new.foo([],"test").should == ["B#foo(a,test)", "A#foo"]
   end
 
-  ruby_bug "#1151 [ruby-core:22040]", "1.8.7.174" do
-    it "raises an error error when super method does not exist" do
-      sup = Class.new
-      sub_normal = Class.new(sup) do
-        def foo
-          super()
-        end
+  it "raises an error error when super method does not exist" do
+    sup = Class.new
+    sub_normal = Class.new(sup) do
+      def foo
+        super()
       end
-      sub_zsuper = Class.new(sup) do
-        def foo
-          super
-        end
-      end
-
-      lambda {sub_normal.new.foo}.should raise_error(NoMethodError, /super/)
-      lambda {sub_zsuper.new.foo}.should raise_error(NoMethodError, /super/)
     end
+    sub_zsuper = Class.new(sup) do
+      def foo
+        super
+      end
+    end
+
+    lambda {sub_normal.new.foo}.should raise_error(NoMethodError, /super/)
+    lambda {sub_zsuper.new.foo}.should raise_error(NoMethodError, /super/)
   end
 
   it "calls the superclass method when in a block" do
@@ -163,4 +161,9 @@ describe "The super keyword" do
   it "invokes methods from a chain of anonymous modules" do
     Super::AnonymousModuleIncludedTwice.new.a([]).should == ["anon", "anon", "non-anon"]
   end
+
+  it "can accept a block but still pass the original arguments" do
+    Super::ZSuperWithBlock::B.new.a.should == 14
+  end
+
 end

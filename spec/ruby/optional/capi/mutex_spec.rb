@@ -74,7 +74,7 @@ describe "C-API Mutex functions" do
       @m.lock
       start = Time.now
       @s.rb_mutex_sleep(@m, 0.1)
-      (Time.now - start).should be_close(0.1, 0.1)
+      (Time.now - start).should be_close(0.1, 0.2)
       @m.locked?.should be_true
     end
   end

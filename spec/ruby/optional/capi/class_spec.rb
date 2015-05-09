@@ -3,11 +3,15 @@ require File.expand_path('../fixtures/class', __FILE__)
 
 load_extension("class")
 
-autoload :ClassUnderAutoload, "#{extension_path}/class_under_autoload_spec"
+autoload :ClassUnderAutoload, "#{object_path}/class_under_autoload_spec"
 
 describe :rb_path_to_class, :shared => true do
   it "returns a class or module from a scoped String" do
     @s.send(@method, "CApiClassSpecs::A::B").should equal(CApiClassSpecs::A::B)
+  end
+
+  it "resolves autoload constants" do
+    @s.send(@method, "CApiClassSpecs::A::D").name.should == "CApiClassSpecs::A::D"
   end
 
   it "raises an ArgumentError if a constant in the path does not exist" do
@@ -22,10 +26,8 @@ describe :rb_path_to_class, :shared => true do
     lambda { @s.send(@method, "CApiClassSpecs::A::C") }.should raise_error(TypeError)
   end
 
-  ruby_bug '#5691', '1.9.3' do
-    it "raises an ArgumentError even if a constant in the path exists on toplevel" do
-      lambda { @s.send(@method, "CApiClassSpecs::Object") }.should raise_error(ArgumentError)
-    end
+  it "raises an ArgumentError even if a constant in the path exists on toplevel" do
+    lambda { @s.send(@method, "CApiClassSpecs::Object") }.should raise_error(ArgumentError)
   end
 end
 

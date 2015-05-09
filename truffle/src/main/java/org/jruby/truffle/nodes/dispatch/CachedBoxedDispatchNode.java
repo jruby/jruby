@@ -10,9 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
@@ -84,7 +82,9 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
             } else {
                 callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
-                if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit()) {
+                if ((callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit())
+                        || (method.getDeclaringModule() != null
+                        && method.getDeclaringModule().getName().equals("TruffleInterop"))) {
                     insert(callNode);
                     callNode.cloneCallTarget();
                 }
@@ -93,7 +93,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     }
 
     @Override
-    protected boolean guard(Object methodName, Object receiver) {
+    public boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
                 (receiver instanceof RubyBasicObject) &&
                 ((RubyBasicObject) receiver).getMetaClass() == expectedClass;
@@ -166,11 +166,22 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
     @Override
     public String toString() {
-        return String.format("CachedBoxedDispatchNode(:%s, %s@%x, %s, %s)",
+        return String.format("CachedBoxedDispatchNode(:%s, %s@%x, %s)",
                 getCachedNameAsSymbol().toString(),
                 expectedClass.getName(), expectedClass.hashCode(),
-                value == null ? "null" : DebugOperations.inspect(getContext(), value),
                 method == null ? "null" : method.toString());
     }
 
+    public boolean couldOptimizeKeywordArguments() {
+        // TODO CS 18-Apr-15 doesn't seem to work with Truffle?
+        return false; //method.getSharedMethodInfo().getArity().getKeywordArguments() != null && next instanceof UnresolvedDispatchNode;
+    }
+
+    public InternalMethod getMethod() {
+        return method;
+    }
+
+    public Assumption getUnmodifiedAssumption() {
+        return unmodifiedAssumption;
+    }
 }

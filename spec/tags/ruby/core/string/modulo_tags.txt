@@ -1,2 +1,1 @@
-fails:String#% calls to_str on argument for %c formats
 fails:String#% when format string contains %<> formats should raise ArgumentError if no hash given

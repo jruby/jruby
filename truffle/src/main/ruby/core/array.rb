@@ -45,4 +45,8 @@ class Array
     end
   end
 
+  def sort!(&block)
+    replace sort(&block)
+  end
+
 end

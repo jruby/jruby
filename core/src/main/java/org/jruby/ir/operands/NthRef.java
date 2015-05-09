@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -27,8 +28,13 @@ public class NthRef extends Reference {
 
     @Override
     public void encode(IRWriterEncoder e) {
-        super.encode(e);
+        // We do not super since name is derived from number.
+        e.encode(getOperandType().getCoded());
         e.encode(matchNumber);
+    }
+
+    public static NthRef decode(IRReaderDecoder d) {
+        return new NthRef(d.decodeInt());
     }
 
     @Override

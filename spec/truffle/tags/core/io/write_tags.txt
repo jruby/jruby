@@ -1,33 +1,4 @@
 fails:IO#write on a file writes all of the string's bytes but buffers them
-fails:IO#write on a file does not check if the file is writable if writing zero bytes
-fails:IO#write on a file returns a length of 0 when writing a blank string
-fails:IO#write on a file returns the number of bytes written
-fails:IO#write on a file uses the encoding from the given option for non-ascii encoding
-fails:IO#write on a file uses an :open_args option
-fails:IO#write on a file raises a invalid byte sequence error if invalid bytes are being written
-fails:IO#write on a file writes binary data if no encoding is given
-fails:IO.write coerces the argument to a string using to_s
-fails:IO.write returns the number of bytes written
-fails:IO.write creates a file if missing
-fails:IO.write creates file if missing even if offset given
-fails:IO.write truncates the file and writes the given string
-fails:IO.write doesn't truncate the file and writes the given string if an offset is given
-fails:IO.write doesn't truncate and writes at the given offset after passing empty opts
-fails:IO.write accepts a :mode option
-fails:IO.write raises an error if readonly mode is specified
-fails:IO.write truncates if empty :opts provided and offset skipped
-fails:IO.write uses an :open_args option
-fails:IO.write disregards other options if :open_args is given
-fails:IO.write uses the given encoding and returns the number of bytes written
-fails:IO.write writes binary data if no encoding is given
-fails:IO#write coerces the argument to a string using to_s
-fails:IO#write checks if the file is writable if writing more than zero bytes
-fails:IO#write returns the number of bytes written
-fails:IO#write invokes to_s on non-String argument
-fails:IO#write writes all of the string's bytes without buffering if mode is sync
-fails:IO#write does not warn if called after IO#read
-fails:IO#write writes to the current position after IO#read
-fails:IO#write advances the file position by the count of given bytes
-fails:IO#write raises IOError on closed stream
 fails(windows):IO#write on Windows normalizes line endings in text mode
 fails(windows):IO#write on Windows does not normalize line endings in binary mode
+fails:IO.write on a FIFO writes correctly

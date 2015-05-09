@@ -39,6 +39,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.CallNode;
@@ -111,7 +112,6 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.EventHook;
@@ -166,6 +166,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -918,17 +919,12 @@ public final class Ruby implements Constantizable {
     }
 
     private TruffleBridge loadTruffleBridge() {
-        /*
-         * It's possible to remove Truffle classes from the JRuby distribution, so we provide a sensible
-         * explanation when the classes are not found.
-         */
-
         final Class<?> clazz;
 
         try {
             clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.TruffleBridgeImpl");
         } catch (Exception e) {
-            throw new UnsupportedOperationException("Support for Truffle has been removed from this distribution", e);
+            throw new UnsupportedOperationException("Truffle classes not available", e);
         }
 
         final TruffleBridge truffleBridge;
@@ -937,7 +933,7 @@ public final class Ruby implements Constantizable {
             Constructor<?> con = clazz.getConstructor(Ruby.class);
             truffleBridge = (TruffleBridge) con.newInstance(this);
         } catch (Exception e) {
-            throw new UnsupportedOperationException("Error while calling the constructor of Truffle Bridge", e);
+            throw new UnsupportedOperationException("Error while calling the constructor of TruffleBridgeImpl", e);
         }
 
         truffleBridge.init();
@@ -1286,6 +1282,20 @@ public final class Ruby implements Constantizable {
             loadService.require("jruby");
         }
 
+        // attempt to enable unlimited-strength crypto on OpenJDK
+        try {
+            Class jceSecurity = Class.forName("javax.crypto.JceSecurity");
+            Field isRestricted = jceSecurity.getField("isRestricted");
+            isRestricted.setAccessible(true);
+            isRestricted.set(null, false);
+            isRestricted.setAccessible(false);
+        } catch (Exception e) {
+            if (isDebug()) {
+                System.err.println("unable to enable unlimited-strength crypto");
+                e.printStackTrace();
+            }
+        }
+
         // out of base boot mode
         bootingCore = false;
 
@@ -1516,9 +1526,6 @@ public final class Ruby implements Constantizable {
 
         if (profile.allowClass("Struct")) {
             RubyStruct.createStructClass(this);
-        }
-        if (profile.allowClass("Tms")) {
-            tmsStruct = RubyStruct.newInstance(structClass, new IRubyObject[]{newString("Tms"), newSymbol("utime"), newSymbol("stime"), newSymbol("cutime"), newSymbol("cstime")}, Block.NULL_BLOCK);
         }
 
         if (profile.allowClass("Binding")) {
@@ -2734,7 +2741,7 @@ public final class Ruby implements Constantizable {
      private Node parseFileAndGetAST(InputStream in, String file, DynamicScope scope, int lineNumber, boolean isFromMain) {
          ParserConfiguration parserConfig =
                  new ParserConfiguration(this, lineNumber, false, true, config);
-         setupSourceEncoding(parserConfig);
+         setupSourceEncoding(parserConfig, UTF8Encoding.INSTANCE);
          return parser.parse(file, in, scope, parserConfig);
      }
 
@@ -2742,18 +2749,18 @@ public final class Ruby implements Constantizable {
         addEvalParseToStats();
         ParserConfiguration parserConfig =
                 new ParserConfiguration(this, 0, false, true, false, config);
-        setupSourceEncoding(parserConfig);
+        setupSourceEncoding(parserConfig, getEncodingService().getLocaleEncoding());
         return parser.parse(file, in, scope, parserConfig);
     }
 
-    private void setupSourceEncoding(ParserConfiguration parserConfig) {
+    private void setupSourceEncoding(ParserConfiguration parserConfig, Encoding defaultEncoding) {
         if (config.getSourceEncoding() != null) {
             if (config.isVerbose()) {
                 config.getError().println("-K is specified; it is for 1.8 compatibility and may cause odd behavior");
             }
             parserConfig.setDefaultEncoding(getEncodingService().getEncodingFromString(config.getSourceEncoding()));
         } else {
-            parserConfig.setDefaultEncoding(getEncodingService().getLocaleEncoding());
+            parserConfig.setDefaultEncoding(defaultEncoding);
         }
     }
 
@@ -3101,17 +3108,25 @@ public final class Ruby implements Constantizable {
 
     public synchronized void removeEventHook(EventHook hook) {
         EventHook[] hooks = eventHooks;
+
         if (hooks.length == 0) return;
-        EventHook[] newHooks = new EventHook[hooks.length - 1];
-        boolean found = false;
-        for (int i = 0, j = 0; i < hooks.length; i++) {
-            if (!found && hooks[i] == hook && !found) { // exclude first found
-                found = true;
-                continue;
+
+        int pivot = -1;
+        for (int i = 0; i < hooks.length; i++) {
+            if (hooks[i] == hook) {
+                pivot = i;
+                break;
             }
-            newHooks[j] = hooks[i];
-            j++;
         }
+
+        if (pivot == -1) return; // No such hook found.
+
+        EventHook[] newHooks = new EventHook[hooks.length - 1];
+        // copy before and after pivot into the new array but don't bother
+        // to arraycopy if pivot is first/last element of the old list.
+        if (pivot != 0) System.arraycopy(hooks, 0, newHooks, 0, pivot);
+        if (pivot != hooks.length-1) System.arraycopy(hooks, pivot + 1, newHooks, pivot, hooks.length - (pivot + 1));
+
         eventHooks = newHooks;
         hasEventHooks = newHooks.length > 0;
     }
@@ -3489,6 +3504,11 @@ public final class Ruby implements Constantizable {
 
     public RubySymbol newSymbol(String name) {
         return symbolTable.getSymbol(name);
+    }
+
+    public RubySymbol newSymbol(String name, Encoding encoding) {
+        ByteList byteList = RubyString.encodeBytelist(name, encoding);
+        return symbolTable.getSymbol(byteList);
     }
 
     public RubySymbol newSymbol(ByteList name) {
@@ -4783,15 +4803,6 @@ public final class Ruby implements Constantizable {
         if (parserStats != null) parserStats.addEvalParse();
     }
 
-    private void addJRubyModuleParseToStats() {
-        if (parserStats != null) parserStats.addJRubyModuleParse();
-    }
-
-    @Deprecated
-    public CallbackFactory callbackFactory(Class<?> type) {
-        throw new RuntimeException("callback-style handles are no longer supported in JRuby");
-    }
-
     @Deprecated
     public boolean is1_8() {
         return false;
@@ -5071,7 +5082,7 @@ public final class Ruby implements Constantizable {
     private EnumMap<DefinedMessage, RubyString> definedMessages = new EnumMap<DefinedMessage, RubyString>(DefinedMessage.class);
     private EnumMap<RubyThread.Status, RubyString> threadStatuses = new EnumMap<RubyThread.Status, RubyString>(RubyThread.Status.class);
 
-    private interface ObjectSpacer {
+    public interface ObjectSpacer {
         public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);
     }
 

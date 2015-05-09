@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.control;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
@@ -33,10 +34,9 @@ public class RescueSplatNode extends RescueNode {
         this.handlingClassesArray = handlingClassesArray;
     }
 
-    @ExplodeLoop
     @Override
     public boolean canHandle(VirtualFrame frame, RubyException exception) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         final RubyArray handlingClasses = (RubyArray) handlingClassesArray.execute(frame);
 

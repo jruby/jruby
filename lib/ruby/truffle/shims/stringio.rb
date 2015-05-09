@@ -10,8 +10,8 @@
 
 class StringIO
 
-  def initialize(string, mode)
-    @lines = string.split(/\n/).reject { |line| line.empty? }
+  def initialize(string=nil, mode=nil)
+    @lines = (string || '').split(/\n/).reject { |line| line.empty? }
   end
 
   def gets

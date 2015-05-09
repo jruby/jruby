@@ -37,7 +37,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  */
 public abstract class JavaMethod extends DynamicMethod implements Cloneable, MethodArgs2 {
-    protected int arityValue;
     protected Arity arity = Arity.OPTIONAL;
     private String javaName;
     private boolean isSingleton;
@@ -45,6 +44,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     private String parameterDesc;
     private String[] parameterList;
     private CallConfiguration callerRequirement = CallConfiguration.FrameNoneScopeNone;
+
+    private static String[] ONE_REQ = new String[] { "q" };
+    private static String[] TWO_REQ = new String[] { "q", "q" };
+    private static String[] THREE_REQ = new String[] { "q", "q", "q" };
 
     public static final Class[][] METHODS = {
         {JavaMethodZero.class, JavaMethodZeroOrOne.class, JavaMethodZeroOrOneOrTwo.class, JavaMethodZeroOrOneOrTwoOrThree.class},
@@ -92,7 +95,6 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     public void init(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, CallConfiguration callConfig) {
         this.staticScope = staticScope;
         this.arity = arity;
-        this.arityValue = arity.getValue();
         super.init(implementationClass, visibility, callConfig);
     }
     
@@ -187,7 +189,6 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     
     public void setArity(Arity arity) {
         this.arity = arity;
-        this.arityValue = arity.getValue();
     }
 
     @Override
@@ -972,12 +973,15 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     public static abstract class JavaMethodOne extends JavaMethodOneOrN {
         public JavaMethodOne(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
+            setParameterList(ONE_REQ);
         }
         public JavaMethodOne(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility, callConfig);
+            setParameterList(ONE_REQ);
         }
         public JavaMethodOne(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
             super(implementationClass, visibility, callConfig, name);
+            setParameterList(ONE_REQ);
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
@@ -1038,9 +1042,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     public static abstract class JavaMethodTwo extends JavaMethodTwoOrN {
         public JavaMethodTwo(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
+            setParameterList(TWO_REQ);
         }
         public JavaMethodTwo(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility, callConfig);
+            setParameterList(TWO_REQ);
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
@@ -1079,9 +1085,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     public static abstract class JavaMethodThree extends JavaMethodThreeOrN {
         public JavaMethodThree(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
+            setParameterList(THREE_REQ);
         }
         public JavaMethodThree(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility, callConfig);
+            setParameterList(THREE_REQ);
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {

@@ -1,3 +1,0 @@
-fails:FileTest.readable? returns true if named file is readable by the effective user id of the process, otherwise false
-fails:FileTest.readable? accepts an object that has a #to_path method
-fails:FileTest.readable? returns false if the file does not exist

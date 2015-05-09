@@ -1,4 +1,3 @@
 fails:Module#define_method when name is :initialize passed a block sets visibility to private when method name is :initialize
 fails:Module#define_method when name is :initialize given an UnboundMethod sets the visibility to private when method is named :initialize
 fails:Module#define_method method body is an UnboundMethod allows methods defined on a different object
-fails:passed { |a, b = 1|  } creates a method that raises an ArgumentError when passed three arguments

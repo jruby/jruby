@@ -1,2 +1,1 @@
 fails:Array#delete may be given a block that is executed if no element matches object
-fails:Array#delete raises a RuntimeError on a frozen array

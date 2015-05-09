@@ -7,7 +7,7 @@ module ProcessSpecs
     end
 
     def run
-      File.delete @signal if File.exists? @signal
+      File.delete @signal if File.exist? @signal
       send @behavior
       File.open(@signal, "w") { }
 

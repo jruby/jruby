@@ -9,19 +9,15 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
 
-@ImportGuards(ArrayGuards.class)
-public abstract class ArrayCoreMethodNode extends CoreMethodNode {
+@ImportStatic(ArrayGuards.class)
+public abstract class ArrayCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
     public ArrayCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-    }
-
-    public ArrayCoreMethodNode(ArrayCoreMethodNode prev) {
-        super(prev);
     }
 
 }

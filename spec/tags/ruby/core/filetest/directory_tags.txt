@@ -1,1 +1,0 @@
-fails:FileTest.directory? returns true if the argument is an IO that is a directory

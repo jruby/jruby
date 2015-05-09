@@ -16,13 +16,11 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
-import org.jruby.truffle.nodes.objects.MetaClassNodeFactory;
+import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
-import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -41,7 +39,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
     public AbstractGeneralSuperCallNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        metaClassNode = MetaClassNodeFactory.create(context, sourceSection, null);
+        metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
     }
 
     protected boolean guard(VirtualFrame frame, Object self) {
@@ -80,7 +78,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
                 return;
             }
             // TODO: should add " for #{receiver.inspect}" in error message
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError(String.format("super: no superclass method `%s'", name), this));
+            throw new RaiseException(getContext().getCoreLibrary().noMethodError(String.format("super: no superclass method `%s'", name), name, this));
         }
 
         unmodifiedAssumption = declaringModule.getUnmodifiedAssumption();
@@ -96,7 +94,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         final Object self = RubyArguments.getSelf(frame.getArguments());
 
@@ -105,7 +103,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
         }
 
         if (superMethod == null) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         } else {
             return getContext().makeString("super");
         }

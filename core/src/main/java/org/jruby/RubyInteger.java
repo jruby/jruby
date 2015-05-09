@@ -44,6 +44,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -141,7 +142,7 @@ public abstract class RubyInteger extends RubyNumeric {
     private static void fixnumUpto(ThreadContext context, long from, long to, Block block) {
         // We must avoid "i++" integer overflow when (to == Long.MAX_VALUE).
         Ruby runtime = context.runtime;
-        if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+        if (block.getSignature() == Signature.NO_ARGUMENTS) {
             IRubyObject nil = runtime.getNil();
             long i;
             for (i = from; i < to; i++) {
@@ -204,7 +205,7 @@ public abstract class RubyInteger extends RubyNumeric {
     private static void fixnumDownto(ThreadContext context, long from, long to, Block block) {
         // We must avoid "i--" integer overflow when (to == Long.MIN_VALUE).
         Ruby runtime = context.runtime;
-        if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+        if (block.getSignature() == Signature.NO_ARGUMENTS) {
             IRubyObject nil = runtime.getNil();
             long i;
             for (i = from; i > to; i--) {
@@ -348,13 +349,13 @@ public abstract class RubyInteger extends RubyNumeric {
         if (enc == ASCIIEncoding.INSTANCE && value >= 0x80) {
             return chr19(context);
         }
-        return RubyString.newStringNoCopy(runtime, fromEncodedBytes(runtime, enc, (int)value), enc, 0);
+        return RubyString.newStringNoCopy(runtime, fromEncodedBytes(runtime, enc, value), enc, 0);
     }
 
-    private ByteList fromEncodedBytes(Ruby runtime, Encoding enc, int value) {
+    private ByteList fromEncodedBytes(Ruby runtime, Encoding enc, long value) {
         int n;
         try {
-            n = value < 0 ? 0 : enc.codeToMbcLength(value);
+            n = value < 0 ? 0 : enc.codeToMbcLength((int)value);
         } catch (EncodingException ee) {
             n = 0;
         }
@@ -362,12 +363,19 @@ public abstract class RubyInteger extends RubyNumeric {
         if (n <= 0) throw runtime.newRangeError(this.toString() + " out of char range");
         
         ByteList bytes = new ByteList(n);
-        
+
+        boolean ok = false;
         try {
-            enc.codeToMbc(value, bytes.getUnsafeBytes(), 0);
+            enc.codeToMbc((int)value, bytes.getUnsafeBytes(), 0);
+            ok = StringSupport.preciseLength(enc, bytes.unsafeBytes(), 0, n) == n;
         } catch (EncodingException e) {
+            // ok = false, fall through
+        }
+
+        if (!ok) {
             throw runtime.newRangeError("invalid codepoint " + String.format("0x%x in ", value) + enc.getCharsetName());
         }
+
         bytes.setRealSize(n);
         return bytes;
     }

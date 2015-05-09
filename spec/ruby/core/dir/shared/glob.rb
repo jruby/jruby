@@ -260,14 +260,6 @@ describe :dir_glob, :shared => true do
          subdir_two/nondotfile.ext]
   end
 
-  it "preserves the separator between directory components" do
-    Dir.send(@method, "deeply/nested//directory/structure/*.ext").should ==
-      %w!deeply/nested//directory/structure/file_one.ext!
-
-    Dir.send(@method, "deeply/nested/directory/structure//**/*.ext").should ==
-      %w!deeply/nested/directory/structure//file_one.ext!
-  end
-
   it "ignores matching through directories that doen't exist" do
     Dir.send(@method, "deeply/notthere/blah*/whatever").should == []
   end

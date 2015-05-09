@@ -13,13 +13,15 @@ describe "String#split with String" do
   end
 
   with_feature :encoding do
-    it "throws an ArgumentError if the pattern is not a valid string" do
-      str = 'проверка'
-      broken_str = 'проверка'
-      broken_str.force_encoding('binary')
-      broken_str.chop!
-      broken_str.force_encoding('utf-8')
-      lambda { str.split(broken_str) }.should raise_error(ArgumentError)
+    ruby_bug "#10886", "2.2.0.79" do
+      it "throws an ArgumentError if the pattern is not a valid string" do
+        str = 'проверка'
+        broken_str = 'проверка'
+        broken_str.force_encoding('binary')
+        broken_str.chop!
+        broken_str.force_encoding('utf-8')
+        lambda { str.split(broken_str) }.should raise_error(ArgumentError)
+      end
     end
 
     it "splits on multibyte characters" do
@@ -347,10 +349,8 @@ describe "String#split with Regexp" do
   # When split is called with a limit of -1, empty fields are not suppressed
   # and a final empty field is *alawys* created (who knows why). This empty
   # string is not tainted (again, who knows why) on 1.8 but is on 1.9.
-  ruby_bug "#", "1.8" do
-    it "taints an empty string if self is tainted" do
-      ":".taint.split(//, -1).last.tainted?.should be_true
-    end
+  it "taints an empty string if self is tainted" do
+    ":".taint.split(//, -1).last.tainted?.should be_true
   end
 
   it "doesn't taints the resulting strings if the Regexp is tainted" do

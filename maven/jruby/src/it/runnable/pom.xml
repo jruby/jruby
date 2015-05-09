@@ -256,6 +256,12 @@
           <version>0.7.1</version>
           <type>gem</type>
         </dependency>
+        <dependency>
+          <groupId>rubygems</groupId>
+          <artifactId>ruby-maven</artifactId>
+          <version>3.1.1.0.11</version>
+          <type>gem</type>
+        </dependency>
       </dependencies>
     </profile>
     <profile>
@@ -285,19 +291,19 @@
                     <rspec-core>2.99.2</rspec-core>
                     <rspec-expectations>2.99.2</rspec-expectations>
                     <diff-lcs>1.2.5</diff-lcs>
-                    <rspec-mocks>2.99.2</rspec-mocks>
-                    <rake>10.3.2</rake>
+                    <rspec-mocks>2.99.3</rspec-mocks>
+                    <rake>10.4.2</rake>
                     <jbundler>0.7.1</jbundler>
-                    <jar-dependencies>0.1.7</jar-dependencies>
-                    <maven-tools>1.0.7</maven-tools>
-                    <virtus>1.0.3</virtus>
+                    <jar-dependencies>0.1.13</jar-dependencies>
+                    <maven-tools>1.0.8</maven-tools>
+                    <virtus>1.0.5</virtus>
                     <axiom-types>0.1.1</axiom-types>
                     <descendants_tracker>0.0.4</descendants_tracker>
-                    <thread_safe>0.3.4</thread_safe>
-                    <ice_nine>0.11.0</ice_nine>
+                    <thread_safe>0.3.5</thread_safe>
+                    <ice_nine>0.11.1</ice_nine>
                     <coercible>1.0.0</coercible>
-                    <equalizer>0.0.9</equalizer>
-                    <ruby-maven>3.1.1.0.8</ruby-maven>
+                    <equalizer>0.0.11</equalizer>
+                    <ruby-maven>3.1.1.0.11</ruby-maven>
                     <ruby-maven-libs>3.1.1</ruby-maven-libs>
                   </gems>
                 </configuration>

@@ -1,46 +1,27 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class IRBlockBody extends ContextAwareBlockBody {
-    protected String[] parameterList;
     protected final String fileName;
     protected final int lineNumber;
     protected ThreadLocal<EvalType> evalType;
-    protected final Signature signature;
 
-    public IRBlockBody(StaticScope staticScope, String[] parameterList, String fileName, int lineNumber, Signature signature) {
-        super(staticScope, signature.arity(), -1);
-        this.parameterList = parameterList;
+    public IRBlockBody(StaticScope staticScope, String fileName, int lineNumber, Signature signature) {
+        super(staticScope, signature);
         this.fileName = fileName;
         this.lineNumber = lineNumber;
         this.evalType = new ThreadLocal();
         this.evalType.set(EvalType.NONE);
-        this.signature = signature;
     }
 
     public void setEvalType(EvalType evalType) {
         this.evalType.set(evalType);
-    }
-
-    public Signature getSignature() {
-        return signature;
-    }
-
-    @Override
-    public String[] getParameterList() {
-        return parameterList;
-    }
-
-    public void setParameterList(String[] parameterList) {
-        this.parameterList = parameterList;
     }
 
     @Override
@@ -78,9 +59,8 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Type type) {
         IRubyObject[] args = IRubyObject.NULL_ARRAY;
-        if (type == Type.LAMBDA) {
-            signature.checkArity(context.runtime, args);
-        }
+        if (type == Type.LAMBDA) signature.checkArity(context.runtime, args);
+
         return commonYieldPath(context, args, null, binding, type, Block.NULL_BLOCK);
     }
 
@@ -88,7 +68,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Type type) {
         if (arg0 instanceof RubyArray) {
 		    // Unwrap the array arg
-            IRubyObject[] args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, arity, true);
+            IRubyObject[] args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature.arityValue(), true);
 
             // FIXME: arity error is aginst new args but actual error shows arity of original args.
             if (type == Type.LAMBDA) signature.checkArity(context.runtime, args);
@@ -100,7 +80,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     }
 
     private IRubyObject yieldSpecificMultiArgsCommon(ThreadContext context, IRubyObject[] args, Binding binding, Type type) {
-        int blockArity = arity().getValue();
+        int blockArity = getSignature().arityValue();
         if (blockArity == 0) {
             args = IRubyObject.NULL_ARRAY; // discard args
         } else if (blockArity == 1) {
@@ -126,11 +106,11 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     public IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
         IRubyObject[] args;
 
-        int blockArity = arity().getValue();
+        int blockArity = getSignature().arityValue();
 
         // For lambdas, independent of whether there is a REST arg or not, if # required args is 1,
         // the value is passed through unmodified even when it is an array!
-        if ((type == Type.LAMBDA && arity().required() == 1) || (blockArity >= -1 && blockArity <= 1)) {
+        if ((type == Type.LAMBDA && signature.required() == 1) || (blockArity >= -1 && blockArity <= 1)) {
             args = new IRubyObject[] { value };
         } else {
             IRubyObject val0 = Helpers.aryToAry(value);
@@ -147,10 +127,8 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type) {
-        args = (args == null) ? IRubyObject.NULL_ARRAY : args;
-        if (type == Type.LAMBDA) {
-            signature.checkArity(context.runtime, args);
-        }
+        if (type == Type.LAMBDA) signature.checkArity(context.runtime, args);
+
         return commonYieldPath(context, args, self, binding, type, Block.NULL_BLOCK);
     }
 
@@ -162,35 +140,6 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     }
 
     protected abstract IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block);
-
-    protected void blockArgWarning(Ruby ruby, int length) {
-        ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +
-                    length + " for 1)");
-    }
-
-    protected IRubyObject[] convertToRubyArray(ThreadContext context, IRubyObject[] args) {
-        return (args.length == 0) ? context.runtime.getSingleNilArray()
-                                  : new IRubyObject[] {context.runtime.newArrayNoCopy(args)};
-    }
-
-    @Override
-    public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Type type) {
-        if (type == Type.LAMBDA) {
-            signature.checkArity(context.runtime, args);
-        } else {
-            // SSS FIXME: How is it even possible to "call" a NORMAL block?
-            // I thought only procs & lambdas can be called, and blocks are yielded to.
-            if (args.length == 1) {
-                // Convert value to arg-array, unwrapping where necessary
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], arity, (type == Type.NORMAL) && (args[0] instanceof RubyArray));
-            } else if (arity().getValue() == 1) {
-               // discard excess arguments
-                args = (args.length == 0) ? context.runtime.getSingleNilArray() : new IRubyObject[] { args[0] };
-            }
-        }
-
-        return args;
-    }
 
     @Override
     public String getFile() {

@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.interpreter.Profiler;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -18,10 +19,6 @@ public class ThreadPollInstr extends Instr implements FixedArityInstr {
     public ThreadPollInstr(boolean onBackEdge) {
         super(Operation.THREAD_POLL, EMPTY_OPERANDS);
         this.onBackEdge = onBackEdge;
-    }
-
-    public ThreadPollInstr() {
-        this(false);
     }
 
     @Override
@@ -41,6 +38,10 @@ public class ThreadPollInstr extends Instr implements FixedArityInstr {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(onBackEdge);
+    }
+
+    public static ThreadPollInstr decode(IRReaderDecoder d) {
+        return new ThreadPollInstr(d.decodeBoolean());
     }
 
     @Override

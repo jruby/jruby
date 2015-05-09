@@ -56,10 +56,8 @@ describe "CApiBignumSpecs" do
       lambda { @s.rb_big2ulong(ensure_bignum(@min_long - 1)) }.should raise_error(RangeError)
     end
 
-    ruby_bug "#", "1.9.3" do
-      it "wraps around if passed a negative bignum" do
-        @s.rb_big2ulong(ensure_bignum(@min_long)).should == -(@min_long)
-      end
+    it "wraps around if passed a negative bignum" do
+      @s.rb_big2ulong(ensure_bignum(@min_long)).should == -(@min_long)
     end
   end
 
@@ -74,11 +72,9 @@ describe "CApiBignumSpecs" do
       @s.rb_big2dbl(huge_bignum).should == infinity_value
     end
 
-    ruby_bug "#3362", "1.8.7.357" do
-      it "returns -Infinity if the number is negative and too big for a double" do
-        huge_bignum = -ensure_bignum(Float::MAX.to_i * 2)
-        @s.rb_big2dbl(huge_bignum).should == -infinity_value
-      end
+    it "returns -Infinity if the number is negative and too big for a double" do
+      huge_bignum = -ensure_bignum(Float::MAX.to_i * 2)
+      @s.rb_big2dbl(huge_bignum).should == -infinity_value
     end
   end
 
@@ -153,39 +149,41 @@ describe "CApiBignumSpecs" do
     end
   end
 
-  describe "RBIGNUM_SIGN" do
-    it "returns C true if the Bignum has a positive sign" do
-      @s.RBIGNUM_SIGN(bignum_value()).should be_true
+  ruby_version_is ""..."2.2" do
+    describe "RBIGNUM_SIGN" do
+      it "returns C true if the Bignum has a positive sign" do
+        @s.RBIGNUM_SIGN(bignum_value()).should be_true
+      end
+
+      it "retuns C false if the Bignum has a negative sign" do
+        @s.RBIGNUM_SIGN(-bignum_value()).should be_false
+      end
     end
 
-    it "retuns C false if the Bignum has a negative sign" do
-      @s.RBIGNUM_SIGN(-bignum_value()).should be_false
-    end
-  end
+    describe "RBIGNUM_POSITIVE_P" do
+      it "returns C true if the Bignum has a positive sign" do
+        @s.RBIGNUM_POSITIVE_P(bignum_value()).should be_true
+      end
 
-  describe "RBIGNUM_POSITIVE_P" do
-    it "returns C true if the Bignum has a positive sign" do
-      @s.RBIGNUM_POSITIVE_P(bignum_value()).should be_true
-    end
-
-    it "retuns C false if the Bignum has a negative sign" do
-      @s.RBIGNUM_POSITIVE_P(-bignum_value()).should be_false
-    end
-  end
-
-  describe "RBIGNUM_NEGATIVE_P" do
-    it "returns C false if the Bignum has a positive sign" do
-      @s.RBIGNUM_NEGATIVE_P(bignum_value()).should be_false
+      it "retuns C false if the Bignum has a negative sign" do
+        @s.RBIGNUM_POSITIVE_P(-bignum_value()).should be_false
+      end
     end
 
-    it "retuns C true if the Bignum has a negative sign" do
-      @s.RBIGNUM_NEGATIVE_P(-bignum_value()).should be_true
-    end
-  end
+    describe "RBIGNUM_NEGATIVE_P" do
+      it "returns C false if the Bignum has a positive sign" do
+        @s.RBIGNUM_NEGATIVE_P(bignum_value()).should be_false
+      end
 
-  describe "RBIGNUM_LEN" do
-    it "returns the number of BDIGITS needed for the bignum" do
-      @s.RBIGNUM_LEN(bignum_value * 2).should == 3
+      it "retuns C true if the Bignum has a negative sign" do
+        @s.RBIGNUM_NEGATIVE_P(-bignum_value()).should be_true
+      end
+    end
+
+    describe "RBIGNUM_LEN" do
+      it "returns the number of BDIGITS needed for the bignum" do
+        @s.RBIGNUM_LEN(bignum_value * 2).should == 3
+      end
     end
   end
 end

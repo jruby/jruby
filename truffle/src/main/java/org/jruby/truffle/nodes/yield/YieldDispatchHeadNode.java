@@ -9,13 +9,12 @@
  */
 package org.jruby.truffle.nodes.yield;
 
-import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
-
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -42,16 +41,26 @@ public class YieldDispatchHeadNode extends Node {
         // TODO: assumes this also changes the default definee.
 
         Frame frame = block.getDeclarationFrame();
-        FrameSlot slot = frame.getFrameDescriptor().findOrAddFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID, "dynamic visibility for def", FrameSlotKind.Object);
-        Object oldVisibility = frame.getValue(slot);
 
-        try {
-            frame.setObject(slot, Visibility.PUBLIC);
+        if (frame != null) {
+            FrameSlot slot = getVisibilitySlot(frame);
+            Object oldVisibility = frame.getValue(slot);
 
+            try {
+                frame.setObject(slot, Visibility.PUBLIC);
+
+                return dispatch.dispatchWithSelfAndBlock(currentFrame, block, self, block.getBlockCapturedInScope(), argumentsObjects);
+            } finally {
+                frame.setObject(slot, oldVisibility);
+            }
+        } else {
             return dispatch.dispatchWithSelfAndBlock(currentFrame, block, self, block.getBlockCapturedInScope(), argumentsObjects);
-        } finally {
-            frame.setObject(slot, oldVisibility);
         }
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private FrameSlot getVisibilitySlot(Frame frame) {
+        return frame.getFrameDescriptor().findOrAddFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID, "dynamic visibility for def", FrameSlotKind.Object);
     }
 
     public YieldDispatchNode getDispatch() {

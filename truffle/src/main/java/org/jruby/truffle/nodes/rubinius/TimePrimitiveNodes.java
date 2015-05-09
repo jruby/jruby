@@ -15,8 +15,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
-import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
@@ -41,15 +39,10 @@ public abstract class TimePrimitiveNodes {
             readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
-        public TimeSNowPrimitiveNode(TimeSNowPrimitiveNode prev) {
-            super(prev);
-            readTimeZoneNode = prev.readTimeZoneNode;
-        }
-
         @Specialization
         public RubyTime timeSNow(VirtualFrame frame, RubyClass timeClass) {
             // TODO CS 4-Mar-15 whenever we get time we have to convert lookup and time zone to a string and look it up - need to cache somehow...
-            return new RubyTime(timeClass, now(readTimeZoneNode.executeRubyString(frame)), null);
+            return new RubyTime(timeClass, now(readTimeZoneNode.executeRubyString(frame)), nil());
         }
         
         @CompilerDirectives.TruffleBoundary
@@ -64,10 +57,6 @@ public abstract class TimePrimitiveNodes {
 
         public TimeSDupPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public TimeSDupPrimitiveNode(TimeSDupPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -88,33 +77,39 @@ public abstract class TimePrimitiveNodes {
             readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
-        public TimeSSpecificPrimitiveNode(TimeSSpecificPrimitiveNode prev) {
-            super(prev);
-            readTimeZoneNode = prev.readTimeZoneNode;
-        }
-
-        @Specialization(guards = "isTrue(arguments[2])")
+        @Specialization(guards = "isTrue(isUTC)")
         public RubyTime timeSSpecificUTC(long seconds, long nanoseconds, boolean isUTC, RubyNilClass offset) {
             return timeSSpecificUTC((int) seconds, (int) nanoseconds, isUTC, offset);
         }
 
-        @Specialization(guards = "isTrue(arguments[2])")
+        @Specialization(guards = "isTrue(isUTC)")
+        public RubyTime timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
+            return timeSSpecificUTC((int) seconds, nanoseconds, isUTC, offset);
+        }
+
+        @Specialization(guards = "isTrue(isUTC)")
         public RubyTime timeSSpecificUTC(int seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = seconds * 1_000L + (nanoseconds / 1_000_000);
-            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds), null);
+            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds), nil());
         }
 
-        @Specialization(guards = "!isTrue(arguments[2])")
+
+        @Specialization(guards = "!isTrue(isUTC)")
         public RubyTime timeSSpecific(VirtualFrame frame, long seconds, long nanoseconds, boolean isUTC, RubyNilClass offset) {
             return timeSSpecific(frame, (int) seconds, (int) nanoseconds, isUTC, offset);
         }
 
-        @Specialization(guards = "!isTrue(arguments[2])")
+        @Specialization(guards = "!isTrue(isUTC)")
+        public RubyTime timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
+            return timeSSpecific(frame, (int) seconds, nanoseconds, isUTC, offset);
+        }
+
+        @Specialization(guards = "!isTrue(isUTC)")
         public RubyTime timeSSpecific(VirtualFrame frame, int seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = (long) seconds * 1_000 + ((long) nanoseconds / 1_000_000);
-            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds, readTimeZoneNode.executeRubyString(frame)), null);
+            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds, readTimeZoneNode.executeRubyString(frame)), offset);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -136,10 +131,6 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TimeSecondsPrimitiveNode(TimeSecondsPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public long timeSeconds(RubyTime time) {
             return time.getDateTime().getMillis() / 1_000;
@@ -154,10 +145,6 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TimeUSecondsPrimitiveNode(TimeUSecondsPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public long timeUSeconds(RubyTime time) {
             return time.getDateTime().getMillisOfSecond() * 1_000L;
@@ -170,10 +157,6 @@ public abstract class TimePrimitiveNodes {
 
         public TimeDecomposePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public TimeDecomposePrimitiveNode(TimeDecomposePrimitiveNode prev) {
-            super(prev);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -201,7 +184,7 @@ public abstract class TimePrimitiveNodes {
             String zoneString = org.jruby.RubyTime.zoneHelper(envTimeZoneString, dateTime, false);
             Object zone;
             if (zoneString.matches(".*-\\d+")) {
-                zone = getContext().getCoreLibrary().getNilObject();
+                zone = nil();
             } else {
                 zone = getContext().makeString(zoneString);
             }
@@ -219,16 +202,12 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TimeStrftimePrimitiveNode(TimeStrftimePrimitiveNode prev) {
-            super(prev);
-        }
-
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString timeStrftime(RubyTime time, RubyString format) {
             final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
             // TODO CS 15-Feb-15 ok to just pass nanoseconds as 0?
-            return getContext().makeString(rdf.formatToByteList(rdf.compilePattern(format.getBytes(), false), time.getDateTime(), 0, null));
+            return getContext().makeString(rdf.formatToByteList(rdf.compilePattern(format.getByteList(), false), time.getDateTime(), 0, null));
         }
 
     }
@@ -240,38 +219,34 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TimeSFromArrayPrimitiveNode(TimeSFromArrayPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, RubyNilClass sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, RubyNilClass sec, int min, int hour, int mday, int month, int year,
                                        RubyNilClass nsec, int isdst, boolean fromutc, Object utcoffset) {
-            return timeSFromArray(timeClass, 0, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
+            return timeSFromArray(frame, timeClass, 0, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
                                        RubyNilClass nsec, int isdst, boolean fromutc, Object utcoffset) {
-            return timeSFromArray(timeClass, sec, min, hour, mday, month, year, 0, isdst, fromutc, utcoffset);
+            return buildTime(frame, timeClass, sec, min, hour, mday, month, year, 0, isdst, fromutc, utcoffset);
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, long sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, long sec, int min, int hour, int mday, int month, int year,
                                        int nsec, int isdst, boolean fromutc, Object utcoffset) {
             // TODO CS 15-Feb-15 that cast
-            return timeSFromArray(timeClass, (int) sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
+            return buildTime(frame, timeClass, (int) sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
                                        long nsec, int isdst, boolean fromutc, Object utcoffset) {
             // TODO CS 15-Feb-15 that cast
-            return timeSFromArray(timeClass, sec, min, hour, mday, month, year, (int) nsec, isdst, fromutc, utcoffset);
+            return buildTime(frame, timeClass, sec, min, hour, mday, month, year, (int) nsec, isdst, fromutc, utcoffset);
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
+        public RubyTime buildTime(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
                                        int nsec, int isdst, boolean fromutc, Object utcoffset) {
             if (sec < 0 || sec > 59 ||
                     min < 0 || min > 59 ||
@@ -281,25 +256,25 @@ public abstract class TimePrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorOutOfRange(this));
             }
 
-            if (isdst == -1 && !fromutc && utcoffset instanceof Integer) {
-                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, DateTimeZone.forOffsetMillis(((int) utcoffset) * 1_000));
-                return new RubyTime(timeClass, dateTime, utcoffset);
-            } else if (isdst == -1 && !fromutc && utcoffset instanceof Long) {
-                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, DateTimeZone.forOffsetMillis((int) ((long) utcoffset) * 1_000));
-                return new RubyTime(timeClass, dateTime, utcoffset);
-            } else if (isdst == -1 && !fromutc && utcoffset instanceof RubyBasicObject && isRational((RubyBasicObject) utcoffset)) {
-                // TODO CS 15-Feb-15 debug send and cast
-                final int millis = cast(DebugOperations.send(getContext(), utcoffset, "_offset_to_milliseconds", null));
-                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, DateTimeZone.forOffsetMillis(millis));
-                return new RubyTime(timeClass, dateTime, utcoffset);
-            } else if (isdst == -1 && !fromutc && utcoffset == getContext().getCoreLibrary().getNilObject()) {
-                // TODO CS 14-Feb-15 uses debug send
-                final DateTimeZone zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(),
-                        DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString());
+            final DateTimeZone zone;
+            if (fromutc) {
+                zone = DateTimeZone.UTC;
+            } else if (utcoffset == nil()) {
+                String tz = DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString();
+                zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(), tz);
+            } else if (utcoffset instanceof Integer) {
+                zone = DateTimeZone.forOffsetMillis(((int) utcoffset) * 1_000);
+            } else if (utcoffset instanceof Long) {
+                zone = DateTimeZone.forOffsetMillis((int) ((long) utcoffset) * 1_000);
+            } else if (utcoffset instanceof RubyBasicObject) {
+                final int millis = cast(ruby(frame, "(offset * 1000).to_i", "offset", utcoffset));
+                zone = DateTimeZone.forOffsetMillis(millis);
+            } else {
+                throw new UnsupportedOperationException(String.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
+            }
+
+            if (isdst == -1) {
                 final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, zone);
-                return new RubyTime(timeClass, dateTime, null);
-            } else if (isdst == -1 && fromutc && utcoffset == getContext().getCoreLibrary().getNilObject()) {
-                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, DateTimeZone.UTC);
                 return new RubyTime(timeClass, dateTime, utcoffset);
             } else {
                 throw new UnsupportedOperationException(String.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
@@ -313,30 +288,30 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
                                        long nsec, int isdst, boolean fromutc, Object utcoffset) {
-            return timeSFromArray(timeClass, sec, min, hour, mday, month, year, (int) nsec, isdst, fromutc, utcoffset);
+            return timeSFromArray(frame, timeClass, sec, min, hour, mday, month, year, (int) nsec, isdst, fromutc, utcoffset);
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
                                        int nsec, long isdst, boolean fromutc, Object utcoffset) {
-            return timeSFromArray(timeClass, sec, min, hour, mday, month, year, nsec, (int) isdst, fromutc, utcoffset);
+            return timeSFromArray(frame, timeClass, sec, min, hour, mday, month, year, nsec, (int) isdst, fromutc, utcoffset);
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
                                        RubyNilClass nsec, int isdst, boolean fromutc, Object utcoffset) {
             final int secondsWhole = (int) sec;
             final int nanosecondsFractional = (int) ((sec * 1_000_000_000) - (secondsWhole * 1_000_000_000));
-            return timeSFromArray(timeClass, secondsWhole, min, hour, mday, month, year, nanosecondsFractional, isdst, fromutc, utcoffset);
+            return buildTime(frame, timeClass, secondsWhole, min, hour, mday, month, year, nanosecondsFractional, isdst, fromutc, utcoffset);
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
                                        int nsec, int isdst, boolean fromutc, Object utcoffset) {
             final int secondsWhole = (int) sec;
-            return timeSFromArray(timeClass, secondsWhole, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
+            return buildTime(frame, timeClass, secondsWhole, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
         }
 
         private int cast(Object value) {
@@ -358,10 +333,6 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TimeNSecondsPrimitiveNode(TimeNSecondsPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public long timeNSeconds(RubyTime time) {
             return time.getDateTime().getMillisOfSecond() * 1_000_000L;
@@ -374,10 +345,6 @@ public abstract class TimePrimitiveNodes {
 
         public TimeSetNSecondsPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public TimeSetNSecondsPrimitiveNode(TimeSetNSecondsPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -395,10 +362,6 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TimeEnvZonePrimitiveNode(TimeEnvZonePrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object timeEnvZone(RubyTime time) {
             throw new UnsupportedOperationException("time_env_zone");
@@ -413,14 +376,11 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TimeUTCOffsetPrimitiveNode(TimeUTCOffsetPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object timeUTCOffset(RubyTime time) {
-            if (time.getOffset() != null) {
-                return time.getOffset();
+            Object offset = time.getOffset();
+            if (offset != nil()) {
+                return offset;
             } else {
                 return time.getDateTime().getZone().getOffset(time.getDateTime().getMillis()) / 1_000;
             }

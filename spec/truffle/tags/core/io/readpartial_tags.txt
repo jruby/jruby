@@ -1,5 +1,4 @@
 fails:IO#readpartial raises IOError on closed stream
-fails:IO#readpartial reads at most the specified number of bytes
 fails:IO#readpartial reads after ungetc with data in the buffer
 fails:IO#readpartial reads after ungetc with multibyte characters in the buffer
 fails:IO#readpartial reads after ungetc without data in the buffer
@@ -7,5 +6,3 @@ fails:IO#readpartial discards the existing buffer content upon successful read
 fails:IO#readpartial raises EOFError on EOF
 fails:IO#readpartial discards the existing buffer content upon error
 fails:IO#readpartial raises IOError if the stream is closed
-fails:IO#readpartial raises ArgumentError if the negative argument is provided
-fails:IO#readpartial immediately returns an empty string if the length argument is 0

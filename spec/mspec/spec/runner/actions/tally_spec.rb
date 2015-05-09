@@ -180,7 +180,8 @@ describe Tally, "#format" do
     @tally.examples! 2
     @tally.expectations! 4
     @tally.errors!
-    @tally.format.should == "1 file, 2 examples, 4 expectations, 0 failures, 1 error"
+    @tally.tagged!
+    @tally.format.should == "1 file, 2 examples, 4 expectations, 0 failures, 1 error, 1 tagged"
   end
 
   it "includes guards if MSpec is in verify mode" do
@@ -189,9 +190,10 @@ describe Tally, "#format" do
     @tally.examples! 2
     @tally.expectations! 4
     @tally.errors!
+    @tally.tagged!
     @tally.guards!
     @tally.format.should ==
-      "1 file, 2 examples, 4 expectations, 0 failures, 1 error, 1 guard"
+      "1 file, 2 examples, 4 expectations, 0 failures, 1 error, 1 tagged, 1 guard"
   end
 
   it "includes guards if MSpec is in report mode" do
@@ -200,9 +202,10 @@ describe Tally, "#format" do
     @tally.examples! 2
     @tally.expectations! 4
     @tally.errors!
+    @tally.tagged!
     @tally.guards! 2
     @tally.format.should ==
-      "1 file, 2 examples, 4 expectations, 0 failures, 1 error, 2 guards"
+      "1 file, 2 examples, 4 expectations, 0 failures, 1 error, 1 tagged, 2 guards"
   end
 
   it "includes guards if MSpec is in report_on mode" do
@@ -213,7 +216,7 @@ describe Tally, "#format" do
     @tally.errors!
     @tally.guards! 2
     @tally.format.should ==
-      "1 file, 2 examples, 4 expectations, 0 failures, 1 error, 2 guards"
+      "1 file, 2 examples, 4 expectations, 0 failures, 1 error, 0 tagged, 2 guards"
   end
 end
 
@@ -312,7 +315,7 @@ describe TallyAction, "#format" do
     @tally.expectation @state
     exc = ExceptionState.new nil, nil, SpecExpectationNotMetError.new("Failed!")
     @tally.exception exc
-    @tally.format.should == "1 file, 1 example, 2 expectations, 1 failure, 0 errors"
+    @tally.format.should == "1 file, 1 example, 2 expectations, 1 failure, 0 errors, 0 tagged"
   end
 end
 
@@ -324,8 +327,9 @@ describe TallyAction, "#register" do
 
   it "registers itself with MSpec for appropriate actions" do
     MSpec.should_receive(:register).with(:load, @tally)
-    MSpec.should_receive(:register).with(:example, @tally)
     MSpec.should_receive(:register).with(:exception, @tally)
+    MSpec.should_receive(:register).with(:example, @tally)
+    MSpec.should_receive(:register).with(:tagged, @tally)
     MSpec.should_receive(:register).with(:expectation, @tally)
     @tally.register
   end
@@ -341,6 +345,7 @@ describe TallyAction, "#unregister" do
     MSpec.should_receive(:unregister).with(:load, @tally)
     MSpec.should_receive(:unregister).with(:exception, @tally)
     MSpec.should_receive(:unregister).with(:example, @tally)
+    MSpec.should_receive(:unregister).with(:tagged, @tally)
     MSpec.should_receive(:unregister).with(:expectation, @tally)
     @tally.unregister
   end

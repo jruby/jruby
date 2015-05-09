@@ -1,0 +1,7 @@
+fails:StringIO#readline when passed [separator] returns the data read till the next occurence of the passed separator
+fails:StringIO#readline when passed [separator] sets $_ to the read content
+fails:StringIO#readline when passed [separator] returns the next paragraph when the passed separator is an empty String
+fails:StringIO#readline when passed [separator] returns the remaining content starting at the current position when passed nil
+fails:StringIO#readline when passed [separator] tries to convert the passed separator to a String using #to_str
+fails:StringIO#readline when passed no argument returns the data read till the next occurence of $/ or till eof
+fails:StringIO#readline when passed no argument sets $_ to the read content

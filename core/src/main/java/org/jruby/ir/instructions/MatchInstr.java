@@ -6,24 +6,36 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.NormalCachingCallSite;
 
 import static org.jruby.ir.IRFlags.USES_BACKREF_OR_LASTLINE;
 
-public class MatchInstr extends ResultBaseInstr implements FixedArityInstr {
-    public MatchInstr(Variable result, Operand receiver) {
-        super(Operation.MATCH, result, new Operand[] { receiver });
+public class MatchInstr extends CallBase implements FixedArityInstr, ResultInstr {
+    protected Variable result;
 
-        assert result != null: "MatchInstr result is null";
+    public MatchInstr(Variable result, Operand receiver, Operand arg) {
+        super(Operation.MATCH, CallType.NORMAL, "=~", receiver, new Operand[]{arg}, null, false);
+
+        assert result != null : "Match2Instr result is null";
+
+        this.result = result;
     }
 
-    public Operand getReceiver() {
-        return operands[0];
+    public Variable getResult() {
+        return result;
+    }
+
+    public void updateResult(Variable v) {
+        this.result = v;
     }
 
     @Override
@@ -36,19 +48,19 @@ public class MatchInstr extends ResultBaseInstr implements FixedArityInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new MatchInstr((Variable) result.cloneForInlining(ii), getReceiver().cloneForInlining(ii));
+        return new MatchInstr((Variable) result.cloneForInlining(ii),
+                getReceiver().cloneForInlining(ii), getArg1().cloneForInlining(ii));
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getReceiver());
+        e.encode(getArg1());
     }
 
-    @Override
-    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        RubyRegexp regexp = (RubyRegexp) getReceiver().retrieve(context, self, currScope, currDynScope, temp);
-        return regexp.op_match2_19(context);
+    public static MatchInstr decode(IRReaderDecoder d) {
+        return new MatchInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
     }
 
     @Override

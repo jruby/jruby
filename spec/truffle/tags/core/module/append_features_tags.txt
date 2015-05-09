@@ -1,4 +1,3 @@
-fails:Module#append_features is a private method
 fails:Module#append_features raises an ArgumentError on a cyclic include
 fails:Module#append_features copies own tainted status to the given module
 fails:Module#append_features copies own untrusted status to the given module

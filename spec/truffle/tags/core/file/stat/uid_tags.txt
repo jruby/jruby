@@ -1,1 +1,0 @@
-fails:File::Stat#uid returns the owner attribute of a File::Stat object
