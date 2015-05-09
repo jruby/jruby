@@ -592,7 +592,7 @@ public abstract class ModuleNodes {
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
             CompilerDirectives.transferToInterpreter();
 
-            final Source source = Source.asPseudoFile(code.toString(), file.toString());
+            final Source source = Source.fromNamedText(code.toString(), file.toString());
             return classEvalSource(frame, module, source, code.getByteList().getEncoding());
         }
 
@@ -600,7 +600,7 @@ public abstract class ModuleNodes {
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, int line, UndefinedPlaceholder block) {
             CompilerDirectives.transferToInterpreter();
 
-            final Source source = Source.asPseudoFile(code.toString(), file.toString());
+            final Source source = Source.fromNamedText(code.toString(), file.toString());
             return classEvalSource(frame, module, source, code.getByteList().getEncoding());
         }
 
