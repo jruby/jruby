@@ -238,8 +238,10 @@ require_relative 'core/shims'
 
 # Load JRuby+Truffle specific classes
 
-require_relative 'core/truffle/truffle'
+require_relative 'core/truffle/attachments'
 require_relative 'core/truffle/debug'
+require_relative 'core/truffle/runtime'
+require_relative 'core/truffle/truffle'
 
 # Start running Ruby code outside classes
 
