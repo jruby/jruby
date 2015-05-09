@@ -41,6 +41,7 @@ env:
     - PHASE='-Ptruffle-specs-language'
     - PHASE='-Ptruffle-specs-core'
     - PHASE='-Ptruffle-specs-library'
+    - PHASE='-Ptruffle-specs-truffle'
     - PHASE='-Ptruffle-mri-tests'
 
 matrix:

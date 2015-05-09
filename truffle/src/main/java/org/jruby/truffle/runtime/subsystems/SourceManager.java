@@ -73,7 +73,9 @@ public class SourceManager {
     public int common(String path, String existingPath) {
         int n = 0;
 
-        while (n < path.length() && n < existingPath.length() && path.charAt(path.length() - n) == existingPath.charAt(existingPath.length() - n)) {
+        while (n < path.length()
+                && n < existingPath.length()
+                && path.charAt(path.length() - n - 1) == existingPath.charAt(existingPath.length() - n - 1)) {
             n++;
         }
 

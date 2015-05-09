@@ -571,6 +571,15 @@
       </modules>
     </profile>
     <profile>
+      <id>truffle-specs-truffle</id>
+      <build>
+        <defaultGoal>package</defaultGoal>
+      </build>
+      <modules>
+        <module>test</module>
+      </modules>
+    </profile>
+    <profile>
       <id>truffle-specs-language-report</id>
       <build>
         <defaultGoal>package</defaultGoal>

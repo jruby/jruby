@@ -83,7 +83,7 @@ public abstract class BindingNodes {
         public Object localVariableGetCached(RubyBinding binding, RubySymbol symbol,
                                              @Cached("symbol") RubySymbol cachedSymbol,
                                              @Cached("getFrameDescriptor(binding)") FrameDescriptor cachedFrameDescriptor,
-                                             @Cached("findFrameSlot(cachedFrameDescriptor, symbol)") FrameSlot cachedFrameSlot,
+                                             @Cached("findFrameSlot(binding, symbol)") FrameSlot cachedFrameSlot,
                                              @Cached("createReadNode(cachedFrameSlot)") ReadAbstractFrameSlotNode readLocalVariableNode) {
             if (cachedFrameSlot == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -124,12 +124,30 @@ public abstract class BindingNodes {
             return binding.getFrame().getFrameDescriptor();
         }
 
-        protected FrameSlot findFrameSlot(FrameDescriptor frameDescriptor, RubySymbol symbol) {
-            return frameDescriptor.findFrameSlot(symbol.toString());
+        protected FrameSlot findFrameSlot(RubyBinding binding, RubySymbol symbol) {
+            final String symbolString = symbol.toString();
+
+            MaterializedFrame frame = binding.getFrame();
+
+            while (frame != null) {
+                final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(symbolString);
+
+                if (frameSlot != null) {
+                    return frameSlot;
+                }
+
+                frame = RubyArguments.getDeclarationFrame(frame.getArguments());
+            }
+
+            return null;
         }
 
         protected ReadAbstractFrameSlotNode createReadNode(FrameSlot frameSlot) {
-            return ReadAbstractFrameSlotNodeGen.create(frameSlot);
+            if (frameSlot == null) {
+                return null;
+            } else {
+                return ReadAbstractFrameSlotNodeGen.create(frameSlot);
+            }
         }
 
         protected boolean isLastLine(RubySymbol symbol) {
