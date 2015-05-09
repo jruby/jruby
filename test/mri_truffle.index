@@ -1,6 +1,6 @@
 # Test index
 base64/test_base64.rb
-# benchmark/test_benchmark.rb # passes alone but not in suite
+benchmark/test_benchmark.rb
 # bigdecimal/test_bigdecimal.rb
 # bigdecimal/test_bigdecimal_util.rb
 # bigdecimal/test_bigmath.rb

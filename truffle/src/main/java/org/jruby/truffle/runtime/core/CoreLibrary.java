@@ -631,6 +631,10 @@ public class CoreLibrary {
             return (int) value;
         }
 
+        if (value instanceof Long) {
+            return (long) value;
+        }
+
         if (value instanceof RubyBignum) {
             return ((RubyBignum) value).bigIntegerValue().doubleValue();
         }
