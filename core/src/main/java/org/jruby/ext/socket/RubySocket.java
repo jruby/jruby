@@ -313,7 +313,7 @@ public class RubySocket extends RubyBasicSocket {
         return SocketUtils.gethostbyname(context, hostname);
     }
 
-    @JRubyMethod(required = 2, optional = 4, meta = true)
+    @JRubyMethod(required = 2, optional = 5, meta = true)
     public static IRubyObject getaddrinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return SocketUtils.getaddrinfo(context, args);
     }

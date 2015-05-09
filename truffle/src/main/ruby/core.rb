@@ -231,14 +231,17 @@ require_relative 'core/string'
 require_relative 'core/thread'
 require_relative 'core/unbound_method'
 require_relative 'core/library'
+require_relative 'core/type'
 
 # Dirty fixes we'd like to get rid of soon
 require_relative 'core/shims'
 
 # Load JRuby+Truffle specific classes
 
-require_relative 'core/truffle/truffle'
+require_relative 'core/truffle/attachments'
 require_relative 'core/truffle/debug'
+require_relative 'core/truffle/runtime'
+require_relative 'core/truffle/truffle'
 
 # Start running Ruby code outside classes
 

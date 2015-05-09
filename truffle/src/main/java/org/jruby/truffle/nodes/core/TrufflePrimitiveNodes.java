@@ -169,55 +169,6 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(names = "dump_call_stack", onSingleton = true)
-    public abstract static class DumpCallStackNode extends CoreMethodArrayArgumentsNode {
-
-        public DumpCallStackNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @CompilerDirectives.TruffleBoundary
-        @Specialization
-        public RubyNilClass dumpCallStack() {
-            for (String line : Backtrace.DEBUG_FORMATTER.format(getContext(), null, RubyCallStack.getBacktrace(this))) {
-                System.err.println(line);
-            }
-
-            return nil();
-        }
-
-    }
-
-    @CoreMethod(names = "flush_stdout", onSingleton = true)
-    public abstract static class FlushStdoutNode extends CoreMethodArrayArgumentsNode {
-
-        public FlushStdoutNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyNilClass flush() {
-            getContext().getRuntime().getOut().flush();
-            return nil();
-        }
-
-    }
-
-    @CoreMethod(names = "full_tree", onSingleton = true)
-    public abstract static class FullTreeNode extends CoreMethodArrayArgumentsNode {
-
-        public FullTreeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @CompilerDirectives.TruffleBoundary
-        @Specialization
-        public RubyString fullTree() {
-            return getContext().makeString(NodeUtil.printTreeToString(Truffle.getRuntime().getCallerFrame().getCallNode().getRootNode()));
-        }
-
-    }
-
     @CoreMethod(names = "java_class_of", onSingleton = true, required = 1)
     public abstract static class JavaClassOfNode extends CoreMethodArrayArgumentsNode {
 
@@ -227,7 +178,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public RubyString javaClassOf(Object value) {
-            return getContext().makeString(value.getClass().getName());
+            return getContext().makeString(value.getClass().getSimpleName());
         }
 
     }
@@ -243,108 +194,12 @@ public abstract class TrufflePrimitiveNodes {
         @Specialization
         public RubyString dumpString(RubyString string) {
             final StringBuilder builder = new StringBuilder();
-            builder.append("\"");
 
             for (byte b : string.getByteList().unsafeBytes()) {
                 builder.append(String.format("\\x%02x", b));
             }
 
-            builder.append("\"");
-
             return getContext().makeString(builder.toString());
-        }
-
-    }
-
-    @CoreMethod(names = "source_attribution_tree", onSingleton = true)
-    public abstract static class SourceAttributionTreeNode extends CoreMethodArrayArgumentsNode {
-
-        public SourceAttributionTreeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @CompilerDirectives.TruffleBoundary
-        @Specialization
-        public RubyString sourceAttributionTree() {
-            return getContext().makeString(NodeUtil.printSourceAttributionTree(Truffle.getRuntime().getCallerFrame().getCallNode().getRootNode()));
-        }
-
-    }
-
-    @CoreMethod(names = "storage_class", onSingleton = true, required = 1)
-    public abstract static class StorageClassNode extends CoreMethodArrayArgumentsNode {
-
-        public StorageClassNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyString storageClass(RubyArray array) {
-            if (array.getStore() == null) {
-                return getContext().makeString("null");
-            } else {
-                return getContext().makeString(array.getStore().getClass().getName());
-            }
-        }
-
-        @Specialization
-        public RubyString storageClass(RubyHash hash) {
-            if (hash.getStore() == null) {
-                return getContext().makeString("null");
-            } else {
-                return getContext().makeString(hash.getStore().getClass().getName());
-            }
-        }
-
-    }
-
-    @CoreMethod(names = "panic", onSingleton = true)
-    public abstract static class PanicNode extends CoreMethodArrayArgumentsNode {
-
-        public PanicNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyNilClass doPanic() {
-            DebugOperations.panic(getContext(), this, null);
-            return nil();
-        }
-
-    }
-
-    @CoreMethod(names = "parse_tree", onSingleton = true)
-    public abstract static class ParseTreeNode extends CoreMethodArrayArgumentsNode {
-
-        public ParseTreeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @CompilerDirectives.TruffleBoundary
-        @Specialization
-        public Object parseTree(VirtualFrame frame) {
-            final org.jruby.ast.Node parseTree = RubyCallStack.getCallingMethod(frame).getSharedMethodInfo().getParseTree();
-
-            if (parseTree == null) {
-                return nil();
-            } else {
-                return getContext().makeString(parseTree.toString(true, 0));
-            }
-        }
-
-    }
-
-    @CoreMethod(names = "tree", onSingleton = true)
-    public abstract static class TreeNode extends CoreMethodArrayArgumentsNode {
-
-        public TreeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @CompilerDirectives.TruffleBoundary
-        @Specialization
-        public RubyString tree() {
-            return getContext().makeString(NodeUtil.printCompactTreeToString(Truffle.getRuntime().getCallerFrame().getCallNode().getRootNode()));
         }
 
     }

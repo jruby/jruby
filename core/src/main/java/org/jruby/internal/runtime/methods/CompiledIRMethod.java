@@ -5,6 +5,7 @@ import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.PositionAware;
@@ -17,14 +18,13 @@ import java.lang.invoke.MethodHandle;
 
 import org.jruby.runtime.Helpers;
 
-public class CompiledIRMethod extends JavaMethod implements IRMethodArgs, MethodArgs2, PositionAware {
+public class CompiledIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware {
     protected final MethodHandle variable;
 
     protected final MethodHandle specific;
     protected final int specificArity;
 
     protected final IRScope method;
-    private String[] parameterList;
     private final StaticScope staticScope;
     private final boolean hasExplicitCallProtocol;
     private final boolean hasKwargs;
@@ -72,10 +72,8 @@ public class CompiledIRMethod extends JavaMethod implements IRMethodArgs, Method
         return staticScope.getSignature();
     }
 
-    public String[] getParameterList() {
-        if (parameterList != null) return parameterList;
-
-        return parameterList = Helpers.irMethodArgsToParameters(((IRMethod)method).getArgDesc());
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return ((IRMethod)method).getArgumentDescriptors();
     }
 
     @Override

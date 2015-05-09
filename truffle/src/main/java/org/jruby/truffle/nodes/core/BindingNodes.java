@@ -25,6 +25,7 @@ import org.jruby.truffle.nodes.methods.locals.WriteAbstractFrameSlotNode;
 import org.jruby.truffle.nodes.methods.locals.WriteAbstractFrameSlotNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -66,21 +67,30 @@ public abstract class BindingNodes {
     @CoreMethod(names = "local_variable_get", required = 1)
     public abstract static class LocalVariableGetNode extends CoreMethodArrayArgumentsNode {
 
+        private final RubySymbol dollarUnderscore;
+
         public LocalVariableGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            dollarUnderscore = getContext().getSymbol("$_");
         }
 
         @Specialization(guards = {
-                "!isLastLine(symbol)",
-                "getFrameDescriptor(binding) == cachedFrameDescriptor",
-                "symbol == cachedSymbol"
+                "symbol == cachedSymbol",
+                "!isLastLine(cachedSymbol)",
+                "getFrameDescriptor(binding) == cachedFrameDescriptor"
 
         })
         public Object localVariableGetCached(RubyBinding binding, RubySymbol symbol,
                                              @Cached("symbol") RubySymbol cachedSymbol,
                                              @Cached("getFrameDescriptor(binding)") FrameDescriptor cachedFrameDescriptor,
-                                             @Cached("createReadNode(findFrameSlot(cachedFrameDescriptor, symbol))") ReadAbstractFrameSlotNode readLocalVariableNode) {
-            return readLocalVariableNode.executeRead(binding.getFrame());
+                                             @Cached("findFrameSlot(cachedFrameDescriptor, symbol)") FrameSlot cachedFrameSlot,
+                                             @Cached("createReadNode(cachedFrameSlot)") ReadAbstractFrameSlotNode readLocalVariableNode) {
+            if (cachedFrameSlot == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(symbol.toString(), binding, this));
+            } else {
+                return readLocalVariableNode.executeRead(binding.getFrame());
+            }
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -88,6 +98,11 @@ public abstract class BindingNodes {
         public Object localVariableGetUncached(RubyBinding binding, RubySymbol symbol) {
             final MaterializedFrame frame = binding.getFrame();
             final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(symbol.toString());
+
+            if (frameSlot == null) {
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(symbol.toString(), binding, this));
+            }
+
             return frame.getValue(frameSlot);
         }
 
@@ -96,6 +111,11 @@ public abstract class BindingNodes {
         public Object localVariableGetLastLine(RubyBinding binding, RubySymbol symbol) {
             final MaterializedFrame frame = binding.getFrame();
             final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(symbol.toString());
+
+            if (frameSlot == null) {
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(symbol.toString(), binding, this));
+            }
+
             final Object value = frame.getValue(frameSlot);
             return GetFromThreadLocalNode.get(getContext(), value);
         }
@@ -113,7 +133,7 @@ public abstract class BindingNodes {
         }
 
         protected boolean isLastLine(RubySymbol symbol) {
-            return symbol.toString() == "$_";
+            return symbol == dollarUnderscore;
         }
 
     }
@@ -121,8 +141,11 @@ public abstract class BindingNodes {
     @CoreMethod(names = "local_variable_set", required = 2)
     public abstract static class LocalVariableSetNode extends CoreMethodArrayArgumentsNode {
 
+        private final RubySymbol dollarUnderscore;
+
         public LocalVariableSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            dollarUnderscore = getContext().getSymbol("$_");
         }
 
         @Specialization(guards = {
@@ -182,7 +205,7 @@ public abstract class BindingNodes {
         }
 
         protected boolean isLastLine(RubySymbol symbol) {
-            return symbol.toString() == "$_";
+            return symbol == dollarUnderscore;
         }
     }
 

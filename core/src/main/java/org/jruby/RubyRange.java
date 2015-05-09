@@ -421,7 +421,7 @@ public class RubyRange extends RubyObject {
             to--;
         }
         long from = ((RubyFixnum) begin).getLongValue();
-        if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+        if (block.getSignature() == Signature.NO_ARGUMENTS) {
             IRubyObject nil = runtime.getNil();
             long i;
             for (i = from; i < to; i++) {

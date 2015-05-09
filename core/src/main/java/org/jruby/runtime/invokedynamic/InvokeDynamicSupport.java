@@ -913,18 +913,6 @@ public class InvokeDynamicSupport {
         return rubyEncoding;
     }
     
-    public static BlockBody initBlockBody(MutableCallSite site, Object scriptObject, ThreadContext context, StaticScope scope, String descriptor) {
-        BlockBody body = Helpers.createCompiledBlockBody(context, scriptObject, scope, descriptor);
-        site.setTarget(dropArguments(constant(BlockBody.class, body), 0, Object.class, ThreadContext.class, StaticScope.class));
-        return body;
-    }
-    
-    public static BlockBody initBlockBody19(MutableCallSite site, Object scriptObject, ThreadContext context, StaticScope scope, String descriptor) {
-        BlockBody body = Helpers.createCompiledBlockBody19(context, scriptObject, scope, descriptor);
-        site.setTarget(dropArguments(constant(BlockBody.class, body), 0, Object.class, ThreadContext.class, StaticScope.class));
-        return body;
-    }
-    
     public static RubyBoolean loadBoolean(MutableCallSite site, boolean value, ThreadContext context) {
         RubyBoolean rubyBoolean = context.runtime.newBoolean(value);
         site.setTarget(dropArguments(constant(RubyBoolean.class, rubyBoolean), 0, ThreadContext.class));

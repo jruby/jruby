@@ -456,11 +456,10 @@ public class IRRuntimeHelpers {
         return b.yieldSpecific(context);
     }
 
-    public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, Arity arity, boolean argIsArray) {
+    public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, int blockArity, boolean argIsArray) {
         // SSS FIXME: This should not really happen -- so, some places in the runtime library are breaking this contract.
         if (argIsArray && !(value instanceof RubyArray)) argIsArray = false;
 
-        int blockArity = arity.getValue();
         switch (blockArity) {
             case -1 : return argIsArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
             case  0 : return new IRubyObject[] { value };
@@ -497,7 +496,7 @@ public class IRRuntimeHelpers {
         } else if (value instanceof RubyProc) {
             block = ((RubyProc) value).getBlock();
         } else if (value instanceof RubyMethod) {
-            block = ((RubyProc)((RubyMethod)value).to_proc(context, null)).getBlock();
+            block = ((RubyProc)((RubyMethod)value).to_proc(context)).getBlock();
         } else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil()) {
             block = Block.NULL_BLOCK;
         } else if (value instanceof IRubyObject) {

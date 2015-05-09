@@ -32,6 +32,7 @@ import jnr.constants.platform.Sock;
 import jnr.netdb.Service;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
@@ -182,7 +183,7 @@ public class SocketUtils {
     /**
      * Ruby definition would look like:
      *
-     * def self.getaddrinfo(host, port, family = nil, socktype = nil, protocol = nil, flags = nil)
+     * def self.getaddrinfo(host, port, family = nil, socktype = nil, protocol = nil, flags = nil, reverse_lookup = nil)
      */
     public static IRubyObject getaddrinfo(final ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = context.runtime;
@@ -190,7 +191,7 @@ public class SocketUtils {
 
         buildAddrinfoList(context, args, new AddrinfoCallback() {
             @Override
-            public void addrinfo(InetAddress address, int port, Sock sock) {
+            public void addrinfo(InetAddress address, int port, Sock sock, Boolean reverse) {
                 boolean is_ipv6 = address instanceof Inet6Address;
                 boolean sock_stream = true;
                 boolean sock_dgram = true;
@@ -211,7 +212,7 @@ public class SocketUtils {
                     c = new IRubyObject[7];
                     c[0] = runtime.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
                     c[1] = runtime.newFixnum(port);
-                    c[2] = runtime.newString(getHostAddress(context, address));
+                    c[2] = runtime.newString(getHostAddress(context, address, reverse));
                     c[3] = runtime.newString(address.getHostAddress());
                     c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
                     c[5] = runtime.newFixnum(SOCK_DGRAM);
@@ -223,7 +224,7 @@ public class SocketUtils {
                     c = new IRubyObject[7];
                     c[0] = runtime.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
                     c[1] = runtime.newFixnum(port);
-                    c[2] = runtime.newString(getHostAddress(context, address));
+                    c[2] = runtime.newString(getHostAddress(context, address, reverse));
                     c[3] = runtime.newString(address.getHostAddress());
                     c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
                     c[5] = runtime.newFixnum(SOCK_STREAM);
@@ -242,7 +243,7 @@ public class SocketUtils {
 
         buildAddrinfoList(context, args, new AddrinfoCallback() {
             @Override
-            public void addrinfo(InetAddress address, int port, Sock sock) {
+            public void addrinfo(InetAddress address, int port, Sock sock, Boolean reverse) {
                 boolean sock_stream = true;
                 boolean sock_dgram = true;
 
@@ -279,7 +280,8 @@ public class SocketUtils {
         void addrinfo(
                 InetAddress address,
                 int port,
-                Sock sock);
+                Sock sock,
+                Boolean reverse);
     }
 
     public static void buildAddrinfoList(ThreadContext context, IRubyObject[] args, AddrinfoCallback callback) {
@@ -297,6 +299,24 @@ public class SocketUtils {
             IRubyObject socktype = args.length > 3 ? args[3] : context.nil;
             //IRubyObject protocol = args[4];
             IRubyObject flags = args.length > 5 ? args[5] : context.nil;
+            IRubyObject reverseArg = args.length > 6 ? args[6] : context.nil;
+
+            // The Ruby Socket.getaddrinfo function supports boolean/nil/Symbol values for the
+            // reverse_lookup parameter. We need to massage all valid inputs to true/false/null.
+            Boolean reverseLookup = null;
+            if (reverseArg instanceof RubyBoolean) {
+                reverseLookup = reverseArg.isTrue();
+            } else if (reverseArg instanceof RubySymbol) {
+                String reverseString = reverseArg.toString();
+                if ("hostname".equals(reverseString)) {
+                    reverseLookup = true;
+                } else if ("numeric".equals(reverseString)) {
+                    reverseLookup = false;
+                } else {
+                    throw runtime.newArgumentError("invalid reverse_lookup flag: :" + 
+                     reverseString);
+                }
+            }
 
             AddressFamily addressFamily = AF_INET;
             if (!family.isNil()) {
@@ -339,7 +359,7 @@ public class SocketUtils {
 
             for(int i = 0; i < addrs.length; i++) {
                 int p = port.isNil() ? 0 : (int)port.convertToInteger().getLongValue();
-                callback.addrinfo(addrs[i], p, sock);
+                callback.addrinfo(addrs[i], p, sock, reverseLookup);
             }
 
         } catch(UnknownHostException e) {
@@ -527,8 +547,21 @@ public class SocketUtils {
         return port;
     }
 
+    private static String getHostAddress(ThreadContext context, InetAddress addr, Boolean reverse) {
+        String ret;
+        if (reverse == null) {
+            ret = context.runtime.isDoNotReverseLookupEnabled() ? 
+                   addr.getHostAddress() : addr.getCanonicalHostName();
+        } else if (reverse) {
+            ret = addr.getCanonicalHostName();
+        } else {
+            ret = addr.getHostAddress();
+        }
+        return ret;
+    }
+
     private static String getHostAddress(ThreadContext context, InetAddress addr) {
-        return context.runtime.isDoNotReverseLookupEnabled() ? addr.getHostAddress() : addr.getCanonicalHostName();
+        return getHostAddress(context, addr, null);
     }
 
     private static final Pattern STRING_IPV4_ADDRESS_PATTERN =

@@ -631,6 +631,10 @@ public class CoreLibrary {
             return (int) value;
         }
 
+        if (value instanceof Long) {
+            return (long) value;
+        }
+
         if (value instanceof RubyBignum) {
             return ((RubyBignum) value).bigIntegerValue().doubleValue();
         }
@@ -852,6 +856,11 @@ public class CoreLibrary {
     public RubyException nameErrorPrivateMethod(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("method `%s' for %s is private", name, module.getName()), name, currentNode);
+    }
+
+    public RubyException nameErrorLocalVariableNotDefined(String name, RubyBinding binding, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return nameError(String.format("local variable `%s' not defined for %s", name, binding.toString()), name, currentNode);
     }
 
     public RubyException noMethodError(String message, String name, Node currentNode) {

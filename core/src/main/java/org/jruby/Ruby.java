@@ -112,7 +112,6 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.EventHook;
@@ -4802,15 +4801,6 @@ public final class Ruby implements Constantizable {
 
     private void addEvalParseToStats() {
         if (parserStats != null) parserStats.addEvalParse();
-    }
-
-    private void addJRubyModuleParseToStats() {
-        if (parserStats != null) parserStats.addJRubyModuleParse();
-    }
-
-    @Deprecated
-    public CallbackFactory callbackFactory(Class<?> type) {
-        throw new RuntimeException("callback-style handles are no longer supported in JRuby");
     }
 
     @Deprecated

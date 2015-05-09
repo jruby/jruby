@@ -122,7 +122,7 @@ public class JRubyScriptEngineManager {
 
     public ScriptEngine getEngineByName(String shortName) {
         if (shortName == null) {
-            throw new NullPointerException("Null shortName");
+            throw new NullPointerException("Null symbolicName");
         }
         ScriptEngineFactory factory = nameMap.get(shortName);
         if (factory == null) {

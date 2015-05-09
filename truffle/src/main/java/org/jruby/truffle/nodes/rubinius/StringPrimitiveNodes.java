@@ -919,7 +919,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_copy_from", needsSelf = false)
+    @RubiniusPrimitive(name = "string_copy_from", needsSelf = false, lowerFixnumParameters = {3, 4, 5})
     public static abstract class StringCopyFromPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringCopyFromPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -1037,7 +1037,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_pattern")
+    @RubiniusPrimitive(name = "string_pattern", lowerFixnumParameters = {0, 1})
     public static abstract class StringPatternPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringPatternPrimitiveNode(RubyContext context, SourceSection sourceSection) {

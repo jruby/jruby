@@ -7,6 +7,7 @@ import java.nio.charset.Charset;
 
 import jnr.constants.platform.Errno;
 import org.jruby.*;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.DAsgnNode;
@@ -15,6 +16,7 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.UnnamedRestArgNode;
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.common.IRubyWarnings.ID;
@@ -137,104 +139,11 @@ public class Helpers {
         return receiver0.isTrue() || receiver1.isTrue() || receiver2.isTrue();
     }
 
-    public static CompiledBlockCallback createBlockCallback(Object scriptObject, String closureMethod, String file, int line) {
-        Class scriptClass = scriptObject.getClass();
-        ClassLoader scriptClassLoader = scriptClass.getClassLoader();
-        MethodFactory factory = MethodFactory.createFactory(scriptClassLoader);
-
-        return factory.getBlockCallback(closureMethod, file, line, scriptObject);
-    }
-
-    public static CompiledBlockCallback19 createBlockCallback19(Object scriptObject, String closureMethod, String file, int line) {
-        Class scriptClass = scriptObject.getClass();
-        ClassLoader scriptClassLoader = scriptClass.getClassLoader();
-        MethodFactory factory = MethodFactory.createFactory(scriptClassLoader);
-
-        return factory.getBlockCallback19(closureMethod, file, line, scriptObject);
-    }
-
-    public static byte[] createBlockCallbackOffline(String classPath, String closureMethod, String file, int line) {
-        MethodFactory factory = MethodFactory.createFactory(Helpers.class.getClassLoader());
-
-        return factory.getBlockCallbackOffline(closureMethod, file, line, classPath);
-    }
-
-    public static byte[] createBlockCallback19Offline(String classPath, String closureMethod, String file, int line) {
-        MethodFactory factory = MethodFactory.createFactory(Helpers.class.getClassLoader());
-
-        return factory.getBlockCallback19Offline(closureMethod, file, line, classPath);
-    }
-
     public static String[] parseBlockDescriptor(String descriptor) {
         String[] mangled = descriptor.split(":");
         mangled[0] = JavaNameMangler.demangleMethodName(mangled[0]);
         mangled[4] = JavaNameMangler.demangleMethodName(mangled[4]);
         return mangled;
-    }
-
-    public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, StaticScope scope, String descriptor) {
-        String[] firstSplit = parseBlockDescriptor(descriptor);
-        return createCompiledBlockBody(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), scope, Boolean.valueOf(firstSplit[2]), Integer.parseInt(firstSplit[3]), firstSplit[4], Integer.parseInt(firstSplit[5]), Boolean.valueOf(firstSplit[6]));
-    }
-
-    public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, String closureMethod, int arity,
-            StaticScope staticScope, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light) {
-        staticScope.determineModule();
-
-        if (light) {
-            return CompiledBlockLight.newCompiledBlockLight(
-                    Arity.createArity(arity), staticScope,
-                    createBlockCallback(scriptObject, closureMethod, file, line),
-                    hasMultipleArgsHead, argsNodeType);
-        } else {
-            return CompiledBlock.newCompiledBlock(
-                    Arity.createArity(arity), staticScope,
-                    createBlockCallback(scriptObject, closureMethod, file, line),
-                    hasMultipleArgsHead, argsNodeType);
-        }
-    }
-
-    public static BlockBody createCompiledBlockBody19(ThreadContext context, Object scriptObject, StaticScope scope, String descriptor) {
-        String[] firstSplit = parseBlockDescriptor(descriptor);
-        return createCompiledBlockBody19(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), scope, Boolean.valueOf(firstSplit[2]), Integer.parseInt(firstSplit[3]), firstSplit[4], Integer.parseInt(firstSplit[5]), Boolean.valueOf(firstSplit[6]), firstSplit[7]);
-    }
-
-    public static BlockBody createCompiledBlockBody19(ThreadContext context, Object scriptObject, String closureMethod, int arity,
-            StaticScope staticScope, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light, String parameterList) {
-        staticScope.determineModule();
-
-        if (light) {
-            return CompiledBlockLight19.newCompiledBlockLight(
-                    Arity.createArity(arity), staticScope,
-                    createBlockCallback19(scriptObject, closureMethod, file, line),
-                    hasMultipleArgsHead, argsNodeType, parameterList.split(";"));
-        } else {
-            return CompiledBlock19.newCompiledBlock(
-                    Arity.createArity(arity), staticScope,
-                    createBlockCallback19(scriptObject, closureMethod, file, line),
-                    hasMultipleArgsHead, argsNodeType, parameterList.split(";"));
-        }
-    }
-
-    public static Block createBlock(ThreadContext context, IRubyObject self, BlockBody body) {
-        return CompiledBlock.newCompiledClosure(
-                context,
-                self,
-                body);
-    }
-
-    public static Block createBlock19(ThreadContext context, IRubyObject self, BlockBody body) {
-        return CompiledBlock19.newCompiledClosure(
-                context,
-                self,
-                body);
-    }
-
-    public static Block createSharedScopeBlock(ThreadContext context, IRubyObject self, int arity,
-            CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argsNodeType) {
-
-        return CompiledSharedScopeBlock.newCompiledSharedScopeClosure(context, self, Arity.createArity(arity),
-                context.getCurrentScope(), callback, hasMultipleArgsHead, argsNodeType);
     }
 
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
@@ -948,7 +857,7 @@ public class Helpers {
         }
 
         if (currentThrowable instanceof RaiseException) {
-            return isExceptionHandled(((RaiseException)currentThrowable).getException(), throwables, context);
+            return isExceptionHandled(((RaiseException) currentThrowable).getException(), throwables, context);
         } else {
             if (throwables.length == 0) {
                 // no rescue means StandardError, which rescues Java exceptions
@@ -971,7 +880,7 @@ public class Helpers {
         }
 
         if (currentThrowable instanceof RaiseException) {
-            return isExceptionHandled(((RaiseException)currentThrowable).getException(), throwable, context);
+            return isExceptionHandled(((RaiseException) currentThrowable).getException(), throwable, context);
         } else {
             if (checkJavaException(currentThrowable, throwable, context)) {
                 return context.runtime.getTrue();
@@ -2499,56 +2408,52 @@ public class Helpers {
         return ((RubyArray) Helpers.ensureRubyArray(runtime, first).dup()).concat(secondArgs);
     }
 
-    public static String encodeParameterList(ArgsNode argsNode) {
-        StringBuilder builder = new StringBuilder();
+    /** Use an ArgsNode (used for blocks) to generate ArgumentDescriptors */
+    public static ArgumentDescriptor[] argsNodeToArgumentDescriptors(ArgsNode argsNode) {
+        ArrayList<ArgumentDescriptor> descs = new ArrayList<>();
 
-        boolean added = false;
         if (argsNode.getPre() != null) {
             for (Node preNode : argsNode.getPre().childNodes()) {
-                if (added) builder.append(';');
-                added = true;
                 if (preNode instanceof MultipleAsgnNode) {
-                    builder.append("nil");
+                    descs.add(new ArgumentDescriptor(ArgumentType.anonreq));
                 } else {
-                    builder.append("q").append(((ArgumentNode)preNode).getName());
+                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode) preNode).getName()));
                 }
             }
         }
 
         if (argsNode.getOptArgs() != null) {
             for (Node optNode : argsNode.getOptArgs().childNodes()) {
-                if (added) builder.append(';');
-                added = true;
-                builder.append("o");
+                ArgumentType type = ArgumentType.opt;
+                String name = null;
                 if (optNode instanceof OptArgNode) {
-                    builder.append(((OptArgNode)optNode).getName());
+                    name = ((OptArgNode)optNode).getName();
                 } else if (optNode instanceof LocalAsgnNode) {
-                    builder.append(((LocalAsgnNode)optNode).getName());
+                    name = ((LocalAsgnNode)optNode).getName();
                 } else if (optNode instanceof DAsgnNode) {
-                    builder.append(((DAsgnNode)optNode).getName());
+                    name = ((DAsgnNode)optNode).getName();
+                } else {
+                    type = ArgumentType.anonopt;
                 }
+                descs.add(new ArgumentDescriptor(type, name));
             }
         }
 
         ArgumentNode restArg = argsNode.getRestArgNode();
         if (restArg != null) {
-            if (added) builder.append(';');
-            added = true;
             if (restArg instanceof UnnamedRestArgNode) {
-                if (((UnnamedRestArgNode) restArg).isStar()) builder.append("R");
+                if (((UnnamedRestArgNode) restArg).isStar()) descs.add(new ArgumentDescriptor(ArgumentType.anonrest));
             } else {
-                builder.append("r").append(restArg.getName());
+                descs.add(new ArgumentDescriptor(ArgumentType.rest, restArg.getName()));
             }
         }
 
         if (argsNode.getPost() != null) {
             for (Node postNode : argsNode.getPost().childNodes()) {
-                if (added) builder.append(';');
-                added = true;
                 if (postNode instanceof MultipleAsgnNode) {
-                    builder.append("nil");
+                    descs.add(new ArgumentDescriptor(ArgumentType.anonreq));
                 } else {
-                    builder.append("q").append(((ArgumentNode)postNode).getName());
+                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode)postNode).getName()));
                 }
             }
         }
@@ -2556,124 +2461,81 @@ public class Helpers {
         if (argsNode.getKeywords() != null) {
             for (Node keyWordNode : argsNode.getKeywords().childNodes()) {
                 for (Node asgnNode : keyWordNode.childNodes()) {
-                    if (added) builder.append(';');
-                    added = true;
                     if (isRequiredKeywordArgumentValueNode(asgnNode)) {
-                        builder.append("K").append(((DAsgnNode) asgnNode).getName());
+                        descs.add(new ArgumentDescriptor(ArgumentType.keyreq, ((INameNode) asgnNode).getName()));
                     } else {
-                        builder.append("k").append(((DAsgnNode) asgnNode).getName());
+                        descs.add(new ArgumentDescriptor(ArgumentType.key, ((INameNode) asgnNode).getName()));
                     }
                 }
             }
         }
 
         if (argsNode.getKeyRest() != null) {
-            if (added) builder.append(';');
-            added = true;
-            builder.append("e").append(argsNode.getKeyRest().getName());
+            String argName = argsNode.getKeyRest().getName();
+            if (argName == null || argName.length() == 0) {
+                descs.add(new ArgumentDescriptor(ArgumentType.anonkeyrest, argName));
+            } else {
+                descs.add(new ArgumentDescriptor(ArgumentType.keyrest, argsNode.getKeyRest().getName()));
+            }
         }
+        if (argsNode.getBlock() != null) descs.add(new ArgumentDescriptor(ArgumentType.block, argsNode.getBlock().getName()));
 
-
-        if (argsNode.getBlock() != null) {
-            if (added) builder.append(';');
-            added = true;
-            builder.append("b").append(argsNode.getBlock().getName());
-        }
-
-        if (!added) {
-          return "NONE";
-        }
-
-        return builder.toString();
+        return descs.toArray(new ArgumentDescriptor[descs.size()]);
     }
 
-    public static String encodeParameterList(List<String[]> args) {
-        if (args.size() == 0) return "NONE";
+    /** Convert a parameter list from prefix format to ArgumentDescriptor format */
+    public static ArgumentDescriptor[] parameterListToArgumentDescriptors(String[] parameterList, boolean isLambda) {
+        ArgumentDescriptor[] parms = new ArgumentDescriptor[parameterList.length];
 
-        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < parameterList.length; i++) {
+            String param = parameterList[i];
 
-        boolean added = false;
-        for (String[] desc : args) {
-            if (added) builder.append(';');
-            builder.append(desc[0]).append(desc[1]);
-            added = true;
-        }
-
-        return builder.toString();
-    }
-
-    public static RubyArray parameterListToParameters(Ruby runtime, String[] parameterList, boolean isLambda) {
-        RubyArray parms = RubyArray.newEmptyArray(runtime);
-
-        for (String param : parameterList) {
-            if (param == null) continue; // FIXME: How does this happen?
             if (param.equals("NONE")) break;
+            if (param.equals("nil")) param = "n"; // make length 1 so we don't look for a name
 
-            RubyArray elem = RubyArray.newEmptyArray(runtime);
-            if (param.equals("nil")) {
-                // marker for masgn args (the parens in "a, b, (c, d)"
-                elem.add(RubySymbol.newSymbol(runtime, isLambda ? "req" : "opt"));
-                parms.add(elem);
-                continue;
-            }
+            ArgumentType type = ArgumentType.valueOf(param.charAt(0));
 
-            if (param.length() == 0) System.out.println(Arrays.toString(parameterList));
-            if (param.charAt(0) == 'q') {
-                // required/normal arg
-                elem.add(RubySymbol.newSymbol(runtime, isLambda ? "req" : "opt"));
-            } else if (param.charAt(0) == 'r') {
-                // named rest arg
-                elem.add(RubySymbol.newSymbol(runtime, "rest"));
-            } else if (param.charAt(0) == 'R') {
-                // unnamed rest arg (star)
-                elem.add(RubySymbol.newSymbol(runtime, "rest"));
-                parms.add(elem);
-                continue;
-            } else if (param.charAt(0) == 'o') {
-                // optional arg
-                elem.add(RubySymbol.newSymbol(runtime, "opt"));
-                if (param.length() == 1) {
-                    // no name; continue
-                    parms.add(elem);
-                    continue;
-                }
-            } else if (param.charAt(0) == 'b') {
-                // block arg
-                elem.add(RubySymbol.newSymbol(runtime, "block"));
-            } else if (param.charAt(0) == 'k') {
-                elem.add(RubySymbol.newSymbol(runtime, "key"));
-            } else if (param.charAt(0) == 'K') {
-                elem.add(RubySymbol.newSymbol(runtime, "keyreq"));
-            } else if (param.charAt(0) == 'e') {
-                elem.add(RubySymbol.newSymbol(runtime, "keyrest"));
-            }
+            // for lambdas, we call required args optional
+            if (type == ArgumentType.req && !isLambda) type = ArgumentType.opt;
 
+            // 'R', 'o', 'n' forms can get here without a name
             if (param.length() > 1) {
-                elem.add(RubySymbol.newSymbol(runtime, param.substring(1)));
+                parms[i] = new ArgumentDescriptor(type, param.substring(1));
+            } else {
+                parms[i] = new ArgumentDescriptor(type);
             }
-
-            parms.add(elem);
         }
 
         return parms;
     }
 
-    public static String[] irMethodArgsToParameters(String[] argDesc) {
-        String[] tmp = new String[argDesc.length];
-        for (int i = 0; i < tmp.length; i++) {
-            String type = argDesc[i];
-            i++;
-            String name = argDesc[i];
-            if (type.equals("keyreq")) {
-                tmp[i] = "K" + name;
-            } else if (type.equals("keyrest")) {
-                tmp[i] = "e" + name;
-            } else {
-                tmp[i] = type.charAt(0) + name;
-            }
-        }
+    /** Convert a parameter list from ArgumentDescriptor format to "Array of Array" format */
+    public static RubyArray argumentDescriptorsToParameters(Ruby runtime, ArgumentDescriptor[] argsDesc, boolean isLambda) {
+        if (argsDesc == null) Thread.dumpStack();
 
-        return tmp;
+        RubyArray parms = RubyArray.newArray(runtime, argsDesc.length);
+
+        for (ArgumentDescriptor param : argsDesc) parms.add(param.toArrayForm(runtime, isLambda));
+
+        return parms;
+    }
+
+    public static ArgumentDescriptor[] methodToArgumentDescriptors(DynamicMethod method) {
+        method = method.getRealMethod();
+
+        if (method instanceof MethodArgs2) {
+            return parameterListToArgumentDescriptors(((MethodArgs2) method).getParameterList(), true);
+        } else if (method instanceof IRMethodArgs) {
+            return ((IRMethodArgs) method).getArgumentDescriptors();
+        } else {
+            return new ArgumentDescriptor[]{new ArgumentDescriptor(ArgumentType.rest)};
+        }
+    }
+
+    public static IRubyObject methodToParameters(Ruby runtime, AbstractRubyMethod recv) {
+        DynamicMethod method = recv.getMethod().getRealMethod();
+
+        return argumentDescriptorsToParameters(runtime, methodToArgumentDescriptors(method), true);
     }
 
     public static RubyString getDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name) {
@@ -2933,7 +2795,7 @@ public class Helpers {
     public static void rewriteStackTrace(final Ruby runtime, final Throwable e) {
         final StackTraceElement[] javaTrace = e.getStackTrace();
         BacktraceData backtraceData = runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(runtime.getCurrentContext(), javaTrace);
-        e.setStackTrace( RaiseException.javaTraceFromRubyTrace(backtraceData.getBacktrace(runtime)) );
+        e.setStackTrace(RaiseException.javaTraceFromRubyTrace(backtraceData.getBacktrace(runtime)));
     }
 
     public static String stringJoin(String delimiter, String[] strings) {
@@ -2965,6 +2827,22 @@ public class Helpers {
 
     private static boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
         return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueNode;
+    }
+
+    @Deprecated
+    public static String encodeParameterList(List<String[]> args) {
+        if (args.size() == 0) return "NONE";
+
+        StringBuilder builder = new StringBuilder();
+
+        boolean added = false;
+        for (String[] desc : args) {
+            if (added) builder.append(';');
+            builder.append(desc[0]).append(desc[1]);
+            added = true;
+        }
+
+        return builder.toString();
     }
 
 }

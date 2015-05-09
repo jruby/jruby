@@ -91,7 +91,7 @@ public class BodyTranslator extends Translator {
     public boolean useClassVariablesAsIfInClass = false;
     private boolean translatingNextExpression = false;
     private boolean translatingWhile = false;
-    private String currentCallMethodName = null;
+    protected String currentCallMethodName = null;
 
     private boolean privately = false;
 
@@ -484,13 +484,15 @@ public class BodyTranslator extends Translator {
 
         final List<RubyNode> arguments = new ArrayList<>();
 
-        final Iterator<Node> childIterator = node.getArgsNode().childNodes().iterator();
+        // The first argument was the symbol so we ignore it
+        for (int n = 1; n < node.getArgsNode().childNodes().size(); n++) {
+            RubyNode readArgumentNode = node.getArgsNode().childNodes().get(n).accept(this);
 
-        // The first argument was the symbol, so skip it when gathering arguments to pass to the primitive
-        childIterator.next();
+            if (ArrayUtils.contains(primitive.getAnnotation().lowerFixnumParameters(), n)) {
+                readArgumentNode = new FixnumLowerNode(readArgumentNode);
+            }
 
-        while (childIterator.hasNext()) {
-            arguments.add(childIterator.next().accept(this));
+            arguments.add(readArgumentNode);
         }
         
         return new InvokeRubiniusPrimitiveNode(context, sourceSection,

@@ -1,23 +1,19 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class IRBlockBody extends ContextAwareBlockBody {
-    protected String[] parameterList;
     protected final String fileName;
     protected final int lineNumber;
     protected ThreadLocal<EvalType> evalType;
 
-    public IRBlockBody(StaticScope staticScope, String[] parameterList, String fileName, int lineNumber, Signature signature) {
-        super(staticScope, signature, -1);
-        this.parameterList = parameterList;
+    public IRBlockBody(StaticScope staticScope, String fileName, int lineNumber, Signature signature) {
+        super(staticScope, signature);
         this.fileName = fileName;
         this.lineNumber = lineNumber;
         this.evalType = new ThreadLocal();
@@ -26,15 +22,6 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     public void setEvalType(EvalType evalType) {
         this.evalType.set(evalType);
-    }
-
-    @Override
-    public String[] getParameterList() {
-        return parameterList;
-    }
-
-    public void setParameterList(String[] parameterList) {
-        this.parameterList = parameterList;
     }
 
     @Override
@@ -81,7 +68,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Type type) {
         if (arg0 instanceof RubyArray) {
 		    // Unwrap the array arg
-            IRubyObject[] args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature.arity(), true);
+            IRubyObject[] args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature.arityValue(), true);
 
             // FIXME: arity error is aginst new args but actual error shows arity of original args.
             if (type == Type.LAMBDA) signature.checkArity(context.runtime, args);
@@ -153,25 +140,6 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     }
 
     protected abstract IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block);
-
-    @Override
-    public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Type type) {
-        if (type == Type.LAMBDA) {
-            signature.checkArity(context.runtime, args);
-        } else {
-            // SSS FIXME: How is it even possible to "call" a NORMAL block?
-            // I thought only procs & lambdas can be called, and blocks are yielded to.
-            if (args.length == 1) {
-                // Convert value to arg-array, unwrapping where necessary
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], signature.arity(), (type == Type.NORMAL) && (args[0] instanceof RubyArray));
-            } else if (getSignature().arityValue() == 1 && !getSignature().restKwargs()) {
-               // discard excess arguments
-                args = (args.length == 0) ? context.runtime.getSingleNilArray() : new IRubyObject[] { args[0] };
-            }
-        }
-
-        return args;
-    }
 
     @Override
     public String getFile() {

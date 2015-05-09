@@ -8,6 +8,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -55,9 +56,9 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         return method.getStaticScope();
     }
 
-    public String[] getParameterList() {
+    public ArgumentDescriptor[] getArgumentDescriptors() {
         ensureInstrsReady(); // Make sure method is minimally built before returning this info
-        return ((IRMethod) method).getArgDesc();
+        return ((IRMethod) method).getArgumentDescriptors();
     }
 
     public Signature getSignature() {

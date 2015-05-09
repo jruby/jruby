@@ -21,6 +21,8 @@ import org.jruby.parser.StaticScope;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -61,6 +63,8 @@ public abstract class IRScope implements ParseResult {
     private static final Collection<IRClosure> NO_CLOSURES = Collections.unmodifiableCollection(new ArrayList<IRClosure>(0));
 
     private static AtomicInteger globalScopeCount = new AtomicInteger();
+    // Argument description
+    protected ArgumentDescriptor[] argDesc = ArgumentDescriptor.EMPTY_ARRAY;
 
     /** Unique global scope id */
     private int scopeId;
@@ -191,6 +195,7 @@ public abstract class IRScope implements ParseResult {
         this.scopeId = globalScopeCount.getAndIncrement();
 
         setupLexicalContainment();
+        this.argDesc = null;
     }
 
     private void setupLexicalContainment() {
@@ -775,6 +780,17 @@ public abstract class IRScope implements ParseResult {
 
     public LocalVariable lookupExistingLVar(String name) {
         return localVars.get(name);
+    }
+
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return argDesc;
+    }
+
+    /**
+     * Set upon completion of IRBuild of this IRMethod.
+     */
+    public void setArgumentDescriptors(ArgumentDescriptor[] argDesc) {
+        this.argDesc = argDesc;
     }
 
     protected LocalVariable findExistingLocalVariable(String name, int depth) {

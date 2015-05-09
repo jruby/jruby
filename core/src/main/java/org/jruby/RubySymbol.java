@@ -282,7 +282,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
     @JRubyMethod(name = "===", required = 1)
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return super.op_equal(context, other);
+        return context.runtime.newBoolean(this == other);
+    }
+
+    @JRubyMethod(name = "==", required = 1)
+    @Override
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+        return context.runtime.newBoolean(this == other);
     }
 
     @Deprecated
@@ -419,7 +425,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
     public IRubyObject to_proc(ThreadContext context) {
         StaticScope scope = context.runtime.getStaticScopeFactory().getDummyScope();
         final CallSite site = new FunctionalCachingCallSite(symbol);
-        BlockBody body = new ContextAwareBlockBody(scope, Signature.OPTIONAL, BlockBody.SINGLE_RESTARG) {
+        BlockBody body = new ContextAwareBlockBody(scope, Signature.OPTIONAL) {
             private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block block) {
                 if (array.isEmpty()) {
                     throw context.runtime.newArgumentError("no receiver given");

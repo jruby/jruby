@@ -56,13 +56,13 @@ public class BodyInterpreterEngine extends InterpreterEngine {
         while (ipc < n) {
             Instr instr = instrs[ipc];
 
-            ipc++;
-
             Operation operation = instr.getOperation();
             if (debug) {
-                Interpreter.LOG.info("I: {}", instr);
+                Interpreter.LOG.info("I: {" + ipc + "} ", instr);
                 Interpreter.interpInstrsCount++;
             }
+
+            ipc++;
 
             try {
                 switch (operation) {

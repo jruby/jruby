@@ -24,6 +24,7 @@ import org.jruby.truffle.pack.nodes.type.ToDoubleNodeGen;
 import org.jruby.truffle.pack.nodes.type.ToIntegerNodeGen;
 import org.jruby.truffle.pack.nodes.write.WriteByteNode;
 import org.jruby.truffle.pack.nodes.write.WriteBytesNodeGen;
+import org.jruby.truffle.pack.nodes.write.WritePaddedBytesNodeGen;
 import org.jruby.truffle.pack.runtime.PackEncoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
@@ -72,8 +73,13 @@ public class FormatParser {
                         node = new WriteByteNode((byte) '%');
                         break;
                     case 's':
-                        node = WriteBytesNodeGen.create(ReadStringNodeGen.create(
-                                context, true, "to_s", false, new ByteList(), new SourceNode()));
+                        if (directive.getSpacePadding() == FormatDirective.DEFAULT) {
+                            node = WriteBytesNodeGen.create(ReadStringNodeGen.create(
+                                    context, true, "to_s", false, new ByteList(), new SourceNode()));
+                        } else {
+                            node = WritePaddedBytesNodeGen.create(directive.getSpacePadding(), ReadStringNodeGen.create(
+                                    context, true, "to_s", false, new ByteList(), new SourceNode()));
+                        }
                         break;
                     case 'd':
                     case 'i':

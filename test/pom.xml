@@ -600,7 +600,6 @@
                       <arg value="test/jruby/test_irubyobject_java_passing.rb" />
                       <arg value="test/jruby/test_jruby_object_input_stream.rb" />
                       <arg value="test/jruby/test_jar_on_load_path.rb" />
-                      <arg value="test/jruby/test_jruby_ext.rb" />
                       <arg value="test/jruby/test_jruby_core_ext.rb" />
                       <arg value="test/jruby/test_thread_context_frame_dereferences_unreachable_variables.rb" />
                       <arg value="test/jruby/test_context_classloader.rb" />

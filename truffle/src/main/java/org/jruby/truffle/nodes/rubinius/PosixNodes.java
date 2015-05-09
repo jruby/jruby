@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Fcntl;
@@ -18,6 +19,7 @@ import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -197,6 +199,31 @@ public abstract class PosixNodes {
             final long address = getAddress(pointer);
             UnsafeHolder.U.setMemory(address, length, (byte) c);
             return pointer;
+        }
+
+    }
+
+    @CoreMethod(names = "readlink", isModuleFunction = true, required = 3)
+    public abstract static class ReadlinkNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+
+        public ReadlinkNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int readlink(RubyString path, RubyBasicObject pointer, int bufsize) {
+            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
+            final long address = getAddress(pointer);
+            final byte[] buffer = new byte[bufsize];
+            final int result = posix().readlink(pathString, buffer, bufsize);
+            if (result == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+            for (int n = 0; n < buffer.length; n++) {
+                UnsafeHolder.U.putByte(address + n * Unsafe.ARRAY_BYTE_INDEX_SCALE, buffer[n]);
+            }
+            return result;
         }
 
     }

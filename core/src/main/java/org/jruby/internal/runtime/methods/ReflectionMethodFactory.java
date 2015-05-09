@@ -29,28 +29,24 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-
-import java.util.ArrayList;
-import java.util.List;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CompiledBlockCallback;
-import org.jruby.runtime.CompiledBlockCallback19;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This MethodFactory uses reflection to provide method handles. Reflection is
@@ -176,80 +172,6 @@ public class ReflectionMethodFactory extends MethodFactory {
             return ic;
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public CompiledBlockCallback getBlockCallback(String method, final String file, final int line, final Object scriptObject) {
-        try {
-            Class scriptClass = scriptObject.getClass();
-            final Method blockMethod = scriptClass.getMethod(method, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class);
-            return new CompiledBlockCallback() {
-                public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject args, Block block) {
-                    try {
-                        return (IRubyObject)blockMethod.invoke(null, scriptObject, context, self, args, block);
-                    } catch (IllegalAccessException ex) {
-                        throw new RuntimeException(ex);
-                    } catch (IllegalArgumentException ex) {
-                        throw new RuntimeException(ex);
-                    } catch (InvocationTargetException ex) {
-                        Throwable cause = ex.getCause();
-                        if (cause instanceof RuntimeException) {
-                            throw (RuntimeException) cause;
-                        } else if (cause instanceof Error) {
-                            throw (Error) cause;
-                        } else {
-                            throw new RuntimeException(ex);
-                        }
-                    }
-                }
-
-                public String getFile() {
-                    return file;
-                }
-
-                public int getLine() {
-                    return line;
-                }
-            };
-        } catch (NoSuchMethodException nsme) {
-            throw new RuntimeException(nsme);
-        }
-    }
-
-    public CompiledBlockCallback19 getBlockCallback19(String method, final String file, final int line, final Object scriptObject) {
-        try {
-            Class scriptClass = scriptObject.getClass();
-            final Method blockMethod = scriptClass.getMethod(method, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
-            return new CompiledBlockCallback19() {
-                public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-                    try {
-                        return (IRubyObject)blockMethod.invoke(null, scriptObject, context, self, args, block);
-                    } catch (IllegalAccessException ex) {
-                        throw new RuntimeException(ex);
-                    } catch (IllegalArgumentException ex) {
-                        throw new RuntimeException(ex);
-                    } catch (InvocationTargetException ex) {
-                        Throwable cause = ex.getCause();
-                        if (cause instanceof RuntimeException) {
-                            throw (RuntimeException) cause;
-                        } else if (cause instanceof Error) {
-                            throw (Error) cause;
-                        } else {
-                            throw new RuntimeException(ex);
-                        }
-                    }
-                }
-
-                public String getFile() {
-                    return file;
-                }
-
-                public int getLine() {
-                    return line;
-                }
-            };
-        } catch (NoSuchMethodException nsme) {
-            throw new RuntimeException(nsme);
         }
     }
 }

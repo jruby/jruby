@@ -36,7 +36,7 @@ package org.jruby.runtime;
 import org.jruby.EvalType;
 import org.jruby.RubyArray;
 import org.jruby.RubyProc;
-import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -44,19 +44,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  * The executable body portion of a closure.
  */
 public abstract class BlockBody {
-    // FIXME: Maybe not best place, but move it to a good home
-    public static final int ZERO_ARGS = 0;
-    public static final int MULTIPLE_ASSIGNMENT = 1;
-    public static final int ARRAY = 2;
-    public static final int SINGLE_RESTARG = 3;
-
     public static final String[] EMPTY_PARAMETER_LIST = new String[0];
     
-    protected final int argumentType;
     protected final Signature signature;
 
-    public BlockBody(int argumentType, Signature signature) {
-        this.argumentType = argumentType;
+    public BlockBody(Signature signature) {
         this.signature = signature;
     }
 
@@ -120,10 +112,6 @@ public abstract class BlockBody {
     public IRubyObject yield(ThreadContext context, IRubyObject value,
             Binding binding, Block.Type type, Block block) {
         return yield(context, value, binding, type);
-    }
-
-    public int getArgumentType() {
-        return argumentType;
     }
 
     public IRubyObject call(ThreadContext context, Binding binding, Block.Type type) {
@@ -217,43 +205,25 @@ public abstract class BlockBody {
     public abstract int getLine();
 
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
-        switch (type) {
-        case NORMAL: {
-//            assert false : "can this happen?";
-            if (args.length == 1 && args[0] instanceof RubyArray) {
-                if (argumentType == MULTIPLE_ASSIGNMENT || argumentType == SINGLE_RESTARG) {
-                    args = ((RubyArray) args[0]).toJavaArray();
-                }
-                break;
+        if (type == Block.Type.LAMBDA) {
+            signature.checkArity(context.runtime, args);
+        } else {
+            // SSS FIXME: How is it even possible to "call" a NORMAL block?
+            // I thought only procs & lambdas can be called, and blocks are yielded to.
+            if (args.length == 1) {
+                // Convert value to arg-array, unwrapping where necessary
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], signature.arityValue(), type == Block.Type.NORMAL && args[0] instanceof RubyArray);
+            } else if (getSignature().arityValue() == 1 && !getSignature().restKwargs()) {
+                // discard excess arguments
+                args = args.length == 0 ? context.runtime.getSingleNilArray() : new IRubyObject[] { args[0] };
             }
-        }
-        case PROC: {
-            if (args.length == 1 && args[0] instanceof RubyArray) {
-                if (argumentType == MULTIPLE_ASSIGNMENT && argumentType != SINGLE_RESTARG) {
-                    args = ((RubyArray) args[0]).toJavaArray();
-                }
-            }
-            break;
-        }
-        case LAMBDA:
-            if (argumentType == ARRAY && args.length != 1) {
-                context.runtime.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + getSignature().arityValue() + ")");
-                if (args.length == 0) {
-                    args = context.runtime.getSingleNilArray();
-                } else {
-                    args = new IRubyObject[] {context.runtime.newArrayNoCopy(args)};
-                }
-            } else {
-                getSignature().checkArity(context.runtime, args);
-            }
-            break;
         }
 
         return args;
     }
 
-    public String[] getParameterList() {
-        return EMPTY_PARAMETER_LIST;
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return ArgumentDescriptor.EMPTY_ARRAY;
     }
 
     public static final BlockBody NULL_BODY = new NullBlockBody();

@@ -45,7 +45,6 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
-import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -241,9 +240,6 @@ public class RubyProc extends RubyObject implements DataType {
     public static IRubyObject[] prepareArgs(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject[] args) {
         Signature signature = blockBody.getSignature();
 
-        // FIXME: which blocks have no signature (and no arity before that?)
-        if (signature == null) return args;
-
         if (args == null) return IRubyObject.NULL_ARRAY;
 
         if (type == Block.Type.LAMBDA) {
@@ -349,10 +345,8 @@ public class RubyProc extends RubyObject implements DataType {
     public IRubyObject parameters(ThreadContext context) {
         BlockBody body = this.getBlock().getBody();
 
-        if (body instanceof MethodBlock) return ((MethodBlock) body).getMethod().parameters(context);
-
-        return Helpers.parameterListToParameters(context.runtime,
-                body.getParameterList(), isLambda());
+        return Helpers.argumentDescriptorsToParameters(context.runtime,
+                body.getArgumentDescriptors(), isLambda());
     }
 
     @JRubyMethod(name = "lambda?")

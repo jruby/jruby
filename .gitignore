@@ -105,3 +105,6 @@ build.eclipse
 truffle-findbugs-report.html
 findbugs-noUpdateChecks-3.0.0.tar.gz
 findbugs-3.0.0
+
+# Vagrant
+/.vagrant

@@ -129,15 +129,17 @@ public class InterpreterEngine {
         // Enter the looooop!
         while (ipc < n) {
             Instr instr = instrs[ipc];
-            ipc++;
+
             Operation operation = instr.getOperation();
             if (debug) {
-                Interpreter.LOG.info("I: {}", instr);
+                Interpreter.LOG.info("I: {" + ipc + "} ", instr);
                 Interpreter.interpInstrsCount++;
             } else if (profile) {
                 Profiler.instrTick(operation);
                 Interpreter.interpInstrsCount++;
             }
+
+            ipc++;
 
             try {
                 switch (operation.opClass) {
