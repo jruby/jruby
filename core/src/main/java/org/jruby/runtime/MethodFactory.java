@@ -221,50 +221,6 @@ public abstract class MethodFactory {
     public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc);
 
     /**
-     * Get a CompiledBlockCallback for the specified block
-     *
-     * @param method The name of the method
-     * @param scriptObject The object in which the method can be found
-     * @return A new CompiledBlockCallback for the method
-     */
-    public abstract CompiledBlockCallback getBlockCallback(String method, String file, int line, Object scriptObject);
-
-    /**
-     * Get a CompiledBlockCallback for the specified block
-     *
-     * @param method The name of the method
-     * @param scriptObject The object in which the method can be found
-     * @return A new CompiledBlockCallback for the method
-     */
-    public abstract CompiledBlockCallback19 getBlockCallback19(String method, String file, int line, Object scriptObject);
-
-    /**
-     * Get a CompiledBlockCallback for the specified block, returning the bytes
-     * but not loading the class. This is used for offline generation of the
-     * callback class file.
-     *
-     * @param method The name of the method
-     * @param classPath The /-based name of the class containing the method
-     * @return The bytes of the class
-     */
-    public byte[] getBlockCallbackOffline(String method, String file, int line, String classPath) {
-        return null;
-    }
-
-    /**
-     * Get a CompiledBlockCallback for the specified block, returning the bytes
-     * but not loading the class. This is used for offline generation of the
-     * callback class file. This version generates a 1.9-compatible callback.
-     *
-     * @param method The name of the method
-     * @param classPath The /-based name of the class containing the method
-     * @return The bytes of the class
-     */
-    public byte[] getBlockCallback19Offline(String method, String file, int line, String classPath) {
-        return null;
-    }
-
-    /**
      * Use the reflection-based factory.
      */
     private static final boolean reflection;

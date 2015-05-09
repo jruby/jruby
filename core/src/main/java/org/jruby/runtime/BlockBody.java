@@ -222,8 +222,8 @@ public abstract class BlockBody {
         return args;
     }
 
-    public String[] getParameterList() {
-        return EMPTY_PARAMETER_LIST;
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return ArgumentDescriptor.EMPTY_ARRAY;
     }
 
     public static final BlockBody NULL_BODY = new NullBlockBody();

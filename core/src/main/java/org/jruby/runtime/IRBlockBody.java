@@ -1,23 +1,19 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class IRBlockBody extends ContextAwareBlockBody {
-    protected String[] parameterList;
     protected final String fileName;
     protected final int lineNumber;
     protected ThreadLocal<EvalType> evalType;
 
-    public IRBlockBody(StaticScope staticScope, String[] parameterList, String fileName, int lineNumber, Signature signature) {
+    public IRBlockBody(StaticScope staticScope, String fileName, int lineNumber, Signature signature) {
         super(staticScope, signature);
-        this.parameterList = parameterList;
         this.fileName = fileName;
         this.lineNumber = lineNumber;
         this.evalType = new ThreadLocal();
@@ -26,15 +22,6 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     public void setEvalType(EvalType evalType) {
         this.evalType.set(evalType);
-    }
-
-    @Override
-    public String[] getParameterList() {
-        return parameterList;
-    }
-
-    public void setParameterList(String[] parameterList) {
-        this.parameterList = parameterList;
     }
 
     @Override

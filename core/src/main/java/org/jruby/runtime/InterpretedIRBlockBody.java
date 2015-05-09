@@ -26,7 +26,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements FullBuildSour
     private InterpreterContext interpreterContext;
 
     public InterpretedIRBlockBody(IRClosure closure, Signature signature) {
-        super(closure.getStaticScope(), closure.getParameterList(), closure.getFileName(), closure.getLineNumber(), signature);
+        super(closure.getStaticScope(), closure.getFileName(), closure.getLineNumber(), signature);
         this.closure = closure;
         this.pushScope = true;
         this.reuseParentScope = false;
@@ -51,6 +51,11 @@ public class InterpretedIRBlockBody extends IRBlockBody implements FullBuildSour
     @Override
     public IRScope getIRScope() {
         return closure;
+    }
+
+    @Override
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return closure.getArgumentDescriptors();
     }
 
     public InterpreterContext ensureInstrsReady() {

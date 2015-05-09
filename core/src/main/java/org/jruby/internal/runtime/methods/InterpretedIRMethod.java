@@ -58,7 +58,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
         ensureInstrsReady(); // Make sure method is minimally built before returning this info
-        return ((IRMethod) method).getArgDesc();
+        return ((IRMethod) method).getArgumentDescriptors();
     }
 
     public Signature getSignature() {

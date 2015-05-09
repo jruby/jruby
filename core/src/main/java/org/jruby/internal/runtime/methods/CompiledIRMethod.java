@@ -73,7 +73,7 @@ public class CompiledIRMethod extends DynamicMethod implements IRMethodArgs, Pos
     }
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
-        return ((IRMethod)method).getArgDesc();
+        return ((IRMethod)method).getArgumentDescriptors();
     }
 
     @Override

@@ -30,7 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.jruby;
 
-import java.util.ArrayList;
 import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -38,13 +37,10 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.IRMethodArgs;
-import org.jruby.internal.runtime.methods.MethodArgs2;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -154,24 +150,8 @@ public class JRubyLibrary implements Library {
             AbstractRubyMethod rubyMethod = (AbstractRubyMethod)recv;
             DynamicMethod method = rubyMethod.getMethod().getRealMethod();
 
-            return Helpers.parameterListToParameters(runtime, methodParameters(method), true);
+            return Helpers.argumentDescriptorsToParameters(runtime, Helpers.methodToArgumentDescriptors(method), true);
         }
-        
-        public static String[] methodParameters(DynamicMethod method) {
-            ArrayList<String> argsArray = new ArrayList<String>();
-            method = method.getRealMethod();
 
-            if (method instanceof MethodArgs2) {
-                return ((MethodArgs2) method).getParameterList();
-            } else if (method instanceof IRMethodArgs) {
-                return Helpers.irMethodArgsToParameters(((IRMethodArgs) method).getArgumentDescriptors());
-            } else {
-                if (method.getArity() == Arity.OPTIONAL) {
-                    argsArray.add("r");
-                }
-            }
-
-            return argsArray.toArray(new String[argsArray.size()]);
-        }
     }
 }

@@ -3,6 +3,7 @@ package org.jruby.runtime;
 import org.jruby.EvalType;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block.Type;
@@ -18,7 +19,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
     protected boolean usesKwargs;
 
     public CompiledIRBlockBody(MethodHandle handle, IRScope closure, long encodedSignature) {
-        super(closure.getStaticScope(), ((IRClosure)closure).getParameterList(), closure.getFileName(), closure.getLineNumber(), Signature.decode(encodedSignature));
+        super(closure.getStaticScope(), closure.getFileName(), closure.getLineNumber(), Signature.decode(encodedSignature));
         this.handle = handle;
         this.closure = (IRClosure)closure;
         // FIXME: duplicated from InterpreterContext
@@ -28,6 +29,11 @@ public class CompiledIRBlockBody extends IRBlockBody {
 
         // Done in the interpreter (WrappedIRClosure) but we do it here
         closure.getStaticScope().determineModule();
+    }
+
+    @Override
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return closure.getArgumentDescriptors();
     }
 
     protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block) {

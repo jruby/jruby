@@ -14,9 +14,6 @@ import org.jruby.parser.StaticScope;
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
 
-    // Argument description
-    private ArgumentDescriptor[] argDesc;
-
     // Signatures to the jitted versions of this method
     private Map<Integer, MethodType> signatures;
 
@@ -31,7 +28,6 @@ public class IRMethod extends IRScope {
 
         this.defn = defn;
         this.isInstanceMethod = isInstanceMethod;
-        this.argDesc = null;
         this.signatures = null;
 
         if (!getManager().isDryRun() && staticScope != null) {
@@ -63,17 +59,6 @@ public class IRMethod extends IRScope {
     @Override
     public IRScopeType getScopeType() {
         return isInstanceMethod ? IRScopeType.INSTANCE_METHOD : IRScopeType.CLASS_METHOD;
-    }
-
-    public ArgumentDescriptor[] getArgDesc() {
-        return argDesc;
-    }
-
-    /**
-     * Set upon completion of IRBuild of this IRMethod.
-     */
-    public void setArgDesc(ArgumentDescriptor[] argDesc) {
-        this.argDesc = argDesc;
     }
 
     @Override

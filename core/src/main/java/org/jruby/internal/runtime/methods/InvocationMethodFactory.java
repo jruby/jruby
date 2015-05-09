@@ -28,20 +28,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import java.io.PrintWriter;
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.List;
-
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyKernel;
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.Signature;
-import org.jruby.util.ClassDefiningClassLoader;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -51,23 +40,35 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CompiledBlockCallback;
-import org.jruby.runtime.CompiledBlockCallback19;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.MethodFactory;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.CodegenUtils;
-import static org.jruby.util.CodegenUtils.*;
-import static java.lang.System.*;
 import org.jruby.util.ClassDefiningJRubyClassLoader;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.util.CheckClassAdapter;
+import org.jruby.util.CodegenUtils;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.util.CheckClassAdapter;
+
+import java.io.PrintWriter;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.List;
+
+import static java.lang.System.out;
+import static org.jruby.util.CodegenUtils.ci;
+import static org.jruby.util.CodegenUtils.p;
+import static org.jruby.util.CodegenUtils.params;
+import static org.jruby.util.CodegenUtils.sig;
 
 /**
  * In order to avoid the overhead with reflection-based method handles, this
@@ -93,18 +94,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     
     /** The pathname of the super class for compiled Ruby method handles. */ 
     private final static String COMPILED_SUPER_CLASS_NAME = p(COMPILED_SUPER_CLASS);
-
-    /** The class used for the super class of compiled Ruby block handles. */
-    private static final Class<CompiledBlockCallback> COMPILED_BLOCK_SUPER_CLASS = CompiledBlockCallback.class;
-
-    /** The pathname of the super class for compiled Ruby block handles. */
-    private static final String COMPILED_BLOCK_SUPER_CLASS_NAME = p(COMPILED_BLOCK_SUPER_CLASS);
-
-    /** The interface used for compiled Ruby 1.9+ block handles. */
-    public static final Class<CompiledBlockCallback19> COMPILED_BLOCK_19_INTERFACE = CompiledBlockCallback19.class;
-
-    /** The pathname of the interface for compiled Ruby block handles. */
-    public static final String COMPILED_BLOCK_19_INTERFACE_NAME = p(COMPILED_BLOCK_19_INTERFACE);
     
     /** The outward call signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG = sig(IRubyObject.class,
@@ -933,180 +922,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
     public static String getBlockCallbackName(String typePathString, String method) {
         return (typePathString + "$" + method).replaceAll("/", "\\$");
-    }
-
-    public CompiledBlockCallback getBlockCallback(String method, String file, int line, Object scriptObject) {
-        Class typeClass = scriptObject.getClass();
-        String typePathString = p(typeClass);
-        String mname = getBlockCallbackName(typePathString, method);
-        try {
-            Class c = tryBlockCallbackClass(mname, COMPILED_BLOCK_SUPER_CLASS);
-            if (c == null) {
-                synchronized (syncObject) {
-                    c = tryBlockCallbackClass(mname, COMPILED_BLOCK_SUPER_CLASS);
-                    if (c == null) {
-                        if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                            LOG.debug("no generated handle in classloader for: {}", mname);
-                        }
-                        byte[] bytes = getBlockCallbackOffline(method, file, line, typePathString);
-                        c = endClassWithBytes(bytes, mname);
-                    } else {
-                        if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                            LOG.debug("found generated handle in classloader for: {}", mname);
-                        }
-                    }
-                }
-            }
-                
-            CompiledBlockCallback ic = (CompiledBlockCallback) c.getConstructor(Object.class).newInstance(scriptObject);
-            return ic;
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IllegalArgumentException(e.getMessage());
-        }
-    }
-
-    @Override
-    public byte[] getBlockCallbackOffline(String method, String file, int line, String classname) {
-        String mname = getBlockCallbackName(classname, method);
-        ClassWriter cw = createBlockCtor(mname, classname);
-        SkinnyMethodAdapter mv = startBlockCall(cw);
-        mv.aload(0);
-        mv.getfield(mname, "$scriptObject", "L" + classname + ";");
-        mv.aloadMany(1, 2, 3, 4);
-        mv.invokestatic(classname, method, sig(
-                IRubyObject.class, "L" + classname + ";", ThreadContext.class,
-                        IRubyObject.class, IRubyObject.class, Block.class));
-        mv.areturn();
-        mv.end();
-
-        mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "getFile", sig(String.class), null, null);
-        mv.start();
-        mv.ldc(file);
-        mv.areturn();
-        mv.end();
-
-        mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "getLine", sig(int.class), null, null);
-        mv.start();
-        mv.ldc(line);
-        mv.ireturn();
-        mv.end();
-
-        return endCallOffline(cw);
-    }
-
-    public CompiledBlockCallback19 getBlockCallback19(String method, String file, int line, Object scriptObject) {
-        Class typeClass = scriptObject.getClass();
-        String typePathString = p(typeClass);
-        String mname = getBlockCallbackName(typePathString, method);
-        try {
-            Class c = tryBlockCallback19Class(mname, COMPILED_BLOCK_19_INTERFACE);
-            if (c == null) {
-                synchronized (syncObject) {
-                    c = tryBlockCallback19Class(mname, COMPILED_BLOCK_19_INTERFACE);
-                    if (c == null) {
-                        if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                            LOG.debug("no generated handle in classloader for: {}", mname);
-                        }
-                        byte[] bytes = getBlockCallback19Offline(method, file, line, typePathString);
-                        c = endClassWithBytes(bytes, mname);
-                    } else {
-                        if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                            LOG.debug("found generated handle in classloader for: {}", mname);
-                        }
-                    }
-                }
-            }
-                
-            CompiledBlockCallback19 ic = (CompiledBlockCallback19) c.getConstructor(Object.class).newInstance(scriptObject);
-            return ic;
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IllegalArgumentException(e.getMessage());
-        }
-    }
-
-    @Override
-    public byte[] getBlockCallback19Offline(String method, String file, int line, String classname) {
-        String mnamePath = getBlockCallbackName(classname, method);
-        ClassWriter cw = createBlockCtor19(mnamePath, classname);
-        SkinnyMethodAdapter mv = startBlockCall19(cw);
-        mv.aload(0);
-        mv.getfield(mnamePath, "$scriptObject", "L" + classname + ";");
-        mv.aloadMany(1, 2, 3, 4);
-        mv.invokestatic(classname, method, sig(
-                IRubyObject.class, "L" + classname + ";", ThreadContext.class,
-                        IRubyObject.class, IRubyObject[].class, Block.class));
-        mv.areturn();
-        mv.end();
-
-        mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "getFile", sig(String.class), null, null);
-        mv.start();
-        mv.ldc(file);
-        mv.areturn();
-        mv.end();
-
-        mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "getLine", sig(int.class), null, null);
-        mv.start();
-        mv.ldc(line);
-        mv.ireturn();
-        mv.end();
-        
-        return endCallOffline(cw);
-    }
-
-    private SkinnyMethodAdapter startBlockCall(ClassWriter cw) {
-        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_SYNTHETIC | ACC_FINAL, "call", BLOCK_CALL_SIG, null, null);
-
-        mv.visitCode();
-        return mv;
-    }
-
-    private SkinnyMethodAdapter startBlockCall19(ClassWriter cw) {
-        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_SYNTHETIC | ACC_FINAL, "call", BLOCK_CALL_SIG19, null, null);
-
-        mv.visitCode();
-        return mv;
-    }
-
-    private ClassWriter createBlockCtor(String namePath, String classname) {
-        String ciClassname = "L" + classname + ";";
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, COMPILED_BLOCK_SUPER_CLASS_NAME, null);
-        cw.visitSource(namePath, null);
-        cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ciClassname, null, null);
-        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null);
-        mv.start();
-        mv.aload(0);
-        mv.invokespecial(p(CompiledBlockCallback.class), "<init>", sig(void.class));
-        mv.aloadMany(0, 1);
-        mv.checkcast(classname);
-        mv.putfield(namePath, "$scriptObject", ciClassname);
-        mv.voidreturn();
-        mv.end();
-
-        return cw;
-    }
-
-    private ClassWriter createBlockCtor19(String namePath, String classname) {
-        String ciClassname = "L" + classname + ";";
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, p(Object.class), new String[] {COMPILED_BLOCK_19_INTERFACE_NAME});
-        cw.visitSource(namePath, null);
-        cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ciClassname, null, null);
-        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null);
-        mv.start();
-        mv.aload(0);
-        mv.invokespecial(p(Object.class), "<init>", sig(void.class));
-        mv.aloadMany(0, 1);
-        mv.checkcast(classname);
-        mv.putfield(namePath, "$scriptObject", ciClassname);
-        mv.voidreturn();
-        mv.end();
-
-        return cw;
     }
 
     /**

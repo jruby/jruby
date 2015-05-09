@@ -1741,7 +1741,7 @@ public class IRBuilder {
             }
         }
 
-        ((IRMethod) scope).setArgDesc(argDesc);
+        ((IRMethod) scope).setArgumentDescriptors(argDesc);
 
         return scope.allocateInterpreterContext(instructions);
     }
@@ -1867,7 +1867,11 @@ public class IRBuilder {
             // For this code, there is no argument name available from the ruby code.
             // So, we generate an implicit arg name
             String argName = argsNode.getRestArgNode().getName();
-            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.rest, argName == null ? "" : argName);
+            if (scope instanceof IRMethod) {
+                addArgumentDescription(
+                        argName == null || argName.length() == 0 ? ArgumentType.anonrest : ArgumentType.rest,
+                        argName);
+            }
             argName = (argName == null || argName.equals("")) ? "*" : argName;
 
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
@@ -2099,7 +2103,7 @@ public class IRBuilder {
     public void receiveBlockArgs(final IterNode node) {
         Node args = node.getVarNode();
         if (args instanceof ArgsNode) { // regular blocks
-            ((IRClosure) scope).setParameterList(Helpers.encodeParameterList((ArgsNode) args).split(";"));
+            scope.setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
             receiveArgs((ArgsNode)args);
         } else  {
             // for loops -- reuse code in IRBuilder:buildBlockArgsAssignment
