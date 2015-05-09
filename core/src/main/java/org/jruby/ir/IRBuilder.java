@@ -2215,9 +2215,15 @@ public class IRBuilder {
 
      * ****************************************************************/
     public Operand buildEnsureNode(final EnsureNode ensureNode) {
+        final Variable savedGlobalException = createTemporaryVariable();
+        addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
+
         CodeBlock ensureCodeBuilder = new CodeBlock() {
             public Operand run() {
-                return (ensureNode.getEnsureNode() == null) ? manager.getNil() : build(ensureNode.getEnsureNode());
+                Operand retVal = (ensureNode.getEnsureNode() == null) ? manager.getNil() : build(ensureNode.getEnsureNode());
+                // Restore "$!"
+                addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+                return retVal;
             };
         };
         return buildEnsureInternal(ensureNode.getBodyNode(), ensureCodeBuilder);
@@ -3052,7 +3058,7 @@ public class IRBuilder {
         // Save $! in a temp var so it can be restored when the exception gets handled.
         Variable savedGlobalException = createTemporaryVariable();
         addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
-        if (ensure != null) ensure.savedGlobalException = savedGlobalException;
+        ensure.savedGlobalException = savedGlobalException;
 
         addInstr(new LabelInstr(rBeginLabel));
 
@@ -3102,9 +3108,7 @@ public class IRBuilder {
             // No explicit return from the protected body
             // - If we dont have any ensure blocks, simply jump to the end of the rescue block
             // - If we do, execute the ensure code.
-            if (ensure != null) {
-                ensure.cloneIntoHostScope(this);
-            }
+            ensure.cloneIntoHostScope(this);
             addInstr(new JumpInstr(rEndLabel));
         }   //else {
             // If the body had an explicit return, the return instruction IR build takes care of setting
@@ -3124,9 +3128,6 @@ public class IRBuilder {
 
         // Build the actual rescue block(s)
         buildRescueBodyInternal(rescueNode.getRescueNode(), rv, exc, rEndLabel);
-
-        // End label -- only if there is no ensure block!  With an ensure block, you end at ensureEndLabel.
-        if (ensure == null) addInstr(new LabelInstr(rEndLabel));
 
         activeRescueBlockStack.pop();
         return rv;
