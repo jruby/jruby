@@ -9,6 +9,11 @@
 module Rubinius
   module Type
 
+    def self.const_get(mod, name, inherit=true, resolve=true)
+      raise "unsupported" unless resolve
+      mod.const_get name, inherit
+    end
+
     def self.const_exists?(mod, name, inherit = true)
       mod.const_defined? name, inherit
     end
