@@ -48,6 +48,7 @@ import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
@@ -110,7 +111,7 @@ public abstract class VMPrimitiveNodes {
                         clearExceptionVariableNode = insert(
                                 new WriteInstanceVariableNode(getContext(), getSourceSection(), "$!",
                                         new ObjectLiteralNode(getContext(), getSourceSection(), getContext().getThreadManager().getCurrentThread().getThreadLocals()),
-                                        new ObjectLiteralNode(getContext(), getSourceSection(), nil()),
+                                        new NilLiteralNode(getContext(), getSourceSection()),
                                         true)
                         );
                     }

@@ -22,6 +22,7 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
@@ -87,7 +88,7 @@ class MethodTranslator extends BodyTranslator {
                 parentSourceSection.pop();
             }
         } else {
-            body = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+            body = new NilLiteralNode(context, sourceSection);
         }
 
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
@@ -136,7 +137,7 @@ class MethodTranslator extends BodyTranslator {
 
             prelude = SequenceNode.sequence(context, sourceSection,
                     new BehaveAsBlockNode(context, sourceSection,
-                            new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                            new NilLiteralNode(context, sourceSection),
                             new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null)), preludeBuilder);
         } else {
             if (usesRubiniusPrimitive) {

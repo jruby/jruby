@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyNilClass;
@@ -39,7 +40,7 @@ public final class SequenceNode extends RubyNode {
         final List<RubyNode> flattened = flatten(sequence, true);
 
         if (flattened.isEmpty()) {
-            return new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+            return new NilLiteralNode(context, sourceSection);
         } else if (flattened.size() == 1) {
             return flattened.get(0);
         } else {
