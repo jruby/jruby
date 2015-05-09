@@ -47,6 +47,8 @@ import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
+import org.jruby.truffle.nodes.core.array.ArrayCoreMethodNode;
+import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;

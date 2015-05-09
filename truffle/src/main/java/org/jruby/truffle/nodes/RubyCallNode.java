@@ -20,7 +20,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.nodes.dispatch.*;
-import org.jruby.truffle.nodes.literal.HashLiteralNode;
+import org.jruby.truffle.nodes.core.hash.HashLiteralNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.nodes.arguments.OptionalKeywordArgMissingNode;

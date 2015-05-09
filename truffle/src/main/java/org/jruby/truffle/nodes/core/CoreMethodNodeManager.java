@@ -19,6 +19,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNode;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.nodes.arguments.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
