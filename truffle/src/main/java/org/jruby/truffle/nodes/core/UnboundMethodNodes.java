@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
@@ -152,10 +153,10 @@ public abstract class UnboundMethodNodes {
         public RubyArray parameters(RubyUnboundMethod method) {
             final ArgsNode argsNode = method.getMethod().getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
 
-            final String[] parameters = Helpers.encodeParameterList((ArgsNode) argsNode).split(";");
+            final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
 
-            return (RubyArray) getContext().toTruffle(Helpers.parameterListToParameters(getContext().getRuntime(),
-                    parameters, true));
+            return (RubyArray) getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
+                    argsDesc, true));
         }
 
     }
