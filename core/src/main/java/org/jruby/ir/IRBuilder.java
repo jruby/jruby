@@ -133,20 +133,12 @@ public class IRBuilder {
     }
 
     private static class RescueBlockInfo {
-        RescueNode rescueNode;             // Rescue node for which we are tracking info
         Label      entryLabel;             // Entry of the rescue block
         Variable   savedExceptionVariable; // Variable that contains the saved $! variable
-        IRLoop     innermostLoop;          // Innermost loop within which this rescue block is nested, if any
 
-        public RescueBlockInfo(RescueNode n, Label l, Variable v, IRLoop loop) {
-            rescueNode = n;
+        public RescueBlockInfo(Label l, Variable v) {
             entryLabel = l;
             savedExceptionVariable = v;
-            innermostLoop = loop;
-        }
-
-        public void restoreException(IRBuilder b, IRLoop currLoop) {
-            if (currLoop == innermostLoop) b.addInstr(new PutGlobalVarInstr("$!", savedExceptionVariable));
         }
     }
 
@@ -253,6 +245,7 @@ public class IRBuilder {
         }
     }
 
+    // SSS FIXME: Currently only used for retries -- we should be able to eliminate this
     // Stack of nested rescue blocks -- this just tracks the start label of the blocks
     private Stack<RescueBlockInfo> activeRescueBlockStack = new Stack<>();
 
@@ -355,9 +348,7 @@ public class IRBuilder {
             if (loop != null && ebi.innermostLoop != loop) break;
 
             // SSS FIXME: Should $! be restored before or after the ensure block is run?
-            if (ebi.savedGlobalException != null) {
-                addInstr(new PutGlobalVarInstr("$!", ebi.savedGlobalException));
-            }
+            addInstr(new PutGlobalVarInstr("$!", ebi.savedGlobalException));
 
             // Clone into host scope
             ebi.cloneIntoHostScope(this);
@@ -902,8 +893,6 @@ public class IRBuilder {
         // If we have ensure blocks, have to run those first!
         if (!activeEnsureBlockStack.empty()) {
             emitEnsureBlocks(currLoop);
-        } else if (!activeRescueBlockStack.empty()) {
-            activeRescueBlockStack.peek().restoreException(this, currLoop);
         }
 
         if (currLoop != null) {
@@ -2239,6 +2228,7 @@ public class IRBuilder {
         Operand ensureRetVal = ensurerNode == null ? manager.getNil() : build(ensurerNode);
         // Restore $!
         addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+        ebi.savedGlobalException = savedGlobalException;
         ensureBodyBuildStack.pop();
 
         // ------------ Build the protected region ------------
@@ -2763,7 +2753,6 @@ public class IRBuilder {
 
         // If we have ensure blocks, have to run those first!
         if (!activeEnsureBlockStack.empty()) emitEnsureBlocks(currLoop);
-        else if (!activeRescueBlockStack.empty()) activeRescueBlockStack.peek().restoreException(this, currLoop);
 
         if (currLoop != null) {
             // If a regular loop, the next is simply a jump to the end of the iteration
@@ -3040,11 +3029,6 @@ public class IRBuilder {
         Label rEndLabel   = ensure.end;
         Label rescueLabel = getNewLabel(); // Label marking start of the first rescue code.
 
-        // Save $! in a temp var so it can be restored when the exception gets handled.
-        Variable savedGlobalException = createTemporaryVariable();
-        addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
-        ensure.savedGlobalException = savedGlobalException;
-
         addInstr(new LabelInstr(rBeginLabel));
 
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
@@ -3072,7 +3056,7 @@ public class IRBuilder {
         //
         // The retry should jump to 1, not 2.
         // If we push the rescue block before building the body, we will jump to 2.
-        RescueBlockInfo rbi = new RescueBlockInfo(rescueNode, rBeginLabel, savedGlobalException, getCurrentLoop());
+        RescueBlockInfo rbi = new RescueBlockInfo(rBeginLabel, ensure.savedGlobalException);
         activeRescueBlockStack.push(rbi);
 
         // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
@@ -3171,17 +3155,13 @@ public class IRBuilder {
         Node realBody = skipOverNewlines(rescueBodyNode.getBodyNode());
         Operand x = build(realBody);
         if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
-            // Restore "$!"
-            RescueBlockInfo rbi = activeRescueBlockStack.peek();
-            addInstr(new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
-
             // Set up node return value 'rv'
             addInstr(new CopyInstr(rv, x));
 
-            // If we have a matching ensure block, clone it so ensure block runs here
-            if (!activeEnsureBlockStack.empty() && rbi.rescueNode == activeEnsureBlockStack.peek().matchingRescueNode) {
-                activeEnsureBlockStack.peek().cloneIntoHostScope(this);
-            }
+            // Clone the topmost ensure block (which will be a wrapper
+            // around the current rescue block)
+            activeEnsureBlockStack.peek().cloneIntoHostScope(this);
+
             addInstr(new JumpInstr(endLabel));
         }
     }
@@ -3190,6 +3170,12 @@ public class IRBuilder {
         // JRuby only supports retry when present in rescue blocks!
         // 1.9 doesn't support retry anywhere else.
 
+        // SSS FIXME: We should be able to use activeEnsureBlockStack for this
+        // But, see the code in buildRescueInternal that pushes/pops these and
+        // the documentation for retries.  There is a small ordering issue
+        // which is preventing me from getting rid of activeRescueBlockStack
+        // altogether!
+        //
         // Jump back to the innermost rescue block
         // We either find it, or we add code to throw a runtime exception
         if (activeRescueBlockStack.empty()) {
@@ -3210,14 +3196,9 @@ public class IRBuilder {
         // Before we return,
         // - have to go execute all the ensure blocks if there are any.
         //   this code also takes care of resetting "$!"
-        // - if we have a rescue block, reset "$!".
         if (!activeEnsureBlockStack.empty()) {
             retVal = addResultInstr(new CopyInstr(createTemporaryVariable(), retVal));
             emitEnsureBlocks(null);
-        } else if (!activeRescueBlockStack.empty()) {
-            // Restore $!
-            RescueBlockInfo rbi = activeRescueBlockStack.peek();
-            addInstr(new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
         }
        return retVal;
     }
