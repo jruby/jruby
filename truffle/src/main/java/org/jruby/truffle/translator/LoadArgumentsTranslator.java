@@ -18,6 +18,7 @@ import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.truffle.nodes.DefinedWrapperNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArraySliceNodeGen;
 import org.jruby.truffle.nodes.core.array.PrimitiveArrayNodeFactory;
@@ -25,8 +26,8 @@ import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.array.ArrayLiteralNode;
-import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.arguments.*;
+import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.locals.ReadLocalVariableNodeGen;
 import org.jruby.truffle.nodes.locals.WriteLocalVariableNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
@@ -176,7 +177,9 @@ public class LoadArgumentsTranslator extends Translator {
             name = localAsgnNode.getName();
 
             if (localAsgnNode.getValueNode() == null) {
-                defaultValue = new NilLiteralNode(context, sourceSection);
+                defaultValue = new DefinedWrapperNode(context, sourceSection,
+                        new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                        "nil");
             } else if (localAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
                 /*
                  * This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
@@ -191,7 +194,9 @@ public class LoadArgumentsTranslator extends Translator {
             name = dAsgnNode.getName();
 
             if (dAsgnNode.getValueNode() == null) {
-                defaultValue = new NilLiteralNode(context, sourceSection);
+                defaultValue = new DefinedWrapperNode(context, sourceSection,
+                        new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                        "nil");
             } else if (dAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
                 /*
                  * This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
@@ -411,7 +416,9 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         for (String parameterToClear : parametersToClearCollector.getParameters()) {
-            nilSequence.add(((ReadNode) methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(parameterToClear, sourceSection)).makeWriteNode(new NilLiteralNode(context, sourceSection)));
+            nilSequence.add(((ReadNode) methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(parameterToClear, sourceSection)).makeWriteNode(new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil")));
         }
 
         if (!childNodes.isEmpty()) {
@@ -429,7 +436,9 @@ public class LoadArgumentsTranslator extends Translator {
                 new IfNode(context, sourceSection,
                         new IsNilNode(context, sourceSection, ReadLocalVariableNodeGen.create(context, sourceSection, arraySlot)),
                         nil,
-                        notNil == null ? new NilLiteralNode(context, sourceSection) : notNil));
+                        notNil == null ? new DefinedWrapperNode(context, sourceSection,
+                                new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                                "nil") : notNil));
     }
 
     @Override

@@ -43,12 +43,12 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Sysconf;
 import jnr.posix.Times;
+import org.jruby.truffle.nodes.DefinedWrapperNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
-import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
@@ -108,10 +108,14 @@ public abstract class VMPrimitiveNodes {
                 if (areSame(frame, e.getTag(), tag)) {
                     if (clearExceptionVariableNode == null) {
                         CompilerDirectives.transferToInterpreter();
+                        RubyContext context = getContext();
+                        SourceSection sourceSection = getSourceSection();
                         clearExceptionVariableNode = insert(
                                 new WriteInstanceVariableNode(getContext(), getSourceSection(), "$!",
                                         new ObjectLiteralNode(getContext(), getSourceSection(), getContext().getThreadManager().getCurrentThread().getThreadLocals()),
-                                        new NilLiteralNode(getContext(), getSourceSection()),
+                                        new DefinedWrapperNode(context, sourceSection,
+                                                new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                                                "nil"),
                                         true)
                         );
                     }

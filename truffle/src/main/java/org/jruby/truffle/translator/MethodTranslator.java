@@ -17,12 +17,12 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
+import org.jruby.truffle.nodes.DefinedWrapperNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
@@ -88,7 +88,9 @@ class MethodTranslator extends BodyTranslator {
                 parentSourceSection.pop();
             }
         } else {
-            body = new NilLiteralNode(context, sourceSection);
+            body = new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil");
         }
 
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
@@ -137,7 +139,9 @@ class MethodTranslator extends BodyTranslator {
 
             prelude = SequenceNode.sequence(context, sourceSection,
                     new BehaveAsBlockNode(context, sourceSection,
-                            new NilLiteralNode(context, sourceSection),
+                            new DefinedWrapperNode(context, sourceSection,
+                                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                                    "nil"),
                             new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null)), preludeBuilder);
         } else {
             if (usesRubiniusPrimitive) {

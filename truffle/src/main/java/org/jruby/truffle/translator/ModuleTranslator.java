@@ -14,10 +14,10 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.DefinedWrapperNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.AliasNodeGen;
 import org.jruby.truffle.nodes.methods.CatchReturnPlaceholderNode;
@@ -54,7 +54,9 @@ class ModuleTranslator extends BodyTranslator {
                 parentSourceSection.pop();
             }
         } else {
-            body = new NilLiteralNode(context, sourceSection);
+            body = new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil");
         }
 
         if (environment.getFlipFlopStates().size() > 0) {

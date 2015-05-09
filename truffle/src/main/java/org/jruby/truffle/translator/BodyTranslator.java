@@ -139,7 +139,9 @@ public class BodyTranslator extends Translator {
         RubyNode x;
 
         if (node.getFirstNode() == null) {
-            x = new NilLiteralNode(context, sourceSection);
+            x = new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil");
         } else {
             x = node.getFirstNode().accept(this);
         }
@@ -147,7 +149,9 @@ public class BodyTranslator extends Translator {
         RubyNode y;
 
         if (node.getSecondNode() == null) {
-            y = new NilLiteralNode(context, sourceSection);
+            y = new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil");
         } else {
             y = node.getSecondNode().accept(this);
         }
@@ -579,7 +583,9 @@ public class BodyTranslator extends Translator {
         return new IfNode(context, sourceSection,
                 frozen,
                 raise,
-                new NilLiteralNode(context, sourceSection));
+                new DefinedWrapperNode(context, sourceSection,
+                        new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                        "nil"));
     }
 
     /**
@@ -719,7 +725,9 @@ public class BodyTranslator extends Translator {
         if (node.getElseNode() != null) {
             elseNode = node.getElseNode().accept(this);
         } else {
-            elseNode = new NilLiteralNode(context, sourceSection);
+            elseNode = new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil");
         }
 
         /*
@@ -783,7 +791,9 @@ public class BodyTranslator extends Translator {
                 RubyNode thenNode;
 
                 if (when.getBodyNode() == null || when.getBodyNode().isNil()) {
-                    thenNode = new NilLiteralNode(context, sourceSection);
+                    thenNode = new DefinedWrapperNode(context, sourceSection,
+                            new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                            "nil");
                 } else {
                     thenNode = when.getBodyNode().accept(this);
                 }
@@ -1162,7 +1172,10 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitFalseNode(org.jruby.ast.FalseNode node) {
-        return new BooleanLiteralNode(context, translate(node.getPosition()), false);
+        final SourceSection sourceSection = translate(node.getPosition());
+        return new DefinedWrapperNode(context, sourceSection,
+                new ObjectLiteralNode(context, sourceSection, false),
+                "false");
     }
 
     @Override
@@ -1201,7 +1214,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitFloatNode(org.jruby.ast.FloatNode node) {
-        return new FloatLiteralNode(context, translate(node.getPosition()), node.getValue());
+        return new ObjectLiteralNode(context, translate(node.getPosition()), node.getValue());
     }
 
     @Override
@@ -1485,7 +1498,9 @@ public class BodyTranslator extends Translator {
                 keyValues.add(pair.getKey().accept(this));
 
                 if (pair.getValue() == null) {
-                    keyValues.add(new NilLiteralNode(context, sourceSection));
+                    keyValues.add(new DefinedWrapperNode(context, sourceSection,
+                            new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                            "nil"));
                 } else {
                     keyValues.add(pair.getValue().accept(this));
                 }
@@ -1521,7 +1536,9 @@ public class BodyTranslator extends Translator {
         RubyNode condition;
 
         if (node.getCondition() == null) {
-            condition = new NilLiteralNode(context, sourceSection);
+            condition = new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil");
         } else {
             condition = node.getCondition().accept(this);
         }
@@ -1852,7 +1869,9 @@ public class BodyTranslator extends Translator {
 
         if (rhs == null) {
             context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getLine(), "no RHS for multiple assignment - using nil");
-            rhsTranslated = new NilLiteralNode(context, sourceSection);
+            rhsTranslated = new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil");
         } else {
             rhsTranslated = rhs.accept(this);
         }
@@ -2087,7 +2106,9 @@ public class BodyTranslator extends Translator {
             result = SequenceNode.sequence(context, sourceSection, sequence);
         } else {
             context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getLine(), node + " unknown form of multiple assignment");
-            result = new NilLiteralNode(context, sourceSection);
+            result = new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil");
         }
 
         return new DefinedWrapperNode(context, sourceSection, result, "assignment");
@@ -2203,7 +2224,10 @@ public class BodyTranslator extends Translator {
             return new DeadNode(context, null, "nil node with no invalid source position - assumed to be implicit null");
         }
 
-        return new NilLiteralNode(context, translate(node.getPosition()));
+        SourceSection sourceSection = translate(node.getPosition());
+        return new DefinedWrapperNode(context, sourceSection,
+                new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                "nil");
     }
 
     @Override
@@ -2363,7 +2387,9 @@ public class BodyTranslator extends Translator {
         RubyNode x;
 
         if (node.getFirstNode() == null) {
-            x = new NilLiteralNode(context, sourceSection);
+            x = new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil");
         } else {
             x = node.getFirstNode().accept(this);
         }
@@ -2371,7 +2397,9 @@ public class BodyTranslator extends Translator {
         RubyNode y;
 
         if (node.getSecondNode() == null) {
-            y = new NilLiteralNode(context, sourceSection);
+            y = new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil");
         } else {
             y = node.getSecondNode().accept(this);
         }
@@ -2486,7 +2514,9 @@ public class BodyTranslator extends Translator {
         if (node.getBodyNode() != null) {
             tryPart = node.getBodyNode().accept(this);
         } else {
-            tryPart = new NilLiteralNode(context, sourceSection);
+            tryPart = new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil");
         }
 
         final List<RescueNode> rescueNodes = new ArrayList<>();
@@ -2507,7 +2537,9 @@ public class BodyTranslator extends Translator {
                     RubyNode translatedBody;
 
                     if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-                        translatedBody = new NilLiteralNode(context, sourceSection);
+                        translatedBody = new DefinedWrapperNode(context, sourceSection,
+                                new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                                "nil");
                     } else {
                         translatedBody = rescueBody.getBodyNode().accept(this);
                     }
@@ -2520,7 +2552,9 @@ public class BodyTranslator extends Translator {
                     RubyNode splatTranslated;
 
                     if (splat.getValue() == null) {
-                        splatTranslated = new NilLiteralNode(context, sourceSection);
+                        splatTranslated = new DefinedWrapperNode(context, sourceSection,
+                                new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                                "nil");
                     } else {
                         splatTranslated = splat.getValue().accept(this);
                     }
@@ -2528,7 +2562,9 @@ public class BodyTranslator extends Translator {
                     RubyNode bodyTranslated;
 
                     if (rescueBody.getBodyNode() == null) {
-                        bodyTranslated = new NilLiteralNode(context, sourceSection);
+                        bodyTranslated = new DefinedWrapperNode(context, sourceSection,
+                                new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                                "nil");
                     } else {
                         bodyTranslated = rescueBody.getBodyNode().accept(this);
                     }
@@ -2542,7 +2578,9 @@ public class BodyTranslator extends Translator {
                 RubyNode bodyNode;
 
                 if (rescueBody.getBodyNode() == null) {
-                    bodyNode = new NilLiteralNode(context, sourceSection);
+                    bodyNode = new DefinedWrapperNode(context, sourceSection,
+                            new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                            "nil");
                 } else {
                     bodyNode = rescueBody.getBodyNode().accept(this);
                 }
@@ -2559,7 +2597,9 @@ public class BodyTranslator extends Translator {
         if (node.getElseNode() != null) {
             elsePart = node.getElseNode().accept(this);
         } else {
-            elsePart = new NilLiteralNode(context, sourceSection);
+            elsePart = new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil");
         }
 
         return new TryNode(context, sourceSection,
@@ -2609,7 +2649,9 @@ public class BodyTranslator extends Translator {
         RubyNode value;
 
         if (node.getValue() == null) {
-            value = new NilLiteralNode(context, sourceSection);
+            value = new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil");
         } else {
             value = node.getValue().accept(this);
         }
@@ -2629,7 +2671,10 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitTrueNode(org.jruby.ast.TrueNode node) {
-        return new BooleanLiteralNode(context, translate(node.getPosition()), true);
+        final SourceSection sourceSection = translate(node.getPosition());
+        return new DefinedWrapperNode(context, sourceSection,
+                new ObjectLiteralNode(context, sourceSection, true),
+                "true");
     }
 
     @Override
@@ -2675,7 +2720,9 @@ public class BodyTranslator extends Translator {
         translatingWhile = true;
         try {
             if (node.getBodyNode().isNil()) {
-                body = new NilLiteralNode(context, sourceSection);
+                body = new DefinedWrapperNode(context, sourceSection,
+                        new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                        "nil");
             } else {
                 body = node.getBodyNode().accept(this);
             }
@@ -2810,7 +2857,10 @@ public class BodyTranslator extends Translator {
 
     protected RubyNode unimplemented(Node node) {
         context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getLine(), node + " does nothing - translating as nil");
-        return new NilLiteralNode(context, translate(node.getPosition()));
+        SourceSection sourceSection = translate(node.getPosition());
+        return new DefinedWrapperNode(context, sourceSection,
+                new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                "nil");
     }
 
     public TranslatorEnvironment getEnvironment() {
