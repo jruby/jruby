@@ -347,8 +347,10 @@ public class IRBuilder {
             // ensure blocks from the loops they are present in.
             if (loop != null && ebi.innermostLoop != loop) break;
 
-            // SSS FIXME: Should $! be restored before or after the ensure block is run?
-            addInstr(new PutGlobalVarInstr("$!", ebi.savedGlobalException));
+            // $! should be restored before the ensure block is run
+            if (ebi.savedGlobalException != null) {
+                addInstr(new PutGlobalVarInstr("$!", ebi.savedGlobalException));
+            }
 
             // Clone into host scope
             ebi.cloneIntoHostScope(this);
@@ -2225,9 +2227,11 @@ public class IRBuilder {
             activeRescuers.peek());
 
         ensureBodyBuildStack.push(ebi);
-        // Restore $!
-        addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
-        ebi.savedGlobalException = savedGlobalException;
+        // Restore $! if we the exception was rescued
+        if (ensureBodyNode != null) {
+            addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+            ebi.savedGlobalException = savedGlobalException;
+        }
         Operand ensureRetVal = ensurerNode == null ? manager.getNil() : build(ensurerNode);
         ensureBodyBuildStack.pop();
 
