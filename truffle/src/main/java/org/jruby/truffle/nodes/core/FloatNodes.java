@@ -299,9 +299,9 @@ public abstract class FloatNodes {
             return divModNode.execute(a, b);
         }
 
-        @Specialization
-        public RubyArray divMod(double a, RubyBignum b) {
-            return divModNode.execute(a, b);
+        @Specialization(guards = "isRubyBignum(b)")
+        public RubyArray divMod(double a, RubyBasicObject b) {
+            return divModNode.execute(a, BignumNodes.getBigIntegerValue(b));
         }
 
     }

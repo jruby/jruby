@@ -20,6 +20,7 @@ import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyProc;
 
@@ -207,8 +208,8 @@ public abstract class IntegerNodes {
             return n;
         }
 
-        @Specialization
-        public Object times(VirtualFrame frame, RubyBignum n, RubyProc block) {
+        @Specialization(guards = "isRubyBignum(n)")
+        public Object times(VirtualFrame frame, RubyBasicObject n, RubyProc block) {
             if (fixnumOrBignum == null) {
                 CompilerDirectives.transferToInterpreter();
                 fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
@@ -250,8 +251,8 @@ public abstract class IntegerNodes {
             return n;
         }
 
-        @Specialization
-        public RubyBignum toI(RubyBignum n) {
+        @Specialization(guards = "isRubyBignum(n)")
+        public RubyBasicObject toI(RubyBasicObject n) {
             return n;
         }
 

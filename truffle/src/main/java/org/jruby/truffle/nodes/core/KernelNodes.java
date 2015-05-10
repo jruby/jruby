@@ -1830,8 +1830,8 @@ public abstract class KernelNodes {
             return Long.toHexString(value);
         }
 
-        @Specialization
-        public String toHexString(RubyBignum value) {
+        @Specialization(guards = "isRubyBignum(value)")
+        public String toHexString(RubyBasicObject value) {
             return BignumNodes.getBigIntegerValue(value).toString(16);
         }
 

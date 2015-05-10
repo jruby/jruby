@@ -56,21 +56,21 @@ public abstract class ObjectSpaceNodes {
             }
         }
 
-        @Specialization(guards = "isLargeFixnumID(id)")
-        public Object id2RefLargeFixnum(RubyBignum id) {
+        @Specialization(guards = {"isRubyBignum(id)", "isLargeFixnumID(id)"})
+        public Object id2RefLargeFixnum(RubyBasicObject id) {
             return BignumNodes.getBigIntegerValue(id).longValue();
         }
 
-        @Specialization(guards = "isFloatID(id)")
-        public double id2RefFloat(RubyBignum id) {
+        @Specialization(guards = {"isRubyBignum(id)", "isFloatID(id)"})
+        public double id2RefFloat(RubyBasicObject id) {
             return Double.longBitsToDouble(BignumNodes.getBigIntegerValue(id).longValue());
         }
 
-        protected boolean isLargeFixnumID(RubyBignum id) {
+        protected boolean isLargeFixnumID(RubyBasicObject id) {
             return ObjectIDOperations.isLargeFixnumID(BignumNodes.getBigIntegerValue(id));
         }
 
-        protected boolean isFloatID(RubyBignum id) {
+        protected boolean isFloatID(RubyBasicObject id) {
             return ObjectIDOperations.isFloatID(BignumNodes.getBigIntegerValue(id));
         }
 

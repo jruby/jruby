@@ -137,8 +137,8 @@ public abstract class StringNodes {
             return ret;
         }
 
-        @Specialization
-        public RubyString multiply(RubyString string, RubyBignum times) {
+        @Specialization(guards = "isRubyBignum(times)")
+        public RubyString multiply(RubyString string, RubyBasicObject times) {
             CompilerDirectives.transferToInterpreter();
 
             throw new RaiseException(
@@ -309,8 +309,8 @@ public abstract class StringNodes {
             return concatNumeric(string, (int) other);
         }
 
-        @Specialization
-        public RubyString concat(RubyString string, RubyBignum other) {
+        @Specialization(guards = "isRubyBignum(other)")
+        public RubyString concat(RubyString string, RubyBasicObject other) {
             if (BignumNodes.getBigIntegerValue(other).signum() < 0) {
                 CompilerDirectives.transferToInterpreter();
 

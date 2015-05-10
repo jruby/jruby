@@ -92,8 +92,8 @@ public class GeneralDivModNode extends RubyNode {
         return divMod(a, b);
     }
 
-    public RubyArray execute(double a, RubyBignum b) {
-        return divMod(a, BignumNodes.getBigIntegerValue(b).doubleValue());
+    public RubyArray execute(double a, BigInteger b) {
+        return divMod(a, b.doubleValue());
     }
 
     public RubyArray execute(double a, double b) {
