@@ -2228,7 +2228,7 @@ public class IRBuilder {
 
         ensureBodyBuildStack.push(ebi);
         // Restore $! if we the exception was rescued
-        if (ensureBodyNode != null) {
+        if (ensureBodyNode != null && ensureBodyNode instanceof RescueNode) {
             addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
             ebi.savedGlobalException = savedGlobalException;
         }
