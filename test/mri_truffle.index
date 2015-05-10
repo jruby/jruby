@@ -190,7 +190,7 @@ ruby/test_io_m17n.rb
 ruby/test_iterator.rb
 ruby/test_lambda.rb
 ruby/test_literal.rb
-# ruby/test_m17n.rb
+# ruby/test_m17n.rb # NPE in Body Translator
 # ruby/test_m17n_comb.rb # cannot load such file -- etc
 # ruby/test_marshal.rb # including this causes error in test_objectspace.rb
 ruby/test_math.rb
@@ -246,7 +246,7 @@ stringio/test_stringio.rb
 strscan/test_stringscanner.rb
 test_cmath.rb
 test_delegate.rb
-# test_find.rb  # cannot load such file -- find
+test_find.rb
 # test_ipaddr.rb # cannot load such file -- ipaddr
 test_open3.rb
 test_pp.rb
