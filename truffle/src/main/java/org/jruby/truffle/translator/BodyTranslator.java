@@ -111,7 +111,6 @@ public class BodyTranslator extends Translator {
         debugIgnoredCalls.add("upto");
     }
 
-    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$+", "$&", "$`", "$'"));
     public static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$~", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9", "$!")); // "$_"
 
     public BodyTranslator(com.oracle.truffle.api.nodes.Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source, boolean topLevel) {
@@ -1208,7 +1207,7 @@ public class BodyTranslator extends Translator {
         if (depth == 0) {
             return new LocalFlipFlopStateNode(sourceSection, frameSlot);
         } else {
-            return new LevelFlipFlopStateNode(sourceSection, depth, frameSlot);
+            return new DeclarationFlipFlopStateNode(sourceSection, depth, frameSlot);
         }
     }
 
@@ -2156,8 +2155,8 @@ public class BodyTranslator extends Translator {
         } else if (dummyAssignment instanceof org.jruby.ast.DAsgnNode) {
             final RubyNode dummyTranslated = dummyAssignment.accept(this);
 
-            if (dummyTranslated.getNonProxyNode() instanceof WriteLevelVariableNode) {
-                translated = ((ReadNode) ((WriteLevelVariableNode) dummyTranslated.getNonProxyNode()).makeReadNode()).makeWriteNode(rhs);
+            if (dummyTranslated.getNonProxyNode() instanceof WriteDeclarationVariableNode) {
+                translated = ((ReadNode) ((WriteDeclarationVariableNode) dummyTranslated.getNonProxyNode()).makeReadNode()).makeWriteNode(rhs);
             } else {
                 translated = ((ReadNode) ((WriteLocalVariableNode) dummyTranslated.getNonProxyNode()).makeReadNode()).makeWriteNode(rhs);
             }

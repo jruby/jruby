@@ -16,12 +16,13 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyArguments;
 
-public class LevelFlipFlopStateNode extends FlipFlopStateNode {
+public class DeclarationFlipFlopStateNode extends FlipFlopStateNode {
 
     private final int level;
     private final FrameSlot frameSlot;
 
-    public LevelFlipFlopStateNode(SourceSection sourceSection, int level, FrameSlot frameSlot) {
+    public DeclarationFlipFlopStateNode(SourceSection sourceSection, int level,
+                                        FrameSlot frameSlot) {
         super(sourceSection);
         this.level = level;
         this.frameSlot = frameSlot;

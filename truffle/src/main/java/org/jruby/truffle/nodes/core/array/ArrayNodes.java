@@ -37,7 +37,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
-import org.jruby.truffle.nodes.locals.ReadLevelVariableNodeGen;
+import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
@@ -2496,7 +2496,7 @@ public abstract class ArrayNodes {
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
                     context, sourceSection, null, sharedMethodInfo,
                     ArrayNodesFactory.MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
-                            ReadLevelVariableNodeGen.create(context, sourceSection, frameSlot, 1),
+                            new ReadDeclarationVariableNode(context, sourceSection, 1, frameSlot),
                             new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
                     })));
         }
@@ -2598,7 +2598,7 @@ public abstract class ArrayNodes {
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
                     context, sourceSection, null, sharedMethodInfo,
                     ArrayNodesFactory.MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
-                            ReadLevelVariableNodeGen.create(context, sourceSection, frameSlot, 1),
+                            new ReadDeclarationVariableNode(context, sourceSection, 1, frameSlot),
                             new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
                     })));
         }

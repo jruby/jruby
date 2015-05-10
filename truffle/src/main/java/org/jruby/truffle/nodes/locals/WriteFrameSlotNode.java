@@ -26,80 +26,48 @@ public abstract class WriteFrameSlotNode extends Node {
     public abstract Object executeWrite(Frame frame, Object value);
 
     @Specialization(guards = "isBooleanKind(frame)")
-    public boolean doFixnum(Frame frame, boolean value) {
-        setBoolean(frame, value);
+    public boolean writeBoolean(Frame frame, boolean value) {
+        frame.setBoolean(frameSlot, value);
         return value;
     }
 
-    @Specialization(guards = "isFixnumKind(frame)")
-    public int doFixnum(Frame frame, int value) {
-        setFixnum(frame, value);
+    @Specialization(guards = "isIntegerKind(frame)")
+    public int writeInteger(Frame frame, int value) {
+        frame.setInt(frameSlot, value);
         return value;
     }
 
-    @Specialization(guards = "isLongFixnumKind(frame)")
-    public long doLongFixnum(Frame frame, long value) {
-        setLongFixnum(frame, value);
+    @Specialization(guards = "isLongKind(frame)")
+    public long writeLong(Frame frame, long value) {
+        frame.setLong(frameSlot, value);
         return value;
     }
 
-    @Specialization(guards = "isFloatKind(frame)")
-    public double doFloat(Frame frame, double value) {
-        setFloat(frame, value);
+    @Specialization(guards = "isDoubleKind(frame)")
+    public double writeDouble(Frame frame, double value) {
+        frame.setDouble(frameSlot, value);
         return value;
     }
 
     @Specialization(guards = "isObjectKind(frame)")
-    public Object doObject(Frame frame, Object value) {
-        setObject(frame, value);
-        return value;
-    }
-
-    public final FrameSlot getFrameSlot() {
-        return frameSlot;
-    }
-
-    protected final void setBoolean(Frame frame, boolean value) {
-        frame.setBoolean(frameSlot, value);
-    }
-
-    protected final void setFixnum(Frame frame, int value) {
-        frame.setInt(frameSlot, value);
-    }
-
-    protected final void setLongFixnum(Frame frame, long value) {
-        frame.setLong(frameSlot, value);
-    }
-
-    protected final void setFloat(Frame frame, double value) {
-        frame.setDouble(frameSlot, value);
-    }
-
-    protected final void setObject(Frame frame, Object value) {
+    public Object writeObject(Frame frame, Object value) {
         frame.setObject(frameSlot, value);
-    }
-
-    protected final Object getObject(Frame frame) throws FrameSlotTypeException {
-        return frame.getObject(frameSlot);
-    }
-
-    protected final Object getValue(Frame frame) {
-        return frame.getValue(frameSlot);
+        return value;
     }
 
     protected final boolean isBooleanKind(Frame frame) {
         return isKind(FrameSlotKind.Boolean);
     }
 
-    protected final boolean isFixnumKind(Frame frame) {
+    protected final boolean isIntegerKind(Frame frame) {
         return isKind(FrameSlotKind.Int);
     }
 
-    protected final boolean isLongFixnumKind(Frame frame) {
+    protected final boolean isLongKind(Frame frame) {
         return isKind(FrameSlotKind.Long);
     }
 
-    protected final boolean isFloatKind(Frame frame) {
+    protected final boolean isDoubleKind(Frame frame) {
         return isKind(FrameSlotKind.Double);
     }
 
@@ -112,7 +80,11 @@ public abstract class WriteFrameSlotNode extends Node {
     }
 
     private boolean isKind(FrameSlotKind kind) {
-        return frameSlot.getKind() == kind || initialSetKind(kind);
+        if (frameSlot.getKind() == kind) {
+            return true;
+        } else {
+            return initialSetKind(kind);
+        }
     }
 
     private boolean initialSetKind(FrameSlotKind kind) {
@@ -122,6 +94,10 @@ public abstract class WriteFrameSlotNode extends Node {
             return true;
         }
         return false;
+    }
+
+    public final FrameSlot getFrameSlot() {
+        return frameSlot;
     }
 
 }

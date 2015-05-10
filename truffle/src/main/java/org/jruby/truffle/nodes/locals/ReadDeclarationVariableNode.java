@@ -15,37 +15,47 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.translator.ReadNode;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.translator.Translator;
 
-public class ReadLocalVariableNode extends RubyNode implements ReadNode {
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+public class ReadDeclarationVariableNode extends RubyNode implements ReadNode {
+
+    private final int frameDepth;
 
     @Child private ReadFrameSlotNode readFrameSlotNode;
 
-    public ReadLocalVariableNode(RubyContext context, SourceSection sourceSection,
-                                 FrameSlot slot) {
+    public ReadDeclarationVariableNode(RubyContext context, SourceSection sourceSection,
+                                       int frameDepth, FrameSlot slot) {
         super(context, sourceSection);
         readFrameSlotNode = ReadFrameSlotNodeGen.create(slot);
+        this.frameDepth = frameDepth;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return readFrameSlotNode.executeRead(frame);
+        return readFrameSlotNode.executeRead(RubyArguments.getDeclarationFrame(frame, frameDepth));
     }
 
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
-        return new WriteLocalVariableNode(getContext(), getSourceSection(), rhs,
-                readFrameSlotNode.getFrameSlot());
+        return new WriteDeclarationVariableNode(getContext(), getSourceSection(),
+                rhs, frameDepth, readFrameSlotNode.getFrameSlot());
     }
+
+    public static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Arrays.asList("$~"));
 
     @Override
     public Object isDefined(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
         if (Translator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(readFrameSlotNode.getFrameSlot().getIdentifier())) {
-            if (Translator.ALWAYS_DEFINED_GLOBALS.contains(readFrameSlotNode.getFrameSlot().getIdentifier())
-                    || readFrameSlotNode.executeRead(frame) != nil()) {
+            if (ALWAYS_DEFINED_GLOBALS.contains(readFrameSlotNode.getFrameSlot().getIdentifier())
+                    || readFrameSlotNode.executeRead(RubyArguments.getDeclarationFrame(frame, frameDepth)) != nil()) {
                 return getContext().makeString("global-variable");
             } else {
                 return nil();

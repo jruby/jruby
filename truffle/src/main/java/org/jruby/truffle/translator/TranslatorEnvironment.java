@@ -13,7 +13,7 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.locals.ReadLevelVariableNodeGen;
+import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
@@ -152,7 +152,7 @@ public class TranslatorEnvironment {
                     if (level == 0) {
                         return new ReadLocalVariableNode(context, sourceSection, slot);
                     } else {
-                        return ReadLevelVariableNodeGen.create(context, sourceSection, slot, level);
+                        return new ReadDeclarationVariableNode(context, sourceSection, level, slot);
                     }
                 }
 

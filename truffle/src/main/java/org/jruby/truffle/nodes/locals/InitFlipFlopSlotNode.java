@@ -19,7 +19,8 @@ public class InitFlipFlopSlotNode extends RubyNode {
 
     private final FrameSlot frameSlot;
 
-    public InitFlipFlopSlotNode(RubyContext context, SourceSection sourceSection, FrameSlot frameSlot) {
+    public InitFlipFlopSlotNode(RubyContext context, SourceSection sourceSection,
+                                FrameSlot frameSlot) {
         super(context, sourceSection);
         this.frameSlot = frameSlot;
     }

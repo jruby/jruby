@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.locals;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
@@ -26,74 +25,37 @@ public abstract class ReadFrameSlotNode extends Node {
     public abstract Object executeRead(Frame frame);
 
     @Specialization(rewriteOn = {FrameSlotTypeException.class})
-    public boolean doBoolean(Frame frame) throws FrameSlotTypeException {
-        return getBoolean(frame);
+    public boolean readBoolean(Frame frame) throws FrameSlotTypeException {
+        return frame.getBoolean(frameSlot);
     }
 
     @Specialization(rewriteOn = {FrameSlotTypeException.class})
-    public int doFixnum(Frame frame) throws FrameSlotTypeException {
-        return getFixnum(frame);
+    public int readInteger(Frame frame) throws FrameSlotTypeException {
+        return frame.getInt(frameSlot);
     }
 
     @Specialization(rewriteOn = {FrameSlotTypeException.class})
-    public long doLongFixnum(Frame frame) throws FrameSlotTypeException {
-        return getLongFixnum(frame);
+    public long readLong(Frame frame) throws FrameSlotTypeException {
+        return frame.getLong(frameSlot);
     }
 
     @Specialization(rewriteOn = {FrameSlotTypeException.class})
-    public double doFloat(Frame frame) throws FrameSlotTypeException {
-        return getFloat(frame);
+    public double readDouble(Frame frame) throws FrameSlotTypeException {
+        return frame.getDouble(frameSlot);
     }
 
     @Specialization(rewriteOn = {FrameSlotTypeException.class})
-    public Object doObject(Frame frame) throws FrameSlotTypeException {
-        return getObject(frame);
+    public Object readObject(Frame frame) throws FrameSlotTypeException {
+        return frame.getObject(frameSlot);
     }
 
     @Specialization
     public Object doValue(Frame frame) {
-        return getValue(frame);
+        return frame.getValue(frameSlot);
     }
 
     public final FrameSlot getFrameSlot() {
         return frameSlot;
-    }
-
-    @Override
-    public ReadFrameSlotNode copy() {
-        return (ReadFrameSlotNode) super.copy();
-    }
-
-    protected final void setBoolean(Frame frame, boolean value) {
-        frame.setBoolean(frameSlot, value);
-    }
-
-    protected final void setObject(Frame frame, Object value) {
-        frame.setObject(frameSlot, value);
-    }
-
-    protected final boolean getBoolean(Frame frame) throws FrameSlotTypeException {
-        return frame.getBoolean(frameSlot);
-    }
-
-    protected final int getFixnum(Frame frame) throws FrameSlotTypeException {
-        return frame.getInt(frameSlot);
-    }
-
-    protected final long getLongFixnum(Frame frame) throws FrameSlotTypeException {
-        return frame.getLong(frameSlot);
-    }
-
-    protected final double getFloat(Frame frame) throws FrameSlotTypeException {
-        return frame.getDouble(frameSlot);
-    }
-
-    protected final Object getObject(Frame frame) throws FrameSlotTypeException {
-        return frame.getObject(frameSlot);
-    }
-
-    protected final Object getValue(Frame frame) {
-        return frame.getValue(frameSlot);
     }
 
 }
