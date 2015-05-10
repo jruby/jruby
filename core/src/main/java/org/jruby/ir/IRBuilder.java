@@ -2225,10 +2225,10 @@ public class IRBuilder {
             activeRescuers.peek());
 
         ensureBodyBuildStack.push(ebi);
-        Operand ensureRetVal = ensurerNode == null ? manager.getNil() : build(ensurerNode);
         // Restore $!
         addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
         ebi.savedGlobalException = savedGlobalException;
+        Operand ensureRetVal = ensurerNode == null ? manager.getNil() : build(ensurerNode);
         ensureBodyBuildStack.pop();
 
         // ------------ Build the protected region ------------
