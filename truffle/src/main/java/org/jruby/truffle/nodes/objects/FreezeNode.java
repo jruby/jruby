@@ -57,8 +57,8 @@ public abstract class FreezeNode extends RubyNode {
         return nil();
     }
 
-    @Specialization
-    public Object freeze(RubyBignum object) {
+    @Specialization(guards = "isRubyBignum(object)")
+    public Object freezeBignum(RubyBasicObject object) {
         return object;
     }
 

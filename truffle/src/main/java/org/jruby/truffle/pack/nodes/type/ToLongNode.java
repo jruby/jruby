@@ -23,6 +23,7 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.CantConvertException;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
 /**
@@ -61,8 +62,8 @@ public abstract class ToLongNode extends PackNode {
         return object;
     }
 
-    @Specialization
-    public long toLong(VirtualFrame frame, RubyBignum object) {
+    @Specialization(guards = "isRubyBignum(object)")
+    public long toLong(VirtualFrame frame, RubyBasicObject object) {
         // A truncated value is exactly what we want
         return BignumNodes.getBigIntegerValue(object).longValue();
     }

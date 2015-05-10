@@ -18,6 +18,7 @@ import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.CantCompressNegativeException;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.util.ByteList;
 
@@ -61,8 +62,8 @@ public abstract class WriteBERNode extends PackNode {
         return null;
     }
 
-    @Specialization
-    public Object doWrite(VirtualFrame frame, RubyBignum value) {
+    @Specialization(guards = "isRubyBignum(value)")
+    public Object doWrite(VirtualFrame frame, RubyBasicObject value) {
         if (BignumNodes.getBigIntegerValue(value).signum() < 0) {
             CompilerDirectives.transferToInterpreter();
             throw new CantCompressNegativeException();

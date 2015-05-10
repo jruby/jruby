@@ -68,8 +68,8 @@ public abstract class ArrayCastNode extends RubyNode {
         return nil();
     }
 
-    @Specialization
-    public RubyBasicObject cast(RubyBignum value) {
+    @Specialization(guards = "isRubyBignum(value)")
+    public RubyBasicObject cast(RubyBasicObject value) {
         return nil();
     }
 

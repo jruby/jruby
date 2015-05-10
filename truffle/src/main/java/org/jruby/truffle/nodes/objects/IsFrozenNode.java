@@ -58,8 +58,8 @@ public abstract class IsFrozenNode extends RubyNode {
         return true;
     }
 
-    @Specialization
-    public boolean isFrozen(RubyBignum object) {
+    @Specialization(guards = "isRubyBignum(object)")
+    public boolean isFrozenBignum(RubyBasicObject object) {
         return true;
     }
 

@@ -59,8 +59,8 @@ public abstract class ToIntNode extends RubyNode {
         return value;
     }
 
-    @Specialization
-    public RubyBignum coerceRubyBignum(RubyBignum value) {
+    @Specialization(guards = "isRubyBignum(value)")
+    public RubyBasicObject coerceRubyBignum(RubyBasicObject value) {
         return value;
     }
 

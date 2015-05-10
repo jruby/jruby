@@ -32,6 +32,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyString;
 
@@ -81,8 +82,8 @@ public abstract class CmpIntNode extends RubyNode {
         return 0;
     }
 
-    @Specialization
-    public int cmpBignum(RubyBignum value, Object receiver, Object other) {
+    @Specialization(guards = "isRubyBignum(value)")
+    public int cmpBignum(RubyBasicObject value, Object receiver, Object other) {
         return BignumNodes.getBigIntegerValue(value).signum();
     }
 

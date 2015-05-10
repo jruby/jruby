@@ -58,8 +58,8 @@ public abstract class AliasNode extends RubyNode {
         return noClass();
     }
 
-    @Specialization
-    public Object alias(RubyBignum value) {
+    @Specialization(guards = "isRubyBignum(value)")
+    public Object aliasBignum(RubyBasicObject value) {
         return noClass();
     }
 
