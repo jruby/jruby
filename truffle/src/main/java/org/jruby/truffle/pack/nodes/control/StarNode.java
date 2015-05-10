@@ -12,6 +12,7 @@ package org.jruby.truffle.pack.nodes.control;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Keep applying a child node as long as there is still source to read.
@@ -22,7 +23,8 @@ public class StarNode extends PackNode {
 
     @Child private PackNode child;
 
-    public StarNode(PackNode child) {
+    public StarNode(RubyContext context, PackNode child) {
+        super(context);
         this.child = child;
     }
 

@@ -11,6 +11,7 @@ package org.jruby.truffle.pack.nodes.write;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Simply write a single bytes.
@@ -19,7 +20,8 @@ public class WriteByteNode extends PackNode {
 
     private final byte value;
 
-    public WriteByteNode(byte value) {
+    public WriteByteNode(RubyContext context, byte value) {
+        super(context);
         this.value = value;
     }
 

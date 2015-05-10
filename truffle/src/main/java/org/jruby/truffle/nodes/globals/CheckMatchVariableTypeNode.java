@@ -16,7 +16,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyMatchData;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 
 public class CheckMatchVariableTypeNode extends RubyNode {
 

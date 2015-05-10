@@ -103,10 +103,6 @@ public abstract class RubyGuards {
         return (object instanceof TruffleObject) && !(object instanceof RubyBasicObject);
     }
 
-    public static boolean isNil(Object value) {
-        return value instanceof RubyNilClass;
-    }
-
     public static boolean isTrue(boolean value) {
         return value;
     }

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Run a sequence of child nodes.
@@ -23,7 +24,8 @@ public class SequenceNode extends PackNode {
 
     @Children private final PackNode[] children;
 
-    public SequenceNode(PackNode... children) {
+    public SequenceNode(RubyContext context, PackNode... children) {
+        super(context);
         this.children = children;
     }
 

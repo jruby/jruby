@@ -329,7 +329,7 @@ public class CoreLibrary {
         // Create some key objects
 
         mainObject = new RubyBasicObject(objectClass);
-        nilObject = new RubyNilClass(nilClass);
+        nilObject = new RubyBasicObject(nilClass);
         argv = new RubyArray(arrayClass);
         rubiniusUndefined = new RubyBasicObject(objectClass);
 

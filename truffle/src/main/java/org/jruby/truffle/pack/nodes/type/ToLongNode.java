@@ -23,7 +23,6 @@ import org.jruby.truffle.pack.runtime.exceptions.CantConvertException;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 
 /**
  * Convert a value to a {@code long}.
@@ -33,8 +32,6 @@ import org.jruby.truffle.runtime.core.RubyNilClass;
 })
 public abstract class ToLongNode extends PackNode {
 
-    private final RubyContext context;
-
     @Child private CallDispatchHeadNode toIntNode;
 
     @CompilerDirectives.CompilationFinal private boolean seenInt;
@@ -42,7 +39,7 @@ public abstract class ToLongNode extends PackNode {
     @CompilerDirectives.CompilationFinal private boolean seenBignum;
 
     public ToLongNode(RubyContext context) {
-        this.context = context;
+        super(context);
     }
 
     public abstract long executeToLong(VirtualFrame frame, Object object);
@@ -79,7 +76,7 @@ public abstract class ToLongNode extends PackNode {
     public long toLong(VirtualFrame frame, Object object) {
         if (toIntNode == null) {
             CompilerDirectives.transferToInterpreter();
-            toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING));
+            toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
         }
 
         final Object value = toIntNode.call(frame, object, "to_int", null);

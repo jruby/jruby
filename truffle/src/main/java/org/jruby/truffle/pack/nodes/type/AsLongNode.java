@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Re-interpret a value as a {@code long}.
@@ -21,6 +22,10 @@ import org.jruby.truffle.pack.nodes.PackNode;
         @NodeChild(value = "value", type = PackNode.class),
 })
 public abstract class AsLongNode extends PackNode {
+
+    public AsLongNode(RubyContext context) {
+        super(context);
+    }
 
     @Specialization
     public long asLong(float object) {

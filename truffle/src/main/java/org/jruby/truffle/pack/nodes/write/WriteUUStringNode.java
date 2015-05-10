@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
@@ -31,7 +32,8 @@ public abstract class WriteUUStringNode extends PackNode {
     private final int length;
     private final boolean ignoreStar;
 
-    public WriteUUStringNode(int length, boolean ignoreStar) {
+    public WriteUUStringNode(RubyContext context, int length, boolean ignoreStar) {
+        super(context);
         this.length = length;
         this.ignoreStar = ignoreStar;
     }

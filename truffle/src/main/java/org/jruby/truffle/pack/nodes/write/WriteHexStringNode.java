@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.Endianness;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
 /**
@@ -30,7 +31,8 @@ public abstract class WriteHexStringNode extends PackNode {
     private final Endianness endianness;
     private final int length;
 
-    public WriteHexStringNode(Endianness endianness, int length) {
+    public WriteHexStringNode(RubyContext context, Endianness endianness, int length) {
+        super(context);
         this.endianness = endianness;
         this.length = length;
     }

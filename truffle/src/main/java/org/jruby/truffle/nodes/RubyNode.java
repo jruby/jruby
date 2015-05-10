@@ -221,7 +221,11 @@ public abstract class RubyNode extends Node {
 
     // Guards which use the context and so can't be static
 
-    public boolean isRubiniusUndefined(Object value) {
+    protected boolean isNil(Object value) {
+        return value == nil();
+    }
+
+    protected boolean isRubiniusUndefined(Object value) {
         return value == getContext().getCoreLibrary().getRubiniusUndefined();
     }
 

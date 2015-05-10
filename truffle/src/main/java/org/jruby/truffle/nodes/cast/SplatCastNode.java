@@ -25,7 +25,6 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.

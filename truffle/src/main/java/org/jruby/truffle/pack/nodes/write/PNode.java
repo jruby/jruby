@@ -11,6 +11,7 @@ package org.jruby.truffle.pack.nodes.write;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Write the address of a 'structure'. In MRI this means the pointer to a
@@ -23,6 +24,10 @@ import org.jruby.truffle.pack.nodes.PackNode;
  * [1, 2, 3].pack('x') # =>  "\x00\x00\x00\x00\x00\x00\x00\x00"
  */
 public class PNode extends PackNode {
+
+    public PNode(RubyContext context) {
+        super(context);
+    }
 
     @Override
     public Object execute(VirtualFrame frame) {

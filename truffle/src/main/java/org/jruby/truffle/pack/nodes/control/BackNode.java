@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.OutsideOfStringException;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Moves the output position to the previous byte - similar to seek
@@ -22,6 +23,10 @@ import org.jruby.truffle.pack.runtime.exceptions.OutsideOfStringException;
  * [0xabcd, 0x1234].pack('NXN') # => "\x00\x00\xAB\x00\x00\x124"
  */
 public class BackNode extends PackNode {
+
+    public BackNode(RubyContext context) {
+        super(context);
+    }
 
     @Override
     public Object execute(VirtualFrame frame) {

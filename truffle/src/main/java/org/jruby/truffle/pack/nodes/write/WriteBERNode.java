@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.CantCompressNegativeException;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.util.ByteList;
 
@@ -30,6 +31,10 @@ import java.math.BigInteger;
         @NodeChild(value = "value", type = PackNode.class),
 })
 public abstract class WriteBERNode extends PackNode {
+
+    public WriteBERNode(RubyContext context) {
+        super(context);
+    }
 
     @Specialization
     public Object doWrite(VirtualFrame frame, int value) {

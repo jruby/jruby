@@ -87,7 +87,7 @@ public class RubyBasicObject implements TruffleObject {
 
     @Deprecated
     public void checkFrozen(Node currentNode) {
-        if (DebugOperations.verySlowIsFrozen(getContext(), this)) {
+        if (getContext().getCoreLibrary() != null && DebugOperations.verySlowIsFrozen(getContext(), this)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName(), currentNode));
         }

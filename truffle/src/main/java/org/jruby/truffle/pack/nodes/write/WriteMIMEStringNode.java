@@ -15,7 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
-import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.PackUtils;
 
@@ -30,7 +30,8 @@ public abstract class WriteMIMEStringNode extends PackNode {
 
     private final int length;
 
-    public WriteMIMEStringNode(int length) {
+    public WriteMIMEStringNode(RubyContext context, int length) {
+        super(context);
         this.length = length;
     }
 
