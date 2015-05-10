@@ -79,8 +79,8 @@ public abstract class ArrayCastNode extends RubyNode {
         return array;
     }
 
-    @Specialization
-    public Object cast(RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public Object cast(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass());

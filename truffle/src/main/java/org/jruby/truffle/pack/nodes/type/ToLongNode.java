@@ -69,8 +69,8 @@ public abstract class ToLongNode extends PackNode {
         return object.bigIntegerValue().longValue();
     }
 
-    @Specialization
-    public long toLong(VirtualFrame frame, RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public long toLongNil(VirtualFrame frame, Object nil) {
         CompilerDirectives.transferToInterpreter();
         throw new NoImplicitConversionException(nil, "Integer");
     }

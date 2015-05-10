@@ -34,8 +34,8 @@ public abstract class WriteMIMEStringNode extends PackNode {
         this.length = length;
     }
 
-    @Specialization
-    public Object write(RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public Object write(Object nil) {
         return null;
     }
 

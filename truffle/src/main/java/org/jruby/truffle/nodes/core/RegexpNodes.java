@@ -119,8 +119,8 @@ public abstract class RegexpNodes {
             return match(regexp, (RubyString) toSNode.call(frame, symbol, "to_s", null));
         }
 
-        @Specialization
-        public Object match(RubyRegexp regexp, RubyNilClass nil) {
+        @Specialization(guards = "isNil(nil)")
+        public Object match(RubyRegexp regexp, Object nil) {
             return nil();
         }
 
@@ -194,8 +194,8 @@ public abstract class RegexpNodes {
             return regexp.matchCommon(string, false, false);
         }
 
-        @Specialization
-        public Object match(RubyRegexp regexp, RubyNilClass nil) {
+        @Specialization(guards = "isNil(nil)")
+        public Object match(RubyRegexp regexp, Object nil) {
             return nil();
         }
 

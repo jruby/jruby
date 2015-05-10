@@ -53,9 +53,9 @@ public abstract class FreezeNode extends RubyNode {
         return object;
     }
 
-    @Specialization
-    public Object freeze(RubyNilClass object) {
-        return object;
+    @Specialization(guards = "isNil(nil)")
+    public Object freeze(Object nil) {
+        return nil();
     }
 
     @Specialization

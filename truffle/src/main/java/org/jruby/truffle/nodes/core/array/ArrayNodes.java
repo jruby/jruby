@@ -2731,8 +2731,8 @@ public abstract class ArrayNodes {
             return ruby(frame, "raise TypeError");
         }
 
-        @Specialization
-        public Object pack(VirtualFrame frame, RubyArray array, RubyNilClass format) {
+        @Specialization(guards = "isNil(format)")
+        public Object packNil(VirtualFrame frame, RubyArray array, Object format) {
             return ruby(frame, "raise TypeError");
         }
 

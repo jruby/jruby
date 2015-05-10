@@ -442,8 +442,8 @@ public abstract class VMPrimitiveNodes {
             return true;
         }
 
-        @Specialization
-        public boolean watchSignal(RubyString signalName, RubyNilClass ignore) {
+        @Specialization(guards = "isNil(nil)")
+        public boolean watchSignal(RubyString signalName, Object nil) {
             Signal signal = new Signal(signalName.toString());
 
             SignalOperations.watchSignal(signal, SignalOperations.IGNORE_HANDLER);

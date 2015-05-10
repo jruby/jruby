@@ -1222,8 +1222,8 @@ public abstract class HashNodes {
             return defaultProc;
         }
 
-        @Specialization
-        public RubyBasicObject setDefaultProc(RubyHash hash, RubyNilClass nil) {
+        @Specialization(guards = "isNil(nil)")
+        public RubyBasicObject setDefaultProc(RubyHash hash, Object nil) {
             hash.setDefaultValue(null);
             hash.setDefaultBlock(null);
             return nil();

@@ -68,8 +68,8 @@ public abstract class ToStringNode extends PackNode {
 
     public abstract Object executeToString(VirtualFrame frame, Object object);
 
-    @Specialization
-    public Object toString(VirtualFrame frame, RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public Object toStringNil(VirtualFrame frame, Object nil) {
         return valueOnNil;
     }
 

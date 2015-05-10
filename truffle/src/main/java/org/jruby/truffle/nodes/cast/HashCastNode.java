@@ -70,9 +70,9 @@ public abstract class HashCastNode extends RubyNode {
         return hash;
     }
 
-    @Specialization
-    public RubyBasicObject cast(RubyNilClass nil) {
-        return nil;
+    @Specialization(guards = "isNil(nil)")
+    public RubyBasicObject cast(Object nil) {
+        return nil();
     }
 
     @Specialization(guards = {"!isNil(object)", "!isRubyHash(object)"})

@@ -86,8 +86,8 @@ public abstract class CmpIntNode extends RubyNode {
         return value.bigIntegerValue().signum();
     }
 
-    @Specialization
-    public int cmpNil(RubyNilClass value, Object receiver, Object other) {
+    @Specialization(guards = "isNil(nil)")
+    public int cmpNil(Object nil, Object receiver, Object other) {
         throw new RaiseException(
             getContext().getCoreLibrary().argumentError(
                 String.format("comparison of %s with %s failed",

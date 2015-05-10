@@ -25,8 +25,8 @@ public abstract class ProcOrNullNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    @Specialization
-    public Object doNil(RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public Object doNil(Object nil) {
         return null;
     }
 

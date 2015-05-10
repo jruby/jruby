@@ -11,6 +11,7 @@ package org.jruby.truffle.pack.nodes;
 
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBignum;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 
 import java.math.BigInteger;
@@ -22,7 +23,7 @@ public class PackGuards {
     }
 
     public static boolean isNil(Object object) {
-        return object instanceof RubyString;
+        return object instanceof RubyNilClass;
     }
 
     public static boolean isBoolean(Object object) {

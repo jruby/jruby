@@ -418,8 +418,8 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public int fcntl(int fd, int fcntl, RubyNilClass nil) {
+        @Specialization(guards = "isNil(nil)")
+        public int fcntl(int fd, int fcntl, Object nil) {
             return posix().fcntl(fd, Fcntl.valueOf(fcntl));
         }
 

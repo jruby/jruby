@@ -34,9 +34,9 @@ public abstract class ProcCastNode extends RubyNode {
         toProc = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    @Specialization
-    public RubyBasicObject doNil(RubyNilClass nil) {
-        return nil;
+    @Specialization(guards = "isNil(nil)")
+    public RubyBasicObject doNil(Object nil) {
+        return nil();
     }
 
     @Specialization

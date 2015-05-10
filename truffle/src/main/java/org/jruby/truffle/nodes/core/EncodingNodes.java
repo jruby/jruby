@@ -203,8 +203,8 @@ public abstract class EncodingNodes {
             return rubyEncoding;
         }
 
-        @Specialization
-        public RubyEncoding defaultExternal(RubyNilClass nil) {
+        @Specialization(guards = "isNil(nil)")
+        public RubyEncoding defaultExternal(Object nil) {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("default external can not be nil", this));
         }
 
@@ -239,13 +239,13 @@ public abstract class EncodingNodes {
             return encoding;
         }
 
-        @Specialization
-        public RubyBasicObject defaultInternal(RubyNilClass encoding) {
+        @Specialization(guards = "isNil(encoding)")
+        public RubyBasicObject defaultInternal(Object encoding) {
             CompilerDirectives.transferToInterpreter();
 
             getContext().getRuntime().setDefaultInternalEncoding(null);
 
-            return encoding;
+            return nil();
         }
 
         @Specialization(guards = { "!isRubyEncoding(encoding)", "!isNil(encoding)" })

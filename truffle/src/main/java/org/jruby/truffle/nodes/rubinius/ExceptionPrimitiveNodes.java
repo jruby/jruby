@@ -40,13 +40,13 @@ public abstract class ExceptionPrimitiveNodes {
             return getContext().getCoreLibrary().fileNotFoundError(message.toString(), this);
         }
 
-        @Specialization(guards = "errno == ENOENT")
-        public RubyException enoent(RubyNilClass message, int errno) {
+        @Specialization(guards = {"isNil(message)", "errno == ENOENT"})
+        public RubyException enoent(Object message, int errno) {
             return getContext().getCoreLibrary().fileNotFoundError("nil", this);
         }
 
-        @Specialization(guards = "errno == EBADF")
-        public RubyException ebadf(RubyNilClass message, int errno) {
+        @Specialization(guards = {"isNil(message)", "errno == EBADF"})
+        public RubyException ebadf(Object message, int errno) {
             return getContext().getCoreLibrary().badFileDescriptor(this);
         }
 
@@ -55,8 +55,8 @@ public abstract class ExceptionPrimitiveNodes {
             return getContext().getCoreLibrary().fileExistsError(message.toString(), this);
         }
 
-        @Specialization(guards = "errno == EEXIST")
-        public RubyException eexist(RubyNilClass message, int errno) {
+        @Specialization(guards = {"isNil(message)", "errno == EEXIST"})
+        public RubyException eexist(Object message, int errno) {
             return getContext().getCoreLibrary().fileExistsError("nil", this);
         }
 
@@ -79,8 +79,8 @@ public abstract class ExceptionPrimitiveNodes {
         }
 
         @CompilerDirectives.TruffleBoundary
-        @Specialization(guards = "!isExceptionSupported(errno)")
-        public RubyException unsupported(RubyNilClass message, int errno) {
+        @Specialization(guards = {"isNil(message)", "!isExceptionSupported(errno)"})
+        public RubyException unsupported(Object message, int errno) {
             final Errno errnoObject = Errno.valueOf(errno);
 
             if (errnoObject == null) {

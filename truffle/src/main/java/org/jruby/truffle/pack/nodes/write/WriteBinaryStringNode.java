@@ -44,8 +44,8 @@ public abstract class WriteBinaryStringNode extends PackNode {
         this.appendNull = appendNull;
     }
 
-    @Specialization
-    public Object write(VirtualFrame frame, RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public Object write(VirtualFrame frame, Object nil) {
         if (padOnNil) {
             for (int n = 0; n < width; n++) {
                 writeBytes(frame, padding);

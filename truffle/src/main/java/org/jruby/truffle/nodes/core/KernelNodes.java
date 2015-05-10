@@ -487,8 +487,8 @@ public abstract class KernelNodes {
             return getContext().eval(source.getByteList(), getCallerBinding(frame), true, this);
         }
 
-        @Specialization
-        public Object eval(VirtualFrame frame, RubyString source, RubyNilClass noBinding, RubyString filename, int lineNumber) {
+        @Specialization(guards = "isNil(noBinding)")
+        public Object eval(VirtualFrame frame, RubyString source, Object noBinding, RubyString filename, int lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename.
@@ -942,8 +942,8 @@ public abstract class KernelNodes {
 
         public abstract boolean executeIsA(VirtualFrame frame, Object self, RubyModule rubyClass);
 
-        @Specialization
-        public boolean isA(RubyBasicObject self, RubyNilClass nil) {
+        @Specialization(guards = {"isNil(nil)", "!isRubyModule(nil)"})
+        public boolean isANil(RubyBasicObject self, Object nil) {
             return false;
         }
 
@@ -1438,12 +1438,12 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject setTraceFunc(RubyNilClass nil) {
+        @Specialization(guards = "isNil(nil)")
+        public RubyBasicObject setTraceFunc(Object nil) {
             CompilerDirectives.transferToInterpreter();
 
             getContext().getTraceManager().setTraceFunc(null);
-            return nil;
+            return nil();
         }
 
         @Specialization

@@ -105,8 +105,8 @@ public abstract class ThreadNodes {
             return thread;
         }
 
-        @Specialization
-        public RubyThread join(RubyThread thread, RubyNilClass timeout) {
+        @Specialization(guards = "isNil(nil)")
+        public RubyThread join(RubyThread thread, Object nil) {
             return join(thread, UndefinedPlaceholder.INSTANCE);
         }
 

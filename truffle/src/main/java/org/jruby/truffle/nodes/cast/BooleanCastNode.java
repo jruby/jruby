@@ -34,8 +34,8 @@ public abstract class BooleanCastNode extends RubyNode {
 
     public abstract boolean executeBoolean(VirtualFrame frame, Object value);
 
-    @Specialization
-    public boolean doNil(RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public boolean doNil(Object nil) {
         return false;
     }
 

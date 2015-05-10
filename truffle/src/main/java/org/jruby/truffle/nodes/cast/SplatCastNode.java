@@ -60,8 +60,8 @@ public abstract class SplatCastNode extends RubyNode {
 
     protected abstract RubyNode getChild();
 
-    @Specialization
-    public RubyArray splat(RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public RubyArray splat(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass());

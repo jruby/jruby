@@ -36,8 +36,8 @@ public abstract class ObjectPrimitiveNodes {
 
         public abstract Object executeObjectID(VirtualFrame frame, Object value);
 
-        @Specialization
-        public int objectID(RubyNilClass nil) {
+        @Specialization(guards = "isNil(nil)")
+        public int objectID(Object nil) {
             return ObjectIDOperations.NIL;
         }
 

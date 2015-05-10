@@ -54,8 +54,8 @@ public abstract class IsFrozenNode extends RubyNode {
         return true;
     }
 
-    @Specialization
-    public boolean isFrozen(RubyNilClass object) {
+    @Specialization(guards = "isNil(nil)")
+    public boolean isFrozen(Object nil) {
         return true;
     }
 
