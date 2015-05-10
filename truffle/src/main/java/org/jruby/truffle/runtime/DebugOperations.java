@@ -14,15 +14,21 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.Location;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
+
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.objects.FreezeNode;
 import org.jruby.truffle.nodes.objects.FreezeNodeGen;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
+import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -132,39 +138,20 @@ public abstract class DebugOperations {
         printASTForBacktrace(currentNode.getRootNode(), activeNodes, 0);
     }
 
-    public static Object verySlowFreeze(RubyContext context, final Object object) {
-        final FreezeNode freezeNode = FreezeNodeGen.create(context, null, null);
+    private static Object executeInNewNode(final RubyNode node) {
         new Node() {
-            @Child FreezeNode child = freezeNode;
+            @Child RubyNode child = node;
         }.adoptChildren();
-        return freezeNode.executeFreeze(object);
+
+        return node.execute(null);
+    }
+
+    public static Object verySlowFreeze(RubyContext context, Object object) {
+        return executeInNewNode(FreezeNodeGen.create(context, null, new ObjectLiteralNode(context, null, object)));
     }
 
     public static boolean verySlowIsFrozen(RubyContext context, Object object) {
-        final IsFrozenNode isFrozenNode = IsFrozenNodeGen.create(context, null, null);
-        new Node() {
-            @Child IsFrozenNode child = isFrozenNode;
-        }.adoptChildren();
-        return isFrozenNode.executeIsFrozen(object);
-    }
-
-    public static boolean verySlowIsTainted(Object o) {
-        if ((o instanceof Boolean) ||
-                (o instanceof Integer) ||
-                (o instanceof Long) ||
-                (o instanceof Double) ||
-                (o instanceof RubySymbol)) {
-            return false;
-        }
-
-        final RubyBasicObject object = (RubyBasicObject) o;
-
-        final Shape layout = object.getDynamicObject().getShape();
-        final Property property = layout.getProperty(RubyBasicObject.TAINTED_IDENTIFIER);
-
-        final Location storageLocation = property.getLocation();
-
-        return (boolean) storageLocation.get(object.getDynamicObject(), layout);
+        return (boolean) executeInNewNode(IsFrozenNodeGen.create(context, null, new ObjectLiteralNode(context, null, object)));
     }
 
     private static void printASTForBacktrace(Node node, List<Node> activeNodes, int indentation) {
