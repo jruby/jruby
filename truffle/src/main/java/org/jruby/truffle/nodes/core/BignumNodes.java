@@ -33,6 +33,9 @@ import java.math.BigInteger;
 @CoreClass(name = "Bignum")
 public abstract class BignumNodes {
 
+    public static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
+    public static final BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
+
     public static abstract class BignumCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;

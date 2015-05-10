@@ -69,7 +69,11 @@ public class RubyBasicObject implements TruffleObject {
     }
 
     public boolean hasNoSingleton() {
-        return false;
+        if (this instanceof RubyBignum) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public boolean hasClassAsSingleton() {
