@@ -21,7 +21,6 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyMethod;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -108,7 +107,7 @@ public abstract class InteropNode extends RubyNode {
             this.execute = ExecuteMethodNodeGen.create(context, sourceSection, null);
         }
 
-        
+
         
         @Override
         public Object execute(VirtualFrame frame) {
@@ -189,7 +188,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return ForeignAccessArguments.getReceiver(frame.getArguments()) instanceof RubyNilClass;
+            return ForeignAccessArguments.getReceiver(frame.getArguments()) == nil();
         }
     }
 

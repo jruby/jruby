@@ -15,13 +15,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 
-/**
- * Wraps some node that will produce either a {@link RubyProc} or a {@link RubyNilClass} and
- * returns {@code null} in case of the latter. Used in parts of the dispatch chain.
- */
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ProcOrNullNode extends RubyNode {
 
@@ -29,8 +24,8 @@ public abstract class ProcOrNullNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    @Specialization
-    public Object doNil(RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public Object doNil(Object nil) {
         return null;
     }
 

@@ -334,7 +334,7 @@ public abstract class MathNodes {
 
         @Specialization
         public RubyArray frexp(RubyBignum a) {
-            return frexp(a.bigIntegerValue().doubleValue());
+            return frexp(BignumNodes.getBigIntegerValue(a).doubleValue());
         }
 
         @Specialization
@@ -494,17 +494,17 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(RubyBignum a, int b) {
-            return function(a.bigIntegerValue().doubleValue(), b);
+            return function(BignumNodes.getBigIntegerValue(a).doubleValue(), b);
         }
 
         @Specialization
         public double function(RubyBignum a, long b) {
-            return function(a.bigIntegerValue().doubleValue(), b);
+            return function(BignumNodes.getBigIntegerValue(a).doubleValue(), b);
         }
 
         @Specialization
         public double function(RubyBignum a, double b) {
-            return function(a.bigIntegerValue().doubleValue(), b);
+            return function(BignumNodes.getBigIntegerValue(a).doubleValue(), b);
         }
 
         @Specialization
@@ -574,7 +574,7 @@ public abstract class MathNodes {
 
         @Specialization
         public RubyArray lgamma(RubyBignum a) {
-            return lgamma(a.bigIntegerValue().doubleValue());
+            return lgamma(BignumNodes.getBigIntegerValue(a).doubleValue());
         }
 
         @Specialization
@@ -629,7 +629,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(RubyBignum a, UndefinedPlaceholder b) {
-            return doFunction(a.bigIntegerValue().doubleValue());
+            return doFunction(BignumNodes.getBigIntegerValue(a).doubleValue());
         }
 
         @Specialization
@@ -815,7 +815,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(RubyBignum a) {
-            return doFunction(a.bigIntegerValue().doubleValue());
+            return doFunction(BignumNodes.getBigIntegerValue(a).doubleValue());
         }
 
         @Specialization
@@ -873,7 +873,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(int a, RubyBignum b) {
-            return doFunction(a, b.bigIntegerValue().doubleValue());
+            return doFunction(a, BignumNodes.getBigIntegerValue(b).doubleValue());
         }
 
         @Specialization
@@ -893,7 +893,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(long a, RubyBignum b) {
-            return doFunction(a, b.bigIntegerValue().doubleValue());
+            return doFunction(a, BignumNodes.getBigIntegerValue(b).doubleValue());
         }
 
         @Specialization
@@ -903,22 +903,22 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(RubyBignum a, int b) {
-            return doFunction(a.bigIntegerValue().doubleValue(), b);
+            return doFunction(BignumNodes.getBigIntegerValue(a).doubleValue(), b);
         }
 
         @Specialization
         public double function(RubyBignum a, long b) {
-            return doFunction(a.bigIntegerValue().doubleValue(), b);
+            return doFunction(BignumNodes.getBigIntegerValue(a).doubleValue(), b);
         }
 
         @Specialization
         public double function(RubyBignum a, RubyBignum b) {
-            return doFunction(a.bigIntegerValue().doubleValue(), b.bigIntegerValue().doubleValue());
+            return doFunction(BignumNodes.getBigIntegerValue(a).doubleValue(), BignumNodes.getBigIntegerValue(b).doubleValue());
         }
 
         @Specialization
         public double function(RubyBignum a, double b) {
-            return doFunction(a.bigIntegerValue().doubleValue(), b);
+            return doFunction(BignumNodes.getBigIntegerValue(a).doubleValue(), b);
         }
 
         @Specialization
@@ -933,7 +933,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(double a, RubyBignum b) {
-            return doFunction(a, b.bigIntegerValue().doubleValue());
+            return doFunction(a, BignumNodes.getBigIntegerValue(b).doubleValue());
         }
 
         @Specialization

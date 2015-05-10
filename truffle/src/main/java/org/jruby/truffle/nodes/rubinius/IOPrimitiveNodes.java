@@ -19,7 +19,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.Dir;
 
@@ -185,7 +184,7 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public RubyNilClass ensureOpen(RubyBasicObject file) {
+        public RubyBasicObject ensureOpen(RubyBasicObject file) {
             // TODO CS 18-Apr-15
             return nil();
         }

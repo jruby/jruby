@@ -15,17 +15,12 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
-import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
-import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.cext.CExtManager;
 import org.jruby.truffle.runtime.cext.CExtSubsystem;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -148,7 +143,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization
-        public RubyNilClass assertConstant(Object value) {
+        public RubyBasicObject assertConstant(Object value) {
             throw new RaiseException(getContext().getCoreLibrary().runtimeError("Truffle::Primitive.assert_constant can only be called lexically", this));
         }
 
@@ -163,7 +158,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyNilClass assertNotCompiled() {
+        public RubyBasicObject assertNotCompiled() {
             throw new RaiseException(getContext().getCoreLibrary().runtimeError("Truffle::Primitive.assert_not_compiled can only be called lexically", this));
         }
 
@@ -257,7 +252,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyNilClass simpleShell() {
+        public RubyBasicObject simpleShell() {
             new SimpleShell(getContext()).run(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), this);
             return nil();
         }
@@ -313,7 +308,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization
-        public RubyNilClass coverageStart() {
+        public RubyBasicObject coverageStart() {
             if (getContext().getCoverageTracker() == null) {
                 throw new UnsupportedOperationException("coverage is disabled");
             }
@@ -333,7 +328,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyNilClass attach(RubyString file, int line, RubyProc block) {
+        public RubyBasicObject attach(RubyString file, int line, RubyProc block) {
             getContext().getAttachmentsManager().attach(file.toString(), line, block);
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -349,7 +344,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyNilClass detach(RubyString file, int line) {
+        public RubyBasicObject detach(RubyString file, int line) {
             getContext().getAttachmentsManager().detach(file.toString(), line);
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -423,7 +418,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyNilClass debugPrint(RubyString string) {
+        public RubyBasicObject debugPrint(RubyString string) {
             System.err.println(string.toString());
             return nil();
         }

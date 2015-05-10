@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.parser.FormatDirective;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
@@ -28,7 +29,8 @@ public abstract class FormatIntegerNode extends PackNode {
     private final int zeroPadding;
     private final char format;
 
-    public FormatIntegerNode(int spacePadding, int zeroPadding, char format) {
+    public FormatIntegerNode(RubyContext context, int spacePadding, int zeroPadding, char format) {
+        super(context);
         this.spacePadding = spacePadding;
         this.zeroPadding = zeroPadding;
         this.format = format;

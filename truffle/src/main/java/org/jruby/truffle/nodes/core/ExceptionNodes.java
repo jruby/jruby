@@ -16,8 +16,8 @@ import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 
 @CoreClass(name = "Exception")
@@ -31,7 +31,7 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public RubyNilClass initialize(RubyException exception, UndefinedPlaceholder message) {
+        public RubyBasicObject initialize(RubyException exception, UndefinedPlaceholder message) {
             CompilerDirectives.transferToInterpreter();
 
             exception.initialize(getContext().makeString(""));
@@ -39,7 +39,7 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public RubyNilClass initialize(RubyException exception, RubyString message) {
+        public RubyBasicObject initialize(RubyException exception, RubyString message) {
             CompilerDirectives.transferToInterpreter();
 
             exception.initialize(message);
@@ -75,12 +75,12 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public RubyNilClass captureBacktrace(RubyException exception, UndefinedPlaceholder offset) {
+        public RubyBasicObject captureBacktrace(RubyException exception, UndefinedPlaceholder offset) {
             return captureBacktrace(exception, 1);
         }
 
         @Specialization
-        public RubyNilClass captureBacktrace(RubyException exception, int offset) {
+        public RubyBasicObject captureBacktrace(RubyException exception, int offset) {
             Backtrace backtrace = RubyCallStack.getBacktrace(this, offset);
             exception.setBacktrace(backtrace);
             return nil();

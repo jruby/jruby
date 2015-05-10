@@ -18,6 +18,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.pack.runtime.PackFrameDescriptor;
 import org.jruby.truffle.pack.runtime.exceptions.TooFewArgumentsException;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
 import java.util.Arrays;
@@ -31,7 +32,13 @@ import java.util.Arrays;
 @ImportStatic(PackGuards.class)
 public abstract class PackNode extends Node {
 
-    private ConditionProfile writeMoreThanZeroBytes = ConditionProfile.createBinaryProfile();
+    private final RubyContext context;
+
+    private final ConditionProfile writeMoreThanZeroBytes = ConditionProfile.createBinaryProfile();
+
+    public PackNode(RubyContext context) {
+        this.context = context;
+    }
 
     public abstract Object execute(VirtualFrame frame);
 
@@ -177,5 +184,12 @@ public abstract class PackNode extends Node {
         return output;
     }
 
+    protected RubyContext getContext() {
+        return context;
+    }
+
+    protected boolean isNil(Object object) {
+        return object == context.getCoreLibrary().getNilObject();
+    }
 
 }

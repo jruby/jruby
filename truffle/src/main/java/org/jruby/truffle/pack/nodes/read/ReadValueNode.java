@@ -16,11 +16,16 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
+import org.jruby.truffle.runtime.RubyContext;
 
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
 })
 public abstract class ReadValueNode extends PackNode {
+
+    public ReadValueNode(RubyContext context) {
+        super(context);
+    }
 
     @Specialization(guards = "isNull(source)")
     public void read(VirtualFrame frame, Object source) {

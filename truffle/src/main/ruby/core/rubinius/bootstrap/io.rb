@@ -163,7 +163,7 @@ class IO
   #
   def shutdown(how)
     Rubinius.primitive :io_shutdown
-    raise PrimitiveFailure, "IO#shutdown primitive failed"
+    raise PrimitiveFailure, "IO#innertShutdown primitive failed"
   end
 
   def socket_recv(bytes, flags, type)

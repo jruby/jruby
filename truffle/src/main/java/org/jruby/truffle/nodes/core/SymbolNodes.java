@@ -54,7 +54,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization(guards = "!isRubySymbol(other)")
-        public RubyNilClass compare(RubySymbol symbol,  Object other) {
+        public RubyBasicObject compare(RubySymbol symbol,  Object other) {
             return nil();
         }
     }
@@ -108,7 +108,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization(guards = "!isRubySymbol(other)")
-        public RubyNilClass caseCompare(RubySymbol symbol,  Object other) {
+        public RubyBasicObject caseCompare(RubySymbol symbol,  Object other) {
             return nil();
         }
 

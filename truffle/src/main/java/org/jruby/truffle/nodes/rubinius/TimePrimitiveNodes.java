@@ -77,36 +77,36 @@ public abstract class TimePrimitiveNodes {
             readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
-        @Specialization(guards = "isTrue(isUTC)")
-        public RubyTime timeSSpecificUTC(long seconds, long nanoseconds, boolean isUTC, RubyNilClass offset) {
+        @Specialization(guards = {"isTrue(isUTC)", "isNil(offset)"})
+        public RubyTime timeSSpecificUTC(long seconds, long nanoseconds, boolean isUTC, Object offset) {
             return timeSSpecificUTC((int) seconds, (int) nanoseconds, isUTC, offset);
         }
 
-        @Specialization(guards = "isTrue(isUTC)")
-        public RubyTime timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
+        @Specialization(guards = {"isTrue(isUTC)", "isNil(offset)"})
+        public RubyTime timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, Object offset) {
             return timeSSpecificUTC((int) seconds, nanoseconds, isUTC, offset);
         }
 
-        @Specialization(guards = "isTrue(isUTC)")
-        public RubyTime timeSSpecificUTC(int seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
+        @Specialization(guards = {"isTrue(isUTC)", "isNil(offset)"})
+        public RubyTime timeSSpecificUTC(int seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = seconds * 1_000L + (nanoseconds / 1_000_000);
             return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds), nil());
         }
 
 
-        @Specialization(guards = "!isTrue(isUTC)")
-        public RubyTime timeSSpecific(VirtualFrame frame, long seconds, long nanoseconds, boolean isUTC, RubyNilClass offset) {
+        @Specialization(guards = {"!isTrue(isUTC)", "isNil(offset)"})
+        public RubyTime timeSSpecific(VirtualFrame frame, long seconds, long nanoseconds, boolean isUTC, Object offset) {
             return timeSSpecific(frame, (int) seconds, (int) nanoseconds, isUTC, offset);
         }
 
-        @Specialization(guards = "!isTrue(isUTC)")
-        public RubyTime timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
+        @Specialization(guards = {"!isTrue(isUTC)", "isNil(offset)"})
+        public RubyTime timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             return timeSSpecific(frame, (int) seconds, nanoseconds, isUTC, offset);
         }
 
-        @Specialization(guards = "!isTrue(isUTC)")
-        public RubyTime timeSSpecific(VirtualFrame frame, int seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
+        @Specialization(guards = {"!isTrue(isUTC)", "isNil(offset)"})
+        public RubyTime timeSSpecific(VirtualFrame frame, int seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = (long) seconds * 1_000 + ((long) nanoseconds / 1_000_000);
             return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds, readTimeZoneNode.executeRubyString(frame)), offset);
@@ -219,15 +219,15 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, RubyNilClass sec, int min, int hour, int mday, int month, int year,
-                                       RubyNilClass nsec, int isdst, boolean fromutc, Object utcoffset) {
+        @Specialization(guards = {"isNil(sec)", "isNil(nsec)"})
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, Object sec, int min, int hour, int mday, int month, int year,
+                                       Object nsec, int isdst, boolean fromutc, Object utcoffset) {
             return timeSFromArray(frame, timeClass, 0, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
         }
 
-        @Specialization
+        @Specialization(guards = "isNil(nsec)")
         public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
-                                       RubyNilClass nsec, int isdst, boolean fromutc, Object utcoffset) {
+                                       Object nsec, int isdst, boolean fromutc, Object utcoffset) {
             return buildTime(frame, timeClass, sec, min, hour, mday, month, year, 0, isdst, fromutc, utcoffset);
         }
 
@@ -281,9 +281,9 @@ public abstract class TimePrimitiveNodes {
             }
         }
 
-        @Specialization
+        @Specialization(guards = "isNil(nsec)")
         public RubyTime timeSFromArray(RubyClass timeClass, RubyBasicObject sec, int min, int hour, int mday, int month, int year,
-                                       RubyNilClass nsec, int isdst, boolean fromutc, Object utcoffset) {
+                                       Object nsec, int isdst, boolean fromutc, Object utcoffset) {
             return null;
         }
 
@@ -299,9 +299,9 @@ public abstract class TimePrimitiveNodes {
             return timeSFromArray(frame, timeClass, sec, min, hour, mday, month, year, nsec, (int) isdst, fromutc, utcoffset);
         }
 
-        @Specialization
+        @Specialization(guards = "isNil(nsec)")
         public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
-                                       RubyNilClass nsec, int isdst, boolean fromutc, Object utcoffset) {
+                                       Object nsec, int isdst, boolean fromutc, Object utcoffset) {
             final int secondsWhole = (int) sec;
             final int nanosecondsFractional = (int) ((sec * 1_000_000_000) - (secondsWhole * 1_000_000_000));
             return buildTime(frame, timeClass, secondsWhole, min, hour, mday, month, year, nanosecondsFractional, isdst, fromutc, utcoffset);

@@ -11,6 +11,7 @@ package org.jruby.truffle.pack.nodes.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Moves the output position to a particular location - similar to seek
@@ -23,7 +24,8 @@ public class AtNode extends PackNode {
 
     private final int position;
 
-    public AtNode(int position) {
+    public AtNode(RubyContext context, int position) {
+        super(context);
         this.position = position;
     }
 

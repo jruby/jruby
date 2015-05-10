@@ -47,6 +47,8 @@ import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
+import org.jruby.truffle.nodes.core.array.ArrayCoreMethodNode;
+import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
@@ -309,14 +311,14 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString concat(RubyString string, RubyBignum other) {
-            if (other.bigIntegerValue().signum() < 0) {
+            if (BignumNodes.getBigIntegerValue(other).signum() < 0) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
                         getContext().getCoreLibrary().rangeError("bignum out of char range", this));
             }
 
-            return concatNumeric(string, other.bigIntegerValue().intValue());
+            return concatNumeric(string, BignumNodes.getBigIntegerValue(other).intValue());
         }
 
         @TruffleBoundary

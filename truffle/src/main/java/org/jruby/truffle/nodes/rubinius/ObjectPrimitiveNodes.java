@@ -17,10 +17,9 @@ import org.jruby.truffle.nodes.objects.IsTaintedNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
 import org.jruby.truffle.nodes.objects.TaintNodeGen;
-import org.jruby.truffle.runtime.object.ObjectIDOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Object} class.
@@ -36,8 +35,8 @@ public abstract class ObjectPrimitiveNodes {
 
         public abstract Object executeObjectID(VirtualFrame frame, Object value);
 
-        @Specialization
-        public int objectID(RubyNilClass nil) {
+        @Specialization(guards = "isNil(nil)")
+        public int objectID(Object nil) {
             return ObjectIDOperations.NIL;
         }
 

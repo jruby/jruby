@@ -21,12 +21,10 @@ import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.unsafe.UnsafeHolder;
 import sun.misc.Unsafe;
 
-import java.io.File;
 import java.nio.charset.StandardCharsets;
 
 @CoreClass(name = "Rubinius::FFI::Platform::POSIX")
@@ -419,8 +417,8 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public int fcntl(int fd, int fcntl, RubyNilClass nil) {
+        @Specialization(guards = "isNil(nil)")
+        public int fcntl(int fd, int fcntl, Object nil) {
             return posix().fcntl(fd, Fcntl.valueOf(fcntl));
         }
 

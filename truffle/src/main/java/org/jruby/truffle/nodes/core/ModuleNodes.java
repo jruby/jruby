@@ -26,6 +26,9 @@ import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.arguments.CheckArityNode;
+import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.coerce.SymbolOrToStrNode;
@@ -38,9 +41,6 @@ import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
-import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
-import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
-import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
@@ -263,7 +263,7 @@ public abstract class ModuleNodes {
 
             final Object isSubclass = isSubclass(frame, self, other);
 
-            if (isSubclass instanceof RubyNilClass) {
+            if (isSubclass == nil()) {
                 return nil();
             } else if (booleanCast(frame, isSubclass)) {
                 return -1;
@@ -340,7 +340,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyNilClass appendFeatures(RubyModule module, RubyModule other) {
+        public RubyBasicObject appendFeatures(RubyModule module, RubyModule other) {
             CompilerDirectives.transferToInterpreter();
 
             module.appendFeatures(this, other);
@@ -356,7 +356,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyNilClass attrReader(RubyModule module, Object[] args) {
+        public RubyBasicObject attrReader(RubyModule module, Object[] args) {
             CompilerDirectives.transferToInterpreter();
 
             final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
@@ -406,7 +406,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyNilClass attrWriter(RubyModule module, Object[] args) {
+        public RubyBasicObject attrWriter(RubyModule module, Object[] args) {
             CompilerDirectives.transferToInterpreter();
 
             final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
@@ -455,7 +455,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyNilClass attrAccessor(RubyModule module, Object[] args) {
+        public RubyBasicObject attrAccessor(RubyModule module, Object[] args) {
             CompilerDirectives.transferToInterpreter();
 
             final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
@@ -507,16 +507,16 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyNilClass autoload(RubyModule module, RubySymbol name, RubyString filename) {
+        public RubyBasicObject autoload(RubyModule module, RubySymbol name, RubyString filename) {
             return autoload(module, name.toString(), filename);
         }
 
         @Specialization
-        public RubyNilClass autoload(RubyModule module, RubyString name, RubyString filename) {
+        public RubyBasicObject autoload(RubyModule module, RubyString name, RubyString filename) {
             return autoload(module, name.toString(), filename);
         }
 
-        private RubyNilClass autoload(RubyModule module, String name, RubyString filename) {
+        private RubyBasicObject autoload(RubyModule module, String name, RubyString filename) {
             if (invalidConstantName.profile(!IdUtil.isValidConstantName19(name))) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("autoload must be constant name: %s", name), name, this));
@@ -1103,7 +1103,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyNilClass included(Object subclass) {
+        public RubyBasicObject included(Object subclass) {
             return nil();
         }
 

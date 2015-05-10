@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.RangeException;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Write a Unicode character out as UTF-8 bytes.
@@ -24,6 +25,10 @@ import org.jruby.truffle.pack.runtime.exceptions.RangeException;
         @NodeChild(value = "value", type = PackNode.class),
 })
 public abstract class WriteUTF8CharacterNode extends PackNode {
+
+    public WriteUTF8CharacterNode(RubyContext context) {
+        super(context);
+    }
 
     // UTF-8 logic copied from jruby.util.Pack - see copyright and authorship there
 

@@ -11,7 +11,6 @@ package org.jruby.truffle.runtime.util;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
-import org.jruby.truffle.nodes.RubyNode;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;

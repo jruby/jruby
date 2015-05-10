@@ -20,13 +20,16 @@ import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadServiceResource;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ArrayNodes;
-import org.jruby.truffle.nodes.core.MutexNodes;
-import org.jruby.truffle.nodes.core.ProcessNodes;
-import org.jruby.truffle.nodes.core.ThreadBacktraceLocationNodes;
+import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.core.array.ArrayNodesFactory;
+import org.jruby.truffle.nodes.core.fixnum.FixnumNodesFactory;
+import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.nodes.rubinius.ByteArrayNodesFactory;
 import org.jruby.truffle.nodes.rubinius.NativeFunctionPrimitiveNodes;
+import org.jruby.truffle.nodes.rubinius.PosixNodesFactory;
+import org.jruby.truffle.nodes.rubinius.RubiniusTypeNodesFactory;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -126,7 +129,7 @@ public class CoreLibrary {
     private final RubyArray argv;
     private final RubyBasicObject globalVariablesObject;
     private final RubyBasicObject mainObject;
-    private final RubyNilClass nilObject;
+    private final RubyBasicObject nilObject;
     private RubyBasicObject rubiniusUndefined;
 
     private final ArrayNodes.MinBlock arrayMinBlock;
@@ -326,7 +329,7 @@ public class CoreLibrary {
         // Create some key objects
 
         mainObject = new RubyBasicObject(objectClass);
-        nilObject = new RubyNilClass(nilClass);
+        nilObject = new RubyBasicObject(nilClass);
         argv = new RubyArray(arrayClass);
         rubiniusUndefined = new RubyBasicObject(objectClass);
 
@@ -352,6 +355,47 @@ public class CoreLibrary {
      * Initializations which may access {@link RubyContext#getCoreLibrary()}.
      */
     public void initialize() {
+        // Bring in core method nodes
+
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ArrayNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, BasicObjectNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, BindingNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, BignumNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ClassNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ExceptionNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, FalseClassNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, FiberNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, FixnumNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, FloatNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, HashNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, IntegerNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, KernelNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, MainNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, MatchDataNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, MathNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ModuleNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, MutexNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ObjectSpaceNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ProcessNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ProcNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, RangeNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, RegexpNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, StringNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, SymbolNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ThreadNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, TrueClassNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, TrufflePrimitiveNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, EncodingNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, EncodingConverterNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, TruffleInteropNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, MethodNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, UnboundMethodNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ByteArrayNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, TimeNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, PosixNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, RubiniusTypeNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ThreadBacktraceLocationNodesFactory.getFactories());
+
         initializeGlobalVariables();
         initializeConstants();
         initializeEncodingConstants();
@@ -620,10 +664,10 @@ public class CoreLibrary {
     /**
      * Convert a value to a {@code Float}, without doing any lookup.
      */
-    public static double toDouble(Object value) {
+    public static double toDouble(Object value, RubyBasicObject nil) {
         assert value != null;
 
-        if (value instanceof RubyNilClass) {
+        if (value == nil) {
             return 0;
         }
 
@@ -636,7 +680,7 @@ public class CoreLibrary {
         }
 
         if (value instanceof RubyBignum) {
-            return ((RubyBignum) value).bigIntegerValue().doubleValue();
+            return BignumNodes.getBigIntegerValue((RubyBignum) value).doubleValue();
         }
 
         if (value instanceof Double) {
@@ -1169,7 +1213,7 @@ public class CoreLibrary {
         return mainObject;
     }
 
-    public RubyNilClass getNilObject() {
+    public RubyBasicObject getNilObject() {
         return nilObject;
     }
 

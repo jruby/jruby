@@ -53,7 +53,10 @@ import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutG
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -171,7 +174,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyNilClass equal(Object other) {
+        public RubyBasicObject equal(Object other) {
             return nil();
         }
 
@@ -223,7 +226,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyNilClass abort() {
+        public RubyBasicObject abort() {
             CompilerDirectives.transferToInterpreter();
             System.exit(1);
             return nil();
@@ -484,8 +487,8 @@ public abstract class KernelNodes {
             return getContext().eval(source.getByteList(), getCallerBinding(frame), true, this);
         }
 
-        @Specialization
-        public Object eval(VirtualFrame frame, RubyString source, RubyNilClass noBinding, RubyString filename, int lineNumber) {
+        @Specialization(guards = "isNil(noBinding)")
+        public Object eval(VirtualFrame frame, RubyString source, Object noBinding, RubyString filename, int lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename.
@@ -613,12 +616,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyNilClass exit(UndefinedPlaceholder exitCode) {
+        public RubyBasicObject exit(UndefinedPlaceholder exitCode) {
             return exit(1);
         }
 
         @Specialization
-        public RubyNilClass exit(int exitCode) {
+        public RubyBasicObject exit(int exitCode) {
             CompilerDirectives.transferToInterpreter();
             System.exit(exitCode);
             return nil();
@@ -939,8 +942,8 @@ public abstract class KernelNodes {
 
         public abstract boolean executeIsA(VirtualFrame frame, Object self, RubyModule rubyClass);
 
-        @Specialization
-        public boolean isA(RubyBasicObject self, RubyNilClass nil) {
+        @Specialization(guards = {"isNil(nil)", "!isRubyModule(nil)"})
+        public boolean isANil(RubyBasicObject self, Object nil) {
             return false;
         }
 
@@ -1435,12 +1438,12 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyNilClass setTraceFunc(RubyNilClass nil) {
+        @Specialization(guards = "isNil(nil)")
+        public RubyBasicObject setTraceFunc(Object nil) {
             CompilerDirectives.transferToInterpreter();
 
             getContext().getTraceManager().setTraceFunc(null);
-            return nil;
+            return nil();
         }
 
         @Specialization
@@ -1829,7 +1832,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public String toHexString(RubyBignum value) {
-            return value.bigIntegerValue().toString(16);
+            return BignumNodes.getBigIntegerValue(value).toString(16);
         }
 
     }

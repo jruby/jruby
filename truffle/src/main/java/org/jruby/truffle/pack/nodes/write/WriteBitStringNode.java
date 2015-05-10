@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.Endianness;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
 /**
@@ -32,7 +33,8 @@ public abstract class WriteBitStringNode extends PackNode {
     private final boolean star;
     private final int length;
 
-    public WriteBitStringNode(Endianness endianness, boolean star, int length) {
+    public WriteBitStringNode(RubyContext context, Endianness endianness, boolean star, int length) {
+        super(context);
         this.endianness = endianness;
         this.star = star;
         this.length = length;

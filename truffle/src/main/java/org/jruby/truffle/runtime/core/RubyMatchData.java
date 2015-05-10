@@ -11,7 +11,6 @@ package org.jruby.truffle.runtime.core;
 
 import org.joni.Regex;
 import org.joni.Region;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;

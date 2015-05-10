@@ -17,6 +17,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
 import java.math.BigInteger;
@@ -47,8 +48,8 @@ public class GeneralDivModNode extends RubyNode {
         return divMod(a, b);
     }
 
-    public RubyArray execute(int a, RubyBignum b) {
-        return divMod(BigInteger.valueOf(a), b.bigIntegerValue());
+    public RubyArray execute(int a, BigInteger b) {
+        return divMod(BigInteger.valueOf(a), b);
     }
 
     public RubyArray execute(int a, double b) {
@@ -63,24 +64,24 @@ public class GeneralDivModNode extends RubyNode {
         return divMod(a, b);
     }
 
-    public RubyArray execute(long a, RubyBignum b) {
-        return divMod(BigInteger.valueOf(a), b.bigIntegerValue());
+    public RubyArray execute(long a, BigInteger b) {
+        return divMod(BigInteger.valueOf(a), b);
     }
 
     public RubyArray execute(long a, double b) {
         return divMod(a, b);
     }
 
-    public RubyArray execute(RubyBignum a, int b) {
-        return divMod(a.bigIntegerValue(), BigInteger.valueOf(b));
+    public RubyArray execute(BigInteger a, int b) {
+        return divMod(a, BigInteger.valueOf(b));
     }
 
-    public RubyArray execute(RubyBignum a, long b) {
-        return divMod(a.bigIntegerValue(), BigInteger.valueOf(b));
+    public RubyArray execute(BigInteger a, long b) {
+        return divMod(a, BigInteger.valueOf(b));
     }
 
-    public RubyArray execute(RubyBignum a, RubyBignum b) {
-        return divMod(a.bigIntegerValue(), b.bigIntegerValue());
+    public RubyArray execute(BigInteger a, BigInteger b) {
+        return divMod(a, b);
     }
 
     public RubyArray execute(double a, int b) {
@@ -92,7 +93,7 @@ public class GeneralDivModNode extends RubyNode {
     }
 
     public RubyArray execute(double a, RubyBignum b) {
-        return divMod(a, b.bigIntegerValue().doubleValue());
+        return divMod(a, BignumNodes.getBigIntegerValue(b).doubleValue());
     }
 
     public RubyArray execute(double a, double b) {

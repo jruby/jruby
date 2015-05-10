@@ -24,7 +24,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 
 // TODO(CS): copy and paste of ArrayCastNode
 
@@ -41,27 +40,27 @@ public abstract class HashCastNode extends RubyNode {
     protected abstract RubyNode getChild();
 
     @Specialization
-    public RubyNilClass cast(boolean value) {
+    public RubyBasicObject cast(boolean value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(int value) {
+    public RubyBasicObject cast(int value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(long value) {
+    public RubyBasicObject cast(long value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(double value) {
+    public RubyBasicObject cast(double value) {
         return nil();
     }
 
-    @Specialization
-    public RubyNilClass cast(RubyBignum value) {
+    @Specialization(guards = "isRubyBignum(value)")
+    public RubyBasicObject cast(RubyBasicObject value) {
         return nil();
     }
 
@@ -70,12 +69,12 @@ public abstract class HashCastNode extends RubyNode {
         return hash;
     }
 
-    @Specialization
-    public RubyNilClass cast(RubyNilClass nil) {
-        return nil;
+    @Specialization(guards = "isNil(nil)")
+    public RubyBasicObject cast(Object nil) {
+        return nil();
     }
 
-    @Specialization(guards = {"!isRubyNilClass(object)", "!isRubyHash(object)"})
+    @Specialization(guards = {"!isNil(object)", "!isRubyHash(object)"})
     public Object cast(VirtualFrame frame, RubyBasicObject object) {
         final Object result = toHashNode.call(frame, object, "to_hash", null, new Object[]{});
 

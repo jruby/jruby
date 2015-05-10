@@ -19,18 +19,19 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.arguments.CheckArityNode;
+import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.nodes.arguments.ShouldDestructureNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
+import org.jruby.truffle.nodes.dispatch.RespondToNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
+import org.jruby.truffle.nodes.locals.FlipFlopStateNode;
+import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.nodes.methods.*;
-import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
-import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
-import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
-import org.jruby.truffle.nodes.methods.arguments.ShouldDestructureNode;
-import org.jruby.truffle.nodes.methods.locals.FlipFlopStateNode;
-import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeGen;
-import org.jruby.truffle.nodes.respondto.RespondToNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperCallNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperReCallNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -87,7 +88,9 @@ class MethodTranslator extends BodyTranslator {
                 parentSourceSection.pop();
             }
         } else {
-            body = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+            body = new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil");
         }
 
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
@@ -116,7 +119,7 @@ class MethodTranslator extends BodyTranslator {
                 final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
                 final RubyNode castArrayNode = ArrayCastNodeGen.create(context, sourceSection, readArrayNode);
                 final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
-                final RubyNode writeArrayNode = WriteLocalVariableNodeGen.create(context, sourceSection, arraySlot, castArrayNode);
+                final RubyNode writeArrayNode = new WriteLocalVariableNode(context, sourceSection, castArrayNode, arraySlot);
 
                 final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
                 destructureArgumentsTranslator.pushArraySlot(arraySlot);
@@ -136,7 +139,9 @@ class MethodTranslator extends BodyTranslator {
 
             prelude = SequenceNode.sequence(context, sourceSection,
                     new BehaveAsBlockNode(context, sourceSection,
-                            new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                            new DefinedWrapperNode(context, sourceSection,
+                                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                                    "nil"),
                             new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null)), preludeBuilder);
         } else {
             if (usesRubiniusPrimitive) {

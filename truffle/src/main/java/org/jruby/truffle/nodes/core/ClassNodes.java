@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 
 @CoreClass(name = "Class")
@@ -127,7 +126,7 @@ public abstract class ClassNodes {
         }
 
         @Specialization
-        public RubyNilClass inherited(Object subclass) {
+        public RubyBasicObject inherited(Object subclass) {
             return nil();
         }
 

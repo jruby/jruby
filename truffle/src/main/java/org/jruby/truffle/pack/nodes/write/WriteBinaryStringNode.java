@@ -14,7 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
-import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
 /**
@@ -35,7 +35,9 @@ public abstract class WriteBinaryStringNode extends PackNode {
     private final boolean takeAll;
     private final boolean appendNull;
 
-    public WriteBinaryStringNode(boolean pad, boolean padOnNil, int width, byte padding, boolean takeAll, boolean appendNull) {
+    public WriteBinaryStringNode(RubyContext context, boolean pad, boolean padOnNil,
+                                 int width, byte padding, boolean takeAll, boolean appendNull) {
+        super(context);
         this.pad = pad;
         this.padOnNil = padOnNil;
         this.width = width;
@@ -44,8 +46,8 @@ public abstract class WriteBinaryStringNode extends PackNode {
         this.appendNull = appendNull;
     }
 
-    @Specialization
-    public Object write(VirtualFrame frame, RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public Object write(VirtualFrame frame, Object nil) {
         if (padOnNil) {
             for (int n = 0; n < width; n++) {
                 writeBytes(frame, padding);

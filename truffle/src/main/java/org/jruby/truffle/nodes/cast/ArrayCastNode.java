@@ -25,7 +25,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 
 /*
  * TODO(CS): could probably unify this with SplatCastNode with some final configuration options.
@@ -50,27 +49,27 @@ public abstract class ArrayCastNode extends RubyNode {
     protected abstract RubyNode getChild();
 
     @Specialization
-    public RubyNilClass cast(boolean value) {
+    public RubyBasicObject cast(boolean value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(int value) {
+    public RubyBasicObject cast(int value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(long value) {
+    public RubyBasicObject cast(long value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(double value) {
+    public RubyBasicObject cast(double value) {
         return nil();
     }
 
-    @Specialization
-    public RubyNilClass cast(RubyBignum value) {
+    @Specialization(guards = "isRubyBignum(value)")
+    public RubyBasicObject cast(RubyBasicObject value) {
         return nil();
     }
 
@@ -79,8 +78,8 @@ public abstract class ArrayCastNode extends RubyNode {
         return array;
     }
 
-    @Specialization
-    public Object cast(RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public Object cast(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass());
@@ -98,7 +97,7 @@ public abstract class ArrayCastNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = {"!isRubyNilClass(object)", "!isRubyArray(object)"})
+    @Specialization(guards = {"!isNil(object)", "!isRubyArray(object)"})
     public Object cast(VirtualFrame frame, RubyBasicObject object) {
         final Object result = toArrayNode.call(frame, object, "to_ary", null, new Object[]{});
 
