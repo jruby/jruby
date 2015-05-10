@@ -27,6 +27,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -82,7 +83,7 @@ public abstract class CmpIntNode extends RubyNode {
 
     @Specialization
     public int cmpBignum(RubyBignum value, Object receiver, Object other) {
-        return value.bigIntegerValue().signum();
+        return BignumNodes.getBigIntegerValue(value).signum();
     }
 
     @Specialization(guards = "isNil(nil)")

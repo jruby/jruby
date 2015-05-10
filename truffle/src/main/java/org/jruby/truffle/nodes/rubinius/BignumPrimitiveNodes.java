@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
@@ -41,14 +42,14 @@ public abstract class BignumPrimitiveNodes {
                 return null; // Primitive failure
             } else {
                 // TODO CS 15-Feb-15 what about this cast?
-                return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), a.bigIntegerValue().pow((int) b));
+                return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), BignumNodes.getBigIntegerValue(a).pow((int) b));
             }
         }
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public double pow(RubyBignum a, double b) {
-            return Math.pow(a.bigIntegerValue().doubleValue(), b);
+            return Math.pow(BignumNodes.getBigIntegerValue(a).doubleValue(), b);
         }
 
         @Specialization

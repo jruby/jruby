@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
@@ -63,7 +64,7 @@ public abstract class ToLongNode extends PackNode {
     @Specialization
     public long toLong(VirtualFrame frame, RubyBignum object) {
         // A truncated value is exactly what we want
-        return object.bigIntegerValue().longValue();
+        return BignumNodes.getBigIntegerValue(object).longValue();
     }
 
     @Specialization(guards = "isNil(nil)")

@@ -25,7 +25,7 @@ public class RubyBignum extends RubyBasicObject {
         this.value = value;
     }
 
-    public BigInteger bigIntegerValue() {
+    public BigInteger internalGetBigIntegerValue() {
         return value;
     }
 

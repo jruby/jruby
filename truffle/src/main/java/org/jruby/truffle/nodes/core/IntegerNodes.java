@@ -216,7 +216,7 @@ public abstract class IntegerNodes {
                 fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
             }
 
-            outer: for (BigInteger i = BigInteger.ZERO; i.compareTo(n.bigIntegerValue()) < 0; i = i.add(BigInteger.ONE)) {
+            outer: for (BigInteger i = BigInteger.ZERO; i.compareTo(BignumNodes.getBigIntegerValue(n)) < 0; i = i.add(BigInteger.ONE)) {
                 while (true) {
                     try {
                         yield(frame, block, fixnumOrBignum.fixnumOrBignum(i));

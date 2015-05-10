@@ -680,7 +680,7 @@ public class CoreLibrary {
         }
 
         if (value instanceof RubyBignum) {
-            return ((RubyBignum) value).bigIntegerValue().doubleValue();
+            return BignumNodes.getBigIntegerValue((RubyBignum) value).doubleValue();
         }
 
         if (value instanceof Double) {

@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.object;
 
 import com.oracle.truffle.api.ExactMath;
+import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
@@ -91,7 +92,7 @@ public abstract class ObjectIDOperations {
     }
 
     public static long toFixnum(RubyBignum id) {
-        return id.bigIntegerValue().longValue();
+        return BignumNodes.getBigIntegerValue(id).longValue();
     }
 
     public static boolean isFloatID(BigInteger id) {
@@ -99,7 +100,7 @@ public abstract class ObjectIDOperations {
     }
 
     public static double toFloat(RubyBignum id) {
-        return Double.longBitsToDouble(id.bigIntegerValue().longValue());
+        return Double.longBitsToDouble(BignumNodes.getBigIntegerValue(id).longValue());
     }
 
     private static BigInteger unsignedBigInteger(long value) {

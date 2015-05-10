@@ -311,14 +311,14 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString concat(RubyString string, RubyBignum other) {
-            if (other.bigIntegerValue().signum() < 0) {
+            if (BignumNodes.getBigIntegerValue(other).signum() < 0) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
                         getContext().getCoreLibrary().rangeError("bignum out of char range", this));
             }
 
-            return concatNumeric(string, other.bigIntegerValue().intValue());
+            return concatNumeric(string, BignumNodes.getBigIntegerValue(other).intValue());
         }
 
         @TruffleBoundary

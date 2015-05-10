@@ -1832,7 +1832,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public String toHexString(RubyBignum value) {
-            return value.bigIntegerValue().toString(16);
+            return BignumNodes.getBigIntegerValue(value).toString(16);
         }
 
     }

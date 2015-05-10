@@ -36,6 +36,10 @@ public abstract class BignumNodes {
     public static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
     public static final BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
 
+    public static BigInteger getBigIntegerValue(RubyBignum bignum) {
+        return bignum.internalGetBigIntegerValue();
+    }
+
     public static abstract class BignumCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
@@ -60,7 +64,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object neg(RubyBignum value) {
-            return fixnumOrBignum(value.bigIntegerValue().negate());
+            return fixnumOrBignum(getBigIntegerValue(value).negate());
         }
 
     }
@@ -74,22 +78,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object add(RubyBignum a, int b) {
-            return fixnumOrBignum(a.bigIntegerValue().add(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).add(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object add(RubyBignum a, long b) {
-            return fixnumOrBignum(a.bigIntegerValue().add(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).add(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public double add(RubyBignum a, double b) {
-            return a.bigIntegerValue().doubleValue() + b;
+            return getBigIntegerValue(a).doubleValue() + b;
         }
 
         @Specialization
         public Object add(RubyBignum a, RubyBignum b) {
-            return fixnumOrBignum(a.bigIntegerValue().add(b.bigIntegerValue()));
+            return fixnumOrBignum(getBigIntegerValue(a).add(getBigIntegerValue(b)));
         }
 
     }
@@ -103,22 +107,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object sub(RubyBignum a, int b) {
-            return fixnumOrBignum(a.bigIntegerValue().subtract(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).subtract(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object sub(RubyBignum a, long b) {
-            return fixnumOrBignum(a.bigIntegerValue().subtract(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).subtract(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public double sub(RubyBignum a, double b) {
-            return a.bigIntegerValue().doubleValue() - b;
+            return getBigIntegerValue(a).doubleValue() - b;
         }
 
         @Specialization
         public Object sub(RubyBignum a, RubyBignum b) {
-            return fixnumOrBignum(a.bigIntegerValue().subtract(b.bigIntegerValue()));
+            return fixnumOrBignum(getBigIntegerValue(a).subtract(getBigIntegerValue(b)));
         }
 
     }
@@ -133,24 +137,24 @@ public abstract class BignumNodes {
         @TruffleBoundary
         @Specialization
         public Object mul(RubyBignum a, int b) {
-            return fixnumOrBignum(a.bigIntegerValue().multiply(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).multiply(BigInteger.valueOf(b)));
         }
 
         @TruffleBoundary
         @Specialization
         public Object mul(RubyBignum a, long b) {
-            return fixnumOrBignum(a.bigIntegerValue().multiply(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).multiply(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public double mul(RubyBignum a, double b) {
-            return a.bigIntegerValue().doubleValue() * b;
+            return getBigIntegerValue(a).doubleValue() * b;
         }
 
         @TruffleBoundary
         @Specialization
         public Object mul(RubyBignum a, RubyBignum b) {
-            return fixnumOrBignum(a.bigIntegerValue().multiply(b.bigIntegerValue()));
+            return fixnumOrBignum(getBigIntegerValue(a).multiply(getBigIntegerValue(b)));
         }
 
     }
@@ -164,22 +168,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object div(RubyBignum a, int b) {
-            return fixnumOrBignum(a.bigIntegerValue().divide(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).divide(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object div(RubyBignum a, long b) {
-            return fixnumOrBignum(a.bigIntegerValue().divide(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).divide(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public double div(RubyBignum a, double b) {
-            return a.bigIntegerValue().doubleValue() / b;
+            return getBigIntegerValue(a).doubleValue() / b;
         }
 
         @Specialization
         public Object div(RubyBignum a, RubyBignum b) {
-            return fixnumOrBignum(a.bigIntegerValue().divide(b.bigIntegerValue()));
+            return fixnumOrBignum(getBigIntegerValue(a).divide(getBigIntegerValue(b)));
         }
 
     }
@@ -197,10 +201,10 @@ public abstract class BignumNodes {
                 throw new ArithmeticException("divide by zero");
             } else if (b < 0) {
                 final BigInteger bigint = BigInteger.valueOf(b);
-                final BigInteger mod = a.bigIntegerValue().mod(bigint.negate());
+                final BigInteger mod = getBigIntegerValue(a).mod(bigint.negate());
                 return fixnumOrBignum(mod.add(bigint));
             }
-            return fixnumOrBignum(a.bigIntegerValue().mod(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).mod(BigInteger.valueOf(b)));
         }
 
         @Specialization
@@ -209,23 +213,23 @@ public abstract class BignumNodes {
                 throw new ArithmeticException("divide by zero");
             } else if (b < 0) {
                 final BigInteger bigint = BigInteger.valueOf(b);
-                final BigInteger mod = a.bigIntegerValue().mod(bigint.negate());
+                final BigInteger mod = getBigIntegerValue(a).mod(bigint.negate());
                 return fixnumOrBignum(mod.add(bigint));
             }
-            return fixnumOrBignum(a.bigIntegerValue().mod(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).mod(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object mod(RubyBignum a, RubyBignum b) {
-            final BigInteger bigint = b.bigIntegerValue();
+            final BigInteger bigint = getBigIntegerValue(b);
             final int compare = bigint.compareTo(BigInteger.ZERO);
             if (compare == 0) {
                 throw new ArithmeticException("divide by zero");
             } else if (compare < 0) {
-                final BigInteger mod = a.bigIntegerValue().mod(bigint.negate());
+                final BigInteger mod = getBigIntegerValue(a).mod(bigint.negate());
                 return fixnumOrBignum(mod.add(bigint));
             }
-            return fixnumOrBignum(a.bigIntegerValue().mod(b.bigIntegerValue()));
+            return fixnumOrBignum(getBigIntegerValue(a).mod(getBigIntegerValue(b)));
         }
 
         @Specialization(guards = {"!isInteger(b)", "!isLong(b)", "!isRubyBignum(b)"})
@@ -244,22 +248,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean less(RubyBignum a, int b) {
-            return a.bigIntegerValue().compareTo(BigInteger.valueOf(b)) < 0;
+            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) < 0;
         }
 
         @Specialization
         public boolean less(RubyBignum a, long b) {
-            return a.bigIntegerValue().compareTo(BigInteger.valueOf(b)) < 0;
+            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) < 0;
         }
 
         @Specialization
         public boolean less(RubyBignum a, double b) {
-            return Double.compare(a.bigIntegerValue().doubleValue(), b) < 0;
+            return Double.compare(getBigIntegerValue(a).doubleValue(), b) < 0;
         }
 
         @Specialization
         public boolean less(RubyBignum a, RubyBignum b) {
-            return a.bigIntegerValue().compareTo(b.bigIntegerValue()) < 0;
+            return getBigIntegerValue(a).compareTo(getBigIntegerValue(b)) < 0;
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
@@ -278,22 +282,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean lessEqual(RubyBignum a, int b) {
-            return a.bigIntegerValue().compareTo(BigInteger.valueOf(b)) <= 0;
+            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) <= 0;
         }
 
         @Specialization
         public boolean lessEqual(RubyBignum a, long b) {
-            return a.bigIntegerValue().compareTo(BigInteger.valueOf(b)) <= 0;
+            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) <= 0;
         }
 
         @Specialization
         public boolean lessEqual(RubyBignum a, double b) {
-            return a.bigIntegerValue().compareTo(BigInteger.valueOf((long) b)) <= 0;
+            return getBigIntegerValue(a).compareTo(BigInteger.valueOf((long) b)) <= 0;
         }
 
         @Specialization
         public boolean lessEqual(RubyBignum a, RubyBignum b) {
-            return a.bigIntegerValue().compareTo(b.bigIntegerValue()) <= 0;
+            return getBigIntegerValue(a).compareTo(getBigIntegerValue(b)) <= 0;
         }
     }
 
@@ -309,22 +313,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean equal(RubyBignum a, int b) {
-            return a.bigIntegerValue().equals(BigInteger.valueOf(b));
+            return getBigIntegerValue(a).equals(BigInteger.valueOf(b));
         }
 
         @Specialization
         public boolean equal(RubyBignum a, long b) {
-            return a.bigIntegerValue().equals(BigInteger.valueOf(b));
+            return getBigIntegerValue(a).equals(BigInteger.valueOf(b));
         }
 
         @Specialization
         public boolean equal(RubyBignum a, double b) {
-            return a.bigIntegerValue().doubleValue() == b;
+            return getBigIntegerValue(a).doubleValue() == b;
         }
 
         @Specialization
         public boolean equal(RubyBignum a, RubyBignum b) {
-            return a.bigIntegerValue().equals(b.bigIntegerValue());
+            return getBigIntegerValue(a).equals(getBigIntegerValue(b));
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
@@ -356,12 +360,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public int compare(RubyBignum a, int b) {
-            return a.bigIntegerValue().compareTo(BigInteger.valueOf(b));
+            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b));
         }
 
         @Specialization
         public int compare(RubyBignum a, long b) {
-            return a.bigIntegerValue().compareTo(BigInteger.valueOf(b));
+            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b));
         }
 
         @Specialization
@@ -369,13 +373,13 @@ public abstract class BignumNodes {
             if (negativeInfinityProfile.profile(Double.isInfinite(b) && b < 0)) {
                 return 1;
             } else {
-                return Double.compare(a.bigIntegerValue().doubleValue(), b);
+                return Double.compare(getBigIntegerValue(a).doubleValue(), b);
             }
         }
 
         @Specialization
         public int compare(RubyBignum a, RubyBignum b) {
-            return a.bigIntegerValue().compareTo(b.bigIntegerValue());
+            return getBigIntegerValue(a).compareTo(getBigIntegerValue(b));
         }
     }
 
@@ -388,22 +392,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean greaterEqual(RubyBignum a, int b) {
-            return a.bigIntegerValue().compareTo(BigInteger.valueOf(b)) >= 0;
+            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) >= 0;
         }
 
         @Specialization
         public boolean greaterEqual(RubyBignum a, long b) {
-            return a.bigIntegerValue().compareTo(BigInteger.valueOf(b)) >= 0;
+            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) >= 0;
         }
 
         @Specialization
         public boolean greaterEqual(RubyBignum a, double b) {
-            return Double.compare(a.bigIntegerValue().doubleValue(), b) >= 0;
+            return Double.compare(getBigIntegerValue(a).doubleValue(), b) >= 0;
         }
 
         @Specialization
         public boolean greaterEqual(RubyBignum a, RubyBignum b) {
-            return a.bigIntegerValue().compareTo(b.bigIntegerValue()) >= 0;
+            return getBigIntegerValue(a).compareTo(getBigIntegerValue(b)) >= 0;
         }
     }
 
@@ -416,22 +420,22 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean greater(RubyBignum a, int b) {
-            return a.bigIntegerValue().compareTo(BigInteger.valueOf(b)) > 0;
+            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) > 0;
         }
 
         @Specialization
         public boolean greater(RubyBignum a, long b) {
-            return a.bigIntegerValue().compareTo(BigInteger.valueOf(b)) > 0;
+            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) > 0;
         }
 
         @Specialization
         public boolean greater(RubyBignum a, double b) {
-            return Double.compare(a.bigIntegerValue().doubleValue(), b) > 0;
+            return Double.compare(getBigIntegerValue(a).doubleValue(), b) > 0;
         }
 
         @Specialization
         public boolean greater(RubyBignum a, RubyBignum b) {
-            return a.bigIntegerValue().compareTo(b.bigIntegerValue()) > 0;
+            return getBigIntegerValue(a).compareTo(getBigIntegerValue(b)) > 0;
         }
     }
 
@@ -444,17 +448,17 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object bitAnd(RubyBignum a, int b) {
-            return fixnumOrBignum(a.bigIntegerValue().and(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).and(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitAnd(RubyBignum a, long b) {
-            return fixnumOrBignum(a.bigIntegerValue().and(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).and(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitAnd(RubyBignum a, RubyBignum b) {
-            return fixnumOrBignum(a.bigIntegerValue().and(b.bigIntegerValue()));
+            return fixnumOrBignum(getBigIntegerValue(a).and(getBigIntegerValue(b)));
         }
     }
 
@@ -467,17 +471,17 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object bitOr(RubyBignum a, int b) {
-            return fixnumOrBignum(a.bigIntegerValue().or(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).or(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitOr(RubyBignum a, long b) {
-            return fixnumOrBignum(a.bigIntegerValue().or(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).or(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitOr(RubyBignum a, RubyBignum b) {
-            return fixnumOrBignum(a.bigIntegerValue().or(a.bigIntegerValue()));
+            return fixnumOrBignum(getBigIntegerValue(a).or(getBigIntegerValue(a)));
         }
     }
 
@@ -490,17 +494,17 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object bitXOr(RubyBignum a, int b) {
-            return fixnumOrBignum(a.bigIntegerValue().xor(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).xor(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitXOr(RubyBignum a, long b) {
-            return fixnumOrBignum(a.bigIntegerValue().xor(BigInteger.valueOf(b)));
+            return fixnumOrBignum(getBigIntegerValue(a).xor(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitXOr(RubyBignum a, RubyBignum b) {
-            return fixnumOrBignum(a.bigIntegerValue().xor(b.bigIntegerValue()));
+            return fixnumOrBignum(getBigIntegerValue(a).xor(getBigIntegerValue(b)));
         }
     }
 
@@ -516,10 +520,10 @@ public abstract class BignumNodes {
         @Specialization
         public Object leftShift(RubyBignum a, int b) {
             if (b >= 0) {
-                return fixnumOrBignum(a.bigIntegerValue().shiftLeft(b));
+                return fixnumOrBignum(getBigIntegerValue(a).shiftLeft(b));
             } else {
                 bLessThanZero.enter();
-                return fixnumOrBignum(a.bigIntegerValue().shiftRight(-b));
+                return fixnumOrBignum(getBigIntegerValue(a).shiftRight(-b));
             }
         }
 
@@ -537,10 +541,10 @@ public abstract class BignumNodes {
         @Specialization
         public Object leftShift(RubyBignum a, int b) {
             if (b >= 0) {
-                return fixnumOrBignum(a.bigIntegerValue().shiftRight(b));
+                return fixnumOrBignum(getBigIntegerValue(a).shiftRight(b));
             } else {
                 bLessThanZero.enter();
-                return fixnumOrBignum(a.bigIntegerValue().shiftLeft(-b));
+                return fixnumOrBignum(getBigIntegerValue(a).shiftLeft(-b));
             }
         }
 
@@ -555,7 +559,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object abs(RubyBignum value) {
-            return fixnumOrBignum(value.bigIntegerValue().abs());
+            return fixnumOrBignum(getBigIntegerValue(value).abs());
         }
 
     }
@@ -569,7 +573,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public int bitLength(RubyBignum value) {
-            return value.bigIntegerValue().bitLength();
+            return getBigIntegerValue(value).bitLength();
         }
 
     }
@@ -648,7 +652,7 @@ public abstract class BignumNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public boolean even(RubyBignum value) {
-            return value.bigIntegerValue().getLowestSetBit() != 0;
+            return getBigIntegerValue(value).getLowestSetBit() != 0;
         }
 
     }
@@ -661,8 +665,8 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public int hash(RubyBignum self) {
-            return self.bigIntegerValue().hashCode();
+        public int hash(RubyBignum value) {
+            return getBigIntegerValue(value).hashCode();
         }
 
     }
@@ -676,7 +680,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public int size(RubyBignum value) {
-            return (value.bigIntegerValue().bitLength() + 7) / 8;
+            return (getBigIntegerValue(value).bitLength() + 7) / 8;
         }
 
     }
@@ -690,7 +694,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public double toF(RubyBignum value) {
-            return value.bigIntegerValue().doubleValue();
+            return getBigIntegerValue(value).doubleValue();
         }
 
     }
@@ -705,7 +709,7 @@ public abstract class BignumNodes {
         @TruffleBoundary
         @Specialization
         public RubyString toS(RubyBignum value, UndefinedPlaceholder undefined) {
-            return getContext().makeString(value.bigIntegerValue().toString());
+            return getContext().makeString(getBigIntegerValue(value).toString());
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -716,7 +720,7 @@ public abstract class BignumNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
-            return getContext().makeString(value.bigIntegerValue().toString(base));
+            return getContext().makeString(getBigIntegerValue(value).toString(base));
         }
 
     }

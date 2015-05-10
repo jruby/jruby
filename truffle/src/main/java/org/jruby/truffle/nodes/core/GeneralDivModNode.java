@@ -48,7 +48,7 @@ public class GeneralDivModNode extends RubyNode {
     }
 
     public RubyArray execute(int a, RubyBignum b) {
-        return divMod(BigInteger.valueOf(a), b.bigIntegerValue());
+        return divMod(BigInteger.valueOf(a), BignumNodes.getBigIntegerValue(b));
     }
 
     public RubyArray execute(int a, double b) {
@@ -64,7 +64,7 @@ public class GeneralDivModNode extends RubyNode {
     }
 
     public RubyArray execute(long a, RubyBignum b) {
-        return divMod(BigInteger.valueOf(a), b.bigIntegerValue());
+        return divMod(BigInteger.valueOf(a), BignumNodes.getBigIntegerValue(b));
     }
 
     public RubyArray execute(long a, double b) {
@@ -72,15 +72,15 @@ public class GeneralDivModNode extends RubyNode {
     }
 
     public RubyArray execute(RubyBignum a, int b) {
-        return divMod(a.bigIntegerValue(), BigInteger.valueOf(b));
+        return divMod(BignumNodes.getBigIntegerValue(a), BigInteger.valueOf(b));
     }
 
     public RubyArray execute(RubyBignum a, long b) {
-        return divMod(a.bigIntegerValue(), BigInteger.valueOf(b));
+        return divMod(BignumNodes.getBigIntegerValue(a), BigInteger.valueOf(b));
     }
 
     public RubyArray execute(RubyBignum a, RubyBignum b) {
-        return divMod(a.bigIntegerValue(), b.bigIntegerValue());
+        return divMod(BignumNodes.getBigIntegerValue(a), BignumNodes.getBigIntegerValue(b));
     }
 
     public RubyArray execute(double a, int b) {
@@ -92,7 +92,7 @@ public class GeneralDivModNode extends RubyNode {
     }
 
     public RubyArray execute(double a, RubyBignum b) {
-        return divMod(a, b.bigIntegerValue().doubleValue());
+        return divMod(a, BignumNodes.getBigIntegerValue(b).doubleValue());
     }
 
     public RubyArray execute(double a, double b) {
