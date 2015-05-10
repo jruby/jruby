@@ -15,6 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
 /**
@@ -32,12 +33,12 @@ public abstract class BignumPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBignum pow(RubyBignum a, int b) {
+        public RubyBignum pow(RubyBasicObject a, int b) {
             return pow(a, (long) b);
         }
 
         @Specialization
-        public RubyBignum pow(RubyBignum a, long b) {
+        public RubyBignum pow(RubyBasicObject a, long b) {
             if (negativeProfile.profile(b < 0)) {
                 return null; // Primitive failure
             } else {
@@ -48,12 +49,12 @@ public abstract class BignumPrimitiveNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public double pow(RubyBignum a, double b) {
+        public double pow(RubyBasicObject a, double b) {
             return Math.pow(BignumNodes.getBigIntegerValue(a).doubleValue(), b);
         }
 
-        @Specialization
-        public RubyBignum pow(RubyBignum a, RubyBignum b) {
+        @Specialization(guards = "isRubyBignum(b)")
+        public RubyBignum pow(RubyBasicObject a, RubyBasicObject b) {
             throw new UnsupportedOperationException();
         }
 

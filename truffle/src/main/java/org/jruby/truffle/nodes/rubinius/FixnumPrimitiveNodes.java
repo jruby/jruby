@@ -94,9 +94,9 @@ public abstract class FixnumPrimitiveNodes {
             return pow((long) a, b);
         }
 
-        @Specialization
-        public Object pow(int a, RubyBignum b) {
-            return pow((long) a, b);
+        @Specialization(guards = "isRubyBignum(b)")
+        public Object powBignum(int a, RubyBasicObject b) {
+            return powBignum((long) a, b);
         }
 
         @Specialization(guards = "canShiftIntoLong(a, b)")
@@ -140,8 +140,8 @@ public abstract class FixnumPrimitiveNodes {
         }
 
         @CompilerDirectives.TruffleBoundary
-        @Specialization
-        public Object pow(long a, RubyBignum b) {
+        @Specialization(guards = "isRubyBignum(b)")
+        public Object powBignum(long a, RubyBasicObject b) {
             if (a == 0) {
                 return 0;
             }

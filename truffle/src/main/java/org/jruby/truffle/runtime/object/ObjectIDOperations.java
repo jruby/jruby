@@ -91,16 +91,8 @@ public abstract class ObjectIDOperations {
         return !id.and(LARGE_FIXNUM_FLAG).equals(BigInteger.ZERO);
     }
 
-    public static long toFixnum(RubyBignum id) {
-        return BignumNodes.getBigIntegerValue(id).longValue();
-    }
-
     public static boolean isFloatID(BigInteger id) {
         return !id.and(FLOAT_FLAG).equals(BigInteger.ZERO);
-    }
-
-    public static double toFloat(RubyBignum id) {
-        return Double.longBitsToDouble(BignumNodes.getBigIntegerValue(id).longValue());
     }
 
     private static BigInteger unsignedBigInteger(long value) {
