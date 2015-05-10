@@ -43,7 +43,6 @@ public abstract class WriteHexStringNode extends PackNode {
         int begin = bytes.begin();
 
         int currentByte = 0;
-        int padLength = 0;
 
         final int lengthToUse;
 

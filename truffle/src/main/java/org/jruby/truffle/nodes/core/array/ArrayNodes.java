@@ -1243,7 +1243,6 @@ public abstract class ArrayNodes {
 
         @Child private CallDispatchHeadNode toEnumNode;
 
-        private final BranchProfile breakProfile = BranchProfile.create();
         private final BranchProfile nextProfile = BranchProfile.create();
         private final BranchProfile redoProfile = BranchProfile.create();
 
@@ -1411,7 +1410,6 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
 
-        private final BranchProfile breakProfile = BranchProfile.create();
         private final BranchProfile nextProfile = BranchProfile.create();
         private final BranchProfile redoProfile = BranchProfile.create();
 
@@ -2158,7 +2156,6 @@ public abstract class ArrayNodes {
 
         @Child private ArrayBuilderNode arrayBuilder;
 
-        private final BranchProfile breakProfile = BranchProfile.create();
         private final BranchProfile nextProfile = BranchProfile.create();
         private final BranchProfile redoProfile = BranchProfile.create();
 
@@ -2319,7 +2316,6 @@ public abstract class ArrayNodes {
 
         @Child private ArrayWriteDenormalizedNode writeNode;
 
-        private final BranchProfile breakProfile = BranchProfile.create();
         private final BranchProfile nextProfile = BranchProfile.create();
         private final BranchProfile redoProfile = BranchProfile.create();
 
