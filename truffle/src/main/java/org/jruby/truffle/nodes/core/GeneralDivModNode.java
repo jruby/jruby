@@ -17,6 +17,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
 import java.math.BigInteger;
@@ -71,16 +72,16 @@ public class GeneralDivModNode extends RubyNode {
         return divMod(a, b);
     }
 
-    public RubyArray execute(RubyBignum a, int b) {
-        return divMod(BignumNodes.getBigIntegerValue(a), BigInteger.valueOf(b));
+    public RubyArray execute(BigInteger a, int b) {
+        return divMod(a, BigInteger.valueOf(b));
     }
 
-    public RubyArray execute(RubyBignum a, long b) {
-        return divMod(BignumNodes.getBigIntegerValue(a), BigInteger.valueOf(b));
+    public RubyArray execute(BigInteger a, long b) {
+        return divMod(a, BigInteger.valueOf(b));
     }
 
-    public RubyArray execute(RubyBignum a, RubyBignum b) {
-        return divMod(BignumNodes.getBigIntegerValue(a), BignumNodes.getBigIntegerValue(b));
+    public RubyArray execute(BigInteger a, BigInteger b) {
+        return divMod(a, b);
     }
 
     public RubyArray execute(double a, int b) {
