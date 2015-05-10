@@ -16,16 +16,13 @@ import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.object.RubyObjectType;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.object.RubyObjectType;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
-
-import java.util.Map;
 
 /**
  * Represents the Ruby {@code BasicObject} class - the root of the Ruby class hierarchy.

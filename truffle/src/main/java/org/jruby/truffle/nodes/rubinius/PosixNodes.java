@@ -26,7 +26,6 @@ import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.unsafe.UnsafeHolder;
 import sun.misc.Unsafe;
 
-import java.io.File;
 import java.nio.charset.StandardCharsets;
 
 @CoreClass(name = "Rubinius::FFI::Platform::POSIX")

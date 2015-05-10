@@ -21,7 +21,6 @@ import org.jcodings.Encoding;
 import org.joni.*;
 import org.joni.exception.SyntaxException;
 import org.joni.exception.ValueException;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
