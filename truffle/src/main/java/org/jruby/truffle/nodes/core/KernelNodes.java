@@ -17,9 +17,11 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -396,6 +398,7 @@ public abstract class KernelNodes {
         @Child private CallDispatchHeadNode initializeCloneNode;
         @Child private IsFrozenNode isFrozenNode;
         @Child private FreezeNode freezeNode;
+        @Child private SingletonClassNode singletonClassNode;
 
         public CloneNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -404,6 +407,7 @@ public abstract class KernelNodes {
             initializeCloneNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.CALL_METHOD_MISSING);
             isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             freezeNode = FreezeNodeGen.create(context, sourceSection, null);
+            singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
@@ -414,7 +418,7 @@ public abstract class KernelNodes {
 
             // Copy the singleton class if any.
             if (self.getMetaClass().isSingleton()) {
-                newObject.getSingletonClass(this).initCopy(self.getMetaClass());
+                singletonClassNode.executeSingletonClass(frame, newObject).initCopy(self.getMetaClass());
             }
 
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
@@ -1462,7 +1466,7 @@ public abstract class KernelNodes {
 
         public SingletonClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization

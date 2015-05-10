@@ -18,10 +18,13 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import jnr.posix.Passwd;
+
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -1011,20 +1014,21 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "extend_object", required = 1, visibility = Visibility.PRIVATE)
     public abstract static class ExtendObjectNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private SingletonClassNode singletonClassNode;
+
         public ExtendObjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
-        public RubyBasicObject extendObject(RubyModule module, RubyBasicObject object) {
-            CompilerDirectives.transferToInterpreter();
-
+        public RubyBasicObject extendObject(VirtualFrame frame, RubyModule module, RubyBasicObject object) {
             if (module instanceof RubyClass) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(module, "Module", this));
             }
 
-            object.getSingletonClass(this).include(this, module);
+            singletonClassNode.executeSingletonClass(frame, object).include(this, module);
             return module;
         }
 
@@ -1833,6 +1837,7 @@ public abstract class ModuleNodes {
     public abstract static class SetVisibilityNode extends CoreMethodNode {
 
         @Child SymbolOrToStrNode symbolOrToStrNode;
+        @Child private SingletonClassNode singletonClassNode;
 
         private final Visibility visibility;
 
@@ -1840,6 +1845,7 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
             this.visibility = visibility;
             this.symbolOrToStrNode = SymbolOrToStrNodeGen.create(context, sourceSection, null);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         }
 
         public abstract RubyModule executeSetVisibility(VirtualFrame frame, RubyModule module, Object[] arguments);
@@ -1853,14 +1859,14 @@ public abstract class ModuleNodes {
             } else {
                 for (Object name : names) {
                     final String methodName = symbolOrToStrNode.executeToJavaString(frame, name);
-                    setMethodVisibility(module, methodName);
+                    setMethodVisibility(frame, module, methodName);
                 }
             }
 
             return module;
         }
 
-        private void setMethodVisibility(RubyModule module, final String methodName) {
+        private void setMethodVisibility(VirtualFrame frame, RubyModule module, final String methodName) {
             final InternalMethod method = module.deepMethodSearch(methodName);
 
             if (method == null) {
@@ -1876,7 +1882,7 @@ public abstract class ModuleNodes {
              */
             if (visibility == Visibility.MODULE_FUNCTION) {
                 module.addMethod(this, method.withVisibility(Visibility.PRIVATE));
-                module.getSingletonClass(this).addMethod(this, method.withVisibility(Visibility.PUBLIC));
+                singletonClassNode.executeSingletonClass(frame, module).addMethod(this, method.withVisibility(Visibility.PUBLIC));
             } else {
                 module.addMethod(this, method.withVisibility(visibility));
             }
