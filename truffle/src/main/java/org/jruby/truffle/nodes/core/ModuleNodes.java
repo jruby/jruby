@@ -1558,8 +1558,6 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyArray instanceMethods(RubyModule module, UndefinedPlaceholder argument) {
-            CompilerDirectives.transferToInterpreter();
-
             return instanceMethods(module, true);
         }
 
@@ -1567,23 +1565,13 @@ public abstract class ModuleNodes {
         public RubyArray instanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            Map<String, InternalMethod> methods;
-
-            if (includeAncestors) {
-                methods = ModuleOperations.getAllMethods(module);
-            } else {
-                methods = module.getMethods();
-            }
-
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            for (InternalMethod method : methods.values()) {
-                if (method.getVisibility() != Visibility.PRIVATE && !method.isUndefined()) {
-                    // TODO(CS): shoudln't be using this
-                    array.slowPush(getContext().getSymbol(method.getName()));
-                }
-            }
-
-            return array;
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                    module.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
+                        @Override
+                        public boolean filter(InternalMethod method) {
+                            return method.getVisibility() != Visibility.PRIVATE;
+                        }
+                    }).toArray());
         }
     }
 
