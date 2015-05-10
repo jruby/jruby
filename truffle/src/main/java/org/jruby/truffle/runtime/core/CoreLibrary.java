@@ -252,7 +252,7 @@ public class CoreLibrary {
         floatClass = defineClass(numericClass, "Float");
         integerClass = defineClass(numericClass, "Integer");
         fixnumClass = defineClass(integerClass, "Fixnum");
-        bignumClass = defineClass(integerClass, "Bignum", new RubyBignum.BignumAllocator());
+        bignumClass = defineClass(integerClass, "Bignum", BignumNodes.createBigumAllocator(context.getEmptyShape()));
         rationalClass = defineClass(numericClass, "Rational");
 
         // Classes defined in Object

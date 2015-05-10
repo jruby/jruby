@@ -33,17 +33,17 @@ public abstract class BignumPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBignum pow(RubyBasicObject a, int b) {
+        public RubyBasicObject pow(RubyBasicObject a, int b) {
             return pow(a, (long) b);
         }
 
         @Specialization
-        public RubyBignum pow(RubyBasicObject a, long b) {
+        public RubyBasicObject pow(RubyBasicObject a, long b) {
             if (negativeProfile.profile(b < 0)) {
                 return null; // Primitive failure
             } else {
                 // TODO CS 15-Feb-15 what about this cast?
-                return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), BignumNodes.getBigIntegerValue(a).pow((int) b));
+                return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), BignumNodes.getBigIntegerValue(a).pow((int) b));
             }
         }
 

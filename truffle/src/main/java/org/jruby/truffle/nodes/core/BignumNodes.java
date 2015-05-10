@@ -13,6 +13,8 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -20,15 +22,15 @@ import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.*;
 
 import java.math.BigInteger;
+import java.util.EnumSet;
+import java.util.concurrent.locks.ReentrantLock;
 
 @CoreClass(name = "Bignum")
 public abstract class BignumNodes {
@@ -36,8 +38,43 @@ public abstract class BignumNodes {
     public static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
     public static final BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
 
+    private static final HiddenKey VALUE_IDENTIFIER = new HiddenKey("value");
+    public static final Property VALUE_PROPERTY;
+
+    static {
+        Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+        VALUE_PROPERTY = Property.create(VALUE_IDENTIFIER, allocator.locationForType(BigInteger.class, EnumSet.of(LocationModifier.NonNull)), 0);
+    }
+
+    public static Allocator createBigumAllocator(Shape emptyShape) {
+        Shape shape = emptyShape.addProperty(VALUE_PROPERTY);
+        final DynamicObjectFactory factory = shape.createFactory();
+
+        return new Allocator() {
+            @Override
+            public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+                return new RubyBignum(rubyClass, factory.newInstance(BigInteger.ZERO));
+            }
+        };
+    }
+
+    public static RubyBasicObject createRubyBignum(RubyClass rubyClass, BigInteger value) {
+        final RubyBasicObject bignum = rubyClass.getAllocator().allocate(rubyClass.getContext(), rubyClass, null);
+
+        try {
+            VALUE_PROPERTY.set(bignum.getDynamicObject(), value, bignum.getDynamicObject().getShape());
+        } catch (IncompatibleLocationException e) {
+            throw new UnsupportedOperationException();
+        } catch (FinalLocationException e) {
+            throw new UnsupportedOperationException();
+        }
+
+        return bignum;
+    }
+
     public static BigInteger getBigIntegerValue(RubyBasicObject bignum) {
-        return ((RubyBignum) bignum).internalGetBigIntegerValue();
+        assert bignum.getDynamicObject().getShape().hasProperty(VALUE_IDENTIFIER);
+        return (BigInteger) VALUE_PROPERTY.get(bignum.getDynamicObject(), true);
     }
 
     public static abstract class BignumCoreMethodNode extends CoreMethodArrayArgumentsNode {

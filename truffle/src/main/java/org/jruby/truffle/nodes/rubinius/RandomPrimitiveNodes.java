@@ -17,6 +17,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyRandom;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
@@ -84,9 +85,9 @@ public abstract class RandomPrimitiveNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyBignum randomizerGenSeed(RubyBasicObject random) {
+        public RubyBasicObject randomizerGenSeed(RubyBasicObject random) {
             BigInteger integer = RandomPrimitiveHelper.randomSeed(getContext().getRuntime().getCurrentContext().getRuntime());
-            return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), integer);
+            return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), integer);
         }
     }
 

@@ -193,8 +193,8 @@ public class GeneralDivModNode extends RubyNode {
                 fixnumOrBignumRemainder.fixnumOrBignum(bigIntegerResults[1])}, 2);
     }
 
-    public RubyBignum create(BigInteger value) {
-        return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
+    public RubyBasicObject create(BigInteger value) {
+        return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
     }
 
     @Override

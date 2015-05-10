@@ -326,7 +326,7 @@ public class BodyTranslator extends Translator {
         final BigInteger value = node.getValue();
 
         if (value.bitLength() >= 64) {
-            return new ObjectLiteralNode(context, sourceSection, new RubyBignum(context.getCoreLibrary().getBignumClass(), node.getValue()));
+            return new ObjectLiteralNode(context, sourceSection, BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), node.getValue()));
         } else {
             return new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, value.longValue());
         }
