@@ -174,7 +174,7 @@ ruby/test_enumerator.rb
 # ruby/test_env.rb # TestEnv#test_aset = core:/core/rubinius/bootstrap/time.rb:28:in `now': internal implementation error - ClassCastException org.jruby.truffle.runtime.core.RubyNilClass cannot be cast to org.jruby.truffle.runtime.core.RubyString org.jruby.truffle.nodes.time.ReadTimeZoneNode.executeRubyString(ReadTimeZoneNode.java:36) (RubyTruffleError)
 ruby/test_eval.rb
 # ruby/test_exception.rb  # Stack overflow error
-# ruby/test_file.rb
+ruby/test_file.rb
 ruby/test_file_exhaustive.rb
 ruby/test_fixnum.rb
 ruby/test_flip.rb
