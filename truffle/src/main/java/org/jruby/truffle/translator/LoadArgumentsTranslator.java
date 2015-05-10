@@ -28,8 +28,8 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.array.ArrayLiteralNode;
 import org.jruby.truffle.nodes.arguments.*;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
-import org.jruby.truffle.nodes.locals.ReadLocalVariableNodeGen;
-import org.jruby.truffle.nodes.locals.WriteLocalVariableNodeGen;
+import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
+import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.*;
@@ -160,7 +160,7 @@ public class LoadArgumentsTranslator extends Translator {
         final RubyNode readNode = new ReadKeywordRestArgumentNode(context, sourceSection, required, excludedKeywords.toArray(new String[excludedKeywords.size()]), -countKwArgs - 1);
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(node.getName());
 
-        return WriteLocalVariableNodeGen.create(context, sourceSection, slot, readNode);
+        return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
 
     @Override
@@ -215,7 +215,7 @@ public class LoadArgumentsTranslator extends Translator {
         final RubyNode readNode = new ReadKeywordArgumentNode(context, sourceSection, required, name, defaultValue, kwIndex - countKwArgs);
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
 
-        return WriteLocalVariableNodeGen.create(context, sourceSection, slot, readNode);
+        return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
 
     @Override
@@ -224,7 +224,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         final RubyNode readNode = readArgument(sourceSection);
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
-        return WriteLocalVariableNodeGen.create(context, sourceSection, slot, readNode);
+        return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
 
     private RubyNode readArgument(SourceSection sourceSection) {
@@ -260,7 +260,7 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
-        return WriteLocalVariableNodeGen.create(context, sourceSection, slot, readNode);
+        return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
 
     @Override
@@ -269,7 +269,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         final RubyNode readNode = new ReadBlockNode(context, sourceSection, context.getCoreLibrary().getNilObject());
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
-        return WriteLocalVariableNodeGen.create(context, sourceSection, slot, readNode);
+        return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
 
     @Override
@@ -323,7 +323,7 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
-        return WriteLocalVariableNodeGen.create(context, sourceSection, slot, readNode);
+        return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
 
     @Override
@@ -430,11 +430,11 @@ public class LoadArgumentsTranslator extends Translator {
         final RubyNode nil = SequenceNode.sequence(context, sourceSection, nilSequence);
 
         return SequenceNode.sequence(context, sourceSection,
-                WriteLocalVariableNodeGen.create(context, sourceSection, arraySlot,
+                new WriteLocalVariableNode(context, sourceSection,
                         ArrayCastNodeGen.create(context, sourceSection,
-                                readArgument(sourceSection))),
+                                readArgument(sourceSection)), arraySlot),
                 new IfNode(context, sourceSection,
-                        new IsNilNode(context, sourceSection, ReadLocalVariableNodeGen.create(context, sourceSection, arraySlot)),
+                        new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)),
                         nil,
                         notNil == null ? new DefinedWrapperNode(context, sourceSection,
                                 new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
@@ -460,7 +460,7 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     protected RubyNode loadArray(SourceSection sourceSection) {
-        return ReadLocalVariableNodeGen.create(context, sourceSection, arraySlotStack.peek().getArraySlot());
+        return new ReadLocalVariableNode(context, sourceSection, arraySlotStack.peek().getArraySlot());
     }
 
     @Override

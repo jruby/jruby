@@ -240,7 +240,7 @@ public class BodyTranslator extends Translator {
             argChildNodes.remove(argChildNodes.size() - 1);
 
             // Evaluate the value and store it in a local variable
-            writeValue = WriteLocalVariableNodeGen.create(context, sourceSection, frameSlot, valueNode.accept(this));
+            writeValue = new WriteLocalVariableNode(context, sourceSection, valueNode.accept(this), frameSlot);
 
             // Recreate the arguments array, reading that local instead of including the RHS for the last argument
             argChildNodes.add(new ReadLocalDummyNode(node.getPosition(), sourceSection, frameSlot));
@@ -253,7 +253,7 @@ public class BodyTranslator extends Translator {
             final RubyNode valueNode = extraArgument;
 
             // Evaluate the value and store it in a local variable
-            writeValue = WriteLocalVariableNodeGen.create(context, sourceSection, frameSlot, valueNode);
+            writeValue = new WriteLocalVariableNode(context, sourceSection, valueNode, frameSlot);
 
             // Recreate the arguments array, reading that local instead of including the RHS for the last argument
             final List<org.jruby.ast.Node> argChildNodes = new ArrayList<>();
@@ -305,7 +305,7 @@ public class BodyTranslator extends Translator {
         return SequenceNode.sequence(context, sourceSection,
                 writeValue,
                 actualCall,
-                ReadLocalVariableNodeGen.create(context, sourceSection, frameSlot));
+                new ReadLocalVariableNode(context, sourceSection, frameSlot));
     }
 
     @Override
@@ -2886,7 +2886,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitOther(Node node) {
         if (node instanceof ReadLocalDummyNode) {
             final ReadLocalDummyNode readLocal = (ReadLocalDummyNode) node;
-            return ReadLocalVariableNodeGen.create(context, readLocal.getSourceSection(), readLocal.getFrameSlot());
+            return new ReadLocalVariableNode(context, readLocal.getSourceSection(), readLocal.getFrameSlot());
         } else {
             throw new UnsupportedOperationException();
         }

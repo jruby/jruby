@@ -24,13 +24,13 @@ import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
+import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.arguments.ShouldDestructureNode;
 import org.jruby.truffle.nodes.locals.FlipFlopStateNode;
-import org.jruby.truffle.nodes.locals.WriteLocalVariableNodeGen;
 import org.jruby.truffle.nodes.respondto.RespondToNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperCallNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperReCallNode;
@@ -119,7 +119,7 @@ class MethodTranslator extends BodyTranslator {
                 final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
                 final RubyNode castArrayNode = ArrayCastNodeGen.create(context, sourceSection, readArrayNode);
                 final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
-                final RubyNode writeArrayNode = WriteLocalVariableNodeGen.create(context, sourceSection, arraySlot, castArrayNode);
+                final RubyNode writeArrayNode = new WriteLocalVariableNode(context, sourceSection, castArrayNode, arraySlot);
 
                 final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
                 destructureArgumentsTranslator.pushArraySlot(arraySlot);

@@ -14,11 +14,11 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 
-public abstract class ReadAbstractFrameSlotNode extends Node {
+public abstract class ReadFrameSlotNode extends Node {
 
     protected final FrameSlot frameSlot;
 
-    public ReadAbstractFrameSlotNode(FrameSlot slot) {
+    public ReadFrameSlotNode(FrameSlot slot) {
         assert slot != null;
         this.frameSlot = slot;
     }
@@ -60,24 +60,12 @@ public abstract class ReadAbstractFrameSlotNode extends Node {
     }
 
     @Override
-    public ReadAbstractFrameSlotNode copy() {
-        return (ReadAbstractFrameSlotNode) super.copy();
+    public ReadFrameSlotNode copy() {
+        return (ReadFrameSlotNode) super.copy();
     }
 
     protected final void setBoolean(Frame frame, boolean value) {
         frame.setBoolean(frameSlot, value);
-    }
-
-    protected final void setFixnum(Frame frame, int value) {
-        frame.setInt(frameSlot, value);
-    }
-
-    protected final void setLongFixnum(Frame frame, long value) {
-        frame.setLong(frameSlot, value);
-    }
-
-    protected final void setFloat(Frame frame, double value) {
-        frame.setDouble(frameSlot, value);
     }
 
     protected final void setObject(Frame frame, Object value) {
@@ -106,43 +94,6 @@ public abstract class ReadAbstractFrameSlotNode extends Node {
 
     protected final Object getValue(Frame frame) {
         return frame.getValue(frameSlot);
-    }
-
-    protected final boolean isBooleanKind(Frame frame) {
-        return isKind(FrameSlotKind.Boolean);
-    }
-
-    protected final boolean isFixnumKind(Frame frame) {
-        return isKind(FrameSlotKind.Int);
-    }
-
-    protected final boolean isLongFixnumKind(Frame frame) {
-        return isKind(FrameSlotKind.Long);
-    }
-
-    protected final boolean isFloatKind(Frame frame) {
-        return isKind(FrameSlotKind.Double);
-    }
-
-    protected final boolean isObjectKind(Frame frame) {
-        if (frameSlot.getKind() != FrameSlotKind.Object) {
-            CompilerDirectives.transferToInterpreter();
-            frameSlot.setKind(FrameSlotKind.Object);
-        }
-        return true;
-    }
-
-    private boolean isKind(FrameSlotKind kind) {
-        return frameSlot.getKind() == kind || initialSetKind(kind);
-    }
-
-    private boolean initialSetKind(FrameSlotKind kind) {
-        if (frameSlot.getKind() == FrameSlotKind.Illegal) {
-            CompilerDirectives.transferToInterpreter();
-            frameSlot.setKind(kind);
-            return true;
-        }
-        return false;
     }
 
 }

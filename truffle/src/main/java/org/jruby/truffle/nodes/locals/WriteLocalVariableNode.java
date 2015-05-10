@@ -18,46 +18,25 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.translator.WriteNode;
 import org.jruby.truffle.runtime.RubyContext;
 
-@NodeChild(value = "rhs", type = RubyNode.class)
-public abstract class WriteLocalVariableNode extends FrameSlotNode implements WriteNode {
+public class WriteLocalVariableNode extends RubyNode implements WriteNode {
 
-    public WriteLocalVariableNode(RubyContext context, SourceSection sourceSection, FrameSlot frameSlot) {
-        super(context, sourceSection, frameSlot);
+    @Child private RubyNode valueNode;
+    @Child private WriteFrameSlotNode writeFrameSlotNode;
+
+    public WriteLocalVariableNode(RubyContext context, SourceSection sourceSection, RubyNode valueNode, FrameSlot frameSlot) {
+        super(context, sourceSection);
+        this.valueNode = valueNode;
+        writeFrameSlotNode = WriteFrameSlotNodeGen.create(frameSlot);
     }
 
-    @Specialization(guards = "isBooleanKind(frame)")
-    public boolean doFixnum(VirtualFrame frame, boolean value) {
-        setBoolean(frame, value);
-        return value;
-    }
-
-    @Specialization(guards = "isFixnumKind(frame)")
-    public int doFixnum(VirtualFrame frame, int value) {
-        setFixnum(frame, value);
-        return value;
-    }
-
-    @Specialization(guards = "isLongFixnumKind(frame)")
-    public long doLongFixnum(VirtualFrame frame, long value) {
-        setLongFixnum(frame, value);
-        return value;
-    }
-
-    @Specialization(guards = "isFloatKind(frame)")
-    public double doFloat(VirtualFrame frame, double value) {
-        setFloat(frame, value);
-        return value;
-    }
-
-    @Specialization(guards = "isObjectKind(frame)")
-    public Object doObject(VirtualFrame frame, Object value) {
-        setObject(frame, value);
-        return value;
+    @Override
+    public Object execute(VirtualFrame frame) {
+        return writeFrameSlotNode.executeWrite(frame, valueNode.execute(frame));
     }
 
     @Override
     public RubyNode makeReadNode() {
-        return ReadLocalVariableNodeGen.create(getContext(), getSourceSection(), frameSlot);
+        return new ReadLocalVariableNode(getContext(), getSourceSection(), writeFrameSlotNode.getFrameSlot());
     }
 
     @Override

@@ -14,11 +14,11 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 
-public abstract class WriteAbstractFrameSlotNode extends Node {
+public abstract class WriteFrameSlotNode extends Node {
 
     protected final FrameSlot frameSlot;
 
-    public WriteAbstractFrameSlotNode(FrameSlot frameSlot) {
+    public WriteFrameSlotNode(FrameSlot frameSlot) {
         assert frameSlot != null;
         this.frameSlot = frameSlot;
     }
@@ -77,22 +77,6 @@ public abstract class WriteAbstractFrameSlotNode extends Node {
 
     protected final void setObject(Frame frame, Object value) {
         frame.setObject(frameSlot, value);
-    }
-
-    protected final boolean getBoolean(Frame frame) throws FrameSlotTypeException {
-        return frame.getBoolean(frameSlot);
-    }
-
-    protected final int getFixnum(Frame frame) throws FrameSlotTypeException {
-        return frame.getInt(frameSlot);
-    }
-
-    protected final long getLongFixnum(Frame frame) throws FrameSlotTypeException {
-        return frame.getLong(frameSlot);
-    }
-
-    protected final double getFloat(Frame frame) throws FrameSlotTypeException {
-        return frame.getDouble(frameSlot);
     }
 
     protected final Object getObject(Frame frame) throws FrameSlotTypeException {

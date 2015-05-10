@@ -23,45 +23,23 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public abstract class ReadLocalVariableNode extends FrameSlotNode implements ReadNode {
+public class ReadLocalVariableNode extends RubyNode implements ReadNode {
+
+    @Child private ReadFrameSlotNode readFrameSlotNode;
 
     public ReadLocalVariableNode(RubyContext context, SourceSection sourceSection, FrameSlot slot) {
-        super(context, sourceSection, slot);
+        super(context, sourceSection);
+        readFrameSlotNode = ReadFrameSlotNodeGen.create(slot);
     }
 
-    @Specialization(rewriteOn = {FrameSlotTypeException.class})
-    public boolean doBoolean(VirtualFrame frame) throws FrameSlotTypeException {
-        return getBoolean(frame);
-    }
-
-    @Specialization(rewriteOn = {FrameSlotTypeException.class})
-    public int doFixnum(VirtualFrame frame) throws FrameSlotTypeException {
-        return getFixnum(frame);
-    }
-
-    @Specialization(rewriteOn = {FrameSlotTypeException.class})
-    public long doLongFixnum(VirtualFrame frame) throws FrameSlotTypeException {
-        return getLongFixnum(frame);
-    }
-
-    @Specialization(rewriteOn = {FrameSlotTypeException.class})
-    public double doFloat(VirtualFrame frame) throws FrameSlotTypeException {
-        return getFloat(frame);
-    }
-
-    @Specialization(rewriteOn = {FrameSlotTypeException.class})
-    public Object doObject(VirtualFrame frame) throws FrameSlotTypeException {
-        return getObject(frame);
-    }
-
-    @Specialization
-    public Object doValue(VirtualFrame frame) {
-        return getValue(frame);
+    @Override
+    public Object execute(VirtualFrame frame) {
+        return readFrameSlotNode.executeRead(frame);
     }
 
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
-        return WriteLocalVariableNodeGen.create(getContext(), getSourceSection(), frameSlot, rhs);
+        return new WriteLocalVariableNode(getContext(), getSourceSection(), rhs, readFrameSlotNode.getFrameSlot());
     }
 
     public static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Arrays.asList("$~"));
@@ -69,8 +47,8 @@ public abstract class ReadLocalVariableNode extends FrameSlotNode implements Rea
     @Override
     public Object isDefined(VirtualFrame frame) {
         // TODO(CS): copy and paste of ReadLevelVariableNode
-        if (BodyTranslator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(frameSlot.getIdentifier())) {
-            if (ALWAYS_DEFINED_GLOBALS.contains(frameSlot.getIdentifier()) || doValue(frame) != nil()) {
+        if (BodyTranslator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(readFrameSlotNode.getFrameSlot().getIdentifier())) {
+            if (ALWAYS_DEFINED_GLOBALS.contains(readFrameSlotNode.getFrameSlot().getIdentifier()) || readFrameSlotNode.executeRead(frame) != nil()) {
                 return getContext().makeString("global-variable");
             } else {
                 return nil();
