@@ -29,6 +29,8 @@ import org.jruby.RubyThread.Status;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
@@ -1479,34 +1481,44 @@ public abstract class KernelNodes {
     @CoreMethod(names = "singleton_methods", optional = 1)
     public abstract static class SingletonMethodsNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private MetaClassNode metaClassNode;
+        @Child private BooleanCastNode booleanCastNode;
+
         public SingletonMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
-        public RubyArray singletonMethods(RubyBasicObject self, boolean includeInherited) {
+        public RubyArray singletonMethods(VirtualFrame frame, RubyBasicObject self, UndefinedPlaceholder includeAncestors) {
+            return singletonMethods(frame, self, true);
+        }
+
+        @Specialization
+        public RubyArray singletonMethods(VirtualFrame frame, RubyBasicObject self, boolean includeAncestors) {
+            RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
+
+            if (!metaClass.isSingleton()) {
+                return new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
+            }
+
             CompilerDirectives.transferToInterpreter();
-
-            final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
-
-            final Collection<InternalMethod> methods;
-
-            if (includeInherited) {
-                methods = ModuleOperations.getAllMethods(self.getSingletonClass(this)).values();
-            } else {
-                methods = self.getSingletonClass(this).getMethods().values();
-            }
-
-            for (InternalMethod method : methods) {
-                array.slowPush(RubySymbol.newSymbol(self.getContext(), method.getName()));
-            }
-
-            return array;
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                    metaClass.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
+                        @Override
+                        public boolean filter(InternalMethod method) {
+                            return method.getVisibility() != Visibility.PRIVATE;
+                        }
+                    }).toArray());
         }
 
         @Specialization
-        public RubyArray singletonMethods(RubyBasicObject self, UndefinedPlaceholder includeInherited) {
-            return singletonMethods(self, false);
+        public RubyArray singletonMethods(VirtualFrame frame, RubyBasicObject self, Object includeAncestors) {
+            if (booleanCastNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            return singletonMethods(frame, self, booleanCastNode.executeBoolean(frame, includeAncestors));
         }
 
     }
