@@ -26,8 +26,6 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyThread.Status;
-import org.jruby.common.IRubyWarnings;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
@@ -36,6 +34,7 @@ import org.jruby.truffle.nodes.cast.NumericToFloatNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
+import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
 import org.jruby.truffle.nodes.objects.*;
@@ -49,6 +48,7 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyModule.MethodFilter;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -1085,36 +1085,44 @@ public abstract class KernelNodes {
     @CoreMethod(names = "methods", optional = 1)
     public abstract static class MethodsNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private MetaClassNode metaClassNode;
+        @Child private SingletonMethodsNode singletonMethodsNode;
+        @Child private BooleanCastNode booleanCastNode;
+
         public MethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
-        public RubyArray methods(RubyBasicObject self, UndefinedPlaceholder unused) {
-            return methods(self, true);
+        public RubyArray methods(VirtualFrame frame, Object self, UndefinedPlaceholder regular) {
+            return methods(frame, self, true);
         }
 
         @Specialization
-        public RubyArray methods(RubyBasicObject self, boolean includeInherited) {
+        public RubyArray methods(VirtualFrame frame, Object self, boolean regular) {
+            RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
+
             CompilerDirectives.transferToInterpreter();
-
-            final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
-
-            Map<String, InternalMethod> methods;
-
-            if (includeInherited) {
-                methods = ModuleOperations.getAllMethods(self.getMetaClass());
+            if (regular) {
+                return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                        metaClass.filterMethodsOnObject(regular, MethodFilter.PUBLIC_PROTECTED).toArray());
             } else {
-                methods = self.getMetaClass().getMethods();
-            }
-
-            for (InternalMethod method : methods.values()) {
-                if (method.getVisibility() == Visibility.PUBLIC || method.getVisibility() == Visibility.PROTECTED) {
-                    array.slowPush(self.getContext().getSymbol(method.getName()));
+                if (singletonMethodsNode == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    singletonMethodsNode = insert(SingletonMethodsNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null }));
                 }
+                return singletonMethodsNode.executeSingletonMethods(frame, self, false);
             }
+        }
 
-            return array;
+        @Specialization
+        public RubyArray methods(VirtualFrame frame, RubyBasicObject self, Object regular) {
+            if (booleanCastNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            return methods(frame, self, booleanCastNode.executeBoolean(frame, regular));
         }
 
     }
@@ -1135,36 +1143,35 @@ public abstract class KernelNodes {
     @CoreMethod(names = "private_methods", optional = 1)
     public abstract static class PrivateMethodsNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private MetaClassNode metaClassNode;
+        @Child private BooleanCastNode booleanCastNode;
+
         public PrivateMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
-        public RubyArray private_methods(RubyBasicObject self, UndefinedPlaceholder unused) {
-            return private_methods(self, true);
+        public RubyArray privateMethods(VirtualFrame frame, Object self, UndefinedPlaceholder includeAncestors) {
+            return privateMethods(frame, self, true);
         }
 
         @Specialization
-        public RubyArray private_methods(RubyBasicObject self, boolean includeInherited) {
+        public RubyArray privateMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
+            RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
+
             CompilerDirectives.transferToInterpreter();
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                    metaClass.filterMethodsOnObject(includeAncestors, MethodFilter.PRIVATE).toArray());
+        }
 
-            final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
-
-            Map<String, InternalMethod> methods;
-
-            if (includeInherited) {
-                methods = ModuleOperations.getAllMethods(self.getMetaClass());
-            } else {
-                methods = self.getMetaClass().getMethods();
+        @Specialization
+        public RubyArray privateMethods(VirtualFrame frame, RubyBasicObject self, Object includeAncestors) {
+            if (booleanCastNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
             }
-
-            for (InternalMethod method : methods.values()) {
-                if (method.getVisibility() == Visibility.PRIVATE) {
-                    array.slowPush(self.getContext().getSymbol(method.getName()));
-                }
-            }
-
-            return array;
+            return privateMethods(frame, self, booleanCastNode.executeBoolean(frame, includeAncestors));
         }
 
     }
@@ -1187,39 +1194,74 @@ public abstract class KernelNodes {
         }
     }
 
+    @CoreMethod(names = "protected_methods", optional = 1)
+    public abstract static class ProtectedMethodsNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private MetaClassNode metaClassNode;
+        @Child private BooleanCastNode booleanCastNode;
+
+        public ProtectedMethodsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+        }
+
+        @Specialization
+        public RubyArray protectedMethods(VirtualFrame frame, Object self, UndefinedPlaceholder includeAncestors) {
+            return protectedMethods(frame, self, true);
+        }
+
+        @Specialization
+        public RubyArray protectedMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
+            RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
+
+            CompilerDirectives.transferToInterpreter();
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                    metaClass.filterMethodsOnObject(includeAncestors, MethodFilter.PROTECTED).toArray());
+        }
+
+        @Specialization
+        public RubyArray protectedMethods(VirtualFrame frame, RubyBasicObject self, Object includeAncestors) {
+            if (booleanCastNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            return protectedMethods(frame, self, booleanCastNode.executeBoolean(frame, includeAncestors));
+        }
+
+    }
+
     @CoreMethod(names = "public_methods", optional = 1)
     public abstract static class PublicMethodsNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private MetaClassNode metaClassNode;
+        @Child private BooleanCastNode booleanCastNode;
+
         public PublicMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
-        public RubyArray methods(RubyBasicObject self, boolean includeInherited) {
-            CompilerDirectives.transferToInterpreter();
-
-            if (!includeInherited) {
-                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Object#methods always returns inherited methods at the moment");
-            }
-
-            return methods(self, UndefinedPlaceholder.INSTANCE);
+        public RubyArray publicMethods(VirtualFrame frame, Object self, UndefinedPlaceholder includeAncestors) {
+            return publicMethods(frame, self, true);
         }
 
         @Specialization
-        public RubyArray methods(RubyBasicObject self, UndefinedPlaceholder includeInherited) {
+        public RubyArray publicMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
+            RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
+
             CompilerDirectives.transferToInterpreter();
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                    metaClass.filterMethodsOnObject(includeAncestors, MethodFilter.PUBLIC).toArray());
+        }
 
-            final RubyArray array = new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
-
-            final Map<String, InternalMethod> methods = self.getMetaClass().getMethods();
-
-            for (InternalMethod method : methods.values()) {
-                if (method.getVisibility() == Visibility.PUBLIC) {
-                    array.slowPush(self.getContext().getSymbol(method.getName()));
-                }
+        @Specialization
+        public RubyArray publicMethods(VirtualFrame frame, RubyBasicObject self, Object includeAncestors) {
+            if (booleanCastNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
             }
-
-            return array;
+            return publicMethods(frame, self, booleanCastNode.executeBoolean(frame, includeAncestors));
         }
 
     }
@@ -1489,31 +1531,28 @@ public abstract class KernelNodes {
             this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
         }
 
+        public abstract RubyArray executeSingletonMethods(VirtualFrame frame, Object self, boolean includeAncestors);
+
         @Specialization
-        public RubyArray singletonMethods(VirtualFrame frame, RubyBasicObject self, UndefinedPlaceholder includeAncestors) {
+        public RubyArray singletonMethods(VirtualFrame frame, Object self, UndefinedPlaceholder includeAncestors) {
             return singletonMethods(frame, self, true);
         }
 
         @Specialization
-        public RubyArray singletonMethods(VirtualFrame frame, RubyBasicObject self, boolean includeAncestors) {
+        public RubyArray singletonMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
             RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
 
             if (!metaClass.isSingleton()) {
-                return new RubyArray(self.getContext().getCoreLibrary().getArrayClass());
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass());
             }
 
             CompilerDirectives.transferToInterpreter();
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    metaClass.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
-                        @Override
-                        public boolean filter(InternalMethod method) {
-                            return method.getVisibility() != Visibility.PRIVATE;
-                        }
-                    }).toArray());
+                    metaClass.filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
 
         @Specialization
-        public RubyArray singletonMethods(VirtualFrame frame, RubyBasicObject self, Object includeAncestors) {
+        public RubyArray singletonMethods(VirtualFrame frame, Object self, Object includeAncestors) {
             if (booleanCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));

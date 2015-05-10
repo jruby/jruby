@@ -49,6 +49,7 @@ import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyModule.MethodFilter;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -1400,12 +1401,7 @@ public abstract class ModuleNodes {
 
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    module.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
-                        @Override
-                        public boolean filter(InternalMethod method) {
-                            return method.getVisibility() == Visibility.PROTECTED;
-                        }
-                    }).toArray());
+                    module.filterMethods(includeAncestors, MethodFilter.PROTECTED).toArray());
         }
     }
 
@@ -1452,12 +1448,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    module.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
-                        @Override
-                        public boolean filter(InternalMethod method) {
-                            return method.getVisibility() == Visibility.PRIVATE;
-                        }
-                    }).toArray());
+                    module.filterMethods(includeAncestors, MethodFilter.PRIVATE).toArray());
         }
     }
 
@@ -1514,12 +1505,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    module.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
-                        @Override
-                        public boolean filter(InternalMethod method) {
-                            return method.getVisibility() == Visibility.PUBLIC;
-                        }
-                    }).toArray());
+                    module.filterMethods(includeAncestors, MethodFilter.PUBLIC).toArray());
         }
     }
 
@@ -1566,12 +1552,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    module.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
-                        @Override
-                        public boolean filter(InternalMethod method) {
-                            return method.getVisibility() != Visibility.PRIVATE;
-                        }
-                    }).toArray());
+                    module.filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
     }
 
