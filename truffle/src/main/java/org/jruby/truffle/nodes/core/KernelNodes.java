@@ -174,7 +174,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyNilClass equal(Object other) {
+        public RubyBasicObject equal(Object other) {
             return nil();
         }
 
@@ -226,7 +226,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyNilClass abort() {
+        public RubyBasicObject abort() {
             CompilerDirectives.transferToInterpreter();
             System.exit(1);
             return nil();
@@ -616,12 +616,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyNilClass exit(UndefinedPlaceholder exitCode) {
+        public RubyBasicObject exit(UndefinedPlaceholder exitCode) {
             return exit(1);
         }
 
         @Specialization
-        public RubyNilClass exit(int exitCode) {
+        public RubyBasicObject exit(int exitCode) {
             CompilerDirectives.transferToInterpreter();
             System.exit(exitCode);
             return nil();
@@ -1439,7 +1439,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyNilClass setTraceFunc(RubyNilClass nil) {
+        public RubyBasicObject setTraceFunc(RubyNilClass nil) {
             CompilerDirectives.transferToInterpreter();
 
             getContext().getTraceManager().setTraceFunc(null);

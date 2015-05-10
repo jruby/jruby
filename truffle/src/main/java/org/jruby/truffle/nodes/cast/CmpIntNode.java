@@ -100,7 +100,7 @@ public abstract class CmpIntNode extends RubyNode {
             "!isInteger(value)",
             "!isLong(value)",
             "!isRubyBignum(value)",
-            "!isRubyNilClass(value)" })
+            "!isNil(value)" })
     public int cmpObject(VirtualFrame frame, Object value, Object receiver, Object other) {
         if (gtNode == null) {
             CompilerDirectives.transferToInterpreter();

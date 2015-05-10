@@ -30,7 +30,7 @@ public class CheckMatchVariableTypeNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final Object childValue = child.execute(frame);
 
-        if (!(childValue instanceof RubyMatchData || childValue instanceof RubyNilClass || childValue instanceof RubyNilClass)) {
+        if (!(childValue instanceof RubyMatchData || childValue == nil() || childValue == nil())) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(childValue, "MatchData", this));
         }

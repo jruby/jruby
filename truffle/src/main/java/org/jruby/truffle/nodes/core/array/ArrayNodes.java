@@ -807,7 +807,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "!isObject(array)")
-        public RubyNilClass compactNotObjects(RubyArray array) {
+        public RubyBasicObject compactNotObjects(RubyArray array) {
             return nil();
         }
 
@@ -2461,7 +2461,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public RubyNilClass max(VirtualFrame frame, Object maximumObject, Object value) {
+        public RubyBasicObject max(VirtualFrame frame, Object maximumObject, Object value) {
             final Memo<Object> maximum = (Memo<Object>) maximumObject;
 
             // TODO(CS): cast
@@ -2563,7 +2563,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public RubyNilClass min(VirtualFrame frame, Object minimumObject, Object value) {
+        public RubyBasicObject min(VirtualFrame frame, Object minimumObject, Object value) {
             final Memo<Object> minimum = (Memo<Object>) minimumObject;
 
             // TODO(CS): cast
@@ -2736,7 +2736,7 @@ public abstract class ArrayNodes {
             return ruby(frame, "raise TypeError");
         }
 
-        @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isRubyNilClass(format)"})
+        @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isNil(format)"})
         public Object pack(VirtualFrame frame, RubyArray array, Object format) {
             return ruby(frame, "pack(format.to_str)", "format", format);
         }

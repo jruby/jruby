@@ -21,7 +21,7 @@ public class PackGuards {
         return object == null;
     }
 
-    public static boolean isRubyNilClass(Object object) {
+    public static boolean isNil(Object object) {
         return object instanceof RubyString;
     }
 

@@ -127,7 +127,7 @@ public abstract class ClassNodes {
         }
 
         @Specialization
-        public RubyNilClass inherited(Object subclass) {
+        public RubyBasicObject inherited(Object subclass) {
             return nil();
         }
 

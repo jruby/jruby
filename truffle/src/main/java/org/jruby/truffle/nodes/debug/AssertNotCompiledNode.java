@@ -15,6 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 
 public abstract class AssertNotCompiledNode extends RubyNode {
@@ -26,7 +27,7 @@ public abstract class AssertNotCompiledNode extends RubyNode {
     private static volatile boolean[] sideEffect;
 
     @Specialization
-    public RubyNilClass assertNotCompiled() {
+    public RubyBasicObject assertNotCompiled() {
         final boolean[] compiled = new boolean[]{CompilerDirectives.inCompiledCode()};
 
         sideEffect = compiled;

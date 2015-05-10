@@ -85,8 +85,8 @@ public abstract class DirPrimitiveNodes {
         }
 
         @CompilerDirectives.TruffleBoundary
-        @Specialization
-        public RubyNilClass open(RubyBasicObject dir, RubyString path, RubyNilClass encoding) {
+        @Specialization(guards = "isNil(encoding)")
+        public RubyBasicObject open(RubyBasicObject dir, RubyString path, RubyBasicObject encoding) {
             // TODO CS 22-Apr-15 race conditions here
 
             final File file = new File(path.toString());
@@ -109,7 +109,7 @@ public abstract class DirPrimitiveNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyNilClass open(RubyBasicObject dir, RubyString path, RubyEncoding encoding) {
+        public RubyBasicObject open(RubyBasicObject dir, RubyString path, RubyEncoding encoding) {
             // TODO BJF 30-APR-2015 HandleEncoding
             return open(dir, path, nil());
         }
@@ -207,7 +207,7 @@ public abstract class DirPrimitiveNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyNilClass open(RubyBasicObject dir) {
+        public RubyBasicObject open(RubyBasicObject dir) {
             return nil();
         }
 

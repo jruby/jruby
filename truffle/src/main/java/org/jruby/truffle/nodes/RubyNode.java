@@ -221,13 +221,17 @@ public abstract class RubyNode extends Node {
 
     // Guards which use the context and so can't be static
 
+    public boolean isNil(Object value) {
+        return value instanceof RubyNilClass;
+    }
+
     public boolean isRubiniusUndefined(Object value) {
         return value == getContext().getCoreLibrary().getRubiniusUndefined();
     }
 
     // Helpers methods for terseness
 
-    protected RubyNilClass nil() {
+    protected RubyBasicObject nil() {
         return getContext().getCoreLibrary().getNilObject();
     }
 

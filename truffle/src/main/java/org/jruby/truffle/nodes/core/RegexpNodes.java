@@ -124,7 +124,7 @@ public abstract class RegexpNodes {
             return nil();
         }
 
-        @Specialization(guards = { "!isRubyString(other)", "!isRubySymbol(other)", "!isRubyNilClass(other)" })
+        @Specialization(guards = { "!isRubyString(other)", "!isRubySymbol(other)", "!isNil(other)" })
         public Object matchGeneric(VirtualFrame frame, RubyRegexp regexp, RubyBasicObject other) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();

@@ -17,6 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 
 @NodeChild(value = "child", type = RubyNode.class)
@@ -29,7 +30,7 @@ public abstract class SingleValueCastNode extends RubyNode {
     public abstract Object executeSingleValue(VirtualFrame frame, Object[] args);
 
     @Specialization(guards = "noArguments(args)")
-    protected RubyNilClass castNil(Object[] args) {
+    protected RubyBasicObject castNil(Object[] args) {
         return nil();
     }
 

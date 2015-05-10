@@ -69,7 +69,7 @@ public abstract class IsFrozenNode extends RubyNode {
         return true;
     }
 
-    @Specialization(guards = { "!isRubyNilClass(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
+    @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
     public boolean isFrozen(RubyBasicObject object) {
         if (readFrozenNode == null) {
             CompilerDirectives.transferToInterpreter();

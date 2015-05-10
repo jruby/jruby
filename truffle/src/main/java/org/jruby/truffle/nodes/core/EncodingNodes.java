@@ -208,7 +208,7 @@ public abstract class EncodingNodes {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("default external can not be nil", this));
         }
 
-        @Specialization(guards = { "!isRubyEncoding(encoding)", "!isRubyString(encoding)", "!isRubyNilClass(encoding)" })
+        @Specialization(guards = { "!isRubyEncoding(encoding)", "!isRubyString(encoding)", "!isNil(encoding)" })
         public RubyEncoding defaultExternal(VirtualFrame frame, Object encoding) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -240,7 +240,7 @@ public abstract class EncodingNodes {
         }
 
         @Specialization
-        public RubyNilClass defaultInternal(RubyNilClass encoding) {
+        public RubyBasicObject defaultInternal(RubyNilClass encoding) {
             CompilerDirectives.transferToInterpreter();
 
             getContext().getRuntime().setDefaultInternalEncoding(null);
@@ -248,7 +248,7 @@ public abstract class EncodingNodes {
             return encoding;
         }
 
-        @Specialization(guards = { "!isRubyEncoding(encoding)", "!isRubyNilClass(encoding)" })
+        @Specialization(guards = { "!isRubyEncoding(encoding)", "!isNil(encoding)" })
         public RubyString defaultInternal(VirtualFrame frame, Object encoding) {
             CompilerDirectives.transferToInterpreter();
 

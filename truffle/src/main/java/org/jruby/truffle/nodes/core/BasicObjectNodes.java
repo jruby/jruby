@@ -159,7 +159,7 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public RubyNilClass initialize() {
+        public RubyBasicObject initialize() {
             return nil();
         }
 

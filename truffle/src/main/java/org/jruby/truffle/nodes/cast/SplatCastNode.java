@@ -83,7 +83,7 @@ public abstract class SplatCastNode extends RubyNode {
         return dup.executeDup(frame, array);
     }
 
-    @Specialization(guards = {"!isRubyNilClass(object)", "!isRubyArray(object)"})
+    @Specialization(guards = {"!isNil(object)", "!isRubyArray(object)"})
     public RubyArray splat(VirtualFrame frame, Object object) {
         final String method;
 
@@ -100,7 +100,7 @@ public abstract class SplatCastNode extends RubyNode {
 
             if (array instanceof RubyArray) {
                 return (RubyArray) array;
-            } else if (array instanceof RubyNilClass || array == DispatchNode.MISSING) {
+            } else if (array == nil() || array == DispatchNode.MISSING) {
                 CompilerDirectives.transferToInterpreter();
                 return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
             } else {

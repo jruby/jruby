@@ -18,6 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 
 import java.util.Arrays;
@@ -41,14 +42,14 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     @Specialization(
             guards={"!indexInBounds(array, index)"}
     )
-    public RubyNilClass readIndexOutOfBounds(RubyArray array, int index, int length) {
+    public RubyBasicObject readIndexOutOfBounds(RubyArray array, int index, int length) {
         return nil();
     }
 
     @Specialization(
             guards={"!lengthPositive(length)"}
     )
-    public RubyNilClass readNegativeLength(RubyArray array, int index, int length) {
+    public RubyBasicObject readNegativeLength(RubyArray array, int index, int length) {
         return nil();
     }
 

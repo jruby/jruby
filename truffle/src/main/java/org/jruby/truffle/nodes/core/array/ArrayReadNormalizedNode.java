@@ -18,6 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 
 @NodeChildren({
@@ -38,7 +39,7 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
     @Specialization(
             guards="isNullArray(array)"
     )
-    public RubyNilClass readNull(RubyArray array, int index) {
+    public RubyBasicObject readNull(RubyArray array, int index) {
         return nil();
     }
 
@@ -77,7 +78,7 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
     @Specialization(
             guards="!isInBounds(array, index)"
     )
-    public RubyNilClass readOutOfBounds(RubyArray array, int index) {
+    public RubyBasicObject readOutOfBounds(RubyArray array, int index) {
         return nil();
     }
 

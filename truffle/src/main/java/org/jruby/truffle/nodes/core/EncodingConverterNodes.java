@@ -26,6 +26,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyEncodingConverter;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.util.ByteList;
@@ -44,7 +45,7 @@ public abstract class EncodingConverterNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyNilClass initialize(RubyEncodingConverter self, Object source, Object destination, Object options) {
+        public RubyBasicObject initialize(RubyEncodingConverter self, Object source, Object destination, Object options) {
             // Adapted from RubyConverter - see attribution there
 
             Ruby runtime = getContext().getRuntime();

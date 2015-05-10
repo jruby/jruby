@@ -18,9 +18,4 @@ public class RubyNilClass extends RubyBasicObject {
         super(rubyClass);
     }
 
-    @Override
-    public boolean hasClassAsSingleton() {
-        return true;
-    }
-
 }

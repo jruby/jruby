@@ -117,7 +117,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return ForeignAccessArguments.getReceiver(frame.getArguments()) instanceof RubyNilClass;
+            return ForeignAccessArguments.getReceiver(frame.getArguments()) == nil();
         }
     }
 

@@ -137,7 +137,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyNilClass vmGCStart() {
+        public RubyBasicObject vmGCStart() {
             final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
             try {
@@ -309,7 +309,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyNilClass vmRaiseException(RubyException exception) {
+        public RubyBasicObject vmRaiseException(RubyException exception) {
             throw new RaiseException(exception);
         }
     }

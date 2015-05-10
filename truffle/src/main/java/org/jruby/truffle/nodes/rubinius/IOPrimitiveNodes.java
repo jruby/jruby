@@ -185,7 +185,7 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public RubyNilClass ensureOpen(RubyBasicObject file) {
+        public RubyBasicObject ensureOpen(RubyBasicObject file) {
             // TODO CS 18-Apr-15
             return nil();
         }

@@ -62,7 +62,7 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
         if (block != null) {
             final Object blockTempObject = block.execute(frame);
 
-            if (blockTempObject instanceof RubyNilClass) {
+            if (blockTempObject == nil()) {
                 blockObject = null;
             } else {
                 blockObject = (RubyProc) blockTempObject;

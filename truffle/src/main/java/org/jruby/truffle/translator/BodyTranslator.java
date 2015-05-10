@@ -698,7 +698,7 @@ public class BodyTranslator extends Translator {
         } else if (iterNode != null) {
             blockTranslated = iterNode.accept(this);
 
-            if (blockTranslated instanceof ObjectLiteralNode && ((ObjectLiteralNode) blockTranslated).getObject() instanceof RubyNilClass) {
+            if (blockTranslated instanceof ObjectLiteralNode && ((ObjectLiteralNode) blockTranslated).getObject() == context.getCoreLibrary().getNilObject()) {
                 blockTranslated = null;
             }
         } else {

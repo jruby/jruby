@@ -85,7 +85,7 @@ public abstract class ThreadNodes {
         }
 
         @Specialization
-        public RubyNilClass initialize(RubyThread thread, RubyProc block) {
+        public RubyBasicObject initialize(RubyThread thread, RubyProc block) {
             thread.initialize(getContext(), this, block);
             return nil();
         }
@@ -155,7 +155,7 @@ public abstract class ThreadNodes {
         }
 
         @Specialization
-        public RubyNilClass pass(VirtualFrame frame) {
+        public RubyBasicObject pass(VirtualFrame frame) {
             threadPassNode.executeVoid(frame);
             return nil();
         }
@@ -173,17 +173,17 @@ public abstract class ThreadNodes {
         }
 
         @Specialization
-        public RubyNilClass raise(VirtualFrame frame, RubyThread thread, RubyString message, UndefinedPlaceholder undefined) {
+        public RubyBasicObject raise(VirtualFrame frame, RubyThread thread, RubyString message, UndefinedPlaceholder undefined) {
             return raise(frame, thread, getContext().getCoreLibrary().getRuntimeErrorClass(), message);
         }
 
         @Specialization
-        public RubyNilClass raise(VirtualFrame frame, RubyThread thread, RubyClass exceptionClass, UndefinedPlaceholder message) {
+        public RubyBasicObject raise(VirtualFrame frame, RubyThread thread, RubyClass exceptionClass, UndefinedPlaceholder message) {
             return raise(frame, thread, exceptionClass, getContext().makeString(""));
         }
 
         @Specialization
-        public RubyNilClass raise(VirtualFrame frame, final RubyThread thread, RubyClass exceptionClass, RubyString message) {
+        public RubyBasicObject raise(VirtualFrame frame, final RubyThread thread, RubyClass exceptionClass, RubyString message) {
             final Object exception = exceptionClass.allocate(this);
             initialize.call(frame, exception, "initialize", null, message);
 

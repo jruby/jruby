@@ -73,7 +73,11 @@ public class RubyBasicObject implements TruffleObject {
     }
 
     public boolean hasClassAsSingleton() {
-        return false;
+        if (this == getContext().getCoreLibrary().getNilObject()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Deprecated

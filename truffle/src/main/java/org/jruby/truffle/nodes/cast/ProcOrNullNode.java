@@ -18,10 +18,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 
-/**
- * Wraps some node that will produce either a {@link RubyProc} or a {@link RubyNilClass} and
- * returns {@code null} in case of the latter. Used in parts of the dispatch chain.
- */
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ProcOrNullNode extends RubyNode {
 

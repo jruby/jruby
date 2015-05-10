@@ -129,7 +129,7 @@ public class CoreLibrary {
     private final RubyArray argv;
     private final RubyBasicObject globalVariablesObject;
     private final RubyBasicObject mainObject;
-    private final RubyNilClass nilObject;
+    private final RubyBasicObject nilObject;
     private RubyBasicObject rubiniusUndefined;
 
     private final ArrayNodes.MinBlock arrayMinBlock;
@@ -664,10 +664,10 @@ public class CoreLibrary {
     /**
      * Convert a value to a {@code Float}, without doing any lookup.
      */
-    public static double toDouble(Object value) {
+    public static double toDouble(Object value, RubyBasicObject nil) {
         assert value != null;
 
-        if (value instanceof RubyNilClass) {
+        if (value == nil) {
             return 0;
         }
 
@@ -1213,7 +1213,7 @@ public class CoreLibrary {
         return mainObject;
     }
 
-    public RubyNilClass getNilObject() {
+    public RubyBasicObject getNilObject() {
         return nilObject;
     }
 

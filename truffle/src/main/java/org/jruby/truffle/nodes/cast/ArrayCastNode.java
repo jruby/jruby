@@ -50,27 +50,27 @@ public abstract class ArrayCastNode extends RubyNode {
     protected abstract RubyNode getChild();
 
     @Specialization
-    public RubyNilClass cast(boolean value) {
+    public RubyBasicObject cast(boolean value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(int value) {
+    public RubyBasicObject cast(int value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(long value) {
+    public RubyBasicObject cast(long value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(double value) {
+    public RubyBasicObject cast(double value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(RubyBignum value) {
+    public RubyBasicObject cast(RubyBignum value) {
         return nil();
     }
 
@@ -98,7 +98,7 @@ public abstract class ArrayCastNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = {"!isRubyNilClass(object)", "!isRubyArray(object)"})
+    @Specialization(guards = {"!isNil(object)", "!isRubyArray(object)"})
     public Object cast(VirtualFrame frame, RubyBasicObject object) {
         final Object result = toArrayNode.call(frame, object, "to_ary", null, new Object[]{});
 

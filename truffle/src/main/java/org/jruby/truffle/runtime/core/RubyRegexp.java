@@ -117,7 +117,7 @@ public class RubyRegexp extends RubyBasicObject {
 
         final int match = matcher.search(startPos, range, Option.DEFAULT);
 
-        final RubyNilClass nil = getContext().getCoreLibrary().getNilObject();
+        final RubyBasicObject nil = getContext().getCoreLibrary().getNilObject();
 
         if (match == -1) {
             setThread("$~", nil);

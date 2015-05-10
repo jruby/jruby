@@ -421,7 +421,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public IRubyObject toJRuby(Object object) {
-        if (object instanceof RubyNilClass) {
+        if (object == getCoreLibrary().getNilObject()) {
             return runtime.getNil();
         } else if (object == getCoreLibrary().getKernelModule()) {
             return runtime.getKernel();

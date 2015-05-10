@@ -1018,7 +1018,7 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = {"isEmpty(hash)", "!hasDefaultValue(hash)", "!hasDefaultBlock(hash)"})
-        public RubyNilClass shiftEmpty(RubyHash hash) {
+        public RubyBasicObject shiftEmpty(RubyHash hash) {
             return nil();
         }
 
@@ -1223,7 +1223,7 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public RubyNilClass setDefaultProc(RubyHash hash, RubyNilClass nil) {
+        public RubyBasicObject setDefaultProc(RubyHash hash, RubyNilClass nil) {
             hash.setDefaultValue(null);
             hash.setDefaultBlock(null);
             return nil();

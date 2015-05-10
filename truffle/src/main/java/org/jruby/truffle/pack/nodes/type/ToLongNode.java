@@ -75,7 +75,7 @@ public abstract class ToLongNode extends PackNode {
         throw new NoImplicitConversionException(nil, "Integer");
     }
 
-    @Specialization(guards = {"!isBoolean(object)", "!isInteger(object)", "!isLong(object)", "!isBigInteger(object)", "!isRubyBignum(object)", "!isRubyNilClass(object)"})
+    @Specialization(guards = {"!isBoolean(object)", "!isInteger(object)", "!isLong(object)", "!isBigInteger(object)", "!isRubyBignum(object)", "!isNil(object)"})
     public long toLong(VirtualFrame frame, Object object) {
         if (toIntNode == null) {
             CompilerDirectives.transferToInterpreter();
