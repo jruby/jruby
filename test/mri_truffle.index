@@ -30,9 +30,9 @@ date/test_date_compat.rb
 date/test_date_conv.rb
 date/test_date_marshal.rb
 date/test_date_new.rb
-# date/test_date_parse.rb # passes alone but not in suite
-# date/test_date_strftime.rb # passes alone but not in suite
-# date/test_date_strptime.rb
+date/test_date_parse.rb
+date/test_date_strftime.rb
+date/test_date_strptime.rb
 date/test_switch_hitter.rb
 # digest/test_digest.rb
 # digest/test_digest_extend.rb
