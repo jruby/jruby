@@ -1548,7 +1548,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    metaClass.filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
+                    metaClass.filterSingletonMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
 
         @Specialization

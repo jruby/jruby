@@ -557,23 +557,36 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     public Collection<RubySymbol> filterMethods(boolean includeAncestors, MethodFilter filter) {
-        return filterMethods(includeAncestors, false, filter);
-    }
-
-    public Collection<RubySymbol> filterMethodsOnObject(boolean includeAncestors, MethodFilter filter) {
-        return filterMethods(includeAncestors, true, filter);
-    }
-
-    private Collection<RubySymbol> filterMethods(boolean includeAncestors, boolean untilLogicalClass, MethodFilter filter) {
         final Map<String, InternalMethod> allMethods;
         if (includeAncestors) {
             allMethods = ModuleOperations.getAllMethods(this);
-        } else if (untilLogicalClass) {
-            allMethods = ModuleOperations.getMethodsUntilLogicalClass(this);
         } else {
             allMethods = getMethods();
         }
+        return filterMethods(allMethods, filter);
+    }
 
+    public Collection<RubySymbol> filterMethodsOnObject(boolean includeAncestors, MethodFilter filter) {
+        final Map<String, InternalMethod> allMethods;
+        if (includeAncestors) {
+            allMethods = ModuleOperations.getAllMethods(this);
+        } else {
+            allMethods = ModuleOperations.getMethodsUntilLogicalClass(this);
+        }
+        return filterMethods(allMethods, filter);
+    }
+
+    public Collection<RubySymbol> filterSingletonMethods(boolean includeAncestors, MethodFilter filter) {
+        final Map<String, InternalMethod> allMethods;
+        if (includeAncestors) {
+            allMethods = ModuleOperations.getMethodsBeforeLogicalClass(this);
+        } else {
+            allMethods = getMethods();
+        }
+        return filterMethods(allMethods, filter);
+    }
+
+    private Collection<RubySymbol> filterMethods(Map<String, InternalMethod> allMethods, MethodFilter filter) {
         final Map<String, InternalMethod> methods = ModuleOperations.withoutUndefinedMethods(allMethods);
 
         final Set<RubySymbol> filtered = new HashSet<>();
