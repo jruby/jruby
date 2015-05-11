@@ -539,11 +539,16 @@ public class IRBuilder {
 
     // Non-arg masgn
     public Operand buildMultipleAsgn19(MultipleAsgnNode multipleAsgnNode) {
-        Operand  values = build(multipleAsgnNode.getValueNode());
+        Node valueNode = multipleAsgnNode.getValueNode();
+        Operand values = build(valueNode);
         Variable ret = getValueInTemporaryVariable(values);
-        Variable tmp = createTemporaryVariable();
-        addInstr(new ToAryInstr(tmp, ret));
-        buildMultipleAsgn19Assignment(multipleAsgnNode, null, tmp);
+        if (valueNode instanceof ArrayNode) {
+            buildMultipleAsgn19Assignment(multipleAsgnNode, null, ret);
+        } else {
+            Variable tmp = createTemporaryVariable();
+            addInstr(new ToAryInstr(tmp, ret));
+            buildMultipleAsgn19Assignment(multipleAsgnNode, null, tmp);
+        }
         return ret;
     }
 
