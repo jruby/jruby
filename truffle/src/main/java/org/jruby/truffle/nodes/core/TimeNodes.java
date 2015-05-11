@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -20,6 +21,23 @@ import org.jruby.truffle.runtime.core.RubyTime;
 
 @CoreClass(name = "Time")
 public abstract class TimeNodes {
+
+    // We need it to copy the internal data for a call to Kernel#clone.
+    @CoreMethod(names = "initialize_copy", required = 1)
+    public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
+
+        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object initializeCopy(RubyTime self, RubyTime from) {
+            self.setDateTime(from.getDateTime());
+            self.setOffset(from.getOffset());
+            return self;
+        }
+
+    }
 
     // Not a core method, used to simulate Rubinius @is_gmt.
     @NodeChild(type = RubyNode.class, value = "self")
