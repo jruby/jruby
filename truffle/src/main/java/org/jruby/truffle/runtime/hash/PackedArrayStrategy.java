@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.hash;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.util.cli.Options;
 
@@ -77,6 +78,7 @@ public abstract class PackedArrayStrategy {
         }
     }
 
+    @CompilerDirectives.TruffleBoundary
     public static void promoteToBuckets(RubyHash hash, Object[] store, int size) {
         final Entry[] buckets = new Entry[BucketsStrategy.capacityGreaterThan(size)];
 

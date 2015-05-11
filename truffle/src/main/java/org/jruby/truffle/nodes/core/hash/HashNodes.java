@@ -331,6 +331,7 @@ public abstract class HashNodes {
         private final ConditionProfile foundProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile bucketCollisionProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile appendingProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile resizeProfile = ConditionProfile.createBinaryProfile();
 
         @Specialization(guards = {"isBucketsStorage(hash)", "!isRubyString(key)"})
         public Object setBuckets(VirtualFrame frame, RubyHash hash, Object key, Object value) {
@@ -346,10 +347,12 @@ public abstract class HashNodes {
             final Entry entry = result.getEntry();
 
             if (foundProfile.profile(entry == null)) {
+                final Entry[] entries = (Entry[]) hash.getStore();
+
                 final Entry newEntry = new Entry(result.getHashed(), key, value);
 
                 if (bucketCollisionProfile.profile(result.getPreviousEntry() == null)) {
-                    ((Entry[]) hash.getStore())[result.getIndex()] = newEntry;
+                    entries[result.getIndex()] = newEntry;
                 } else {
                     result.getPreviousEntry().setNextInLookup(newEntry);
                 }
@@ -365,7 +368,15 @@ public abstract class HashNodes {
 
                 hash.setLastInSequence(newEntry);
 
-                hash.setSize(hash.getSize() + 1);
+                final int newSize = hash.getSize() + 1;
+
+                hash.setSize(newSize);
+
+                // TODO CS 11-May-15 could store the next size for resize instead of doing a float operation each time
+
+                if (resizeProfile.profile(newSize / (double) entries.length > BucketsStrategy.MAX_LOAD_BALANCE)) {
+                    BucketsStrategy.resize(hash);
+                }
             } else {
                 entry.setKeyValue(result.getHashed(), key, value);
             }
