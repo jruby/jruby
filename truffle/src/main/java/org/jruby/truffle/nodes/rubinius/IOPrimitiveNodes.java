@@ -210,7 +210,8 @@ public abstract class IOPrimitiveNodes {
 
             final ByteList byteList = string.getByteList();
 
-            final ByteBuffer buffer = ByteBuffer.wrap(byteList.bytes(), byteList.begin(), byteList.length());
+            // TODO (eregon, 11 May 2015): review consistency under concurrent modification
+            final ByteBuffer buffer = ByteBuffer.wrap(byteList.unsafeBytes(), byteList.begin(), byteList.length());
 
             int total = 0;
 
