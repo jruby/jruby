@@ -176,7 +176,7 @@ date/test_switch_hitter.rb
 # digest/test_digest.rb
 # digest/test_digest_extend.rb
 
-# erb/test_erb.rb  # unit.rb:1094:in `abort': wrong number of arguments (1 for 0) (ArgumentError)
+erb/test_erb.rb
 erb/test_erb_m17n.rb
 
 # etc/test_etc.rb
