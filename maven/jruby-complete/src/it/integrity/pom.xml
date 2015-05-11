@@ -148,8 +148,8 @@
 		<!-- make sure openssl loads -->
 		<argument>
 		  begin
-		    import_java "org.objectweb.asm.ClassWriter"
-		    raise "error there is org.objectweb.asm.ClassWriter on the classpath"
+		    a = org.objectweb.asm.ClassWriter
+		    raise "error there is org.objectweb.asm.ClassWriter on the classpath: #{a}"
 		  rescue NameError => e
 		    puts "there is NO org.objectweb.asm.ClassWriter on the classpath"
                   end
