@@ -28,7 +28,6 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
@@ -42,7 +41,6 @@ import java.nio.charset.StandardCharsets;
 })
 public abstract class ToStringNode extends PackNode {
 
-    private final RubyContext context;
     protected final boolean convertNumbersToStrings;
     private final String conversionMethod;
     private final boolean inspectOnConversionFailure;
@@ -58,7 +56,7 @@ public abstract class ToStringNode extends PackNode {
     public ToStringNode(RubyContext context, boolean convertNumbersToStrings,
                         String conversionMethod, boolean inspectOnConversionFailure,
                         Object valueOnNil) {
-        this.context = context;
+        super(context);
         this.convertNumbersToStrings = convertNumbersToStrings;
         this.conversionMethod = conversionMethod;
         this.inspectOnConversionFailure = inspectOnConversionFailure;
@@ -68,8 +66,8 @@ public abstract class ToStringNode extends PackNode {
 
     public abstract Object executeToString(VirtualFrame frame, Object object);
 
-    @Specialization
-    public Object toString(VirtualFrame frame, RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public Object toStringNil(VirtualFrame frame, Object nil) {
         return valueOnNil;
     }
 
@@ -106,7 +104,7 @@ public abstract class ToStringNode extends PackNode {
     public ByteList toString(VirtualFrame frame, RubyArray array) {
         if (toSNode == null) {
             CompilerDirectives.transferToInterpreter();
-            toSNode = insert(DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING));
+            toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
         }
 
         final Object value = toSNode.call(frame, array, "to_s", null);
@@ -132,7 +130,7 @@ public abstract class ToStringNode extends PackNode {
     public ByteList toString(VirtualFrame frame, Object object) {
         if (toStrNode == null) {
             CompilerDirectives.transferToInterpreter();
-            toStrNode = insert(DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING));
+            toStrNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
         }
 
         final Object value = toStrNode.call(frame, object, conversionMethod, null);
@@ -148,7 +146,7 @@ public abstract class ToStringNode extends PackNode {
         if (inspectOnConversionFailure) {
             if (inspectNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                inspectNode = insert(KernelNodesFactory.ToSNodeFactory.create(context,
+                inspectNode = insert(KernelNodesFactory.ToSNodeFactory.create(getContext(),
                         getEncapsulatingSourceSection(), new RubyNode[]{null}));
             }
 

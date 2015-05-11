@@ -9,41 +9,12 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.nodes.objects.Allocator;
-import org.jruby.truffle.runtime.RubyContext;
-
-import java.math.BigInteger;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class RubyBignum extends RubyBasicObject {
 
-    private static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
-    private static final BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
-
-    private final BigInteger value;
-
-    public RubyBignum(RubyClass rubyClass, BigInteger value) {
-        super(rubyClass);
-        assert value.compareTo(LONG_MIN) < 0 || value.compareTo(LONG_MAX) > 0 : String.format("%s not in Bignum range", value);
-        this.value = value;
-    }
-
-    @Override
-    public boolean hasNoSingleton() {
-        return true;
-    }
-
-    public BigInteger bigIntegerValue() {
-        return value;
-    }
-
-    public static class BignumAllocator implements Allocator {
-
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyBignum(rubyClass, BigInteger.ZERO);
-        }
-
+    public RubyBignum(RubyClass rubyClass, DynamicObject dynamicObject) {
+        super(rubyClass, dynamicObject);
     }
 
 }

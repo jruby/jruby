@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Convert a value to a {@code double}.
@@ -22,6 +23,10 @@ import org.jruby.truffle.pack.nodes.PackNode;
         @NodeChild(value = "value", type = PackNode.class),
 })
 public abstract class ToDoubleNode extends PackNode {
+
+    public ToDoubleNode(RubyContext context) {
+        super(context);
+    }
 
     public abstract double executeToDouble(VirtualFrame frame, Object object);
 

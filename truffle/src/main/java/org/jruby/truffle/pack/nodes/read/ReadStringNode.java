@@ -29,7 +29,6 @@ import org.jruby.truffle.runtime.RubyContext;
 })
 public abstract class ReadStringNode extends PackNode {
 
-    private final RubyContext context;
     private final boolean convertNumbersToStrings;
     private final String conversionMethod;
     private final boolean inspectOnConversionFailure;
@@ -40,7 +39,7 @@ public abstract class ReadStringNode extends PackNode {
     public ReadStringNode(RubyContext context, boolean convertNumbersToStrings,
                           String conversionMethod, boolean inspectOnConversionFailure,
                           Object valueOnNil) {
-        this.context = context;
+        super(context);
         this.convertNumbersToStrings = convertNumbersToStrings;
         this.conversionMethod = conversionMethod;
         this.inspectOnConversionFailure = inspectOnConversionFailure;
@@ -80,8 +79,8 @@ public abstract class ReadStringNode extends PackNode {
     private Object readAndConvert(VirtualFrame frame, Object value) {
         if (toStringNode == null) {
             CompilerDirectives.transferToInterpreter();
-            toStringNode = insert(ToStringNodeGen.create(context, convertNumbersToStrings,
-                    conversionMethod, inspectOnConversionFailure, valueOnNil, new WriteByteNode((byte) 0)));
+            toStringNode = insert(ToStringNodeGen.create(getContext(), convertNumbersToStrings,
+                    conversionMethod, inspectOnConversionFailure, valueOnNil, new WriteByteNode(getContext(), (byte) 0)));
         }
 
         return toStringNode.executeToString(frame, value);

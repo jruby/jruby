@@ -16,8 +16,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ArrayDupNode;
-import org.jruby.truffle.nodes.core.ArrayDupNodeGen;
+import org.jruby.truffle.nodes.core.array.ArrayDupNode;
+import org.jruby.truffle.nodes.core.array.ArrayDupNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
@@ -25,7 +25,6 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.
@@ -60,8 +59,8 @@ public abstract class SplatCastNode extends RubyNode {
 
     protected abstract RubyNode getChild();
 
-    @Specialization
-    public RubyArray splat(RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public RubyArray splat(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass());
@@ -83,7 +82,7 @@ public abstract class SplatCastNode extends RubyNode {
         return dup.executeDup(frame, array);
     }
 
-    @Specialization(guards = {"!isRubyNilClass(object)", "!isRubyArray(object)"})
+    @Specialization(guards = {"!isNil(object)", "!isRubyArray(object)"})
     public RubyArray splat(VirtualFrame frame, Object object) {
         final String method;
 
@@ -100,7 +99,7 @@ public abstract class SplatCastNode extends RubyNode {
 
             if (array instanceof RubyArray) {
                 return (RubyArray) array;
-            } else if (array instanceof RubyNilClass || array == DispatchNode.MISSING) {
+            } else if (array == nil() || array == DispatchNode.MISSING) {
                 CompilerDirectives.transferToInterpreter();
                 return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
             } else {

@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.runtime.backtrace;
 
-import org.jruby.TruffleBridge;
+import org.jruby.TruffleContextInterface;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
@@ -33,7 +33,7 @@ public class Backtrace {
         return Collections.unmodifiableList(Arrays.asList(activations));
     }
 
-    private static BacktraceFormatter getFormatter(TruffleBridge.BacktraceFormatter formatter) {
+    private static BacktraceFormatter getFormatter(TruffleContextInterface.BacktraceFormatter formatter) {
         switch (formatter) {
             case MRI:
                 return new MRIBacktraceFormatter();

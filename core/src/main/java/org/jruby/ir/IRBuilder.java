@@ -347,8 +347,10 @@ public class IRBuilder {
             // ensure blocks from the loops they are present in.
             if (loop != null && ebi.innermostLoop != loop) break;
 
-            // SSS FIXME: Should $! be restored before or after the ensure block is run?
-            addInstr(new PutGlobalVarInstr("$!", ebi.savedGlobalException));
+            // $! should be restored before the ensure block is run
+            if (ebi.savedGlobalException != null) {
+                addInstr(new PutGlobalVarInstr("$!", ebi.savedGlobalException));
+            }
 
             // Clone into host scope
             ebi.cloneIntoHostScope(this);
@@ -2225,10 +2227,12 @@ public class IRBuilder {
             activeRescuers.peek());
 
         ensureBodyBuildStack.push(ebi);
+        // Restore $! if we the exception was rescued
+        if (ensureBodyNode != null && ensureBodyNode instanceof RescueNode) {
+            addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+            ebi.savedGlobalException = savedGlobalException;
+        }
         Operand ensureRetVal = ensurerNode == null ? manager.getNil() : build(ensurerNode);
-        // Restore $!
-        addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
-        ebi.savedGlobalException = savedGlobalException;
         ensureBodyBuildStack.pop();
 
         // ------------ Build the protected region ------------
@@ -2247,8 +2251,9 @@ public class IRBuilder {
         activeRescuers.pop();
 
         // Clone the ensure body and jump to the end.
-        // Don't bother if the protected body ended in a return.
-        if (rv != U_NIL && !(ensureBodyNode instanceof RescueNode)) {
+        // Don't bother if the protected body ended in a return
+        // OR if we are really processing a rescue node
+        if (ensurerNode != null && rv != U_NIL && !(ensureBodyNode instanceof RescueNode)) {
             ebi.cloneIntoHostScope(this);
             addInstr(new JumpInstr(ebi.end));
         }
@@ -3065,9 +3070,8 @@ public class IRBuilder {
         activeRescuers.pop();
 
         // Else part of the body -- we simply fall through from the main body if there were no exceptions
-        Label elseLabel = rescueNode.getElseNode() == null ? null : getNewLabel();
-        if (elseLabel != null) {
-            addInstr(new LabelInstr(elseLabel));
+        if (rescueNode.getElseNode() != null) {
+            addInstr(new LabelInstr(getNewLabel()));
             tmp = build(rescueNode.getElseNode());
         }
 

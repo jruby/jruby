@@ -252,16 +252,24 @@ project 'JRuby Core' do
                                         'shadedPattern' => 'org.jruby.org.objectweb' } ],
                    'outputFile' => '${jruby.basedir}/lib/jruby.jar',
                    'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main' } ] )
-    execute_goals( 'shade',
-                   :id => 'shade the asm classes',
-                   :phase => 'package',
-                   'artifactSet' => {
-                     'includes' => [ 'com.github.jnr:jnr-ffi',
-                                     'org.ow2.asm:*' ]
-                   },
-                   'relocations' => [ { 'pattern' =>  'org.objectweb',
-                                        'shadedPattern' =>  'org.jruby.org.objectweb' } ] )
+                                         'mainClass' => 'org.jruby.Main' } ],
+                   :artifactSet => { :excludes => ['com.github.jnr:jffi:native'] } )
+  end
+
+  [:release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
+    profile name do
+      plugin :shade do
+        execute_goals( 'shade',
+                       :id => 'shade the asm classes',
+                       :phase => 'package',
+                       'artifactSet' => {
+                         'includes' => [ 'com.github.jnr:jnr-ffi',
+                                         'org.ow2.asm:*' ]
+                       },
+                       'relocations' => [ { 'pattern' =>  'org.objectweb',
+                                            'shadedPattern' =>  'org.jruby.org.objectweb' } ] )
+      end
+    end
   end
 
   profile 'jruby.bash' do
@@ -322,7 +330,7 @@ project 'JRuby Core' do
   profile 'build.properties' do
 
     activation do
-      file( :exits => '../build.properties' )
+      file( :exists => '../build.properties' )
     end
 
     plugin 'org.codehaus.mojo:properties-maven-plugin:1.0-alpha-2' do

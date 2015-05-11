@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Convert a {@code double} value to a {@code float}.
@@ -21,6 +22,10 @@ import org.jruby.truffle.pack.nodes.PackNode;
         @NodeChild(value = "value", type = PackNode.class),
 })
 public abstract class AsSinglePrecisionNode extends PackNode {
+
+    public AsSinglePrecisionNode(RubyContext context) {
+        super(context);
+    }
 
     @Specialization
     public float asFloat(double object) {

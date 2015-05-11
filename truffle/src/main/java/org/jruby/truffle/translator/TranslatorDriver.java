@@ -22,6 +22,7 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.CatchNextNode;
 import org.jruby.truffle.nodes.methods.CatchRetryAsErrorNode;
@@ -153,7 +154,9 @@ public class TranslatorDriver {
             translator.parentSourceSection.push(sharedMethodInfo.getSourceSection());
             
             try {
-                truffleNode = new ObjectLiteralNode(context, null, context.getCoreLibrary().getNilObject());
+                truffleNode = new DefinedWrapperNode(context, null,
+                        new ObjectLiteralNode(context, null, context.getCoreLibrary().getNilObject()),
+                        "nil");
             } finally {
                 translator.parentSourceSection.pop();
             }

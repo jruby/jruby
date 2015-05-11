@@ -94,7 +94,7 @@ public abstract class ProcNodes {
         }
 
         @Specialization
-        public RubyNilClass initialize(RubyProc proc, RubyProc block) {
+        public RubyBasicObject initialize(RubyProc proc, RubyProc block) {
             proc.initialize(block.getSharedMethodInfo(), block.getCallTargetForProcs(),
                     block.getCallTargetForProcs(), block.getCallTargetForMethods(), block.getDeclarationFrame(),
                     block.getMethod(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
@@ -104,7 +104,7 @@ public abstract class ProcNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyNilClass initialize(RubyProc proc, UndefinedPlaceholder block) {
+        public RubyBasicObject initialize(RubyProc proc, UndefinedPlaceholder block) {
             final Memo<Integer> frameCount = new Memo<>(0);
 
             // The parent will be the Proc.new call.  We need to go an extra level up in order to get the parent

@@ -19,7 +19,6 @@ import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubySymbol;
 
 @NodeChild(value = "child")
@@ -53,13 +52,13 @@ public abstract class FreezeNode extends RubyNode {
         return object;
     }
 
-    @Specialization
-    public Object freeze(RubyNilClass object) {
-        return object;
+    @Specialization(guards = "isNil(nil)")
+    public Object freeze(Object nil) {
+        return nil();
     }
 
-    @Specialization
-    public Object freeze(RubyBignum object) {
+    @Specialization(guards = "isRubyBignum(object)")
+    public Object freezeBignum(RubyBasicObject object) {
         return object;
     }
 
@@ -68,7 +67,7 @@ public abstract class FreezeNode extends RubyNode {
         return object;
     }
 
-    @Specialization(guards = { "!isRubyNilClass(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
+    @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
     public Object freeze(RubyBasicObject object) {
         if (writeFrozenNode == null) {
             CompilerDirectives.transferToInterpreter();

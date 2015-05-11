@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
 /**
@@ -26,7 +27,8 @@ public abstract class WritePaddedBytesNode extends PackNode {
 
     private final int padding;
 
-    public WritePaddedBytesNode(int padding) {
+    public WritePaddedBytesNode(RubyContext context, int padding) {
+        super(context);
         this.padding = padding;
     }
 

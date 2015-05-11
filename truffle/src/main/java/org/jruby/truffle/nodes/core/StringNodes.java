@@ -47,6 +47,8 @@ import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
+import org.jruby.truffle.nodes.core.array.ArrayCoreMethodNode;
+import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
@@ -135,8 +137,8 @@ public abstract class StringNodes {
             return ret;
         }
 
-        @Specialization
-        public RubyString multiply(RubyString string, RubyBignum times) {
+        @Specialization(guards = "isRubyBignum(times)")
+        public RubyString multiply(RubyString string, RubyBasicObject times) {
             CompilerDirectives.transferToInterpreter();
 
             throw new RaiseException(
@@ -307,16 +309,16 @@ public abstract class StringNodes {
             return concatNumeric(string, (int) other);
         }
 
-        @Specialization
-        public RubyString concat(RubyString string, RubyBignum other) {
-            if (other.bigIntegerValue().signum() < 0) {
+        @Specialization(guards = "isRubyBignum(other)")
+        public RubyString concat(RubyString string, RubyBasicObject other) {
+            if (BignumNodes.getBigIntegerValue(other).signum() < 0) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
                         getContext().getCoreLibrary().rangeError("bignum out of char range", this));
             }
 
-            return concatNumeric(string, other.bigIntegerValue().intValue());
+            return concatNumeric(string, BignumNodes.getBigIntegerValue(other).intValue());
         }
 
         @TruffleBoundary
@@ -693,7 +695,6 @@ public abstract class StringNodes {
             sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { null });
         }
 
-        @TruffleBoundary
         @Specialization
         public Object chopBang(VirtualFrame frame, RubyString string) {
             if (sizeNode.executeInteger(frame, string) == 0) {
@@ -728,27 +729,27 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public int count(VirtualFrame frame, RubyString string, Object[] otherStrings) {
+        public int count(VirtualFrame frame, RubyString string, Object[] args) {
             if (string.getByteList().getRealSize() == 0) {
                 return 0;
             }
 
-            if (otherStrings.length == 0) {
+            if (args.length == 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
             }
 
-            return countSlow(frame, string, otherStrings);
-        }
-
-        @TruffleBoundary
-        private int countSlow(VirtualFrame frame, RubyString string, Object[] args) {
             RubyString[] otherStrings = new RubyString[args.length];
 
             for (int i = 0; i < args.length; i++) {
                 otherStrings[i] = toStr.executeRubyString(frame, args[i]);
             }
 
+            return countSlow(string, otherStrings);
+        }
+
+        @TruffleBoundary
+        private int countSlow(RubyString string, RubyString[] otherStrings) {
             RubyString otherStr = otherStrings[0];
             Encoding enc = otherStr.getByteList().getEncoding();
 
@@ -849,27 +850,27 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object deleteBang(VirtualFrame frame, RubyString string, Object... otherStrings) {
+        public Object deleteBang(VirtualFrame frame, RubyString string, Object... args) {
             if (string.getByteList().length() == 0) {
                 return nil();
             }
 
-            if (otherStrings.length == 0) {
+            if (args.length == 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
             }
 
-            return deleteBangSlow(frame, string, otherStrings);
-        }
-
-        @TruffleBoundary
-        private Object deleteBangSlow(VirtualFrame frame, RubyString string, Object... args) {
             RubyString[] otherStrings = new RubyString[args.length];
 
             for (int i = 0; i < args.length; i++) {
                 otherStrings[i] = toStr.executeRubyString(frame, args[i]);
             }
 
+            return deleteBangSlow(string, otherStrings);
+        }
+
+        @TruffleBoundary
+        private Object deleteBangSlow(RubyString string, RubyString... otherStrings) {
             RubyString otherString = otherStrings[0];
             Encoding enc = string.checkEncoding(otherString, this);
 

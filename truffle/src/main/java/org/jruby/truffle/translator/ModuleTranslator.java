@@ -17,6 +17,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.AliasNodeGen;
 import org.jruby.truffle.nodes.methods.CatchReturnPlaceholderNode;
@@ -53,7 +54,9 @@ class ModuleTranslator extends BodyTranslator {
                 parentSourceSection.pop();
             }
         } else {
-            body = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+            body = new DefinedWrapperNode(context, sourceSection,
+                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    "nil");
         }
 
         if (environment.getFlipFlopStates().size() > 0) {

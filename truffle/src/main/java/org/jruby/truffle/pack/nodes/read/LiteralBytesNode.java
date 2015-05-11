@@ -11,13 +11,15 @@ package org.jruby.truffle.pack.nodes.read;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
 public class LiteralBytesNode extends PackNode {
 
     private final ByteList bytes;
 
-    public LiteralBytesNode(ByteList bytes) {
+    public LiteralBytesNode(RubyContext context, ByteList bytes) {
+        super(context);
         this.bytes = bytes;
     }
 

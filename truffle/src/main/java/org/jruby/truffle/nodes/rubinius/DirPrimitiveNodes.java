@@ -47,11 +47,7 @@ import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyEncoding;
-import org.jruby.truffle.runtime.core.RubyNilClass;
-import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.*;
 
 import java.io.File;
 
@@ -89,8 +85,8 @@ public abstract class DirPrimitiveNodes {
         }
 
         @CompilerDirectives.TruffleBoundary
-        @Specialization
-        public RubyNilClass open(RubyBasicObject dir, RubyString path, RubyNilClass encoding) {
+        @Specialization(guards = "isNil(encoding)")
+        public RubyBasicObject open(RubyBasicObject dir, RubyString path, RubyBasicObject encoding) {
             // TODO CS 22-Apr-15 race conditions here
 
             final File file = new File(path.toString());
@@ -113,7 +109,7 @@ public abstract class DirPrimitiveNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyNilClass open(RubyBasicObject dir, RubyString path, RubyEncoding encoding) {
+        public RubyBasicObject open(RubyBasicObject dir, RubyString path, RubyEncoding encoding) {
             // TODO BJF 30-APR-2015 HandleEncoding
             return open(dir, path, nil());
         }
@@ -211,7 +207,7 @@ public abstract class DirPrimitiveNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyNilClass open(RubyBasicObject dir) {
+        public RubyBasicObject open(RubyBasicObject dir) {
             return nil();
         }
 

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
 /**
@@ -23,6 +24,10 @@ import org.jruby.util.ByteList;
         @NodeChild(value = "value", type = PackNode.class),
 })
 public abstract class WriteBytesNode extends PackNode {
+
+    public WriteBytesNode(RubyContext context) {
+        super(context);
+    }
 
     @Specialization
     public Object write(VirtualFrame frame, ByteList bytes) {

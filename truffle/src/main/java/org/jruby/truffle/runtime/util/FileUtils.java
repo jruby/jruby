@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.runtime.util;
 
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 

@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -187,6 +186,46 @@ public abstract class ModuleOperations {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
+            }
+        }
+
+        return methods;
+    }
+
+    @TruffleBoundary
+    public static Map<String, InternalMethod> getMethodsBeforeLogicalClass(RubyModule module) {
+        final Map<String, InternalMethod> methods = new HashMap<>();
+
+        for (RubyModule ancestor : module.ancestors()) {
+            // When we find a class which is not a singleton class, we are done
+            if (ancestor instanceof RubyClass && !((RubyClass) ancestor).isSingleton()) {
+                break;
+            }
+
+            for (InternalMethod method : ancestor.getMethods().values()) {
+                if (!methods.containsKey(method.getName())) {
+                    methods.put(method.getName(), method);
+                }
+            }
+        }
+
+        return methods;
+    }
+
+    @TruffleBoundary
+    public static Map<String, InternalMethod> getMethodsUntilLogicalClass(RubyModule module) {
+        final Map<String, InternalMethod> methods = new HashMap<>();
+
+        for (RubyModule ancestor : module.ancestors()) {
+            for (InternalMethod method : ancestor.getMethods().values()) {
+                if (!methods.containsKey(method.getName())) {
+                    methods.put(method.getName(), method);
+                }
+            }
+
+            // When we find a class which is not a singleton class, we are done
+            if (ancestor instanceof RubyClass && !((RubyClass) ancestor).isSingleton()) {
+                break;
             }
         }
 

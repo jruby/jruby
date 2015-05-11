@@ -232,6 +232,17 @@ project 'JRuby Integration Tests' do
 
   end
 
+  profile 'truffle-specs-truffle' do
+
+    plugin :antrun do
+      execute_goals( 'run',
+                     :id => 'rake',
+                     :phase => 'test',
+                     :configuration => [ xml( truffle_spec_config(:truffle, false) ) ] )
+    end
+
+  end
+
   profile 'truffle-specs-language-report' do
 
     plugin :antrun do

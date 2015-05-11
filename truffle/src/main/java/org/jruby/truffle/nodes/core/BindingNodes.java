@@ -19,10 +19,10 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.globals.GetFromThreadLocalNode;
 import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
-import org.jruby.truffle.nodes.methods.locals.ReadAbstractFrameSlotNode;
-import org.jruby.truffle.nodes.methods.locals.ReadAbstractFrameSlotNodeGen;
-import org.jruby.truffle.nodes.methods.locals.WriteAbstractFrameSlotNode;
-import org.jruby.truffle.nodes.methods.locals.WriteAbstractFrameSlotNodeGen;
+import org.jruby.truffle.nodes.locals.ReadFrameSlotNode;
+import org.jruby.truffle.nodes.locals.ReadFrameSlotNodeGen;
+import org.jruby.truffle.nodes.locals.WriteFrameSlotNode;
+import org.jruby.truffle.nodes.locals.WriteFrameSlotNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -83,8 +83,8 @@ public abstract class BindingNodes {
         public Object localVariableGetCached(RubyBinding binding, RubySymbol symbol,
                                              @Cached("symbol") RubySymbol cachedSymbol,
                                              @Cached("getFrameDescriptor(binding)") FrameDescriptor cachedFrameDescriptor,
-                                             @Cached("findFrameSlot(cachedFrameDescriptor, symbol)") FrameSlot cachedFrameSlot,
-                                             @Cached("createReadNode(cachedFrameSlot)") ReadAbstractFrameSlotNode readLocalVariableNode) {
+                                             @Cached("findFrameSlot(binding, symbol)") FrameSlot cachedFrameSlot,
+                                             @Cached("createReadNode(cachedFrameSlot)") ReadFrameSlotNode readLocalVariableNode) {
             if (cachedFrameSlot == null) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(symbol.toString(), binding, this));
@@ -124,12 +124,30 @@ public abstract class BindingNodes {
             return binding.getFrame().getFrameDescriptor();
         }
 
-        protected FrameSlot findFrameSlot(FrameDescriptor frameDescriptor, RubySymbol symbol) {
-            return frameDescriptor.findFrameSlot(symbol.toString());
+        protected FrameSlot findFrameSlot(RubyBinding binding, RubySymbol symbol) {
+            final String symbolString = symbol.toString();
+
+            MaterializedFrame frame = binding.getFrame();
+
+            while (frame != null) {
+                final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(symbolString);
+
+                if (frameSlot != null) {
+                    return frameSlot;
+                }
+
+                frame = RubyArguments.getDeclarationFrame(frame.getArguments());
+            }
+
+            return null;
         }
 
-        protected ReadAbstractFrameSlotNode createReadNode(FrameSlot frameSlot) {
-            return ReadAbstractFrameSlotNodeGen.create(frameSlot);
+        protected ReadFrameSlotNode createReadNode(FrameSlot frameSlot) {
+            if (frameSlot == null) {
+                return null;
+            } else {
+                return ReadFrameSlotNodeGen.create(frameSlot);
+            }
         }
 
         protected boolean isLastLine(RubySymbol symbol) {
@@ -156,7 +174,7 @@ public abstract class BindingNodes {
         public Object localVariableSetCached(RubyBinding binding, RubySymbol symbol, Object value,
                                              @Cached("symbol") RubySymbol cachedSymbol,
                                              @Cached("getFrameDescriptor(binding)") FrameDescriptor cachedFrameDescriptor,
-                                             @Cached("createWriteNode(findFrameSlot(binding, symbol))") WriteAbstractFrameSlotNode writeLocalVariableNode) {
+                                             @Cached("createWriteNode(findFrameSlot(binding, symbol))") WriteFrameSlotNode writeLocalVariableNode) {
             return writeLocalVariableNode.executeWrite(binding.getFrame(), value);
         }
 
@@ -200,8 +218,8 @@ public abstract class BindingNodes {
             return binding.getFrame().getFrameDescriptor().addFrameSlot(symbolString);
         }
 
-        protected WriteAbstractFrameSlotNode createWriteNode(FrameSlot frameSlot) {
-            return WriteAbstractFrameSlotNodeGen.create(frameSlot);
+        protected WriteFrameSlotNode createWriteNode(FrameSlot frameSlot) {
+            return WriteFrameSlotNodeGen.create(frameSlot);
         }
 
         protected boolean isLastLine(RubySymbol symbol) {

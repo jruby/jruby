@@ -18,6 +18,7 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.nodes.type.ToDoubleNode;
 import org.jruby.truffle.pack.nodes.type.ToDoubleNodeGen;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Read a {@code double} value from the source.
@@ -28,6 +29,10 @@ import org.jruby.truffle.pack.nodes.type.ToDoubleNodeGen;
 public abstract class ReadDoubleNode extends PackNode {
 
     @Child private ToDoubleNode toDoubleNode;
+
+    public ReadDoubleNode(RubyContext context) {
+        super(context);
+    }
 
     @Specialization(guards = "isNull(source)")
     public double read(VirtualFrame frame, Object source) {
@@ -58,7 +63,7 @@ public abstract class ReadDoubleNode extends PackNode {
     public double read(VirtualFrame frame, Object[] source) {
         if (toDoubleNode == null) {
             CompilerDirectives.transferToInterpreter();
-            toDoubleNode = insert(ToDoubleNodeGen.create(null));
+            toDoubleNode = insert(ToDoubleNodeGen.create(getContext(), null));
         }
 
         return toDoubleNode.executeToDouble(frame, source[advanceSourcePosition(frame)]);

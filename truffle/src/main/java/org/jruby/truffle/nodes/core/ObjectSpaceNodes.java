@@ -14,10 +14,10 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.object.ObjectIDOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 @CoreClass(name = "ObjectSpace")
 public abstract class ObjectSpaceNodes {
@@ -56,22 +56,22 @@ public abstract class ObjectSpaceNodes {
             }
         }
 
-        @Specialization(guards = "isLargeFixnumID(id)")
-        public Object id2RefLargeFixnum(RubyBignum id) {
-            return ObjectIDOperations.toFixnum(id);
+        @Specialization(guards = {"isRubyBignum(id)", "isLargeFixnumID(id)"})
+        public Object id2RefLargeFixnum(RubyBasicObject id) {
+            return BignumNodes.getBigIntegerValue(id).longValue();
         }
 
-        @Specialization(guards = "isFloatID(id)")
-        public double id2RefFloat(RubyBignum id) {
-            return ObjectIDOperations.toFloat(id);
+        @Specialization(guards = {"isRubyBignum(id)", "isFloatID(id)"})
+        public double id2RefFloat(RubyBasicObject id) {
+            return Double.longBitsToDouble(BignumNodes.getBigIntegerValue(id).longValue());
         }
 
-        protected boolean isLargeFixnumID(RubyBignum id) {
-            return ObjectIDOperations.isLargeFixnumID(id.bigIntegerValue());
+        protected boolean isLargeFixnumID(RubyBasicObject id) {
+            return ObjectIDOperations.isLargeFixnumID(BignumNodes.getBigIntegerValue(id));
         }
 
-        protected boolean isFloatID(RubyBignum id) {
-            return ObjectIDOperations.isFloatID(id.bigIntegerValue());
+        protected boolean isFloatID(RubyBasicObject id) {
+            return ObjectIDOperations.isFloatID(BignumNodes.getBigIntegerValue(id));
         }
 
     }

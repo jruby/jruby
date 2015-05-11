@@ -48,6 +48,7 @@ import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
@@ -107,10 +108,14 @@ public abstract class VMPrimitiveNodes {
                 if (areSame(frame, e.getTag(), tag)) {
                     if (clearExceptionVariableNode == null) {
                         CompilerDirectives.transferToInterpreter();
+                        RubyContext context = getContext();
+                        SourceSection sourceSection = getSourceSection();
                         clearExceptionVariableNode = insert(
                                 new WriteInstanceVariableNode(getContext(), getSourceSection(), "$!",
                                         new ObjectLiteralNode(getContext(), getSourceSection(), getContext().getThreadManager().getCurrentThread().getThreadLocals()),
-                                        new ObjectLiteralNode(getContext(), getSourceSection(), nil()),
+                                        new DefinedWrapperNode(context, sourceSection,
+                                                new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                                                "nil"),
                                         true)
                         );
                     }
@@ -132,7 +137,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyNilClass vmGCStart() {
+        public RubyBasicObject vmGCStart() {
             final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
             try {
@@ -304,7 +309,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyNilClass vmRaiseException(RubyException exception) {
+        public RubyBasicObject vmRaiseException(RubyException exception) {
             throw new RaiseException(exception);
         }
     }
@@ -437,8 +442,8 @@ public abstract class VMPrimitiveNodes {
             return true;
         }
 
-        @Specialization
-        public boolean watchSignal(RubyString signalName, RubyNilClass ignore) {
+        @Specialization(guards = "isNil(nil)")
+        public boolean watchSignal(RubyString signalName, Object nil) {
             Signal signal = new Signal(signalName.toString());
 
             SignalOperations.watchSignal(signal, SignalOperations.IGNORE_HANDLER);

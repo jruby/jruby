@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 
 /**
@@ -34,9 +33,9 @@ public abstract class ProcCastNode extends RubyNode {
         toProc = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    @Specialization
-    public RubyNilClass doNil(RubyNilClass nil) {
-        return nil;
+    @Specialization(guards = "isNil(nil)")
+    public RubyBasicObject doNil(Object nil) {
+        return nil();
     }
 
     @Specialization

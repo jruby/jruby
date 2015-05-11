@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
@@ -31,7 +32,8 @@ public abstract class WriteBase64StringNode extends PackNode {
     private final int length;
     private final boolean ignoreStar;
 
-    public WriteBase64StringNode(int length, boolean ignoreStar) {
+    public WriteBase64StringNode(RubyContext context, int length, boolean ignoreStar) {
+        super(context);
         this.length = length;
         this.ignoreStar = ignoreStar;
     }

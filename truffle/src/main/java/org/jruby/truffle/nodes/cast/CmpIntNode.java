@@ -27,12 +27,13 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 
 /**
@@ -81,13 +82,13 @@ public abstract class CmpIntNode extends RubyNode {
         return 0;
     }
 
-    @Specialization
-    public int cmpBignum(RubyBignum value, Object receiver, Object other) {
-        return value.bigIntegerValue().signum();
+    @Specialization(guards = "isRubyBignum(value)")
+    public int cmpBignum(RubyBasicObject value, Object receiver, Object other) {
+        return BignumNodes.getBigIntegerValue(value).signum();
     }
 
-    @Specialization
-    public int cmpNil(RubyNilClass value, Object receiver, Object other) {
+    @Specialization(guards = "isNil(nil)")
+    public int cmpNil(Object nil, Object receiver, Object other) {
         throw new RaiseException(
             getContext().getCoreLibrary().argumentError(
                 String.format("comparison of %s with %s failed",
@@ -100,7 +101,7 @@ public abstract class CmpIntNode extends RubyNode {
             "!isInteger(value)",
             "!isLong(value)",
             "!isRubyBignum(value)",
-            "!isRubyNilClass(value)" })
+            "!isNil(value)" })
     public int cmpObject(VirtualFrame frame, Object value, Object receiver, Object other) {
         if (gtNode == null) {
             CompilerDirectives.transferToInterpreter();

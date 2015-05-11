@@ -20,6 +20,7 @@ import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyProc;
 
@@ -31,7 +32,6 @@ public abstract class IntegerNodes {
     @CoreMethod(names = "downto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class DownToNode extends YieldingCoreMethodNode {
 
-        private final BranchProfile breakProfile = BranchProfile.create();
         private final BranchProfile nextProfile = BranchProfile.create();
         private final BranchProfile redoProfile = BranchProfile.create();
 
@@ -128,7 +128,6 @@ public abstract class IntegerNodes {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
-        private final BranchProfile breakProfile = BranchProfile.create();
         private final BranchProfile nextProfile = BranchProfile.create();
         private final BranchProfile redoProfile = BranchProfile.create();
 
@@ -209,14 +208,14 @@ public abstract class IntegerNodes {
             return n;
         }
 
-        @Specialization
-        public Object times(VirtualFrame frame, RubyBignum n, RubyProc block) {
+        @Specialization(guards = "isRubyBignum(n)")
+        public Object times(VirtualFrame frame, RubyBasicObject n, RubyProc block) {
             if (fixnumOrBignum == null) {
                 CompilerDirectives.transferToInterpreter();
                 fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
             }
 
-            outer: for (BigInteger i = BigInteger.ZERO; i.compareTo(n.bigIntegerValue()) < 0; i = i.add(BigInteger.ONE)) {
+            outer: for (BigInteger i = BigInteger.ZERO; i.compareTo(BignumNodes.getBigIntegerValue(n)) < 0; i = i.add(BigInteger.ONE)) {
                 while (true) {
                     try {
                         yield(frame, block, fixnumOrBignum.fixnumOrBignum(i));
@@ -252,8 +251,8 @@ public abstract class IntegerNodes {
             return n;
         }
 
-        @Specialization
-        public RubyBignum toI(RubyBignum n) {
+        @Specialization(guards = "isRubyBignum(n)")
+        public RubyBasicObject toI(RubyBasicObject n) {
             return n;
         }
 
@@ -262,7 +261,6 @@ public abstract class IntegerNodes {
     @CoreMethod(names = "upto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class UpToNode extends YieldingCoreMethodNode {
 
-        private final BranchProfile breakProfile = BranchProfile.create();
         private final BranchProfile nextProfile = BranchProfile.create();
         private final BranchProfile redoProfile = BranchProfile.create();
 

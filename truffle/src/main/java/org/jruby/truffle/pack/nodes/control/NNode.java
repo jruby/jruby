@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.runtime.RubyContext;
 
 /**
  * Repeats a child node N times.
@@ -30,7 +31,8 @@ public class NNode extends PackNode {
     private final int repeats;
     @Child private PackNode child;
 
-    public NNode(int repeats, PackNode child) {
+    public NNode(RubyContext context, int repeats, PackNode child) {
+        super(context);
         this.repeats = repeats;
         this.child = child;
     }

@@ -29,12 +29,10 @@ import org.jruby.truffle.runtime.RubyContext;
 })
 public abstract class ReadLongNode extends PackNode {
 
-    private final RubyContext context;
-
     @Child private ToLongNode toLongNode;
 
     public ReadLongNode(RubyContext context) {
-        this.context = context;
+        super(context);
     }
 
     @Specialization(guards = "isNull(source)")
@@ -66,7 +64,7 @@ public abstract class ReadLongNode extends PackNode {
     public long read(VirtualFrame frame, Object[] source) {
         if (toLongNode == null) {
             CompilerDirectives.transferToInterpreter();
-            toLongNode = insert(ToLongNodeGen.create(context, null));
+            toLongNode = insert(ToLongNodeGen.create(getContext(), null));
         }
 
         return toLongNode.executeToLong(frame, source[advanceSourcePosition(frame)]);

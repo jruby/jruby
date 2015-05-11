@@ -13,8 +13,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ArrayAllocationSite;
+import org.jruby.truffle.nodes.core.array.ArrayAllocationSite;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
@@ -69,10 +68,10 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     public static RubyArray fromObjects(RubyClass arrayClass, Object... objects) {
-        return new RubyArray(arrayClass, storeFromObjects(objects), objects.length);
+        return new RubyArray(arrayClass, storeFromObjects(arrayClass.getContext(), objects), objects.length);
     }
 
-    private static Object storeFromObjects(Object... objects) {
+    private static Object storeFromObjects(RubyContext context, Object... objects) {
         if (objects.length == 0) {
             return null;
         }
@@ -131,7 +130,7 @@ public final class RubyArray extends RubyBasicObject {
             final double[] store = new double[objects.length];
 
             for (int n = 0; n < objects.length; n++) {
-                store[n] = CoreLibrary.toDouble(objects[n]);
+                store[n] = CoreLibrary.toDouble(objects[n], context.getCoreLibrary().getNilObject());
             }
 
             return store;
@@ -205,7 +204,7 @@ public final class RubyArray extends RubyBasicObject {
         assert verifyStore(store, size);
 
         if (RANDOMIZE_STORAGE_ARRAY) {
-            store = randomizeStorageStrategy(store, size);
+            store = randomizeStorageStrategy(getContext(), store, size);
             assert verifyStore(store, size);
         }
 
@@ -214,7 +213,7 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     @CompilerDirectives.TruffleBoundary
-    private static Object randomizeStorageStrategy(Object store, int size) {
+    private static Object randomizeStorageStrategy(RubyContext context, Object store, int size) {
         // Use any type for empty arrays
 
         if (size == 0) {
@@ -237,7 +236,7 @@ public final class RubyArray extends RubyBasicObject {
         // Convert to the canonical store type first
 
         final Object[] boxedStore = ArrayUtils.box(store);
-        final Object canonicalStore = storeFromObjects(boxedStore);
+        final Object canonicalStore = storeFromObjects(context, boxedStore);
 
         // Then promote it at random
 

@@ -63,10 +63,6 @@ public abstract class RubyGuards {
         return value instanceof RubyModule;
     }
 
-    public static boolean isRubyNilClass(Object value) {
-        return value instanceof RubyNilClass;
-    }
-
     public static boolean isRubyRange(Object value) {
         return value instanceof RubyRange;
     }

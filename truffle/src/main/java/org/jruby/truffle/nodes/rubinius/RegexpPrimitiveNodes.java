@@ -15,10 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.joni.Matcher;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyNilClass;
-import org.jruby.truffle.runtime.core.RubyRegexp;
-import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.StringSupport;
 
 /**
@@ -94,7 +91,7 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization
-        public RubyNilClass setBlockLastMatch(RubyClass regexpClass) {
+        public RubyBasicObject setBlockLastMatch(RubyClass regexpClass) {
             // TODO CS 7-Mar-15 what does this do?
             return nil();
         }

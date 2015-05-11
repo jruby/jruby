@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
@@ -22,8 +23,8 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.CantConvertException;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 
 /**
  * Convert a value to a {@code long}.
@@ -33,8 +34,6 @@ import org.jruby.truffle.runtime.core.RubyNilClass;
 })
 public abstract class ToLongNode extends PackNode {
 
-    private final RubyContext context;
-
     @Child private CallDispatchHeadNode toIntNode;
 
     @CompilerDirectives.CompilationFinal private boolean seenInt;
@@ -42,7 +41,7 @@ public abstract class ToLongNode extends PackNode {
     @CompilerDirectives.CompilationFinal private boolean seenBignum;
 
     public ToLongNode(RubyContext context) {
-        this.context = context;
+        super(context);
     }
 
     public abstract long executeToLong(VirtualFrame frame, Object object);
@@ -63,23 +62,23 @@ public abstract class ToLongNode extends PackNode {
         return object;
     }
 
-    @Specialization
-    public long toLong(VirtualFrame frame, RubyBignum object) {
+    @Specialization(guards = "isRubyBignum(object)")
+    public long toLong(VirtualFrame frame, RubyBasicObject object) {
         // A truncated value is exactly what we want
-        return object.bigIntegerValue().longValue();
+        return BignumNodes.getBigIntegerValue(object).longValue();
     }
 
-    @Specialization
-    public long toLong(VirtualFrame frame, RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public long toLongNil(VirtualFrame frame, Object nil) {
         CompilerDirectives.transferToInterpreter();
         throw new NoImplicitConversionException(nil, "Integer");
     }
 
-    @Specialization(guards = {"!isBoolean(object)", "!isInteger(object)", "!isLong(object)", "!isBigInteger(object)", "!isRubyBignum(object)", "!isRubyNilClass(object)"})
+    @Specialization(guards = {"!isBoolean(object)", "!isInteger(object)", "!isLong(object)", "!isBigInteger(object)", "!isRubyBignum(object)", "!isNil(object)"})
     public long toLong(VirtualFrame frame, Object object) {
         if (toIntNode == null) {
             CompilerDirectives.transferToInterpreter();
-            toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING));
+            toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
         }
 
         final Object value = toIntNode.call(frame, object, "to_int", null);

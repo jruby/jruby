@@ -14,8 +14,11 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.CantCompressNegativeException;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.util.ByteList;
 
@@ -30,6 +33,10 @@ import java.math.BigInteger;
         @NodeChild(value = "value", type = PackNode.class),
 })
 public abstract class WriteBERNode extends PackNode {
+
+    public WriteBERNode(RubyContext context) {
+        super(context);
+    }
 
     @Specialization
     public Object doWrite(VirtualFrame frame, int value) {
@@ -55,9 +62,9 @@ public abstract class WriteBERNode extends PackNode {
         return null;
     }
 
-    @Specialization
-    public Object doWrite(VirtualFrame frame, RubyBignum value) {
-        if (value.bigIntegerValue().signum() < 0) {
+    @Specialization(guards = "isRubyBignum(value)")
+    public Object doWrite(VirtualFrame frame, RubyBasicObject value) {
+        if (BignumNodes.getBigIntegerValue(value).signum() < 0) {
             CompilerDirectives.transferToInterpreter();
             throw new CantCompressNegativeException();
         }
@@ -78,8 +85,8 @@ public abstract class WriteBERNode extends PackNode {
         long l;
 
         if (from instanceof RubyBignum) {
-            from = ((RubyBignum) from).bigIntegerValue();
             BigInteger big128 = BigInteger.valueOf(128);
+            from = BignumNodes.getBigIntegerValue((RubyBignum) from);
             while (true) {
                 BigInteger bignum = (BigInteger)from;
                 BigInteger[] ary = bignum.divideAndRemainder(big128);

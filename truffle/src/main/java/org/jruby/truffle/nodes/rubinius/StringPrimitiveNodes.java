@@ -792,7 +792,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_byte_index", needsSelf = false)
+    @RubiniusPrimitive(name = "string_byte_index", needsSelf = false, lowerFixnumParameters = {2, 3})
     public static abstract class StringByteIndexPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -955,7 +955,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_resize_capacity", needsSelf = false)
+    @RubiniusPrimitive(name = "string_resize_capacity", needsSelf = false, lowerFixnumParameters = 2)
     public static abstract class StringResizeCapacityPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringResizeCapacityPrimitiveNode(RubyContext context, SourceSection sourceSection) {

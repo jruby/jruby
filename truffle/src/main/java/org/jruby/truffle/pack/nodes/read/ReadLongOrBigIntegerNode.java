@@ -34,14 +34,12 @@ import java.math.BigInteger;
 })
 public abstract class ReadLongOrBigIntegerNode extends PackNode {
 
-    private final RubyContext context;
-
     @Child private ToLongNode toLongNode;
 
     private final ConditionProfile bignumProfile = ConditionProfile.createBinaryProfile();
 
     public ReadLongOrBigIntegerNode(RubyContext context) {
-        this.context = context;
+        super(context);
     }
 
     @Specialization(guards = "isNull(source)")
@@ -73,7 +71,7 @@ public abstract class ReadLongOrBigIntegerNode extends PackNode {
         } else {
             if (toLongNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toLongNode = insert(ToLongNodeGen.create(context, null));
+                toLongNode = insert(ToLongNodeGen.create(getContext(), null));
             }
 
             return toLongNode.executeToLong(frame, value);
