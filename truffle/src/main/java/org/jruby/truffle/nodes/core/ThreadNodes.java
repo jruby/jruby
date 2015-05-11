@@ -77,15 +77,16 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true, argumentsAsArray = true)
+    @CoreMethod(names = "initialize", needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public RubyBasicObject initialize(RubyThread thread, Object[] arguments, RubyProc block) {
-            thread.initialize(getContext(), this, arguments, block);
+        @Specialization
+        public RubyBasicObject initialize(RubyThread thread, RubyProc block) {
+            thread.initialize(getContext(), this, block);
             return nil();
         }
 
