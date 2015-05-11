@@ -40,14 +40,16 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 class MethodTranslator extends BodyTranslator {
 
+    private final org.jruby.ast.ArgsNode argsNode;
     private boolean isBlock;
 
-    public MethodTranslator(Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, Source source) {
+    public MethodTranslator(Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, Source source, org.jruby.ast.ArgsNode argsNode) {
         super(currentNode, context, parent, environment, source, false);
         this.isBlock = isBlock;
+        this.argsNode = argsNode;
     }
 
-    public RubyNode compileFunctionNode(SourceSection sourceSection, String methodName, ArgsNode argsNode, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
+    public RubyNode compileFunctionNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
         if (PRINT_PARSE_TREE_METHOD_NAMES.contains(methodName)) {
             System.err.println(sourceSection + " " + methodName);
             System.err.println(sharedMethodInfo.getParseTree().toString(true, 0));
@@ -282,7 +284,9 @@ class MethodTranslator extends BodyTranslator {
             blockNode = null;
         }
 
-        return new GeneralSuperReCallNode(context, sourceSection, environment.isBlock(), blockNode);
+        return new GeneralSuperReCallNode(context, sourceSection, environment.isBlock(),
+                new ReloadArgumentsTranslator(currentNode, context, source, this).visitArgsNode(argsNode),
+                blockNode);
     }
 
     @Override
