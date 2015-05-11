@@ -907,6 +907,20 @@ class Array
     replace ary
   end
 
+  class SampleRandom
+    def initialize(rng)
+      @rng = rng
+    end
+
+    def rand(size)
+      random = Rubinius::Type.coerce_to_collection_index @rng.rand(size)
+      raise RangeError, "random value must be >= 0" if random < 0
+      raise RangeError, "random value must be less than Array size" unless random < size
+
+      random
+    end
+  end
+
   def sample(count=undefined, options=undefined)
     return at Kernel.rand(size) if undefined.equal? count
 

@@ -54,6 +54,12 @@ public class Entry {
         this.value = value;
     }
 
+    public void setKeyValue(int hashed, Object key, Object value) {
+        this.hashed = hashed;
+        this.key = key;
+        this.value = value;
+    }
+
     public Entry getNextInLookup() {
         return nextInLookup;
     }
