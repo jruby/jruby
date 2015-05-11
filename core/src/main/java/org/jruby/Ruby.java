@@ -927,7 +927,7 @@ public final class Ruby implements Constantizable {
         try {
             clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.runtime.RubyContext");
         } catch (Exception e) {
-            throw new RuntimeException("Truffle backend available", e);
+            throw new RuntimeException("Truffle backend not available", e);
         }
 
         final TruffleContextInterface truffleBridge;
