@@ -30,7 +30,7 @@
     <Bug pattern="DM_EXIT" />
   </Match>
   <Match>
-    <Class name="org.jruby.truffle.nodes.TopLevelRaiseHandler" />
+    <Class name="org.jruby.truffle.nodes.exceptions.TopLevelRaiseHandler" />
     <Bug pattern="DM_EXIT" />
   </Match>
 
@@ -44,7 +44,7 @@
   <!-- Sometimes we really do want to compare floating point equality -->
 
   <Match>
-    <Class name="org.jruby.truffle.nodes.core.FixnumNodes$PowNode" />
+    <Class name="org.jruby.truffle.nodes.core.fixnum.FixnumNodes$PowNode" />
     <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
   </Match>
   <Match>
@@ -56,7 +56,7 @@
     <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
   </Match>
   <Match>
-    <Class name="org.jruby.truffle.nodes.core.FixnumNodes$EqualNode" />
+    <Class name="org.jruby.truffle.nodes.core.fixnum.FixnumNodes$EqualNode" />
     <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
   </Match>
   <Match>
@@ -124,7 +124,7 @@
     <Bug pattern="SIC_INNER_SHOULD_BE_STATIC_ANON" />
   </Match>
   <Match>
-    <Class name="org.jruby.truffle.nodes.RubyCallNode" />
+    <Class name="org.jruby.truffle.nodes.dispatch.RubyCallNode" />
     <Bug pattern="PZLA_PREFER_ZERO_LENGTH_ARRAYS" />
   </Match>
 
