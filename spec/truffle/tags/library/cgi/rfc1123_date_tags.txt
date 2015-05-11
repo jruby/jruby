@@ -1,1 +1,0 @@
-fails:CGI.rfc1123_date when passsed Time returns the passed Time formatted in RFC1123 ('Sat, 01 Dec 2007 15:56:42 GMT')
