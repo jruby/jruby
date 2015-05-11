@@ -60,12 +60,12 @@ public class RubyThread extends RubyBasicObject {
         fiberManager = new FiberManager(this, manager);
     }
 
-    public void initialize(RubyContext context, Node currentNode, final RubyProc block) {
+    public void initialize(RubyContext context, Node currentNode, final Object[] arguments, final RubyProc block) {
         String info = block.getSharedMethodInfo().getSourceSection().getShortDescription();
         initialize(context, currentNode, info, new Runnable() {
             @Override
             public void run() {
-                value = block.rootCall();
+                value = block.rootCall(arguments);
             }
         });
     }
