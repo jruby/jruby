@@ -2028,6 +2028,7 @@ public class IRBuilder {
     // Ex: { |a,b,*c| ..} is the argument passing case
     public void buildMultipleAsgn19Assignment(final MultipleAsgnNode multipleAsgnNode, Operand argsArray, Operand values) {
         final ListNode masgnPre = multipleAsgnNode.getPre();
+        final List<Tuple<Node, Variable>> assigns = new ArrayList<>();
 
         // Build assignments for specific named arguments
         int i = 0;
@@ -2038,7 +2039,7 @@ public class IRBuilder {
                 } else {
                     Variable rhsVal = createTemporaryVariable();
                     addInstr(new ReqdArgMultipleAsgnInstr(rhsVal, values, i));
-                    buildAssignment(an, rhsVal);
+                    assigns.add(new Tuple<Node, Variable>(an, rhsVal));
                 }
                 i++;
             }
@@ -2053,7 +2054,7 @@ public class IRBuilder {
             } else {
                 Variable rhsVal = createTemporaryVariable();
                 addInstr(new RestArgMultipleAsgnInstr(rhsVal, values, i, postArgsCount, 0));
-                buildAssignment(restNode, rhsVal); // rest of the argument array!
+                assigns.add(new Tuple<Node, Variable>(restNode, rhsVal)); // rest of the argument array!
             }
         }
 
@@ -2067,10 +2068,14 @@ public class IRBuilder {
                 } else {
                     Variable rhsVal = createTemporaryVariable();
                     addInstr(new ReqdArgMultipleAsgnInstr(rhsVal, values, i, postArgsCount, j));  // Fetch from the end
-                    buildAssignment(an, rhsVal);
+                    assigns.add(new Tuple<Node, Variable>(an, rhsVal));
                 }
                 j++;
             }
+        }
+
+        for (Tuple<Node, Variable> assign: assigns) {
+            buildAssignment(assign.a, assign.b);
         }
     }
 
