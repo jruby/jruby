@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.util;
+package org.jruby.truffle.runtime.array;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -117,22 +117,55 @@ public abstract class ArrayUtils {
     }
 
     public static Object[] box(int[] unboxed) {
-        return box(unboxed, 0);
+        return boxExtra(unboxed, 0);
     }
 
     public static Object[] box(long[] unboxed) {
-        return box(unboxed, 0);
+        return boxExtra(unboxed, 0);
     }
 
     public static Object[] box(double[] unboxed) {
-        return box(unboxed, 0);
+        return boxExtra(unboxed, 0);
     }
 
     public static Object[] box(Object array) {
-        return box(array, 0);
+        return boxExtra(array, 0);
     }
 
-    public static Object[] box(int[] unboxed, int extra) {
+    public static Object[] box(int[] unboxed, int newLength) {
+        final Object[] boxed = new Object[newLength];
+
+        final int boxCount = Math.min(unboxed.length, newLength);
+        for (int n = 0; n < boxCount; n++) {
+            boxed[n] = unboxed[n];
+        }
+
+        return boxed;
+    }
+
+    public static Object[] box(long[] unboxed, int newLength) {
+        final Object[] boxed = new Object[newLength];
+
+        final int boxCount = Math.min(unboxed.length, newLength);
+        for (int n = 0; n < boxCount; n++) {
+            boxed[n] = unboxed[n];
+        }
+
+        return boxed;
+    }
+
+    public static Object[] box(double[] unboxed, int newLength) {
+        final Object[] boxed = new Object[newLength];
+
+        final int boxCount = Math.min(unboxed.length, newLength);
+        for (int n = 0; n < boxCount; n++) {
+            boxed[n] = unboxed[n];
+        }
+
+        return boxed;
+    }
+
+    public static Object[] boxExtra(int[] unboxed, int extra) {
         final Object[] boxed = new Object[unboxed.length + extra];
 
         for (int n = 0; n < unboxed.length; n++) {
@@ -142,7 +175,7 @@ public abstract class ArrayUtils {
         return boxed;
     }
 
-    public static Object[] box(long[] unboxed, int extra) {
+    public static Object[] boxExtra(long[] unboxed, int extra) {
         final Object[] boxed = new Object[unboxed.length + extra];
 
         for (int n = 0; n < unboxed.length; n++) {
@@ -152,7 +185,7 @@ public abstract class ArrayUtils {
         return boxed;
     }
 
-    public static Object[] box(double[] unboxed, int extra) {
+    public static Object[] boxExtra(double[] unboxed, int extra) {
         final Object[] boxed = new Object[unboxed.length + extra];
 
         for (int n = 0; n < unboxed.length; n++) {
@@ -192,17 +225,17 @@ public abstract class ArrayUtils {
         return boxed;
     }
 
-    public static Object[] box(Object array, int extra) {
+    public static Object[] boxExtra(Object array, int extra) {
         CompilerAsserts.neverPartOfCompilation();
 
         if (array == null) {
            return new Object[extra];
         } if (array instanceof int[]) {
-            return box((int[]) array, extra);
+            return boxExtra((int[]) array, extra);
         } else if (array instanceof long[]) {
-            return box((long[]) array, extra);
+            return boxExtra((long[]) array, extra);
         } else if (array instanceof double[]) {
-            return box((double[]) array, extra);
+            return boxExtra((double[]) array, extra);
         } else if (array instanceof Object[]) {
             final Object[] objectArray = (Object[]) array;
             return Arrays.copyOf(objectArray, objectArray.length + extra);
@@ -316,6 +349,13 @@ public abstract class ArrayUtils {
 
     public static void arraycopy(Object[] src, int srcPos, Object[] dest, int destPos, int length) {
         System.arraycopy(src, srcPos, dest, destPos, length);
+    }
+
+    public static Object[] copyOf(Object[] array, int newLength) {
+        // Arrays.copyOf(Object, int) uses reflection
+        final Object[] copy = new Object[Math.max(array.length, newLength)];
+        System.arraycopy(array, 0, copy, 0, array.length);
+        return copy;
     }
 
 }

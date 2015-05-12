@@ -16,7 +16,7 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
-import org.jruby.truffle.runtime.util.ArrayUtils;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;

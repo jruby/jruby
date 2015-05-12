@@ -17,7 +17,7 @@ import com.oracle.truffle.api.source.NullSourceSection;
 import org.jruby.truffle.pack.runtime.PackEncoding;
 import org.jruby.truffle.pack.runtime.PackFrameDescriptor;
 import org.jruby.truffle.pack.runtime.PackResult;
-import org.jruby.truffle.runtime.util.ArrayUtils;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 
 /**
  * The node at the root of a pack expression.

@@ -16,7 +16,7 @@ import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.util.ArrayUtils;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 
 /**
  * Pack and unpack Ruby method arguments to and from an array of objects.

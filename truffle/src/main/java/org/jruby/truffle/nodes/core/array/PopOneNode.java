@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.array.ArrayMirror;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
@@ -39,29 +40,27 @@ public abstract class PopOneNode extends RubyNode {
 
     @Specialization(guards = {"!isEmpty(array)", "isIntegerFixnum(array)"})
     public Object popOneInteger(RubyArray array) {
-        return popOne(array, ArrayViews.view((int[]) array.getStore()));
+        return popOneGeneric(array, ArrayMirror.reflect((int[]) array.getStore()));
     }
 
     @Specialization(guards = {"!isEmpty(array)", "isLongFixnum(array)"})
     public Object popOneLong(RubyArray array) {
-        return popOne(array, ArrayViews.view((long[]) array.getStore()));
+        return popOneGeneric(array, ArrayMirror.reflect((long[]) array.getStore()));
     }
 
     @Specialization(guards = {"!isEmpty(array)", "isFloat(array)"})
     public Object popOneDouble(RubyArray array) {
-        return popOne(array, ArrayViews.view((double[]) array.getStore()));
+        return popOneGeneric(array, ArrayMirror.reflect((double[]) array.getStore()));
     }
 
     @Specialization(guards = {"!isEmpty(array)", "isObject(array)"})
     public Object popOneObject(RubyArray array) {
-        return popOne(array, ArrayViews.view((Object[]) array.getStore()));
+        return popOneGeneric(array, ArrayMirror.reflect((Object[]) array.getStore()));
     }
 
-    // General implementation
-
-    private Object popOne(RubyArray array, ArrayView view) {
+    private Object popOneGeneric(RubyArray array, ArrayMirror storeMirror) {
         final int size = array.getSize();
-        final Object value = view.get(size - 1);
+        final Object value = storeMirror.get(size - 1);
         array.setSize(size - 1);
         return value;
     }

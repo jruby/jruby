@@ -32,7 +32,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.util.ArrayUtils;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 
 import java.util.ArrayList;
 import java.util.List;

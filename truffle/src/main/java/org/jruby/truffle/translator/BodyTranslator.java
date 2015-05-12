@@ -76,7 +76,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.truffle.runtime.util.ArrayUtils;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;

@@ -55,7 +55,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.truffle.runtime.util.ArrayUtils;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 
@@ -3171,7 +3171,7 @@ public abstract class ArrayNodes {
 
             if (oldStore.length < newSize) {
                 extendBranch.enter();
-                store = ArrayUtils.box(oldStore, ArrayUtils.capacity(oldStore.length, newSize) - oldStore.length);
+                store = ArrayUtils.boxExtra(oldStore, ArrayUtils.capacity(oldStore.length, newSize) - oldStore.length);
             } else {
                 store = ArrayUtils.box(oldStore);
             }
@@ -3303,7 +3303,7 @@ public abstract class ArrayNodes {
 
             if (oldStore.length < newSize) {
                 extendBranch.enter();
-                newStore = ArrayUtils.box(oldStore, ArrayUtils.capacity(oldStore.length, newSize) - oldStore.length);
+                newStore = ArrayUtils.boxExtra(oldStore, ArrayUtils.capacity(oldStore.length, newSize) - oldStore.length);
             } else {
                 newStore = ArrayUtils.box(oldStore);
             }
