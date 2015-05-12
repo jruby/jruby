@@ -45,6 +45,7 @@ import org.jruby.truffle.pack.parser.FormatParser;
 import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.pack.runtime.exceptions.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -341,12 +342,8 @@ public abstract class KernelNodes {
             final Object[] locations = new Object[locationsCount];
 
             for (int n = 0; n < locationsCount; n++) {
-                final RubyBasicObject location = threadBacktraceLocationClass.getAllocator().allocate(getContext(), threadBacktraceLocationClass, this);
-
-                // TODO CS 30-Apr-15 can't set set this in the allocator? How do we get it there?
-                ThreadBacktraceLocationNodes.setActivation(location, backtrace.getActivations().get(n));
-
-                locations[n] = location;
+                Activation activation = backtrace.getActivations().get(n);
+                locations[n] = ThreadBacktraceLocationNodes.createRubyThreadBacktraceLocation(threadBacktraceLocationClass, activation);
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), locations, locations.length);

@@ -10,18 +10,22 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyString;
 
+import java.math.BigInteger;
 import java.util.EnumSet;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -33,29 +37,18 @@ public class ThreadBacktraceLocationNodes {
 
     static {
         Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        ACTIVATION_PROPERTY = Property.create(ACTIVATION_IDENTIFIER, allocator.locationForType(Activation.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        ACTIVATION_PROPERTY = Property.create(ACTIVATION_IDENTIFIER, allocator.locationForType(Activation.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
     }
 
-    public static Allocator createThreadBacktraceLocationAllocator(Shape emptyShape) {
+    @CompilationFinal private static DynamicObjectFactory THREAD_BACKTRACE_LOCATION_FACTORY;
+
+    public static void createThreadBacktraceLocationFactory(Shape emptyShape) {
         final Shape shape = emptyShape.addProperty(ACTIVATION_PROPERTY);
-        final DynamicObjectFactory factory = shape.createFactory();
-
-        return new Allocator() {
-            @Override
-            public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-                return new RubyBasicObject(rubyClass, factory.newInstance(new ReentrantLock()));
-            }
-        };
+        THREAD_BACKTRACE_LOCATION_FACTORY = shape.createFactory();
     }
 
-    public static void setActivation(RubyBasicObject threadBacktraceLocation, Activation activation) {
-        assert threadBacktraceLocation.getDynamicObject().getShape().hasProperty(ACTIVATION_IDENTIFIER);
-
-        try {
-            ACTIVATION_PROPERTY.set(threadBacktraceLocation.getDynamicObject(), activation, threadBacktraceLocation.getDynamicObject().getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException();
-        }
+    public static RubyBasicObject createRubyThreadBacktraceLocation(RubyClass rubyClass, Activation activation) {
+        return new RubyBasicObject(rubyClass, THREAD_BACKTRACE_LOCATION_FACTORY.newInstance(activation));
     }
 
     protected static Activation getActivation(RubyBasicObject threadBacktraceLocation) {

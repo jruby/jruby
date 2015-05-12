@@ -259,7 +259,7 @@ public class CoreLibrary {
 
         numericClass = defineClass("Numeric");
         complexClass = defineClass(numericClass, "Complex");
-        floatClass = defineClass(numericClass, "Float");
+        floatClass = defineClass(numericClass, "Float", NO_ALLOCATOR);
         integerClass = defineClass(numericClass, "Integer", NO_ALLOCATOR);
         fixnumClass = defineClass(integerClass, "Fixnum");
         BignumNodes.createBigumFactory(context.getEmptyShape());
@@ -271,27 +271,28 @@ public class CoreLibrary {
         arrayClass = defineClass("Array", new RubyArray.ArrayAllocator());
         bindingClass = defineClass("Binding", new RubyBinding.BindingAllocator());
         dirClass = defineClass("Dir");
-        encodingClass = defineClass("Encoding", new RubyEncoding.EncodingAllocator());
-        falseClass = defineClass("FalseClass");
+        encodingClass = defineClass("Encoding", NO_ALLOCATOR);
+        falseClass = defineClass("FalseClass", NO_ALLOCATOR);
         fiberClass = defineClass("Fiber", new RubyFiber.FiberAllocator());
         defineModule("FileTest");
         hashClass = defineClass("Hash", new RubyHash.HashAllocator());
         matchDataClass = defineClass("MatchData");
-        methodClass = defineClass("Method");
+        methodClass = defineClass("Method", NO_ALLOCATOR);
         defineClass("Mutex", MutexNodes.createMutexAllocator(context.getEmptyShape()));
-        nilClass = defineClass("NilClass");
+        nilClass = defineClass("NilClass", NO_ALLOCATOR);
         procClass = defineClass("Proc", new RubyProc.ProcAllocator());
         processModule = defineModule("Process");
         rangeClass = defineClass("Range", new RubyRange.RangeAllocator());
         regexpClass = defineClass("Regexp", new RubyRegexp.RegexpAllocator());
         stringClass = defineClass("String", new RubyString.StringAllocator());
-        symbolClass = defineClass("Symbol");
+        symbolClass = defineClass("Symbol", NO_ALLOCATOR);
         threadClass = defineClass("Thread", new RubyThread.ThreadAllocator());
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
-        threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location", ThreadBacktraceLocationNodes.createThreadBacktraceLocationAllocator(context.getEmptyShape()));
+        ThreadBacktraceLocationNodes.createThreadBacktraceLocationFactory(context.getEmptyShape());
+        threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location", NO_ALLOCATOR);
         timeClass = defineClass("Time", new RubyTime.TimeAllocator());
-        trueClass = defineClass("TrueClass");
-        unboundMethodClass = defineClass("UnboundMethod");
+        trueClass = defineClass("TrueClass", NO_ALLOCATOR);
+        unboundMethodClass = defineClass("UnboundMethod", NO_ALLOCATOR);
 
         // Modules
 
