@@ -504,20 +504,22 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         } else if (object instanceof org.jruby.RubySymbol) {
             return getSymbolTable().getSymbol(object.toString());
         } else if (object instanceof org.jruby.RubyArray) {
-            final org.jruby.RubyArray jrubyArray = (org.jruby.RubyArray) object;
-
-            final Object[] truffleArray = new Object[jrubyArray.size()];
-
-            for (int n = 0; n < truffleArray.length; n++) {
-                truffleArray[n] = toTruffle((IRubyObject) jrubyArray.get(n));
-            }
-
-            return new RubyArray(coreLibrary.getArrayClass(), truffleArray, truffleArray.length);
+            return toTruffle((org.jruby.RubyArray) object);
         } else if (object instanceof org.jruby.RubyException) {
             return toTruffle((org.jruby.RubyException) object, null);
         } else {
             throw object.getRuntime().newRuntimeError("cannot pass " + object.inspect() + " (" + object.getClass().getName()  + ") to Truffle");
         }
+    }
+
+    public RubyArray toTruffle(org.jruby.RubyArray array) {
+        final Object[] store = new Object[array.size()];
+
+        for (int n = 0; n < store.length; n++) {
+            store[n] = toTruffle(array.entry(n));
+        }
+
+        return RubyArray.fromObjects(coreLibrary.getArrayClass(), store);
     }
 
     public RubyString toTruffle(org.jruby.RubyString jrubyString) {

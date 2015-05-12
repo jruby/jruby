@@ -1,5 +1,2 @@
-fails:String#unpack with format 'V' ignores whitespace in the format string
 fails:String#unpack with format 'V' calls #to_str to coerce the directives string
-fails:String#unpack with format 'V' adds nil for each element requested beyond the end of the String
 fails:String#unpack with format 'v' calls #to_str to coerce the directives string
-fails:String#unpack with format 'v' adds nil for each element requested beyond the end of the String

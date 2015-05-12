@@ -1,20 +1,2 @@
-fails:String#unpack with format 'S' with modifier '<' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' with modifier '<' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' with modifier '<' and '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' with modifier '>' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' with modifier '>' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' with modifier '>' and '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '<' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '<' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '<' and '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '>' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '>' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '>' and '!' adds nil for each element requested beyond the end of the String
 fails:String#unpack with format 'S' calls #to_str to coerce the directives string
-fails:String#unpack with format 'S' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' with modifier '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' with modifier '!' adds nil for each element requested beyond the end of the String
 fails:String#unpack with format 's' calls #to_str to coerce the directives string
-fails:String#unpack with format 's' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '!' adds nil for each element requested beyond the end of the String

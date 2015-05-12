@@ -1,10 +1,1 @@
 fails:String#unpack with format 'Z' calls #to_str to coerce the directives string
-fails:String#unpack with format 'Z' returns an empty string if the input is empty
-fails:String#unpack with format 'Z' returns empty strings for repeated formats if the input is empty
-fails:String#unpack with format 'Z' returns an empty string and does not decode any bytes when the count modifier is zero
-fails:String#unpack with format 'Z' implicitly has a count of one when no count is specified
-fails:String#unpack with format 'Z' decodes the number of bytes specified by the count modifier
-fails:String#unpack with format 'Z' decodes the number of bytes specified by the count modifier including whitespace bytes
-fails:String#unpack with format 'Z' decodes past whitespace bytes when passed the '*' modifier
-fails:String#unpack with format 'Z' stops decoding at NULL bytes when passed the '*' modifier
-fails:String#unpack with format 'Z' decodes the number of bytes specified by the count modifier and truncates the decoded string at the first NULL byte

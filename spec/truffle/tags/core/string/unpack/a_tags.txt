@@ -1,23 +1,2 @@
 fails:String#unpack with format 'A' calls #to_str to coerce the directives string
-fails:String#unpack with format 'A' returns an empty string if the input is empty
-fails:String#unpack with format 'A' returns empty strings for repeated formats if the input is empty
-fails:String#unpack with format 'A' returns an empty string and does not decode any bytes when the count modifier is zero
-fails:String#unpack with format 'A' implicitly has a count of one when no count is specified
-fails:String#unpack with format 'A' decodes the number of bytes specified by the count modifier
-fails:String#unpack with format 'A' decodes the number of bytes specified by the count modifier including whitespace bytes
-fails:String#unpack with format 'A' decodes past whitespace bytes when passed the '*' modifier
-fails:String#unpack with format 'A' decodes the number of bytes specified by the count modifier including NULL bytes
-fails:String#unpack with format 'A' decodes past NULL bytes when passed the '*' modifier
-fails:String#unpack with format 'A' removes trailing space and NULL bytes from the decoded string
-fails:String#unpack with format 'A' does not remove whitespace other than space
 fails:String#unpack with format 'a' calls #to_str to coerce the directives string
-fails:String#unpack with format 'a' returns an empty string if the input is empty
-fails:String#unpack with format 'a' returns empty strings for repeated formats if the input is empty
-fails:String#unpack with format 'a' returns an empty string and does not decode any bytes when the count modifier is zero
-fails:String#unpack with format 'a' implicitly has a count of one when no count is specified
-fails:String#unpack with format 'a' decodes the number of bytes specified by the count modifier
-fails:String#unpack with format 'a' decodes the number of bytes specified by the count modifier including whitespace bytes
-fails:String#unpack with format 'a' decodes past whitespace bytes when passed the '*' modifier
-fails:String#unpack with format 'a' decodes the number of bytes specified by the count modifier including NULL bytes
-fails:String#unpack with format 'a' decodes past NULL bytes when passed the '*' modifier
-fails:String#unpack with format 'a' does not remove trailing whitespace or NULL bytes from the decoded string

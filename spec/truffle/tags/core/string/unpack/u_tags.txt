@@ -1,7 +1,2 @@
 fails:String#unpack with format 'U' calls #to_str to coerce the directives string
 fails:String#unpack with format 'u' calls #to_str to coerce the directives string
-fails:String#unpack with format 'u' decodes an empty string as an empty string
-fails:String#unpack with format 'u' decodes the complete string ignoring newlines when given a single directive
-fails:String#unpack with format 'u' appends empty string to the array for directives exceeding the input size
-fails:String#unpack with format 'u' ignores the count or '*' modifier and decodes the entire string
-fails:String#unpack with format 'u' decodes all ascii characters

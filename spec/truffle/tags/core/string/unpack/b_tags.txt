@@ -1,22 +1,2 @@
 fails:String#unpack with format 'B' calls #to_str to coerce the directives string
-fails:String#unpack with format 'B' decodes one bit from each byte for each format character starting with the most significant bit
-fails:String#unpack with format 'B' decodes only the number of bits in the string when passed a count
-fails:String#unpack with format 'B' decodes multiple differing bit counts from a single string
-fails:String#unpack with format 'B' decodes a directive with a '*' modifier after a directive with a count modifier
-fails:String#unpack with format 'B' decodes a directive with a count modifier after a directive with a '*' modifier
-fails:String#unpack with format 'B' decodes the number of bits specified by the count modifier
-fails:String#unpack with format 'B' decodes all the bits when passed the '*' modifier
-fails:String#unpack with format 'B' adds an empty string for each element requested beyond the end of the String
-fails:String#unpack with format 'B' ignores NULL bytes between directives
-fails:String#unpack with format 'B' ignores spaces between directives
 fails:String#unpack with format 'b' calls #to_str to coerce the directives string
-fails:String#unpack with format 'b' decodes one bit from each byte for each format character starting with the least significant bit
-fails:String#unpack with format 'b' decodes only the number of bits in the string when passed a count
-fails:String#unpack with format 'b' decodes multiple differing bit counts from a single string
-fails:String#unpack with format 'b' decodes a directive with a '*' modifier after a directive with a count modifier
-fails:String#unpack with format 'b' decodes a directive with a count modifier after a directive with a '*' modifier
-fails:String#unpack with format 'b' decodes the number of bits specified by the count modifier
-fails:String#unpack with format 'b' decodes all the bits when passed the '*' modifier
-fails:String#unpack with format 'b' adds an empty string for each element requested beyond the end of the String
-fails:String#unpack with format 'b' ignores NULL bytes between directives
-fails:String#unpack with format 'b' ignores spaces between directives
