@@ -38,6 +38,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -134,6 +135,17 @@ public class RubyBinding extends RubyObject {
         }
 
         return RubyKernel.eval(context, this, newArgs, Block.NULL_BLOCK);
+    }
+
+    @JRubyMethod
+    public IRubyObject local_variable_get(ThreadContext context, IRubyObject symbol) {
+        String name = symbol.asJavaString();
+        DynamicScope scope = getBinding().getDynamicScope();
+        int slot = scope.getStaticScope().isDefined(name.intern());
+
+        if (slot == -1) throw context.runtime.newNameError("local variable `" + name +  "' not defined for " + this.inspect(), "b");
+
+        return scope.getValue(slot & 0xffff, slot >> 16);
     }
 
     @JRubyMethod
