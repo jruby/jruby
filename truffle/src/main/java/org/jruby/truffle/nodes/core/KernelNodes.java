@@ -25,6 +25,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyThread.Status;
+import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
@@ -229,27 +230,11 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject abort() {
-            CompilerDirectives.transferToInterpreter();
-            System.exit(1);
-            return nil();
-        }
-    }
-
-    @CoreMethod(names = "at_exit", isModuleFunction = true, needsBlock = true)
-    public abstract static class AtExitNode extends CoreMethodArrayArgumentsNode {
-
-        public AtExitNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object atExit(RubyProc block) {
-            CompilerDirectives.transferToInterpreter();
-
-            getContext().getAtExitManager().add(block);
-            return nil();
+            getContext().innerShutdown(false);
+            throw new MainExitException(1, true);
         }
     }
 

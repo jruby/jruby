@@ -16,7 +16,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
@@ -46,7 +45,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
-import org.jruby.truffle.runtime.object.RubyObjectType;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
@@ -360,8 +358,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return id;
     }
 
-    public void innertShutdown() {
-        atExitManager.run();
+    public void innerShutdown(boolean normalExit) {
+        atExitManager.run(normalExit);
 
         if (instrumentationServerManager != null) {
             instrumentationServerManager.shutdown();
@@ -668,7 +666,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     @Override
     public void shutdown() {
         try {
-            innertShutdown();
+            innerShutdown(true);
         } catch (RaiseException e) {
             final RubyException rubyException = e.getRubyException();
 

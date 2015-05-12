@@ -454,4 +454,19 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
+    @CoreMethod(names = "at_exit", isModuleFunction = true, needsBlock = true, required = 1)
+    public abstract static class AtExitSystemNode extends CoreMethodArrayArgumentsNode {
+
+        public AtExitSystemNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public Object atExit(boolean always, RubyProc block) {
+            getContext().getAtExitManager().add(block, always);
+            return nil();
+        }
+    }
+
 }
