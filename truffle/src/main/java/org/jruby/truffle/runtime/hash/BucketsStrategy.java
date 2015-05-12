@@ -73,7 +73,7 @@ public abstract class BucketsStrategy {
 
     @CompilerDirectives.TruffleBoundary
     public static void resize(RubyHash hash) {
-        HashOperations.verifyStore(hash);
+        assert HashOperations.verifyStore(hash);
 
         final int bucketsCount = capacityGreaterThan(hash.getSize()) * 2;
         final Entry[] newEntries = new Entry[bucketsCount];
@@ -100,7 +100,7 @@ public abstract class BucketsStrategy {
 
         hash.setStore(newEntries, hash.getSize(), hash.getFirstInSequence(), hash.getLastInSequence());
 
-        HashOperations.verifyStore(hash);
+        assert HashOperations.verifyStore(hash);
     }
 
 }
