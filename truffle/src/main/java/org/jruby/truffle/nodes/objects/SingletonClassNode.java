@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.objects;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -19,14 +20,17 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
 
 /**
  * Reads the singleton (meta, eigen) class of an object.
  */
-@NodeChild(value="value", type=RubyNode.class)
+@NodeChild(value = "value", type = RubyNode.class)
 public abstract class SingletonClassNode extends RubyNode {
+
+    @Child IsFrozenNode isFrozenNode;
+    @Child FreezeNode freezeNode;
 
     public SingletonClassNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -44,33 +48,83 @@ public abstract class SingletonClassNode extends RubyNode {
         return getContext().getCoreLibrary().getFalseClass();
     }
 
+    @Specialization(guards = "isNil(value)")
+    protected RubyClass singletonClassNil(RubyBasicObject value) {
+        return getContext().getCoreLibrary().getNilClass();
+    }
+
     @Specialization
     protected RubyClass singletonClass(int value) {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
+        return noSingletonClass();
     }
 
     @Specialization
     protected RubyClass singletonClass(long value) {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
+        return noSingletonClass();
     }
 
     @Specialization
     protected RubyClass singletonClass(double value) {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
+        return noSingletonClass();
     }
 
     @Specialization(guards = "isRubyBignum(value)")
     protected RubyClass singletonClassBignum(RubyBasicObject value) {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
+        return noSingletonClass();
     }
 
-    @Specialization(guards = "!isRubyBignum(object)")
+    @Specialization(guards = "isRubySymbol(value)")
+    protected RubyClass singletonClassSymbol(RubyBasicObject value) {
+        return noSingletonClass();
+    }
+
+    @Specialization
+    protected RubyClass singletonClass(RubyClass rubyClass) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        return rubyClass.getSingletonClass();
+    }
+
+    @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)", "!isRubyClass(object)" })
     protected RubyClass singletonClass(RubyBasicObject object) {
-        return object.getSingletonClass(this);
+        CompilerAsserts.neverPartOfCompilation();
+
+        if (object.getMetaClass().isSingleton()) {
+            return object.getMetaClass();
+        }
+
+        CompilerDirectives.transferToInterpreter();
+        final RubyClass logicalClass = object.getLogicalClass();
+
+        RubyModule attached = null;
+        if (object instanceof RubyModule) {
+            attached = (RubyModule) object;
+        }
+
+        String name = String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), object.verySlowGetObjectID());
+        RubyClass singletonClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass, attached, name);
+        propagateFrozen(object, singletonClass);
+
+        object.setMetaClass(singletonClass);
+
+        return singletonClass;
+    }
+
+    private void propagateFrozen(Object object, RubyClass singletonClass) {
+        if (isFrozenNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+            freezeNode = insert(FreezeNodeGen.create(getContext(), getSourceSection(), null));
+        }
+
+        if (isFrozenNode.executeIsFrozen(object)) {
+            freezeNode.executeFreeze(singletonClass);
+        }
+    }
+
+    private RubyClass noSingletonClass() {
+        CompilerDirectives.transferToInterpreter();
+        throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
     }
 
 }

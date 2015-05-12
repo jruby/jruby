@@ -40,9 +40,9 @@ public class RubyBasicObject implements TruffleObject {
     private final DynamicObject dynamicObject;
 
     /** The class of the object, not a singleton class. */
-    @CompilationFinal protected RubyClass logicalClass;
+    @CompilationFinal private RubyClass logicalClass;
     /** Either the singleton class if it exists or the logicalClass. */
-    @CompilationFinal protected RubyClass metaClass;
+    @CompilationFinal private RubyClass metaClass;
 
     public RubyBasicObject(RubyClass rubyClass) {
         this(rubyClass.getContext(), rubyClass);
@@ -74,22 +74,6 @@ public class RubyBasicObject implements TruffleObject {
         metaClass = newLogicalClass;
     }
 
-    public boolean hasNoSingleton() {
-        if (this instanceof RubyBignum) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public boolean hasClassAsSingleton() {
-        if (this == getContext().getCoreLibrary().getNilObject()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     @Deprecated
     public void freeze() {
         DebugOperations.verySlowFreeze(getContext(), this);
@@ -107,32 +91,8 @@ public class RubyBasicObject implements TruffleObject {
         return metaClass;
     }
 
-    public RubyClass getSingletonClass(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        if (hasNoSingleton()) {
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(currentNode));
-        }
-
-        if (hasClassAsSingleton() || metaClass.isSingleton()) {
-            return metaClass;
-        }
-
-        final RubyClass logicalClass = metaClass;
-        RubyModule attached = null;
-
-        if (this instanceof RubyModule) {
-            attached = (RubyModule) this;
-        }
-
-        metaClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass, attached,
-                String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), verySlowGetObjectID()));
-
-        if (DebugOperations.verySlowIsFrozen(getContext(), this)) {
-            DebugOperations.verySlowFreeze(getContext(), metaClass);
-        }
-
-        return metaClass;
+    public void setMetaClass(RubyClass metaClass) {
+        this.metaClass = metaClass;
     }
 
     @CompilerDirectives.TruffleBoundary
@@ -170,7 +130,7 @@ public class RubyBasicObject implements TruffleObject {
 
     public final void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         if (visitor.visit(this)) {
-            metaClass.visitObjectGraph(visitor);
+            getMetaClass().visitObjectGraph(visitor);
 
             for (Object instanceVariable : getObjectType().getInstanceVariables(this).values()) {
                 if (instanceVariable instanceof RubyBasicObject) {

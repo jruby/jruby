@@ -123,7 +123,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         if (this.name == null) {
             // Tricky, we need to compare with the Object class, but we only have a Class at hand.
-            RubyClass classClass = logicalClass.getLogicalClass();
+            RubyClass classClass = getLogicalClass().getLogicalClass();
             RubyClass objectClass = classClass.getSuperClass().getSuperClass();
 
             if (lexicalParent == objectClass) {
@@ -351,10 +351,10 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public String getName() {
         if (name != null) {
             return name;
-        } else if (logicalClass == this) { // For the case of class Class during initialization
+        } else if (getLogicalClass() == this) { // For the case of class Class during initialization
             return "#<cyclic>";
         } else {
-            return "#<" + logicalClass.getName() + ":0x" + Long.toHexString(verySlowGetObjectID()) + ">";
+            return "#<" + getLogicalClass().getName() + ":0x" + Long.toHexString(verySlowGetObjectID()) + ">";
         }
     }
 
