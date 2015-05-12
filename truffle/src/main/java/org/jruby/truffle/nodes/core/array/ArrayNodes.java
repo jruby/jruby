@@ -210,7 +210,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(array.getLogicalClass(), array.getAllocationSite(), newStore, newStoreLength);
+            return new RubyArray(array.getLogicalClass(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isLongFixnum(array)")
@@ -228,7 +228,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(array.getLogicalClass(), array.getAllocationSite(), newStore, newStoreLength);
+            return new RubyArray(array.getLogicalClass(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isFloat(array)")
@@ -246,7 +246,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(array.getLogicalClass(), array.getAllocationSite(), newStore, newStoreLength);
+            return new RubyArray(array.getLogicalClass(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isObject(array)")
@@ -264,7 +264,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(array.getLogicalClass(), array.getAllocationSite(), newStore, newStoreLength);
+            return new RubyArray(array.getLogicalClass(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isRubyString(string)")

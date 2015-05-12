@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.nodes.core.array.ArrayAllocationSite;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
@@ -33,7 +32,6 @@ public final class RubyArray extends RubyBasicObject {
     private static final boolean RANDOMIZE_STORAGE_ARRAY = Options.TRUFFLE_RANDOMIZE_STORAGE_ARRAY.load();
     private static final Random random = new Random(Options.TRUFFLE_RANDOMIZE_SEED.load());
 
-    private final ArrayAllocationSite allocationSite;
     private Object store;
     private int size;
 
@@ -42,12 +40,7 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     public RubyArray(RubyClass arrayClass, Object store, int size) {
-        this(arrayClass, null, store, size);
-    }
-
-    public RubyArray(RubyClass arrayClass, ArrayAllocationSite allocationSite, Object store, int size) {
         super(arrayClass);
-        this.allocationSite = allocationSite;
         setStore(store, size);
     }
 
@@ -300,10 +293,6 @@ public final class RubyArray extends RubyBasicObject {
         }
 
         return true;
-    }
-
-    public ArrayAllocationSite getAllocationSite() {
-        return allocationSite;
     }
 
     @Override
