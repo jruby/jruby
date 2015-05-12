@@ -92,6 +92,10 @@ public final class WhileNode extends RubyNode {
             }
         }
 
+        @Override
+        public String toString() {
+            return condition.getEncapsulatingSourceSection().getShortDescription();
+        }
     }
     
     private static class DoWhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {

@@ -35,7 +35,7 @@ public class AddMethodNode extends RubyNode {
         super(context, section);
         this.receiver = receiver;
         this.methodNode = method;
-        singletonClassNode = SingletonClassNodeGen.create(context, section, null);
+        this.singletonClassNode = SingletonClassNodeGen.create(context, section, null);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class AddMethodNode extends RubyNode {
 
         if (method.getVisibility() == Visibility.MODULE_FUNCTION) {
             module.addMethod(this, method.withVisibility(Visibility.PRIVATE));
-            module.getSingletonClass(this).addMethod(this, method.withVisibility(Visibility.PUBLIC));
+            singletonClassNode.executeSingletonClass(frame, module).addMethod(this, method.withVisibility(Visibility.PUBLIC));
         } else {
             module.addMethod(this, method);
         }

@@ -907,6 +907,20 @@ class Array
     replace ary
   end
 
+  class SampleRandom
+    def initialize(rng)
+      @rng = rng
+    end
+
+    def rand(size)
+      random = Rubinius::Type.coerce_to_collection_index @rng.rand(size)
+      raise RangeError, "random value must be >= 0" if random < 0
+      raise RangeError, "random value must be less than Array size" unless random < size
+
+      random
+    end
+  end
+
   def sample(count=undefined, options=undefined)
     return at Kernel.rand(size) if undefined.equal? count
 
@@ -928,29 +942,80 @@ class Array
     end
 
     rng = options[:random] if options
-    rng = Kernel unless rng and rng.respond_to? :rand
-
-    unless count
-      random = Rubinius::Type.coerce_to_collection_index rng.rand(size)
-      raise RangeError, "random value must be >= 0" if random < 0
-      raise RangeError, "random value must be less than Array size" unless random < size
-
-      return at random
+    if rng and rng.respond_to? :rand
+      rng = SampleRandom.new rng
+    else
+      rng = Kernel
     end
+
+    return at rng.rand(size) unless count
 
     count = size if count > size
-    result = Array.new self
-    tuple = Rubinius::Mirror::Array.reflect(result).tuple
 
-    count.times do |i|
-      random = Rubinius::Type.coerce_to_collection_index rng.rand(size)
-      raise RangeError, "random value must be >= 0" if random < 0
-      raise RangeError, "random value must be less than Array size" unless random < size
+    case count
+    when 0
+      return []
+    when 1
+      return [at(rng.rand(size))]
+    when 2
+      i = rng.rand(size)
+      j = rng.rand(size)
+      if i == j
+        j = i == 0 ? i + 1 : i - 1
+      end
+      return [at(i), at(j)]
+    else
+      if size / count > 3
+        abandon = false
+        spin = 0
 
-      tuple.swap i, random
+        result = Array.new count
+        i = 1
+
+        result[0] = rng.rand(size)
+        while i < count
+          k = rng.rand(size)
+          j = 0
+
+          while j < i
+            while k == result[j]
+              spin += 1
+              if spin > 100
+                abandon = true
+                break
+              end
+              k = rng.rand(size)
+            end
+            break if abandon
+
+            j += 1
+          end
+
+          break if abandon
+
+          result[i] = k
+
+          i += 1
+        end
+
+        unless abandon
+          i = 0
+          while i < count
+            result[i] = at result[i]
+            i += 1
+          end
+
+          return result
+        end
+      end
+
+      result = Array.new self
+      tuple = Rubinius::Mirror::Array.reflect(result).tuple
+
+      count.times { |i| tuple.swap i, rng.rand(size) }
+
+      return count == size ? result : result[0, count]
     end
-
-    return count == size ? result : result[0, count]
   end
 
   def select!(&block)

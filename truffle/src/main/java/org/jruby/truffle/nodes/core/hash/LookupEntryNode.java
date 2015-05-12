@@ -21,9 +21,9 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
-import org.jruby.truffle.runtime.hash.HashSearchResult;
+import org.jruby.truffle.runtime.hash.HashLookupResult;
 
-public class FindEntryNode extends RubyNode {
+public class LookupEntryNode extends RubyNode {
 
     @Child HashNode hashNode;
     @Child CallDispatchHeadNode eqlNode;
@@ -31,14 +31,14 @@ public class FindEntryNode extends RubyNode {
     
     private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
 
-    public FindEntryNode(RubyContext context, SourceSection sourceSection) {
+    public LookupEntryNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         hashNode = new HashNode(context, sourceSection);
         eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
     }
 
-    public HashSearchResult search(VirtualFrame frame, RubyHash hash, Object key) {
+    public HashLookupResult lookup(VirtualFrame frame, RubyHash hash, Object key) {
         final int hashed = hashNode.hash(frame, key);
 
         final Entry[] entries = (Entry[]) hash.getStore();
@@ -50,11 +50,11 @@ public class FindEntryNode extends RubyNode {
         while (entry != null) {
             if (byIdentityProfile.profile(hash.isCompareByIdentity())) {
                 if (equalNode.executeReferenceEqual(frame, key, entry.getKey())) {
-                    return new HashSearchResult(hashed, index, previousEntry, entry);
+                    return new HashLookupResult(hashed, index, previousEntry, entry);
                 }
             } else {
                 if (eqlNode.callBoolean(frame, key, "eql?", null, entry.getKey())) {
-                    return new HashSearchResult(hashed, index, previousEntry, entry);
+                    return new HashLookupResult(hashed, index, previousEntry, entry);
                 }
             }
 
@@ -62,7 +62,7 @@ public class FindEntryNode extends RubyNode {
             entry = entry.getNextInLookup();
         }
 
-        return new HashSearchResult(hashed, index, previousEntry, null);
+        return new HashLookupResult(hashed, index, previousEntry, null);
     }
 
     @Override

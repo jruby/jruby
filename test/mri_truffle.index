@@ -84,7 +84,7 @@ ruby/test_signal.rb
 # ruby/test_sleep.rb #  cannot load such file -- etc
 ruby/test_sprintf.rb
 
-# ruby/test_sprintf_comb.rb # syntax error, unexpected tLPAREN2
+ruby/test_sprintf_comb.rb
 ruby/test_string.rb
 ruby/test_stringchar.rb
 ruby/test_struct.rb
@@ -96,7 +96,7 @@ ruby/test_thread.rb
 ruby/test_time.rb
 ruby/test_time_tz.rb
 ruby/test_trace.rb
-# ruby/test_transcode.rb # exclude methods with parentheses
+ruby/test_transcode.rb
 ruby/test_undef.rb
 ruby/test_unicode_escape.rb
 ruby/test_variable.rb
@@ -176,7 +176,7 @@ date/test_switch_hitter.rb
 # digest/test_digest.rb
 # digest/test_digest_extend.rb
 
-# erb/test_erb.rb  # unit.rb:1094:in `abort': wrong number of arguments (1 for 0) (ArgumentError)
+erb/test_erb.rb
 erb/test_erb_m17n.rb
 
 # etc/test_etc.rb

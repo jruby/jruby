@@ -7,13 +7,13 @@
 # GNU Lesser General Public License version 2.1
 
 module RbConfig
-CONFIG = {
-  'ruby_install_name' => 'rubytruffle',
-  'RUBY_INSTALL_NAME' => 'rubytruffle',
-  'exeext' => '',
-  'EXEEXT' => 'rubytruffle',
-  'ruby_version' => '2.2.0',
-  'libdir' => "#{Truffle::Primitive.home_directory}/lib/ruby/truffle",
-  'host_os' => Truffle::Primitive.host_os
-}
+  CONFIG = {
+    'exeext' => '',
+    'EXEEXT' => 'rubytruffle',
+    'host_os' => Truffle::Primitive.host_os,
+    'libdir' => "#{Truffle::Primitive.home_directory}/lib/ruby/truffle",
+    'ruby_install_name' => 'rubytruffle',
+    'RUBY_INSTALL_NAME' => 'rubytruffle',
+    'ruby_version' => '2.2.0',
+  }
 end

@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.object;
 import com.oracle.truffle.api.ExactMath;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
 import java.math.BigInteger;
@@ -65,16 +66,16 @@ public abstract class ObjectIDOperations {
         return fixnum * 2 + 1;
     }
 
-    public static RubyBignum largeFixnumToID(RubyContext context, long fixnum) {
+    public static RubyBasicObject largeFixnumToID(RubyContext context, long fixnum) {
         assert !isSmallFixnum(fixnum);
         BigInteger big = unsignedBigInteger(fixnum);
-        return new RubyBignum(context.getCoreLibrary().getBignumClass(), big.or(LARGE_FIXNUM_FLAG));
+        return BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), big.or(LARGE_FIXNUM_FLAG));
     }
 
-    public static RubyBignum floatToID(RubyContext context, double value) {
+    public static RubyBasicObject floatToID(RubyContext context, double value) {
         long bits = Double.doubleToRawLongBits(value);
         BigInteger big = unsignedBigInteger(bits);
-        return new RubyBignum(context.getCoreLibrary().getBignumClass(), big.or(FLOAT_FLAG));
+        return BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), big.or(FLOAT_FLAG));
     }
 
     // ID => primitive

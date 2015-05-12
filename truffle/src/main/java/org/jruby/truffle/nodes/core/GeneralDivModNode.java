@@ -92,8 +92,8 @@ public class GeneralDivModNode extends RubyNode {
         return divMod(a, b);
     }
 
-    public RubyArray execute(double a, RubyBignum b) {
-        return divMod(a, BignumNodes.getBigIntegerValue(b).doubleValue());
+    public RubyArray execute(double a, BigInteger b) {
+        return divMod(a, b.doubleValue());
     }
 
     public RubyArray execute(double a, double b) {
@@ -193,8 +193,8 @@ public class GeneralDivModNode extends RubyNode {
                 fixnumOrBignumRemainder.fixnumOrBignum(bigIntegerResults[1])}, 2);
     }
 
-    public RubyBignum create(BigInteger value) {
-        return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
+    public RubyBasicObject create(BigInteger value) {
+        return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
     }
 
     @Override

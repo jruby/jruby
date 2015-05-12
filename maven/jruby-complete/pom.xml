@@ -23,6 +23,12 @@
       <artifactId>jruby-core</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jnr-ffi</artifactId>
+          <groupId>com.github.jnr</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -51,7 +57,7 @@
             <Bundle-Name>JRuby ${project.version}</Bundle-Name>
             <Bundle-Description>JRuby ${project.version} OSGi bundle</Bundle-Description>
             <Bundle-SymbolicName>org.jruby.jruby</Bundle-SymbolicName>
-            <Embed-Dependency>*;type=jar;scope=provided;inline=true</Embed-Dependency>
+            <Embed-Dependency>*;type=jar;scope=provided;inline=true;artifactId=!jnr-ffi</Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
           </instructions>
         </configuration>

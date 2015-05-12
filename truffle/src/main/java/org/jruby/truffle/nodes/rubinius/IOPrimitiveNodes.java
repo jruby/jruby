@@ -13,15 +13,19 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Fcntl;
+
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.util.ByteList;
 import org.jruby.util.Dir;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public abstract class IOPrimitiveNodes {
@@ -204,23 +208,28 @@ public abstract class IOPrimitiveNodes {
 
             // We have to copy here as write starts at byte[0], and the ByteList may not
 
-            byte[] bytes = string.getByteList().bytes();
+            final ByteList byteList = string.getByteList();
 
-            while (bytes.length > 0) {
+            // TODO (eregon, 11 May 2015): review consistency under concurrent modification
+            final ByteBuffer buffer = ByteBuffer.wrap(byteList.unsafeBytes(), byteList.begin(), byteList.length());
+
+            int total = 0;
+
+            while (buffer.hasRemaining()) {
                 getContext().getSafepointManager().poll(this);
 
-                int written = posix().write(fd, bytes, bytes.length);
+                int written = posix().write(fd, buffer, buffer.remaining());
 
                 if (written == -1) {
                     throw new UnsupportedOperationException();
                 }
 
-                // Have to copy here again for the same reason!
+                buffer.position(buffer.position() + written);
 
-                bytes = Arrays.copyOfRange(bytes, written, bytes.length);
+                total += written;
             }
 
-            return bytes.length;
+            return total;
         }
 
     }

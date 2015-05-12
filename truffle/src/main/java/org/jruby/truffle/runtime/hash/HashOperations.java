@@ -110,7 +110,7 @@ public class HashOperations {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public static HashSearchResult verySlowFindBucket(RubyHash hash, Object key, boolean byIdentity) {
+    public static HashLookupResult verySlowFindBucket(RubyHash hash, Object key, boolean byIdentity) {
         final Object hashValue = DebugOperations.send(hash.getContext(), key, "hash", null);
 
         final int hashed;
@@ -141,34 +141,34 @@ public class HashOperations {
             }
 
             if ((boolean) DebugOperations.send(hash.getContext(), key, method, null, entry.getKey())) {
-                return new HashSearchResult(hashed, bucketIndex, previousEntry, entry);
+                return new HashLookupResult(hashed, bucketIndex, previousEntry, entry);
             }
 
             previousEntry = entry;
             entry = entry.getNextInLookup();
         }
 
-        return new HashSearchResult(hashed, bucketIndex, previousEntry, null);
+        return new HashLookupResult(hashed, bucketIndex, previousEntry, null);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public static void verySlowSetAtBucket(RubyHash hash, HashSearchResult hashSearchResult, Object key, Object value) {
+    public static void verySlowSetAtBucket(RubyHash hash, HashLookupResult hashLookupResult, Object key, Object value) {
         assert verifyStore(hash);
 
         assert hash.getStore() instanceof Entry[];
 
-        if (hashSearchResult.getEntry() == null) {
-            BucketsStrategy.addNewEntry(hash, hashSearchResult.getHashed(), key, value);
+        if (hashLookupResult.getEntry() == null) {
+            BucketsStrategy.addNewEntry(hash, hashLookupResult.getHashed(), key, value);
 
             assert verifyStore(hash);
         } else {
-            final Entry entry = hashSearchResult.getEntry();
+            final Entry entry = hashLookupResult.getEntry();
 
             // The bucket stays in the same place in the sequence
 
             // Update the key (it overwrites even it it's eql?) and value
 
-            entry.setHashed(hashSearchResult.getHashed());
+            entry.setHashed(hashLookupResult.getHashed());
             entry.setKey(key);
             entry.setValue(value);
 
@@ -184,12 +184,12 @@ public class HashOperations {
             key = DebugOperations.send(hash.getContext(), DebugOperations.send(hash.getContext(), key, "dup", null), "freeze", null);
         }
 
-        final HashSearchResult hashSearchResult = verySlowFindBucket(hash, key, byIdentity);
-        verySlowSetAtBucket(hash, hashSearchResult, key, value);
+        final HashLookupResult hashLookupResult = verySlowFindBucket(hash, key, byIdentity);
+        verySlowSetAtBucket(hash, hashLookupResult, key, value);
 
         assert verifyStore(hash);
 
-        return hashSearchResult.getEntry() == null;
+        return hashLookupResult.getEntry() == null;
     }
 
     @CompilerDirectives.TruffleBoundary

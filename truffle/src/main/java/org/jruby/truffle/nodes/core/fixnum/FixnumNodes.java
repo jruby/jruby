@@ -27,7 +27,6 @@ import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyString;
 
 import java.math.BigInteger;
@@ -581,7 +580,7 @@ public abstract class FixnumNodes {
 
             if (mod < 0 && BignumNodes.getBigIntegerValue(b).compareTo(BigInteger.ZERO) > 0 || mod > 0 && BignumNodes.getBigIntegerValue(b).compareTo(BigInteger.ZERO) < 0) {
                 adjustProfile.enter();
-                return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), BigInteger.valueOf(mod).add(BignumNodes.getBigIntegerValue(b)));
+                return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), BigInteger.valueOf(mod).add(BignumNodes.getBigIntegerValue(b)));
             }
 
             return mod;
@@ -1341,7 +1340,7 @@ public abstract class FixnumNodes {
         @Specialization(contains = "absInBounds")
         public Object abs(long n) {
             if (n == Long.MIN_VALUE) {
-                return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), BigInteger.valueOf(n).abs());
+                return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), BigInteger.valueOf(n).abs());
             }
             return (n < 0) ? -n : n;
         }
@@ -1351,7 +1350,7 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "bit_length")
     public abstract static class BitLengthNode extends CoreMethodArrayArgumentsNode {
 
-        private static final int INTEGER_BITS = Integer.numberOfLeadingZeros(0);
+        private static final int INT_BITS = Integer.numberOfLeadingZeros(0);
         private static final int LONG_BITS = Long.numberOfLeadingZeros(0);
 
         public BitLengthNode(RubyContext context, SourceSection sourceSection) {
@@ -1360,17 +1359,17 @@ public abstract class FixnumNodes {
 
         @Specialization
         public int bitLength(int n) {
-            return bitLength((long) n);
+            if (n < 0) {
+                n = ~n;
+            }
+
+            return INT_BITS - Integer.numberOfLeadingZeros(n);
         }
 
         @Specialization
         public int bitLength(long n) {
             if (n < 0) {
                 n = ~n;
-            }
-
-            if (n == Long.MAX_VALUE) {
-                return LONG_BITS - 1;
             }
 
             return LONG_BITS - Long.numberOfLeadingZeros(n);

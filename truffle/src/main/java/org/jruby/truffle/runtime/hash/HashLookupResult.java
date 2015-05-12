@@ -23,14 +23,14 @@ package org.jruby.truffle.runtime.hash;
  *     previous entry will be the one in the entry chain before that one</li>
  * </ul>
  */
-public class HashSearchResult {
+public class HashLookupResult {
 
     private final int hashed;
     private final int index;
     private final Entry previousEntry;
     private final Entry entry;
 
-    public HashSearchResult(int hashed, int index, Entry previousEntry, Entry entry) {
+    public HashLookupResult(int hashed, int index, Entry previousEntry, Entry entry) {
         this.hashed = hashed;
         this.index = index;
         this.previousEntry = previousEntry;

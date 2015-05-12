@@ -33,7 +33,7 @@ public class ThreadBacktraceLocationNodes {
 
     static {
         Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        ACTIVATION_PROPERTY = Property.create(ACTIVATION_IDENTIFIER, allocator.locationForType(ReentrantLock.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        ACTIVATION_PROPERTY = Property.create(ACTIVATION_IDENTIFIER, allocator.locationForType(Activation.class, EnumSet.of(LocationModifier.NonNull)), 0);
     }
 
     public static Allocator createThreadBacktraceLocationAllocator(Shape emptyShape) {

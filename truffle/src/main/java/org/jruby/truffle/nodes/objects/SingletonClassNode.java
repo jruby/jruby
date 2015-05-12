@@ -14,10 +14,12 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyClass;
 
 /**
@@ -60,7 +62,13 @@ public abstract class SingletonClassNode extends RubyNode {
         throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
     }
 
-    @Specialization
+    @Specialization(guards = "isRubyBignum(value)")
+    protected RubyClass singletonClassBignum(RubyBasicObject value) {
+        CompilerDirectives.transferToInterpreter();
+        throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
+    }
+
+    @Specialization(guards = "!isRubyBignum(object)")
     protected RubyClass singletonClass(RubyBasicObject object) {
         return object.getSingletonClass(this);
     }

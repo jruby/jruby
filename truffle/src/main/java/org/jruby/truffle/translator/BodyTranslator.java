@@ -326,7 +326,7 @@ public class BodyTranslator extends Translator {
         final BigInteger value = node.getValue();
 
         if (value.bitLength() >= 64) {
-            return new ObjectLiteralNode(context, sourceSection, new RubyBignum(context.getCoreLibrary().getBignumClass(), node.getValue()));
+            return new ObjectLiteralNode(context, sourceSection, BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), node.getValue()));
         } else {
             return new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, value.longValue());
         }
@@ -1131,9 +1131,9 @@ public class BodyTranslator extends Translator {
 
         // ownScopeForAssignments is the same for the defined method as the current one.
 
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source);
+        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
 
-        final MethodDefinitionNode functionExprNode = (MethodDefinitionNode) methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, sharedMethodInfo);
+        final MethodDefinitionNode functionExprNode = (MethodDefinitionNode) methodCompiler.compileFunctionNode(sourceSection, methodName, bodyNode, sharedMethodInfo);
 
         return new AddMethodNode(context, sourceSection, classNode, functionExprNode);
     }
@@ -1707,14 +1707,14 @@ public class BodyTranslator extends Translator {
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), hasOwnScope, false,
                 sharedMethodInfo, environment.getNamedMethodName(), true, environment.getParseEnvironment().allocateBlockID());
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source);
+        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source, argsNode);
         methodCompiler.translatingForStatement = translatingForStatement;
 
         if (translatingForStatement && useClassVariablesAsIfInClass) {
             methodCompiler.useClassVariablesAsIfInClass = true;
         }
 
-        return methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), sharedMethodInfo);
+        return methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo);
     }
 
     @Override
@@ -2837,9 +2837,9 @@ public class BodyTranslator extends Translator {
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), false, false,
                 sharedMethodInfo, sharedMethodInfo.getName(), true, environment.getParseEnvironment().allocateBlockID());
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source);
+        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
 
-        final RubyNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), sharedMethodInfo);
+        final RubyNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo);
 
         return new LambdaNode(context, translate(node.getPosition()), definitionNode);
     }

@@ -61,12 +61,12 @@ public class TranslatorDriver {
         final MethodTranslator translator;
 
         try {
-            translator = new MethodTranslator(currentNode, context, null, environment, false, Source.fromFileName(bodyNode.getPosition().getFile()));
+            translator = new MethodTranslator(currentNode, context, null, environment, false, Source.fromFileName(bodyNode.getPosition().getFile()), argsNode);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        return translator.compileFunctionNode(null, "(unknown)", argsNode, bodyNode, sharedMethod);
+        return translator.compileFunctionNode(null, "(unknown)", bodyNode, sharedMethod);
     }
 
     public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode, NodeWrapper wrapper) {

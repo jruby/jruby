@@ -193,6 +193,46 @@ public abstract class ModuleOperations {
     }
 
     @TruffleBoundary
+    public static Map<String, InternalMethod> getMethodsBeforeLogicalClass(RubyModule module) {
+        final Map<String, InternalMethod> methods = new HashMap<>();
+
+        for (RubyModule ancestor : module.ancestors()) {
+            // When we find a class which is not a singleton class, we are done
+            if (ancestor instanceof RubyClass && !((RubyClass) ancestor).isSingleton()) {
+                break;
+            }
+
+            for (InternalMethod method : ancestor.getMethods().values()) {
+                if (!methods.containsKey(method.getName())) {
+                    methods.put(method.getName(), method);
+                }
+            }
+        }
+
+        return methods;
+    }
+
+    @TruffleBoundary
+    public static Map<String, InternalMethod> getMethodsUntilLogicalClass(RubyModule module) {
+        final Map<String, InternalMethod> methods = new HashMap<>();
+
+        for (RubyModule ancestor : module.ancestors()) {
+            for (InternalMethod method : ancestor.getMethods().values()) {
+                if (!methods.containsKey(method.getName())) {
+                    methods.put(method.getName(), method);
+                }
+            }
+
+            // When we find a class which is not a singleton class, we are done
+            if (ancestor instanceof RubyClass && !((RubyClass) ancestor).isSingleton()) {
+                break;
+            }
+        }
+
+        return methods;
+    }
+
+    @TruffleBoundary
     public static Map<String, InternalMethod> withoutUndefinedMethods(Map<String, InternalMethod> methods) {
         Map<String, InternalMethod> definedMethods = new HashMap<>();
         for (Entry<String, InternalMethod> method : methods.entrySet()) {

@@ -15,7 +15,10 @@ project 'JRuby Complete' do
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home' )
 
   scope :provided do
-    jar 'org.jruby:jruby-core:${project.version}'
+    jar 'org.jruby:jruby-core:${project.version}' do
+      # this needs to match the Embed-Dependency on the maven-bundle-plugin
+      exclusion 'com.github.jnr:jnr-ffi'
+    end
     jar 'org.jruby:jruby-stdlib:${project.version}'
   end
 
@@ -33,7 +36,8 @@ project 'JRuby Complete' do
             'Bundle-Name' => 'JRuby ${project.version}',
             'Bundle-Description' => 'JRuby ${project.version} OSGi bundle',
             'Bundle-SymbolicName' => 'org.jruby.jruby',
-            'Embed-Dependency' => '*;type=jar;scope=provided;inline=true',
+            # the artifactId exclusion needs to match the jruby-core from above
+            'Embed-Dependency' => '*;type=jar;scope=provided;inline=true;artifactId=!jnr-ffi',
             'Embed-Transitive' => true
           } ) do
     # TODO fix DSL

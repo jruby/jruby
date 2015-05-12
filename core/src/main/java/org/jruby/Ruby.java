@@ -927,7 +927,7 @@ public final class Ruby implements Constantizable {
         try {
             clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.runtime.RubyContext");
         } catch (Exception e) {
-            throw new UnsupportedOperationException("Truffle classes not available", e);
+            throw new RuntimeException("Truffle backend not available", e);
         }
 
         final TruffleContextInterface truffleBridge;
@@ -936,7 +936,7 @@ public final class Ruby implements Constantizable {
             Constructor<?> con = clazz.getConstructor(Ruby.class);
             truffleBridge = (TruffleContextInterface) con.newInstance(this);
         } catch (Exception e) {
-            throw new UnsupportedOperationException("Error while calling the constructor of TruffleBridgeImpl", e);
+            throw new RuntimeException("Error while calling the constructor of Truffle's RubyContext", e);
         }
 
         return truffleBridge;

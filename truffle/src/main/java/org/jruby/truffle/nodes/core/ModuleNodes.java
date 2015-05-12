@@ -18,10 +18,13 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import jnr.posix.Passwd;
+
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -46,6 +49,7 @@ import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyModule.MethodFilter;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -1011,20 +1015,21 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "extend_object", required = 1, visibility = Visibility.PRIVATE)
     public abstract static class ExtendObjectNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private SingletonClassNode singletonClassNode;
+
         public ExtendObjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
-        public RubyBasicObject extendObject(RubyModule module, RubyBasicObject object) {
-            CompilerDirectives.transferToInterpreter();
-
+        public RubyBasicObject extendObject(VirtualFrame frame, RubyModule module, RubyBasicObject object) {
             if (module instanceof RubyClass) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(module, "Module", this));
             }
 
-            object.getSingletonClass(this).include(this, module);
+            singletonClassNode.executeSingletonClass(frame, object).include(this, module);
             return module;
         }
 
@@ -1396,12 +1401,7 @@ public abstract class ModuleNodes {
 
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    module.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
-                        @Override
-                        public boolean filter(InternalMethod method) {
-                            return method.getVisibility() == Visibility.PROTECTED;
-                        }
-                    }).toArray());
+                    module.filterMethods(includeAncestors, MethodFilter.PROTECTED).toArray());
         }
     }
 
@@ -1448,12 +1448,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    module.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
-                        @Override
-                        public boolean filter(InternalMethod method) {
-                            return method.getVisibility() == Visibility.PRIVATE;
-                        }
-                    }).toArray());
+                    module.filterMethods(includeAncestors, MethodFilter.PRIVATE).toArray());
         }
     }
 
@@ -1510,12 +1505,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    module.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
-                        @Override
-                        public boolean filter(InternalMethod method) {
-                            return method.getVisibility() == Visibility.PUBLIC;
-                        }
-                    }).toArray());
+                    module.filterMethods(includeAncestors, MethodFilter.PUBLIC).toArray());
         }
     }
 
@@ -1554,8 +1544,6 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyArray instanceMethods(RubyModule module, UndefinedPlaceholder argument) {
-            CompilerDirectives.transferToInterpreter();
-
             return instanceMethods(module, true);
         }
 
@@ -1563,23 +1551,8 @@ public abstract class ModuleNodes {
         public RubyArray instanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            Map<String, InternalMethod> methods;
-
-            if (includeAncestors) {
-                methods = ModuleOperations.getAllMethods(module);
-            } else {
-                methods = module.getMethods();
-            }
-
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            for (InternalMethod method : methods.values()) {
-                if (method.getVisibility() != Visibility.PRIVATE && !method.isUndefined()) {
-                    // TODO(CS): shoudln't be using this
-                    array.slowPush(getContext().getSymbol(method.getName()));
-                }
-            }
-
-            return array;
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                    module.filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
     }
 
@@ -1833,6 +1806,7 @@ public abstract class ModuleNodes {
     public abstract static class SetVisibilityNode extends CoreMethodNode {
 
         @Child SymbolOrToStrNode symbolOrToStrNode;
+        @Child private SingletonClassNode singletonClassNode;
 
         private final Visibility visibility;
 
@@ -1840,6 +1814,7 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
             this.visibility = visibility;
             this.symbolOrToStrNode = SymbolOrToStrNodeGen.create(context, sourceSection, null);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         }
 
         public abstract RubyModule executeSetVisibility(VirtualFrame frame, RubyModule module, Object[] arguments);
@@ -1853,14 +1828,14 @@ public abstract class ModuleNodes {
             } else {
                 for (Object name : names) {
                     final String methodName = symbolOrToStrNode.executeToJavaString(frame, name);
-                    setMethodVisibility(module, methodName);
+                    setMethodVisibility(frame, module, methodName);
                 }
             }
 
             return module;
         }
 
-        private void setMethodVisibility(RubyModule module, final String methodName) {
+        private void setMethodVisibility(VirtualFrame frame, RubyModule module, final String methodName) {
             final InternalMethod method = module.deepMethodSearch(methodName);
 
             if (method == null) {
@@ -1876,7 +1851,7 @@ public abstract class ModuleNodes {
              */
             if (visibility == Visibility.MODULE_FUNCTION) {
                 module.addMethod(this, method.withVisibility(Visibility.PRIVATE));
-                module.getSingletonClass(this).addMethod(this, method.withVisibility(Visibility.PUBLIC));
+                singletonClassNode.executeSingletonClass(frame, module).addMethod(this, method.withVisibility(Visibility.PUBLIC));
             } else {
                 module.addMethod(this, method.withVisibility(visibility));
             }

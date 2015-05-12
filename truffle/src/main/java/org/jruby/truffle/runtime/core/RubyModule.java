@@ -15,6 +15,8 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
+
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -521,6 +523,35 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     public static interface MethodFilter {
 
+        public static final MethodFilter PUBLIC = new RubyModule.MethodFilter() {
+            @Override
+            public boolean filter(InternalMethod method) {
+                return method.getVisibility() == Visibility.PUBLIC;
+            }
+        };
+
+        public static final MethodFilter PUBLIC_PROTECTED = new RubyModule.MethodFilter() {
+            @Override
+            public boolean filter(InternalMethod method) {
+                return method.getVisibility() == Visibility.PUBLIC ||
+                        method.getVisibility() == Visibility.PROTECTED;
+            }
+        };
+
+        public static final MethodFilter PROTECTED = new RubyModule.MethodFilter() {
+            @Override
+            public boolean filter(InternalMethod method) {
+                return method.getVisibility() == Visibility.PROTECTED;
+            }
+        };
+
+        public static final MethodFilter PRIVATE = new RubyModule.MethodFilter() {
+            @Override
+            public boolean filter(InternalMethod method) {
+                return method.getVisibility() == Visibility.PRIVATE;
+            }
+        };
+
         boolean filter(InternalMethod method);
 
     }
@@ -532,6 +563,30 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         } else {
             allMethods = getMethods();
         }
+        return filterMethods(allMethods, filter);
+    }
+
+    public Collection<RubySymbol> filterMethodsOnObject(boolean includeAncestors, MethodFilter filter) {
+        final Map<String, InternalMethod> allMethods;
+        if (includeAncestors) {
+            allMethods = ModuleOperations.getAllMethods(this);
+        } else {
+            allMethods = ModuleOperations.getMethodsUntilLogicalClass(this);
+        }
+        return filterMethods(allMethods, filter);
+    }
+
+    public Collection<RubySymbol> filterSingletonMethods(boolean includeAncestors, MethodFilter filter) {
+        final Map<String, InternalMethod> allMethods;
+        if (includeAncestors) {
+            allMethods = ModuleOperations.getMethodsBeforeLogicalClass(this);
+        } else {
+            allMethods = getMethods();
+        }
+        return filterMethods(allMethods, filter);
+    }
+
+    private Collection<RubySymbol> filterMethods(Map<String, InternalMethod> allMethods, MethodFilter filter) {
         final Map<String, InternalMethod> methods = ModuleOperations.withoutUndefinedMethods(allMethods);
 
         final Set<RubySymbol> filtered = new HashSet<>();

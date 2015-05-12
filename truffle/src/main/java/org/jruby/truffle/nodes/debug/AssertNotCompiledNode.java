@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.debug;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -23,6 +24,7 @@ public abstract class AssertNotCompiledNode extends RubyNode {
         super(context, sourceSection);
     }
 
+    @SuppressWarnings("unused")
     private static volatile boolean[] sideEffect;
 
     @Specialization

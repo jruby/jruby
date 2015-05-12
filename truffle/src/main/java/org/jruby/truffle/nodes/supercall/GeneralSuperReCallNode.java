@@ -21,16 +21,20 @@ import java.util.Arrays;
 public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
 
     private final boolean inBlock;
+    @Child private RubyNode reload;
     @Child private RubyNode block;
 
-    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, boolean inBlock, RubyNode block) {
+    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, boolean inBlock, RubyNode reload, RubyNode block) {
         super(context, sourceSection);
         this.inBlock = inBlock;
+        this.reload = reload;
         this.block = block;
     }
 
     @Override
     public final Object execute(VirtualFrame frame) {
+        reload.execute(frame);
+
         final Object self = RubyArguments.getSelf(frame.getArguments());
 
         if (!guard(frame, self)) {

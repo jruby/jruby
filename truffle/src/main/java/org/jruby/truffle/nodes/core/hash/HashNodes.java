@@ -10,10 +10,7 @@
 package org.jruby.truffle.nodes.core.hash;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.ImportStatic;
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeChildren;
-import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
@@ -129,7 +126,7 @@ public abstract class HashNodes {
         @Child private CallDispatchHeadNode eqlNode;
         @Child private BasicObjectNodes.ReferenceEqualNode equalNode;
         @Child private CallDispatchHeadNode callDefaultNode;
-        @Child private FindEntryNode findEntryNode;
+        @Child private LookupEntryNode lookupEntryNode;
 
         private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
         private final BranchProfile notInHashProfile = BranchProfile.create();
@@ -143,7 +140,7 @@ public abstract class HashNodes {
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
             equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
             callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
-            findEntryNode = new FindEntryNode(context, sourceSection);
+            lookupEntryNode = new LookupEntryNode(context, sourceSection);
         }
 
         public abstract Object executeGet(VirtualFrame frame, RubyHash hash, Object key);
@@ -198,10 +195,10 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isBucketsStorage(hash)")
         public Object getBuckets(VirtualFrame frame, RubyHash hash, Object key) {
-            final HashSearchResult hashSearchResult = findEntryNode.search(frame, hash, key);
+            final HashLookupResult hashLookupResult = lookupEntryNode.lookup(frame, hash, key);
 
-            if (hashSearchResult.getEntry() != null) {
-                return hashSearchResult.getEntry().getValue();
+            if (hashLookupResult.getEntry() != null) {
+                return hashLookupResult.getEntry().getValue();
             }
 
             notInHashProfile.enter();
@@ -245,6 +242,7 @@ public abstract class HashNodes {
         @Child private HashNode hashNode;
         @Child private CallDispatchHeadNode eqlNode;
         @Child private BasicObjectNodes.ReferenceEqualNode equalNode;
+        @Child private LookupEntryNode lookupEntryNode;
 
         private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
 
@@ -329,13 +327,59 @@ public abstract class HashNodes {
             }
         }
 
-        @Specialization(guards = {"isBucketsStorage(hash)", "!isRubyString(key)"})
-        public Object setBuckets(RubyHash hash, Object key, Object value) {
-            CompilerDirectives.transferToInterpreter();
+        // Can't be @Cached yet as we call from the RubyString specialisation
+        private final ConditionProfile foundProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile bucketCollisionProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile appendingProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile resizeProfile = ConditionProfile.createBinaryProfile();
 
+        @Specialization(guards = {"isBucketsStorage(hash)", "!isRubyString(key)"})
+        public Object setBuckets(VirtualFrame frame, RubyHash hash, Object key, Object value) {
             assert HashOperations.verifyStore(hash);
 
-            HashOperations.verySlowSetInBuckets(hash, key, value, hash.isCompareByIdentity());
+            if (lookupEntryNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                lookupEntryNode = insert(new LookupEntryNode(getContext(), getEncapsulatingSourceSection()));
+            }
+
+            final HashLookupResult result = lookupEntryNode.lookup(frame, hash, key);
+
+            final Entry entry = result.getEntry();
+
+            if (foundProfile.profile(entry == null)) {
+                final Entry[] entries = (Entry[]) hash.getStore();
+
+                final Entry newEntry = new Entry(result.getHashed(), key, value);
+
+                if (bucketCollisionProfile.profile(result.getPreviousEntry() == null)) {
+                    entries[result.getIndex()] = newEntry;
+                } else {
+                    result.getPreviousEntry().setNextInLookup(newEntry);
+                }
+
+                final Entry lastInSequence = hash.getLastInSequence();
+
+                if (appendingProfile.profile(lastInSequence == null)) {
+                    hash.setFirstInSequence(newEntry);
+                } else {
+                    lastInSequence.setNextInSequence(newEntry);
+                    newEntry.setPreviousInSequence(lastInSequence);
+                }
+
+                hash.setLastInSequence(newEntry);
+
+                final int newSize = hash.getSize() + 1;
+
+                hash.setSize(newSize);
+
+                // TODO CS 11-May-15 could store the next size for resize instead of doing a float operation each time
+
+                if (resizeProfile.profile(newSize / (double) entries.length > BucketsStrategy.MAX_LOAD_BALANCE)) {
+                    BucketsStrategy.resize(hash);
+                }
+            } else {
+                entry.setKeyValue(result.getHashed(), key, value);
+            }
 
             assert HashOperations.verifyStore(hash);
 
@@ -345,9 +389,9 @@ public abstract class HashNodes {
         @Specialization(guards = "isBucketsStorage(hash)")
         public Object setBuckets(VirtualFrame frame, RubyHash hash, RubyString key, Object value) {
             if (hash.isCompareByIdentity()) {
-                return setBuckets(hash, key, value);
+                return setBuckets(frame, hash, key, value);
             } else {
-                return setBuckets(hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value);
+                return setBuckets(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value);
             }
         }
 
@@ -431,14 +475,14 @@ public abstract class HashNodes {
 
         @Child private HashNode hashNode;
         @Child private CallDispatchHeadNode eqlNode;
-        @Child private FindEntryNode findEntryNode;
+        @Child private LookupEntryNode lookupEntryNode;
         @Child private YieldDispatchHeadNode yieldNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
-            findEntryNode = new FindEntryNode(context, sourceSection);
+            lookupEntryNode = new LookupEntryNode(context, sourceSection);
             yieldNode = new YieldDispatchHeadNode(context);
         }
 
@@ -489,9 +533,9 @@ public abstract class HashNodes {
         public Object delete(VirtualFrame frame, RubyHash hash, Object key, Object block) {
             assert HashOperations.verifyStore(hash);
 
-            final HashSearchResult hashSearchResult = findEntryNode.search(frame, hash, key);
+            final HashLookupResult hashLookupResult = lookupEntryNode.lookup(frame, hash, key);
 
-            if (hashSearchResult.getEntry() == null) {
+            if (hashLookupResult.getEntry() == null) {
                 if (block == UndefinedPlaceholder.INSTANCE) {
                     return nil();
                 } else {
@@ -499,7 +543,7 @@ public abstract class HashNodes {
                 }
             }
 
-            final Entry entry = hashSearchResult.getEntry();
+            final Entry entry = hashLookupResult.getEntry();
 
             // Remove from the sequence chain
 
@@ -519,10 +563,10 @@ public abstract class HashNodes {
 
             // Remove from the lookup chain
 
-            if (hashSearchResult.getPreviousEntry() == null) {
-                ((Entry[]) hash.getStore())[hashSearchResult.getIndex()] = entry.getNextInLookup();
+            if (hashLookupResult.getPreviousEntry() == null) {
+                ((Entry[]) hash.getStore())[hashLookupResult.getIndex()] = entry.getNextInLookup();
             } else {
-                hashSearchResult.getPreviousEntry().setNextInLookup(entry.getNextInLookup());
+                hashLookupResult.getPreviousEntry().setNextInLookup(entry.getNextInLookup());
             }
 
             hash.setSize(hash.getSize() - 1);
@@ -952,7 +996,7 @@ public abstract class HashNodes {
             }
 
             for (KeyValue keyValue : HashOperations.verySlowToKeyValues(other)) {
-                final HashSearchResult searchResult = HashOperations.verySlowFindBucket(merged, keyValue.getKey(), false);
+                final HashLookupResult searchResult = HashOperations.verySlowFindBucket(merged, keyValue.getKey(), false);
                 
                 if (searchResult.getEntry() == null) {
                     HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue(), false);

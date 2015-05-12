@@ -43,20 +43,12 @@ public class ByteListLexerSource extends LexerSource {
     @Override
     public ByteList gets() {
         int length = completeSource.length();
-        if (offset == length) return null; // At end of source/eof
+        if (offset >= length) return null; // At end of source/eof
 
-        int end = offset;
-        
-        while (end < length) {
-            if (completeSource.get(end) == '\n') {
-                end++; // include newline
-                break;
-            }
-            end++;
-        }
+        int end = completeSource.indexOf('\n', offset) + 1;
+        if (end == 0) end = length;
 
         ByteList line = completeSource.makeShared(offset, end - offset);
-
         offset = end;
 
         if (scriptLines != null) scriptLines.append(RubyString.newString(scriptLines.getRuntime(), line));
