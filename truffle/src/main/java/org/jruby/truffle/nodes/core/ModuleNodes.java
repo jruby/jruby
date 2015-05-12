@@ -39,7 +39,8 @@ import org.jruby.truffle.nodes.coerce.SymbolOrToStrNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.KernelNodes.BindingNode;
-import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeFactory;
+import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
+import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
@@ -1181,7 +1182,7 @@ public abstract class ModuleNodes {
 
         public ModuleFunctionNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            setVisibilityNode = SetVisibilityNodeFactory.create(context, sourceSection, Visibility.MODULE_FUNCTION, null, null);
+            setVisibilityNode = SetVisibilityNodeGen.create(context, sourceSection, Visibility.MODULE_FUNCTION, null, null);
         }
 
         @Specialization
@@ -1251,7 +1252,7 @@ public abstract class ModuleNodes {
 
         public PublicNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            setVisibilityNode = SetVisibilityNodeFactory.create(context, sourceSection, Visibility.PUBLIC, null, null);
+            setVisibilityNode = SetVisibilityNodeGen.create(context, sourceSection, Visibility.PUBLIC, null, null);
         }
 
         public abstract RubyModule executePublic(VirtualFrame frame, RubyModule module, Object[] args);
@@ -1266,32 +1267,21 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "public_class_method", argumentsAsArray = true)
     public abstract static class PublicClassMethodNode extends CoreMethodArrayArgumentsNode {
 
+        @Child SingletonClassNode singletonClassNode;
+        @Child SetMethodVisibilityNode setMethodVisibilityNode;
+
         public PublicClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+            this.setMethodVisibilityNode = SetMethodVisibilityNodeGen.create(context, sourceSection, Visibility.PUBLIC, null, null);
         }
 
         @Specialization
-        public RubyModule publicClassMethod(RubyModule module, Object... args) {
-            CompilerDirectives.transferToInterpreter();
+        RubyModule publicClassMethod(VirtualFrame frame, RubyModule module, Object[] names) {
+            final RubyClass singletonClass = singletonClassNode.executeSingletonClass(frame, module);
 
-            final RubyClass moduleSingleton = module.getSingletonClass(this);
-
-            for (Object arg : args) {
-                final String methodName;
-
-                if (arg instanceof RubySymbol) {
-                    methodName = arg.toString();
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-
-                final InternalMethod method = ModuleOperations.lookupMethod(moduleSingleton, methodName);
-
-                if (method == null) {
-                    throw new RuntimeException("Couldn't find method " + arg.toString());
-                }
-
-                moduleSingleton.addMethod(this, method.withVisibility(Visibility.PUBLIC));
+            for (Object name : names) {
+                setMethodVisibilityNode.executeSetMethodVisibility(frame, singletonClass, name);
             }
 
             return module;
@@ -1305,7 +1295,7 @@ public abstract class ModuleNodes {
 
         public PrivateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            setVisibilityNode = SetVisibilityNodeFactory.create(context, sourceSection, Visibility.PRIVATE, null, null);
+            setVisibilityNode = SetVisibilityNodeGen.create(context, sourceSection, Visibility.PRIVATE, null, null);
         }
 
         public abstract RubyModule executePrivate(VirtualFrame frame, RubyModule module, Object[] args);
@@ -1320,37 +1310,21 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "private_class_method", argumentsAsArray = true)
     public abstract static class PrivateClassMethodNode extends CoreMethodArrayArgumentsNode {
 
+        @Child SingletonClassNode singletonClassNode;
+        @Child SetMethodVisibilityNode setMethodVisibilityNode;
+
         public PrivateClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+            this.setMethodVisibilityNode = SetMethodVisibilityNodeGen.create(context, sourceSection, Visibility.PRIVATE, null, null);
         }
 
         @Specialization
-        public RubyModule privateClassMethod(RubyModule module, Object... args) {
-            CompilerDirectives.transferToInterpreter();
+        public RubyModule privateClassMethod(VirtualFrame frame, RubyModule module, Object[] names) {
+            final RubyClass singletonClass = singletonClassNode.executeSingletonClass(frame, module);
 
-            final RubyClass moduleSingleton = module.getSingletonClass(this);
-
-            for (Object arg : args) {
-                final String methodName;
-
-                if (arg instanceof RubySymbol) {
-                    methodName = arg.toString();
-                } else if (arg instanceof RubyString) {
-                    methodName = ((RubyString) arg).toString();
-                } else {
-                    // TODO BF 26-APR-2015 the message could be improved to match MRI
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().typeError(" is not a symbol", this));
-                }
-
-                final InternalMethod method = ModuleOperations.lookupMethod(moduleSingleton, methodName);
-
-                if (method == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(methodName, module, this));
-                }
-
-                moduleSingleton.addMethod(this, method.withVisibility(Visibility.PRIVATE));
+            for (Object name : names) {
+                setMethodVisibilityNode.executeSetMethodVisibility(frame, singletonClass, name);
             }
 
             return module;
@@ -1640,7 +1614,7 @@ public abstract class ModuleNodes {
 
         public ProtectedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            setVisibilityNode = SetVisibilityNodeFactory.create(context, sourceSection, Visibility.PROTECTED, null, null);
+            setVisibilityNode = SetVisibilityNodeGen.create(context, sourceSection, Visibility.PROTECTED, null, null);
         }
 
         @Specialization
@@ -1803,18 +1777,16 @@ public abstract class ModuleNodes {
     }
 
     @NodeChildren({ @NodeChild(value = "module"), @NodeChild(value = "names") })
-    public abstract static class SetVisibilityNode extends CoreMethodNode {
-
-        @Child SymbolOrToStrNode symbolOrToStrNode;
-        @Child private SingletonClassNode singletonClassNode;
+    public abstract static class SetVisibilityNode extends RubyNode {
 
         private final Visibility visibility;
+
+        @Child SetMethodVisibilityNode setMethodVisibilityNode;
 
         public SetVisibilityNode(RubyContext context, SourceSection sourceSection, Visibility visibility) {
             super(context, sourceSection);
             this.visibility = visibility;
-            this.symbolOrToStrNode = SymbolOrToStrNodeGen.create(context, sourceSection, null);
-            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+            this.setMethodVisibilityNode = SetMethodVisibilityNodeGen.create(context, sourceSection, visibility, null, null);
         }
 
         public abstract RubyModule executeSetVisibility(VirtualFrame frame, RubyModule module, Object[] arguments);
@@ -1827,15 +1799,50 @@ public abstract class ModuleNodes {
                 setCurrentVisibility(visibility);
             } else {
                 for (Object name : names) {
-                    final String methodName = symbolOrToStrNode.executeToJavaString(frame, name);
-                    setMethodVisibility(frame, module, methodName);
+                    setMethodVisibilityNode.executeSetMethodVisibility(frame, module, name);
                 }
             }
 
             return module;
         }
 
-        private void setMethodVisibility(VirtualFrame frame, RubyModule module, final String methodName) {
+        private void setCurrentVisibility(Visibility visibility) {
+            CompilerDirectives.transferToInterpreter();
+
+            final Frame callerFrame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+
+            assert callerFrame != null;
+            assert callerFrame.getFrameDescriptor() != null;
+
+            final FrameSlot visibilitySlot = callerFrame.getFrameDescriptor().findOrAddFrameSlot(
+                    RubyModule.VISIBILITY_FRAME_SLOT_ID, "visibility for frame", FrameSlotKind.Object);
+
+            callerFrame.setObject(visibilitySlot, visibility);
+        }
+
+    }
+
+    @NodeChildren({ @NodeChild(value = "module"), @NodeChild(value = "name") })
+    public abstract static class SetMethodVisibilityNode extends RubyNode {
+
+        private final Visibility visibility;
+
+        @Child SingletonClassNode singletonClassNode;
+        @Child SymbolOrToStrNode symbolOrToStrNode;
+
+        public SetMethodVisibilityNode(RubyContext context, SourceSection sourceSection, Visibility visibility) {
+            super(context, sourceSection);
+            this.visibility = visibility;
+            this.symbolOrToStrNode = SymbolOrToStrNodeGen.create(context, sourceSection, null);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+        }
+
+        public abstract RubyModule executeSetMethodVisibility(VirtualFrame frame, RubyModule module, Object name);
+
+        @Specialization
+        RubyModule setMethodVisibility(VirtualFrame frame, RubyModule module, Object name) {
+            final String methodName = symbolOrToStrNode.executeToJavaString(frame, name);
+
             final InternalMethod method = module.deepMethodSearch(methodName);
 
             if (method == null) {
@@ -1855,20 +1862,8 @@ public abstract class ModuleNodes {
             } else {
                 module.addMethod(this, method.withVisibility(visibility));
             }
-        }
 
-        private void setCurrentVisibility(Visibility visibility) {
-            CompilerDirectives.transferToInterpreter();
-
-            final Frame callerFrame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
-
-            assert callerFrame != null;
-            assert callerFrame.getFrameDescriptor() != null;
-
-            final FrameSlot visibilitySlot = callerFrame.getFrameDescriptor().findOrAddFrameSlot(
-                    RubyModule.VISIBILITY_FRAME_SLOT_ID, "visibility for frame", FrameSlotKind.Object);
-
-            callerFrame.setObject(visibilitySlot, visibility);
+            return module;
         }
 
     }
