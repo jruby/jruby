@@ -162,17 +162,6 @@ public abstract class ArrayLiteralNode extends RubyNode {
             return makeGeneric(frame, executedObjects);
         }
 
-        private RubyArray makeGeneric(VirtualFrame frame,
-                final long[] executedValues, int n) {
-            final Object[] executedObjects = new Object[n];
-
-            for (int i = 0; i < n; i++) {
-                executedObjects[i] = executedValues[i];
-            }
-
-            return makeGeneric(frame, executedObjects);
-        }
-
     }
 
     public static class LongFixnumArrayLiteralNode extends ArrayLiteralNode {
