@@ -9,12 +9,6 @@ project 'JRuby Truffle' do
               'tesla.dump.readonly' => true,
 
               'jruby.basedir' => '${basedir}/..' )
-  
-  repository( 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/releases/',
-              :id => 'truffle' ) do
-    releases 'true'
-    snapshots 'false'
-  end
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
