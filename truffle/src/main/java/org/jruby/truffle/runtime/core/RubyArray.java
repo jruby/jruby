@@ -212,6 +212,11 @@ public final class RubyArray extends RubyBasicObject {
         this.size = size;
     }
 
+    public void setSize(int size) {
+        assert verifyStore(store, size);
+        this.size = size;
+    }
+
     @CompilerDirectives.TruffleBoundary
     private static Object randomizeStorageStrategy(RubyContext context, Object store, int size) {
         // Use any type for empty arrays

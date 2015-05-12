@@ -398,7 +398,7 @@ public abstract class ArrayNodes {
 
         @Child private ArrayWriteDenormalizedNode writeNode;
         @Child protected ArrayReadSliceDenormalizedNode readSliceNode;
-        @Child private PopNode popNode;
+        @Child private PopOneNode popOneNode;
         @Child private ToIntNode toIntNode;
 
         private final BranchProfile tooSmallBranch = BranchProfile.create();
@@ -511,13 +511,13 @@ public abstract class ArrayNodes {
                 } else {
                     writeNode.executeWrite(frame, array, begin, value);
                 }
-                if (popNode == null) {
+                if (popOneNode == null) {
                     CompilerDirectives.transferToInterpreter();
-                    popNode = insert(ArrayNodesFactory.PopNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
+                    popOneNode = insert(PopOneNodeGen.create(getContext(), getSourceSection(), null));
                 }
                 int popLength = length - 1 < array.getSize() ? length - 1 : array.getSize() - 1;
                 for (int i = 0; i < popLength; i++) { // TODO 3-15-2015 BF update when pop can pop multiple
-                    popNode.executePop(frame, array, UndefinedPlaceholder.INSTANCE);
+                    popOneNode.executePopOne(array);
                 }
                 return value;
             }
@@ -612,12 +612,12 @@ public abstract class ArrayNodes {
                     final int popNum = newLength < array.getSize() ? array.getSize() - newLength : 0;
 
                     if (popNum > 0) {
-                        if (popNode == null) {
+                        if (popOneNode == null) {
                             CompilerDirectives.transferToInterpreter();
-                            popNode = insert(ArrayNodesFactory.PopNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
+                            popOneNode = insert(PopOneNodeGen.create(getContext(), getSourceSection(), null));
                         }
                         for (int i = 0; i < popNum; i++) { // TODO 3-28-2015 BF update to pop multiple
-                            popNode.executePop(frame, array, UndefinedPlaceholder.INSTANCE);
+                            popOneNode.executePopOne(array);
                         }
                     }
 
@@ -2760,101 +2760,20 @@ public abstract class ArrayNodes {
     public abstract static class PopNode extends ArrayCoreMethodNode {
 
         @Child private ToIntNode toIntNode;
+        @Child private PopOneNode popOneNode;
 
         public PopNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public abstract Object executePop(VirtualFrame frame, RubyArray array, Object n);
-
-        @Specialization(guards = "isNullOrEmpty(array)")
-        public Object popNil(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
-            return nil();
-        }
-
-        @Specialization(guards = "isIntegerFixnum(array)", rewriteOn = UnexpectedResultException.class)
-        public int popIntegerFixnumInBounds(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) throws UnexpectedResultException {
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final int[] store = ((int[]) array.getStore());
-                final int value = store[array.getSize() - 1];
-                array.setStore(store, array.getSize() - 1);
-                return value;
+        @Specialization
+        public Object pop(RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+            if (popOneNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                popOneNode = insert(PopOneNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
             }
-        }
 
-
-        @Specialization(contains = "popIntegerFixnumInBounds", guards = "isIntegerFixnum(array)")
-        public Object popIntegerFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
-                return nil();
-            } else {
-                final int[] store = ((int[]) array.getStore());
-                final int value = store[array.getSize() - 1];
-                array.setStore(store, array.getSize() - 1);
-                return value;
-            }
-        }
-
-        @Specialization(guards = "isLongFixnum(array)", rewriteOn = UnexpectedResultException.class)
-        public long popLongFixnumInBounds(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) throws UnexpectedResultException {
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final long[] store = ((long[]) array.getStore());
-                final long value = store[array.getSize() - 1];
-                array.setStore(store, array.getSize() - 1);
-                return value;
-            }
-        }
-
-        @Specialization(contains = "popLongFixnumInBounds", guards = "isLongFixnum(array)")
-        public Object popLongFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
-                return nil();
-            } else {
-                final long[] store = ((long[]) array.getStore());
-                final long value = store[array.getSize() - 1];
-                array.setStore(store, array.getSize() - 1);
-                return value;
-            }
-        }
-
-        @Specialization(guards = "isFloat(array)", rewriteOn = UnexpectedResultException.class)
-        public double popFloatInBounds(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) throws UnexpectedResultException {
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final double[] store = ((double[]) array.getStore());
-                final double value = store[array.getSize() - 1];
-                array.setStore(store, array.getSize() - 1);
-                return value;
-            }
-        }
-
-        @Specialization(contains = "popFloatInBounds", guards = "isFloat(array)")
-        public Object popFloat(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
-                return nil();
-            } else {
-                final double[] store = ((double[]) array.getStore());
-                final double value = store[array.getSize() - 1];
-                array.setStore(store, array.getSize() - 1);
-                return value;
-            }
-        }
-
-        @Specialization(guards = "isObject(array)")
-        public Object popObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
-                return nil();
-            } else {
-                final Object[] store = ((Object[]) array.getStore());
-                final Object value = store[array.getSize() - 1];
-                array.setStore(store, array.getSize() - 1);
-                return value;
-            }
+            return popOneNode.executePopOne(array);
         }
 
         @Specialization(guards = {"isNullOrEmpty(array)","!isUndefinedPlaceholder(object)"})
@@ -3175,17 +3094,17 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "<<", raiseIfFrozenSelf = true, required = 1)
-    public abstract static class ShiftIntoNode extends ArrayCoreMethodNode {
+    public abstract static class LeftShiftNode extends ArrayCoreMethodNode {
 
         @Child private AppendOneNode appendOneNode;
 
-        public ShiftIntoNode(RubyContext context, SourceSection sourceSection) {
+        public LeftShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             appendOneNode = AppendOneNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
-        public RubyArray pushNullEmptySingleIntegerFixnum(RubyArray array, Object value) {
+        public RubyArray leftShift(RubyArray array, Object value) {
             return appendOneNode.executeAppendOne(array, value);
         }
 
