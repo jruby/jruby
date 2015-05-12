@@ -262,7 +262,6 @@ public class CoreLibrary {
         floatClass = defineClass(numericClass, "Float", NO_ALLOCATOR);
         integerClass = defineClass(numericClass, "Integer", NO_ALLOCATOR);
         fixnumClass = defineClass(integerClass, "Fixnum");
-        BignumNodes.createBigumFactory(context.getEmptyShape());
         bignumClass = defineClass(integerClass, "Bignum");
         rationalClass = defineClass(numericClass, "Rational");
 
@@ -278,7 +277,7 @@ public class CoreLibrary {
         hashClass = defineClass("Hash", new RubyHash.HashAllocator());
         matchDataClass = defineClass("MatchData");
         methodClass = defineClass("Method", NO_ALLOCATOR);
-        defineClass("Mutex", MutexNodes.createMutexAllocator(context.getEmptyShape()));
+        defineClass("Mutex", new MutexNodes.MutexAllocator());
         nilClass = defineClass("NilClass", NO_ALLOCATOR);
         procClass = defineClass("Proc", new RubyProc.ProcAllocator());
         processModule = defineModule("Process");
@@ -288,7 +287,6 @@ public class CoreLibrary {
         symbolClass = defineClass("Symbol", NO_ALLOCATOR);
         threadClass = defineClass("Thread", new RubyThread.ThreadAllocator());
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
-        ThreadBacktraceLocationNodes.createThreadBacktraceLocationFactory(context.getEmptyShape());
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location", NO_ALLOCATOR);
         timeClass = defineClass("Time", new RubyTime.TimeAllocator());
         trueClass = defineClass("TrueClass", NO_ALLOCATOR);

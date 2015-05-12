@@ -23,12 +23,6 @@ import java.util.Map;
 
 public class RubyObjectType extends ObjectType {
 
-    private final RubyContext context;
-
-    public RubyObjectType(RubyContext context) {
-        this.context = context;
-    }
-
     @CompilerDirectives.TruffleBoundary
     public void setInstanceVariable(RubyBasicObject receiver, Object name, Object value) {
         Shape shape = receiver.getDynamicObject().getShape();
@@ -54,7 +48,7 @@ public class RubyObjectType extends ObjectType {
         if (property != null) {
             return property.get(receiver.getDynamicObject(), false);
         } else {
-            return context.getCoreLibrary().getNilObject();
+            return receiver.getContext().getCoreLibrary().getNilObject();
         }
     }
 

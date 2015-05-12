@@ -107,7 +107,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     protected RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, Node currentNode) {
-        super(context, selfClass, LAYOUT.newInstance(context.getEmptyShape()));
+        super(context, selfClass);
         this.context = context;
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");

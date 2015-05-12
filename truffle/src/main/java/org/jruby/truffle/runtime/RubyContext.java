@@ -81,7 +81,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     private final ThreadManager threadManager;
     private final AtExitManager atExitManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
-    private final Shape emptyShape;
     private final Warnings warnings;
     private final SafepointManager safepointManager;
     private final Random random = new Random();
@@ -135,8 +134,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         // Object space manager needs to come early before we create any objects
         objectSpaceManager = new ObjectSpaceManager(this);
-
-        emptyShape = RubyBasicObject.LAYOUT.createShape(new RubyObjectType(this));
 
         coreLibrary = new CoreLibrary(this);
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
@@ -230,10 +227,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
                 }
             }
         }
-    }
-
-    public Shape getEmptyShape() {
-        return emptyShape;
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {

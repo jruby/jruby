@@ -34,16 +34,12 @@ public class ThreadBacktraceLocationNodes {
 
     private static final HiddenKey ACTIVATION_IDENTIFIER = new HiddenKey("activation");
     private static final Property ACTIVATION_PROPERTY;
+    private static final DynamicObjectFactory THREAD_BACKTRACE_LOCATION_FACTORY;
 
     static {
         Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
         ACTIVATION_PROPERTY = Property.create(ACTIVATION_IDENTIFIER, allocator.locationForType(Activation.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-    }
-
-    @CompilationFinal private static DynamicObjectFactory THREAD_BACKTRACE_LOCATION_FACTORY;
-
-    public static void createThreadBacktraceLocationFactory(Shape emptyShape) {
-        final Shape shape = emptyShape.addProperty(ACTIVATION_PROPERTY);
+        final Shape shape = RubyBasicObject.EMPTY_SHAPE.addProperty(ACTIVATION_PROPERTY);
         THREAD_BACKTRACE_LOCATION_FACTORY = shape.createFactory();
     }
 

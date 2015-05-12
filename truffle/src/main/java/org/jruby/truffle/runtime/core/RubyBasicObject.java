@@ -16,6 +16,7 @@ import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
+
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -34,6 +35,7 @@ public class RubyBasicObject implements TruffleObject {
     public static final HiddenKey FROZEN_IDENTIFIER = new HiddenKey("frozen?");
 
     public static final Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);
+    public static final Shape EMPTY_SHAPE = LAYOUT.createShape(new RubyObjectType());
 
     private final DynamicObject dynamicObject;
 
@@ -43,14 +45,18 @@ public class RubyBasicObject implements TruffleObject {
     @CompilationFinal protected RubyClass metaClass;
 
     public RubyBasicObject(RubyClass rubyClass) {
-        this(rubyClass, LAYOUT.newInstance(rubyClass.getContext().getEmptyShape()));
+        this(rubyClass.getContext(), rubyClass);
     }
 
     public RubyBasicObject(RubyClass rubyClass, DynamicObject dynamicObject) {
         this(rubyClass.getContext(), rubyClass, dynamicObject);
     }
 
-    public RubyBasicObject(RubyContext context, RubyClass rubyClass, DynamicObject dynamicObject) {
+    protected RubyBasicObject(RubyContext context, RubyClass rubyClass) {
+        this(context, rubyClass, LAYOUT.newInstance(EMPTY_SHAPE));
+    }
+
+    private RubyBasicObject(RubyContext context, RubyClass rubyClass, DynamicObject dynamicObject) {
         this.dynamicObject = dynamicObject;
 
         if (rubyClass != null) {

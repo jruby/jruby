@@ -42,16 +42,12 @@ public abstract class BignumNodes {
 
     private static final HiddenKey VALUE_IDENTIFIER = new HiddenKey("value");
     public static final Property VALUE_PROPERTY;
+    private static final DynamicObjectFactory BIGNUM_FACTORY;
 
     static {
         Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
         VALUE_PROPERTY = Property.create(VALUE_IDENTIFIER, allocator.locationForType(BigInteger.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-    }
-
-    @CompilationFinal private static DynamicObjectFactory BIGNUM_FACTORY;
-
-    public static void createBigumFactory(Shape emptyShape) {
-        Shape shape = emptyShape.addProperty(VALUE_PROPERTY);
+        Shape shape = RubyBasicObject.EMPTY_SHAPE.addProperty(VALUE_PROPERTY);
         BIGNUM_FACTORY = shape.createFactory();
     }
 
