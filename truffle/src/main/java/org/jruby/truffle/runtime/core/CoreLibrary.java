@@ -11,8 +11,11 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 
 import jnr.constants.platform.Errno;
 
@@ -22,12 +25,15 @@ import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadServiceResource;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodesFactory;
 import org.jruby.truffle.nodes.core.fixnum.FixnumNodesFactory;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.nodes.objects.SingletonClassNode;
+import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodesFactory;
 import org.jruby.truffle.nodes.rubinius.NativeFunctionPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.PosixNodesFactory;
@@ -158,6 +164,27 @@ public class CoreLibrary {
             throw new RaiseException(typeError(String.format("allocator undefined for %s", rubyClass.getName()), currentNode));
         }
     };
+
+    private static class CoreLibraryNode extends RubyNode {
+
+        @Child SingletonClassNode singletonClassNode;
+
+        public CoreLibraryNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+            adoptChildren();
+        }
+
+        public SingletonClassNode getSingletonClassNode() {
+            return singletonClassNode;
+        }
+
+        @Override
+        public Object execute(VirtualFrame frame) {
+            return nil();
+        }
+
+    }
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
@@ -365,51 +392,57 @@ public class CoreLibrary {
      * Initializations which may access {@link RubyContext#getCoreLibrary()}.
      */
     public void initialize() {
-        // Bring in core method nodes
-
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ArrayNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, BasicObjectNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, BindingNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, BignumNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ClassNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ExceptionNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, FalseClassNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, FiberNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, FixnumNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, FloatNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, HashNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, IntegerNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, KernelNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, MainNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, MatchDataNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, MathNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ModuleNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, MutexNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ObjectSpaceNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ProcessNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ProcNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, RangeNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, RegexpNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, StringNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, SymbolNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ThreadNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, TrueClassNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, TrufflePrimitiveNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, EncodingNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, EncodingConverterNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, TruffleInteropNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, MethodNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, UnboundMethodNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ByteArrayNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, TimeNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, PosixNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, RubiniusTypeNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ThreadBacktraceLocationNodesFactory.getFactories());
-
+        addCoreMethods();
         initializeGlobalVariables();
         initializeConstants();
         initializeEncodingConstants();
         initializeSignalConstants();
+    }
+
+    private void addCoreMethods() {
+        CoreLibraryNode coreLibraryRootNode = new CoreLibraryNode(context, new CoreSourceSection("CoreLibrary", "initialize"));
+
+        // Bring in core method nodes
+        CoreMethodNodeManager coreMethodNodeManager = new CoreMethodNodeManager(objectClass, coreLibraryRootNode.getSingletonClassNode());
+
+        coreMethodNodeManager.addCoreMethodNodes(ArrayNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(BasicObjectNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(BindingNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(BignumNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ClassNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ExceptionNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(FalseClassNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(FiberNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(FixnumNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(FloatNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(HashNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(IntegerNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(KernelNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(MainNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(MatchDataNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(MathNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ModuleNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(MutexNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ObjectSpaceNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ProcessNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ProcNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(RangeNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(RegexpNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(StringNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(SymbolNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ThreadNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TrueClassNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TrufflePrimitiveNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(EncodingNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(EncodingConverterNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleInteropNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(MethodNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(UnboundMethodNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ByteArrayNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TimeNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(PosixNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(RubiniusTypeNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ThreadBacktraceLocationNodesFactory.getFactories());
     }
 
     private void initializeGlobalVariables() {
