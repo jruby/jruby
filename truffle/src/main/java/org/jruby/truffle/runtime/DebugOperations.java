@@ -146,10 +146,6 @@ public abstract class DebugOperations {
         return node.execute(null);
     }
 
-    public static Object verySlowFreeze(RubyContext context, Object object) {
-        return executeInNewNode(FreezeNodeGen.create(context, null, new ObjectLiteralNode(context, null, object)));
-    }
-
     public static boolean verySlowIsFrozen(RubyContext context, Object object) {
         return (boolean) executeInNewNode(IsFrozenNodeGen.create(context, null, new ObjectLiteralNode(context, null, object)));
     }
