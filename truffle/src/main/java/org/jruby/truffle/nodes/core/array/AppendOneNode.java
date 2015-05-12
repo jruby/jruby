@@ -96,7 +96,7 @@ public abstract class AppendOneNode extends RubyNode {
         final ArrayMirror newStoreMirror;
 
         if (extendProfile.profile(newSize > storeMirror.getLength())) {
-            newStoreMirror = storeMirror.copyMirror(ArrayUtils.capacity(storeMirror.getLength(), newSize));
+            newStoreMirror = storeMirror.copyArrayAndMirror(ArrayUtils.capacity(storeMirror.getLength(), newSize));
         } else {
             newStoreMirror = storeMirror;
         }
