@@ -1,4 +1,3 @@
-exclude :test_arity2, "needs investigation"
 exclude :test_attr_source_location, "needs investigation"
 exclude :test_bound_parameters, "needs investigation"
 exclude :test_curry, "needs investigation"
@@ -15,4 +14,3 @@ exclude :test_proc_args_pos_opt_post, "needs investigation"
 exclude :test_proc_args_pos_opt_post_block, "needs investigation"
 exclude :test_proc_lambda, "needs investigation"
 exclude :test_safe, "needs investigation"
-

@@ -107,11 +107,11 @@ public class Signature {
             case 0:
                 return arity.isFixed() ? Signature.NO_ARGUMENTS : Signature.OPTIONAL;
             case 1:
-                return arity.isFixed() ? Signature.ONE_REQUIRED : Signature.ONE_ARGUMENT;
+                return arity.isFixed() ? Signature.ONE_ARGUMENT : Signature.ONE_REQUIRED;
             case 2:
-                return arity.isFixed() ? Signature.TWO_REQUIRED : Signature.TWO_ARGUMENTS;
+                return arity.isFixed() ? Signature.TWO_ARGUMENTS : Signature.TWO_REQUIRED;
             case 3:
-                return arity.isFixed() ? Signature.THREE_REQUIRED : Signature.THREE_ARGUMENTS;
+                return arity.isFixed() ? Signature.THREE_ARGUMENTS : Signature.THREE_REQUIRED;
         }
 
         throw new UnsupportedOperationException("We do not know enough about the arity to convert it to a signature");
