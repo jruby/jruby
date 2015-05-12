@@ -374,7 +374,7 @@ public abstract class HashNodes {
 
                 // TODO CS 11-May-15 could store the next size for resize instead of doing a float operation each time
 
-                if (resizeProfile.profile(newSize / (double) entries.length > BucketsStrategy.MAX_LOAD_BALANCE)) {
+                if (resizeProfile.profile(newSize / (double) entries.length > BucketsStrategy.LOAD_FACTOR)) {
                     BucketsStrategy.resize(hash);
                 }
             } else {

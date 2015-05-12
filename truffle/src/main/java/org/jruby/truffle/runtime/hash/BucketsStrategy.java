@@ -16,7 +16,7 @@ import java.util.Arrays;
 
 public abstract class BucketsStrategy {
 
-    public static final double MAX_LOAD_BALANCE = 0.75;
+    public static final double LOAD_FACTOR = 0.75;
 
     public static final int SIGN_BIT_MASK = ~(1 << 31);
 
