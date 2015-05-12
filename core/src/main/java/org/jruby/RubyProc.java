@@ -197,12 +197,6 @@ public class RubyProc extends RubyObject implements DataType {
         return newProc(getRuntime(), block, type, sourcePosition);
     }
     
-    @JRubyMethod(name = "==", required = 1)
-    public IRubyObject op_equal(IRubyObject other) {
-        return getRuntime().newBoolean(other instanceof RubyProc &&
-                (this == other || this.block.equals(((RubyProc)other).block)));
-    }
-    
     @Override
     public IRubyObject to_s() {
         return to_s19();
