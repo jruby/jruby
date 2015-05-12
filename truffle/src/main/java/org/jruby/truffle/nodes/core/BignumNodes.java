@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -18,6 +19,7 @@ import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -43,33 +45,18 @@ public abstract class BignumNodes {
 
     static {
         Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        VALUE_PROPERTY = Property.create(VALUE_IDENTIFIER, allocator.locationForType(BigInteger.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        VALUE_PROPERTY = Property.create(VALUE_IDENTIFIER, allocator.locationForType(BigInteger.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
     }
 
-    public static Allocator createBigumAllocator(Shape emptyShape) {
-        Shape shape = emptyShape.addProperty(VALUE_PROPERTY);
-        final DynamicObjectFactory factory = shape.createFactory();
+    @CompilationFinal private static DynamicObjectFactory BIGNUM_FACTORY;
 
-        return new Allocator() {
-            @Override
-            public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-                return new RubyBignum(rubyClass, factory.newInstance(BigInteger.ZERO));
-            }
-        };
+    public static void createBigumFactory(Shape emptyShape) {
+        Shape shape = emptyShape.addProperty(VALUE_PROPERTY);
+        BIGNUM_FACTORY = shape.createFactory();
     }
 
     public static RubyBasicObject createRubyBignum(RubyClass rubyClass, BigInteger value) {
-        final RubyBasicObject bignum = rubyClass.getAllocator().allocate(rubyClass.getContext(), rubyClass, null);
-
-        try {
-            VALUE_PROPERTY.set(bignum.getDynamicObject(), value, bignum.getDynamicObject().getShape());
-        } catch (IncompatibleLocationException e) {
-            throw new UnsupportedOperationException();
-        } catch (FinalLocationException e) {
-            throw new UnsupportedOperationException();
-        }
-
-        return bignum;
+        return new RubyBignum(rubyClass, BIGNUM_FACTORY.newInstance(value));
     }
 
     public static BigInteger getBigIntegerValue(RubyBasicObject bignum) {

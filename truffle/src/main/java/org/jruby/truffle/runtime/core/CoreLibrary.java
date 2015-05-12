@@ -13,7 +13,9 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
+
 import jnr.constants.platform.Errno;
+
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConvFlags;
@@ -149,6 +151,14 @@ public class CoreLibrary {
 
     private State state = State.INITIALIZING;
 
+    private final Allocator NO_ALLOCATOR = new Allocator() {
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(typeError(String.format("allocator undefined for %s", rubyClass.getName()), currentNode));
+        }
+    };
+
     public CoreLibrary(RubyContext context) {
         this.context = context;
 
@@ -250,9 +260,10 @@ public class CoreLibrary {
         numericClass = defineClass("Numeric");
         complexClass = defineClass(numericClass, "Complex");
         floatClass = defineClass(numericClass, "Float");
-        integerClass = defineClass(numericClass, "Integer");
+        integerClass = defineClass(numericClass, "Integer", NO_ALLOCATOR);
         fixnumClass = defineClass(integerClass, "Fixnum");
-        bignumClass = defineClass(integerClass, "Bignum", BignumNodes.createBigumAllocator(context.getEmptyShape()));
+        BignumNodes.createBigumFactory(context.getEmptyShape());
+        bignumClass = defineClass(integerClass, "Bignum");
         rationalClass = defineClass(numericClass, "Rational");
 
         // Classes defined in Object
