@@ -57,7 +57,7 @@ public abstract class DebugOperations {
 
         final InternalMethod method = ModuleOperations.lookupMethod(context.getCoreLibrary().getMetaClass(object), methodName);
 
-        if (method == null) {
+        if (method == null || method.isUndefined()) {
             return null;
         }
 
