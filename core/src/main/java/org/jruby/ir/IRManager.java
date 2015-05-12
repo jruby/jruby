@@ -226,7 +226,9 @@ public class IRManager {
         // This ensures that local opts aren't affected by RAW hazards.
         (new LocalOptimizationPass()).runLocalOptsOnInstrArray(scope, instrs);
         // FIXME: Make this check ir.passes and not run if ir.passes is set and does not contain opttempvars.
-        return OptimizeTempVarsPass.optimizeTmpVars(scope, instrs);
+        // FIXME: LOP + Opttempvars cannot cope with y,d = d,y it propagates the intermediate temp var away
+        //return OptimizeTempVarsPass.optimizeTmpVars(scope, instrs);
+        return instrs;
     }
 
     /**
