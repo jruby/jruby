@@ -137,6 +137,15 @@ public class RubyBinding extends RubyObject {
         return RubyKernel.eval(context, this, newArgs, Block.NULL_BLOCK);
     }
 
+    @JRubyMethod(name = "local_variable_defined?")
+    public IRubyObject local_variable_defined_p(ThreadContext context, IRubyObject symbol) {
+        String name = symbol.asJavaString();
+        DynamicScope scope = getBinding().getDynamicScope();
+        int slot = scope.getStaticScope().isDefined(name.intern());
+
+        return context.runtime.newBoolean(slot != -1);
+    }
+
     @JRubyMethod
     public IRubyObject local_variable_get(ThreadContext context, IRubyObject symbol) {
         String name = symbol.asJavaString();
