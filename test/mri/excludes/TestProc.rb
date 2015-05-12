@@ -1,4 +1,3 @@
-exclude :test_arity, "needs investigation"
 exclude :test_arity2, "needs investigation"
 exclude :test_attr_source_location, "needs investigation"
 exclude :test_bound_parameters, "needs investigation"

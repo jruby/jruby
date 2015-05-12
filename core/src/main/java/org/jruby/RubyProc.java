@@ -325,7 +325,12 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = "arity")
     public RubyFixnum arity() {
-        return getRuntime().newFixnum(block.getSignature().arityValue());
+        Signature signature = block.getSignature();
+
+        if (block.type == Block.Type.LAMBDA) return getRuntime().newFixnum(signature.arityValue());
+
+        // FIXME: Consider min/max like MRI here instead of required + kwarg count.
+        return getRuntime().newFixnum(signature.hasRest() ? signature.arityValue() : signature.required() + signature.getRequiredKeywordForArityCount());
     }
     
     @JRubyMethod(name = "to_proc")
