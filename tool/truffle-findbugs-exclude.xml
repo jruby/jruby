@@ -52,7 +52,7 @@
     <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
   </Match>
   <Match>
-    <Class name="org.jruby.truffle.runtime.util.ArrayUtils" />
+    <Class name="org.jruby.truffle.runtime.array.ArrayUtils" />
     <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
   </Match>
   <Match>

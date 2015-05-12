@@ -16,6 +16,7 @@ import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
+
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -34,23 +35,28 @@ public class RubyBasicObject implements TruffleObject {
     public static final HiddenKey FROZEN_IDENTIFIER = new HiddenKey("frozen?");
 
     public static final Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);
+    public static final Shape EMPTY_SHAPE = LAYOUT.createShape(new RubyObjectType());
 
     private final DynamicObject dynamicObject;
 
     /** The class of the object, not a singleton class. */
-    @CompilationFinal protected RubyClass logicalClass;
+    @CompilationFinal private RubyClass logicalClass;
     /** Either the singleton class if it exists or the logicalClass. */
-    @CompilationFinal protected RubyClass metaClass;
+    @CompilationFinal private RubyClass metaClass;
 
     public RubyBasicObject(RubyClass rubyClass) {
-        this(rubyClass, LAYOUT.newInstance(rubyClass.getContext().getEmptyShape()));
+        this(rubyClass.getContext(), rubyClass);
     }
 
     public RubyBasicObject(RubyClass rubyClass, DynamicObject dynamicObject) {
         this(rubyClass.getContext(), rubyClass, dynamicObject);
     }
 
-    public RubyBasicObject(RubyContext context, RubyClass rubyClass, DynamicObject dynamicObject) {
+    protected RubyBasicObject(RubyContext context, RubyClass rubyClass) {
+        this(context, rubyClass, LAYOUT.newInstance(EMPTY_SHAPE));
+    }
+
+    private RubyBasicObject(RubyContext context, RubyClass rubyClass, DynamicObject dynamicObject) {
         this.dynamicObject = dynamicObject;
 
         if (rubyClass != null) {
@@ -68,65 +74,12 @@ public class RubyBasicObject implements TruffleObject {
         metaClass = newLogicalClass;
     }
 
-    public boolean hasNoSingleton() {
-        if (this instanceof RubyBignum) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public boolean hasClassAsSingleton() {
-        if (this == getContext().getCoreLibrary().getNilObject()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    @Deprecated
-    public void freeze() {
-        DebugOperations.verySlowFreeze(getContext(), this);
-    }
-
-    @Deprecated
-    public void checkFrozen(Node currentNode) {
-        if (getContext().getCoreLibrary() != null && DebugOperations.verySlowIsFrozen(getContext(), this)) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName(), currentNode));
-        }
-    }
-
     public RubyClass getMetaClass() {
         return metaClass;
     }
 
-    public RubyClass getSingletonClass(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        if (hasNoSingleton()) {
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(currentNode));
-        }
-
-        if (hasClassAsSingleton() || metaClass.isSingleton()) {
-            return metaClass;
-        }
-
-        final RubyClass logicalClass = metaClass;
-        RubyModule attached = null;
-
-        if (this instanceof RubyModule) {
-            attached = (RubyModule) this;
-        }
-
-        metaClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass, attached,
-                String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), verySlowGetObjectID()));
-
-        if (DebugOperations.verySlowIsFrozen(getContext(), this)) {
-            DebugOperations.verySlowFreeze(getContext(), metaClass);
-        }
-
-        return metaClass;
+    public void setMetaClass(RubyClass metaClass) {
+        this.metaClass = metaClass;
     }
 
     @CompilerDirectives.TruffleBoundary
@@ -164,7 +117,7 @@ public class RubyBasicObject implements TruffleObject {
 
     public final void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         if (visitor.visit(this)) {
-            metaClass.visitObjectGraph(visitor);
+            getMetaClass().visitObjectGraph(visitor);
 
             for (Object instanceVariable : getObjectType().getInstanceVariables(this).values()) {
                 if (instanceVariable instanceof RubyBasicObject) {

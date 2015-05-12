@@ -1268,7 +1268,10 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static RubyProc lambda(ThreadContext context, IRubyObject recv, Block block) {
-        return context.runtime.newProc(Block.Type.LAMBDA, block);
+        // If we encounter a amp'd proc we leave it a proc for some reason.
+        Block.Type type = block.type == Block.Type.PROC ? block.type : Block.Type.LAMBDA;
+
+        return context.runtime.newProc(type, block);
     }
     
     @JRubyMethod(name = "proc", module = true, visibility = PRIVATE)

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -30,22 +31,20 @@ public abstract class MutexNodes {
 
     private static final HiddenKey LOCK_IDENTIFIER = new HiddenKey("lock");
     private static final Property LOCK_PROPERTY;
+    private static final DynamicObjectFactory MUTEX_FACTORY;
 
     static {
         Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
         LOCK_PROPERTY = Property.create(LOCK_IDENTIFIER, allocator.locationForType(ReentrantLock.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
+        Shape shape = RubyBasicObject.EMPTY_SHAPE.addProperty(LOCK_PROPERTY);
+        MUTEX_FACTORY = shape.createFactory();
     }
 
-    public static Allocator createMutexAllocator(Shape emptyShape) {
-        Shape shape = emptyShape.addProperty(LOCK_PROPERTY);
-        final DynamicObjectFactory factory = shape.createFactory();
-
-        return new Allocator() {
-            @Override
-            public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-                return new RubyBasicObject(rubyClass, factory.newInstance(new ReentrantLock()));
-            }
-        };
+    public static class MutexAllocator implements Allocator {
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+            return new RubyBasicObject(rubyClass, MUTEX_FACTORY.newInstance(new ReentrantLock()));
+        }
     }
 
     protected static ReentrantLock getLock(RubyBasicObject mutex) {

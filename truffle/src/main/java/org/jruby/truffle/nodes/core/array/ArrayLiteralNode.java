@@ -131,8 +131,6 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     public static class IntegerFixnumArrayLiteralNode extends ArrayLiteralNode {
 
-        private final ArrayAllocationSite arrayAllocationSite = new ArrayAllocationSite();
-
         public IntegerFixnumArrayLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] values) {
             super(context, sourceSection, values);
         }
@@ -140,46 +138,21 @@ public abstract class ArrayLiteralNode extends RubyNode {
         @ExplodeLoop
         @Override
         public RubyArray executeRubyArray(VirtualFrame frame) {
-            if (arrayAllocationSite.hasConvertedIntToLong()) {
-                final long[] executedValues = new long[values.length];
+            final int[] executedValues = new int[values.length];
 
-                for (int n = 0; n < values.length; n++) {
-                    try {
-                        executedValues[n] = values[n].executeLong(frame);
-                    } catch (UnexpectedResultException e) {
-                        return makeGeneric(frame, executedValues, n);
-                    }
+            for (int n = 0; n < values.length; n++) {
+                try {
+                    executedValues[n] = values[n].executeInteger(frame);
+                } catch (UnexpectedResultException e) {
+                    return makeGeneric(frame, executedValues, n);
                 }
-
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayAllocationSite, executedValues, values.length);
-            } else {
-                final int[] executedValues = new int[values.length];
-
-                for (int n = 0; n < values.length; n++) {
-                    try {
-                        executedValues[n] = values[n].executeInteger(frame);
-                    } catch (UnexpectedResultException e) {
-                        return makeGeneric(frame, executedValues, n);
-                    }
-                }
-
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayAllocationSite, executedValues, values.length);
             }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
         }
 
         private RubyArray makeGeneric(VirtualFrame frame,
                 final int[] executedValues, int n) {
-            final Object[] executedObjects = new Object[n];
-
-            for (int i = 0; i < n; i++) {
-                executedObjects[i] = executedValues[i];
-            }
-
-            return makeGeneric(frame, executedObjects);
-        }
-
-        private RubyArray makeGeneric(VirtualFrame frame,
-                final long[] executedValues, int n) {
             final Object[] executedObjects = new Object[n];
 
             for (int i = 0; i < n; i++) {

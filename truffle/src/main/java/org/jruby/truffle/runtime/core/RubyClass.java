@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -41,7 +42,7 @@ public class RubyClass extends RubyModule {
         ensureSingletonConsistency();
     }
 
-    protected static RubyClass createSingletonClassOfObject(RubyContext context, RubyClass superclass, RubyModule attached, String name) {
+    public static RubyClass createSingletonClassOfObject(RubyContext context, RubyClass superclass, RubyModule attached, String name) {
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
         // Allocator is null here, we cannot create instances of singleton classes.
@@ -93,8 +94,7 @@ public class RubyClass extends RubyModule {
         return this;
     }
 
-    @Override
-    public RubyClass getSingletonClass(Node currentNode) {
+    public RubyClass getSingletonClass() {
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
         return createOneSingletonClass().ensureSingletonConsistency();
@@ -103,22 +103,21 @@ public class RubyClass extends RubyModule {
     private RubyClass createOneSingletonClass() {
         CompilerAsserts.neverPartOfCompilation();
 
-        if (metaClass.isSingleton()) {
-            return metaClass;
+        if (getMetaClass().isSingleton()) {
+            return getMetaClass();
         }
 
-        RubyClass singletonSuperclass;
-
+        final RubyClass singletonSuperclass;
         if (getSuperClass() == null) {
             singletonSuperclass = getLogicalClass();
         } else {
             singletonSuperclass = getSuperClass().createOneSingletonClass();
         }
 
-        metaClass = new RubyClass(getContext(),
-                getLogicalClass(), null, singletonSuperclass, String.format("#<Class:%s>", getName()), true, this, null);
+        String name = String.format("#<Class:%s>", getName());
+        setMetaClass(new RubyClass(getContext(), getLogicalClass(), null, singletonSuperclass, name, true, this, null));
 
-        return metaClass;
+        return getMetaClass();
     }
 
     public RubyBasicObject allocate(Node currentNode) {

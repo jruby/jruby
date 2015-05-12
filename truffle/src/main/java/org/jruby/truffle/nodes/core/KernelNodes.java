@@ -17,7 +17,6 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
-import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -45,6 +44,7 @@ import org.jruby.truffle.pack.parser.FormatParser;
 import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.pack.runtime.exceptions.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -54,7 +54,7 @@ import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.FeatureManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
-import org.jruby.truffle.runtime.util.ArrayUtils;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.util.ByteList;
 
 import java.io.BufferedReader;
@@ -341,12 +341,8 @@ public abstract class KernelNodes {
             final Object[] locations = new Object[locationsCount];
 
             for (int n = 0; n < locationsCount; n++) {
-                final RubyBasicObject location = threadBacktraceLocationClass.getAllocator().allocate(getContext(), threadBacktraceLocationClass, this);
-
-                // TODO CS 30-Apr-15 can't set set this in the allocator? How do we get it there?
-                ThreadBacktraceLocationNodes.setActivation(location, backtrace.getActivations().get(n));
-
-                locations[n] = location;
+                Activation activation = backtrace.getActivations().get(n);
+                locations[n] = ThreadBacktraceLocationNodes.createRubyThreadBacktraceLocation(threadBacktraceLocationClass, activation);
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), locations, locations.length);

@@ -205,9 +205,4 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
         }
     }
 
-    @Override
-    public boolean hasNoSingleton() {
-        return true;
-    }
-
 }

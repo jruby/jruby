@@ -33,18 +33,6 @@
       <scope>provided</scope>
     </dependency>
   </dependencies>
-  <repositories>
-    <repository>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>truffle</id>
-      <url>http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/releases/</url>
-    </repository>
-  </repositories>
   <build>
     <defaultGoal>package</defaultGoal>
     <resources>

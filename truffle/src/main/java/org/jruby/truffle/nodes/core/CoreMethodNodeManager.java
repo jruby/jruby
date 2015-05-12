@@ -13,6 +13,7 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.nodes.NodeUtil;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -22,6 +23,7 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNode;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
+import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
@@ -30,15 +32,23 @@ import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.truffle.runtime.util.ArrayUtils;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public abstract class CoreMethodNodeManager {
+public class CoreMethodNodeManager {
 
-    public static void addCoreMethodNodes(RubyClass rubyObjectClass, List<? extends NodeFactory<? extends RubyNode>> nodeFactories) {
+    private final RubyClass objectClass;
+    private final SingletonClassNode singletonClassNode;
+
+    public CoreMethodNodeManager(RubyClass objectClass, SingletonClassNode singletonClassNode) {
+        this.objectClass = objectClass;
+        this.singletonClassNode = singletonClassNode;
+    }
+
+    public void addCoreMethodNodes(List<? extends NodeFactory<? extends RubyNode>> nodeFactories) {
         for (NodeFactory<? extends RubyNode> nodeFactory : nodeFactories) {
             final GeneratedBy generatedBy = nodeFactory.getClass().getAnnotation(GeneratedBy.class);
             final Class<?> nodeClass = generatedBy.value();
@@ -46,25 +56,25 @@ public abstract class CoreMethodNodeManager {
             final CoreMethod methodAnnotation = nodeClass.getAnnotation(CoreMethod.class);
 
             if (methodAnnotation != null) {
-                final MethodDetails details = new MethodDetails(classAnnotation, methodAnnotation, nodeFactory);
-                addMethod(rubyObjectClass, details);
+                addCoreMethod(new MethodDetails(classAnnotation, methodAnnotation, nodeFactory));
             }
         }
     }
 
-    private static void addMethod(RubyClass rubyObjectClass, MethodDetails methodDetails) {
-        assert rubyObjectClass != null;
-        assert methodDetails != null;
+    private RubyClass getSingletonClass(Object object) {
+        return singletonClassNode.executeSingletonClass(null, object);
+    }
 
-        final RubyContext context = rubyObjectClass.getContext();
+    private void addCoreMethod(MethodDetails methodDetails) {
+        final RubyContext context = objectClass.getContext();
 
         RubyModule module;
         String fullName = methodDetails.getClassAnnotation().name();
 
         if (fullName.equals("main")) {
-            module = context.getCoreLibrary().getMainObject().getSingletonClass(null);
+            module = getSingletonClass(context.getCoreLibrary().getMainObject());
         } else {
-            module = rubyObjectClass;
+            module = objectClass;
 
             for (String moduleName : fullName.split("::")) {
                 final RubyConstant constant = ModuleOperations.lookupConstant(context, LexicalScope.NONE, module, moduleName);
@@ -106,9 +116,9 @@ public abstract class CoreMethodNodeManager {
 
         if (anno.isModuleFunction()) {
             addMethod(module, rootNode, names, Visibility.PRIVATE);
-            addMethod(module.getSingletonClass(null), rootNode, names, Visibility.PUBLIC);
+            addMethod(getSingletonClass(module), rootNode, names, Visibility.PUBLIC);
         } else if (anno.onSingleton()) {
-            addMethod(module.getSingletonClass(null), rootNode, names, visibility);
+            addMethod(getSingletonClass(module), rootNode, names, visibility);
         } else {
             addMethod(module, rootNode, names, visibility);
         }

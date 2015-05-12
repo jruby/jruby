@@ -16,7 +16,7 @@ import java.util.Arrays;
 
 public abstract class BucketsStrategy {
 
-    public static final double MAX_LOAD_BALANCE = 0.75;
+    public static final double LOAD_FACTOR = 0.75;
 
     public static final int SIGN_BIT_MASK = ~(1 << 31);
 
@@ -73,7 +73,7 @@ public abstract class BucketsStrategy {
 
     @CompilerDirectives.TruffleBoundary
     public static void resize(RubyHash hash) {
-        HashOperations.verifyStore(hash);
+        assert HashOperations.verifyStore(hash);
 
         final int bucketsCount = capacityGreaterThan(hash.getSize()) * 2;
         final Entry[] newEntries = new Entry[bucketsCount];
@@ -100,7 +100,7 @@ public abstract class BucketsStrategy {
 
         hash.setStore(newEntries, hash.getSize(), hash.getFirstInSequence(), hash.getLastInSequence());
 
-        HashOperations.verifyStore(hash);
+        assert HashOperations.verifyStore(hash);
     }
 
 }

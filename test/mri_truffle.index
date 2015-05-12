@@ -29,7 +29,7 @@ ruby/test_encoding.rb
 ruby/test_enumerator.rb
 # ruby/test_env.rb # TestEnv#test_aset = core:/core/rubinius/bootstrap/time.rb:28:in `now': internal implementation error - ClassCastException org.jruby.truffle.runtime.core.RubyNilClass cannot be cast to org.jruby.truffle.runtime.core.RubyString org.jruby.truffle.nodes.time.ReadTimeZoneNode.executeRubyString(ReadTimeZoneNode.java:36) (RubyTruffleError)
 ruby/test_eval.rb
-# ruby/test_exception.rb  # Stack overflow error
+ruby/test_exception.rb
 
 # ruby/test_fiber.rb
 ruby/test_file.rb
@@ -74,7 +74,7 @@ ruby/test_rand.rb
 # ruby/test_range.rb # cannot load such file -- bigdecimal
 ruby/test_rational.rb
 ruby/test_rational2.rb
-# ruby/test_readpartial.rb
+ruby/test_readpartial.rb
 # ruby/test_regexp.rb # NPE in BodyTranslator
 ruby/test_require.rb
 ruby/test_rubyoptions.rb

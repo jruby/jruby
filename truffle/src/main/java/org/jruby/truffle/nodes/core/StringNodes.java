@@ -2159,7 +2159,7 @@ public abstract class StringNodes {
         @Specialization
         public RubyArray unpack(RubyString string, RubyString format) {
             final org.jruby.RubyArray jrubyArray = Pack.unpack(getContext().getRuntime(), string.getByteList(), format.getByteList());
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), jrubyArray.toArray());
+            return getContext().toTruffle(jrubyArray);
         }
 
     }

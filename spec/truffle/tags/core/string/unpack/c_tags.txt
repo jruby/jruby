@@ -1,4 +1,2 @@
 fails:String#unpack with format 'C' calls #to_str to coerce the directives string
-fails:String#unpack with format 'C' adds nil for each element requested beyond the end of the String
 fails:String#unpack with format 'c' calls #to_str to coerce the directives string
-fails:String#unpack with format 'c' adds nil for each element requested beyond the end of the String

@@ -18,10 +18,13 @@ import com.oracle.truffle.interop.messages.Argument;
 import com.oracle.truffle.interop.messages.Read;
 import com.oracle.truffle.interop.messages.Receiver;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.objects.SingletonClassNode;
+import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -39,6 +42,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     private final boolean indirect;
     private final MissingBehavior missingBehavior;
 
+    @Child private SingletonClassNode singletonClassNode;
     @Child private KernelNodes.RequireNode requireNode;
 
     public UnresolvedDispatchNode(
@@ -211,13 +215,19 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 requireNode.require((RubyString) constant.getValue());
 
                 return doRubyBasicObject(frame, first, receiverObject, methodName, argumentsObjects);
-            }
+            } else {
+                // The module, the "receiver" is an instance of its singleton class.
+                if (singletonClassNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), getSourceSection(), null));
+                }
+                RubyClass moduleSingletonClass = singletonClassNode.executeSingletonClass(frame, module);
 
-            // The module, the "receiver" is an instance of its singleton class.
-            // But we want to check the module assumption, not its singleton class assumption.
-            return new CachedBoxedDispatchNode(getContext(), methodName, first,
-                    module.getSingletonClass(null), module.getUnmodifiedAssumption(), constant.getValue(),
-                    null, indirect, getDispatchAction());
+                // But we want to check the module assumption, not its singleton class assumption.
+                return new CachedBoxedDispatchNode(getContext(), methodName, first,
+                        moduleSingletonClass, module.getUnmodifiedAssumption(), constant.getValue(),
+                        null, indirect, getDispatchAction());
+            }
         } else {
             throw new UnsupportedOperationException();
         }

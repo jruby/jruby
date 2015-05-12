@@ -1,4 +1,2 @@
 fails:String#unpack with format 'X' calls #to_str to coerce the directives string
 fails:String#unpack with format 'x' calls #to_str to coerce the directives string
-fails:String#unpack with format 'x' moves the read index to the end of the string when passed the '*' modifier
-fails:String#unpack with format 'x' positions the read index one beyond the last readable byte in the String

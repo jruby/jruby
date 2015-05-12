@@ -107,7 +107,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     protected RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, Node currentNode) {
-        super(context, selfClass, LAYOUT.newInstance(context.getEmptyShape()));
+        super(context, selfClass);
         this.context = context;
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
@@ -123,7 +123,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         if (this.name == null) {
             // Tricky, we need to compare with the Object class, but we only have a Class at hand.
-            RubyClass classClass = logicalClass.getLogicalClass();
+            RubyClass classClass = getLogicalClass().getLogicalClass();
             RubyClass objectClass = classClass.getSuperClass().getSuperClass();
 
             if (lexicalParent == objectClass) {
@@ -164,6 +164,14 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     /** If this instance is a module and not a class. */
     public boolean isOnlyAModule() {
         return !(this instanceof RubyClass);
+    }
+
+    // TODO (eregon, 12 May 2015): ideally all callers would be nodes and check themselves.
+    private void checkFrozen(Node currentNode) {
+        if (getContext().getCoreLibrary() != null && DebugOperations.verySlowIsFrozen(getContext(), this)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName(), currentNode));
+        }
     }
 
     @TruffleBoundary
@@ -351,10 +359,10 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public String getName() {
         if (name != null) {
             return name;
-        } else if (logicalClass == this) {
+        } else if (getLogicalClass() == this) { // For the case of class Class during initialization
             return "#<cyclic>";
         } else {
-            return "#<" + logicalClass.getName() + ":0x" + Long.toHexString(verySlowGetObjectID()) + ">";
+            return "#<" + getLogicalClass().getName() + ":0x" + Long.toHexString(verySlowGetObjectID()) + ">";
         }
     }
 

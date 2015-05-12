@@ -1,22 +1,2 @@
 fails:String#unpack with format 'H' calls #to_str to coerce the directives string
-fails:String#unpack with format 'H' decodes one nibble from each byte for each format character starting with the most significant bit
-fails:String#unpack with format 'H' decodes only the number of nibbles in the string when passed a count
-fails:String#unpack with format 'H' decodes multiple differing nibble counts from a single string
-fails:String#unpack with format 'H' decodes a directive with a '*' modifier after a directive with a count modifier
-fails:String#unpack with format 'H' decodes a directive with a count modifier after a directive with a '*' modifier
-fails:String#unpack with format 'H' decodes the number of nibbles specified by the count modifier
-fails:String#unpack with format 'H' decodes all the nibbles when passed the '*' modifier
-fails:String#unpack with format 'H' adds an empty string for each element requested beyond the end of the String
-fails:String#unpack with format 'H' ignores NULL bytes between directives
-fails:String#unpack with format 'H' ignores spaces between directives
 fails:String#unpack with format 'h' calls #to_str to coerce the directives string
-fails:String#unpack with format 'h' decodes one nibble from each byte for each format character starting with the least significant bit
-fails:String#unpack with format 'h' decodes only the number of nibbles in the string when passed a count
-fails:String#unpack with format 'h' decodes multiple differing nibble counts from a single string
-fails:String#unpack with format 'h' decodes a directive with a '*' modifier after a directive with a count modifier
-fails:String#unpack with format 'h' decodes a directive with a count modifier after a directive with a '*' modifier
-fails:String#unpack with format 'h' decodes the number of nibbles specified by the count modifier
-fails:String#unpack with format 'h' decodes all the nibbles when passed the '*' modifier
-fails:String#unpack with format 'h' adds an empty string for each element requested beyond the end of the String
-fails:String#unpack with format 'h' ignores NULL bytes between directives
-fails:String#unpack with format 'h' ignores spaces between directives

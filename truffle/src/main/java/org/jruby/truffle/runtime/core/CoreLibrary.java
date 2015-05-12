@@ -11,21 +11,31 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
+
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadServiceResource;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodesFactory;
 import org.jruby.truffle.nodes.core.fixnum.FixnumNodesFactory;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.nodes.objects.FreezeNode;
+import org.jruby.truffle.nodes.objects.FreezeNodeGen;
+import org.jruby.truffle.nodes.objects.SingletonClassNode;
+import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodesFactory;
 import org.jruby.truffle.nodes.rubinius.NativeFunctionPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.PosixNodesFactory;
@@ -149,8 +159,42 @@ public class CoreLibrary {
 
     private State state = State.INITIALIZING;
 
+    private final Allocator NO_ALLOCATOR = new Allocator() {
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(typeError(String.format("allocator undefined for %s", rubyClass.getName()), currentNode));
+        }
+    };
+
+    private static class CoreLibraryNode extends RubyNode {
+
+        @Child SingletonClassNode singletonClassNode;
+        @Child FreezeNode freezeNode;
+
+        public CoreLibraryNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+            this.freezeNode = FreezeNodeGen.create(context, sourceSection, null);
+            adoptChildren();
+        }
+
+        public SingletonClassNode getSingletonClassNode() {
+            return singletonClassNode;
+        }
+
+        @Override
+        public Object execute(VirtualFrame frame) {
+            return nil();
+        }
+
+    }
+
+    private final CoreLibraryNode node;
+
     public CoreLibrary(RubyContext context) {
         this.context = context;
+        this.node = new CoreLibraryNode(context, new CoreSourceSection("CoreLibrary", "initialize"));
 
         // Nothing in this constructor can use RubyContext.getCoreLibrary() as we are building it!
         // Therefore, only initialize the core classes and modules here.
@@ -169,12 +213,12 @@ public class CoreLibrary {
         moduleClass.unsafeSetSuperclass(objectClass);
         classClass.unsafeSetSuperclass(moduleClass);
 
-        classClass.getAdoptedByLexicalParent(objectClass, "Class", null);
-        basicObjectClass.getAdoptedByLexicalParent(objectClass, "BasicObject", null);
-        objectClass.getAdoptedByLexicalParent(objectClass, "Object", null);
-        moduleClass.getAdoptedByLexicalParent(objectClass, "Module", null);
+        classClass.getAdoptedByLexicalParent(objectClass, "Class", node);
+        basicObjectClass.getAdoptedByLexicalParent(objectClass, "BasicObject", node);
+        objectClass.getAdoptedByLexicalParent(objectClass, "Object", node);
+        moduleClass.getAdoptedByLexicalParent(objectClass, "Module", node);
 
-        // Create Exception classes 
+        // Create Exception classes
 
         // Exception
         exceptionClass = defineClass("Exception", new RubyException.ExceptionAllocator());
@@ -249,10 +293,10 @@ public class CoreLibrary {
 
         numericClass = defineClass("Numeric");
         complexClass = defineClass(numericClass, "Complex");
-        floatClass = defineClass(numericClass, "Float");
-        integerClass = defineClass(numericClass, "Integer");
+        floatClass = defineClass(numericClass, "Float", NO_ALLOCATOR);
+        integerClass = defineClass(numericClass, "Integer", NO_ALLOCATOR);
         fixnumClass = defineClass(integerClass, "Fixnum");
-        bignumClass = defineClass(integerClass, "Bignum", BignumNodes.createBigumAllocator(context.getEmptyShape()));
+        bignumClass = defineClass(integerClass, "Bignum");
         rationalClass = defineClass(numericClass, "Rational");
 
         // Classes defined in Object
@@ -260,27 +304,27 @@ public class CoreLibrary {
         arrayClass = defineClass("Array", new RubyArray.ArrayAllocator());
         bindingClass = defineClass("Binding", new RubyBinding.BindingAllocator());
         dirClass = defineClass("Dir");
-        encodingClass = defineClass("Encoding", new RubyEncoding.EncodingAllocator());
-        falseClass = defineClass("FalseClass");
+        encodingClass = defineClass("Encoding", NO_ALLOCATOR);
+        falseClass = defineClass("FalseClass", NO_ALLOCATOR);
         fiberClass = defineClass("Fiber", new RubyFiber.FiberAllocator());
         defineModule("FileTest");
         hashClass = defineClass("Hash", new RubyHash.HashAllocator());
         matchDataClass = defineClass("MatchData");
-        methodClass = defineClass("Method");
-        defineClass("Mutex", MutexNodes.createMutexAllocator(context.getEmptyShape()));
-        nilClass = defineClass("NilClass");
+        methodClass = defineClass("Method", NO_ALLOCATOR);
+        defineClass("Mutex", new MutexNodes.MutexAllocator());
+        nilClass = defineClass("NilClass", NO_ALLOCATOR);
         procClass = defineClass("Proc", new RubyProc.ProcAllocator());
         processModule = defineModule("Process");
         rangeClass = defineClass("Range", new RubyRange.RangeAllocator());
         regexpClass = defineClass("Regexp", new RubyRegexp.RegexpAllocator());
         stringClass = defineClass("String", new RubyString.StringAllocator());
-        symbolClass = defineClass("Symbol");
+        symbolClass = defineClass("Symbol", NO_ALLOCATOR);
         threadClass = defineClass("Thread", new RubyThread.ThreadAllocator());
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
-        threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location", ThreadBacktraceLocationNodes.createThreadBacktraceLocationAllocator(context.getEmptyShape()));
+        threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location", NO_ALLOCATOR);
         timeClass = defineClass("Time", new RubyTime.TimeAllocator());
-        trueClass = defineClass("TrueClass");
-        unboundMethodClass = defineClass("UnboundMethod");
+        trueClass = defineClass("TrueClass", NO_ALLOCATOR);
+        unboundMethodClass = defineClass("UnboundMethod", NO_ALLOCATOR);
 
         // Modules
 
@@ -340,66 +384,70 @@ public class CoreLibrary {
     }
 
     private void includeModules(RubyModule comparableModule) {
-        objectClass.include(null, kernelModule);
+        objectClass.include(node, kernelModule);
 
-        numericClass.include(null, comparableModule);
-        symbolClass.include(null, comparableModule);
+        numericClass.include(node, comparableModule);
+        symbolClass.include(node, comparableModule);
 
-        arrayClass.include(null, enumerableModule);
-        dirClass.include(null, enumerableModule);
-        hashClass.include(null, enumerableModule);
-        rangeClass.include(null, enumerableModule);
+        arrayClass.include(node, enumerableModule);
+        dirClass.include(node, enumerableModule);
+        hashClass.include(node, enumerableModule);
+        rangeClass.include(node, enumerableModule);
     }
 
     /**
      * Initializations which may access {@link RubyContext#getCoreLibrary()}.
      */
     public void initialize() {
-        // Bring in core method nodes
-
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ArrayNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, BasicObjectNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, BindingNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, BignumNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ClassNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ExceptionNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, FalseClassNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, FiberNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, FixnumNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, FloatNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, HashNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, IntegerNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, KernelNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, MainNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, MatchDataNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, MathNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ModuleNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, MutexNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ObjectSpaceNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ProcessNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ProcNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, RangeNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, RegexpNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, StringNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, SymbolNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ThreadNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, TrueClassNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, TrufflePrimitiveNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, EncodingNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, EncodingConverterNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, TruffleInteropNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, MethodNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, UnboundMethodNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ByteArrayNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, TimeNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, PosixNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, RubiniusTypeNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(objectClass, ThreadBacktraceLocationNodesFactory.getFactories());
-
+        addCoreMethods();
         initializeGlobalVariables();
         initializeConstants();
         initializeEncodingConstants();
         initializeSignalConstants();
+    }
+
+    private void addCoreMethods() {
+        // Bring in core method nodes
+        CoreMethodNodeManager coreMethodNodeManager = new CoreMethodNodeManager(objectClass, node.getSingletonClassNode());
+
+        coreMethodNodeManager.addCoreMethodNodes(ArrayNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(BasicObjectNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(BindingNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(BignumNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ClassNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ExceptionNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(FalseClassNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(FiberNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(FixnumNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(FloatNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(HashNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(IntegerNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(KernelNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(MainNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(MatchDataNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(MathNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ModuleNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(MutexNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ObjectSpaceNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ProcessNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ProcNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(RangeNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(RegexpNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(StringNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(SymbolNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ThreadNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TrueClassNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TrufflePrimitiveNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(EncodingNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(EncodingConverterNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TruffleInteropNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(MethodNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(UnboundMethodNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ByteArrayNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(TimeNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(PosixNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(RubiniusTypeNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ThreadBacktraceLocationNodesFactory.getFactories());
     }
 
     private void initializeGlobalVariables() {
@@ -418,7 +466,7 @@ public class CoreLibrary {
         globals.getObjectType().setInstanceVariable(globals, "$VERBOSE", value);
 
         final RubyString defaultRecordSeparator = RubyString.fromJavaString(stringClass, CLI_RECORD_SEPARATOR);
-        defaultRecordSeparator.freeze();
+        node.freezeNode.executeFreeze(defaultRecordSeparator);
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
         globals.getObjectType().setInstanceVariable(globals, "$/", defaultRecordSeparator);
@@ -429,36 +477,36 @@ public class CoreLibrary {
     private void initializeConstants() {
         // Set constants
 
-        objectClass.setConstant(null, "RUBY_VERSION", RubyString.fromJavaString(stringClass, Constants.RUBY_VERSION));
-        objectClass.setConstant(null, "RUBY_PATCHLEVEL", Constants.RUBY_PATCHLEVEL);
-        objectClass.setConstant(null, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, Constants.ENGINE + "+truffle"));
-        objectClass.setConstant(null, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, Constants.PLATFORM));
-        objectClass.setConstant(null, "RUBY_RELEASE_DATE", RubyString.fromJavaString(stringClass, Constants.COMPILE_DATE));
-        objectClass.setConstant(null, "RUBY_DESCRIPTION", RubyString.fromJavaString(stringClass, OutputStrings.getVersionString()));
+        objectClass.setConstant(node, "RUBY_VERSION", RubyString.fromJavaString(stringClass, Constants.RUBY_VERSION));
+        objectClass.setConstant(node, "RUBY_PATCHLEVEL", Constants.RUBY_PATCHLEVEL);
+        objectClass.setConstant(node, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, Constants.ENGINE + "+truffle"));
+        objectClass.setConstant(node, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, Constants.PLATFORM));
+        objectClass.setConstant(node, "RUBY_RELEASE_DATE", RubyString.fromJavaString(stringClass, Constants.COMPILE_DATE));
+        objectClass.setConstant(node, "RUBY_DESCRIPTION", RubyString.fromJavaString(stringClass, OutputStrings.getVersionString()));
 
         // BasicObject knows itself
-        basicObjectClass.setConstant(null, "BasicObject", basicObjectClass);
+        basicObjectClass.setConstant(node, "BasicObject", basicObjectClass);
 
-        objectClass.setConstant(null, "ARGV", argv);
+        objectClass.setConstant(node, "ARGV", argv);
 
-        rubiniusModule.setConstant(null, "UNDEFINED", rubiniusUndefined);
+        rubiniusModule.setConstant(node, "UNDEFINED", rubiniusUndefined);
 
-        processModule.setConstant(null, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
-        processModule.setConstant(null, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
+        processModule.setConstant(node, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
+        processModule.setConstant(node, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
 
-        encodingConverterClass.setConstant(null, "INVALID_MASK", EConvFlags.INVALID_MASK);
-        encodingConverterClass.setConstant(null, "INVALID_REPLACE", EConvFlags.INVALID_REPLACE);
-        encodingConverterClass.setConstant(null, "UNDEF_MASK", EConvFlags.UNDEF_MASK);
-        encodingConverterClass.setConstant(null, "UNDEF_REPLACE", EConvFlags.UNDEF_REPLACE);
-        encodingConverterClass.setConstant(null, "UNDEF_HEX_CHARREF", EConvFlags.UNDEF_HEX_CHARREF);
-        encodingConverterClass.setConstant(null, "PARTIAL_INPUT", EConvFlags.PARTIAL_INPUT);
-        encodingConverterClass.setConstant(null, "AFTER_OUTPUT", EConvFlags.AFTER_OUTPUT);
-        encodingConverterClass.setConstant(null, "UNIVERSAL_NEWLINE_DECORATOR", EConvFlags.UNIVERSAL_NEWLINE_DECORATOR);
-        encodingConverterClass.setConstant(null, "CRLF_NEWLINE_DECORATOR", EConvFlags.CRLF_NEWLINE_DECORATOR);
-        encodingConverterClass.setConstant(null, "CR_NEWLINE_DECORATOR", EConvFlags.CR_NEWLINE_DECORATOR);
-        encodingConverterClass.setConstant(null, "XML_TEXT_DECORATOR", EConvFlags.XML_TEXT_DECORATOR);
-        encodingConverterClass.setConstant(null, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
-        encodingConverterClass.setConstant(null, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
+        encodingConverterClass.setConstant(node, "INVALID_MASK", EConvFlags.INVALID_MASK);
+        encodingConverterClass.setConstant(node, "INVALID_REPLACE", EConvFlags.INVALID_REPLACE);
+        encodingConverterClass.setConstant(node, "UNDEF_MASK", EConvFlags.UNDEF_MASK);
+        encodingConverterClass.setConstant(node, "UNDEF_REPLACE", EConvFlags.UNDEF_REPLACE);
+        encodingConverterClass.setConstant(node, "UNDEF_HEX_CHARREF", EConvFlags.UNDEF_HEX_CHARREF);
+        encodingConverterClass.setConstant(node, "PARTIAL_INPUT", EConvFlags.PARTIAL_INPUT);
+        encodingConverterClass.setConstant(node, "AFTER_OUTPUT", EConvFlags.AFTER_OUTPUT);
+        encodingConverterClass.setConstant(node, "UNIVERSAL_NEWLINE_DECORATOR", EConvFlags.UNIVERSAL_NEWLINE_DECORATOR);
+        encodingConverterClass.setConstant(node, "CRLF_NEWLINE_DECORATOR", EConvFlags.CRLF_NEWLINE_DECORATOR);
+        encodingConverterClass.setConstant(node, "CR_NEWLINE_DECORATOR", EConvFlags.CR_NEWLINE_DECORATOR);
+        encodingConverterClass.setConstant(node, "XML_TEXT_DECORATOR", EConvFlags.XML_TEXT_DECORATOR);
+        encodingConverterClass.setConstant(node, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
+        encodingConverterClass.setConstant(node, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
     }
 
     private void initializeSignalConstants() {
@@ -470,7 +518,7 @@ public class CoreLibrary {
             signals[i++] = RubyArray.fromObjects(arrayClass, signalName, signal.getValue());
         }
 
-        signalModule.setConstant(null, "SIGNAL_LIST", new RubyArray(arrayClass, signals, signals.length));
+        signalModule.setConstant(node, "SIGNAL_LIST", new RubyArray(arrayClass, signals, signals.length));
     }
 
     private RubyClass defineClass(String name) {
@@ -502,7 +550,7 @@ public class CoreLibrary {
     }
 
     private RubyModule defineModule(RubyModule lexicalParent, String name) {
-        return new RubyModule(context, moduleClass, lexicalParent, name, null);
+        return new RubyModule(context, moduleClass, lexicalParent, name, node);
     }
 
     public void initializeAfterMethodsAdded() {
@@ -511,7 +559,7 @@ public class CoreLibrary {
         // ENV is supposed to be an object that actually updates the environment, and sees any updates
 
         envHash = getSystemEnv();
-        objectClass.setConstant(null, "ENV", envHash);
+        objectClass.setConstant(node, "ENV", envHash);
 
         // Load Ruby core
 
@@ -532,26 +580,26 @@ public class CoreLibrary {
     }
 
     private void initializeRubiniusFFI() {
-        rubiniusFFIModule.setConstant(null, "TYPE_CHAR", NativeFunctionPrimitiveNodes.TYPE_CHAR);
-        rubiniusFFIModule.setConstant(null, "TYPE_UCHAR", NativeFunctionPrimitiveNodes.TYPE_UCHAR);
-        rubiniusFFIModule.setConstant(null, "TYPE_BOOL", NativeFunctionPrimitiveNodes.TYPE_BOOL);
-        rubiniusFFIModule.setConstant(null, "TYPE_SHORT", NativeFunctionPrimitiveNodes.TYPE_SHORT);
-        rubiniusFFIModule.setConstant(null, "TYPE_USHORT", NativeFunctionPrimitiveNodes.TYPE_USHORT);
-        rubiniusFFIModule.setConstant(null, "TYPE_INT", NativeFunctionPrimitiveNodes.TYPE_INT);
-        rubiniusFFIModule.setConstant(null, "TYPE_UINT", NativeFunctionPrimitiveNodes.TYPE_UINT);
-        rubiniusFFIModule.setConstant(null, "TYPE_LONG", NativeFunctionPrimitiveNodes.TYPE_LONG);
-        rubiniusFFIModule.setConstant(null, "TYPE_ULONG", NativeFunctionPrimitiveNodes.TYPE_ULONG);
-        rubiniusFFIModule.setConstant(null, "TYPE_LL", NativeFunctionPrimitiveNodes.TYPE_LL);
-        rubiniusFFIModule.setConstant(null, "TYPE_ULL", NativeFunctionPrimitiveNodes.TYPE_ULL);
-        rubiniusFFIModule.setConstant(null, "TYPE_FLOAT", NativeFunctionPrimitiveNodes.TYPE_FLOAT);
-        rubiniusFFIModule.setConstant(null, "TYPE_DOUBLE", NativeFunctionPrimitiveNodes.TYPE_DOUBLE);
-        rubiniusFFIModule.setConstant(null, "TYPE_PTR", NativeFunctionPrimitiveNodes.TYPE_PTR);
-        rubiniusFFIModule.setConstant(null, "TYPE_VOID", NativeFunctionPrimitiveNodes.TYPE_VOID);
-        rubiniusFFIModule.setConstant(null, "TYPE_STRING", NativeFunctionPrimitiveNodes.TYPE_STRING);
-        rubiniusFFIModule.setConstant(null, "TYPE_STRPTR", NativeFunctionPrimitiveNodes.TYPE_STRPTR);
-        rubiniusFFIModule.setConstant(null, "TYPE_CHARARR", NativeFunctionPrimitiveNodes.TYPE_CHARARR);
-        rubiniusFFIModule.setConstant(null, "TYPE_ENUM", NativeFunctionPrimitiveNodes.TYPE_ENUM);
-        rubiniusFFIModule.setConstant(null, "TYPE_VARARGS", NativeFunctionPrimitiveNodes.TYPE_VARARGS);
+        rubiniusFFIModule.setConstant(node, "TYPE_CHAR", NativeFunctionPrimitiveNodes.TYPE_CHAR);
+        rubiniusFFIModule.setConstant(node, "TYPE_UCHAR", NativeFunctionPrimitiveNodes.TYPE_UCHAR);
+        rubiniusFFIModule.setConstant(node, "TYPE_BOOL", NativeFunctionPrimitiveNodes.TYPE_BOOL);
+        rubiniusFFIModule.setConstant(node, "TYPE_SHORT", NativeFunctionPrimitiveNodes.TYPE_SHORT);
+        rubiniusFFIModule.setConstant(node, "TYPE_USHORT", NativeFunctionPrimitiveNodes.TYPE_USHORT);
+        rubiniusFFIModule.setConstant(node, "TYPE_INT", NativeFunctionPrimitiveNodes.TYPE_INT);
+        rubiniusFFIModule.setConstant(node, "TYPE_UINT", NativeFunctionPrimitiveNodes.TYPE_UINT);
+        rubiniusFFIModule.setConstant(node, "TYPE_LONG", NativeFunctionPrimitiveNodes.TYPE_LONG);
+        rubiniusFFIModule.setConstant(node, "TYPE_ULONG", NativeFunctionPrimitiveNodes.TYPE_ULONG);
+        rubiniusFFIModule.setConstant(node, "TYPE_LL", NativeFunctionPrimitiveNodes.TYPE_LL);
+        rubiniusFFIModule.setConstant(node, "TYPE_ULL", NativeFunctionPrimitiveNodes.TYPE_ULL);
+        rubiniusFFIModule.setConstant(node, "TYPE_FLOAT", NativeFunctionPrimitiveNodes.TYPE_FLOAT);
+        rubiniusFFIModule.setConstant(node, "TYPE_DOUBLE", NativeFunctionPrimitiveNodes.TYPE_DOUBLE);
+        rubiniusFFIModule.setConstant(node, "TYPE_PTR", NativeFunctionPrimitiveNodes.TYPE_PTR);
+        rubiniusFFIModule.setConstant(node, "TYPE_VOID", NativeFunctionPrimitiveNodes.TYPE_VOID);
+        rubiniusFFIModule.setConstant(node, "TYPE_STRING", NativeFunctionPrimitiveNodes.TYPE_STRING);
+        rubiniusFFIModule.setConstant(node, "TYPE_STRPTR", NativeFunctionPrimitiveNodes.TYPE_STRPTR);
+        rubiniusFFIModule.setConstant(node, "TYPE_CHARARR", NativeFunctionPrimitiveNodes.TYPE_CHARARR);
+        rubiniusFFIModule.setConstant(node, "TYPE_ENUM", NativeFunctionPrimitiveNodes.TYPE_ENUM);
+        rubiniusFFIModule.setConstant(node, "TYPE_VARARGS", NativeFunctionPrimitiveNodes.TYPE_VARARGS);
     }
 
     public void loadRubyCore(String fileName) {
@@ -568,7 +616,7 @@ public class CoreLibrary {
             throw new RuntimeException(e);
         }
 
-        context.load(source, null, NodeWrapper.IDENTITY);
+        context.load(source, node, NodeWrapper.IDENTITY);
     }
 
     public InputStream getRubyCoreInputStream(String fileName) {
@@ -597,7 +645,7 @@ public class CoreLibrary {
 
             @Override
             public void defineConstant(int encodingListIndex, String constName) {
-                encodingClass.setConstant(null, constName, RubyEncoding.getEncoding(encodingListIndex));
+                encodingClass.setConstant(node, constName, RubyEncoding.getEncoding(encodingListIndex));
             }
         });
 
@@ -610,7 +658,7 @@ public class CoreLibrary {
 
             @Override
             public void defineConstant(int encodingListIndex, String constName) {
-                encodingClass.setConstant(null, constName, RubyEncoding.getEncoding(encodingListIndex));
+                encodingClass.setConstant(node, constName, RubyEncoding.getEncoding(encodingListIndex));
             }
         });
     }

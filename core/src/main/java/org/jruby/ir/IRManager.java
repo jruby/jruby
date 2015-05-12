@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import org.jruby.ir.passes.DeadCodeElimination;
+import org.jruby.ir.passes.LocalOptimizationPass;
 import org.jruby.ir.passes.OptimizeDelegationPass;
 import org.jruby.ir.passes.OptimizeDynScopesPass;
 import org.jruby.ir.passes.OptimizeTempVarsPass;
@@ -26,8 +27,8 @@ import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
 
 public class IRManager {
     public static final String SAFE_COMPILER_PASSES = "";
-    public static final String DEFAULT_BUILD_PASSES = "LocalOptimizationPass";
-    public static final String DEFAULT_JIT_PASSES = "LocalOptimizationPass,OptimizeDelegationPass,DeadCodeElimination,AddLocalVarLoadStoreInstructions,OptimizeDynScopesPass,AddCallProtocolInstructions,EnsureTempsAssigned";
+    public static final String DEFAULT_BUILD_PASSES = "";
+    public static final String DEFAULT_JIT_PASSES = "OptimizeDelegationPass,DeadCodeElimination,AddLocalVarLoadStoreInstructions,OptimizeDynScopesPass,AddCallProtocolInstructions,EnsureTempsAssigned";
     public static final String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
 
     private final CompilerPass deadCodeEliminationPass = new DeadCodeElimination();
@@ -220,8 +221,14 @@ public class IRManager {
     }
 
     public Instr[] optimizeTemporaryVariablesIfEnabled(IRScope scope, Instr[] instrs) {
+        // Local opts don't move instrs across basic-block boundaries
+        // and are safe to run before the opt-tmp-vars pass.
+        // This ensures that local opts aren't affected by RAW hazards.
+        (new LocalOptimizationPass()).runLocalOptsOnInstrArray(scope, instrs);
         // FIXME: Make this check ir.passes and not run if ir.passes is set and does not contain opttempvars.
-        return OptimizeTempVarsPass.optimizeTmpVars(scope, instrs);
+        // FIXME: LOP + Opttempvars cannot cope with y,d = d,y it propagates the intermediate temp var away
+        //return OptimizeTempVarsPass.optimizeTmpVars(scope, instrs);
+        return instrs;
     }
 
     /**

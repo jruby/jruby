@@ -1012,7 +1012,7 @@ class Array
       result = Array.new self
       tuple = Rubinius::Mirror::Array.reflect(result).tuple
 
-      count.times { |i| tuple.swap i, rng.rand(size) }
+      count.times { |c| tuple.swap c, rng.rand(size) } # Truffle: removed shadowing variable
 
       return count == size ? result : result[0, count]
     end

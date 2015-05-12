@@ -1,1 +1,0 @@
-fails:Proc#hash does not depend on whether self is a proc or lambda

@@ -1,22 +1,2 @@
-fails:String#unpack with format 'I' with modifier '<' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' with modifier '<' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' with modifier '<' and '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' with modifier '>' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' with modifier '>' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' with modifier '>' and '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '<' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '<' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '<' and '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '>' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '>' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '>' and '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' ignores whitespace in the format string
 fails:String#unpack with format 'I' calls #to_str to coerce the directives string
-fails:String#unpack with format 'I' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' with modifier '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' with modifier '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' ignores whitespace in the format string
 fails:String#unpack with format 'i' calls #to_str to coerce the directives string
-fails:String#unpack with format 'i' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '!' adds nil for each element requested beyond the end of the String

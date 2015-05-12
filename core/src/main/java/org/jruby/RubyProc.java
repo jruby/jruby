@@ -197,12 +197,6 @@ public class RubyProc extends RubyObject implements DataType {
         return newProc(getRuntime(), block, type, sourcePosition);
     }
     
-    @JRubyMethod(name = "==", required = 1)
-    public IRubyObject op_equal(IRubyObject other) {
-        return getRuntime().newBoolean(other instanceof RubyProc &&
-                (this == other || this.block.equals(((RubyProc)other).block)));
-    }
-    
     @Override
     public IRubyObject to_s() {
         return to_s19();
@@ -210,12 +204,19 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = "to_s", alias = "inspect")
     public IRubyObject to_s19() {
-        StringBuilder sb = new StringBuilder("#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" +
-                block.getBody().getFile() + ":" + (block.getBody().getLine() + 1));
+        StringBuilder sb = new StringBuilder("#<Proc:0x" + Integer.toString(block.hashCode(), 16));
+        String file = block.getBody().getFile();
+
+        if (file != null) sb.append('@').append(file).append(':').append(block.getBody().getLine() + 1);
+
         if (isLambda()) sb.append(" (lambda)");
         sb.append(">");
+
+        IRubyObject string = RubyString.newString(getRuntime(), sb.toString());
+
+        if (isTaint()) string.setTaint(true);
         
-        return RubyString.newString(getRuntime(), sb.toString());
+        return string;
     }
 
     @JRubyMethod(name = "binding")
@@ -318,7 +319,12 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = "arity")
     public RubyFixnum arity() {
-        return getRuntime().newFixnum(block.getSignature().arityValue());
+        Signature signature = block.getSignature();
+
+        if (block.type == Block.Type.LAMBDA) return getRuntime().newFixnum(signature.arityValue());
+
+        // FIXME: Consider min/max like MRI here instead of required + kwarg count.
+        return getRuntime().newFixnum(signature.hasRest() ? signature.arityValue() : signature.required() + signature.getRequiredKeywordForArityCount());
     }
     
     @JRubyMethod(name = "to_proc")

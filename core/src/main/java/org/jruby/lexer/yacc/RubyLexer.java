@@ -385,6 +385,7 @@ public class RubyLexer {
         parenNest = 0;
         braceNest = 0;
         tokp = 0;
+        ruby_sourceline = src.getLineOffset() - 1;
         last_cr_line = -1;
 
         parser_prepare();
@@ -481,10 +482,6 @@ public class RubyLexer {
 
     public int column() {
         return tokp - lex_pbeg;
-    }
-
-    public int lineno() {
-        return ruby_sourceline + src.getLineOffset() - 1;
     }
 
     public boolean was_bol() {
@@ -588,16 +585,16 @@ public class RubyLexer {
     }
 
     public ISourcePosition getPosition() {
-        if (tokline != null && lineno() == tokline.getLine()) return tokline;
-        return new SimpleSourcePosition(src.getFilename(), lineno());
+        if (tokline != null && ruby_sourceline == tokline.getLine()) return tokline;
+        return new SimpleSourcePosition(src.getFilename(), ruby_sourceline);
     }
 
     public ISourcePosition getPosition(ISourcePosition startPosition) {
         if (startPosition != null) return startPosition;
 
-        if (tokline != null && lineno() == tokline.getLine()) return tokline;
+        if (tokline != null && ruby_sourceline == tokline.getLine()) return tokline;
 
-        return new SimpleSourcePosition(src.getFilename(), lineno());
+        return new SimpleSourcePosition(src.getFilename(), ruby_sourceline);
     }
 
     public String getCurrentLine() {

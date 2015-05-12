@@ -80,7 +80,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     private final ThreadManager threadManager;
     private final AtExitManager atExitManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
-    private final Shape emptyShape;
     private final Warnings warnings;
     private final SafepointManager safepointManager;
     private final Random random = new Random();
@@ -134,8 +133,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         // Object space manager needs to come early before we create any objects
         objectSpaceManager = new ObjectSpaceManager(this);
-
-        emptyShape = RubyBasicObject.LAYOUT.createShape(new RubyObjectType(this));
 
         coreLibrary = new CoreLibrary(this);
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
@@ -229,10 +226,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
                 }
             }
         }
-    }
-
-    public Shape getEmptyShape() {
-        return emptyShape;
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {
@@ -503,20 +496,22 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         } else if (object instanceof org.jruby.RubySymbol) {
             return getSymbolTable().getSymbol(object.toString());
         } else if (object instanceof org.jruby.RubyArray) {
-            final org.jruby.RubyArray jrubyArray = (org.jruby.RubyArray) object;
-
-            final Object[] truffleArray = new Object[jrubyArray.size()];
-
-            for (int n = 0; n < truffleArray.length; n++) {
-                truffleArray[n] = toTruffle((IRubyObject) jrubyArray.get(n));
-            }
-
-            return new RubyArray(coreLibrary.getArrayClass(), truffleArray, truffleArray.length);
+            return toTruffle((org.jruby.RubyArray) object);
         } else if (object instanceof org.jruby.RubyException) {
             return toTruffle((org.jruby.RubyException) object, null);
         } else {
             throw object.getRuntime().newRuntimeError("cannot pass " + object.inspect() + " (" + object.getClass().getName()  + ") to Truffle");
         }
+    }
+
+    public RubyArray toTruffle(org.jruby.RubyArray array) {
+        final Object[] store = new Object[array.size()];
+
+        for (int n = 0; n < store.length; n++) {
+            store[n] = toTruffle(array.entry(n));
+        }
+
+        return RubyArray.fromObjects(coreLibrary.getArrayClass(), store);
     }
 
     public RubyString toTruffle(org.jruby.RubyString jrubyString) {

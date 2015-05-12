@@ -18,7 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.util.ArrayUtils;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 
 @NodeChildren({
         @NodeChild(value="array", type=RubyNode.class),
@@ -48,7 +48,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     )
     public RubyArray generalizeInt(RubyArray array, int requiredCapacity) {
         final int[] intStore = (int[]) array.getStore();
-        array.setStore(ArrayUtils.box(intStore, requiredCapacity - intStore.length), array.getSize());
+        array.setStore(ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), array.getSize());
         return array;
     }
 
@@ -57,7 +57,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     )
     public RubyArray generalizeLong(RubyArray array, int requiredCapacity) {
         final long[] intStore = (long[]) array.getStore();
-        array.setStore(ArrayUtils.box(intStore, requiredCapacity - intStore.length), array.getSize());
+        array.setStore(ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), array.getSize());
         return array;
     }
 
@@ -66,7 +66,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     )
     public RubyArray generalizeDouble(RubyArray array, int requiredCapacity) {
         final double[] intStore = (double[]) array.getStore();
-        array.setStore(ArrayUtils.box(intStore, requiredCapacity - intStore.length), array.getSize());
+        array.setStore(ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), array.getSize());
         return array;
     }
 

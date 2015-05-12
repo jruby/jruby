@@ -1,2 +1,1 @@
 fails:String#unpack with format '@' calls #to_str to coerce the directives string
-fails:String#unpack with format '@' positions the read index one beyond the last readable byte in the String
