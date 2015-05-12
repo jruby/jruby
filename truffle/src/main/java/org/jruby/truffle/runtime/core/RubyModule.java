@@ -351,7 +351,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public String getName() {
         if (name != null) {
             return name;
-        } else if (logicalClass == this) {
+        } else if (logicalClass == this) { // For the case of class Class during initialization
             return "#<cyclic>";
         } else {
             return "#<" + logicalClass.getName() + ":0x" + Long.toHexString(verySlowGetObjectID()) + ">";
