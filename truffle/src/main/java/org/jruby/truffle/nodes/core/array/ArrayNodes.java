@@ -844,106 +844,25 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class ConcatNode extends CoreMethodNode {
 
+        @Child private AppendManyNode appendManyNode;
+
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            appendManyNode = AppendManyNodeGen.create(context, sourceSection, null, null, null);
         }
-
-        public abstract RubyArray executeConcat(RubyArray array, RubyArray other);
 
         @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode other) {
             return ToAryNodeGen.create(getContext(), getSourceSection(), other);
         }
 
-        @Specialization(guards = "areBothNull(array, other)")
+        @Specialization(guards = "isNull(other)")
         public RubyArray concatNull(RubyArray array, RubyArray other) {
             return array;
         }
 
-        @Specialization(guards = "areBothIntegerFixnum(array, other)")
-        public RubyArray concatIntegerFixnum(RubyArray array, RubyArray other) {
-            CompilerDirectives.transferToInterpreter();
-
-            final int newSize = array.getSize() + other.getSize();
-            int[] store = (int[]) array.getStore();
-
-            if ( store.length < newSize) {
-                store = Arrays.copyOf((int[]) array.getStore(), ArrayUtils.capacity(store.length, newSize));
-            }
-
-            System.arraycopy(other.getStore(), 0, store, array.getSize(), other.getSize());
-            array.setStore(store, newSize);
-            return array;
-        }
-
-        @Specialization(guards = "areBothLongFixnum(array, other)")
-        public RubyArray concatLongFixnum(RubyArray array, RubyArray other) {
-            CompilerDirectives.transferToInterpreter();
-
-            final int newSize = array.getSize() + other.getSize();
-            long[] store = (long[]) array.getStore();
-
-            if ( store.length < newSize) {
-                store = Arrays.copyOf((long[]) array.getStore(), ArrayUtils.capacity(store.length, newSize));
-            }
-
-            System.arraycopy(other.getStore(), 0, store, array.getSize(), other.getSize());
-            array.setStore(store, newSize);
-            return array;
-        }
-
-        @Specialization(guards = "areBothFloat(array, other)")
-        public RubyArray concatDouble(RubyArray array, RubyArray other) {
-            CompilerDirectives.transferToInterpreter();
-
-            final int newSize = array.getSize() + other.getSize();
-            double[] store = (double[]) array.getStore();
-
-            if ( store.length < newSize) {
-                store = Arrays.copyOf((double[]) array.getStore(), ArrayUtils.capacity(store.length, newSize));
-            }
-
-            System.arraycopy(other.getStore(), 0, store, array.getSize(), other.getSize());
-            array.setStore(store, newSize);
-            return array;
-        }
-
-        @Specialization(guards = "areBothObject(array, other)")
-        public RubyArray concatObject(RubyArray array, RubyArray other) {
-            CompilerDirectives.transferToInterpreter();
-
-            final int size = array.getSize();
-            final int newSize = size + other.getSize();
-            Object[] store = (Object[]) array.getStore();
-
-            if (newSize > store.length) {
-                store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
-            }
-
-            System.arraycopy(other.getStore(), 0, store, size, other.getSize());
-            array.setStore(store, newSize);
-            return array;
-        }
-
-        @Specialization
+        @Specialization(guards = "!isNull(other)")
         public RubyArray concat(RubyArray array, RubyArray other) {
-            CompilerDirectives.transferToInterpreter();
-
-            final int newSize = array.getSize() + other.getSize();
-
-            Object[] store;
-            if (array.getStore() instanceof Object[]) {
-                store = (Object[]) array.getStore();
-                if (store.length < newSize) {
-                    store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
-                }
-                ArrayUtils.copy(other.getStore(), store, array.getSize(), other.getSize());
-            } else {
-                store = new Object[newSize];
-                ArrayUtils.copy(array.getStore(), store, 0, array.getSize());
-                ArrayUtils.copy(other.getStore(), store, array.getSize(), other.getSize());
-            }
-
-            array.setStore(store, newSize);
+            appendManyNode.executeAppendMany(array, other.getSize(), other.getStore());
             return array;
         }
 
