@@ -20,7 +20,7 @@ public class LocalOptimizationPass extends CompilerPass {
     @Override
     public Object execute(IRScope s, Object... data) {
         for (BasicBlock b: s.getCFG().getBasicBlocks()) {
-            runLocalOptsOnInstrList(s, b.getInstrs().listIterator(), false);
+            runLocalOptsOnBasicBlock(s, b);
         }
 
         // SSS FIXME: What is this about? 
@@ -55,56 +55,67 @@ public class LocalOptimizationPass extends CompilerPass {
         }
     }
 
-    public static void runLocalOptsOnInstrList(IRScope s, ListIterator<Instr> instrs, boolean preCFG) {
+    public static Instr optInstr(IRScope s, Instr instr, Map<Operand,Operand> valueMap, Map<Variable,List<Variable>> simplificationMap) {
+        // System.out.println("BEFORE: " + instr);
+
+        // Simplify instruction and record mapping between target variable and simplified value
+        Operand  val = instr.simplifyAndGetResult(s, valueMap);
+
+        // Variable dst = (instr instanceof ResultInstr) ? ((ResultInstr) instr).getResult() : null;
+        // System.out.println("AFTER: " + instr + "; dst = " + dst + "; val = " + val);
+
+        if (!(instr instanceof ResultInstr)) {
+            return instr;
+        }
+
+        Instr newInstr = instr;
+        Variable res = ((ResultInstr) instr).getResult();
+        if (val == null) {
+            // If we didn't get a simplified value, remove any existing simplifications for the result
+            // to get rid of RAW hazards!
+            valueMap.remove(res);
+        } else {
+            if (!res.equals(val)) {
+                recordSimplification(res, val, valueMap, simplificationMap);
+            }
+
+            if (!instr.hasSideEffects()) {
+                if (instr instanceof CopyInstr) {
+                    if (res.equals(val) && instr.canBeDeleted(s)) {
+                        instr.markDead();
+                    }
+                } else {
+                    newInstr = new CopyInstr(res, val);
+                }
+            }
+        }
+
+        // Purge all entries in valueMap that have 'res' as their simplified value to take care of RAW scenarios (because we aren't in SSA form yet!)
+        if (!res.equals(val)) {
+            List<Variable> simplifiedVars = simplificationMap.get(res);
+            if (simplifiedVars != null) {
+                for (Variable v: simplifiedVars) {
+                    valueMap.remove(v);
+                }
+                simplificationMap.remove(res);
+            }
+        }
+
+        return newInstr;
+    }
+
+    public static void runLocalOptsOnBasicBlock(IRScope s, BasicBlock b) {
+        ListIterator<Instr> instrs = b.getInstrs().listIterator();
         // Reset value map if this instruction is the start/end of a basic block
         Map<Operand,Operand> valueMap = new HashMap<Operand,Operand>();
         Map<Variable,List<Variable>> simplificationMap = new HashMap<Variable,List<Variable>>();
         while (instrs.hasNext()) {
-            Instr i = instrs.next();
-            Operation iop = i.getOperation();
-            if (preCFG && iop.startsBasicBlock()) {
-                valueMap = new HashMap<Operand,Operand>();
-                simplificationMap = new HashMap<Variable,List<Variable>>();
-            }
-
-            // Simplify instruction and record mapping between target variable and simplified value
-            // System.out.println("BEFORE: " + i);
-            Operand  val = i.simplifyAndGetResult(s, valueMap);
-            // FIXME: This logic can be simplified based on the number of res != null checks only done if doesn't
-            Variable res = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
-
-            // System.out.println("AFTER: " + i + "; dst = " + res + "; val = " + val);
-
-            if (res != null && val != null) {
-                if (!res.equals(val)) {
-                    recordSimplification(res, val, valueMap, simplificationMap);
-                }
-
-                if (!i.hasSideEffects()) {
-                    if (i instanceof CopyInstr) {
-                        if (res.equals(val) && i.canBeDeleted(s)) {
-                            i.markDead();
-                            instrs.remove();
-                        }
-                    } else {
-                        instrs.set(new CopyInstr(res, val));
-                    }
-                }
-            } else if (res != null && val == null) {
-                // If we didn't get a simplified value, remove any existing simplifications for the result
-                // to get rid of RAW hazards!
-                valueMap.remove(res);
-            }
-
-            // Purge all entries in valueMap that have 'res' as their simplified value to take care of RAW scenarios (because we aren't in SSA form yet!)
-            if (res != null && !res.equals(val)) {
-                List<Variable> simplifiedVars = simplificationMap.get(res);
-                if (simplifiedVars != null) {
-                    for (Variable v: simplifiedVars) {
-                        valueMap.remove(v);
-                    }
-                    simplificationMap.remove(res);
-                }
+            Instr instr = instrs.next();
+            Instr newInstr = optInstr(s, instr, valueMap, simplificationMap);
+            if (newInstr.isDead()) {
+                instrs.remove();
+            } else if (newInstr != instr) {
+                instrs.set(newInstr);
             }
 
             // If the call has been optimized away in the previous step, it is no longer a hard boundary for opts!
@@ -120,7 +131,8 @@ public class LocalOptimizationPass extends CompilerPass {
             //   - etc.
             //
             // This information is present in instruction flags on CallBase. Use it!
-            if ((preCFG && iop.endsBasicBlock()) || (iop.isCall() && !i.isDead())) {
+            Operation iop = instr.getOperation();
+            if (iop.isCall() && !instr.isDead()) {
                 valueMap = new HashMap<Operand,Operand>();
                 simplificationMap = new HashMap<Variable,List<Variable>>();
             }
