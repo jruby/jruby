@@ -66,8 +66,7 @@ ruby/test_parse.rb
 ruby/test_path.rb
 ruby/test_pipe.rb
 ruby/test_primitive.rb
-# TODO 2.1 parser
-#ruby/test_proc.rb
+ruby/test_proc.rb
 # hangs when run with other tests
 ruby/test_process.rb
 ruby/test_rand.rb

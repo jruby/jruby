@@ -136,6 +136,10 @@ public class RubyBinding extends RubyObject {
         return RubyKernel.eval(context, this, newArgs, Block.NULL_BLOCK);
     }
 
+    @JRubyMethod
+    public IRubyObject local_variables(ThreadContext context) {
+        return RubyKernel.local_variables(context, this);
+    }
 
     @JRubyMethod(name = "receiver")
     public IRubyObject receiver(ThreadContext context) {
