@@ -166,6 +166,14 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         return !(this instanceof RubyClass);
     }
 
+    // TODO (eregon, 12 May 2015): ideally all callers would be nodes and check themselves.
+    private void checkFrozen(Node currentNode) {
+        if (getContext().getCoreLibrary() != null && DebugOperations.verySlowIsFrozen(getContext(), this)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName(), currentNode));
+        }
+    }
+
     @TruffleBoundary
     public void include(Node currentNode, RubyModule module) {
         checkFrozen(currentNode);

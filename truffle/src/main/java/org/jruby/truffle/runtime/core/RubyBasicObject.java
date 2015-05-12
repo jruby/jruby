@@ -74,14 +74,6 @@ public class RubyBasicObject implements TruffleObject {
         metaClass = newLogicalClass;
     }
 
-    @Deprecated
-    public void checkFrozen(Node currentNode) {
-        if (getContext().getCoreLibrary() != null && DebugOperations.verySlowIsFrozen(getContext(), this)) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName(), currentNode));
-        }
-    }
-
     public RubyClass getMetaClass() {
         return metaClass;
     }
