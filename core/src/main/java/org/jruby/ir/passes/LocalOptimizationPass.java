@@ -59,7 +59,7 @@ public class LocalOptimizationPass extends CompilerPass {
         // System.out.println("BEFORE: " + instr);
 
         // Simplify instruction and record mapping between target variable and simplified value
-        Operand  val = instr.simplifyAndGetResult(s, valueMap);
+        Operand val = instr.simplifyAndGetResult(s, valueMap);
 
         // Variable dst = (instr instanceof ResultInstr) ? ((ResultInstr) instr).getResult() : null;
         // System.out.println("AFTER: " + instr + "; dst = " + dst + "; val = " + val);
@@ -71,8 +71,8 @@ public class LocalOptimizationPass extends CompilerPass {
         Instr newInstr = instr;
         Variable res = ((ResultInstr) instr).getResult();
         if (val == null) {
-            // If we didn't get a simplified value, remove any existing simplifications for the result
-            // to get rid of RAW hazards!
+            // If we didn't get a simplified value, remove existing simplifications
+            // for the result to get rid of RAW hazards!
             valueMap.remove(res);
         } else {
             if (!res.equals(val)) {
@@ -82,6 +82,7 @@ public class LocalOptimizationPass extends CompilerPass {
             if (!instr.hasSideEffects()) {
                 if (instr instanceof CopyInstr) {
                     if (res.equals(val) && instr.canBeDeleted(s)) {
+                        System.out.println("DEAD: marking instr dead!!");
                         instr.markDead();
                     }
                 } else {
@@ -90,7 +91,8 @@ public class LocalOptimizationPass extends CompilerPass {
             }
         }
 
-        // Purge all entries in valueMap that have 'res' as their simplified value to take care of RAW scenarios (because we aren't in SSA form yet!)
+        // Purge all entries in valueMap that have 'res' as their simplified value
+        // to take care of RAW scenarios (because we aren't in SSA form yet!)
         if (!res.equals(val)) {
             List<Variable> simplifiedVars = simplificationMap.get(res);
             if (simplifiedVars != null) {
@@ -104,11 +106,43 @@ public class LocalOptimizationPass extends CompilerPass {
         return newInstr;
     }
 
+    public static void runLocalOptsOnInstrArray(IRScope s, Instr[] instrs) {
+        // Reset value map if this instruction is the start/end of a basic block
+        Map<Operand,Operand> valueMap = new HashMap<>();
+        Map<Variable,List<Variable>> simplificationMap = new HashMap<>();
+        for (int i = 0; i < instrs.length; i++) {
+            Instr instr = instrs[i];
+            Instr newInstr = optInstr(s, instr, valueMap, simplificationMap);
+            if (newInstr != instr) {
+                instrs[i] = newInstr;
+            }
+
+            // If the call has been optimized away in the previous step, it is no longer a hard boundary for opts!
+            //
+            // Right now, calls are considered hard boundaries for optimization and
+            // information cannot be propagated across them!
+            //
+            // SSS FIXME: Rather than treat all calls with a broad brush, what we need
+            // is to capture different attributes about a call :
+            //   - uses closures
+            //   - known call target
+            //   - can modify scope,
+            //   - etc.
+            //
+            // This information is present in instruction flags on CallBase. Use it!
+            Operation iop = instr.getOperation();
+            if (iop.startsBasicBlock() || iop.endsBasicBlock() || (iop.isCall() && !instr.isDead())) {
+                valueMap = new HashMap<>();
+                simplificationMap = new HashMap<>();
+            }
+        }
+    }
+
     public static void runLocalOptsOnBasicBlock(IRScope s, BasicBlock b) {
         ListIterator<Instr> instrs = b.getInstrs().listIterator();
         // Reset value map if this instruction is the start/end of a basic block
-        Map<Operand,Operand> valueMap = new HashMap<Operand,Operand>();
-        Map<Variable,List<Variable>> simplificationMap = new HashMap<Variable,List<Variable>>();
+        Map<Operand,Operand> valueMap = new HashMap<>();
+        Map<Variable,List<Variable>> simplificationMap = new HashMap<>();
         while (instrs.hasNext()) {
             Instr instr = instrs.next();
             Instr newInstr = optInstr(s, instr, valueMap, simplificationMap);
@@ -133,8 +167,8 @@ public class LocalOptimizationPass extends CompilerPass {
             // This information is present in instruction flags on CallBase. Use it!
             Operation iop = instr.getOperation();
             if (iop.isCall() && !instr.isDead()) {
-                valueMap = new HashMap<Operand,Operand>();
-                simplificationMap = new HashMap<Variable,List<Variable>>();
+                valueMap = new HashMap<>();
+                simplificationMap = new HashMap<>();
             }
         }
     }
