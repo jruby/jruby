@@ -1,1 +1,0 @@
-fails:Proc#lambda? is preserved when passing a Proc with & to the lambda keyword
