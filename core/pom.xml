@@ -13,18 +13,19 @@
     <version.ruby>2.2.2</version.ruby>
     <prawn.dir>${test.dir}/prawn</prawn.dir>
     <spec.tags.dir>${spec.dir}/tags</spec.tags.dir>
+    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
     <pkg.dir>${build.dir}/pkg</pkg.dir>
     <unsafe.jar>${settings.localRepository}/com/headius/unsafe-mock/${unsafe.version}/unsafe-mock-${unsafe.version}.jar</unsafe.jar>
     <spec.dir>spec</spec.dir>
     <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
     <jruby.test.memory.permgen>2G</jruby.test.memory.permgen>
     <installer.gems>${jruby.win32ole.gem}</installer.gems>
-    <tesla.dump.readonly>true</tesla.dump.readonly>
     <prawn.git.repo>git://github.com/sandal/prawn.git</prawn.git.repo>
     <version.ruby.minor>2</version.ruby.minor>
     <tzdata.version>2013d</tzdata.version>
     <install4j.executable>/Applications/install4j 4/bin/install4jc</install4j.executable>
     <jay.bin>jay</jay.bin>
+    <polyglot.dump.readonly>true</polyglot.dump.readonly>
     <dest.lib.dir>${lib.dir}</dest.lib.dir>
     <rails.git.repo>git://github.com/rails/rails.git</rails.git.repo>
     <build.dir>target</build.dir>
@@ -37,7 +38,6 @@
     <release.dir>release</release.dir>
     <lib.dir>lib</lib.dir>
     <rails.dir>${test.dir}/rails</rails.dir>
-    <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <parser.dir>core/src/main/java/org/jruby/parser</parser.dir>
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <rubyspec.dir>${spec.dir}/ruby</rubyspec.dir>
@@ -110,7 +110,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.8.8-SNAPSHOT</version>
+      <version>0.8.7</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>

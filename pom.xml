@@ -110,8 +110,8 @@
     </site>
   </distributionManagement>
   <properties>
-    <tesla.version>0.1.1</tesla.version>
     <rspec-core.version>2.14.2</rspec-core.version>
+    <polyglot.dump.readonly>true</polyglot.dump.readonly>
     <its.j2ee>j2ee*/pom.xml</its.j2ee>
     <jruby.basedir>${project.basedir}</jruby.basedir>
     <minitest.version>5.4.1</minitest.version>
@@ -129,9 +129,7 @@
     <test-unit.version>3.0.3</test-unit.version>
     <rdoc.version>4.1.0</rdoc.version>
     <rspec.version>2.14.1</rspec.version>
-    <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <base.java.version>1.7</base.java.version>
-    <tesla.dump.readonly>true</tesla.dump.readonly>
     <rspec-mocks.version>2.14.1</rspec-mocks.version>
     <jruby.plugins.version>1.0.9</jruby.plugins.version>
     <json.version>1.8.0</json.version>
@@ -142,6 +140,7 @@
     <main.basedir>${project.basedir}</main.basedir>
     <github.global.server>github</github.global.server>
     <joda.time.version>2.5</joda.time.version>
+    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
   </properties>
   <dependencyManagement>
     <dependencies>
