@@ -1774,7 +1774,6 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         Ruby runtime = context.runtime;
-        IRubyObject body;
         String name = TypeConverter.convertToIdentifier(arg0);
         DynamicMethod newMethod = null;
         Visibility visibility = PUBLIC;
@@ -1788,17 +1787,14 @@ public class RubyModule extends RubyObject {
         if (runtime.getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
             RubyProc proc = (RubyProc)arg1;
-            body = proc;
 
             newMethod = createProcMethod(name, visibility, proc);
         } else if (arg1 instanceof AbstractRubyMethod) {
             AbstractRubyMethod method = (AbstractRubyMethod)arg1;
-            body = method;
 
             checkValidBindTargetFrom(context, (RubyModule)method.owner(context));
 
-            newMethod = method.getMethod().dup();
-            newMethod.setImplementationClass(this);
+            newMethod = new WrapperMethod(this, method.getMethod(), visibility);
         } else {
             throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
         }
