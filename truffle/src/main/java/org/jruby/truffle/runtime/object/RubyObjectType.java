@@ -74,14 +74,4 @@ public class RubyObjectType extends ObjectType {
         return receiver.getDynamicObject().getShape().hasProperty(name);
     }
 
-    @Override
-    public boolean equals(DynamicObject dynamicObject, Object o) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int hashCode(DynamicObject dynamicObject) {
-        throw new UnsupportedOperationException();
-    }
-
 }

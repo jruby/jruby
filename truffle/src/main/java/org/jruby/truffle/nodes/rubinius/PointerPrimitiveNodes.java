@@ -10,59 +10,50 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import com.oracle.truffle.api.object.HiddenKey;
+import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
-import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import jnr.ffi.Pointer;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.unsafe.UnsafeHolder;
-import sun.misc.Unsafe;
+
+import java.util.EnumSet;
 
 public abstract class PointerPrimitiveNodes {
 
-    public static final HiddenKey ADDRESS_IDENTIFIER = new HiddenKey("address");
+    private static final HiddenKey POINTER_IDENTIFIER = new HiddenKey("pointer");
+    private static final Property POINTER_PROPERTY;
+    private static final DynamicObjectFactory POINTER_FACTORY;
 
-    public static abstract class WriteAddressPrimitiveNode extends RubiniusPrimitiveNode {
-
-        @Child private WriteHeadObjectFieldNode writeAddressNode;
-
-        public WriteAddressPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            writeAddressNode = new WriteHeadObjectFieldNode(PointerPrimitiveNodes.ADDRESS_IDENTIFIER);
-        }
-
-        public long writeAddress(RubyBasicObject pointer, long address) {
-            writeAddressNode.execute(pointer, address);
-            return address;
-        }
-
+    static {
+        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+        POINTER_PROPERTY = Property.create(POINTER_IDENTIFIER, allocator.locationForType(Pointer.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        POINTER_FACTORY = RubyBasicObject.EMPTY_SHAPE.addProperty(POINTER_PROPERTY).createFactory();
     }
 
-    public static abstract class ReadAddressPrimitiveNode extends RubiniusPrimitiveNode {
+    public static RubyBasicObject createPointer(RubyClass rubyClass, Pointer pointer) {
+        return new RubyBasicObject(rubyClass, POINTER_FACTORY.newInstance(pointer));
+    }
 
-        @Child private ReadHeadObjectFieldNode readAddressNode;
+    public static void setPointer(RubyBasicObject pointer, Pointer newPointer) {
+        assert pointer.getDynamicObject().getShape().hasProperty(POINTER_IDENTIFIER);
 
-        public ReadAddressPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            readAddressNode = new ReadHeadObjectFieldNode(PointerPrimitiveNodes.ADDRESS_IDENTIFIER);
+        try {
+            POINTER_PROPERTY.set(pointer.getDynamicObject(), newPointer, pointer.getDynamicObject().getShape());
+        } catch (IncompatibleLocationException | FinalLocationException e) {
+            throw new UnsupportedOperationException(e);
         }
+    }
 
-        public long getAddress(RubyBasicObject pointer) {
-            try {
-                return readAddressNode.executeLong(pointer);
-            } catch (UnexpectedResultException e) {
-                throw new UnsupportedOperationException();
-            }
-        }
-
+    public static Pointer getPointer(RubyBasicObject pointer) {
+        assert pointer.getDynamicObject().getShape().hasProperty(POINTER_IDENTIFIER);
+        return (Pointer) POINTER_PROPERTY.get(pointer.getDynamicObject(), true);
     }
 
     @RubiniusPrimitive(name = "pointer_malloc")
-    public static abstract class PointerMallocPrimitiveNode extends WriteAddressPrimitiveNode {
+    public static abstract class PointerMallocPrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerMallocPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -75,31 +66,28 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject malloc(RubyClass pointerClass, long size) {
-            final RubyBasicObject pointer = new RubyBasicObject(pointerClass);
-            writeAddress(pointer, UnsafeHolder.U.allocateMemory(size));
-            return pointer;
+            return createPointer(pointerClass, getMemoryManager().newPointer(UnsafeHolder.U.allocateMemory(size)));
         }
 
     }
 
     @RubiniusPrimitive(name = "pointer_free")
-    public static abstract class PointerFreePrimitiveNode extends ReadAddressPrimitiveNode {
+    public static abstract class PointerFreePrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerFreePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
-        public long free(RubyBasicObject pointer) {
-            final long address = getAddress(pointer);
-            UnsafeHolder.U.freeMemory(address);
-            return address;
+        public RubyBasicObject free(RubyBasicObject pointer) {
+            UnsafeHolder.U.freeMemory(getPointer(pointer).address());
+            return pointer;
         }
 
     }
 
     @RubiniusPrimitive(name = "pointer_set_address")
-    public static abstract class PointerSetAddressPrimitiveNode extends WriteAddressPrimitiveNode {
+    public static abstract class PointerSetAddressPrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerSetAddressPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -112,21 +100,17 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public long setAddress(RubyBasicObject pointer, long address) {
-            return writeAddress(pointer, address);
+            setPointer(pointer, getMemoryManager().newPointer(address));
+            return address;
         }
 
     }
 
     @RubiniusPrimitive(name = "pointer_add")
-    public static abstract class PointerAddPrimitiveNode extends WriteAddressPrimitiveNode {
-
-        @Child private WriteHeadObjectFieldNode writeAddressNode;
-        @Child private ReadHeadObjectFieldNode readAddressNode;
+    public static abstract class PointerAddPrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerAddPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeAddressNode = new WriteHeadObjectFieldNode(ADDRESS_IDENTIFIER);
-            readAddressNode = new ReadHeadObjectFieldNode(PointerPrimitiveNodes.ADDRESS_IDENTIFIER);
         }
 
         @Specialization
@@ -136,36 +120,21 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject add(RubyBasicObject a, long b) {
-            final RubyBasicObject result = new RubyBasicObject(a.getLogicalClass());
-            writeAddress(result, getAddress(a) + b);
-            return result;
-        }
-
-        public long writeAddress(RubyBasicObject pointer, long address) {
-            writeAddressNode.execute(pointer, address);
-            return address;
-        }
-
-        public long getAddress(RubyBasicObject pointer) {
-            try {
-                return readAddressNode.executeLong(pointer);
-            } catch (UnexpectedResultException e) {
-                throw new UnsupportedOperationException();
-            }
+            return createPointer(a.getLogicalClass(), getMemoryManager().newPointer(getPointer(a).address() + b));
         }
 
     }
 
     @RubiniusPrimitive(name = "pointer_read_int")
-    public static abstract class PointerReadIntPrimitiveNode extends ReadAddressPrimitiveNode {
+    public static abstract class PointerReadIntPrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerReadIntPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization(guards = "isSigned(signed)")
-        public long readInt(RubyBasicObject pointer, boolean signed) {
-            return UnsafeHolder.U.getInt(getAddress(pointer));
+        public int readInt(RubyBasicObject pointer, boolean signed) {
+            return getPointer(pointer).getInt(0);
         }
 
         protected boolean isSigned(boolean signed) {
@@ -175,7 +144,7 @@ public abstract class PointerPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "pointer_read_string")
-    public static abstract class PointerReadStringPrimitiveNode extends ReadAddressPrimitiveNode {
+    public static abstract class PointerReadStringPrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerReadStringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -183,18 +152,15 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public RubyString readString(RubyBasicObject pointer, int length) {
-            final long address = getAddress(pointer);
             final byte[] bytes = new byte[length];
-            for (int n = 0; n < bytes.length; n++) {
-                bytes[n] = UnsafeHolder.U.getByte(address + n * Unsafe.ARRAY_BYTE_INDEX_SCALE);
-            }
+            getPointer(pointer).get(0, bytes, 0, length);
             return getContext().makeString(bytes);
         }
 
     }
 
     @RubiniusPrimitive(name = "pointer_set_autorelease")
-    public static abstract class PointerSetAutoreleasePrimitiveNode extends ReadAddressPrimitiveNode {
+    public static abstract class PointerSetAutoreleasePrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerSetAutoreleasePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -209,7 +175,7 @@ public abstract class PointerPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "pointer_set_at_offset", lowerFixnumParameters = {0, 2})
-    public static abstract class PointerSetAtOffsetPrimitiveNode extends ReadAddressPrimitiveNode {
+    public static abstract class PointerSetAtOffsetPrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerSetAtOffsetPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -217,48 +183,29 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public int setAtOffset(RubyBasicObject pointer, int offset, Object type, int value) {
-            UnsafeHolder.U.putInt(getAddress(pointer), value);
+            // TODO CS 13-May-15 what does the type parameter do?
+            getPointer(pointer).putInt(offset, value);
             return value;
         }
 
     }
 
     @RubiniusPrimitive(name = "pointer_read_pointer")
-    public static abstract class PointerReadPointerPrimitiveNode extends ReadAddressPrimitiveNode {
-
-        @Child private WriteHeadObjectFieldNode writeAddressNode;
-        @Child private ReadHeadObjectFieldNode readAddressNode;
+    public static abstract class PointerReadPointerPrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerReadPointerPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeAddressNode = new WriteHeadObjectFieldNode(ADDRESS_IDENTIFIER);
-            readAddressNode = new ReadHeadObjectFieldNode(PointerPrimitiveNodes.ADDRESS_IDENTIFIER);
         }
 
         @Specialization
         public RubyBasicObject readPointer(RubyBasicObject pointer) {
-            final RubyBasicObject readPointer = new RubyBasicObject(pointer.getLogicalClass());
-            writeAddress(readPointer, UnsafeHolder.U.getLong(getAddress(pointer)));
-            return pointer;
-        }
-
-        public long writeAddress(RubyBasicObject pointer, long address) {
-            writeAddressNode.execute(pointer, address);
-            return address;
-        }
-
-        public long getAddress(RubyBasicObject pointer) {
-            try {
-                return readAddressNode.executeLong(pointer);
-            } catch (UnexpectedResultException e) {
-                throw new UnsupportedOperationException();
-            }
+            return createPointer(pointer.getLogicalClass(), getPointer(pointer).getPointer(0));
         }
 
     }
 
     @RubiniusPrimitive(name = "pointer_address")
-    public static abstract class PointerAddressPrimitiveNode extends ReadAddressPrimitiveNode {
+    public static abstract class PointerAddressPrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerAddressPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -266,7 +213,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public long address(RubyBasicObject pointer) {
-            return getAddress(pointer);
+            return getPointer(pointer).address();
         }
 
     }

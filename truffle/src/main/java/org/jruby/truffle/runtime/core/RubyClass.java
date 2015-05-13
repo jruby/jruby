@@ -23,7 +23,8 @@ import org.jruby.truffle.runtime.RubyContext;
 public class RubyClass extends RubyModule {
 
     // TODO(CS): is this compilation final needed? Is it a problem for correctness?
-    @CompilationFinal Allocator allocator;
+    @CompilationFinal
+    private Allocator allocator;
 
     private final boolean isSingleton;
     private final RubyModule attached;
@@ -54,7 +55,7 @@ public class RubyClass extends RubyModule {
 
         assert isSingleton || attached == null;
 
-        this.allocator = allocator;
+        this.unsafeSetAllocator(allocator);
         this.isSingleton = isSingleton;
         this.attached = attached;
 
@@ -66,7 +67,7 @@ public class RubyClass extends RubyModule {
     public void initialize(RubyClass superclass) {
         unsafeSetSuperclass(superclass);
         ensureSingletonConsistency();
-        allocator = superclass.allocator;
+        unsafeSetAllocator(superclass.getAllocator());
     }
 
     /**
@@ -84,7 +85,7 @@ public class RubyClass extends RubyModule {
 
     public void initCopy(RubyClass from) {
         super.initCopy(from);
-        this.allocator = ((RubyClass) from).allocator;
+        this.unsafeSetAllocator(((RubyClass) from).getAllocator());
         // isSingleton is false as we cannot copy a singleton class.
         // and therefore attached is null.
     }
@@ -121,7 +122,7 @@ public class RubyClass extends RubyModule {
     }
 
     public RubyBasicObject allocate(Node currentNode) {
-        return allocator.allocate(getContext(), this, currentNode);
+        return getAllocator().allocate(getContext(), this, currentNode);
     }
 
     public boolean isSingleton() {
@@ -146,6 +147,10 @@ public class RubyClass extends RubyModule {
 
     public Allocator getAllocator() {
         return allocator;
+    }
+
+    public void unsafeSetAllocator(Allocator allocator) {
+        this.allocator = allocator;
     }
 
     public static class ClassAllocator implements Allocator {
