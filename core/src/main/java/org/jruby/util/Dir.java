@@ -643,10 +643,12 @@ public class Dir {
                 }
             }
 
-            if ( isAbsolutePath(path, begin, end) ) {
-                status = addToResultIfExists(posix, null, path, begin, end, flags, func, arg);
-            } else if ( (end - begin) > 0 ) { // Length check is a hack.  We should not be reeiving "" as a filename ever.
-                status = addToResultIfExists(posix, cwd, path, begin, end, flags, func, arg);
+            if ( (end - begin) > 0 ) {
+                if ( isAbsolutePath(path, begin, end) ) {
+                    status = addToResultIfExists(posix, null, path, begin, end, flags, func, arg);
+                } else {
+                    status = addToResultIfExists(posix, cwd, path, begin, end, flags, func, arg);
+                }
             }
 
             return status;

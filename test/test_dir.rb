@@ -24,13 +24,13 @@ class TestDir < Test::Unit::TestCase
 
   # JRUBY-2519
   def test_dir_instance_should_not_cache_dir_contents
-    
+
     require 'fileutils'
     require 'tmpdir'
-    
+
     testdir = File.join(Dir.tmpdir, Process.pid.to_s)
     FileUtils.mkdir_p testdir
-    
+
     FileUtils.touch File.join(testdir, 'fileA.txt')
     dir = Dir.new(testdir)
     FileUtils.touch File.join(testdir, 'fileB.txt')
@@ -38,8 +38,8 @@ class TestDir < Test::Unit::TestCase
 
     assert_equal 'fileA.txt', dir.find {|item| item == 'fileA.txt' }
     assert_equal 'fileB.txt', dir.find {|item| item == 'fileB.txt' }
-  end  
-  
+  end
+
   def test_pwd_and_getwd_equivalent
     assert_equal(Dir.pwd, Dir.getwd)
   end
@@ -72,7 +72,7 @@ class TestDir < Test::Unit::TestCase
   end
 
   def test_bogus_glob
-    # Test unescaped special char that is meant to be used with another 
+    # Test unescaped special char that is meant to be used with another
     # (i.e. bogus glob pattern)
     assert_equal([], Dir.glob("{"))
   end
@@ -83,7 +83,7 @@ class TestDir < Test::Unit::TestCase
   end
 
   def test_glob_double_star
-    # Test that glob expansion of ** works ok with non-patterns as path 
+    # Test that glob expansion of ** works ok with non-patterns as path
     # elements. This used to throw NPE.
     Dir.mkdir("testDir_2")
     open("testDir_2/testDir_tmp1", "w").close
@@ -114,6 +114,10 @@ class TestDir < Test::Unit::TestCase
     Dir["blahtest/test_argf.rb"[4..-1]]
   end
 
+  def test_glob_empty_parens
+    assert_equal [], Dir['{}'] # #2922 throwing AIOoBE is <= 1.7.20
+  end
+
   # http://jira.codehaus.org/browse/JRUBY-300
   def test_chdir_and_pwd
     java_test_classes = File.expand_path(File.dirname(__FILE__) + '/../test/target/test-classes')
@@ -124,7 +128,7 @@ class TestDir < Test::Unit::TestCase
       pwd.gsub! '\\', '/'
       assert_equal("testDir_4", pwd.split("/")[-1].strip)
 
-      if (ENV_JAVA['jruby.home'] and not 
+      if (ENV_JAVA['jruby.home'] and not
           ENV_JAVA['jruby.home'].match( /!\// ) and not
           ENV_JAVA['jruby.home'].match( /:\// ))
         pwd = `#{ENV_JAVA['jruby.home']}/bin/jruby -e "puts Dir.pwd"`
@@ -217,7 +221,7 @@ class TestDir < Test::Unit::TestCase
   # JRUBY-4983
   def test_entries_unicode
     utf8_dir = "testDir_1/glk\u00a9"
-    
+
     Dir.mkdir("./testDir_1")
     Dir.mkdir(utf8_dir)
 
@@ -269,7 +273,7 @@ class TestDir < Test::Unit::TestCase
     def test_chdir_exceptions_windows
       orig_pwd = Dir.pwd
       assert_raise(Errno::EINVAL) {
-        Dir.chdir('//') # '//' is not a valid thing on Windows 
+        Dir.chdir('//') # '//' is not a valid thing on Windows
       }
       assert_raise(Errno::ENOENT) {
         Dir.chdir('//blah-blah-blah') # doesn't exist
@@ -289,7 +293,7 @@ class TestDir < Test::Unit::TestCase
     ensure
       Dir.chdir(orig_pwd)
     end
-    
+
     def test_new_windows
       slashes = ['/', '\\']
       slashes.each { |slash|
@@ -306,7 +310,7 @@ class TestDir < Test::Unit::TestCase
         assert_equal(drive_root_entries, slash_entries, "slash - #{slash}")
       }
     end
-    
+
     def test_new_with_drive_letter
       current_drive_letter = Dir.pwd[0..2]
 
@@ -318,7 +322,7 @@ class TestDir < Test::Unit::TestCase
         Dir.new(current_drive_letter + "\\").entries,
         Dir.new(current_drive_letter).entries)
     end
-    
+
     def test_entries_with_drive_letter
       current_drive_letter = Dir.pwd[0..2]
 
@@ -330,7 +334,7 @@ class TestDir < Test::Unit::TestCase
         Dir.entries(current_drive_letter + "\\"),
         Dir.entries(current_drive_letter))
     end
-    
+
     def test_open_windows
       slashes = ['/', '\\']
       slashes.each { |slash|
@@ -347,13 +351,13 @@ class TestDir < Test::Unit::TestCase
         assert_equal(drive_root_entries, slash_entries, "slash - #{slash}")
       }
     end
-    
+
     def test_dir_new_exceptions_windows
       assert_raise(Errno::ENOENT) {
         Dir.new('')
       }
       assert_raise(Errno::EINVAL) {
-        Dir.new('//') # '//' is not a valid thing on Windows 
+        Dir.new('//') # '//' is not a valid thing on Windows
       }
       assert_raise(Errno::ENOENT) {
         Dir.new('//blah-blah-blah') # doesn't exist
@@ -371,7 +375,7 @@ class TestDir < Test::Unit::TestCase
         Dir.new('\\\\\\') # doesn't exist
       }
     end
-    
+
     def test_entries_windows
       slashes = ['/', '\\']
       slashes.each { |slash|
@@ -387,7 +391,7 @@ class TestDir < Test::Unit::TestCase
         Dir.entries('')
       }
       assert_raise(Errno::EINVAL) {
-        Dir.entries('//') # '//' is not a valid thing on Windows 
+        Dir.entries('//') # '//' is not a valid thing on Windows
       }
       assert_raise(Errno::ENOENT) {
         Dir.entries('//blah-blah-blah') # doesn't exist
@@ -446,11 +450,11 @@ class TestDir < Test::Unit::TestCase
       require 'pathname'
       win_dir = nil
       if FileTest.exist?('C:/windows')
-        win_dir = "windows" 
+        win_dir = "windows"
       elsif FileTest.exist?('C:/winnt')
-        win_dir = "winnt" 
+        win_dir = "winnt"
       end
-        
+
       if (win_dir != nil)
         Pathname.new("C:\\#{win_dir}").realpath.to_s
         Pathname.new("C:\\#{win_dir}\\..\\#{win_dir}").realpath.to_s
