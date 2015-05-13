@@ -102,25 +102,37 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         return yieldSpecificMultiArgsCommon(context, new IRubyObject[] { arg0, arg1, arg2 }, binding, type);
     }
 
+    private IRubyObject[] toAry(ThreadContext context, IRubyObject value) {
+        IRubyObject val0 = Helpers.aryToAry(value);
+
+        if (!(val0 instanceof RubyArray)) {
+            throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
+        }
+
+        return ((RubyArray)val0).toJavaArray();
+    }
+
+    protected IRubyObject doYieldLambda(ThreadContext context, IRubyObject value, Binding binding, Type type) {
+        // Lambda does not splat arrays even if a rest arg is present when it wants a single parameter filled.
+        IRubyObject[] args = signature.required() == 1 ? new IRubyObject[] { value } : toAry(context, value);
+
+        signature.checkArity(context.runtime, args);
+
+        return commonYieldPath(context, args, null, binding, type, Block.NULL_BLOCK);
+    }
+
     @Override
     public IRubyObject doYield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
-        IRubyObject[] args;
+        if (type == Type.LAMBDA) return doYieldLambda(context, value, binding, type);
 
         int blockArity = getSignature().arityValue();
 
-        // For lambdas, independent of whether there is a REST arg or not, if # required args is 1,
-        // the value is passed through unmodified even when it is an array!
-        if ((type == Type.LAMBDA && signature.required() == 1) || (blockArity >= -1 && blockArity <= 1)) {
+        IRubyObject[] args;
+        if (blockArity >= -1 && blockArity <= 1) {
             args = new IRubyObject[] { value };
         } else {
-            IRubyObject val0 = Helpers.aryToAry(value);
-            if (!(val0 instanceof RubyArray)) {
-                throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
-            }
-            args = ((RubyArray)val0).toJavaArray();
+            args = toAry(context, value);
         }
-
-        if (type == Type.LAMBDA) signature.checkArity(context.runtime, args);
 
         return commonYieldPath(context, args, null, binding, type, Block.NULL_BLOCK);
     }
