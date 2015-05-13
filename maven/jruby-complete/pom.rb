@@ -18,6 +18,10 @@ project 'JRuby Complete' do
     jar 'org.jruby:jruby-core:${project.version}' do
       # this needs to match the Embed-Dependency on the maven-bundle-plugin
       exclusion 'com.github.jnr:jnr-ffi'
+      # HACK workaround a bug in maven + ruby-dsl
+      ['asm', 'asm-commons', 'asm-tree', 'asm-analysis', 'asm-util' ].each do |e|
+        exclusion "org.ow2.asm:#{e}"
+      end
     end
     jar 'org.jruby:jruby-stdlib:${project.version}'
   end
