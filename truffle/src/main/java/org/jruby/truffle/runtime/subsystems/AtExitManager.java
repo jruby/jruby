@@ -11,28 +11,44 @@ package org.jruby.truffle.runtime.subsystems;
 
 import org.jruby.truffle.runtime.core.RubyProc;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
-/**
- * Manages at_exit callbacks.
- */
 public class AtExitManager {
 
-    private final List<RubyProc> blocks = new LinkedList<>();
+    private final List<RubyProc> runOnExit = new LinkedList<>();
+    private final List<RubyProc> runOnExitAlways = new LinkedList<>();
 
-    public synchronized void add(RubyProc block) {
-        blocks.add(block);
-    }
-
-    public synchronized void run() {
-        final ListIterator<RubyProc> iterator = blocks.listIterator(blocks.size());
-
-        while (iterator.hasPrevious()) {
-            RubyProc hook = iterator.previous();
-            iterator.remove();
-            hook.rootCall();
+    public synchronized void add(RubyProc block, boolean always) {
+        if (always) {
+            runOnExitAlways.add(block);
+        } else {
+            runOnExit.add(block);
         }
     }
+
+    public synchronized void run(boolean normalExit) {
+        if (normalExit) {
+            Collections.reverse(runOnExit);
+
+            for (RubyProc block : runOnExit) {
+                try {
+                    block.rootCall();
+                } catch (Exception e) {
+                }
+            }
+        }
+
+        Collections.reverse(runOnExitAlways);
+
+        for (RubyProc block : runOnExitAlways) {
+            try {
+                block.rootCall();
+            } catch (Exception e) {
+            }
+        }
+    }
+
 }

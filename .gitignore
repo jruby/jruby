@@ -85,6 +85,7 @@ install/updates.xml
 maven/jruby/src/it/osgi_*
 maven/jruby/src/it/j2ee_wlp
 maven/jruby-complete/src/it/osgi*
+maven/jruby-complete/pom.xml
 
 # IntelliJ project files
 .idea

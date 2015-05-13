@@ -37,7 +37,7 @@ end
 if STDOUT.tty?
   STDOUT.sync = true
 else
-  at_exit do
+  Truffle::Primitive.at_exit true do
     STDOUT.flush
   end
 end
@@ -45,7 +45,7 @@ end
 if STDERR.tty?
   STDERR.sync = true
 else
-  at_exit do
+  Truffle::Primitive.at_exit true do
     STDERR.flush
   end
 end

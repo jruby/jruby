@@ -85,7 +85,7 @@ branches:
     - /^test-.*$/
     - /^ha-feature/
 
-script: if [[ -v COMMAND ]]; then $COMMAND; else travis_retry mvn -Pbootstrap clean install -Dinvoker.skip=false $PHASE | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]; fi
+script: if [[ -v COMMAND ]]; then $COMMAND; else travis_retry ./mvnw -Pbootstrap clean install -Dinvoker.skip=false $PHASE | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]; fi
 install: /bin/true
 notifications:
   irc:

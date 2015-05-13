@@ -18,10 +18,6 @@
     <Bug pattern="DM_EXIT" />
   </Match>
   <Match>
-    <Class name="org.jruby.truffle.nodes.core.KernelNodes$AbortNode" />
-    <Bug pattern="DM_EXIT" />
-  </Match>
-  <Match>
     <Class name="org.jruby.truffle.runtime.DebugOperations" />
     <Bug pattern="DM_EXIT" />
   </Match>
@@ -105,6 +101,10 @@
   <Match>
     <Class name="~org\.jruby\.truffle\.runtime\.DebugOperations.*" />
     <Bug pattern="URF_UNREAD_FIELD" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.runtime.subsystems.AtExitManager" />
+    <Bug pattern="DE_MIGHT_IGNORE" />
   </Match>
 
   <!-- Stuff we just don't agree with -->

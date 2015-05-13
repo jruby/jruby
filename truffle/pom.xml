@@ -11,8 +11,8 @@
   <name>JRuby Truffle</name>
   <properties>
     <jruby.basedir>${basedir}/..</jruby.basedir>
-    <tesla.dump.readonly>true</tesla.dump.readonly>
-    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <polyglot.dump.readonly>true</polyglot.dump.readonly>
+    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
   </properties>
   <dependencies>
     <dependency>

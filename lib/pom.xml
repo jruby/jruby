@@ -10,13 +10,12 @@
   <artifactId>jruby-stdlib</artifactId>
   <name>JRuby Lib Setup</name>
   <properties>
-    <tesla.dump.readonly>true</tesla.dump.readonly>
+    <polyglot.dump.readonly>true</polyglot.dump.readonly>
     <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
     <gem.home>${basedir}/ruby/gems/shared</gem.home>
     <jruby.plugins.version>1.0.9</jruby.plugins.version>
-    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
-    <tesla.version>0.1.1</tesla.version>
   </properties>
   <dependencies>
     <dependency>
@@ -254,9 +253,9 @@
         <artifactId>build-helper-maven-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>io.tesla.polyglot</groupId>
-        <artifactId>tesla-polyglot-maven-plugin</artifactId>
-        <version>${tesla.version}</version>
+        <groupId>io.takari.polyglot</groupId>
+        <artifactId>polyglot-maven-plugin</artifactId>
+        <version>0.1.10</version>
         <executions>
           <execution>
             <id>install_gems</id>
@@ -305,9 +304,9 @@
         </executions>
         <dependencies>
           <dependency>
-            <groupId>io.tesla.polyglot</groupId>
-            <artifactId>tesla-polyglot-ruby</artifactId>
-            <version>${tesla.version}</version>
+            <groupId>io.takari.polyglot</groupId>
+            <artifactId>polyglot-ruby</artifactId>
+            <version>0.1.10</version>
           </dependency>
         </dependencies>
       </plugin>

@@ -5,8 +5,8 @@ project 'JRuby Core' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-core'
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readonly' => true,
+  properties( 'polyglot.dump.pom' => 'pom.xml',
+              'polyglot.dump.readonly' => true,
 
               'tzdata.version' => '2013d',
               'tzdata.scope' => 'provided',
@@ -44,7 +44,7 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jnr-enxio:0.9'
   jar 'com.github.jnr:jnr-x86asm:1.0.2'
   jar 'com.github.jnr:jnr-unixsocket:0.8'
-  jar 'com.github.jnr:jnr-posix:3.0.12'
+  jar 'com.github.jnr:jnr-posix:3.0.13-SNAPSHOT'
   jar 'com.github.jnr:jnr-constants:0.8.7'
   jar 'com.github.jnr:jnr-ffi:2.0.3'
   jar 'com.github.jnr:jffi:${jffi.version}'
