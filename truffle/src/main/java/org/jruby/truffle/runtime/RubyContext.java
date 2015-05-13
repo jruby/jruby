@@ -438,15 +438,18 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         }
     }
 
-    public org.jruby.RubyArray toJRuby(RubyArray array) {
-        final Object[] objects = array.slowToArray();
+    public IRubyObject[] toJRuby(Object... objects) {
         final IRubyObject[] store = new IRubyObject[objects.length];
 
         for (int n = 0; n < objects.length; n++) {
             store[n] = toJRuby(objects[n]);
         }
 
-        return runtime.newArray(store);
+        return store;
+    }
+
+    public org.jruby.RubyArray toJRuby(RubyArray array) {
+        return runtime.newArray(toJRuby(array.slowToArray()));
     }
 
     public IRubyObject toJRuby(RubyEncoding encoding) {
