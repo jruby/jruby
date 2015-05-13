@@ -298,12 +298,13 @@ public class Dir {
     }
 
     public static List<ByteList> push_glob(POSIX posix, String cwd, ByteList globByteList, int flags) {
-        List<ByteList> result = new ArrayList<ByteList>();
         if (globByteList.length() > 0) {
+            final ArrayList<ByteList> result = new ArrayList<ByteList>();
             push_braces(posix, cwd, result, new GlobPattern(globByteList, flags));
+            return result;
         }
 
-        return result;
+        return new ArrayList<ByteList>(4);
     }
 
     private static class GlobPattern {
@@ -416,7 +417,7 @@ public class Dir {
     /*
      * Process {}'s (example: Dir.glob("{jruby,jython}/README*")
      */
-    private static int push_braces(POSIX posix, String cwd, List<ByteList> result, GlobPattern pattern) {
+    private static int push_braces(POSIX posix, String cwd, ArrayList<ByteList> result, GlobPattern pattern) {
         pattern.reset();
         int lbrace = pattern.indexOf((byte) '{'); // index of left-most brace
         int rbrace = pattern.findClosingIndexOf(lbrace);// index of right-most brace
@@ -496,16 +497,14 @@ public class Dir {
         return false;
     }
 
-    private static int remove_backslashes(byte[] bytes, int index, int len) {
-        int t = index;
+    private static int remove_backslashes(byte[] bytes, int index, int end) {
+        int i = index;
+        for ( ; index < end; index++, i++ ) {
+            if (bytes[index] == '\\' && ++index == end) break;
 
-        for (; index < len; index++, t++) {
-            if (bytes[index] == '\\' && ++index == len) break;
-
-            bytes[t] = bytes[index];
+            bytes[i] = bytes[index];
         }
-
-        return t;
+        return i;
     }
 
     private static int strchr(byte[] bytes, int begin, int end, byte ch) {
@@ -619,36 +618,35 @@ public class Dir {
         return 0;
     }
 
-    private static int glob_helper(POSIX posix, String cwd, final ByteList bytes, int sub, int flags, GlobFunc func, GlobArgs arg) {
-        final int begin = bytes.getBegin();
-        final int end = begin + bytes.getRealSize();
-        return glob_helper(posix, cwd, bytes.getUnsafeBytes(), begin, end, sub, flags, func, arg);
+    private static int glob_helper(POSIX posix, String cwd, ByteList path, int sub, int flags, GlobFunc func, GlobArgs arg) {
+        final int begin = path.getBegin();
+        final int end = begin + path.getRealSize();
+        return glob_helper(posix, cwd, path.getUnsafeBytes(), begin, end, sub, flags, func, arg);
     }
 
-    private static int glob_helper(POSIX posix, String cwd, byte[] bytes, int begin, int end, int sub, int flags, GlobFunc func, GlobArgs arg) {
-        int p,m;
-        int status = 0;
+    private static int glob_helper(POSIX posix, String cwd, byte[] path, int begin, int end, int sub, int flags, GlobFunc func, GlobArgs arg) {
+        int p, m; int status = 0;
 
         p = sub != -1 ? sub : begin;
 
-        if (!has_magic(bytes, p, end, flags)) {
-            if (DOSISH || (flags & FNM_NOESCAPE) == 0) {
-                final byte[] newpath = new byte[end];
-                System.arraycopy(bytes,0,newpath,0,end);
-                if (sub != -1) {
-                    p = (sub - begin);
-                    end = remove_backslashes(newpath, p, end);
-                    sub = p;
-                } else {
-                    end = remove_backslashes(newpath, 0, end);
-                    bytes = newpath;
+        if ( ! has_magic(path, p, end, flags) ) {
+            if ( DOSISH || (flags & FNM_NOESCAPE) == 0 ) {
+                if ( sub != -1 ) { // can modify path (our internal buf[])
+                    end = remove_backslashes(path, sub, end);
+                }
+                else {
+                    final int len = end - begin;
+                    final byte[] newPath = new byte[len];
+                    System.arraycopy(path, begin, newPath, 0, len);
+                    begin = 0; end = remove_backslashes(newPath, 0, len);
+                    path = newPath;
                 }
             }
 
-            if (isAbsolutePath(bytes, begin, end)) {
-                status = addToResultIfExists(posix, null, bytes, begin, end, flags, func, arg);
-            } else if ((end - begin) > 0) { // Length check is a hack.  We should not be reeiving "" as a filename ever.
-                status = addToResultIfExists(posix, cwd, bytes, begin, end, flags, func, arg);
+            if ( isAbsolutePath(path, begin, end) ) {
+                status = addToResultIfExists(posix, null, path, begin, end, flags, func, arg);
+            } else if ( (end - begin) > 0 ) { // Length check is a hack.  We should not be reeiving "" as a filename ever.
+                status = addToResultIfExists(posix, cwd, path, begin, end, flags, func, arg);
             }
 
             return status;
@@ -658,14 +656,14 @@ public class Dir {
 
         ByteList buf = new ByteList(20); FileResource resource;
         mainLoop: while(p != -1 && status == 0) {
-            if ( bytes[p] == '/' ) p++;
+            if ( path[p] == '/' ) p++;
 
-            m = strchr(bytes, p, end, (byte) '/');
-            if ( has_magic(bytes, p, m == -1 ? end : m, flags) ) {
+            m = strchr(path, p, end, (byte) '/');
+            if ( has_magic(path, p, m == -1 ? end : m, flags) ) {
                 finalize: do {
-                    byte[] base = extract_path(bytes, begin, p);
+                    byte[] base = extract_path(path, begin, p);
                     byte[] dir = begin == p ? new byte[] { '.' } : base;
-                    byte[] magic = extract_elem(bytes,p,end);
+                    byte[] magic = extract_elem(path, p, end);
                     boolean recursive = false;
 
                     resource = JRubyFile.createResource(posix, cwd, newStringFromUTF8(dir, 0, dir.length));
@@ -676,7 +674,7 @@ public class Dir {
                             recursive = true;
                             buf.length(0);
                             buf.append(base);
-                            buf.append(bytes, (base.length > 0 ? m : m + 1), end - (base.length > 0 ? m : m + 1));
+                            buf.append(path, (base.length > 0 ? m : m + 1), end - (base.length > 0 ? m : m + 1));
                             status = glob_helper(posix, cwd, buf, n, flags, func, arg);
                             if ( status != 0 ) break finalize;
                         }
@@ -699,11 +697,11 @@ public class Dir {
                             buf.append( getBytesInUTF8(file) );
                             resource = JRubyFile.createResource(posix, cwd, newStringFromUTF8(buf));
                             if ( !resource.isSymLink() && resource.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
-                                int t = buf.getRealSize();
+                                final int len = buf.getRealSize();
                                 buf.append(SLASH);
                                 buf.append(DOUBLE_STAR);
-                                buf.append(bytes, m, end - m);
-                                status = glob_helper(posix, cwd, buf, t, flags, func, arg);
+                                buf.append(path, m, end - m);
+                                status = glob_helper(posix, cwd, buf, buf.getBegin() + len, flags, func, arg);
                                 if ( status != 0 ) break;
                             }
                             continue;
@@ -730,11 +728,11 @@ public class Dir {
                         if ( status == 0 ) {
                             resource = JRubyFile.createResource(posix, cwd, newStringFromUTF8(link));
                             if ( resource.isDirectory() ) {
-                                int len = link.getRealSize();
+                                final int len = link.getRealSize();
                                 buf.length(0);
                                 buf.append(link);
-                                buf.append(bytes, m, end - m);
-                                status = glob_helper(posix, cwd, buf.getUnsafeBytes(), 0, buf.getRealSize(), len, flags, func, arg);
+                                buf.append(path, m, end - m);
+                                status = glob_helper(posix, cwd, buf, buf.getBegin() + len, flags, func, arg);
                             }
                         }
                     }
