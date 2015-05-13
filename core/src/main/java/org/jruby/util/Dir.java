@@ -38,6 +38,7 @@ import org.jruby.RubyFile;
 
 import org.jruby.platform.Platform;
 import java.io.IOException;
+import java.util.Collections;
 
 /**
  * This class exists as a counterpart to the dir.c file in
@@ -304,7 +305,7 @@ public class Dir {
             return result;
         }
 
-        return new ArrayList<ByteList>(4);
+        return Collections.emptyList();
     }
 
     private static class GlobPattern {
@@ -415,7 +416,7 @@ public class Dir {
     /*
      * Process {}'s (example: Dir.glob("{jruby,jython}/README*")
      */
-    private static int push_braces(POSIX posix, String cwd, ArrayList<ByteList> result, GlobPattern pattern) {
+    private static int push_braces(POSIX posix, String cwd, List<ByteList> result, GlobPattern pattern) {
         pattern.reset();
         int lbrace = pattern.indexOf((byte) '{'); // index of left-most brace
         int rbrace = pattern.findClosingIndexOf(lbrace);// index of right-most brace

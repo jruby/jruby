@@ -173,13 +173,16 @@ public class RubyDir extends RubyObject {
     }
 
     private static RubyArray asRubyStringList(Ruby runtime, List<ByteList> dirs) {
+        final int size = dirs.size();
+        if ( size == 0 ) return RubyArray.newEmptyArray(runtime);
+
         Encoding enc = runtime.getDefaultExternalEncoding();
         if (enc == null) {
             enc = UTF8;
         }
 
-        IRubyObject[] dirStrings = new IRubyObject[ dirs.size() ];
-        for ( int i = 0; i < dirs.size(); i++ ) {
+        IRubyObject[] dirStrings = new IRubyObject[ size ];
+        for ( int i = 0; i < size; i++ ) {
             dirStrings[i] = RubyString.newString(runtime, dirs.get(i), enc);
         }
         return RubyArray.newArrayNoCopy(runtime, dirStrings);
