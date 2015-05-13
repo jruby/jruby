@@ -607,11 +607,11 @@ public abstract class KernelNodes {
             return exit(1);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject exit(int exitCode) {
-            CompilerDirectives.transferToInterpreter();
-            System.exit(exitCode);
-            return nil();
+            getContext().innerShutdown(false);
+            throw new MainExitException(exitCode, true);
         }
 
     }
