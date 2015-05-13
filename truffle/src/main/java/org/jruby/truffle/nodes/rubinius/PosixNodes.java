@@ -72,6 +72,20 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "dup", isModuleFunction = true, required = 1)
+    public abstract static class DupNode extends CoreMethodArrayArgumentsNode {
+
+        public DupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int dup(int descriptor) {
+            return posix().dup(descriptor);
+        }
+
+    }
+
     @CoreMethod(names = "fchmod", isModuleFunction = true, required = 2)
     public abstract static class FchmodNode extends CoreMethodArrayArgumentsNode {
 
