@@ -47,16 +47,27 @@ public class AttachmentsManager {
     public synchronized void attach(String file, int line, final RubyProc block) {
         final String info = String.format("Truffle::Primitive.attach@%s:%d", file, line);
 
-        final Instrument instrument = Instrument.create(new ToolEvalNodeFactory() {
+        final Instrument instrument = Instrument.create(new AdvancedInstrumentResultListener() {
 
             @Override
-            public ToolEvalNode createToolEvalNode(Probe probe, Node node) {
-                return new ToolEvalNode() {
+            public void notifyResult(Node node, VirtualFrame virtualFrame, Object o) {
+            }
 
-                    @Child private DirectCallNode callNode;
+            @Override
+            public void notifyFailure(Node node, VirtualFrame virtualFrame, RuntimeException e) {
+            }
+
+        } , new AdvancedInstrumentRootFactory() {
+
+            @Override
+            public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
+                return new AdvancedInstrumentRoot() {
+
+                    @Node.Child
+                    private DirectCallNode callNode;
 
                     @Override
-                    public Object executeToolEvalNode(Node node, VirtualFrame frame) {
+                    public Object executeRoot(Node node, VirtualFrame frame) {
                         final RubyBinding binding = new RubyBinding(
                                 context.getCoreLibrary().getBindingClass(),
                                 RubyArguments.getSelf(frame.getArguments()),
@@ -87,7 +98,7 @@ public class AttachmentsManager {
                 };
             }
 
-        }, info);
+        }, Object.class, info);
 
         final Source source = context.getSourceManager().forFileBestFuzzily(file);
 
