@@ -16,7 +16,9 @@ module Truffle
     end
 
     # Load a set of C source code files as a C extension, specifying
-    # the name of the initialize function and the C compiler flags.
+    # the name of the initialize functions and the C compiler flags. You can
+    # use this to load multiple C extensions by supplying multiple init
+    # functions.
     # @return [nil]
     #
     # # Example
@@ -26,38 +28,7 @@ module Truffle
     # ```
     def self.load_files(init_functions, c_flags, files)
       raise 'C extensions not supported' unless supported?
-
-      # This is a major hack. We can currently only load C code once. So to
-      # support multiple C extensions being loaded, we delay loading them
-      # until they've all been required. To do that we need to know how many
-      # C extensions there will be. It's 1 by default, and you can override
-      # with the $JRUBY_TRUFFLE_CEXT_DELAY variable.
-
-      @delayed_count ||= 0
-      @delayed_init_functions ||= []
-      @delayed_cflags ||= []
-      @delayed_files ||= []
-
-      @delayed_count += 1
-      @delayed_init_functions.concat(init_functions)
-      @delayed_cflags.concat(c_flags)
-      @delayed_files.concat(files)
-
-      unless @delay_count
-        if ENV.include? 'JRUBY_TRUFFLE_CEXT_DELAY'
-          @delay_count = Integer(ENV['JRUBY_TRUFFLE_CEXT_DELAY'])
-        else
-          @delay_count = 1
-        end
-      end
-
-      if @delayed_count > @delay_count
-        raise "C extensions already loaded - can't load more - use $JRUBY_TRUFFLE_CEXT_DELAY"
-      elsif @delayed_count == @delay_count
-        Truffle::Primitive.cext_load @delayed_init_functions, @delayed_cflags, @delayed_files
-      else
-        # Do nothing - wait for more C extensions to be loaded
-      end
+      Truffle::Primitive.cext_load init_functions, c_flags, files
     end
 
     # Load C source code from a string, specifying the name of the
