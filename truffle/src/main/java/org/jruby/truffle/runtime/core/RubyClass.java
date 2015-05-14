@@ -29,12 +29,17 @@ public class RubyClass extends RubyModule {
     private final boolean isSingleton;
     private final RubyModule attached;
 
+    /** Special constructor for class Class */
+    public static RubyClass createClassClass(RubyContext context, Allocator allocator) {
+        return new RubyClass(context, null, null, null, "Class", false, null, allocator);
+    }
+
     /**
      * This constructor supports initialization and solves boot-order problems and should not
      * normally be used from outside this class.
      */
-    public static RubyClass createBootClass(RubyContext context, RubyClass classClass, String name, Allocator allocator) {
-        return new RubyClass(context, classClass, null, null, name, false, null, allocator);
+    public static RubyClass createBootClass(RubyClass classClass, RubyClass superclass, String name, Allocator allocator) {
+        return new RubyClass(classClass.getContext(), classClass, null, superclass, name, false, null, allocator);
     }
 
     public RubyClass(RubyContext context, RubyModule lexicalParent, RubyClass superclass, String name, Allocator allocator) {

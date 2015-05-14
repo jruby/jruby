@@ -198,16 +198,12 @@ public class CoreLibrary {
 
         // Create the cyclic classes and modules
 
-        classClass = RubyClass.createBootClass(context, null, "Class", new RubyClass.ClassAllocator());
-        basicObjectClass = RubyClass.createBootClass(context, classClass, "BasicObject", new RubyBasicObject.BasicObjectAllocator());
-        objectClass = RubyClass.createBootClass(context, classClass, "Object", basicObjectClass.getAllocator());
-        moduleClass = RubyClass.createBootClass(context, classClass, "Module", new RubyModule.ModuleAllocator());
+        classClass = RubyClass.createClassClass(context, new RubyClass.ClassAllocator());
+        basicObjectClass = RubyClass.createBootClass(classClass, null, "BasicObject", new RubyBasicObject.BasicObjectAllocator());
+        objectClass = RubyClass.createBootClass(classClass, basicObjectClass, "Object", basicObjectClass.getAllocator());
+        moduleClass = RubyClass.createBootClass(classClass, objectClass, "Module", new RubyModule.ModuleAllocator());
 
         // Close the cycles
-        classClass.unsafeSetLogicalClass(classClass);
-
-        objectClass.unsafeSetSuperclass(basicObjectClass);
-        moduleClass.unsafeSetSuperclass(objectClass);
         classClass.unsafeSetSuperclass(moduleClass);
 
         classClass.getAdoptedByLexicalParent(objectClass, "Class", node);

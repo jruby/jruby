@@ -59,9 +59,10 @@ public class RubyBasicObject implements TruffleObject {
     private RubyBasicObject(RubyContext context, RubyClass rubyClass, DynamicObject dynamicObject) {
         this.dynamicObject = dynamicObject;
 
-        if (rubyClass != null) {
-            unsafeSetLogicalClass(rubyClass);
+        if (rubyClass == null && this instanceof RubyClass) { // For class Class
+            rubyClass = (RubyClass) this;
         }
+        unsafeSetLogicalClass(rubyClass);
     }
 
     protected void unsafeSetLogicalClass(RubyClass newLogicalClass) {
