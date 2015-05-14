@@ -286,11 +286,11 @@ public abstract class IOPrimitiveNodes {
                 return 0;
             }
 
+            rubyWithSelf(frame, io, "@descriptor = -1");
+
             if (fd < 3) {
                 return 0;
             }
-
-            rubyWithSelf(frame, io, "@descriptor = -1");
 
             final int result = posix().close(fd);
 
