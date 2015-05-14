@@ -59,6 +59,8 @@ import java.util.Arrays;
 
 public abstract class IOPrimitiveNodes {
 
+    private static int STDOUT = 1;
+
     @RubiniusPrimitive(name = "io_allocate")
     public static abstract class IOAllocatePrimitiveNode extends RubiniusPrimitiveNode {
 
@@ -325,6 +327,11 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public int write(VirtualFrame frame, RubyBasicObject file, RubyString string) {
             final int fd = (int) rubyWithSelf(frame, file, "@descriptor");
+
+            if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
+                getContext().getDebugStandardOut().write(string.getByteList().unsafeBytes(), string.getByteList().begin(), string.getByteList().length());
+                return string.getByteList().length();
+            }
 
             // We have to copy here as write starts at byte[0], and the ByteList may not
 

@@ -53,6 +53,7 @@ import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -94,6 +95,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
     private final boolean runningOnWindows;
+
+    private final PrintStream debugStandardOut;
 
     public RubyContext(Ruby runtime) {
         latestInstance = this;
@@ -160,6 +163,9 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         attachmentsManager = new AttachmentsManager(this);
         sourceManager = new SourceManager(this);
         rubiniusConfiguration = new RubiniusConfiguration(this);
+
+        final PrintStream configStandardOut = runtime.getInstanceConfig().getOutput();
+        debugStandardOut = configStandardOut == System.out ? null : configStandardOut;
 
         // Give the core library manager a chance to tweak some of those methods
 
@@ -678,5 +684,9 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             }
         }
     }
-    
+
+    public PrintStream getDebugStandardOut() {
+        return debugStandardOut;
+    }
+
 }
