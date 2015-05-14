@@ -122,7 +122,7 @@ module ShellUtils
   end
 
   def mvn(*args)
-    sh 'mvn', *args
+    sh './mvnw', *args
   end
 
   def mspec(command, *args)
