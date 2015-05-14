@@ -1330,8 +1330,10 @@ public final class Ruby implements Constantizable {
         bootingRuntime = false;
 
         // Require in all libraries specified on command line
-        for (String scriptName : config.getRequiredLibraries()) {
-            topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
+        if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
+            for (String scriptName : config.getRequiredLibraries()) {
+                topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
+            }
         }
     }
 

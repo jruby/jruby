@@ -73,27 +73,6 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
             }
         }
 
-        /*
-         * We need to intercept Rubinius::FFI::Pointer so that it allocates the
-         * right DynamicObject. We can't do this after the core is loaded as
-         * it's too late by then.
-         *
-         * I don't pretend this is an ideal solution.
-         */
-
-        if (name.equals("Pointer") && getEncapsulatingSourceSection().getSource().getPath().endsWith("core/rubinius/platform/pointer.rb")) {
-
-            definingClass.unsafeSetAllocator(new Allocator() {
-
-                @Override
-                public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-                    return PointerPrimitiveNodes.createPointer(rubyClass, jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().newOpaquePointer(0));
-                }
-
-
-            });
-        }
-
         return definingClass;
     }
 
