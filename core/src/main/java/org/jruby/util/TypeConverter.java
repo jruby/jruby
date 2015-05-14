@@ -293,13 +293,13 @@ public class TypeConverter {
             throw context.runtime.newRuntimeError("bug: undef leaked to the Ruby space");
         }
 
-        xt = x.getMetaClass().getNativeClassIndex();
+        xt = x.getMetaClass().getClassIndex();
 
         // MISSING: special error for T_DATA of a certain type
         if (xt != t.getClassIndex()) {
-            String tname = t.getBaseName();
+            String tname = x.getMetaClass().toString();
             if (tname != null) {
-                throw context.runtime.newArgumentError("wrong argument type " + xt + " (expected " + t.getClassIndex());
+                throw context.runtime.newTypeError("wrong argument type " + tname + " (expected " + t.getName() + ")");
             }
             throw context.runtime.newRuntimeError("bug: unknown type " + t.getClassIndex() + " (" + xt + " given)");
         }
