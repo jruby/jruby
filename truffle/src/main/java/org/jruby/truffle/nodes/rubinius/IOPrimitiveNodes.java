@@ -6,6 +6,34 @@
  * Eclipse Public License version 1.0
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
+ *
+ * Some of the code in this class is transliterated from C++ code in Rubinius.
+ *
+ * Copyright (c) 2007-2014, Evan Phoenix and contributors
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ * * Neither the name of Rubinius nor the names of its contributors
+ *   may be used to endorse or promote products derived from this software
+ *   without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package org.jruby.truffle.nodes.rubinius;
 
@@ -188,8 +216,16 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject ensureOpen(RubyBasicObject file) {
-            // TODO CS 18-Apr-15
+        public RubyBasicObject ensureOpen(VirtualFrame frame, RubyBasicObject file) {
+            // TODO BJF 13-May-2015 Handle nil case
+            final int fd = (int) rubyWithSelf(frame, file, "@descriptor");
+            if(fd == -1){
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().ioError("closed stream",this));
+            } else if (fd == -2){
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().ioError("shutdown stream",this));
+            }
             return nil();
         }
 
@@ -243,9 +279,27 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public int close(VirtualFrame frame, RubyBasicObject io) {
-            // In Rubinius this does a lot more, but we'll stick with this for now
+            rubyWithSelf(frame, io, "ensure_open");
             final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
-            return posix().close(fd);
+
+            if (fd == -1) {
+                return 0;
+            }
+
+            if (fd < 3) {
+                return 0;
+            }
+
+            rubyWithSelf(frame, io, "@descriptor = -1");
+
+            final int result = posix().close(fd);
+
+            // TODO BJF 13-May-2015 Implement more error handling from Rubinius
+            if (result == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+            return 0;
         }
 
     }
