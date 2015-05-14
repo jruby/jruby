@@ -18,10 +18,12 @@ import java.util.*;
 
 public class RubiniusConfiguration {
 
-    private static final int SIZE_OF_SHORT = 2;
-    private static final int SIZE_OF_INT = 4;
-    private static final int SIZE_OF_LONG = 8;
-    private static final int SIZE_OF_POINTER = 8;
+    public static final int SIZE_OF_SHORT = 2;
+    public static final int SIZE_OF_INT = 4;
+    public static final int SIZE_OF_LONG = 8;
+    public static final int SIZE_OF_POINTER = 8;
+
+    public static final int SIZE_OF_ADDRINFO = 4 * SIZE_OF_INT + 4 * SIZE_OF_POINTER;
 
     private final RubyContext context;
 

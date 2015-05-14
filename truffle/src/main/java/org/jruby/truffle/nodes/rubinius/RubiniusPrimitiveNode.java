@@ -12,6 +12,8 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.source.SourceSection;
+import jnr.ffi.*;
+import jnr.ffi.provider.MemoryManager;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 

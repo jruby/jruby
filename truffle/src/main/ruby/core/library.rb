@@ -55,13 +55,14 @@ module Rubinius::FFI::Library
 
     mname = name.to_sym
 
-    # But we've already implemented the actual methods elsewhere
+    # The difference is we already have the methods available in our version of
+    # the POSIX class
 
     caller = Truffle::Primitive.source_of_caller
 
     if caller.end_with? 'ruby/truffle/rubysl/rubysl-socket/lib/rubysl/socket.rb'
-      if Rubinius::FFI::Platform::Socket.respond_to? mname
-        define_method mname, Rubinius::FFI::Platform::Socket.method(mname)
+      if Rubinius::FFI::Platform::POSIX.respond_to? mname
+        define_method mname, Rubinius::FFI::Platform::POSIX.method(mname)
         module_function mname
         return
       end

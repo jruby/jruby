@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Fcntl;
+import jnr.ffi.Pointer;
 import org.jruby.RubyEncoding;
 import org.jruby.platform.Platform;
 import org.jruby.truffle.nodes.core.CoreClass;
@@ -22,8 +23,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.util.unsafe.UnsafeHolder;
-import sun.misc.Unsafe;
 
 import java.nio.charset.StandardCharsets;
 
@@ -69,6 +68,20 @@ public abstract class PosixNodes {
         @Specialization
         public int chown(RubyString path, int owner, int group) {
             return posix().chown(path.toString(), owner, group);
+        }
+
+    }
+
+    @CoreMethod(names = "dup", isModuleFunction = true, required = 1)
+    public abstract static class DupNode extends CoreMethodArrayArgumentsNode {
+
+        public DupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int dup(int descriptor) {
+            return posix().dup(descriptor);
         }
 
     }
@@ -145,7 +158,7 @@ public abstract class PosixNodes {
     }
 
     @CoreMethod(names = "getgroups", isModuleFunction = true, required = 2)
-    public abstract static class GetGroupsNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+    public abstract static class GetGroupsNode extends CoreMethodArrayArgumentsNode {
 
         public GetGroupsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -155,10 +168,11 @@ public abstract class PosixNodes {
         public int getGroups(int max, RubyBasicObject pointer) {
             final long[] groups = Platform.getPlatform().getGroups(null);
 
-            final long address = getAddress(pointer);
+            final Pointer pointerValue = PointerPrimitiveNodes.getPointer(pointer);
 
             for (int n = 0; n < groups.length && n < max; n++) {
-                UnsafeHolder.U.putInt(address + n * Unsafe.ARRAY_INT_INDEX_SCALE, (int) groups[n]);
+                pointerValue.putInt(4 * n, (int) groups[n]);
+
             }
 
             return groups.length;
@@ -181,7 +195,7 @@ public abstract class PosixNodes {
     }
 
     @CoreMethod(names = "memset", isModuleFunction = true, required = 3)
-    public abstract static class MemsetNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+    public abstract static class MemsetNode extends CoreMethodArrayArgumentsNode {
 
         public MemsetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -194,15 +208,14 @@ public abstract class PosixNodes {
 
         @Specialization
         public RubyBasicObject memset(RubyBasicObject pointer, int c, long length) {
-            final long address = getAddress(pointer);
-            UnsafeHolder.U.setMemory(address, length, (byte) c);
+            PointerPrimitiveNodes.getPointer(pointer).setMemory(0, length, (byte) c);
             return pointer;
         }
 
     }
 
     @CoreMethod(names = "readlink", isModuleFunction = true, required = 3)
-    public abstract static class ReadlinkNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+    public abstract static class ReadlinkNode extends CoreMethodArrayArgumentsNode {
 
         public ReadlinkNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -211,23 +224,24 @@ public abstract class PosixNodes {
         @Specialization
         public int readlink(RubyString path, RubyBasicObject pointer, int bufsize) {
             final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
-            final long address = getAddress(pointer);
+
             final byte[] buffer = new byte[bufsize];
+
             final int result = posix().readlink(pathString, buffer, bufsize);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
-            for (int n = 0; n < buffer.length; n++) {
-                UnsafeHolder.U.putByte(address + n * Unsafe.ARRAY_BYTE_INDEX_SCALE, buffer[n]);
-            }
+
+            PointerPrimitiveNodes.getPointer(pointer).put(0, buffer, 0, buffer.length);
+
             return result;
         }
 
     }
 
     @CoreMethod(names = "link", isModuleFunction = true, required = 2)
-    public abstract static class LinkNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+    public abstract static class LinkNode extends CoreMethodArrayArgumentsNode {
 
         public LinkNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -243,7 +257,7 @@ public abstract class PosixNodes {
     }
 
     @CoreMethod(names = "unlink", isModuleFunction = true, required = 1)
-    public abstract static class UnlinkNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+    public abstract static class UnlinkNode extends CoreMethodArrayArgumentsNode {
 
         public UnlinkNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -271,7 +285,7 @@ public abstract class PosixNodes {
     }
 
     @CoreMethod(names = "mkdir", isModuleFunction = true, required = 2)
-    public abstract static class MkdirNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+    public abstract static class MkdirNode extends CoreMethodArrayArgumentsNode {
 
         public MkdirNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -285,7 +299,7 @@ public abstract class PosixNodes {
     }
 
     @CoreMethod(names = "chdir", isModuleFunction = true, required = 1)
-    public abstract static class ChdirNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+    public abstract static class ChdirNode extends CoreMethodArrayArgumentsNode {
 
         public ChdirNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -307,7 +321,7 @@ public abstract class PosixNodes {
     }
 
     @CoreMethod(names = "flock", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1})
-    public abstract static class FlockNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+    public abstract static class FlockNode extends CoreMethodArrayArgumentsNode {
 
         public FlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -365,7 +379,7 @@ public abstract class PosixNodes {
     }
 
     @CoreMethod(names = "rmdir", isModuleFunction = true, required = 1)
-    public abstract static class RmdirNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+    public abstract static class RmdirNode extends CoreMethodArrayArgumentsNode {
 
         public RmdirNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -379,7 +393,7 @@ public abstract class PosixNodes {
     }
 
     @CoreMethod(names = "getcwd", isModuleFunction = true, required = 2)
-    public abstract static class GetcwdNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+    public abstract static class GetcwdNode extends CoreMethodArrayArgumentsNode {
 
         public GetcwdNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

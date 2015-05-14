@@ -1,24 +1,5 @@
-fails:IO#reopen calls #to_io to convert an object
-fails:IO#reopen changes the class of the instance to the class of the object returned by #to_io
-fails:IO#reopen raises an IOError if the object returned by #to_io is closed
-fails:IO#reopen raises a TypeError if #to_io does not return an IO instance
-fails:IO#reopen raises an IOError when called on a closed stream with an object
-fails:IO#reopen raises an IOError if the IO argument is closed
-fails:IO#reopen raises an IOError when called on a closed stream with an IO
-fails:IO#reopen with a String does not raise an exception when called on a closed stream with a path
-fails:IO#reopen with a String returns self
-fails:IO#reopen with a String positions a newly created instance at the beginning of the new stream
-fails:IO#reopen with a String positions an instance that has been read from at the beginning of the new stream
-fails:IO#reopen with a String passes all mode flags through
 fails:IO#reopen with a String effects exec/system/fork performed after it
-fails:IO#reopen with a String calls #to_path on non-String arguments
 fails:IO#reopen with a String opens a path after writing to the original file descriptor
-fails:IO#reopen with a String creates the file if it doesn't exist if the IO is opened in write mode
-fails:IO#reopen with a String raises an Errno::ENOENT if the file does not exist and the IO is not opened in write mode
-fails:IO#reopen with an IO does not call #to_io
-fails:IO#reopen with an IO does not change the object_id
 fails:IO#reopen with an IO reads from the beginning if the other IO has not been read from
 fails:IO#reopen with an IO reads from the current position of the other IO's stream
 fails:IO#reopen with an IO associates the IO instance with the other IO's stream
-fails:IO#reopen with an IO may change the class of the instance
-fails:IO#reopen with an IO sets path equals to the other IO's path if other IO is File

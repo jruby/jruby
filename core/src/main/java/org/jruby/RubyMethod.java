@@ -308,7 +308,7 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod
     public IRubyObject original_name(ThreadContext context) {
         if (method instanceof AliasMethod) {
-            return context.runtime.newString(((AliasMethod)method).getOldName());
+            return context.runtime.newSymbol(((AliasMethod)method).getOldName());
         }
         return name(context);
     }

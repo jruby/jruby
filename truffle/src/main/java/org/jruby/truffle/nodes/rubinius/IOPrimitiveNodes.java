@@ -6,6 +6,34 @@
  * Eclipse Public License version 1.0
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
+ *
+ * Some of the code in this class is transliterated from C++ code in Rubinius.
+ *
+ * Copyright (c) 2007-2014, Evan Phoenix and contributors
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ * * Neither the name of Rubinius nor the names of its contributors
+ *   may be used to endorse or promote products derived from this software
+ *   without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package org.jruby.truffle.nodes.rubinius;
 
@@ -14,6 +42,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
+import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 
 import org.jruby.RubyEncoding;
@@ -188,8 +217,99 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject ensureOpen(RubyBasicObject file) {
-            // TODO CS 18-Apr-15
+        public RubyBasicObject ensureOpen(VirtualFrame frame, RubyBasicObject file) {
+            // TODO BJF 13-May-2015 Handle nil case
+            final int fd = (int) rubyWithSelf(frame, file, "@descriptor");
+            if(fd == -1){
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().ioError("closed stream",this));
+            } else if (fd == -2){
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().ioError("shutdown stream",this));
+            }
+            return nil();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "io_reopen")
+    public static abstract class IOReopenPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public IOReopenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object reopen(VirtualFrame frame, RubyBasicObject file, RubyBasicObject io) {
+            final int fd = (int) rubyWithSelf(frame, file, "@descriptor");
+            final int fdOther = (int) rubyWithSelf(frame, io, "@descriptor");
+
+            final int result = posix().dup2(fd, fdOther);
+            if (result == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+
+            final int mode = posix().fcntl(fd, Fcntl.F_GETFL);
+            if (mode < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+            rubyWithSelf(frame, file, "@mode = mode", "mode", mode);
+
+            rubyWithSelf(frame, io, "reset_buffering");
+
+            return nil();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "io_reopen_path")
+    public static abstract class IOReopenPathPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public IOReopenPathPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object reopenPath(VirtualFrame frame, RubyBasicObject file, RubyString path, int mode) {
+            int fd = (int) rubyWithSelf(frame, file, "@descriptor");
+            final String pathString = path.toString();
+
+            int otherFd = posix().open(pathString, mode, 666);
+            if (otherFd < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+
+            final int result = posix().dup2(otherFd, fd);
+            if (result == -1) {
+                final int errno = posix().errno();
+                if (errno == Errno.EBADF.intValue()) {
+                    rubyWithSelf(frame, file, "@descriptor = desc", "desc", otherFd);
+                    fd = otherFd;
+                } else {
+                    if (otherFd > 0) {
+                        posix().close(otherFd);
+                    }
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().errnoError(errno, this));
+                }
+
+            } else {
+                posix().close(otherFd);
+            }
+
+
+            final int newMode = posix().fcntl(fd, Fcntl.F_GETFL);
+            if (newMode < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+            rubyWithSelf(frame, file, "@mode = mode", "mode", newMode);
+
+            rubyWithSelf(frame, file, "reset_buffering");
+
             return nil();
         }
 
@@ -243,9 +363,27 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public int close(VirtualFrame frame, RubyBasicObject io) {
-            // In Rubinius this does a lot more, but we'll stick with this for now
+            rubyWithSelf(frame, io, "ensure_open");
             final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
-            return posix().close(fd);
+
+            if (fd == -1) {
+                return 0;
+            }
+
+            rubyWithSelf(frame, io, "@descriptor = -1");
+
+            if (fd < 3) {
+                return 0;
+            }
+
+            final int result = posix().close(fd);
+
+            // TODO BJF 13-May-2015 Implement more error handling from Rubinius
+            if (result == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+            return 0;
         }
 
     }
