@@ -1,9 +1,7 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block.Type;
@@ -12,16 +10,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.lang.invoke.MethodHandle;
 
 public class CompiledIRBlockBody extends IRBlockBody {
-    protected final IRClosure closure;
     protected final MethodHandle handle;
     protected boolean pushScope;
     protected boolean reuseParentScope;
     protected boolean usesKwargs;
 
     public CompiledIRBlockBody(MethodHandle handle, IRScope closure, long encodedSignature) {
-        super(closure.getStaticScope(), closure.getFileName(), closure.getLineNumber(), Signature.decode(encodedSignature));
+        super(closure, Signature.decode(encodedSignature));
         this.handle = handle;
-        this.closure = (IRClosure)closure;
         // FIXME: duplicated from InterpreterContext
         this.reuseParentScope = closure.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
         this.pushScope = !closure.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !this.reuseParentScope;

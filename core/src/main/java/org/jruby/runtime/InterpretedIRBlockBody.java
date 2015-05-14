@@ -18,7 +18,6 @@ import org.jruby.util.log.LoggerFactory;
 
 public class InterpretedIRBlockBody extends IRBlockBody implements FullBuildSource {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRBlockBody");
-    protected final IRClosure closure;
     protected boolean pushScope;
     protected boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
@@ -26,8 +25,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements FullBuildSour
     private InterpreterContext interpreterContext;
 
     public InterpretedIRBlockBody(IRClosure closure, Signature signature) {
-        super(closure.getStaticScope(), closure.getFileName(), closure.getLineNumber(), signature);
-        this.closure = closure;
+        super(closure, signature);
         this.pushScope = true;
         this.reuseParentScope = false;
 
