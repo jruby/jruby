@@ -42,6 +42,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
+import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 
 import org.jruby.RubyEncoding;
@@ -226,6 +227,89 @@ public abstract class IOPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().ioError("shutdown stream",this));
             }
+            return nil();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "io_reopen")
+    public static abstract class IOReopenPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public IOReopenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object reopen(VirtualFrame frame, RubyBasicObject file, RubyBasicObject io) {
+            final int fd = (int) rubyWithSelf(frame, file, "@descriptor");
+            final int fdOther = (int) rubyWithSelf(frame, io, "@descriptor");
+
+            final int result = posix().dup2(fd, fdOther);
+            if (result == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+
+            final int mode = posix().fcntl(fd, Fcntl.F_GETFL);
+            if (mode < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+            rubyWithSelf(frame, file, "@mode = mode", "mode", mode);
+
+            rubyWithSelf(frame, io, "reset_buffering");
+
+            return nil();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "io_reopen_path")
+    public static abstract class IOReopenPathPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public IOReopenPathPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object reopenPath(VirtualFrame frame, RubyBasicObject file, RubyString path, int mode) {
+            int fd = (int) rubyWithSelf(frame, file, "@descriptor");
+            final String pathString = path.toString();
+
+            int otherFd = posix().open(pathString, mode, 666);
+            if (otherFd < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+
+            final int result = posix().dup2(otherFd, fd);
+            if (result == -1) {
+                final int errno = posix().errno();
+                if (errno == Errno.EBADF.intValue()) {
+                    rubyWithSelf(frame, file, "@descriptor = desc", "desc", otherFd);
+                    fd = otherFd;
+                } else {
+                    if (otherFd > 0) {
+                        posix().close(otherFd);
+                    }
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().errnoError(errno, this));
+                }
+
+            } else {
+                posix().close(otherFd);
+            }
+
+
+            final int newMode = posix().fcntl(fd, Fcntl.F_GETFL);
+            if (newMode < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+            rubyWithSelf(frame, file, "@mode = mode", "mode", newMode);
+
+            rubyWithSelf(frame, file, "reset_buffering");
+
             return nil();
         }
 
