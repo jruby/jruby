@@ -34,6 +34,7 @@
 package org.jruby.ast;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ParseResult;
@@ -79,11 +80,7 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
     public abstract List<Node> childNodes();
 
     protected static List<Node> createList(Node node) {
-        ArrayList<Node> list = new ArrayList<>(1);
-
-        list.add(node);
-
-        return list;
+        return Collections.singletonList(node);
     }
 
     protected static List<Node> createList(Node node1, Node node2) {
