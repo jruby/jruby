@@ -165,8 +165,11 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         rubiniusConfiguration = new RubiniusConfiguration(this);
 
         final PrintStream configStandardOut = runtime.getInstanceConfig().getOutput();
-        debugStandardOut = configStandardOut == System.out ? null : configStandardOut;
+        debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
+    }
 
+    @Override
+    public void initialize() {
         // Give the core library manager a chance to tweak some of those methods
 
         coreLibrary.initializeAfterMethodsAdded();

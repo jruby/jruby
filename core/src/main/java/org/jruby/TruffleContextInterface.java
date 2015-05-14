@@ -17,6 +17,8 @@ public interface TruffleContextInterface {
         IMPL_DEBUG
     }
 
+    void initialize();
+
     Object execute(org.jruby.ast.RootNode rootNode);
 
     void shutdown();

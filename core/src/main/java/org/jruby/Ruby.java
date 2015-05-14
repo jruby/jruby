@@ -930,16 +930,18 @@ public final class Ruby implements Constantizable {
             throw new RuntimeException("Truffle backend not available", e);
         }
 
-        final TruffleContextInterface truffleBridge;
+        final TruffleContextInterface truffleContext;
 
         try {
             Constructor<?> con = clazz.getConstructor(Ruby.class);
-            truffleBridge = (TruffleContextInterface) con.newInstance(this);
+            truffleContext = (TruffleContextInterface) con.newInstance(this);
         } catch (Exception e) {
             throw new RuntimeException("Error while calling the constructor of Truffle's RubyContext", e);
         }
 
-        return truffleBridge;
+        truffleContext.initialize();
+
+        return truffleContext;
     }
 
     public void shutdownTruffleContextIfRunning() {
