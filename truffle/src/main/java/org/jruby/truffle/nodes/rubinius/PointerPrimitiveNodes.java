@@ -10,9 +10,13 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.ffi.Pointer;
+
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -33,6 +37,13 @@ public abstract class PointerPrimitiveNodes {
         final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
         POINTER_PROPERTY = Property.create(POINTER_IDENTIFIER, allocator.locationForType(Pointer.class, EnumSet.of(LocationModifier.NonNull)), 0);
         POINTER_FACTORY = RubyBasicObject.EMPTY_SHAPE.addProperty(POINTER_PROPERTY).createFactory();
+    }
+
+    public static class PointerAllocator implements Allocator {
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+            return PointerPrimitiveNodes.createPointer(rubyClass, jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().newOpaquePointer(0));
+        }
     }
 
     public static RubyBasicObject createPointer(RubyClass rubyClass, Pointer pointer) {
