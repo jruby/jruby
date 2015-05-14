@@ -23,6 +23,8 @@ import java.util.EnumSet;
 
 public abstract class PointerPrimitiveNodes {
 
+    public static final Pointer NULL_POINTER = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().newOpaquePointer(0);
+
     private static final HiddenKey POINTER_IDENTIFIER = new HiddenKey("pointer");
     private static final Property POINTER_PROPERTY;
     private static final DynamicObjectFactory POINTER_FACTORY;
@@ -34,10 +36,12 @@ public abstract class PointerPrimitiveNodes {
     }
 
     public static RubyBasicObject createPointer(RubyClass rubyClass, Pointer pointer) {
+        assert pointer != null;
         return new RubyBasicObject(rubyClass, POINTER_FACTORY.newInstance(pointer));
     }
 
     public static void setPointer(RubyBasicObject pointer, Pointer newPointer) {
+        assert newPointer != null;
         assert pointer.getDynamicObject().getShape().hasProperty(POINTER_IDENTIFIER);
 
         try {
@@ -182,7 +186,8 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization
-        public int setAtOffset(RubyBasicObject pointer, int offset, Object type, int value) {
+        public int setAtOffset(RubyBasicObject pointer, int offset, int type, int value) {
+            assert type == 5;
             // TODO CS 13-May-15 what does the type parameter do?
             getPointer(pointer).putInt(offset, value);
             return value;
@@ -199,7 +204,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject readPointer(RubyBasicObject pointer) {
-            return createPointer(pointer.getLogicalClass(), getPointer(pointer).getPointer(0));
+            return createPointer(pointer.getLogicalClass(), nullOrPointer(getPointer(pointer).getPointer(0)));
         }
 
     }
@@ -216,6 +221,30 @@ public abstract class PointerPrimitiveNodes {
             return getPointer(pointer).address();
         }
 
+    }
+
+    @RubiniusPrimitive(name = "pointer_get_at_offset")
+    public static abstract class PointerGetAtOffsetPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public PointerGetAtOffsetPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getAtOffset(RubyBasicObject pointer, int offset, int type) {
+            assert type == 5;
+            // TODO CS 13-May-15 not sure about int/long here
+            return getPointer(pointer).getInt(offset);
+        }
+
+    }
+
+    private static Pointer nullOrPointer(Pointer pointer) {
+        if (pointer == null) {
+            return NULL_POINTER;
+        } else {
+            return pointer;
+        }
     }
 
 }

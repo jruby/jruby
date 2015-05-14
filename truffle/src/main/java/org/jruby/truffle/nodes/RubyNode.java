@@ -18,6 +18,7 @@ import com.oracle.truffle.api.instrument.ProbeNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
+import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -267,6 +268,10 @@ public abstract class RubyNode extends Node {
 
     public RubyContext getContext() {
         return context;
+    }
+
+    public MemoryManager getMemoryManager() {
+        return jnr.ffi.Runtime.getSystemRuntime().getMemoryManager();
     }
 
     // ruby() helper

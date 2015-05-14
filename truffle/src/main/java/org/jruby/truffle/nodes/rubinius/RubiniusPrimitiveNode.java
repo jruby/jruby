@@ -25,8 +25,4 @@ public abstract class RubiniusPrimitiveNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public MemoryManager getMemoryManager() {
-        return jnr.ffi.Runtime.getSystemRuntime().getMemoryManager();
-    }
-
 }
