@@ -7,8 +7,10 @@ project 'JRuby Artifacts' do
   inherit 'org.jruby:jruby-parent', version
   packaging 'pom'
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readonly' => true )
+  # it looks like some people have problems with this artifact as parent
+  # TODO set the parent pom to pom.rb inside the children
+  properties( 'polyglot.dump.pom' => 'pom.xml',
+              'polyglot.dump.readonly' => true )
 
   plugin_management do
     plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
