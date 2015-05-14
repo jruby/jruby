@@ -20,8 +20,10 @@ import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.tools.CoverageTracker;
+
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -34,6 +36,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.BignumNodes;
+import org.jruby.truffle.nodes.core.LoadRequiredLibrariesNode;
 import org.jruby.truffle.nodes.core.SetTopLevelBindingNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.exceptions.TopLevelRaiseHandler;
@@ -218,22 +221,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         // Shims
         loadPath.slowPush(makeString(new File(home, "lib/ruby/truffle/shims").toString()));
-
-        // Load libraries required from the command line (-r LIBRARY)
-        for (String requiredLibrary : runtime.getInstanceConfig().getRequiredLibraries()) {
-            try {
-                featureManager.require(requiredLibrary, null);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (RaiseException e) {
-                // Translate LoadErrors for JRuby since we're outside an ExceptionTranslatingNode.
-                if (e.getRubyException().getLogicalClass() == coreLibrary.getLoadErrorClass()) {
-                    throw runtime.newLoadError(e.getRubyException().getMessage().toString(), requiredLibrary);
-                } else {
-                    throw e;
-                }
-            }
-        }
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {
@@ -667,9 +654,11 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             public RubyNode wrap(RubyNode node) {
                 RubyContext context = node.getContext();
                 SourceSection sourceSection = node.getSourceSection();
-                return SequenceNode.sequence(context, sourceSection,
-                        new SetTopLevelBindingNode(context, sourceSection),
-                        new TopLevelRaiseHandler(context, sourceSection, node));
+                return new TopLevelRaiseHandler(context, sourceSection,
+                        SequenceNode.sequence(context, sourceSection,
+                                new SetTopLevelBindingNode(context, sourceSection),
+                                new LoadRequiredLibrariesNode(context, sourceSection),
+                                node));
             }
         });
         return coreLibrary.getNilObject();

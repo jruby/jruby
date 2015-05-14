@@ -151,11 +151,10 @@ public class TranslatorDriver {
         RubyNode truffleNode;
 
         if (rootNode.getBodyNode() == null || rootNode.getBodyNode() instanceof org.jruby.ast.NilNode) {
-            translator.parentSourceSection.push(sharedMethodInfo.getSourceSection());
-            
+            translator.parentSourceSection.push(sourceSection);
             try {
-                truffleNode = new DefinedWrapperNode(context, null,
-                        new ObjectLiteralNode(context, null, context.getCoreLibrary().getNilObject()),
+                truffleNode = new DefinedWrapperNode(context, sourceSection,
+                        new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                         "nil");
             } finally {
                 translator.parentSourceSection.pop();
