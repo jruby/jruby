@@ -6,10 +6,7 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# TODO CS 18-Apr-15 can't seem to monkey patch via Kernel?
-
 module Kernel
-#class Object
 
   if Truffle::CExt.supported?
 
