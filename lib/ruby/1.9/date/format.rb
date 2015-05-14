@@ -937,7 +937,7 @@ class Date
         h[:sec] = i sec if sec
       end
 
-      h[:sec_fraction] = sec_fraction if sec_fraction
+      h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size) if sec_fraction
       set_zone(h, zone)
 
     elsif /\A\s*
@@ -979,7 +979,7 @@ class Date
         h[:sec] = i sec if sec
       end
 
-      h[:sec_fraction] = sec_fraction if sec_fraction
+      h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size) if sec_fraction
       set_zone(h, zone)
 
     elsif /\A\s*
@@ -1002,7 +1002,7 @@ class Date
       h[:hour] = i hour
       h[:min] = i min
       h[:sec] = i sec if sec
-      h[:sec_fraction] = i sec_fraction if sec_fraction
+      h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size) if sec_fraction
       set_zone(h, zone)
     end
     h
