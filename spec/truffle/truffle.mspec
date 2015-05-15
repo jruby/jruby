@@ -151,6 +151,8 @@ class MSpecScript
     "spec/truffle/specs"
   ]
 
+  set :backtrace_filter, /mspec\//
+
   set :tags_patterns, [
     [%r(^.*/language/),                 'spec/truffle/tags/language/'],
     [%r(^.*/core/),                     'spec/truffle/tags/core/'],
