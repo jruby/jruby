@@ -2471,8 +2471,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         result.cat('"');
         int prev = p;
         while (p < end) {
-            int cc = 0;
-
             int n = StringSupport.preciseLength(enc, bytes, p, end);
             if (n <= 0) {
                 if (p > prev) result.cat(bytes, prev, p - prev);
@@ -2484,7 +2482,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 }
                 continue;
             }
-            int c = enc.mbcToCode(bytes, p, end);
+            final int c = enc.mbcToCode(bytes, p, end); int cc = 0;
             p += n;
             if ((asciiCompat || isUnicode) &&
                     (c == '"' || c == '\\' ||
@@ -2641,7 +2639,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             modify19(value.getRealSize() + cl);
 
             if (enc == USASCIIEncoding.INSTANCE) {
-                if (c > 0xff) runtime.newRangeError(c + " out of char range");
+                if (c > 0xff) throw runtime.newRangeError(c + " out of char range");
                 if (c > 0x79) {
                     value.setEncoding(ASCIIEncoding.INSTANCE);
                     enc = value.getEncoding();
