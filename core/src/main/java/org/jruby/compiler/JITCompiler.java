@@ -137,49 +137,30 @@ public class JITCompiler implements JITCompilerMBean {
     }
 
     public void tearDown() {
-        if (executor != null) {
-            try {
-                executor.shutdown();
-            } catch (SecurityException se) {
-                // ignore, can't shut down executor
-            }
+        try {
+            executor.shutdown();
+        } catch (SecurityException se) {
+            // ignore, can't shut down executor
         }
     }
 
-    public void fullBuildThresholdReached(final FullBuildSource method, final RubyInstanceConfig config) {
-        // Disable any other jit tasks from entering queue
-        method.setCallCount(-1);
-
-        Runnable jitTask = new FullBuildTask(method);
-
-        if (config.getJitThreshold() > 0) {
-            if (config.getJitBackground() && executor != null) {
-                try {
-                    executor.submit(jitTask);
-                } catch (RejectedExecutionException ree) {
-                    // failed to submit, just run it directly
-                    jitTask.run();
-                }
-            } else {
-                // Because are non-asynchonously build if the JIT threshold happens to be 0 we will have no ic yet.
-                method.ensureInstrsReady();
-                // just run directly
-                jitTask.run();
-            }
+    public Runnable getTaskFor(ThreadContext context, Compilable method) {
+        if (method instanceof MixedModeIRMethod) {
+            return new JITTask((MixedModeIRMethod) method, method.getClassName(context));
         }
+
+        return new FullBuildTask(method);
     }
-    
-    public void jitThresholdReached(final MixedModeIRMethod method, final RubyInstanceConfig config, ThreadContext context, final String className, final String methodName) {
+
+    public void buildThresholdReached(ThreadContext context, final Compilable method) {
+        final RubyInstanceConfig config = context.runtime.getInstanceConfig();
+
         // Disable any other jit tasks from entering queue
         method.setCallCount(-1);
-        
-        Runnable jitTask = new JITTask(className, method, methodName);
 
-        // if background JIT is enabled and threshold is > 0 and we have an executor...
-        if (config.getJitBackground() &&
-                config.getJitThreshold() > 0 &&
-                executor != null) {
-            // JIT in background
+        Runnable jitTask = getTaskFor(context, method);
+
+        if (config.getJitBackground() && config.getJitThreshold() > 0) {
             try {
                 executor.submit(jitTask);
             } catch (RejectedExecutionException ree) {
@@ -189,7 +170,6 @@ public class JITCompiler implements JITCompilerMBean {
         } else {
             // Because are non-asynchonously build if the JIT threshold happens to be 0 we will have no ic yet.
             method.ensureInstrsReady();
-
             // just run directly
             jitTask.run();
         }
@@ -198,15 +178,15 @@ public class JITCompiler implements JITCompilerMBean {
     private static final MethodHandles.Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup().in(Ruby.class);
 
     private class FullBuildTask implements Runnable {
-        private final FullBuildSource method;
+        private final Compilable method;
 
-        public FullBuildTask(FullBuildSource method) {
+        public FullBuildTask(Compilable method) {
             this.method = method;
         }
 
         public void run() {
             try {
-                method.switchToFullBuild(method.getIRScope().prepareFullBuild());
+                method.completeBuild(method.getIRScope().prepareFullBuild());
 
                 if (config.isJitLogging()) {
                     log(method.getImplementationClass(), method.getFile(), method.getLine(),  method.getName(), "done building");
@@ -228,10 +208,10 @@ public class JITCompiler implements JITCompilerMBean {
         private final MixedModeIRMethod method;
         private final String methodName;
 
-        public JITTask(String className, MixedModeIRMethod method, String methodName) {
-            this.className = className;
+        public JITTask(MixedModeIRMethod method, String className) {
             this.method = method;
-            this.methodName = methodName;
+            this.className = className;
+            this.methodName = method.getName();
         }
 
         public void run() {
@@ -258,7 +238,7 @@ public class JITCompiler implements JITCompilerMBean {
                     }
                 }
 
-                String key = SexpMaker.sha1(method.getIRMethod());
+                String key = SexpMaker.sha1(method.getIRScope());
                 JVMVisitor visitor = new JVMVisitor();
                 JITClassGenerator generator = new JITClassGenerator(className, methodName, key, runtime, method, visitor);
 
@@ -269,7 +249,7 @@ public class JITCompiler implements JITCompilerMBean {
                 // that's so big that JVMs won't even try to compile it. Removed the check because with the new IR JIT
                 // bytecode counts often include all nested scopes, even if they'd be different methods. We need a new
                 // mechanism of getting all method sizes.
-                Class sourceClass = visitor.defineFromBytecode(method.getIRMethod(), generator.bytecode(), new OneShotClassLoader(runtime.getJRubyClassLoader()));
+                Class sourceClass = visitor.defineFromBytecode(method.getIRScope(), generator.bytecode(), new OneShotClassLoader(runtime.getJRubyClassLoader()));
 
                 if (sourceClass == null) {
                     // class could not be found nor generated; give up on JIT and bail out
@@ -293,47 +273,44 @@ public class JITCompiler implements JITCompilerMBean {
                     log(method.getImplementationClass(), method.getFile(), method.getLine(), className + "." + methodName, "done jitting");
                 }
 
-                Map<Integer, MethodType> signatures = ((IRMethod)method.getIRMethod()).getNativeSignatures();
-                String jittedName = ((IRMethod)method.getIRMethod()).getJittedName();
+                Map<Integer, MethodType> signatures = ((IRMethod)method.getIRScope()).getNativeSignatures();
+                String jittedName = ((IRMethod)method.getIRScope()).getJittedName();
                 if (signatures.size() == 1) {
                     // only variable-arity
-                    method.switchToJitted(
+                    method.completeBuild(
                             new CompiledIRMethod(
                                     PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, signatures.get(-1)),
-                                    method.getIRMethod(),
+                                    method.getIRScope(),
                                     method.getVisibility(),
                                     method.getImplementationClass(),
-                                    method.getIRMethod().receivesKeywordArgs()));
+                                    method.getIRScope().receivesKeywordArgs()));
 
                 } else {
                     // also specific-arity
                     for (Map.Entry<Integer, MethodType> entry : signatures.entrySet()) {
                         if (entry.getKey() == -1) continue; // variable arity handle pushed above
 
-                        method.switchToJitted(
+                        method.completeBuild(
                                 new CompiledIRMethod(
                                         PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, signatures.get(-1)),
                                         PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, entry.getValue()),
                                         entry.getKey(),
-                                        method.getIRMethod(),
+                                        method.getIRScope(),
                                         method.getVisibility(),
                                         method.getImplementationClass(),
-                                        method.getIRMethod().receivesKeywordArgs()));
+                                        method.getIRScope().receivesKeywordArgs()));
                         break;
                     }
                 }
-
-                return;
             } catch (Throwable t) {
                 if (config.isJitLogging()) {
-                    log(method.getImplementationClass(), method.getFile(), method.getLine(), className + "." + methodName, "Could not compile; passes run: " + method.getIRMethod().getExecutedPasses(), t.getMessage());
+                    log(method.getImplementationClass(), method.getFile(), method.getLine(), className + "." + methodName, "Could not compile; passes run: " + method.getIRScope().getExecutedPasses(), t.getMessage());
                     if (config.isJitLoggingVerbose()) {
                         t.printStackTrace();
                     }
                 }
 
                 counts.failCount.incrementAndGet();
-                return;
             }
         }
     }
@@ -375,7 +352,6 @@ public class JITCompiler implements JITCompilerMBean {
             this.className = packageName + "/" + className.replace('.', '/') + CLASS_METHOD_DELIMITER + JavaNameMangler.mangleMethodName(methodName) + "_" + digestString;
             this.name = this.className.replaceAll("/", ".");
             this.methodName = methodName;
-            this.ruby = ruby;
             this.method = method;
             this.visitor = visitor;
         }
@@ -391,7 +367,7 @@ public class JITCompiler implements JITCompilerMBean {
 
             // This may not be ok since we'll end up running passes specific to JIT
             // CON FIXME: Really should clone scope before passes in any case
-            bytecode = visitor.compileToBytecode(method.getIRMethod());
+            bytecode = visitor.compileToBytecode(method.getIRScope());
 
             compileTime = System.nanoTime() - start;
         }
@@ -426,7 +402,6 @@ public class JITCompiler implements JITCompilerMBean {
             return methodName + "() at " + method.getFile() + ":" + method.getLine();
         }
 
-        private final Ruby ruby;
         private final String packageName;
         private final String className;
         private final String methodName;

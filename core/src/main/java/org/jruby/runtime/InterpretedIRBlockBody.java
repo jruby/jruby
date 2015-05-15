@@ -1,10 +1,9 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
-import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
-import org.jruby.compiler.FullBuildSource;
+import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
@@ -16,7 +15,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-public class InterpretedIRBlockBody extends IRBlockBody implements FullBuildSource {
+public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<InterpreterContext> {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRBlockBody");
     protected boolean pushScope;
     protected boolean reuseParentScope;
@@ -42,7 +41,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements FullBuildSour
     }
 
     @Override
-    public void switchToFullBuild(InterpreterContext interpreterContext) {
+    public void completeBuild(InterpreterContext interpreterContext) {
         this.interpreterContext = interpreterContext;
     }
 
@@ -67,6 +66,11 @@ public class InterpretedIRBlockBody extends IRBlockBody implements FullBuildSour
             interpreterContext = closure.getInterpreterContext();
         }
         return interpreterContext;
+    }
+
+    @Override
+    public String getClassName(ThreadContext context) {
+        return null;
     }
 
     @Override
@@ -127,14 +131,9 @@ public class InterpretedIRBlockBody extends IRBlockBody implements FullBuildSour
     // Unlike JIT in MixedMode this will always successfully build but if using executor pool it may take a while
     // and replace interpreterContext asynchronously.
     protected void promoteToFullBuild(ThreadContext context) {
-        Ruby runtime = context.runtime;
+        if (context.runtime.isBooting()) return; // don't Promote to full build during runtime boot
 
-        // don't Promote to full build during runtime boot
-        if (runtime.isBooting()) return;
-
-        if (callCount++ >= Options.JIT_THRESHOLD.load()) {
-            runtime.getJITCompiler().fullBuildThresholdReached(this, context.runtime.getInstanceConfig());
-        }
+        if (callCount++ >= Options.JIT_THRESHOLD.load()) context.runtime.getJITCompiler().buildThresholdReached(context, this);
     }
 
     public RubyModule getImplementationClass() {

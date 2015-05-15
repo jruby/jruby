@@ -1,9 +1,9 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.MetaClass;
-import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.compiler.Compilable;
 import org.jruby.ir.*;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -21,7 +21,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware {
+public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Compilable<DynamicMethod> {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
     private Signature signature;
@@ -49,16 +49,12 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
         }
     }
 
-    public IRScope getIRMethod() {
+    public IRScope getIRScope() {
         return method;
     }
 
     public DynamicMethod getActualMethod() {
         return box.actualMethod;
-    }
-
-    public void setCallCount(int callCount) {
-        box.callCount = callCount;
     }
 
     public StaticScope getStaticScope() {
@@ -303,20 +299,21 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
         return this;
     }
 
-    public void switchToJitted(CompiledIRMethod newMethod) {
+    @Override
+    public void completeBuild(DynamicMethod newMethod) {
         this.box.actualMethod = newMethod;
         this.box.actualMethod.serialNumber = this.serialNumber;
         this.box.callCount = -1;
         getImplementationClass().invalidateCacheDescendants();
     }
 
-
     protected void tryJit(ThreadContext context, DynamicMethodBox box) {
-        Ruby runtime = context.runtime;
+        if (context.runtime.isBooting()) return;  // don't JIT during runtime boot
 
-        // don't JIT during runtime boot
-        if (runtime.isBooting()) return;
+        if (box.callCount++ >= Options.JIT_THRESHOLD.load()) context.runtime.getJITCompiler().buildThresholdReached(context, this);
+    }
 
+    public String getClassName(ThreadContext context) {
         String className;
         if (implementationClass.isSingleton()) {
             MetaClass metaClass = (MetaClass)implementationClass;
@@ -333,11 +330,7 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
             // use the class name
             className = implementationClass.getName();
         }
-
-
-        if (box.callCount++ >= Options.JIT_THRESHOLD.load()) {
-            context.runtime.getJITCompiler().jitThresholdReached(this, context.runtime.getInstanceConfig(), context, className, name);
-        }
+        return className;
     }
 
     public void setActualMethod(CompiledIRMethod method) {
@@ -363,4 +356,8 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
     public int getLine() {
         return method.getLineNumber();
    }
+
+    public void setCallCount(int callCount) {
+        box.callCount = callCount;
+    }
 }

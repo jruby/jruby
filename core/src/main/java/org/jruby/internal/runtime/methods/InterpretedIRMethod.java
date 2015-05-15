@@ -2,7 +2,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.compiler.FullBuildSource;
+import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -24,7 +24,7 @@ import org.jruby.util.log.LoggerFactory;
 /**
  * Method for -X-C (interpreted only execution).  See MixedModeIRMethod for inter/JIT method impl.
  */
-public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, FullBuildSource {
+public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Compilable<InterpreterContext> {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
     private Signature signature;
@@ -58,7 +58,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
         ensureInstrsReady(); // Make sure method is minimally built before returning this info
-        return ((IRMethod) method).getArgumentDescriptors();
+        return method.getArgumentDescriptors();
     }
 
     public Signature getSignature() {
@@ -256,7 +256,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         }
     }
 
-    public void switchToFullBuild(InterpreterContext interpreterContext) {
+    public void completeBuild(InterpreterContext interpreterContext) {
         this.interpreterContext = interpreterContext;
     }
 
@@ -265,17 +265,18 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     protected void promoteToFullBuild(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        // don't Promote to full build during runtime boot
-        if (runtime.isBooting()) return;
+        if (runtime.isBooting()) return;   // don't Promote to full build during runtime boot
 
-        if (callCount++ >= Options.JIT_THRESHOLD.load()) {
-            runtime.getJITCompiler().fullBuildThresholdReached(this, context.runtime.getInstanceConfig());
-        }
+        if (callCount++ >= Options.JIT_THRESHOLD.load()) runtime.getJITCompiler().buildThresholdReached(context, this);
     }
 
     @Override
     public DynamicMethod dup() {
         return new InterpretedIRMethod(method, visibility, implementationClass);
+    }
+
+    public String getClassName(ThreadContext context) {
+        return null;
     }
 
     public String getFile() {

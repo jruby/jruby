@@ -160,7 +160,7 @@ public class Profiler {
             IRScope hc = isHotClosure ? hs : null;
             hs = isHotClosure ? hs.getLexicalParent() : hs;
 
-            IRScope tgtMethod = ircs.tgtM.getIRMethod();
+            IRScope tgtMethod = ircs.tgtM.getIRScope();
 
             Instr[] instrs = tgtMethod.getInterpreterContext().getInstructions();
             // Dont inline large methods -- 500 is arbitrary

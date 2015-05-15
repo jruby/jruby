@@ -569,6 +569,7 @@ public abstract class IRScope implements ParseResult {
         if (!isUnsafeScope()) new AddCallProtocolInstructions().run(this);
 
         fullInterpreterContext.generateInstructionsForIntepretation();
+        System.out.println("FOC : " + fullInterpreterContext.toStringInstrs());
         return fullInterpreterContext;
     }
 
