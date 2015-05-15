@@ -1,0 +1,2 @@
+fails:BigDecimal#finite? is false if Infinity or NaN
+fails:BigDecimal#finite? returns true for finite values

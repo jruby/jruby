@@ -1,0 +1,7 @@
+fails:BigDecimal#split splits BigDecimal in an array with four values
+fails:BigDecimal#split First value: 1 for numbers > 0
+fails:BigDecimal#split First value: -1 for numbers < 0
+fails:BigDecimal#split First value: 0 if BigDecimal is NaN
+fails:BigDecimal#split Second value: a string with the significant digits
+fails:BigDecimal#split Third value: the base (currently always ten)
+fails:BigDecimal#split Fourth value: The exponent

@@ -1,0 +1,6 @@
+fails:BigDecimal#ceil returns an Integer, if n is unspecified
+fails:BigDecimal#ceil returns a BigDecimal, if n is specified
+fails:BigDecimal#ceil returns the smallest integer greater or equal to self, if n is unspecified
+fails:BigDecimal#ceil raise exception, if self is special value
+fails:BigDecimal#ceil returns n digits right of the decimal point if given n > 0
+fails:BigDecimal#ceil sets n digits left of the decimal point to 0, if given n < 0

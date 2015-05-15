@@ -1,0 +1,4 @@
+fails:BigDecimal#precs returns array of two values
+fails:BigDecimal#precs returns Integers as array values
+fails:BigDecimal#precs returns the current value of significant digits as the first value
+fails:BigDecimal#precs returns the maximum number of significant digits as the second value

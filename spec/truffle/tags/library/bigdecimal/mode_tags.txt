@@ -1,0 +1,3 @@
+fails:BigDecimal.mode returns the appropriate value and continue the computation if the flag is false
+fails:BigDecimal.mode returns Infinity when too big
+fails:BigDecimal.mode raise an exception if the flag is true

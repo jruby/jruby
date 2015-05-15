@@ -1,0 +1,8 @@
+fails:BigDecimal#remainder it equals modulo, if both values are of same sign
+fails:BigDecimal#remainder means self-arg*(self/arg).truncate
+fails:BigDecimal#remainder returns NaN used with zero
+fails:BigDecimal#remainder returns zero if used on zero
+fails:BigDecimal#remainder returns NaN if NaN is involved
+fails:BigDecimal#remainder returns NaN if Infinity is involved
+fails:BigDecimal#remainder coerces arguments to BigDecimal if possible
+fails:BigDecimal#remainder raises TypeError if the argument cannot be coerced to BigDecimal

@@ -1,0 +1,5 @@
+fails:BigDecimal#frac returns a BigDecimal
+fails:BigDecimal#frac returns the fractional part of the absolute value
+fails:BigDecimal#frac returns 0 if the value is 0
+fails:BigDecimal#frac returns 0 if the value is an integer
+fails:BigDecimal#frac correctly handles special values

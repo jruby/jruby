@@ -1,0 +1,2 @@
+fails:BigDecimal#abs returns the absolute value
+fails:BigDecimal#abs properly handles special values

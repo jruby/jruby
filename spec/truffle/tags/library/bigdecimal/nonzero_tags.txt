@@ -1,0 +1,2 @@
+fails:BigDecimal#nonzero? returns self if self doesn't equal zero
+fails:BigDecimal#nonzero? returns nil otherwise

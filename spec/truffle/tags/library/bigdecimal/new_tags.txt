@@ -1,0 +1,12 @@
+fails:BigDecimal.new creates a new object of class BigDecimal
+fails:BigDecimal.new doesn't segfault when using a very large string to build the number
+fails:BigDecimal.new Number of significant digits >= given precision
+fails:BigDecimal.new determines precision from initial value
+fails:BigDecimal.new ignores leading whitespace
+fails:BigDecimal.new ignores trailing garbage
+fails:BigDecimal.new treats invalid strings as 0.0
+fails:BigDecimal.new allows omitting the integer part
+fails:BigDecimal.new allows for underscores in all parts
+fails:BigDecimal.new accepts NaN and [+-]Infinity
+fails:BigDecimal.new allows for [eEdD] as exponent separator
+fails:BigDecimal.new allows for varying signs

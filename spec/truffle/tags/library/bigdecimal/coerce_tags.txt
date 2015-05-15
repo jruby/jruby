@@ -1,0 +1,1 @@
+fails:BigDecimal#coerce returns [other, self] both as BigDecimal

@@ -1,0 +1,16 @@
+fails:BigDecimal#sqrt returns square root of 2 with desired precision
+fails:BigDecimal#sqrt returns square root of 3 with desired precision
+fails:BigDecimal#sqrt returns square root of 121 with desired precision
+fails:BigDecimal#sqrt returns square root of 0.9E-99999 with desired precision
+fails:BigDecimal#sqrt raises ArgumentError when no argument is given
+fails:BigDecimal#sqrt raises ArgumentError if a negative number is given
+fails:BigDecimal#sqrt raises ArgumentError if 2 arguments are given
+fails:BigDecimal#sqrt raises TypeError if nil is given
+fails:BigDecimal#sqrt raises TypeError if a string is given
+fails:BigDecimal#sqrt raises TypeError if a plain Object is given
+fails:BigDecimal#sqrt returns 1 if precision is 0 or 1
+fails:BigDecimal#sqrt raises FloatDomainError on negative values
+fails:BigDecimal#sqrt returns positive infitinity for infinity
+fails:BigDecimal#sqrt raises FloatDomainError for negative infinity
+fails:BigDecimal#sqrt raises FloatDomainError for NaN
+fails:BigDecimal#sqrt returns 0 for 0, +0.0 and -0.0
