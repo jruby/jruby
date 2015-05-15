@@ -1,3 +1,1 @@
 fails:Module#define_method method body is an UnboundMethod allows methods defined on a different object
-fails:Method#define_method when passed a Method object defines a method with the same #parameters as the original
-fails:Method#define_method when passed an UnboundMethod object defines a method with the same #parameters as the original
