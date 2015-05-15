@@ -10,7 +10,7 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -84,7 +84,7 @@ public class Timeout implements Library {
         @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE)
         public static IRubyObject timeout(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             RubyModule timeout = context.runtime.getModule("Timeout");
-            
+
             switch (args.length) {
             case 1:
                 return Timeout.timeout(context, timeout, args[0], block);
@@ -116,18 +116,11 @@ public class Timeout implements Library {
 
         IRubyObject id = new RubyObject(runtime, runtime.getObject());
         Runnable timeoutRunnable = prepareRunnable(currentThread, runtime, latch, id);
-        Future timeoutFuture = null;
 
         try {
-            try {
-                timeoutFuture = timeoutExecutor.schedule(timeoutRunnable,
-                        (long)(seconds.convertToFloat().getDoubleValue() * 1000000), TimeUnit.MICROSECONDS);
-
-                return block.yield(context, seconds);
-            } finally {
-                killTimeoutThread(context, timeoutFuture, latch);
-            }
-        } catch (RaiseException re) {
+            return yieldWithTimeout(context, seconds, block, timeoutRunnable, latch);
+        }
+        catch (RaiseException re) {
             if (re.getException().getInternalVariable("__identifier__") == id) {
                 return raiseTimeoutError(context, re);
             } else {
@@ -158,18 +151,11 @@ public class Timeout implements Library {
         Runnable timeoutRunnable = exceptionType.isNil() ?
                 prepareRunnable(currentThread, runtime, latch, id) :
                 prepareRunnableWithException(currentThread, exceptionType, runtime, latch);
-        Future timeoutFuture = null;
 
         try {
-            try {
-                timeoutFuture = timeoutExecutor.schedule(timeoutRunnable,
-                        (long)(seconds.convertToFloat().getDoubleValue() * 1000000), TimeUnit.MICROSECONDS);
-
-                return block.yield(context, seconds);
-            } finally {
-                killTimeoutThread(context, timeoutFuture, latch);
-            }
-        } catch (RaiseException re) {
+            return yieldWithTimeout(context, seconds, block, timeoutRunnable, latch);
+        }
+        catch (RaiseException re) {
             // if it's the exception we're expecting
             if (re.getException().getMetaClass() == anonException) {
                 // and we were not given a specific exception
@@ -183,6 +169,21 @@ public class Timeout implements Library {
 
             // otherwise, rethrow
             throw re;
+        }
+    }
+
+    private static IRubyObject yieldWithTimeout(ThreadContext context,
+        final IRubyObject seconds, final Block block,
+        final Runnable runnable, final AtomicBoolean latch) throws RaiseException {
+        final double secs = seconds.convertToFloat().getDoubleValue();
+        Future timeoutFuture = null;
+        try {
+            timeoutFuture = timeoutExecutor.schedule(runnable, (long) (secs * 1000000), TimeUnit.MICROSECONDS);
+            return block.yield(context, seconds);
+        }
+        finally {
+            if ( timeoutFuture != null ) killTimeoutThread(context, timeoutFuture, latch);
+            // ... when timeoutFuture == null there's likely an error thrown from schedule
         }
     }
 
@@ -215,7 +216,7 @@ public class Timeout implements Library {
         return timeoutRunnable;
     }
 
-    private static void killTimeoutThread(ThreadContext context, Future timeoutFuture, AtomicBoolean latch) {
+    private static void killTimeoutThread(ThreadContext context, final Future timeoutFuture, final AtomicBoolean latch) {
         if (latch.compareAndSet(false, true) && timeoutFuture.cancel(false)) {
             // ok, exception will not fire
             if (timeoutExecutor instanceof ScheduledThreadPoolExecutor && timeoutFuture instanceof Runnable) {
@@ -225,10 +226,9 @@ public class Timeout implements Library {
             // future is not cancellable, wait for it to run and then poll
             try {
                 timeoutFuture.get();
-            } catch (ExecutionException ex) {
-            } catch (InterruptedException ex) {
             }
-
+            catch (ExecutionException ex) {}
+            catch (InterruptedException ex) {}
             // poll to propagate exception from child thread
             context.pollThreadEvents();
         }
