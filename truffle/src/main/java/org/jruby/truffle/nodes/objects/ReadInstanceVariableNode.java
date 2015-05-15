@@ -28,7 +28,6 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     @Child private ReadHeadObjectFieldNode readNode;
     private final boolean isGlobal;
 
-    private final BranchProfile nullProfile = BranchProfile.create();
     private final BranchProfile primitiveProfile = BranchProfile.create();
 
     public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean isGlobal) {
@@ -85,14 +84,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
         final Object receiverObject = receiver.execute(frame);
 
         if (receiverObject instanceof RubyBasicObject) {
-            Object value = readNode.execute((RubyBasicObject) receiverObject);
-
-            if (value == null) {
-                nullProfile.enter();
-                value = nil();
-            }
-
-            return value;
+            return readNode.execute((RubyBasicObject) receiverObject);
         } else {
             primitiveProfile.enter();
             return nil();
