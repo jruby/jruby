@@ -1776,10 +1776,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * operation.
      */
     public static class Finalizer implements Finalizable {
-        private RubyFixnum id;
+        private final RubyFixnum id;
+        private final AtomicBoolean finalized;
         private IRubyObject firstFinalizer;
         private List<IRubyObject> finalizers;
-        private AtomicBoolean finalized;
 
         public Finalizer(RubyFixnum id) {
             this.id = id;
