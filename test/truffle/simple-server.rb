@@ -14,7 +14,7 @@ loop do
   socket = server.accept
 
   begin
-    request = socket.gets
+    request = "Hello, World from JRuby+Truffle! #{socket.gets}"
 
     socket.print "HTTP/1.1 200 OK\r\n" +
                  "Content-Type: text/plain\r\n" +

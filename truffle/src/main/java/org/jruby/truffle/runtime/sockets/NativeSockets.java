@@ -10,6 +10,8 @@
 package org.jruby.truffle.runtime.sockets;
 
 import jnr.ffi.Pointer;
+import jnr.ffi.annotations.Out;
+import jnr.ffi.byref.IntByReference;
 
 public interface NativeSockets {
 
@@ -35,5 +37,42 @@ public interface NativeSockets {
      */
 
     int getnameinfo(Pointer sa, int salen, Pointer host, int hostlen, Pointer serv, int servlen, int flags);
+
+    /*
+     * int
+     * socket(int domain, int type, int protocol);
+     */
+
+    int socket(int domain, int type, int protocol);
+
+    /*
+     * int
+     * setsockopt(int socket, int level, int option_name,
+     *            const void *option_value, socklen_t option_len);
+     */
+
+    int setsockopt(int socket, int level, int option_name, Pointer option_value, int option_len);
+
+    /*
+     * int
+     * bind(int socket, const struct sockaddr *address, socklen_t address_len);
+     */
+
+    int bind(int socket, Pointer address, int address_len);
+
+    /*
+     * int
+     * listen(int socket, int backlog);
+     */
+
+    int listen(int socket, int backlog);
+
+    /*
+     * int
+     * accept(int socket, struct sockaddr *restrict address,
+     *        socklen_t *restrict address_len);
+     */
+
+    int accept(int socket, Pointer address, @Out IntByReference addressLength);
 
 }

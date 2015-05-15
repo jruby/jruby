@@ -45,6 +45,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 
+import jnr.ffi.byref.IntByReference;
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -53,6 +54,7 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 import org.jruby.util.Dir;
+import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -406,6 +408,38 @@ public abstract class IOPrimitiveNodes {
         public int seek(VirtualFrame frame, RubyBasicObject io, int amount, int whence) {
             final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
             return posix().lseek(fd, amount, whence);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "io_accept")
+    public abstract static class AcceptNode extends RubiniusPrimitiveNode {
+
+        public AcceptNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int accept(VirtualFrame frame, RubyBasicObject io) {
+            final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
+
+            final IntByReference addressLength = new IntByReference(16);
+            final long address = UnsafeHolder.U.allocateMemory(addressLength.intValue());
+
+            final int newFd;
+
+            try {
+                newFd = nativeSockets().accept(fd, getMemoryManager().newPointer(address), addressLength);
+            } finally {
+                UnsafeHolder.U.freeMemory(address);
+            }
+
+            if (newFd == -1) {
+                System.err.println(posix().errno());
+                throw new UnsupportedOperationException();
+            }
+
+            return newFd;
         }
 
     }

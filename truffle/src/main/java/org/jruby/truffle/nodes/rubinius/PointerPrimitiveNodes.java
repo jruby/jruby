@@ -312,4 +312,19 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "pointer_write_int")
+    public static abstract class PointerWriteIntPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public PointerWriteIntPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject address(RubyBasicObject pointer, int value) {
+            getPointer(pointer).putInt(0, value);
+            return pointer;
+        }
+
+    }
+
 }

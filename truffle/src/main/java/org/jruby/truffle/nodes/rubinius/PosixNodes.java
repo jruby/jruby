@@ -550,4 +550,60 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "socket", isModuleFunction = true, required = 3)
+    public abstract static class SocketNode extends CoreMethodArrayArgumentsNode {
+
+        public SocketNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getnameinfo(int domain, int type, int protocol) {
+            return nativeSockets().socket(domain, type, protocol);
+        }
+
+    }
+
+    @CoreMethod(names = "setsockopt", isModuleFunction = true, required = 5, lowerFixnumParameters = {0, 1, 2, 4})
+    public abstract static class SetSockOptNode extends CoreMethodArrayArgumentsNode {
+
+        public SetSockOptNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int setsockopt(int socket, int level, int optionName, RubyBasicObject optionValue, int optionLength) {
+            return nativeSockets().setsockopt(socket, level, optionName, PointerPrimitiveNodes.getPointer(optionValue), optionLength);
+        }
+
+    }
+
+    @CoreMethod(names = "_bind", isModuleFunction = true, required = 3)
+    public abstract static class BindNode extends CoreMethodArrayArgumentsNode {
+
+        public BindNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int bind(int socket, RubyBasicObject address, int addressLength) {
+            return nativeSockets().bind(socket, PointerPrimitiveNodes.getPointer(address), addressLength);
+        }
+
+    }
+
+    @CoreMethod(names = "listen", isModuleFunction = true, required = 2)
+    public abstract static class ListenNode extends CoreMethodArrayArgumentsNode {
+
+        public ListenNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int listen(int socket, int backlog) {
+            return nativeSockets().listen(socket, backlog);
+        }
+
+    }
+
 }
