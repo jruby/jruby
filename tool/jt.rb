@@ -249,7 +249,7 @@ module Commands
   end
 
   def print(*args)
-    e 'puts', *args
+    e 'puts begin', *args, 'end'
   end
 
   def test_mri(*args)
