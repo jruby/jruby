@@ -136,42 +136,6 @@ public class RubiniusConfiguration {
         config("rbx.platform.timeval.tv_usec.type", "time_t");
 
         /*
-         * struct addrinfo {
-         *     int              ai_flags;
-         *     int              ai_family;
-         *     int              ai_socktype;
-         *     int              ai_protocol;
-         *     socklen_t        ai_addrlen;
-         *     char            *ai_canonname;  manpage on Darwin says these next two are swapped but header says otherwise
-         *     struct sockaddr *ai_addr;
-         *     struct addrinfo *ai_next;
-         * };
-         */
-
-        int addrInfoOffset = 0;
-
-        for (String field : Arrays.asList("ai_flags", "ai_family", "ai_socktype", "ai_protocol")) {
-            config("rbx.platform.addrinfo." + field + ".offset", addrInfoOffset);
-            config("rbx.platform.addrinfo." + field + ".size", SIZE_OF_INT);
-            config("rbx.platform.addrinfo." + field + ".type", "int");
-            addrInfoOffset += SIZE_OF_INT;
-        }
-
-        config("rbx.platform.addrinfo.ai_addrlen.offset", addrInfoOffset);
-        config("rbx.platform.addrinfo.ai_addrlen.size", SIZE_OF_LONG);
-        config("rbx.platform.addrinfo.ai_addrlen.type", "long");
-        addrInfoOffset += SIZE_OF_LONG;
-
-        for (String field : Arrays.asList("ai_canonname", "ai_addr", "ai_next")) {
-            config("rbx.platform.addrinfo." + field + ".offset", addrInfoOffset);
-            config("rbx.platform.addrinfo." + field + ".size", SIZE_OF_POINTER);
-            config("rbx.platform.addrinfo." + field + ".type", "pointer");
-            addrInfoOffset += SIZE_OF_POINTER;
-        }
-
-        config("rbx.platform.addrinfo.sizeof", addrInfoOffset);
-
-        /*
          * struct linger {
          *     int              l_onoff;
          *     int              l_linger;
