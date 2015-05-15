@@ -268,6 +268,11 @@ public abstract class PointerPrimitiveNodes {
             return getPointer(pointer).getLong(offset);
         }
 
+        @Specialization(guards = "type == TYPE_STRING")
+        public RubyString getAtOffsetString(RubyBasicObject pointer, int offset, int type) {
+            return getContext().makeString(getPointer(pointer).getString(offset));
+        }
+
         @Specialization(guards = "type == TYPE_PTR")
         public RubyBasicObject getAtOffsetPointer(RubyBasicObject pointer, int offset, int type) {
             final Pointer readPointer = getPointer(pointer).getPointer(offset);
