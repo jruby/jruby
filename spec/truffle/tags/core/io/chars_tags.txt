@@ -1,4 +1,2 @@
 fails:IO#chars yields each character
 fails:IO#chars returns itself
-fails:IO#chars raises an IOError when an enumerator created on a closed stream is accessed
-fails:IO#chars raises IOError on closed stream

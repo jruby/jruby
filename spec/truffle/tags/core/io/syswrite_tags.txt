@@ -2,5 +2,3 @@ fails:IO#syswrite on a file writes all of the string's bytes but does not buffer
 fails:IO#syswrite on a file warns if called immediately after a buffered IO#write
 fails:IO#syswrite on a file does not warn if called after IO#write with intervening IO#sysread
 fails:IO#syswrite on a file writes to the actual file position when called after buffered IO#read
-fails:IO#syswrite returns the number of bytes written
-fails:IO#syswrite writes all of the string's bytes without buffering if mode is sync

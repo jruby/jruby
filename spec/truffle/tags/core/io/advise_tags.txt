@@ -4,4 +4,3 @@ fails:IO#advise supports the random advice type
 fails:IO#advise supports the dontneed advice type
 fails:IO#advise supports the noreuse advice type
 fails:IO#advise supports the willneed advice type
-fails:IO#advise raises an IOError if the stream is closed

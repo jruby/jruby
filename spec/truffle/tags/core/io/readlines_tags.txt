@@ -1,4 +1,3 @@
-fails:IO#readlines raises an IOError if the stream is closed
 fails:IO#readlines when passed a string that starts with a | gets data from the standard out of the subprocess
 fails:IO#readlines when passed a string that starts with a | gets data from a fork when passed -
 fails:IO.readlines when passed name, object when the object is a Fixnum uses the object as a limit if it is a Fixnum

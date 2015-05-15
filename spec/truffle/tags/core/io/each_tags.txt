@@ -1,1 +1,0 @@
-fails:IO#each with no separator raises an IOError when self is not readable

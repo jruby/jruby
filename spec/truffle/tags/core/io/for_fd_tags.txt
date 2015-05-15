@@ -1,2 +1,0 @@
-fails:IO.for_fd raises an Errno::EBADF if the file descriptor is not valid
-fails:IO.for_fd raises an IOError if passed a closed stream

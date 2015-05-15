@@ -1,5 +1,4 @@
 fails:IO#gets assigns the returned line to $_
-fails:IO#gets raises IOError on closed stream
 fails:IO#gets reads limit bytes and extra bytes when limit is reached not at character boundary
 fails:IO#gets read limit bytes and extra bytes with maximum of 16
 fails:IO#gets ignores the internal encoding if the IO object's external encoding is ASCII-8BIT

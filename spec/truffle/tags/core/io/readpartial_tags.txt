@@ -1,5 +1,3 @@
-fails:IO#readpartial raises IOError on closed stream
-fails:IO#readpartial reads after ungetc with data in the buffer
 fails:IO#readpartial reads after ungetc with multibyte characters in the buffer
 fails:IO#readpartial reads after ungetc without data in the buffer
 fails:IO#readpartial discards the existing buffer content upon successful read

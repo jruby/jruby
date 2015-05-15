@@ -4,5 +4,4 @@ fails:IO#read_nonblock returns at most the number of bytes requested
 fails:IO#read_nonblock returns less data if that is all that is available
 fails:IO#read_nonblock allows for reading 0 bytes before any write
 fails:IO#read_nonblock allows for reading 0 bytes after a write
-fails:IO#read_nonblock raises IOError on closed stream
 fails:IO#read_nonblock raises EOFError when the end is reached

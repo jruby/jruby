@@ -1,2 +1,1 @@
 fails:IO#getbyte returns the next byte from the stream
-fails:IO#getbyte raises an IOError on closed stream

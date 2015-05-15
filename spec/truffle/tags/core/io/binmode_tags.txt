@@ -1,2 +1,0 @@
-fails:IO#binmode raises an IOError on closed stream
-fails:IO#binmode? propagates to dup'ed IO objects

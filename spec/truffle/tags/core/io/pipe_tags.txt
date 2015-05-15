@@ -1,6 +1,0 @@
-fails:IO.pipe passed a block closes both IO objects
-fails:IO.pipe passed a block closes both IO objects when the block raises
-fails:IO.pipe passed a block allows IO objects to be closed within the block
-fails:IO.pipe accepts 'bom|' prefix for external encoding
-fails:IO.pipe accepts 'bom|' prefix for external encoding when specifying 'external:internal'
-fails:IO.pipe accepts an options Hash with one String encoding argument

@@ -1,2 +1,0 @@
-fails:IO#sync= raises an IOError on closed stream
-fails:IO#sync raises an IOError on closed stream

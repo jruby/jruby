@@ -1,2 +1,1 @@
 fails:IO#getc returns the next character from the stream
-fails:IO#getc raises IOError on closed stream
