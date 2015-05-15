@@ -264,11 +264,14 @@ public class RubyModule extends RubyObject {
         return autoloads == Collections.EMPTY_MAP ? autoloads = new ConcurrentHashMap<String, Autoload>(4, 0.9f, 1) : autoloads;
     }
 
+    @SuppressWarnings("unchecked")
     public void addIncludingHierarchy(IncludedModuleWrapper hierarchy) {
         synchronized (getRuntime().getHierarchyLock()) {
-            Set<RubyClass> oldIncludingHierarchies = includingHierarchies;
-            if (oldIncludingHierarchies == Collections.EMPTY_SET) includingHierarchies = oldIncludingHierarchies = new WeakHashSet(4);
-            oldIncludingHierarchies.add(hierarchy);
+            Set<RubyClass> including = this.includingHierarchies;
+            if (including == Collections.EMPTY_SET) {
+                including = this.includingHierarchies = new WeakHashSet(4);
+            }
+            including.add(hierarchy);
         }
     }
 
@@ -3324,9 +3327,8 @@ public class RubyModule extends RubyObject {
     protected Map<String, IRubyObject> getClassVariables() {
         if (CLASSVARS_UPDATER == null) {
             return getClassVariablesForWriteSynchronized();
-        } else {
-            return getClassVariablesForWriteAtomic();
         }
+        return getClassVariablesForWriteAtomic();
     }
 
     /**
@@ -3336,19 +3338,17 @@ public class RubyModule extends RubyObject {
      * @return the class vars map, ready for assignment
      */
     private Map<String,IRubyObject> getClassVariablesForWriteSynchronized() {
-        Map myClassVars = classVariables;
-        if (myClassVars == Collections.EMPTY_MAP) {
+        Map<String, IRubyObject> myClassVars = classVariables;
+        if ( myClassVars == Collections.EMPTY_MAP ) {
             synchronized (this) {
                 myClassVars = classVariables;
 
-                if (myClassVars == Collections.EMPTY_MAP) {
+                if ( myClassVars == Collections.EMPTY_MAP ) {
                     return classVariables = new ConcurrentHashMap<String, IRubyObject>(4, 0.75f, 2);
-                } else {
-                    return myClassVars;
                 }
+                return myClassVars;
             }
         }
-
         return myClassVars;
     }
 
@@ -3361,14 +3361,12 @@ public class RubyModule extends RubyObject {
      */
     private Map<String,IRubyObject> getClassVariablesForWriteAtomic() {
         while (true) {
-            Map myClassVars = classVariables;
-            Map newClassVars;
+            Map<String, IRubyObject> myClassVars = classVariables;
 
-            if (myClassVars == Collections.EMPTY_MAP) {
-                newClassVars = new ConcurrentHashMap<String, IRubyObject>(4, 0.75f, 2);
-            } else {
-                return myClassVars;
-            }
+            if ( myClassVars != Collections.EMPTY_MAP ) return myClassVars;
+
+            Map<String, IRubyObject> newClassVars;
+            newClassVars = new ConcurrentHashMap<String, IRubyObject>(4, 0.75f, 2);
 
             // proceed with atomic update of table, or retry
             if (CLASSVARS_UPDATER.compareAndSet(this, myClassVars, newClassVars)) {
@@ -4096,17 +4094,19 @@ public class RubyModule extends RubyObject {
 
     private volatile Map<String, IRubyObject> classVariables = Collections.EMPTY_MAP;
 
-    private static final AtomicReferenceFieldUpdater CLASSVARS_UPDATER;
+    private static final AtomicReferenceFieldUpdater<RubyModule, Map> CLASSVARS_UPDATER;
 
     static {
-        AtomicReferenceFieldUpdater updater = null;
+        AtomicReferenceFieldUpdater<RubyModule, Map> updater = null;
         try {
             updater = AtomicReferenceFieldUpdater.newUpdater(RubyModule.class, Map.class, "classVariables");
-        } catch (RuntimeException re) {
-            if (re.getCause() instanceof AccessControlException) {
+        }
+        catch (final RuntimeException ex) {
+            if (ex.getCause() instanceof AccessControlException) {
                 // security prevented creation; fall back on synchronized assignment
-            } else {
-                throw re;
+            }
+            else {
+                throw ex;
             }
         }
         CLASSVARS_UPDATER = updater;
