@@ -12,6 +12,8 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -51,16 +53,21 @@ public abstract class ExceptionNodes {
     @CoreMethod(names = "backtrace")
     public abstract static class BacktraceNode extends CoreMethodArrayArgumentsNode {
 
+        @Child ReadHeadObjectFieldNode readCustomBacktrace;
+
         public BacktraceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            readCustomBacktrace = new ReadHeadObjectFieldNode("@custom_backtrace");
         }
 
         @Specialization
         public Object backtrace(RubyException exception) {
-            if (exception.getBacktrace() == null) {
-                return nil();
-            } else {
+            if (readCustomBacktrace.isSet(exception)) {
+                return readCustomBacktrace.execute(exception);
+            } else if (exception.getBacktrace() != null) {
                 return exception.asRubyStringArray();
+            } else {
+                return nil();
             }
         }
 
