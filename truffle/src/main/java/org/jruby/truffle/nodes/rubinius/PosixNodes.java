@@ -101,6 +101,21 @@ public abstract class PosixNodes {
     }
 
 
+    @CoreMethod(names = "fsync", isModuleFunction = true, required = 1)
+    public abstract static class FsyncNode extends CoreMethodArrayArgumentsNode {
+
+        public FsyncNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int fsync(int descriptor) {
+            return posix().fsync(descriptor);
+        }
+
+    }
+
+
     @CoreMethod(names = "fchown", isModuleFunction = true, required = 3)
     public abstract static class FchownNode extends CoreMethodArrayArgumentsNode {
 
