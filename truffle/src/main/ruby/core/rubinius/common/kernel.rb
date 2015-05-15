@@ -172,7 +172,10 @@ module Kernel
 
   def extend(*modules)
     raise ArgumentError, "wrong number of arguments (0 for 1+)" if modules.empty?
-    Rubinius.check_frozen
+
+    # Disabled for JRuby+Truffle. The frozen check should be done in `object_extend`.
+    # Having the check here breaks nil.extend().
+    #Rubinius.check_frozen
 
     modules.reverse_each do |mod|
       Rubinius.privately do
