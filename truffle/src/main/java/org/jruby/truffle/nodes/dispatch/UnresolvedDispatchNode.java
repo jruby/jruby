@@ -226,7 +226,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     CompilerDirectives.transferToInterpreter();
                     singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), getSourceSection(), null));
                 }
-                RubyClass moduleSingletonClass = singletonClassNode.executeSingletonClass(frame, module);
+                // RubyClass moduleSingletonClass = singletonClassNode.executeSingletonClass(frame, module);
+                RubyClass moduleSingletonClass = singletonClassNode.getNormalObjectSingletonClass(module);
 
                 // But we want to check the module assumption, not its singleton class assumption.
                 return new CachedBoxedDispatchNode(getContext(), methodName, first,

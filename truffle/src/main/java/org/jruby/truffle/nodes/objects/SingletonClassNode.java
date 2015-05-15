@@ -87,6 +87,10 @@ public abstract class SingletonClassNode extends RubyNode {
 
     @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)", "!isRubyClass(object)" })
     protected RubyClass singletonClass(RubyBasicObject object) {
+        return getNormalObjectSingletonClass(object);
+    }
+
+    public RubyClass getNormalObjectSingletonClass(RubyBasicObject object) {
         CompilerAsserts.neverPartOfCompilation();
 
         if (object.getMetaClass().isSingleton()) {
