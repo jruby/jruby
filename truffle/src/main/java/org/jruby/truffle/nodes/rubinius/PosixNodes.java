@@ -11,20 +11,28 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
 import org.jruby.RubyEncoding;
+import org.jruby.ext.socket.SocketUtils;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.subsystems.RubiniusConfiguration;
+import org.jruby.util.ByteList;
+import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 @CoreClass(name = "Rubinius::FFI::Platform::POSIX")
 public abstract class PosixNodes {
@@ -186,7 +194,7 @@ public abstract class PosixNodes {
             final Pointer pointerValue = PointerPrimitiveNodes.getPointer(pointer);
 
             for (int n = 0; n < groups.length && n < max; n++) {
-                pointerValue.putInt(4 * n, (int) groups[n]);
+                pointerValue.putInt(RubiniusConfiguration.SIZE_OF_INT * n, (int) groups[n]);
 
             }
 
@@ -482,6 +490,62 @@ public abstract class PosixNodes {
         @Specialization
         public int symlink(RubyString first, RubyString second) {
             return posix().symlink(first.toString(), second.toString());
+        }
+
+    }
+
+    // TODO CS-15-May 15 we're missing a lot of guards for things like Pointer here
+
+    @CoreMethod(names = "_getaddrinfo", isModuleFunction = true, required = 4)
+    public abstract static class GetAddrInfoNode extends CoreMethodArrayArgumentsNode {
+
+        public GetAddrInfoNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getaddrinfo(RubyString hostName, RubyString serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
+            return nativeSockets().getaddrinfo(
+                    hostName.getByteList(),
+                    serviceName.getByteList(),
+                    PointerPrimitiveNodes.getPointer(hintsPointer),
+                    PointerPrimitiveNodes.getPointer(resultsPointer));
+        }
+
+    }
+
+    @CoreMethod(names = "freeaddrinfo", isModuleFunction = true, required = 1)
+    public abstract static class FreeAddrInfoNode extends CoreMethodArrayArgumentsNode {
+
+        public FreeAddrInfoNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject freeaddrinfo(RubyBasicObject addrInfo) {
+            nativeSockets().freeaddrinfo(PointerPrimitiveNodes.getPointer(addrInfo));
+            return nil();
+        }
+
+    }
+
+    @CoreMethod(names = "_getnameinfo", isModuleFunction = true, required = 7)
+    public abstract static class GetNameInfoNode extends CoreMethodArrayArgumentsNode {
+
+        public GetNameInfoNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getnameinfo(RubyBasicObject sa, int salen, RubyBasicObject host, int hostlen, RubyBasicObject serv, int servlen, int flags) {
+            return nativeSockets().getnameinfo(
+                    PointerPrimitiveNodes.getPointer(sa),
+                    salen,
+                    PointerPrimitiveNodes.getPointer(host),
+                    hostlen,
+                    PointerPrimitiveNodes.getPointer(serv),
+                    servlen,
+                    flags);
         }
 
     }

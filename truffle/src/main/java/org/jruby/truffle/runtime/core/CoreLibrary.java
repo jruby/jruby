@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
@@ -45,6 +44,7 @@ import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.signal.SignalOperations;
+import org.jruby.truffle.runtime.subsystems.RubiniusConfiguration;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
@@ -574,26 +574,26 @@ public class CoreLibrary {
     }
 
     private void initializeRubiniusFFI() {
-        rubiniusFFIModule.setConstant(node, "TYPE_CHAR", NativeFunctionPrimitiveNodes.TYPE_CHAR);
-        rubiniusFFIModule.setConstant(node, "TYPE_UCHAR", NativeFunctionPrimitiveNodes.TYPE_UCHAR);
-        rubiniusFFIModule.setConstant(node, "TYPE_BOOL", NativeFunctionPrimitiveNodes.TYPE_BOOL);
-        rubiniusFFIModule.setConstant(node, "TYPE_SHORT", NativeFunctionPrimitiveNodes.TYPE_SHORT);
-        rubiniusFFIModule.setConstant(node, "TYPE_USHORT", NativeFunctionPrimitiveNodes.TYPE_USHORT);
-        rubiniusFFIModule.setConstant(node, "TYPE_INT", NativeFunctionPrimitiveNodes.TYPE_INT);
-        rubiniusFFIModule.setConstant(node, "TYPE_UINT", NativeFunctionPrimitiveNodes.TYPE_UINT);
-        rubiniusFFIModule.setConstant(node, "TYPE_LONG", NativeFunctionPrimitiveNodes.TYPE_LONG);
-        rubiniusFFIModule.setConstant(node, "TYPE_ULONG", NativeFunctionPrimitiveNodes.TYPE_ULONG);
-        rubiniusFFIModule.setConstant(node, "TYPE_LL", NativeFunctionPrimitiveNodes.TYPE_LL);
-        rubiniusFFIModule.setConstant(node, "TYPE_ULL", NativeFunctionPrimitiveNodes.TYPE_ULL);
-        rubiniusFFIModule.setConstant(node, "TYPE_FLOAT", NativeFunctionPrimitiveNodes.TYPE_FLOAT);
-        rubiniusFFIModule.setConstant(node, "TYPE_DOUBLE", NativeFunctionPrimitiveNodes.TYPE_DOUBLE);
-        rubiniusFFIModule.setConstant(node, "TYPE_PTR", NativeFunctionPrimitiveNodes.TYPE_PTR);
-        rubiniusFFIModule.setConstant(node, "TYPE_VOID", NativeFunctionPrimitiveNodes.TYPE_VOID);
-        rubiniusFFIModule.setConstant(node, "TYPE_STRING", NativeFunctionPrimitiveNodes.TYPE_STRING);
-        rubiniusFFIModule.setConstant(node, "TYPE_STRPTR", NativeFunctionPrimitiveNodes.TYPE_STRPTR);
-        rubiniusFFIModule.setConstant(node, "TYPE_CHARARR", NativeFunctionPrimitiveNodes.TYPE_CHARARR);
-        rubiniusFFIModule.setConstant(node, "TYPE_ENUM", NativeFunctionPrimitiveNodes.TYPE_ENUM);
-        rubiniusFFIModule.setConstant(node, "TYPE_VARARGS", NativeFunctionPrimitiveNodes.TYPE_VARARGS);
+        rubiniusFFIModule.setConstant(node, "TYPE_CHAR", RubiniusConfiguration.TYPE_CHAR);
+        rubiniusFFIModule.setConstant(node, "TYPE_UCHAR", RubiniusConfiguration.TYPE_UCHAR);
+        rubiniusFFIModule.setConstant(node, "TYPE_BOOL", RubiniusConfiguration.TYPE_BOOL);
+        rubiniusFFIModule.setConstant(node, "TYPE_SHORT", RubiniusConfiguration.TYPE_SHORT);
+        rubiniusFFIModule.setConstant(node, "TYPE_USHORT", RubiniusConfiguration.TYPE_USHORT);
+        rubiniusFFIModule.setConstant(node, "TYPE_INT", RubiniusConfiguration.TYPE_INT);
+        rubiniusFFIModule.setConstant(node, "TYPE_UINT", RubiniusConfiguration.TYPE_UINT);
+        rubiniusFFIModule.setConstant(node, "TYPE_LONG", RubiniusConfiguration.TYPE_LONG);
+        rubiniusFFIModule.setConstant(node, "TYPE_ULONG", RubiniusConfiguration.TYPE_ULONG);
+        rubiniusFFIModule.setConstant(node, "TYPE_LL", RubiniusConfiguration.TYPE_LL);
+        rubiniusFFIModule.setConstant(node, "TYPE_ULL", RubiniusConfiguration.TYPE_ULL);
+        rubiniusFFIModule.setConstant(node, "TYPE_FLOAT", RubiniusConfiguration.TYPE_FLOAT);
+        rubiniusFFIModule.setConstant(node, "TYPE_DOUBLE", RubiniusConfiguration.TYPE_DOUBLE);
+        rubiniusFFIModule.setConstant(node, "TYPE_PTR", RubiniusConfiguration.TYPE_PTR);
+        rubiniusFFIModule.setConstant(node, "TYPE_VOID", RubiniusConfiguration.TYPE_VOID);
+        rubiniusFFIModule.setConstant(node, "TYPE_STRING", RubiniusConfiguration.TYPE_STRING);
+        rubiniusFFIModule.setConstant(node, "TYPE_STRPTR", RubiniusConfiguration.TYPE_STRPTR);
+        rubiniusFFIModule.setConstant(node, "TYPE_CHARARR", RubiniusConfiguration.TYPE_CHARARR);
+        rubiniusFFIModule.setConstant(node, "TYPE_ENUM", RubiniusConfiguration.TYPE_ENUM);
+        rubiniusFFIModule.setConstant(node, "TYPE_VARARGS", RubiniusConfiguration.TYPE_VARARGS);
     }
 
     public void loadRubyCore(String fileName) {

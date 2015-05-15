@@ -21,6 +21,7 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.tools.CoverageTracker;
 
+import jnr.ffi.LibraryLoader;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 
@@ -48,6 +49,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
+import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
@@ -55,7 +57,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.*;
@@ -74,6 +75,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     private final Ruby runtime;
 
     private final POSIX posix;
+    private final NativeSockets nativeSockets;
 
     private final TranslatorDriver translator;
     private final CoreLibrary coreLibrary;
@@ -133,6 +135,10 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         // JRuby+Truffle uses POSIX for all IO - we need the native version
         posix = POSIXFactory.getNativePOSIX(new TrufflePOSIXHandler(this));
+
+        final LibraryLoader<NativeSockets> loader = LibraryLoader.create(NativeSockets.class);
+        loader.library("c");
+        nativeSockets = loader.load();
 
         warnings = new Warnings(this);
 
@@ -629,6 +635,10 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     public POSIX getPosix() {
         return posix;
+    }
+
+    public NativeSockets getNativeSockets() {
+        return nativeSockets;
     }
 
     @Override
