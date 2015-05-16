@@ -55,6 +55,10 @@ public class RubiniusConfiguration {
                 DarwinRubiniusConfiguration.load(configuration, context);
                 break;
 
+            case LINUX:
+                LinuxRubiniusConfiguration.load(configuration, context);
+                break;
+
             default:
                 throw new UnsupportedOperationException();
         }

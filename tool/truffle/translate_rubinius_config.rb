@@ -20,5 +20,5 @@ ARGF.each do |line|
   else
     code = "context.makeString(\"#{value}\")"
   end
-  puts "        config(\"#{var}\", #{code});"
+  puts "        configuration.config(\"#{var}\", #{code});"
 end
