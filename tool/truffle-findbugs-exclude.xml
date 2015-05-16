@@ -149,4 +149,11 @@
     <Bug pattern="DM_EXIT" />
   </Match>
 
+  <!-- FindBugs bugs -->
+
+  <Match>
+    <Class name="org.jruby.truffle.nodes.objects.SingletonClassNode" />
+    <Bug pattern="BC_UNCONFIRMED_CAST" />
+  </Match>
+
 </FindBugsFilter>
