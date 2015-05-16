@@ -73,10 +73,7 @@ tool/nailgun/config.log
 tool/nailgun/config.status
 tool/nailgun/ng
 reference.txt
-
-# Temporary files
 rubyspec_temp
-.vagrant
 
 # binaries
 !bin/gem
@@ -113,4 +110,4 @@ findbugs-noUpdateChecks-3.0.0.tar.gz
 findbugs-3.0.0
 
 # Vagrant
-/.vagrant
+.vagrant
