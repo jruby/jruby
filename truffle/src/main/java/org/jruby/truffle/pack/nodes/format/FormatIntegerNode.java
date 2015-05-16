@@ -13,12 +13,16 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.parser.FormatDirective;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.util.ByteList;
 
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
@@ -44,6 +48,43 @@ public abstract class FormatIntegerNode extends PackNode {
     @Specialization
     public ByteList format(long value) {
         return doFormat(value);
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    @Specialization(guards = "isRubyBignum(value)")
+    public ByteList format(RubyBasicObject value) {
+        final BigInteger bigInteger = BignumNodes.getBigIntegerValue(value);
+
+        String formatted;
+
+        switch (format) {
+            case 'd':
+            case 'i':
+            case 'u':
+                formatted = bigInteger.toString();
+                break;
+
+            case 'x':
+                formatted = bigInteger.toString(16).toLowerCase(Locale.ENGLISH);
+                break;
+
+            case 'X':
+                formatted = bigInteger.toString(16).toUpperCase(Locale.ENGLISH);
+                break;
+
+            default:
+                throw new UnsupportedOperationException();
+        }
+
+        while (formatted.length() < spacePadding) {
+            formatted = " " + formatted;
+        }
+
+        while (formatted.length() < zeroPadding) {
+            formatted = "0" + formatted;
+        }
+
+        return new ByteList(formatted.getBytes(StandardCharsets.US_ASCII));
     }
 
     @CompilerDirectives.TruffleBoundary
