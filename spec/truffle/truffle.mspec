@@ -95,6 +95,7 @@ class MSpecScript
     "spec/ruby/library/cgi",
     "spec/ruby/library/erb",
     "spec/ruby/library/getoptlong",
+    "spec/ruby/library/ipaddr",
     "spec/ruby/library/matrix",
     "spec/ruby/library/logger",
     "spec/ruby/library/observer",
@@ -102,6 +103,7 @@ class MSpecScript
     "spec/ruby/library/openstruct",
     "spec/ruby/library/pathname",
     "spec/ruby/library/prime",
+    "spec/ruby/library/resolv",
     "spec/ruby/library/scanf",
     "spec/ruby/library/set",
     "spec/ruby/library/shellwords",
@@ -123,12 +125,10 @@ class MSpecScript
     "^spec/ruby/library/etc",
     "^spec/ruby/library/expect",
     "^spec/ruby/library/fiber",
-    "^spec/ruby/library/ipaddr",
     "^spec/ruby/library/mathn",
     "^spec/ruby/library/net",
     "^spec/ruby/library/openssl",
     "^spec/ruby/library/readline",
-    "^spec/ruby/library/resolv",
     "^spec/ruby/library/rexml",
     "^spec/ruby/library/securerandom",
     "^spec/ruby/library/syslog",
@@ -150,6 +150,8 @@ class MSpecScript
   set :truffle, [
     "spec/truffle/specs"
   ]
+
+  set :backtrace_filter, /mspec\//
 
   set :tags_patterns, [
     [%r(^.*/language/),                 'spec/truffle/tags/language/'],

@@ -51,7 +51,7 @@ public class RubyException extends RubyBasicObject {
         this.backtrace = backtrace;
     }
 
-    public Object asRubyStringArray() {
+    public RubyArray asRubyStringArray() {
         assert backtrace != null;
         final String[] lines = Backtrace.EXCEPTION_FORMATTER.format(getContext(), this, backtrace);
 

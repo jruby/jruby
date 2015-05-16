@@ -15,6 +15,9 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+
+import java.math.BigInteger;
 
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
@@ -34,6 +37,11 @@ public abstract class ToIntegerNode extends PackNode {
 
     @Specialization
     public long toInteger(VirtualFrame frame, long value) {
+        return value;
+    }
+
+    @Specialization(guards = "isRubyBignum(value)")
+    public RubyBasicObject toInteger(VirtualFrame frame, RubyBasicObject value) {
         return value;
     }
 

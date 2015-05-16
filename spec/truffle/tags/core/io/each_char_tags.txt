@@ -1,4 +1,2 @@
 fails:IO#each_char yields each character
 fails:IO#each_char returns itself
-fails:IO#each_char raises an IOError when an enumerator created on a closed stream is accessed
-fails:IO#each_char raises IOError on closed stream

@@ -1,2 +1,1 @@
-fails:IO#readline raises IOError on closed stream
 fails:IO#readline assigns the returned line to $_

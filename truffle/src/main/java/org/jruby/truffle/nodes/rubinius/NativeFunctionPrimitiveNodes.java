@@ -12,29 +12,9 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 
 public abstract class NativeFunctionPrimitiveNodes {
-
-    public static final int TYPE_CHAR = 0;
-    public static final int TYPE_UCHAR = 1;
-    public static final int TYPE_BOOL = 2;
-    public static final int TYPE_SHORT = 3;
-    public static final int TYPE_USHORT = 4;
-    public static final int TYPE_INT = 5;
-    public static final int TYPE_UINT = 6;
-    public static final int TYPE_LONG = 7;
-    public static final int TYPE_ULONG = 8;
-    public static final int TYPE_LL = 9;
-    public static final int TYPE_ULL = 10;
-    public static final int TYPE_FLOAT = 11;
-    public static final int TYPE_DOUBLE = 12;
-    public static final int TYPE_PTR = 13;
-    public static final int TYPE_VOID = 14;
-    public static final int TYPE_STRING = 15;
-    public static final int TYPE_STRPTR = 16;
-    public static final int TYPE_CHARARR = 17;
-    public static final int TYPE_ENUM = 18;
-    public static final int TYPE_VARARGS = 19;
 
     @RubiniusPrimitive(name = "nativefunction_type_size", needsSelf = false)
     public static abstract class NativeFunctionTypeSizePrimitiveNode extends RubiniusPrimitiveNode {
@@ -46,40 +26,40 @@ public abstract class NativeFunctionPrimitiveNodes {
         @Specialization
         public long typeSize(int type) {
             switch (type) {
-                case TYPE_CHAR:
-                case TYPE_UCHAR:
+                case RubiniusTypes.TYPE_CHAR:
+                case RubiniusTypes.TYPE_UCHAR:
                     return 1;
 
-                case TYPE_SHORT:
-                case TYPE_USHORT:
+                case RubiniusTypes.TYPE_SHORT:
+                case RubiniusTypes.TYPE_USHORT:
                     return 2;
 
-                case TYPE_INT:
-                case TYPE_UINT:
+                case RubiniusTypes.TYPE_INT:
+                case RubiniusTypes.TYPE_UINT:
                     return 4;
 
-                case TYPE_LONG:
-                case TYPE_ULONG:
+                case RubiniusTypes.TYPE_LONG:
+                case RubiniusTypes.TYPE_ULONG:
                     return 8;
 
-                case TYPE_FLOAT:
+                case RubiniusTypes.TYPE_FLOAT:
                     return 4;
 
-                case TYPE_DOUBLE:
+                case RubiniusTypes.TYPE_DOUBLE:
                     return 8;
 
-                case TYPE_PTR:
-                case TYPE_STRPTR:
+                case RubiniusTypes.TYPE_PTR:
+                case RubiniusTypes.TYPE_STRPTR:
                     return 8;
 
-                case TYPE_BOOL:
-                case TYPE_LL:
-                case TYPE_ULL:
-                case TYPE_VOID:
-                case TYPE_STRING:
-                case TYPE_CHARARR:
-                case TYPE_ENUM:
-                case TYPE_VARARGS:
+                case RubiniusTypes.TYPE_BOOL:
+                case RubiniusTypes.TYPE_LL:
+                case RubiniusTypes.TYPE_ULL:
+                case RubiniusTypes.TYPE_VOID:
+                case RubiniusTypes.TYPE_STRING:
+                case RubiniusTypes.TYPE_CHARARR:
+                case RubiniusTypes.TYPE_ENUM:
+                case RubiniusTypes.TYPE_VARARGS:
                 default:
                     throw new UnsupportedOperationException();
             }

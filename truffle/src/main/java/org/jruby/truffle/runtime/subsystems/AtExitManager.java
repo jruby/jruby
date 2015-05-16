@@ -11,43 +11,43 @@ package org.jruby.truffle.runtime.subsystems;
 
 import org.jruby.truffle.runtime.core.RubyProc;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.Deque;
+import java.util.NoSuchElementException;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class AtExitManager {
 
-    private final List<RubyProc> runOnExit = new LinkedList<>();
-    private final List<RubyProc> runOnExitAlways = new LinkedList<>();
+    private final Deque<RubyProc> runOnExit = new ConcurrentLinkedDeque<>();
+    private final Deque<RubyProc> runOnExitAlways = new ConcurrentLinkedDeque<>();
 
-    public synchronized void add(RubyProc block, boolean always) {
+    public void add(RubyProc block, boolean always) {
         if (always) {
-            runOnExitAlways.add(block);
+            runOnExitAlways.push(block);
         } else {
-            runOnExit.add(block);
+            runOnExit.push(block);
         }
     }
 
-    public synchronized void run(boolean normalExit) {
-        if (normalExit) {
-            Collections.reverse(runOnExit);
-
-            for (RubyProc block : runOnExit) {
-                try {
-                    block.rootCall();
-                } catch (Exception e) {
-                }
+    public void run(boolean normalExit) {
+        try {
+            if (normalExit) {
+                runExitHooks(runOnExit);
             }
+        } finally {
+            runExitHooks(runOnExitAlways);
         }
+    }
 
-        Collections.reverse(runOnExitAlways);
-
-        for (RubyProc block : runOnExitAlways) {
+    private void runExitHooks(Deque<RubyProc> stack) {
+        while (true) {
+            RubyProc block;
             try {
-                block.rootCall();
-            } catch (Exception e) {
+                block = stack.pop();
+            } catch (NoSuchElementException e) {
+                break;
             }
+
+            block.rootCall();
         }
     }
 

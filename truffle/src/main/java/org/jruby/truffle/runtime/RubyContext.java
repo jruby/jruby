@@ -19,20 +19,25 @@ import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.tools.CoverageTracker;
+
+import jnr.ffi.LibraryLoader;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
 import org.jruby.TruffleContextInterface;
+import org.jruby.ext.ffi.Platform;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.BignumNodes;
+import org.jruby.truffle.nodes.core.LoadRequiredLibrariesNode;
 import org.jruby.truffle.nodes.core.SetTopLevelBindingNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.exceptions.TopLevelRaiseHandler;
@@ -44,6 +49,8 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
+import org.jruby.truffle.runtime.rubinius.RubiniusConfiguration;
+import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
@@ -51,7 +58,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.*;
@@ -70,6 +76,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     private final Ruby runtime;
 
     private final POSIX posix;
+    private final NativeSockets nativeSockets;
 
     private final TranslatorDriver translator;
     private final CoreLibrary coreLibrary;
@@ -130,6 +137,10 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         // JRuby+Truffle uses POSIX for all IO - we need the native version
         posix = POSIXFactory.getNativePOSIX(new TrufflePOSIXHandler(this));
 
+        final LibraryLoader<NativeSockets> loader = LibraryLoader.create(NativeSockets.class);
+        loader.library("c");
+        nativeSockets = loader.load();
+
         warnings = new Warnings(this);
 
         // Object space manager needs to come early before we create any objects
@@ -157,15 +168,18 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             instrumentationServerManager = null;
         }
 
-        runningOnWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).indexOf("win") >= 0;
+        runningOnWindows = Platform.getPlatform().getOS() == Platform.OS.WINDOWS;
 
         attachmentsManager = new AttachmentsManager(this);
         sourceManager = new SourceManager(this);
-        rubiniusConfiguration = new RubiniusConfiguration(this);
+        rubiniusConfiguration = RubiniusConfiguration.create(this);
 
         final PrintStream configStandardOut = runtime.getInstanceConfig().getOutput();
-        debugStandardOut = configStandardOut == System.out ? null : configStandardOut;
+        debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
+    }
 
+    @Override
+    public void initialize() {
         // Give the core library manager a chance to tweak some of those methods
 
         coreLibrary.initializeAfterMethodsAdded();
@@ -214,22 +228,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         // Shims
         loadPath.slowPush(makeString(new File(home, "lib/ruby/truffle/shims").toString()));
-
-        // Load libraries required from the command line (-r LIBRARY)
-        for (String requiredLibrary : runtime.getInstanceConfig().getRequiredLibraries()) {
-            try {
-                featureManager.require(requiredLibrary, null);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (RaiseException e) {
-                // Translate LoadErrors for JRuby since we're outside an ExceptionTranslatingNode.
-                if (e.getRubyException().getLogicalClass() == coreLibrary.getLoadErrorClass()) {
-                    throw runtime.newLoadError(e.getRubyException().getMessage().toString(), requiredLibrary);
-                } else {
-                    throw e;
-                }
-            }
-        }
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {
@@ -629,6 +627,10 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return posix;
     }
 
+    public NativeSockets getNativeSockets() {
+        return nativeSockets;
+    }
+
     @Override
     public Object execute(final org.jruby.ast.RootNode rootNode) {
         coreLibrary.getGlobalVariablesObject().getObjectType().setInstanceVariable(
@@ -652,9 +654,11 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             public RubyNode wrap(RubyNode node) {
                 RubyContext context = node.getContext();
                 SourceSection sourceSection = node.getSourceSection();
-                return SequenceNode.sequence(context, sourceSection,
-                        new SetTopLevelBindingNode(context, sourceSection),
-                        new TopLevelRaiseHandler(context, sourceSection, node));
+                return new TopLevelRaiseHandler(context, sourceSection,
+                        SequenceNode.sequence(context, sourceSection,
+                                new SetTopLevelBindingNode(context, sourceSection),
+                                new LoadRequiredLibrariesNode(context, sourceSection),
+                                node));
             }
         });
         return coreLibrary.getNilObject();

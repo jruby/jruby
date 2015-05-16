@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
@@ -44,6 +43,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
+import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.util.cli.Options;
@@ -198,16 +198,12 @@ public class CoreLibrary {
 
         // Create the cyclic classes and modules
 
-        classClass = RubyClass.createBootClass(context, null, "Class", new RubyClass.ClassAllocator());
-        basicObjectClass = RubyClass.createBootClass(context, classClass, "BasicObject", new RubyBasicObject.BasicObjectAllocator());
-        objectClass = RubyClass.createBootClass(context, classClass, "Object", basicObjectClass.getAllocator());
-        moduleClass = RubyClass.createBootClass(context, classClass, "Module", new RubyModule.ModuleAllocator());
+        classClass = RubyClass.createClassClass(context, new RubyClass.ClassAllocator());
+        basicObjectClass = RubyClass.createBootClass(classClass, null, "BasicObject", new RubyBasicObject.BasicObjectAllocator());
+        objectClass = RubyClass.createBootClass(classClass, basicObjectClass, "Object", basicObjectClass.getAllocator());
+        moduleClass = RubyClass.createBootClass(classClass, objectClass, "Module", new RubyModule.ModuleAllocator());
 
         // Close the cycles
-        classClass.unsafeSetLogicalClass(classClass);
-
-        objectClass.unsafeSetSuperclass(basicObjectClass);
-        moduleClass.unsafeSetSuperclass(objectClass);
         classClass.unsafeSetSuperclass(moduleClass);
 
         classClass.getAdoptedByLexicalParent(objectClass, "Class", node);
@@ -578,26 +574,26 @@ public class CoreLibrary {
     }
 
     private void initializeRubiniusFFI() {
-        rubiniusFFIModule.setConstant(node, "TYPE_CHAR", NativeFunctionPrimitiveNodes.TYPE_CHAR);
-        rubiniusFFIModule.setConstant(node, "TYPE_UCHAR", NativeFunctionPrimitiveNodes.TYPE_UCHAR);
-        rubiniusFFIModule.setConstant(node, "TYPE_BOOL", NativeFunctionPrimitiveNodes.TYPE_BOOL);
-        rubiniusFFIModule.setConstant(node, "TYPE_SHORT", NativeFunctionPrimitiveNodes.TYPE_SHORT);
-        rubiniusFFIModule.setConstant(node, "TYPE_USHORT", NativeFunctionPrimitiveNodes.TYPE_USHORT);
-        rubiniusFFIModule.setConstant(node, "TYPE_INT", NativeFunctionPrimitiveNodes.TYPE_INT);
-        rubiniusFFIModule.setConstant(node, "TYPE_UINT", NativeFunctionPrimitiveNodes.TYPE_UINT);
-        rubiniusFFIModule.setConstant(node, "TYPE_LONG", NativeFunctionPrimitiveNodes.TYPE_LONG);
-        rubiniusFFIModule.setConstant(node, "TYPE_ULONG", NativeFunctionPrimitiveNodes.TYPE_ULONG);
-        rubiniusFFIModule.setConstant(node, "TYPE_LL", NativeFunctionPrimitiveNodes.TYPE_LL);
-        rubiniusFFIModule.setConstant(node, "TYPE_ULL", NativeFunctionPrimitiveNodes.TYPE_ULL);
-        rubiniusFFIModule.setConstant(node, "TYPE_FLOAT", NativeFunctionPrimitiveNodes.TYPE_FLOAT);
-        rubiniusFFIModule.setConstant(node, "TYPE_DOUBLE", NativeFunctionPrimitiveNodes.TYPE_DOUBLE);
-        rubiniusFFIModule.setConstant(node, "TYPE_PTR", NativeFunctionPrimitiveNodes.TYPE_PTR);
-        rubiniusFFIModule.setConstant(node, "TYPE_VOID", NativeFunctionPrimitiveNodes.TYPE_VOID);
-        rubiniusFFIModule.setConstant(node, "TYPE_STRING", NativeFunctionPrimitiveNodes.TYPE_STRING);
-        rubiniusFFIModule.setConstant(node, "TYPE_STRPTR", NativeFunctionPrimitiveNodes.TYPE_STRPTR);
-        rubiniusFFIModule.setConstant(node, "TYPE_CHARARR", NativeFunctionPrimitiveNodes.TYPE_CHARARR);
-        rubiniusFFIModule.setConstant(node, "TYPE_ENUM", NativeFunctionPrimitiveNodes.TYPE_ENUM);
-        rubiniusFFIModule.setConstant(node, "TYPE_VARARGS", NativeFunctionPrimitiveNodes.TYPE_VARARGS);
+        rubiniusFFIModule.setConstant(node, "TYPE_CHAR", RubiniusTypes.TYPE_CHAR);
+        rubiniusFFIModule.setConstant(node, "TYPE_UCHAR", RubiniusTypes.TYPE_UCHAR);
+        rubiniusFFIModule.setConstant(node, "TYPE_BOOL", RubiniusTypes.TYPE_BOOL);
+        rubiniusFFIModule.setConstant(node, "TYPE_SHORT", RubiniusTypes.TYPE_SHORT);
+        rubiniusFFIModule.setConstant(node, "TYPE_USHORT", RubiniusTypes.TYPE_USHORT);
+        rubiniusFFIModule.setConstant(node, "TYPE_INT", RubiniusTypes.TYPE_INT);
+        rubiniusFFIModule.setConstant(node, "TYPE_UINT", RubiniusTypes.TYPE_UINT);
+        rubiniusFFIModule.setConstant(node, "TYPE_LONG", RubiniusTypes.TYPE_LONG);
+        rubiniusFFIModule.setConstant(node, "TYPE_ULONG", RubiniusTypes.TYPE_ULONG);
+        rubiniusFFIModule.setConstant(node, "TYPE_LL", RubiniusTypes.TYPE_LL);
+        rubiniusFFIModule.setConstant(node, "TYPE_ULL", RubiniusTypes.TYPE_ULL);
+        rubiniusFFIModule.setConstant(node, "TYPE_FLOAT", RubiniusTypes.TYPE_FLOAT);
+        rubiniusFFIModule.setConstant(node, "TYPE_DOUBLE", RubiniusTypes.TYPE_DOUBLE);
+        rubiniusFFIModule.setConstant(node, "TYPE_PTR", RubiniusTypes.TYPE_PTR);
+        rubiniusFFIModule.setConstant(node, "TYPE_VOID", RubiniusTypes.TYPE_VOID);
+        rubiniusFFIModule.setConstant(node, "TYPE_STRING", RubiniusTypes.TYPE_STRING);
+        rubiniusFFIModule.setConstant(node, "TYPE_STRPTR", RubiniusTypes.TYPE_STRPTR);
+        rubiniusFFIModule.setConstant(node, "TYPE_CHARARR", RubiniusTypes.TYPE_CHARARR);
+        rubiniusFFIModule.setConstant(node, "TYPE_ENUM", RubiniusTypes.TYPE_ENUM);
+        rubiniusFFIModule.setConstant(node, "TYPE_VARARGS", RubiniusTypes.TYPE_VARARGS);
     }
 
     public void loadRubyCore(String fileName) {

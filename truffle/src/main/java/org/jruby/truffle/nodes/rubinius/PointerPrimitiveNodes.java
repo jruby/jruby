@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.kenai.jffi.MemoryIO;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
@@ -21,6 +23,9 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.rubinius.RubiniusConfiguration;
+import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
+import org.jruby.util.ByteList;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.util.EnumSet;
@@ -42,12 +47,15 @@ public abstract class PointerPrimitiveNodes {
     public static class PointerAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return PointerPrimitiveNodes.createPointer(rubyClass, jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().newOpaquePointer(0));
+            return PointerPrimitiveNodes.createPointer(rubyClass, NULL_POINTER);
         }
     }
 
     public static RubyBasicObject createPointer(RubyClass rubyClass, Pointer pointer) {
-        assert pointer != null;
+        if (pointer == null) {
+            pointer = NULL_POINTER;
+        }
+
         return new RubyBasicObject(rubyClass, POINTER_FACTORY.newInstance(pointer));
     }
 
@@ -158,7 +166,7 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_read_string")
+    @RubiniusPrimitive(name = "pointer_read_string", lowerFixnumParameters = 0)
     public static abstract class PointerReadStringPrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerReadStringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -190,16 +198,15 @@ public abstract class PointerPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "pointer_set_at_offset", lowerFixnumParameters = {0, 2})
+    @ImportStatic(RubiniusTypes.class)
     public static abstract class PointerSetAtOffsetPrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerSetAtOffsetPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "type == TYPE_INT")
         public int setAtOffset(RubyBasicObject pointer, int offset, int type, int value) {
-            assert type == 5;
-            // TODO CS 13-May-15 what does the type parameter do?
             getPointer(pointer).putInt(offset, value);
             return value;
         }
@@ -215,7 +222,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject readPointer(RubyBasicObject pointer) {
-            return createPointer(pointer.getLogicalClass(), nullOrPointer(getPointer(pointer).getPointer(0)));
+            return createPointer(pointer.getLogicalClass(), getPointer(pointer).getPointer(0));
         }
 
     }
@@ -235,27 +242,95 @@ public abstract class PointerPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "pointer_get_at_offset")
+    @ImportStatic(RubiniusTypes.class)
     public static abstract class PointerGetAtOffsetPrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerGetAtOffsetPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public int getAtOffset(RubyBasicObject pointer, int offset, int type) {
-            assert type == 5;
-            // TODO CS 13-May-15 not sure about int/long here
+        @Specialization(guards = "type == TYPE_UCHAR")
+        public int getAtOffsetUChar(RubyBasicObject pointer, int offset, int type) {
+            return getPointer(pointer).getByte(offset);
+        }
+
+        @Specialization(guards = "type == TYPE_INT")
+        public int getAtOffsetInt(RubyBasicObject pointer, int offset, int type) {
             return getPointer(pointer).getInt(offset);
+        }
+
+        @Specialization(guards = "type == TYPE_SHORT")
+        public int getAtOffsetShort(RubyBasicObject pointer, int offset, int type) {
+            return getPointer(pointer).getShort(offset);
+        }
+
+        @Specialization(guards = "type == TYPE_LONG")
+        public long getAtOffsetLong(RubyBasicObject pointer, int offset, int type) {
+            return getPointer(pointer).getLong(offset);
+        }
+
+        @Specialization(guards = "type == TYPE_STRING")
+        public RubyString getAtOffsetString(RubyBasicObject pointer, int offset, int type) {
+            return getContext().makeString(getPointer(pointer).getString(offset));
+        }
+
+        @Specialization(guards = "type == TYPE_PTR")
+        public RubyBasicObject getAtOffsetPointer(RubyBasicObject pointer, int offset, int type) {
+            final Pointer readPointer = getPointer(pointer).getPointer(offset);
+
+            if (readPointer == null) {
+                return nil();
+            } else {
+                return createPointer(pointer.getLogicalClass(), readPointer);
+            }
         }
 
     }
 
-    private static Pointer nullOrPointer(Pointer pointer) {
-        if (pointer == null) {
-            return NULL_POINTER;
-        } else {
+    @RubiniusPrimitive(name = "pointer_write_string")
+    public static abstract class PointerWriteStringPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public PointerWriteStringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject address(RubyBasicObject pointer, RubyString string, int maxLength) {
+            final ByteList bytes = string.getByteList();
+            final int length = Math.min(bytes.length(), maxLength);
+            getPointer(pointer).put(0, bytes.unsafeBytes(), bytes.begin(), length);
             return pointer;
         }
+
+    }
+
+    @RubiniusPrimitive(name = "pointer_read_string_to_null")
+    public static abstract class PointerReadStringToNullPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public PointerReadStringToNullPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyString readStringToNull(RubyBasicObject pointer) {
+            return getContext().makeString(MemoryIO.getInstance().getZeroTerminatedByteArray(getPointer(pointer).address()));
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "pointer_write_int")
+    public static abstract class PointerWriteIntPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public PointerWriteIntPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject address(RubyBasicObject pointer, int value) {
+            getPointer(pointer).putInt(0, value);
+            return pointer;
+        }
+
     }
 
 }

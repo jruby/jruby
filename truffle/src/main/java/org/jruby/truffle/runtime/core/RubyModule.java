@@ -112,7 +112,9 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
 
-        if (lexicalParent != null) {
+        if (lexicalParent == null) {
+            this.name = name;
+        } else {
             getAdoptedByLexicalParent(lexicalParent, name, currentNode);
         }
     }

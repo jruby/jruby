@@ -1,2 +1,0 @@
-fails:IO#lineno raises an IOError on a closed stream
-fails:IO#lineno= raises an IOError on a closed stream

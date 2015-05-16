@@ -4,4 +4,3 @@ fails:IO#sysread on a file coerces the second argument to string and uses it as 
 fails:IO#sysread on a file advances the position of the file by the specified number of bytes
 fails:IO#sysread on a file reads normally even when called immediately after a buffered IO#read
 fails:IO#sysread on a file reads updated content after the flushed buffered IO#write
-fails:IO#sysread on a file raises IOError on closed stream

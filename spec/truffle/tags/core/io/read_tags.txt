@@ -2,30 +2,10 @@ fails:IO.read from a pipe runs the rest as a subprocess and returns the standard
 fails:IO.read from a pipe opens a pipe to a fork if the rest is -
 fails:IO.read from a pipe reads only the specified number of bytes requested
 fails:IO.read from a pipe raises Errno::ESPIPE if passed an offset
-fails:IO#read can be read from consecutively
-fails:IO#read clears the output buffer if there is nothing to read
-fails:IO#read consumes zero bytes when reading zero bytes
-fails:IO#read is at end-of-file when everything has been read
-fails:IO#read reads the contents of a file
-fails:IO#read places the specified number of bytes in the buffer
-fails:IO#read expands the buffer when too small
-fails:IO#read overwrites the buffer
-fails:IO#read truncates the buffer when too big
-fails:IO#read returns the given buffer
-fails:IO#read coerces the second argument to string and uses it as a buffer
-fails:IO#read returns an empty string at end-of-file
-fails:IO#read reads the contents of a file when more bytes are specified
-fails:IO#read returns an empty string when the current pos is bigger than the content size
-fails:IO#read returns nil at end-of-file with a length
-fails:IO#read with length argument returns nil when the current pos is bigger than the content size
-fails:IO#read raises IOError on closed stream
-fails:IO.read with BOM reads a file without a bom
 fails:IO.read with BOM reads a file with a utf-8 bom
 fails:IO.read with BOM reads a file with a utf-16le bom
 fails:IO.read with BOM reads a file with a utf-16be bom
 fails:IO.read with BOM reads a file with a utf-32le bom
 fails:IO.read with BOM reads a file with a utf-32be bom
-fails:IO#read with large data reads all the data at once
-fails:IO#read with large data reads only the requested number of bytes
 fails(windows):IO#read on Windows normalizes line endings in text mode
 fails(windows):IO#read on Windows does not normalize line endings in binary mode

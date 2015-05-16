@@ -23,6 +23,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.rubinius.RubiniusConfiguration;
 
 import java.nio.charset.StandardCharsets;
 
@@ -101,6 +102,21 @@ public abstract class PosixNodes {
     }
 
 
+    @CoreMethod(names = "fsync", isModuleFunction = true, required = 1)
+    public abstract static class FsyncNode extends CoreMethodArrayArgumentsNode {
+
+        public FsyncNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int fsync(int descriptor) {
+            return posix().fsync(descriptor);
+        }
+
+    }
+
+
     @CoreMethod(names = "fchown", isModuleFunction = true, required = 3)
     public abstract static class FchownNode extends CoreMethodArrayArgumentsNode {
 
@@ -171,6 +187,7 @@ public abstract class PosixNodes {
             final Pointer pointerValue = PointerPrimitiveNodes.getPointer(pointer);
 
             for (int n = 0; n < groups.length && n < max; n++) {
+                // TODO CS 16-May-15 this is platform dependent
                 pointerValue.putInt(4 * n, (int) groups[n]);
 
             }
@@ -467,6 +484,118 @@ public abstract class PosixNodes {
         @Specialization
         public int symlink(RubyString first, RubyString second) {
             return posix().symlink(first.toString(), second.toString());
+        }
+
+    }
+
+    // TODO CS-15-May 15 we're missing a lot of guards for things like Pointer here
+
+    @CoreMethod(names = "_getaddrinfo", isModuleFunction = true, required = 4)
+    public abstract static class GetAddrInfoNode extends CoreMethodArrayArgumentsNode {
+
+        public GetAddrInfoNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getaddrinfo(RubyString hostName, RubyString serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
+            return nativeSockets().getaddrinfo(
+                    hostName.getByteList(),
+                    serviceName.getByteList(),
+                    PointerPrimitiveNodes.getPointer(hintsPointer),
+                    PointerPrimitiveNodes.getPointer(resultsPointer));
+        }
+
+    }
+
+    @CoreMethod(names = "freeaddrinfo", isModuleFunction = true, required = 1)
+    public abstract static class FreeAddrInfoNode extends CoreMethodArrayArgumentsNode {
+
+        public FreeAddrInfoNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject freeaddrinfo(RubyBasicObject addrInfo) {
+            nativeSockets().freeaddrinfo(PointerPrimitiveNodes.getPointer(addrInfo));
+            return nil();
+        }
+
+    }
+
+    @CoreMethod(names = "_getnameinfo", isModuleFunction = true, required = 7)
+    public abstract static class GetNameInfoNode extends CoreMethodArrayArgumentsNode {
+
+        public GetNameInfoNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getnameinfo(RubyBasicObject sa, int salen, RubyBasicObject host, int hostlen, RubyBasicObject serv, int servlen, int flags) {
+            return nativeSockets().getnameinfo(
+                    PointerPrimitiveNodes.getPointer(sa),
+                    salen,
+                    PointerPrimitiveNodes.getPointer(host),
+                    hostlen,
+                    PointerPrimitiveNodes.getPointer(serv),
+                    servlen,
+                    flags);
+        }
+
+    }
+
+    @CoreMethod(names = "socket", isModuleFunction = true, required = 3)
+    public abstract static class SocketNode extends CoreMethodArrayArgumentsNode {
+
+        public SocketNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getnameinfo(int domain, int type, int protocol) {
+            return nativeSockets().socket(domain, type, protocol);
+        }
+
+    }
+
+    @CoreMethod(names = "setsockopt", isModuleFunction = true, required = 5, lowerFixnumParameters = {0, 1, 2, 4})
+    public abstract static class SetSockOptNode extends CoreMethodArrayArgumentsNode {
+
+        public SetSockOptNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int setsockopt(int socket, int level, int optionName, RubyBasicObject optionValue, int optionLength) {
+            return nativeSockets().setsockopt(socket, level, optionName, PointerPrimitiveNodes.getPointer(optionValue), optionLength);
+        }
+
+    }
+
+    @CoreMethod(names = "_bind", isModuleFunction = true, required = 3)
+    public abstract static class BindNode extends CoreMethodArrayArgumentsNode {
+
+        public BindNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int bind(int socket, RubyBasicObject address, int addressLength) {
+            return nativeSockets().bind(socket, PointerPrimitiveNodes.getPointer(address), addressLength);
+        }
+
+    }
+
+    @CoreMethod(names = "listen", isModuleFunction = true, required = 2)
+    public abstract static class ListenNode extends CoreMethodArrayArgumentsNode {
+
+        public ListenNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int listen(int socket, int backlog) {
+            return nativeSockets().listen(socket, backlog);
         }
 
     }
