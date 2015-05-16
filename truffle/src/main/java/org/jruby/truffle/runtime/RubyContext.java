@@ -31,6 +31,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
 import org.jruby.TruffleContextInterface;
+import org.jruby.ext.ffi.Platform;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyNode;
@@ -168,11 +169,11 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             instrumentationServerManager = null;
         }
 
-        runningOnWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).indexOf("win") >= 0;
+        runningOnWindows = Platform.getPlatform().getOS() == Platform.OS.WINDOWS;
 
         attachmentsManager = new AttachmentsManager(this);
         sourceManager = new SourceManager(this);
-        rubiniusConfiguration = new RubiniusConfiguration(this);
+        rubiniusConfiguration = RubiniusConfiguration.create(this);
 
         final PrintStream configStandardOut = runtime.getInstanceConfig().getOutput();
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;

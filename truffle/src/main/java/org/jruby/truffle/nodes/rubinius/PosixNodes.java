@@ -187,7 +187,8 @@ public abstract class PosixNodes {
             final Pointer pointerValue = PointerPrimitiveNodes.getPointer(pointer);
 
             for (int n = 0; n < groups.length && n < max; n++) {
-                pointerValue.putInt(RubiniusConfiguration.SIZE_OF_INT * n, (int) groups[n]);
+                // TODO CS 16-May-15 this is platform dependent
+                pointerValue.putInt(4 * n, (int) groups[n]);
 
             }
 
