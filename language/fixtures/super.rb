@@ -355,4 +355,19 @@ module Super
     whatever
     whatever
   end
+
+  module ZSuperWithBlock
+    class A
+      def a
+        yield
+      end
+    end
+
+    class B < A
+      def a
+        super { 14 }
+      end
+    end
+  end
+
 end

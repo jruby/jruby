@@ -4,27 +4,27 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe :kernel_singleton_methods, :shared => true do
   it "returns an empty Array for an object with no singleton methods" do
-    ReflectSpecs.o.singleton_methods(@object).should == []
+    ReflectSpecs.o.singleton_methods(*@object).should == []
   end
 
   it "returns the names of module methods for a module" do
-    ReflectSpecs::M.singleton_methods(@object).should include(*stasy(:ms_pro, :ms_pub))
+    ReflectSpecs::M.singleton_methods(*@object).should include(*stasy(:ms_pro, :ms_pub))
   end
 
   it "does not return private module methods for a module" do
-    ReflectSpecs::M.singleton_methods(@object).should_not include(stasy(:ms_pri))
+    ReflectSpecs::M.singleton_methods(*@object).should_not include(stasy(:ms_pri))
   end
 
   it "returns the names of class methods for a class" do
-    ReflectSpecs::A.singleton_methods(@object).should include(*stasy(:as_pro, :as_pub))
+    ReflectSpecs::A.singleton_methods(*@object).should include(*stasy(:as_pro, :as_pub))
   end
 
   it "does not return private class methods for a class" do
-    ReflectSpecs::A.singleton_methods(@object).should_not include(stasy(:as_pri))
+    ReflectSpecs::A.singleton_methods(*@object).should_not include(stasy(:as_pri))
   end
 
   it "returns the names of singleton methods for an object" do
-    ReflectSpecs.os.singleton_methods(@object).should include(*stasy(:os_pro, :os_pub))
+    ReflectSpecs.os.singleton_methods(*@object).should include(*stasy(:os_pro, :os_pub))
   end
 end
 
