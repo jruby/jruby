@@ -16,14 +16,15 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**
- * Re-interpret a value as a {@code long}.
+ * Re-interpret a value as a {@code long}. In other words, get the raw bytes
+ * as a long.
  */
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
 })
-public abstract class AsLongNode extends PackNode {
+public abstract class ReinterpretLongNode extends PackNode {
 
-    public AsLongNode(RubyContext context) {
+    public ReinterpretLongNode(RubyContext context) {
         super(context);
     }
 

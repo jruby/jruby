@@ -27,7 +27,7 @@ import java.math.BigInteger;
 /**
  * Read a {@code long} value from the source, or a {@link BigInteger} if the
  * value is that large. This is only used with BER - in all other cases
- * we could truncate a {@code Bignum}.
+ * we would truncate a {@code Bignum}.
  */
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),

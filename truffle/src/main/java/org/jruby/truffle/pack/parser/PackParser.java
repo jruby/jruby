@@ -15,12 +15,8 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.PackRootNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.nodes.control.*;
-import org.jruby.truffle.pack.nodes.read.ReadDoubleNodeGen;
-import org.jruby.truffle.pack.nodes.read.ReadLongNodeGen;
-import org.jruby.truffle.pack.nodes.read.ReadLongOrBigIntegerNodeGen;
-import org.jruby.truffle.pack.nodes.read.ReadStringNodeGen;
-import org.jruby.truffle.pack.nodes.type.AsLongNodeGen;
-import org.jruby.truffle.pack.nodes.type.AsSinglePrecisionNodeGen;
+import org.jruby.truffle.pack.nodes.read.*;
+import org.jruby.truffle.pack.nodes.type.*;
 import org.jruby.truffle.pack.nodes.write.*;
 import org.jruby.truffle.pack.runtime.Endianness;
 import org.jruby.truffle.pack.runtime.PackEncoding;
@@ -80,10 +76,10 @@ public class PackParser {
                             throw new UnsupportedOperationException("unbalanced parens");
                         }
                     case 'C':
-                        node = writeInteger(8, Signedness.UNSIGNED, nativeEndianness());
+                        node = writeInteger(8, nativeEndianness());
                         break;
                     case 'c':
-                        node = writeInteger(8, Signedness.SIGNED, nativeEndianness());
+                        node = writeInteger(8, nativeEndianness());
                         break;
                     case 'S':
                     case 'L':
@@ -157,19 +153,19 @@ public class PackParser {
                             tokenizer.next();
                         }
 
-                        node = writeInteger(size, signedness, endianness);
+                        node = writeInteger(size, endianness);
                     } break;
                     case 'n':
-                        node = writeInteger(16, Signedness.UNSIGNED, Endianness.BIG);
+                        node = writeInteger(16, Endianness.BIG);
                         break;
                     case 'N':
-                        node = writeInteger(32, Signedness.UNSIGNED, Endianness.BIG);
+                        node = writeInteger(32, Endianness.BIG);
                         break;
                     case 'v':
-                        node = writeInteger(16, Signedness.UNSIGNED, Endianness.LITTLE);
+                        node = writeInteger(16, Endianness.LITTLE);
                         break;
                     case 'V':
-                        node = writeInteger(32, Signedness.UNSIGNED, Endianness.LITTLE);
+                        node = writeInteger(32, Endianness.LITTLE);
                         break;
                     case 'A':
                     case 'Z':
@@ -343,7 +339,9 @@ public class PackParser {
                     } break;
                     case 'U':
                         encoding = encoding.unifyWith(PackEncoding.UTF_8);
-                        node = WriteUTF8CharacterNodeGen.create(context, ReadLongNodeGen.create(context, new SourceNode()));
+                        node = WriteUTF8CharacterNodeGen.create(context,
+                                ToLongNodeGen.create(context,
+                                        ReadValueNodeGen.create(context, new SourceNode())));
                         break;
                     case 'X':
                         node = new BackNode(context);
@@ -362,42 +360,42 @@ public class PackParser {
                     } break;
                     case 'D':
                     case 'd':
-                        node = writeInteger(64, Signedness.UNSIGNED, nativeEndianness(),
-                                AsLongNodeGen.create(context,
+                        node = writeInteger(64, nativeEndianness(),
+                                ReinterpretLongNodeGen.create(context,
                                         ReadDoubleNodeGen.create(context, new SourceNode())));
                         break;
                     case 'F':
                     case 'f':
-                        node = writeInteger(32, Signedness.UNSIGNED, nativeEndianness(),
-                                AsLongNodeGen.create(context,
+                        node = writeInteger(32, nativeEndianness(),
+                                ReinterpretLongNodeGen.create(context,
                                         AsSinglePrecisionNodeGen.create(context,
                                             ReadDoubleNodeGen.create(context, new SourceNode()))));
                         break;
                     case 'E':
-                        node = writeInteger(64, Signedness.UNSIGNED, Endianness.LITTLE,
-                                AsLongNodeGen.create(context,
+                        node = writeInteger(64, Endianness.LITTLE,
+                                ReinterpretLongNodeGen.create(context,
                                         ReadDoubleNodeGen.create(context, new SourceNode())));
                         break;
                     case 'e':
-                        node = writeInteger(32, Signedness.UNSIGNED, Endianness.LITTLE,
-                                AsLongNodeGen.create(context,
+                        node = writeInteger(32, Endianness.LITTLE,
+                                ReinterpretLongNodeGen.create(context,
                                         AsSinglePrecisionNodeGen.create(context,
                                                 ReadDoubleNodeGen.create(context, new SourceNode()))));
                         break;
                     case 'G':
-                        node = writeInteger(64, Signedness.UNSIGNED, Endianness.BIG,
-                                AsLongNodeGen.create(context,
+                        node = writeInteger(64, Endianness.BIG,
+                                ReinterpretLongNodeGen.create(context,
                                         ReadDoubleNodeGen.create(context, new SourceNode())));
                         break;
                     case 'g':
-                        node = writeInteger(32, Signedness.UNSIGNED, Endianness.BIG,
-                                AsLongNodeGen.create(context,
+                        node = writeInteger(32, Endianness.BIG,
+                                ReinterpretLongNodeGen.create(context,
                                         AsSinglePrecisionNodeGen.create(context,
                                                 ReadDoubleNodeGen.create(context, new SourceNode()))));
                         break;
                     case 'P':
                     case 'p':
-                        node = writeInteger(64, Signedness.UNSIGNED, nativeEndianness(),
+                        node = writeInteger(64, nativeEndianness(),
                                 new PNode(context));
                         break;
                     case 'w':
@@ -535,77 +533,36 @@ public class PackParser {
         }
     }
 
-    private PackNode writeInteger(int size, Signedness signedness, Endianness endianness) {
-        final PackNode readNode = ReadLongNodeGen.create(context, new SourceNode());
-        return writeInteger(size, signedness, endianness, readNode);
+    private PackNode writeInteger(int size, Endianness endianness) {
+        final PackNode readNode = ToLongNodeGen.create(context,
+                ReadValueNodeGen.create(context, new SourceNode()));
+        return writeInteger(size, endianness, readNode);
     }
 
-    private PackNode writeInteger(int size, Signedness signedness, Endianness endianness, PackNode readNode) {
+    private PackNode writeInteger(int size, Endianness endianness, PackNode readNode) {
         switch (size) {
             case 8:
                 return Write8NodeGen.create(context, readNode);
             case 16:
-                switch (signedness) {
-                    case UNSIGNED:
-                        switch (endianness) {
-                            case LITTLE:
-                                return Write16LittleNodeGen.create(context, readNode);
-                            case BIG:
-                                return Write16BigNodeGen.create(context, readNode);
-                        }
-                    case SIGNED:
-                        switch (endianness) {
-                            case LITTLE:
-                                // Can I just use the same node?
-                                return Write16LittleNodeGen.create(context, readNode);
-                            case BIG:
-                                // Can I just use the same node?
-                                return Write16BigNodeGen.create(context, readNode);
-                        }
-                    default:
-                        throw new UnsupportedOperationException();
+                switch (endianness) {
+                    case LITTLE:
+                        return Write16LittleNodeGen.create(context, readNode);
+                    case BIG:
+                        return Write16BigNodeGen.create(context, readNode);
                 }
             case 32:
-                switch (signedness) {
-                    case UNSIGNED:
-                        switch (endianness) {
-                            case LITTLE:
-                                return Write32LittleNodeGen.create(context, readNode);
-                            case BIG:
-                                return Write32BigNodeGen.create(context, readNode);
-                        }
-                    case SIGNED:
-                        switch (endianness) {
-                            case LITTLE:
-                                // Can I just use the same node?
-                                return Write32LittleNodeGen.create(context, readNode);
-                            case BIG:
-                                // Can I just use the same node?
-                                return Write32BigNodeGen.create(context, readNode);
-                        }
-                    default:
-                        throw new UnsupportedOperationException();
+                switch (endianness) {
+                    case LITTLE:
+                        return Write32LittleNodeGen.create(context, readNode);
+                    case BIG:
+                        return Write32BigNodeGen.create(context, readNode);
                 }
             case 64:
-                switch (signedness) {
-                    case UNSIGNED:
-                        switch (endianness) {
-                            case LITTLE:
-                                return Write64LittleNodeGen.create(context, readNode);
-                            case BIG:
-                                return Write64BigNodeGen.create(context, readNode);
-                        }
-                    case SIGNED:
-                        switch (endianness) {
-                            case LITTLE:
-                                // Can I just use the same node?
-                                return Write64LittleNodeGen.create(context, readNode);
-                            case BIG:
-                                // Can I just use the same node?
-                                return Write64BigNodeGen.create(context, readNode);
-                        }
-                    default:
-                        throw new UnsupportedOperationException();
+                switch (endianness) {
+                    case LITTLE:
+                        return Write64LittleNodeGen.create(context, readNode);
+                    case BIG:
+                        return Write64BigNodeGen.create(context, readNode);
                 }
             default:
                 throw new UnsupportedOperationException();
