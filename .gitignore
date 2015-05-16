@@ -74,6 +74,7 @@ tool/nailgun/config.status
 tool/nailgun/ng
 reference.txt
 rubyspec_temp
+.polyglot.pom.rb
 
 # binaries
 !bin/gem
