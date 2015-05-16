@@ -35,7 +35,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.jruby.truffle.runtime.subsystems;
+package org.jruby.truffle.runtime.rubinius;
 
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
@@ -50,27 +50,6 @@ public class RubiniusConfiguration {
     public static final int SIZE_OF_INT = 4;
     public static final int SIZE_OF_LONG = 8;
     public static final int SIZE_OF_POINTER = 8;
-
-    public static final int TYPE_CHAR = 0;
-    public static final int TYPE_UCHAR = 1;
-    public static final int TYPE_BOOL = 2;
-    public static final int TYPE_SHORT = 3;
-    public static final int TYPE_USHORT = 4;
-    public static final int TYPE_INT = 5;
-    public static final int TYPE_UINT = 6;
-    public static final int TYPE_LONG = 7;
-    public static final int TYPE_ULONG = 8;
-    public static final int TYPE_LL = 9;
-    public static final int TYPE_ULL = 10;
-    public static final int TYPE_FLOAT = 11;
-    public static final int TYPE_DOUBLE = 12;
-    public static final int TYPE_PTR = 13;
-    public static final int TYPE_VOID = 14;
-    public static final int TYPE_STRING = 15;
-    public static final int TYPE_STRPTR = 16;
-    public static final int TYPE_CHARARR = 17;
-    public static final int TYPE_ENUM = 18;
-    public static final int TYPE_VARARGS = 19;
 
     private final RubyContext context;
 

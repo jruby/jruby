@@ -12,7 +12,7 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.subsystems.RubiniusConfiguration;
+import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 
 public abstract class NativeFunctionPrimitiveNodes {
 
@@ -26,40 +26,40 @@ public abstract class NativeFunctionPrimitiveNodes {
         @Specialization
         public long typeSize(int type) {
             switch (type) {
-                case RubiniusConfiguration.TYPE_CHAR:
-                case RubiniusConfiguration.TYPE_UCHAR:
+                case RubiniusTypes.TYPE_CHAR:
+                case RubiniusTypes.TYPE_UCHAR:
                     return 1;
 
-                case RubiniusConfiguration.TYPE_SHORT:
-                case RubiniusConfiguration.TYPE_USHORT:
+                case RubiniusTypes.TYPE_SHORT:
+                case RubiniusTypes.TYPE_USHORT:
                     return 2;
 
-                case RubiniusConfiguration.TYPE_INT:
-                case RubiniusConfiguration.TYPE_UINT:
+                case RubiniusTypes.TYPE_INT:
+                case RubiniusTypes.TYPE_UINT:
                     return 4;
 
-                case RubiniusConfiguration.TYPE_LONG:
-                case RubiniusConfiguration.TYPE_ULONG:
+                case RubiniusTypes.TYPE_LONG:
+                case RubiniusTypes.TYPE_ULONG:
                     return 8;
 
-                case RubiniusConfiguration.TYPE_FLOAT:
+                case RubiniusTypes.TYPE_FLOAT:
                     return 4;
 
-                case RubiniusConfiguration.TYPE_DOUBLE:
+                case RubiniusTypes.TYPE_DOUBLE:
                     return 8;
 
-                case RubiniusConfiguration.TYPE_PTR:
-                case RubiniusConfiguration.TYPE_STRPTR:
+                case RubiniusTypes.TYPE_PTR:
+                case RubiniusTypes.TYPE_STRPTR:
                     return 8;
 
-                case RubiniusConfiguration.TYPE_BOOL:
-                case RubiniusConfiguration.TYPE_LL:
-                case RubiniusConfiguration.TYPE_ULL:
-                case RubiniusConfiguration.TYPE_VOID:
-                case RubiniusConfiguration.TYPE_STRING:
-                case RubiniusConfiguration.TYPE_CHARARR:
-                case RubiniusConfiguration.TYPE_ENUM:
-                case RubiniusConfiguration.TYPE_VARARGS:
+                case RubiniusTypes.TYPE_BOOL:
+                case RubiniusTypes.TYPE_LL:
+                case RubiniusTypes.TYPE_ULL:
+                case RubiniusTypes.TYPE_VOID:
+                case RubiniusTypes.TYPE_STRING:
+                case RubiniusTypes.TYPE_CHARARR:
+                case RubiniusTypes.TYPE_ENUM:
+                case RubiniusTypes.TYPE_VARARGS:
                 default:
                     throw new UnsupportedOperationException();
             }

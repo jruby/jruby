@@ -23,7 +23,8 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.subsystems.RubiniusConfiguration;
+import org.jruby.truffle.runtime.rubinius.RubiniusConfiguration;
+import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.util.ByteList;
 import org.jruby.util.unsafe.UnsafeHolder;
 
@@ -197,7 +198,7 @@ public abstract class PointerPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "pointer_set_at_offset", lowerFixnumParameters = {0, 2})
-    @ImportStatic(RubiniusConfiguration.class)
+    @ImportStatic(RubiniusTypes.class)
     public static abstract class PointerSetAtOffsetPrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerSetAtOffsetPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -241,7 +242,7 @@ public abstract class PointerPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "pointer_get_at_offset")
-    @ImportStatic(RubiniusConfiguration.class)
+    @ImportStatic(RubiniusTypes.class)
     public static abstract class PointerGetAtOffsetPrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerGetAtOffsetPrimitiveNode(RubyContext context, SourceSection sourceSection) {
