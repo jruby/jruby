@@ -1,2 +1,0 @@
-fails:Module#remove_method raises a NameError when attempting to remove method further up the inheritance tree
-fails:Module#remove_method raises a NameError when attempting to remove a missing method

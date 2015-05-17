@@ -44,6 +44,7 @@ import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -1681,29 +1682,28 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "remove_method", argumentsAsArray = true, visibility = Visibility.PRIVATE)
     public abstract static class RemoveMethodNode extends CoreMethodArrayArgumentsNode {
 
+        @Child SymbolOrToStrNode symbolOrToStrNode;
+        @Child RaiseIfFrozenNode raiseIfFrozenNode;
+
         public RemoveMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.symbolOrToStrNode = SymbolOrToStrNodeGen.create(context, sourceSection, null);
+            this.raiseIfFrozenNode = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyModule removeMethod(RubyModule module, Object[] args) {
+        public RubyModule removeMethod(VirtualFrame frame, RubyModule module, Object[] args) {
             for (Object arg : args) {
-                final String name;
+                final String name = symbolOrToStrNode.executeToJavaString(frame, arg);
+                raiseIfFrozenNode.execute(frame);
 
-                if (arg instanceof RubySymbol) {
-                    name = ((RubySymbol) arg).toString();
-                } else if (arg instanceof RubyString) {
-                    name = ((RubyString) arg).toString();
+                if (module.getMethods().containsKey(name)) {
+                    module.removeMethod(name);
                 } else {
-                    // TODO BF 9-APR-2015 the MRI message calls inspect for error message i think
                     CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().typeError(" is not a symbol", this));
+                    throw new RaiseException(getContext().getCoreLibrary().nameErrorMethodNotDefinedIn(module, name, this));
                 }
-                module.removeMethod(this, name);
-
             }
-
             return module;
         }
 

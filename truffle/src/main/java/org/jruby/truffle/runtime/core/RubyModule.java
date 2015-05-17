@@ -278,9 +278,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     @TruffleBoundary
-    public void removeMethod(Node currentNode, String methodName) {
-        checkFrozen(currentNode);
-
+    public void removeMethod(String methodName) {
         methods.remove(methodName);
         newVersion();
     }
