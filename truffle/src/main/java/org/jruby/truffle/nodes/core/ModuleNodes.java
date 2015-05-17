@@ -635,7 +635,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = {"class_exec","module_exec"}, argumentsAsArray = true, needsBlock = true)
+    @CoreMethod(names = { "class_exec", "module_exec" }, argumentsAsArray = true, needsBlock = true)
     public abstract static class ClassExecNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldDispatchHeadNode yield;
@@ -649,11 +649,13 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object classExec(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block) {
+            return yield.dispatchWithModifiedSelf(frame, block, self, args);
+        }
+
+        @Specialization
+        public Object classExec(VirtualFrame frame, RubyModule self, Object[] args, UndefinedPlaceholder block) {
             CompilerDirectives.transferToInterpreter();
-
-            // TODO: deal with args
-
-            return yield.dispatchWithModifiedSelf(frame, block, self);
+            throw new RaiseException(getContext().getCoreLibrary().noBlockGiven(this));
         }
 
     }

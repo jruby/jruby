@@ -813,6 +813,11 @@ public class CoreLibrary {
         return new RubyException(localJumpErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException noBlockGiven(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return localJumpError("no block given", currentNode);
+    }
+
     public RubyException unexpectedReturn(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return localJumpError("unexpected return", currentNode);
