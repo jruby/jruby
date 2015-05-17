@@ -76,8 +76,6 @@ public class PackParser {
                             throw new UnsupportedOperationException("unbalanced parens");
                         }
                     case 'C':
-                        node = writeInteger(8, nativeEndianness());
-                        break;
                     case 'c':
                         node = writeInteger(8, nativeEndianness());
                         break;
