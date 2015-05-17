@@ -453,7 +453,7 @@ module Rubinius
     def set_encoding(*args)
       @encoding_args = args
       if @stream and !@stream.closed?
-        @stream.set_encoding *args
+        @stream.set_encoding(*args)
       end
     end
 
@@ -474,7 +474,7 @@ module Rubinius
       stream = file == "-" ? STDIN : File.open(file, "r", :external_encoding => encoding)
 
       if @encoding_args
-        stream.set_encoding *@encoding_args
+        stream.set_encoding(*@encoding_args)
       elsif encoding
         stream.set_encoding encoding
       end
