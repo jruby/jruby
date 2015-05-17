@@ -102,11 +102,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      */
     private final Set<RubyModule> lexicalDependents = Collections.newSetFromMap(new WeakHashMap<RubyModule, Boolean>());
 
-    public RubyModule(RubyContext context, RubyModule lexicalParent, String name, Node currentNode) {
-        this(context, context.getCoreLibrary().getModuleClass(), lexicalParent, name, currentNode);
-    }
-
-    protected RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, Node currentNode) {
+    public RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, Node currentNode) {
         super(context, selfClass);
         this.context = context;
 
@@ -611,7 +607,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyModule(context, null, null, currentNode);
+            return new RubyModule(context, rubyClass, null, null, currentNode);
         }
 
     }
