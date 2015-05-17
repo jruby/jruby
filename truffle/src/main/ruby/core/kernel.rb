@@ -31,8 +31,6 @@ module Kernel
   def at_exit(&block)
     Truffle::Primitive.at_exit false, &block
   end
-  private :at_exit
   module_function :at_exit
-
 
 end
