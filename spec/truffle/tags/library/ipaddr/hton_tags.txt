@@ -1,0 +1,2 @@
+fails:IPAddr#hton converts IPAddr to network byte order
+fails:IPAddr#new_ntoh creates a new IPAddr using hton notation

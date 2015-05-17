@@ -939,6 +939,11 @@ public class CoreLibrary {
         return nameError(String.format("undefined method `%s' for %s", name, module.getName()), name, currentNode);
     }
 
+    public RubyException nameErrorMethodNotDefinedIn(RubyModule module, String name, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return nameError(String.format("method `%s' not defined in %s", name, module.getName()), name, currentNode);
+    }
+
     public RubyException nameErrorPrivateMethod(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("method `%s' for %s is private", name, module.getName()), name, currentNode);

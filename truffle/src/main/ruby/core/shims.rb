@@ -50,8 +50,6 @@ else
   end
 end
 
-ARGF = Object.new
-
 class Regexp
   def self.last_match(n = nil)
     if n

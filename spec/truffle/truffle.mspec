@@ -51,7 +51,10 @@ class MSpecScript
     # "^spec/ruby/core/string/gsub_spec.rb",
 
     # require etc, linux only spec
-    "^spec/ruby/core/io/advise_spec.rb"
+    "^spec/ruby/core/io/advise_spec.rb",
+
+    # Pollutes other tests
+    "^spec/ruby/core/argf/binmode_spec.rb"
   ]
 
   core += [

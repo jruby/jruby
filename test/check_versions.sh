@@ -12,7 +12,6 @@ rm -rf maven/*/target/*
 ./mvnw -Pcomplete
 ./mvnw -Pdist
 ./mvnw -Pjruby-jars
-./mvnw -Pjruby-tests
 ./mvnw -Pmain
 
 declare -a failed
@@ -62,7 +61,6 @@ function check {
 
 }
 
-check test/target/jruby-tests-$jar_version.jar 1
 check lib/target/jruby-stdlib-$jar_version.jar 8
 check maven/jruby-jars/pkg/jruby-jars-$gem_version.gem 30
 check maven/jruby-jars/lib/jruby-core-$jar_version-complete.jar 13
