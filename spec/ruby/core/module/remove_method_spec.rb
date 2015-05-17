@@ -47,7 +47,7 @@ describe "Module#remove_method" do
     x.method_to_remove.should == 1
   end
 
-  it "requires multiple arguments" do
+  it "accepts multiple arguments" do
     Module.instance_method(:remove_method).arity.should < 0
   end
 
