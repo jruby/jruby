@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -36,6 +37,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.coerce.SymbolOrToStrNode;
 import org.jruby.truffle.nodes.coerce.SymbolOrToStrNodeGen;
+import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.KernelNodes.BindingNode;
@@ -572,6 +574,7 @@ public abstract class ModuleNodes {
 
         @Child private YieldDispatchHeadNode yield;
         @Child private BindingNode bindingNode;
+        @Child private ToStrNode toStrNode;
 
         public ClassEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -586,32 +589,45 @@ public abstract class ModuleNodes {
             return bindingNode.executeRubyBinding(frame);
         }
 
+        protected RubyString toStr(VirtualFrame frame, Object object) {
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            return toStrNode.executeRubyString(frame, object);
+        }
+
         @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, UndefinedPlaceholder file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
-            CompilerDirectives.transferToInterpreter();
-
-            final Source source = Source.fromText(code.toString(), "(eval)");
-            return classEvalSource(frame, module, source, code.getByteList().getEncoding());
+            return classEvalSource(frame, module, code, "(eval)");
         }
 
         @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
-            CompilerDirectives.transferToInterpreter();
-
-            final Source source = Source.asPseudoFile(code.toString(), file.toString());
-            return classEvalSource(frame, module, source, code.getByteList().getEncoding());
+            return classEvalSource(frame, module, code, file.toString());
         }
 
         @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, int line, UndefinedPlaceholder block) {
-            CompilerDirectives.transferToInterpreter();
-
-            final Source source = Source.asPseudoFile(code.toString(), file.toString());
-            return classEvalSource(frame, module, source, code.getByteList().getEncoding());
+            return classEvalSource(frame, module, code, file.toString());
         }
 
-        private Object classEvalSource(VirtualFrame frame, RubyModule module, Source source, Encoding encoding) {
+        @Specialization(guards = "!isUndefinedPlaceholder(code)")
+        public Object classEval(VirtualFrame frame, RubyModule module, Object code, UndefinedPlaceholder file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
+            return classEvalSource(frame, module, toStr(frame, code), file.toString());
+        }
+
+        @Specialization(guards = "!isUndefinedPlaceholder(file)")
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, Object file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
+            return classEvalSource(frame, module, code, toStr(frame, file).toString());
+        }
+
+        private Object classEvalSource(VirtualFrame frame, RubyModule module, RubyString code, String file) {
             RubyBinding binding = getCallerBinding(frame);
+            Encoding encoding = code.getByteList().getEncoding();
+
+            CompilerDirectives.transferToInterpreter();
+            Source source = Source.fromText(code.toString(), file);
 
             return getContext().execute(source, encoding, TranslatorDriver.ParserContext.MODULE, module, binding.getFrame(), this, new NodeWrapper() {
                 @Override
@@ -629,8 +645,13 @@ public abstract class ModuleNodes {
         @Specialization
         public Object classEval(RubyModule self, UndefinedPlaceholder code, UndefinedPlaceholder file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
             CompilerDirectives.transferToInterpreter();
-
             throw new RaiseException(getContext().getCoreLibrary().argumentError(0, 1, 2, this));
+        }
+
+        @Specialization(guards = "!isUndefinedPlaceholder(code)")
+        public Object classEval(RubyModule self, Object code, UndefinedPlaceholder file, UndefinedPlaceholder line, RubyProc block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError(1, 0, this));
         }
 
     }
