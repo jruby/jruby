@@ -1,2 +1,0 @@
-fails:ARGF.getc reads each char of files
-fails:ARGF.readchar raises EOFError when end of stream reached

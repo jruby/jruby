@@ -1,1 +1,0 @@
-fails:ARGF.to_io returns the IO of the current file

@@ -1,3 +1,0 @@
-fails:ARGF.each_char yields each char of all streams to the passed block
-fails:ARGF.each_char returns self when passed a block
-fails:ARGF.each_char returns an Enumerator when passed no block
