@@ -1,0 +1,8 @@
+fails:BigDecimal#round uses default rounding method unless given
+fails:BigDecimal#round BigDecimal::ROUND_UP rounds values away from zero
+fails:BigDecimal#round BigDecimal::ROUND_DOWN rounds values towards zero
+fails:BigDecimal#round BigDecimal::ROUND_HALF_UP rounds values >= 5 up, otherwise down
+fails:BigDecimal#round BigDecimal::ROUND_HALF_DOWN rounds values > 5 up, otherwise down
+fails:BigDecimal#round BigDecimal::ROUND_CEILING rounds values towards +infinity
+fails:BigDecimal#round BigDecimal::ROUND_FLOOR rounds values towards -infinity
+fails:BigDecimal#round BigDecimal::ROUND_HALF_EVEN rounds values > 5 up, < 5 down and == 5 towards even neighbor

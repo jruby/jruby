@@ -1,0 +1,14 @@
+fails:BigDecimal#% returns self modulo other
+fails:BigDecimal#% returns a [Float value] when the argument is Float
+fails:BigDecimal#% returns NaN if NaN is involved
+fails:BigDecimal#% returns NaN if the dividend is Infinity
+fails:BigDecimal#% returns the dividend if the divisor is Infinity
+fails:BigDecimal#% raises TypeError if the argument cannot be coerced to BigDecimal
+fails:BigDecimal#% raises ZeroDivisionError if other is zero
+fails:BigDecimal#modulo returns self modulo other
+fails:BigDecimal#modulo returns a [Float value] when the argument is Float
+fails:BigDecimal#modulo returns NaN if NaN is involved
+fails:BigDecimal#modulo returns NaN if the dividend is Infinity
+fails:BigDecimal#modulo returns the dividend if the divisor is Infinity
+fails:BigDecimal#modulo raises TypeError if the argument cannot be coerced to BigDecimal
+fails:BigDecimal#modulo raises ZeroDivisionError if other is zero

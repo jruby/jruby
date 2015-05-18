@@ -1,0 +1,7 @@
+fails:BigDecimal#truncate returns value of type Integer.
+fails:BigDecimal#truncate returns the integer part as a BigDecimal if no precision given
+fails:BigDecimal#truncate returns value of given precision otherwise
+fails:BigDecimal#truncate sets n digits left of the decimal point to 0, if given n < 0
+fails:BigDecimal#truncate returns NaN if self is NaN
+fails:BigDecimal#truncate returns Infinity if self is infinite
+fails:BigDecimal#truncate returns the same value if self is special value

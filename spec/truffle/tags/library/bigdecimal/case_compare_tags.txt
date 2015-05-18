@@ -1,0 +1,6 @@
+fails:BigDecimal#=== tests for equality
+fails:BigDecimal#=== NaN is never equal to any number
+fails:BigDecimal#=== returns true for infinity values with the same sign
+fails:BigDecimal#=== returns false for infinity values with different signs
+fails:BigDecimal#=== returns false when infinite value compared to finite one
+fails:BigDecimal#=== returns false when compared objects that can not be coerced into BigDecimal

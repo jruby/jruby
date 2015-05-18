@@ -119,9 +119,9 @@ class MSpecScript
     "spec/ruby/library/time",
     "spec/ruby/library/tmpdir",
     "spec/ruby/library/uri",
+    "spec/ruby/library/bigdecimal",
 
     # Not yet explored
-    "^spec/ruby/library/bigdecimal",
     "^spec/ruby/library/continuation",
     "^spec/ruby/library/csv",
     "^spec/ruby/library/digest/sha1",

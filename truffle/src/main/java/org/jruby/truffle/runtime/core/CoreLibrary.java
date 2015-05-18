@@ -126,6 +126,7 @@ public class CoreLibrary {
     private final RubyModule rubiniusFFIModule;
     private final RubyModule signalModule;
     private final RubyModule truffleModule;
+    private final RubyClass bigDecimalClass;
     private final RubyClass encodingConverterClass;
     private final RubyClass encodingCompatibilityErrorClass;
     private final RubyClass methodClass;
@@ -342,6 +343,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Debug");
         defineModule(truffleModule, "Primitive");
         defineModule(truffleModule, "Digest");
+        bigDecimalClass = defineClass(truffleModule, numericClass, "BigDecimal", new BigDecimalNodes.RubyBigDecimalAllocator());
 
         // Rubinius
 
@@ -445,6 +447,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(RubiniusTypeNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ThreadBacktraceLocationNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(DigestNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(BigDecimalNodesFactory.getFactories());
     }
 
     private void initializeGlobalVariables() {
@@ -1136,6 +1139,10 @@ public class CoreLibrary {
 
     public RubyClass getBignumClass() {
         return bignumClass;
+    }
+
+    public RubyClass getBigDecimalClass() {
+        return bigDecimalClass;
     }
 
     public RubyClass getBindingClass() {

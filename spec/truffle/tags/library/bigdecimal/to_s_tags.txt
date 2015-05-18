@@ -1,0 +1,8 @@
+fails:BigDecimal#to_s the default format looks like 0.xxxxEnn
+fails:BigDecimal#to_s takes an optional argument
+fails:BigDecimal#to_s starts with + if + is supplied and value is positive
+fails:BigDecimal#to_s inserts a space every n chars, if integer n is supplied
+fails:BigDecimal#to_s can return a leading space for values > 0
+fails:BigDecimal#to_s removes trailing spaces in floating point notation
+fails:BigDecimal#to_s can use engineering notation
+fails:BigDecimal#to_s can use conventional floating point notation

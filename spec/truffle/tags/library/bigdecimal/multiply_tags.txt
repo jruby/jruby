@@ -1,0 +1,6 @@
+fails:BigDecimal#* returns zero of appropriate sign if self or argument is zero
+fails:BigDecimal#* returns NaN if NaN is involved
+fails:BigDecimal#* returns zero if self or argument is zero
+fails:BigDecimal#* returns infinite value if self or argument is infinite
+fails:BigDecimal#* returns NaN if the result is undefined
+fails:BigDecimal#* multiply self with other

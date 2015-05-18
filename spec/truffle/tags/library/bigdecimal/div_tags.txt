@@ -1,0 +1,15 @@
+fails:BigDecimal#div with precision set to 0 returns a / b
+fails:BigDecimal#div with precision set to 0 returns 0 if divided by Infinity
+fails:BigDecimal#div with precision set to 0 returns (+|-) Infinity if (+|-) Infinity divided by one
+fails:BigDecimal#div with precision set to 0 returns NaN if Infinity / ((+|-) Infinity)
+fails:BigDecimal#div with precision set to 0 returns (+|-) Infinity if divided by zero
+fails:BigDecimal#div with precision set to 0 returns NaN if zero is divided by zero
+fails:BigDecimal#div returns a / b with optional precision
+fails:BigDecimal#div raises FloatDomainError if NaN is involved
+fails:BigDecimal#div returns 0 if divided by Infinity and no precision given
+fails:BigDecimal#div returns 0 if divided by Infinity with given precision
+fails:BigDecimal#div raises ZeroDivisionError if divided by zero and no precision given
+fails:BigDecimal#div returns NaN if zero is divided by zero
+fails:BigDecimal#div raises FloatDomainError if (+|-) Infinity divided by 1 and no precision given
+fails:BigDecimal#div returns (+|-)Infinity if (+|-)Infinity by 1 and precision given
+fails:BigDecimal#div returns NaN if Infinity / ((+|-) Infinity)

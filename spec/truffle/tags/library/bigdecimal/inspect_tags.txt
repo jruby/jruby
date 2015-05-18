@@ -1,0 +1,7 @@
+fails:BigDecimal#inspect returns String
+fails:BigDecimal#inspect returns String starting with #
+fails:BigDecimal#inspect encloses information in angle brackets
+fails:BigDecimal#inspect is comma separated list of three items
+fails:BigDecimal#inspect value after first comma is value as string
+fails:BigDecimal#inspect last part is number of significant digits
+fails:BigDecimal#inspect looks like this
