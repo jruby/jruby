@@ -12,8 +12,6 @@ if Truffle::CExt.supported?
   # C extensions.
 
   def require(name)
-    puts "here!"
-
     # We're getting quite hacky here. A lot of C extensions are required
     # using the format foo/foo, so we need to guess that the real name is
     # foo from that.
