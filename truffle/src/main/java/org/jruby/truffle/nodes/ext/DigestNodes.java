@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.ext;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
@@ -65,6 +66,7 @@ public abstract class DigestNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyBasicObject md5() {
             return createDigest(getContext(), Algorithm.MD5);
@@ -79,6 +81,7 @@ public abstract class DigestNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyBasicObject update(RubyBasicObject digestObject, RubyString message) {
             final ByteList bytes = message.getByteList();
@@ -95,6 +98,7 @@ public abstract class DigestNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyBasicObject reset(RubyBasicObject digestObject) {
             getDigest(digestObject).reset();
@@ -110,9 +114,37 @@ public abstract class DigestNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString digest(RubyBasicObject digestObject) {
-            return getContext().makeString(getDigest(digestObject).digest());
+            final MessageDigest digest = getDigest(digestObject);
+
+            // TODO CS 18-May-15 this cloning isn't ideal for the key operation
+
+            final MessageDigest clonedDigest;
+
+            try {
+                clonedDigest = (MessageDigest) digest.clone();
+            } catch (CloneNotSupportedException e) {
+                throw new RuntimeException(e);
+            }
+
+            return getContext().makeString(clonedDigest.digest());
+        }
+
+    }
+
+    @CoreMethod(names = "digest_length", isModuleFunction = true, required = 1)
+    public abstract static class DigestLengthNode extends CoreMethodArrayArgumentsNode {
+
+        public DigestLengthNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public int digestLength(RubyBasicObject digestObject) {
+            return getDigest(digestObject).getDigestLength();
         }
 
     }

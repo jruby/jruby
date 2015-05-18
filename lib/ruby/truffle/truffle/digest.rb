@@ -8,6 +8,8 @@
 
 module Digest
 
+  NO_MESSAGE = Object.new
+
   class Base
 
     def update(message)
@@ -20,22 +22,59 @@ module Digest
       Truffle::Digest.reset @digest
     end
 
-    def digest(message=nil)
-      # TODO CS 18-May-15 need to properly handle missing argument, not pretend it's nil
-      if message.nil?
+    def digest(message=NO_MESSAGE)
+      if NO_MESSAGE == message
         Truffle::Digest.digest @digest
       else
         reset
         update message
-        digested = digest
-        reset
-        digested
+        digest!
       end
+    end
+
+    def hexdigest(message=NO_MESSAGE)
+      digest(message).unpack('H*').first
+    end
+
+    alias_method :to_s, :hexdigest
+    alias_method :to_str, :hexdigest
+
+    def digest!
+      digested = digest
+      reset
+      digested
+    end
+
+    def hexdigest!
+      digested = hexdigest
+      reset
+      digested
+    end
+
+    def digest_length
+      Truffle::Digest.digest_length @digest
+    end
+
+    alias_method :size, :digest_length
+    alias_method :length, :digest_length
+
+    def ==(other)
+      hexdigest == other.to_str
+    end
+
+    def inspect
+      "#<#{self.class.name}: #{hexdigest}>"
     end
 
   end
 
   class MD5 < Base
+
+    def self.file(file)
+      digest = new
+      digest.update File.read(file)
+      digest
+    end
 
     def self.digest(message)
       digest = new
@@ -43,8 +82,18 @@ module Digest
       digest.digest
     end
 
+    def self.hexdigest(message)
+      digest = new
+      digest.update message
+      digest.hexdigest
+    end
+
     def initialize
       @digest = Truffle::Digest.md5
+    end
+
+    def block_length
+      64
     end
 
   end

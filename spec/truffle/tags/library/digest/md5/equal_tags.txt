@@ -1,3 +1,0 @@
-fails:Digest::MD5#== equals the string representing its hexdigest
-fails:Digest::MD5#== equals the appropriate object that responds to to_str
-fails:Digest::MD5#== equals the same digest for a different object

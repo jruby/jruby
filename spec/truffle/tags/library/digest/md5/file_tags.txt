@@ -1,6 +1,0 @@
-fails:Digest::MD5.file when passed a path to a file that exists returns a Digest::MD5 object
-fails:Digest::MD5.file when passed a path to a file that exists returns a Digest::MD5 object with the correct digest
-fails:Digest::MD5.file when passed a path to a file that exists calls #to_str on an object and returns the Digest::MD5 with the result
-fails:Digest::MD5.file raises an Errno::EISDIR when passed a path that is a directory
-fails:Digest::MD5.file raises a Errno::ENOENT when passed a path that does not exist
-fails:Digest::MD5.file raises a TypeError when passed nil

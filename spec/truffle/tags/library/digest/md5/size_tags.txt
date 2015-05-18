@@ -1,1 +1,0 @@
-fails:Digest::MD5#size returns the length of the digest
