@@ -234,7 +234,8 @@ public abstract class DigestNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString bubblebabble(RubyString message) {
-            return getContext().makeString(BubbleBabble.bubblebabble(message.getByteList().bytes()));
+            final ByteList byteList = message.getByteList();
+            return getContext().makeString(BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
         }
 
     }

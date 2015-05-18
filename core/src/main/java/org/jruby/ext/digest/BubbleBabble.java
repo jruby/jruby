@@ -1,5 +1,7 @@
 package org.jruby.ext.digest;
 
+import org.jruby.util.ByteList;
+
 /**
  * Ported from OpenSSH (https://github.com/openssh/openssh-portable/blob/957fbceb0f3166e41b76fdb54075ab3b9cc84cba/sshkey.c#L942-L987)
  *
@@ -32,42 +34,41 @@ package org.jruby.ext.digest;
 
 public class BubbleBabble {
 
-    public static String bubblebabble(byte[] digestRaw) {
+    public static ByteList bubblebabble(byte[] message, int begin, int length) {
         char[] vowels = new char[]{'a', 'e', 'i', 'o', 'u', 'y'};
         char[] consonants = new char[]{'b', 'c', 'd', 'f', 'g', 'h', 'k', 'l', 'm',
                 'n', 'p', 'r', 's', 't', 'v', 'z', 'x'};
 
         int seed = 1;
 
-        StringBuffer retval = new StringBuffer();
-        int rawLen = digestRaw.length;
+        ByteList retval = new ByteList();
 
-        int rounds = (rawLen / 2) + 1;
+        int rounds = (length / 2) + 1;
         retval.append('x');
         for (int i = 0; i < rounds; i++) {
             int idx0, idx1, idx2, idx3, idx4;
 
-            if ((i + 1 < rounds) || (rawLen % 2 != 0)) {
-                idx0 = (((((int) (digestRaw[2 * i])) >> 6) & 3) + seed) % 6;
-                idx1 =   (((int) (digestRaw[2 * i])) >> 2) & 15;
-                idx2 =  ((((int) (digestRaw[2 * i]))  & 3) + (seed / 6)) % 6;
+            if ((i + 1 < rounds) || (length % 2 != 0)) {
+                idx0 = (((((int) (message[begin + 2 * i])) >> 6) & 3) + seed) % 6;
+                idx1 =   (((int) (message[begin + 2 * i])) >> 2) & 15;
+                idx2 =  ((((int) (message[begin + 2 * i]))  & 3) + (seed / 6)) % 6;
                 retval.append(vowels[idx0]);
                 retval.append(consonants[idx1]);
                 retval.append(vowels[idx2]);
                 if ((i + 1) < rounds) {
-                    idx3 = (((int) (digestRaw[(2 * i) + 1])) >> 4) & 15;
-                    idx4 = (((int) (digestRaw[(2 * i) + 1]))) & 15;
+                    idx3 = (((int) (message[begin + (2 * i) + 1])) >> 4) & 15;
+                    idx4 = (((int) (message[begin + (2 * i) + 1]))) & 15;
                     retval.append(consonants[idx3]);
                     retval.append('-');
                     retval.append(consonants[idx4]);
                     seed = ((seed * 5) +
-                            ((((int) (digestRaw[2 * i])) * 7) +
-                                    ((int) (digestRaw[(2 * i) + 1])))) % 36;
+                            ((((int) (message[begin + 2 * i])) * 7) +
+                                    ((int) (message[begin + (2 * i) + 1])))) % 36;
                 }
             }
         }
         retval.append('x');
 
-        return retval.toString();
+        return retval;
     }
 }
