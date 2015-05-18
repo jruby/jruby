@@ -10,7 +10,25 @@ module Digest
 
   NO_MESSAGE = Object.new
 
-  class Base
+  class Algorithm
+
+    def self.file(file)
+      digest = new
+      digest.update File.read(file)
+      digest
+    end
+
+    def self.digest(message)
+      digest = new
+      digest.update message
+      digest.digest
+    end
+
+    def self.hexdigest(message)
+      digest = new
+      digest.update message
+      digest.hexdigest
+    end
 
     def update(message)
       Truffle::Digest.update @digest, message
@@ -68,30 +86,7 @@ module Digest
 
   end
 
-  module BaseFunctions
-
-    def file(file)
-      digest = new
-      digest.update File.read(file)
-      digest
-    end
-
-    def digest(message)
-      digest = new
-      digest.update message
-      digest.digest
-    end
-
-    def hexdigest(message)
-      digest = new
-      digest.update message
-      digest.hexdigest
-    end
-
-  end
-
-  class MD5 < Base
-    extend BaseFunctions
+  class MD5 < Algorithm
 
     def initialize
       @digest = Truffle::Digest.md5
@@ -103,8 +98,7 @@ module Digest
 
   end
 
-  class SHA1 < Base
-    extend BaseFunctions
+  class SHA1 < Algorithm
 
     def initialize
       @digest = Truffle::Digest.sha1
@@ -116,8 +110,7 @@ module Digest
 
   end
 
-  class SHA256 < Base
-    extend BaseFunctions
+  class SHA256 < Algorithm
 
     def initialize
       @digest = Truffle::Digest.sha256
@@ -129,8 +122,7 @@ module Digest
 
   end
 
-  class SHA384 < Base
-    extend BaseFunctions
+  class SHA384 < Algorithm
 
     def initialize
       @digest = Truffle::Digest.sha384
@@ -142,8 +134,7 @@ module Digest
 
   end
 
-  class SHA512 < Base
-    extend BaseFunctions
+  class SHA512 < Algorithm
 
     def initialize
       @digest = Truffle::Digest.sha512

@@ -10,24 +10,22 @@ require 'digest'
 
 module Digest
 
-  def bubblebabble(message)
-    Truffle::Digest.bubblebabble(message)
+  def self.bubblebabble(message)
+    raise TypeError if message.nil?
+    raise TypeError if message.is_a? Fixnum
+    Truffle::Digest.bubblebabble(message.to_str)
   end
 
-  class Base
+  class Algorithm
 
-    def bubblebabble(message=NO_MESSAGE)
-      Digest.bubblebabble(digest(message))
-    end
-
-  end
-
-  module BaseFunctions
-
-    def hexdigest(message)
+    def self.bubblebabble(message)
       digest = new
       digest.update message
       digest.bubblebabble
+    end
+
+    def bubblebabble(message=NO_MESSAGE)
+      Digest.bubblebabble(digest(message))
     end
 
   end
