@@ -6,47 +6,42 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-module Kernel
+if Truffle::CExt.supported?
 
-  if Truffle::CExt.supported?
+  # Monkey patch #require, similar to how RubyGems does, in order to load
+  # C extensions.
 
-    # Monkey patch #require, similar to how RubyGems does, in order to load
-    # C extensions.
+  def require(name)
+    puts "here!"
 
-    alias_method :truffle_cext_original_require, :require
+    # We're getting quite hacky here. A lot of C extensions are required
+    # using the format foo/foo, so we need to guess that the real name is
+    # foo from that.
 
-    def require(name)
-      # We're getting quite hacky here. A lot of C extensions are required
-      # using the format foo/foo, so we need to guess that the real name is
-      # foo from that.
-
-      if name =~ /(.+?)\/\1/
-        cext_name = $1
-      else
-        cext_name = name
-      end
-
-      # Look in each $JRUBY_TRUFFLE_CEXT_PATH directory for
-      # cext_name/ext/cext_name/extconf.rb
-
-      if ENV.include? 'JRUBY_TRUFFLE_CEXT_PATH'
-        cext_path = ENV['JRUBY_TRUFFLE_CEXT_PATH'].split(':')
-      else
-        cext_path = [Dir.pwd]
-      end
-
-      cext_path.each do |dir|
-        extconf = File.join(dir, cext_name, 'ext', cext_name, 'extconf.rb')
-
-        if File.exist? extconf
-          return Truffle::CExt::load_extconf(extconf)
-        end
-      end
-
-      truffle_cext_original_require name
+    if name =~ /(.+?)\/\1/
+      cext_name = $1
+    else
+      cext_name = name
     end
-    module_function :require
 
+    # Look in each $JRUBY_TRUFFLE_CEXT_PATH directory for
+    # cext_name/ext/cext_name/extconf.rb
+
+    if ENV.include? 'JRUBY_TRUFFLE_CEXT_PATH'
+      cext_path = ENV['JRUBY_TRUFFLE_CEXT_PATH'].split(':')
+    else
+      cext_path = [Dir.pwd]
+    end
+
+    cext_path.each do |dir|
+      extconf = File.join(dir, cext_name, 'ext', cext_name, 'extconf.rb')
+
+      if File.exist? extconf
+        return Truffle::CExt::load_extconf(extconf)
+      end
+    end
+
+    Kernel.require name
   end
 
 end
