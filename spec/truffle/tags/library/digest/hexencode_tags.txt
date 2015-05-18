@@ -1,5 +1,0 @@
-fails:Digest.hexencode returns '' when passed an empty String
-fails:Digest.hexencode returns the hex-encoded value of a non-empty String
-fails:Digest.hexencode calls #to_str on an object and returns the hex-encoded value of the result
-fails:Digest.hexencode raises a TypeError when passed nil
-fails:Digest.hexencode raises a TypeError when passed a Fixnum

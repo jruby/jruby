@@ -33,7 +33,7 @@ module Digest
     end
 
     def hexdigest(message=NO_MESSAGE)
-      digest(message).unpack('H*').first
+      Digest.hexencode(digest(message))
     end
 
     alias_method :to_s, :hexdigest
@@ -91,7 +91,6 @@ module Digest
   end
 
   class MD5 < Base
-
     extend BaseFunctions
 
     def initialize
@@ -105,7 +104,6 @@ module Digest
   end
 
   class SHA1 < Base
-
     extend BaseFunctions
 
     def initialize
@@ -119,7 +117,6 @@ module Digest
   end
 
   class SHA256 < Base
-
     extend BaseFunctions
 
     def initialize
@@ -133,7 +130,6 @@ module Digest
   end
 
   class SHA384 < Base
-
     extend BaseFunctions
 
     def initialize
@@ -147,7 +143,6 @@ module Digest
   end
 
   class SHA512 < Base
-
     extend BaseFunctions
 
     def initialize
@@ -158,6 +153,12 @@ module Digest
       128
     end
 
+  end
+
+  def self.hexencode(message)
+    raise TypeError if message.nil?
+    raise TypeError if message.is_a? Fixnum
+    message.to_str.unpack('H*').first
   end
 
 end
