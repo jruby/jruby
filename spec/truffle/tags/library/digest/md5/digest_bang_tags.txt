@@ -1,0 +1,1 @@
+fails:Digest::MD5#digest! returns a digest and can digest!

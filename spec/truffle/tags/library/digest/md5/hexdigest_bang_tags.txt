@@ -1,0 +1,1 @@
+fails:Digest::MD5#hexdigest! returns a hexdigest and resets the state

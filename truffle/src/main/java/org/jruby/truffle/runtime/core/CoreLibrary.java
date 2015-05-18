@@ -30,6 +30,7 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodesFactory;
 import org.jruby.truffle.nodes.core.fixnum.FixnumNodesFactory;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
+import org.jruby.truffle.nodes.ext.DigestNodesFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.nodes.objects.FreezeNode;
 import org.jruby.truffle.nodes.objects.FreezeNodeGen;
@@ -340,6 +341,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Interop");
         defineModule(truffleModule, "Debug");
         defineModule(truffleModule, "Primitive");
+        defineModule(truffleModule, "Digest");
 
         // Rubinius
 
@@ -442,6 +444,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(PosixNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(RubiniusTypeNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ThreadBacktraceLocationNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(DigestNodesFactory.getFactories());
     }
 
     private void initializeGlobalVariables() {

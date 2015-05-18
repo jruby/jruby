@@ -1,0 +1,2 @@
+fails:Digest::MD5#hexdigest returns a hexdigest
+fails:Digest::MD5.hexdigest returns a hexdigest
