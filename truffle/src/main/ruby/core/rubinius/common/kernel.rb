@@ -291,6 +291,11 @@ module Kernel
   end
   module_function :p
 
+  def putc(int)
+    $stdout.putc(int)
+  end
+  module_function :putc
+
   def puts(*a)
     $stdout.puts(*a)
     nil
