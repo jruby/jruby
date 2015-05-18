@@ -167,7 +167,7 @@ module Commands
     puts 'jt bench debug benchmark                       run a single benchmark with options for compiler debugging'
     puts 'jt bench reference [benchmarks]                run a set of benchmarks and record a reference point'
     puts 'jt bench compare [benchmarks]                  run a set of benchmarks and compare against a reference point'
-    puts '    benchmarks can be any benchmarks of group of benchmarks supported'
+    puts '    benchmarks can be any benchmarks or group of benchmarks supported'
     puts '    by bench9000, eg all, classic, chunky, 3, 5, 10, 15 - default is 5'
     puts 'jt findbugs                                    run findbugs'
     puts 'jt findbugs report                             run findbugs and generate an HTML report'
