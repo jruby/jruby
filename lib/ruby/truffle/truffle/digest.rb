@@ -68,25 +68,31 @@ module Digest
 
   end
 
-  class MD5 < Base
+  module BaseFunctions
 
-    def self.file(file)
+    def file(file)
       digest = new
       digest.update File.read(file)
       digest
     end
 
-    def self.digest(message)
+    def digest(message)
       digest = new
       digest.update message
       digest.digest
     end
 
-    def self.hexdigest(message)
+    def hexdigest(message)
       digest = new
       digest.update message
       digest.hexdigest
     end
+
+  end
+
+  class MD5 < Base
+
+    extend BaseFunctions
 
     def initialize
       @digest = Truffle::Digest.md5
