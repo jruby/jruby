@@ -17,9 +17,11 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.EnumSet;
 
 @CoreClass(name = "Truffle::BigDecimal")
@@ -110,9 +112,9 @@ public abstract class BigDecimalNodes {
     // TODO: double specializations
 
     @CoreMethod(names = "+", required = 1)
-    public abstract static class AddNode extends BigDecimalCoreMethodNode {
+    public abstract static class AdditionNode extends BigDecimalCoreMethodNode {
 
-        public AddNode(RubyContext context, SourceSection sourceSection) {
+        public AdditionNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
@@ -139,34 +141,65 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(names = "-", required = 1)
-    public abstract static class SubNode extends BigDecimalCoreMethodNode {
+    @CoreMethod(names = "add", required = 2)
+    public abstract static class AddNode extends BigDecimalCoreMethodNode {
 
-        public SubNode(RubyContext context, SourceSection sourceSection) {
+        public AddNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyBigDecimal(b)")
+        public Object add(RubyBasicObject a, RubyBasicObject b, int precision) {
+            return createRubyBigDecimal(
+                    getContext().getCoreLibrary().getBigDecimalClass(),
+                    getBigDecimalValue(a).add(getBigDecimalValue(b), new MathContext(precision)));
+        }
+
+    }
+
+    @CoreMethod(names = "-", required = 1)
+    public abstract static class SubtractNode extends BigDecimalCoreMethodNode {
+
+        public SubtractNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
-        public Object sub(RubyBasicObject a, int b) {
+        public Object subtract(RubyBasicObject a, int b) {
             return createRubyBigDecimal(
                     getContext().getCoreLibrary().getBigDecimalClass(),
                     getBigDecimalValue(a).subtract(BigDecimal.valueOf(b)));
         }
 
         @Specialization
-        public Object sub(RubyBasicObject a, long b) {
+        public Object subtract(RubyBasicObject a, long b) {
             return createRubyBigDecimal(
                     getContext().getCoreLibrary().getBigDecimalClass(),
                     getBigDecimalValue(a).subtract(BigDecimal.valueOf(b)));
         }
 
         @Specialization(guards = "isRubyBigDecimal(b)")
-        public Object sub(RubyBasicObject a, RubyBasicObject b) {
+        public Object subtract(RubyBasicObject a, RubyBasicObject b) {
             return createRubyBigDecimal(
                     getContext().getCoreLibrary().getBigDecimalClass(),
                     getBigDecimalValue(a).subtract(getBigDecimalValue(b)));
         }
 
+    }
+
+    @CoreMethod(names = "sub", required = 2)
+    public abstract static class SubNode extends BigDecimalCoreMethodNode {
+
+        public SubNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyBigDecimal(b)")
+        public Object sub(RubyBasicObject a, RubyBasicObject b, int precision) {
+            return createRubyBigDecimal(
+                    getContext().getCoreLibrary().getBigDecimalClass(),
+                    getBigDecimalValue(a).subtract(getBigDecimalValue(b), new MathContext(precision)));
+        }
     }
 
     @CoreMethod(names = {"==", "eql?"}, required = 1)

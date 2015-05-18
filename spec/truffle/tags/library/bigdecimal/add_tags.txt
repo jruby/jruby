@@ -1,4 +1,3 @@
-fails:BigDecimal#add returns a + b with given precision
 fails:BigDecimal#add returns a + [Fixnum value] with given precision
 fails:BigDecimal#add returns a + [Bignum value] with given precision
 fails:BigDecimal#add favors the precision specified in the second argument over the global limit
