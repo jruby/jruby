@@ -16,7 +16,7 @@
  * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
  * Copyright (C) 2008 Vladimir Sizikov <vsizikov@gmail.com>
  * Copyright (C) 2009 Joseph LaFata <joe@quibb.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -156,7 +156,8 @@ public class RubyDigest {
 
     @JRubyMethod(name = "bubblebabble", required = 1, meta = true)
     public static IRubyObject bubblebabble(IRubyObject recv, IRubyObject arg) {
-        return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(arg.convertToString().getBytes()));
+        final ByteList bytes = arg.convertToString().getByteList();
+        return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(bytes.unsafeBytes(), bytes.begin(), bytes.length()));
     }
 
     private static class Metadata {
@@ -333,7 +334,7 @@ public class RubyDigest {
         @JRubyMethod(name = "bubblebabble", required = 1, optional = 1, meta = true)
         public static IRubyObject bubblebabble(ThreadContext ctx, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
             byte[] digest = recv.callMethod(ctx, "digest", args, Block.NULL_BLOCK).convertToString().getBytes();
-            return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(digest));
+            return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(digest, 0, digest.length));
         }
 
         @JRubyMethod()
@@ -359,7 +360,7 @@ public class RubyDigest {
         public DigestClass(Ruby runtime, RubyClass type) {
             super(runtime, type);
         }
-        
+
         @JRubyMethod(name = "digest", required = 1, rest = true, meta = true)
         public static IRubyObject s_digest(ThreadContext ctx, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
             Ruby runtime = recv.getRuntime();
@@ -404,7 +405,7 @@ public class RubyDigest {
             if(metadata == null) {
                 throw runtime.newNotImplementedError("the " + type + "() function is unimplemented on this machine");
             }
-            
+
             try {
                 setAlgorithm(metadata);
             } catch(NoSuchAlgorithmException e) {
@@ -454,7 +455,7 @@ public class RubyDigest {
             algo.reset();
             return digest;
         }
-        
+
         @JRubyMethod()
         public IRubyObject digest_length() {
             return RubyFixnum.newFixnum(getRuntime(), algo.getDigestLength());
@@ -476,8 +477,9 @@ public class RubyDigest {
         }
 
         @JRubyMethod()
-        public IRubyObject bubblebabble() {
-            return RubyString.newString(getRuntime(), BubbleBabble.bubblebabble(algo.digest()));
+        public IRubyObject bubblebabble(ThreadContext context) {
+            final byte[] digest = algo.digest();
+            return RubyString.newString(context.runtime, BubbleBabble.bubblebabble(digest, 0, digest.length));
         }
 
         private void setAlgorithm(Metadata metadata) throws NoSuchAlgorithmException {
