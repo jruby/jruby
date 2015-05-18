@@ -104,4 +104,60 @@ module Digest
 
   end
 
+  class SHA1 < Base
+
+    extend BaseFunctions
+
+    def initialize
+      @digest = Truffle::Digest.sha1
+    end
+
+    def block_length
+      64
+    end
+
+  end
+
+  class SHA256 < Base
+
+    extend BaseFunctions
+
+    def initialize
+      @digest = Truffle::Digest.sha256
+    end
+
+    def block_length
+      64
+    end
+
+  end
+
+  class SHA384 < Base
+
+    extend BaseFunctions
+
+    def initialize
+      @digest = Truffle::Digest.sha384
+    end
+
+    def block_length
+      128
+    end
+
+  end
+
+  class SHA512 < Base
+
+    extend BaseFunctions
+
+    def initialize
+      @digest = Truffle::Digest.sha512
+    end
+
+    def block_length
+      128
+    end
+
+  end
+
 end

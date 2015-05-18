@@ -39,14 +39,28 @@ public abstract class DigestNodes {
     }
 
     private enum Algorithm {
-        MD5
+        MD5("MD5"),
+        SHA1("SHA1"),
+        SHA256("SHA-256"),
+        SHA384("SHA-384"),
+        SHA512("SHA-512");
+
+        private final String name;
+
+        Algorithm(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
     }
 
     private static RubyBasicObject createDigest(RubyContext context, Algorithm algorithm) {
         final MessageDigest digest;
 
         try {
-            digest = MessageDigest.getInstance(algorithm.name());
+            digest = MessageDigest.getInstance(algorithm.getName());
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
@@ -70,6 +84,66 @@ public abstract class DigestNodes {
         @Specialization
         public RubyBasicObject md5() {
             return createDigest(getContext(), Algorithm.MD5);
+        }
+
+    }
+
+    @CoreMethod(names = "sha1", isModuleFunction = true)
+    public abstract static class SHA1Node extends CoreMethodArrayArgumentsNode {
+
+        public SHA1Node(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyBasicObject sha1() {
+            return createDigest(getContext(), Algorithm.SHA1);
+        }
+
+    }
+
+    @CoreMethod(names = "sha256", isModuleFunction = true)
+    public abstract static class SHA256Node extends CoreMethodArrayArgumentsNode {
+
+        public SHA256Node(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyBasicObject sha256() {
+            return createDigest(getContext(), Algorithm.SHA256);
+        }
+
+    }
+
+    @CoreMethod(names = "sha384", isModuleFunction = true)
+    public abstract static class SHA384Node extends CoreMethodArrayArgumentsNode {
+
+        public SHA384Node(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyBasicObject sha384() {
+            return createDigest(getContext(), Algorithm.SHA384);
+        }
+
+    }
+
+    @CoreMethod(names = "sha512", isModuleFunction = true)
+    public abstract static class SHA512Node extends CoreMethodArrayArgumentsNode {
+
+        public SHA512Node(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyBasicObject sha512() {
+            return createDigest(getContext(), Algorithm.SHA512);
         }
 
     }
