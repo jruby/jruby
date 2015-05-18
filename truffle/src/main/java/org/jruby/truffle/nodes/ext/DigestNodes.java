@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.ext.digest.BubbleBabble;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
@@ -219,6 +220,21 @@ public abstract class DigestNodes {
         @Specialization
         public int digestLength(RubyBasicObject digestObject) {
             return getDigest(digestObject).getDigestLength();
+        }
+
+    }
+
+    @CoreMethod(names = "bubblebabble", isModuleFunction = true, required = 1)
+    public abstract static class BubbleBabbleNode extends CoreMethodArrayArgumentsNode {
+
+        public BubbleBabbleNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyString bubblebabble(RubyString message) {
+            return getContext().makeString(BubbleBabble.bubblebabble(message.getByteList().bytes()));
         }
 
     }
