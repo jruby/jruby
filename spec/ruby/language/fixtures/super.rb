@@ -370,4 +370,25 @@ module Super
     end
   end
 
+  module ZSuperWithOptional
+    class A
+      def m(x, y, z)
+        z
+      end
+    end
+
+    class B < A
+      def m(x, y, z = 14)
+        super
+      end
+    end
+
+    class C < A
+      def m(x, y, z = 14)
+        z = 100
+        super
+      end
+    end
+  end
+
 end

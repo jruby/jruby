@@ -166,4 +166,20 @@ describe "The super keyword" do
     Super::ZSuperWithBlock::B.new.a.should == 14
   end
 
+  it "passes optional arguments that have a default value" do
+    Super::ZSuperWithOptional::B.new.m(1, 2).should == 14
+  end
+
+  it "passes optional arguments that have a non-default value" do
+    Super::ZSuperWithOptional::B.new.m(1, 2, 3).should == 3
+  end
+
+  it "passes optional arguments that have a default value but were modified" do
+    Super::ZSuperWithOptional::C.new.m(1, 2).should == 100
+  end
+
+  it "passes optional arguments that have a non-default value but were modified" do
+    Super::ZSuperWithOptional::C.new.m(1, 2, 3).should == 100
+  end
+
 end
