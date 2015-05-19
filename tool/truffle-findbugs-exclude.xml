@@ -134,6 +134,10 @@
     <Class name="org.jruby.truffle.pack.runtime.PackResult" />
     <Bug pattern="EI_EXPOSE_REP" />
   </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.control.SequenceNode" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
 
   <!-- Hacks that should go away at some point -->
 
