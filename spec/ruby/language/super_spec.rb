@@ -190,4 +190,12 @@ describe "The super keyword" do
     Super::ZSuperWithRest::B.new.m_modified(1, 2, 3).should == [1, 14, 3]
   end
 
+  it "without explicit arguments passes arguments and rest arguments" do
+    Super::ZSuperWithRestAndOthers::B.new.m(1, 2, 3, 4, 5).should == [3, 4, 5]
+  end
+
+  it "without explicit arguments passes arguments and rest arguments including any modifications" do
+    Super::ZSuperWithRestAndOthers::B.new.m_modified(1, 2, 3, 4, 5).should == [3, 14, 5]
+  end
+
 end

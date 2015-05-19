@@ -414,4 +414,27 @@ module Super
     end
   end
 
+  module ZSuperWithRestAndOthers
+    class A
+      def m(a, b, *args)
+        args
+      end
+
+      def m_modified(a, b, *args)
+        args
+      end
+    end
+
+    class B < A
+      def m(a, b, *args)
+        super
+      end
+
+      def m_modified(a, b, *args)
+        args[1] = 14
+        super
+      end
+    end
+  end
+
 end
