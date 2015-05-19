@@ -255,7 +255,7 @@ module Commands
     env_vars = {
         "EXCLUDES" => "test/mri/excludes_truffle"
     }
-    jruby_args = %w[-J-Xmx4G -X+T -Xtruffle.exceptions.print_java]
+    jruby_args = %w[-J-Xmx2G -X+T -Xtruffle.exceptions.print_java]
 
     if args.empty?
       args = File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
