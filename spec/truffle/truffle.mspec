@@ -121,6 +121,7 @@ class MSpecScript
     "spec/ruby/library/tmpdir",
     "spec/ruby/library/uri",
     "spec/ruby/library/bigdecimal",
+    "spec/ruby/library/zlib",
 
     # Not yet explored
     "^spec/ruby/library/continuation",
@@ -142,7 +143,6 @@ class MSpecScript
     "^spec/ruby/library/timeout",
     "^spec/ruby/library/weakref",
     "^spec/ruby/library/win32ole",
-    "^spec/ruby/library/zlib",
     "^spec/ruby/library/yaml",
     "^spec/ruby/library/socket",
 

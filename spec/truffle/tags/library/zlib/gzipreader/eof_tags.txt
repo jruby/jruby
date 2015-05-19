@@ -1,0 +1,5 @@
+fails:GzipReader#eof? returns true when at EOF
+fails:GzipReader#eof? returns true when at EOF with the exact length of uncompressed data
+fails:GzipReader#eof? returns true when at EOF with a length greater than the size of uncompressed data
+fails:GzipReader#eof? returns false when at EOF when there's data left in the buffer to read
+fails:GzipReader#eof? does not affect the reading data

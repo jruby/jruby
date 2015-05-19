@@ -1,0 +1,8 @@
+fails:GzipReader#read with no arguments reads the entire content of a gzip file
+fails:GzipReader#read with nil length argument reads the entire content of a gzip file
+fails:GzipReader#read reads the contents up to a certain size
+fails:GzipReader#read does not accept a negative length to read
+fails:GzipReader#read returns an empty string if a 0 length is given
+fails:GzipReader#read respects :external_encoding option
+fails:GzipReader#read at the end of data returns empty string if length prameter is not specified or 0
+fails:GzipReader#read at the end of data returns nil if length prameter is positive

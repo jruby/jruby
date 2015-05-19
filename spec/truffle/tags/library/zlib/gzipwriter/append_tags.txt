@@ -1,0 +1,2 @@
+fails:Zlib::GzipWriter#<< returns self
+fails:Zlib::GzipWriter#<< needs to be reviewed for spec completeness
