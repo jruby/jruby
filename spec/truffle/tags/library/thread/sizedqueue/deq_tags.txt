@@ -1,0 +1,1 @@
+fails:Thread::SizedQueue#deq raises a ThreadError if Queue is empty

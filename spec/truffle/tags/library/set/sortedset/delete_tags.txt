@@ -1,0 +1,1 @@
+fails:SortedSet#delete? returns self when the passed Object is in self

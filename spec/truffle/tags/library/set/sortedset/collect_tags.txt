@@ -1,0 +1,1 @@
+fails:SortedSet#collect! yields each Object in self in sorted order

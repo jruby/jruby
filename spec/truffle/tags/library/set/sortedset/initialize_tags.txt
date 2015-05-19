@@ -1,0 +1,2 @@
+fails:SortedSet#initialize adds all elements of the passed Enumerable to self
+fails:SortedSet#initialize preprocesses all elements by a passed block before adding to self

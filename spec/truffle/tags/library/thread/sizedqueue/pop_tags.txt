@@ -1,0 +1,1 @@
+fails:Thread::SizedQueue#pop raises a ThreadError if Queue is empty

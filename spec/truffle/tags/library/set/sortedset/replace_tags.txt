@@ -1,0 +1,1 @@
+fails:SortedSet#replace accepts any enumerable as other

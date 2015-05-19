@@ -31,6 +31,14 @@ public final class SequenceNode extends RubyNode {
 
     @Children private final RubyNode[] body;
 
+    public static RubyNode sequenceNoFlatten(RubyContext context, SourceSection sourceSection, RubyNode... sequence) {
+        return new SequenceNode(context, sourceSection, sequence);
+    }
+
+    public static RubyNode sequenceNoFlatten(RubyContext context, SourceSection sourceSection, List<RubyNode> sequence) {
+        return sequenceNoFlatten(context, sourceSection, sequence.toArray(new RubyNode[sequence.size()]));
+    }
+
     public static RubyNode sequence(RubyContext context, SourceSection sourceSection, RubyNode... sequence) {
         return sequence(context, sourceSection, Arrays.asList(sequence));
     }
@@ -93,4 +101,7 @@ public final class SequenceNode extends RubyNode {
         }
     }
 
+    public RubyNode[] getSequence() {
+        return body;
+    }
 }

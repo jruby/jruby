@@ -1,0 +1,1 @@
+fails:SortedSet#eql? returns true when the passed argument is a SortedSet and contains the same elements
