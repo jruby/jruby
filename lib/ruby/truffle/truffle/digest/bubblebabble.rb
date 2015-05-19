@@ -11,9 +11,7 @@ require 'digest'
 module Digest
 
   def self.bubblebabble(message)
-    raise TypeError if message.nil?
-    raise TypeError if message.is_a? Fixnum
-    Truffle::Digest.bubblebabble(message.to_str)
+    Truffle::Digest.bubblebabble(StringValue(message))
   end
 
   class Algorithm

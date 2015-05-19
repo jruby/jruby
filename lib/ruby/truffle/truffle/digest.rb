@@ -147,9 +147,7 @@ module Digest
   end
 
   def self.hexencode(message)
-    raise TypeError if message.nil?
-    raise TypeError if message.is_a? Fixnum
-    message.to_str.unpack('H*').first
+    StringValue(message).unpack('H*').first
   end
 
 end
