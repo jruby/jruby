@@ -960,16 +960,19 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "load", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1)
     public abstract static class LoadNode extends CoreMethodArrayArgumentsNode {
 
         public LoadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
-        public boolean load(RubyString file) {
-            CompilerDirectives.transferToInterpreter();
+        public boolean load(RubyString file, boolean wrap) {
+            if (wrap) {
+                throw new UnsupportedOperationException();
+            }
 
             try {
                 getContext().loadFile(file.toString(), this);
@@ -985,6 +988,11 @@ public abstract class KernelNodes {
             }
 
             return true;
+        }
+
+        @Specialization
+        public boolean load(RubyString file, UndefinedPlaceholder wrap) {
+            return load(file, false);
         }
     }
 
