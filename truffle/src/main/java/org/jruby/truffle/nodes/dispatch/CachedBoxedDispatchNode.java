@@ -27,8 +27,6 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     private final RubyClass expectedClass;
     private final Assumption unmodifiedAssumption;
 
-    private final Object value;
-
     private final InternalMethod method;
     @Child private DirectCallNode callNode;
     @Child private IndirectCallNode indirectCallNode;
@@ -38,41 +36,14 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
             Object cachedName,
             DispatchNode next,
             RubyClass expectedClass,
-            Object value,
-            InternalMethod method,
-            boolean indirect,
-            DispatchAction dispatchAction) {
-        this(
-                context,
-                cachedName,
-                next,
-                expectedClass,
-                expectedClass.getUnmodifiedAssumption(),
-                value,
-                method,
-                indirect,
-                dispatchAction);
-    }
-
-    /**
-     * Allows to give the assumption, which is different than the expectedClass assumption for constant lookup.
-     */
-    public CachedBoxedDispatchNode(
-            RubyContext context,
-            Object cachedName,
-            DispatchNode next,
-            RubyClass expectedClass,
-            Assumption unmodifiedAssumption,
-            Object value,
             InternalMethod method,
             boolean indirect,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
 
         this.expectedClass = expectedClass;
-        this.unmodifiedAssumption = unmodifiedAssumption;
+        this.unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
         this.next = next;
-        this.value = value;
         this.method = method;
 
         if (method != null) {
@@ -154,9 +125,6 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
             case RESPOND_TO_METHOD:
                 return true;
-
-            case READ_CONSTANT:
-                return value;
 
             default:
                 throw new UnsupportedOperationException();

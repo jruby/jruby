@@ -11,7 +11,7 @@ package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.runtime.LexicalScope;
+
 import org.jruby.truffle.runtime.RubyContext;
 
 public class DispatchHeadNode extends Node {
@@ -20,7 +20,6 @@ public class DispatchHeadNode extends Node {
     protected final boolean ignoreVisibility;
     protected final boolean indirect;
     protected final MissingBehavior missingBehavior;
-    protected final LexicalScope lexicalScope;
     protected final DispatchAction dispatchAction;
 
     @Child private DispatchNode first;
@@ -30,13 +29,11 @@ public class DispatchHeadNode extends Node {
             boolean ignoreVisibility,
             boolean indirect,
             MissingBehavior missingBehavior,
-            LexicalScope lexicalScope,
             DispatchAction dispatchAction) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
         this.indirect = indirect;
         this.missingBehavior = missingBehavior;
-        this.lexicalScope = lexicalScope;
         this.dispatchAction = dispatchAction;
         first = new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior, dispatchAction);
     }
@@ -62,10 +59,6 @@ public class DispatchHeadNode extends Node {
 
     public DispatchNode getFirstDispatchNode() {
         return first;
-    }
-
-    public LexicalScope getLexicalScope() {
-        return lexicalScope;
     }
 
     public DispatchAction getDispatchAction() {
