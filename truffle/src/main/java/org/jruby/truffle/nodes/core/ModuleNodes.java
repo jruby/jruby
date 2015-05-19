@@ -867,17 +867,12 @@ public abstract class ModuleNodes {
             return getConstant(frame, module, name, true);
         }
 
-        @Specialization(guards = "isScoped(name)")
-        public Object getConstantScoped(VirtualFrame frame, RubyModule module, String name, UndefinedPlaceholder inherit) {
-            return getConstantScoped(frame, module, name, true);
-        }
-
-        @Specialization(guards = { "isTrue(inherit)", "!isScoped(name)" })
+        @Specialization(guards = { "!isScoped(name)", "inherit" })
         public Object getConstant(VirtualFrame frame, RubyModule module, String name, boolean inherit) {
             return getConstantNode.executeGetConstant(frame, module, name);
         }
 
-        @Specialization(guards = { "!isTrue(inherit)", "!isScoped(name)" })
+        @Specialization(guards = { "!isScoped(name)", "!inherit" })
         public Object getConstantNoInherit(VirtualFrame frame, RubyModule module, String name, boolean inherit) {
             CompilerDirectives.transferToInterpreter();
 
@@ -888,6 +883,11 @@ public abstract class ModuleNodes {
             } else {
                 return constant.getValue();
             }
+        }
+
+        @Specialization(guards = "isScoped(fullName)")
+        public Object getConstantScoped(VirtualFrame frame, RubyModule module, String fullName, UndefinedPlaceholder inherit) {
+            return getConstantScoped(frame, module, fullName, true);
         }
 
         @Specialization(guards = "isScoped(fullName)")
