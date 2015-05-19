@@ -52,6 +52,8 @@ public class FeatureManager {
             } else {
                 // Some features are handled specially
 
+
+
                 if (feature.equals("zlib")) {
                     context.getWarnings().warn("zlib not yet implemented");
                     return true;

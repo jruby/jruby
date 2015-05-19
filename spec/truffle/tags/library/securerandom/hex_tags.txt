@@ -1,0 +1,2 @@
+fails:SecureRandom.hex generates a random hex string of length twice the specified argement
+fails:SecureRandom.hex tries to convert the passed argument to an Integer using #to_int

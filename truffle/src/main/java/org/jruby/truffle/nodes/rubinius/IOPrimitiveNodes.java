@@ -189,9 +189,6 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-
-
-
     @RubiniusPrimitive(name = "io_fnmatch", needsSelf = false)
     public static abstract class IOFNMatchPrimitiveNode extends RubiniusPrimitiveNode {
 
@@ -440,6 +437,34 @@ public abstract class IOPrimitiveNodes {
             }
 
             return newFd;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "io_sysread")
+    public static abstract class IOSysReadPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public IOSysReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyString sysread(VirtualFrame frame, RubyBasicObject file, int length) {
+            final int fd = (int) rubyWithSelf(frame, file, "@descriptor");
+
+            final ByteBuffer buffer = ByteBuffer.allocate(length);
+
+            int toRead = length;
+
+            while (toRead > 0) {
+                getContext().getSafepointManager().poll(this);
+
+                final int readIteration = posix().read(fd, buffer, toRead);
+                buffer.position(readIteration);
+                toRead -= readIteration;
+            }
+
+            return getContext().makeString(buffer);
         }
 
     }

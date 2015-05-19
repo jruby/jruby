@@ -1323,6 +1323,13 @@ public abstract class KernelNodes {
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature.toString(), this));
             }
 
+            // TODO CS 19-May-15 securerandom will use openssl if it's there, but we've only shimmed it
+
+            if (feature.toString().equals("openssl") && Truffle.getRuntime().getCallerFrame().getCallNode()
+                    .getEncapsulatingSourceSection().getSource().getName().endsWith("securerandom.rb")) {
+                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature.toString(), this));
+            }
+
             try {
                 getContext().getFeatureManager().require(feature.toString(), this);
             } catch (IOException e) {
