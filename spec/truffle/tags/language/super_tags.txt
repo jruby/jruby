@@ -2,5 +2,5 @@ fails:The super keyword passes along modified rest args when they weren't origin
 fails:The super keyword passes along modified rest args when they were originally empty
 fails:The super keyword raises a RuntimeError when called with implicit arguments from a method defined with define_method
 fails:The super keyword calls method_missing when a superclass method is not found
-fails:The super keyword passes optional arguments that have a default value
-fails:The super keyword passes optional arguments that have a default value but were modified
+fails:The super keyword without explicit arguments passes rest arguments
+fails:The super keyword without explicit arguments passes rest arguments including any modifications
