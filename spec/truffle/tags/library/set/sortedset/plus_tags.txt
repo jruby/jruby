@@ -1,1 +1,0 @@
-fails:SortedSet#+ returns a new SortedSet containing all elements of self and the passed Enumerable

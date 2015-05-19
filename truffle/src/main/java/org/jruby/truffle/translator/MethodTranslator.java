@@ -284,10 +284,14 @@ class MethodTranslator extends BodyTranslator {
             blockNode = null;
         }
 
-        final SequenceNode reloadSequence = (SequenceNode) new ReloadArgumentsTranslator(
-                currentNode, context, source, this).visitArgsNode(argsNode);
+        final ReloadArgumentsTranslator reloadTranslator = new ReloadArgumentsTranslator(
+                currentNode, context, source, this);
 
-        return new GeneralSuperReCallNode(context, sourceSection, environment.isBlock(),
+        final SequenceNode reloadSequence = (SequenceNode) reloadTranslator.visitArgsNode(argsNode);
+
+        return new GeneralSuperReCallNode(context, sourceSection,
+                environment.isBlock(),
+                reloadTranslator.isSplatted(),
                 reloadSequence.getSequence(),
                 blockNode);
     }

@@ -16,17 +16,21 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyProc;
 
 public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
 
     private final boolean inBlock;
+    private final boolean isSplatted;
     @Children private final RubyNode[] reloadNodes;
     @Child private RubyNode block;
 
-    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, boolean inBlock, RubyNode[] reloadNodes, RubyNode block) {
+    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, boolean inBlock, boolean isSplatted, RubyNode[] reloadNodes, RubyNode block) {
         super(context, sourceSection);
         this.inBlock = inBlock;
+        this.isSplatted = isSplatted;
         this.reloadNodes = reloadNodes;
         this.block = block;
     }
@@ -49,10 +53,17 @@ public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
             originalArguments = frame.getArguments();
         }
 
-        final Object[] superArguments = new Object[reloadNodes.length];
+        Object[] superArguments = new Object[reloadNodes.length];
 
         for (int n = 0; n < superArguments.length; n++) {
             superArguments[n] = reloadNodes[n].execute(frame);
+        }
+
+        if (isSplatted) {
+            CompilerDirectives.transferToInterpreter();
+            assert superArguments.length == 1;
+            assert superArguments[0] instanceof RubyArray;
+            superArguments = ((RubyArray) superArguments[0]).slowToArray();
         }
 
         Object blockObject;

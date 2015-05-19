@@ -1,1 +1,0 @@
-fails:SortedSet#superset? returns true if passed a SortedSet that equals self or self is a proper superset of

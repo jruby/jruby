@@ -1,1 +1,0 @@
-fails:SortedSet#proper_subset? returns true if passed a SortedSet that self is a proper subset of

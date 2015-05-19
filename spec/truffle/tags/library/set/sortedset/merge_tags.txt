@@ -1,1 +1,0 @@
-fails:SortedSet#merge adds the elements of the passed Enumerable to self

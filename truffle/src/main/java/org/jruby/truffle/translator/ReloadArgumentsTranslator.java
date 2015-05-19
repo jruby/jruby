@@ -34,7 +34,7 @@ public class ReloadArgumentsTranslator extends Translator {
 
     private final BodyTranslator methodBodyTranslator;
 
-    private int index;
+    private boolean isSplatted = false;
 
     public ReloadArgumentsTranslator(Node currentNode, RubyContext context, Source source, BodyTranslator methodBodyTranslator) {
         super(currentNode, context, source);
@@ -47,18 +47,27 @@ public class ReloadArgumentsTranslator extends Translator {
 
         final List<RubyNode> sequence = new ArrayList<>();
 
-        if (node.getPre() != null) {
-            for (org.jruby.ast.Node arg : node.getPre().childNodes()) {
-                sequence.add(arg.accept(this));
-                index++;
+        if (node.getPreCount() > 0 || node.getOptArgs() != null) {
+            if (node.getPre() != null) {
+                for (org.jruby.ast.Node arg : node.getPre().childNodes()) {
+                    sequence.add(arg.accept(this));
+                }
             }
-        }
 
-        if (node.getOptArgs() != null) {
-            for (org.jruby.ast.Node arg : node.getOptArgs().childNodes()) {
-                sequence.add(arg.accept(this));
-                index++;
+            if (node.getOptArgs() != null) {
+                for (org.jruby.ast.Node arg : node.getOptArgs().childNodes()) {
+                    sequence.add(arg.accept(this));
+                }
             }
+
+            if (node.hasRestArg()) {
+                // TODO CS 19-May-15 - documented in failing specs as well
+                //System.err.println("warning: " + node.getPosition());
+            }
+        } else if (node.hasRestArg()) {
+            sequence.add(visitArgumentNode(node.getRestArgNode()));
+
+            isSplatted = true;
         }
 
         return SequenceNode.sequenceNoFlatten(context, sourceSection, sequence);
@@ -87,6 +96,10 @@ public class ReloadArgumentsTranslator extends Translator {
     @Override
     protected String getIdentifier() {
         return methodBodyTranslator.getIdentifier();
+    }
+
+    public boolean isSplatted() {
+        return isSplatted;
     }
 
 }
