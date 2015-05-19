@@ -39,6 +39,9 @@ import org.jruby.truffle.nodes.coerce.SymbolOrToStrNode;
 import org.jruby.truffle.nodes.coerce.SymbolOrToStrNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
+import org.jruby.truffle.nodes.constants.GetConstantNode;
+import org.jruby.truffle.nodes.constants.GetConstantNodeGen;
+import org.jruby.truffle.nodes.constants.LookupConstantNodeGen;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.KernelNodes.BindingNode;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
@@ -846,11 +849,12 @@ public abstract class ModuleNodes {
     })
     public abstract static class ConstGetNode extends CoreMethodNode {
 
-        @Child private DispatchHeadNode dispatch;
+        @Child private GetConstantNode getConstantNode;
 
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatch = new DispatchHeadNode(context, false, false, MissingBehavior.CALL_CONST_MISSING, null, DispatchAction.READ_CONSTANT);
+            this.getConstantNode = GetConstantNodeGen.create(context, sourceSection, null, null,
+                    LookupConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, null, null));
         }
 
         @CreateCast("name")
@@ -870,7 +874,7 @@ public abstract class ModuleNodes {
 
         @Specialization(guards = { "isTrue(inherit)", "!isScoped(name)" })
         public Object getConstant(VirtualFrame frame, RubyModule module, String name, boolean inherit) {
-            return dispatch.dispatch(frame, module, name, null, new Object[] {});
+            return getConstantNode.executeGetConstant(frame, module, name);
         }
 
         @Specialization(guards = { "!isTrue(inherit)", "!isScoped(name)" })
