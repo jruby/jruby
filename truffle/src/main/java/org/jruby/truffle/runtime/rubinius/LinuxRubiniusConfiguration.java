@@ -250,7 +250,7 @@ public class LinuxRubiniusConfiguration extends DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.socket.AF_IPX", context.makeString("4"));
         configuration.config("rbx.platform.socket.AF_ISDN", context.makeString("34"));
         configuration.config("rbx.platform.socket.AF_LOCAL", context.makeString("1"));
-        configuration.config("rbx.platform.socket.AF_MAX", context.makeString("40"));
+        configuration.config("rbx.platform.socket.AF_MAX", context.makeString("41"));
         configuration.config("rbx.platform.socket.AF_PACKET", context.makeString("17"));
         configuration.config("rbx.platform.socket.AF_ROUTE", context.makeString("16"));
         configuration.config("rbx.platform.socket.AF_SNA", context.makeString("22"));
@@ -376,6 +376,7 @@ public class LinuxRubiniusConfiguration extends DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.socket.MSG_DONTWAIT", context.makeString("64"));
         configuration.config("rbx.platform.socket.MSG_EOR", context.makeString("128"));
         configuration.config("rbx.platform.socket.MSG_ERRQUEUE", context.makeString("8192"));
+        configuration.config("rbx.platform.socket.MSG_FASTOPEN", context.makeString("536870912"));
         configuration.config("rbx.platform.socket.MSG_FIN", context.makeString("512"));
         configuration.config("rbx.platform.socket.MSG_MORE", context.makeString("32768"));
         configuration.config("rbx.platform.socket.MSG_NOSIGNAL", context.makeString("16384"));
@@ -401,7 +402,7 @@ public class LinuxRubiniusConfiguration extends DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.socket.PF_ISDN", context.makeString("34"));
         configuration.config("rbx.platform.socket.PF_KEY", context.makeString("15"));
         configuration.config("rbx.platform.socket.PF_LOCAL", context.makeString("1"));
-        configuration.config("rbx.platform.socket.PF_MAX", context.makeString("40"));
+        configuration.config("rbx.platform.socket.PF_MAX", context.makeString("41"));
         configuration.config("rbx.platform.socket.PF_PACKET", context.makeString("17"));
         configuration.config("rbx.platform.socket.PF_ROUTE", context.makeString("16"));
         configuration.config("rbx.platform.socket.PF_SNA", context.makeString("22"));
@@ -433,6 +434,7 @@ public class LinuxRubiniusConfiguration extends DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.socket.SO_RCVLOWAT", context.makeString("18"));
         configuration.config("rbx.platform.socket.SO_RCVTIMEO", context.makeString("20"));
         configuration.config("rbx.platform.socket.SO_REUSEADDR", context.makeString("2"));
+        configuration.config("rbx.platform.socket.SO_REUSEPORT", context.makeString("15"));
         configuration.config("rbx.platform.socket.SO_SECURITY_AUTHENTICATION", context.makeString("22"));
         configuration.config("rbx.platform.socket.SO_SECURITY_ENCRYPTION_NETWORK", context.makeString("24"));
         configuration.config("rbx.platform.socket.SO_SECURITY_ENCRYPTION_TRANSPORT", context.makeString("23"));
@@ -454,6 +456,7 @@ public class LinuxRubiniusConfiguration extends DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.socket.SOMAXCONN", context.makeString("128"));
         configuration.config("rbx.platform.socket.TCP_CORK", context.makeString("3"));
         configuration.config("rbx.platform.socket.TCP_DEFER_ACCEPT", context.makeString("9"));
+        configuration.config("rbx.platform.socket.TCP_FASTOPEN", context.makeString("23"));
         configuration.config("rbx.platform.socket.TCP_INFO", context.makeString("11"));
         configuration.config("rbx.platform.socket.TCP_KEEPCNT", context.makeString("6"));
         configuration.config("rbx.platform.socket.TCP_KEEPIDLE", context.makeString("4"));
@@ -523,7 +526,7 @@ public class LinuxRubiniusConfiguration extends DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.signal.SIGUSR2", context.makeString("12"));
         configuration.config("rbx.platform.signal.SIGPWR", context.makeString("30"));
         configuration.config("rbx.platform.signal.SIGPOLL", context.makeString("29"));
-        configuration.config("rbx.platform.zlib.ZLIB_VERSION", context.makeString("1.2.3.4"));
+        configuration.config("rbx.platform.zlib.ZLIB_VERSION", context.makeString("1.2.8"));
         configuration.config("rbx.platform.dlopen.RTLD_LAZY", context.makeString("1"));
         configuration.config("rbx.platform.dlopen.RTLD_NOW", context.makeString("2"));
         configuration.config("rbx.platform.dlopen.RTLD_LOCAL", context.makeString("0"));
@@ -586,7 +589,6 @@ public class LinuxRubiniusConfiguration extends DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.typedef.__useconds_t", context.makeString("uint"));
         configuration.config("rbx.platform.typedef.__suseconds_t", context.makeString("long"));
         configuration.config("rbx.platform.typedef.__daddr_t", context.makeString("int"));
-        configuration.config("rbx.platform.typedef.__swblk_t", context.makeString("long"));
         configuration.config("rbx.platform.typedef.__key_t", context.makeString("int"));
         configuration.config("rbx.platform.typedef.__clockid_t", context.makeString("int"));
         configuration.config("rbx.platform.typedef.__timer_t", context.makeString("pointer"));
@@ -597,7 +599,10 @@ public class LinuxRubiniusConfiguration extends DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.typedef.__fsblkcnt64_t", context.makeString("ulong"));
         configuration.config("rbx.platform.typedef.__fsfilcnt_t", context.makeString("ulong"));
         configuration.config("rbx.platform.typedef.__fsfilcnt64_t", context.makeString("ulong"));
+        configuration.config("rbx.platform.typedef.__fsword_t", context.makeString("long"));
         configuration.config("rbx.platform.typedef.__ssize_t", context.makeString("long"));
+        configuration.config("rbx.platform.typedef.__syscall_slong_t", context.makeString("long"));
+        configuration.config("rbx.platform.typedef.__syscall_ulong_t", context.makeString("ulong"));
         configuration.config("rbx.platform.typedef.__loff_t", context.makeString("long"));
         configuration.config("rbx.platform.typedef.__intptr_t", context.makeString("long"));
         configuration.config("rbx.platform.typedef.__socklen_t", context.makeString("uint"));
@@ -624,7 +629,9 @@ public class LinuxRubiniusConfiguration extends DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.typedef.time_t", context.makeString("long"));
         configuration.config("rbx.platform.typedef.clockid_t", context.makeString("int"));
         configuration.config("rbx.platform.typedef.timer_t", context.makeString("pointer"));
+        configuration.config("rbx.platform.typedef.ptrdiff_t", context.makeString("long"));
         configuration.config("rbx.platform.typedef.size_t", context.makeString("ulong"));
+        configuration.config("rbx.platform.typedef.wchar_t", context.makeString("int"));
         configuration.config("rbx.platform.typedef.ulong", context.makeString("ulong"));
         configuration.config("rbx.platform.typedef.ushort", context.makeString("ushort"));
         configuration.config("rbx.platform.typedef.uint", context.makeString("uint"));
