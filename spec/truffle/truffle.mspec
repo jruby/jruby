@@ -101,7 +101,6 @@ class MSpecScript
     "^spec/ruby/library/weakref",
 
     # Doesn't exist as Ruby code - basically need to write from scratch
-    "^spec/ruby/library/openssl",
     "^spec/ruby/library/win32ole",
 
     # Uses the Rubinius FFI generator
