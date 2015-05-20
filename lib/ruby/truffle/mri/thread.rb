@@ -373,3 +373,12 @@ end
 
 # Documentation comments:
 #  - How do you make RDoc inherit documentation from superclass?
+
+# Truffle: define marshal_dump as MRI tests expect it
+[ConditionVariable, Queue].each do |klass|
+  klass.class_exec do
+    def marshal_dump
+      raise TypeError, "can't dump #{self.class}"
+    end
+  end
+end

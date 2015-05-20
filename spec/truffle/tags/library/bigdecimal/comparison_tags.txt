@@ -1,0 +1,5 @@
+fails:BigDecimal#<=> returns 0 if a == b
+fails:BigDecimal#<=> returns 1 if a > b
+fails:BigDecimal#<=> returns -1 if a < b
+fails:BigDecimal#<=> returns nil if NaN is involved
+fails:BigDecimal#<=> returns nil if the argument is nil

@@ -13,13 +13,10 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.cli.Options;
@@ -55,27 +52,6 @@ public abstract class DispatchNode extends RubyNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects);
-
-    @CompilerDirectives.TruffleBoundary
-    protected RubyConstant lookupConstant(
-            RubyModule module,
-            String name,
-            boolean ignoreVisibility) {
-        final LexicalScope lexicalScope = getHeadNode().getLexicalScope();
-
-        RubyConstant constant = ModuleOperations.lookupConstant(getContext(), lexicalScope, module, name);
-
-        // If no constant was found, use #const_missing
-        if (constant == null) {
-            return null;
-        }
-
-        if (!ignoreVisibility && !constant.isVisibleTo(getContext(), lexicalScope, module)) {
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateConstant(module, name, this));
-        }
-
-        return constant;
-    }
 
     @CompilerDirectives.TruffleBoundary
     protected InternalMethod lookup(

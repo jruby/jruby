@@ -167,12 +167,11 @@ module Commands
     puts 'jt bench debug benchmark                       run a single benchmark with options for compiler debugging'
     puts 'jt bench reference [benchmarks]                run a set of benchmarks and record a reference point'
     puts 'jt bench compare [benchmarks]                  run a set of benchmarks and compare against a reference point'
-    puts '    benchmarks can be any benchmarks of group of benchmarks supported'
+    puts '    benchmarks can be any benchmarks or group of benchmarks supported'
     puts '    by bench9000, eg all, classic, chunky, 3, 5, 10, 15 - default is 5'
     puts 'jt findbugs                                    run findbugs'
     puts 'jt findbugs report                             run findbugs and generate an HTML report'
     puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
-    puts 'jt poms                                        rebuild Maven POM XML files from Ruby files'
     puts
     puts 'you can also put build or rebuild in front of any command'
     puts
@@ -249,14 +248,14 @@ module Commands
   end
 
   def print(*args)
-    e 'puts', *args
+    e 'puts begin', *args, 'end'
   end
 
   def test_mri(*args)
     env_vars = {
         "EXCLUDES" => "test/mri/excludes_truffle"
     }
-    jruby_args = %w[-J-Xmx4G -X+T -Xtruffle.exceptions.print_java]
+    jruby_args = %w[-J-Xmx2G -X+T -Xtruffle.exceptions.print_java]
 
     if args.empty?
       args = File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
@@ -394,10 +393,6 @@ module Commands
     else
       raise ArgumentError, kind
     end
-  end
-
-  def poms
-    sh 'rake', 'maven:dump_poms'
   end
 end
 

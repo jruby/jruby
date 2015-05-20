@@ -9,89 +9,77 @@
  */
 package org.jruby.truffle.nodes.constants;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.DispatchAction;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyModule;
+
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
 
 public class ReadConstantNode extends RubyNode {
 
     private final String name;
-    @Child private RubyNode receiver;
-    @Child private DispatchHeadNode dispatch;
+    @Child private GetConstantNode getConstantNode;
 
     public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, LexicalScope lexicalScope) {
         super(context, sourceSection);
         this.name = name;
-        this.receiver = receiver;
-        dispatch = new DispatchHeadNode(context, false, false, MissingBehavior.CALL_CONST_MISSING, lexicalScope, DispatchAction.READ_CONSTANT);
-
+        this.getConstantNode =
+                GetConstantNodeGen.create(context, sourceSection, receiver, new ObjectLiteralNode(context, sourceSection, name),
+                        LookupConstantNodeGen.create(context, sourceSection, lexicalScope, null, null));
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final Object receiverObject = receiver.execute(frame);
-
-        if (!(receiverObject instanceof RubyModule)) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(receiverObject.toString(), "class/module", this));
-        }
-
-        return dispatch.dispatch(
-                frame,
-                receiverObject,
-                name,
-                null,
-                new Object[]{});
-    }
-
-    @Override
-    public void executeVoid(VirtualFrame frame) {
+        return getConstantNode.execute(frame);
     }
 
     @Override
     public Object isDefined(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
+        RubyNode receiver = getConstantNode.getModule();
         final RubyContext context = getContext();
 
         if (name.equals("Encoding")) {
-            /*
-             * Work-around so I don't have to load the iconv library - runners/formatters/junit.rb.
-             */
+            // Work-around so I don't have to load the iconv library - runners/formatters/junit.rb.
             return context.makeString("constant");
         }
 
-        Object receiverObject;
-
+        final Object receiverObject;
         try {
             receiverObject = receiver.execute(frame);
         } catch (RaiseException e) {
-            /*
-             * If we are looking up a constant in a constant that is itself undefined, we return Nil
-             * rather than raising the error. Eg.. defined?(Defined::Undefined1::Undefined2)
-             */
-
+            /* If we are looking up a constant in a constant that is itself undefined, we return Nil
+             * rather than raising the error. Eg.. defined?(Defined::Undefined1::Undefined2).
+             *
+             * We should maybe try to see if receiver.isDefined() but we also need its value if it is,
+             * and we do not want to execute receiver twice. */
             if (e.getRubyException().getLogicalClass() == context.getCoreLibrary().getNameErrorClass()) {
                 return nil();
             }
-
             throw e;
         }
 
-        RubyModule module = (RubyModule) receiverObject; // TODO(cs): cast
-        RubyConstant constant = ModuleOperations.lookupConstant(context, dispatch.getLexicalScope(), module, name);
+        final RubyConstant constant;
+        try {
+            constant = getConstantNode.getLookupConstantNode().executeLookupConstant(frame, receiverObject, name);
+        } catch (RaiseException e) {
+            if (e.getRubyException().getLogicalClass() == context.getCoreLibrary().getTypeErrorClass()) {
+                // module is not a class/module
+                return nil();
+            } else if (e.getRubyException().getLogicalClass() == context.getCoreLibrary().getNameErrorClass()) {
+                // private constant
+                return nil();
+            }
+            throw e;
+        }
 
-        if (constant == null || !constant.isVisibleTo(context, dispatch.getLexicalScope(), module)) {
+        if (constant == null) {
             return nil();
         } else {
             return context.makeString("constant");

@@ -1,0 +1,5 @@
+fails:BigDecimal#fix returns a BigDecimal
+fails:BigDecimal#fix returns the integer part of the absolute value
+fails:BigDecimal#fix correctly handles special values
+fails:BigDecimal#fix returns 0 if the absolute value is < 1
+fails:BigDecimal#fix does not allow any arguments

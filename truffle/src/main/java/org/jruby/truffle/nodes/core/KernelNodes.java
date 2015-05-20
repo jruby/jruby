@@ -960,16 +960,19 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "load", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1)
     public abstract static class LoadNode extends CoreMethodArrayArgumentsNode {
 
         public LoadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
-        public boolean load(RubyString file) {
-            CompilerDirectives.transferToInterpreter();
+        public boolean load(RubyString file, boolean wrap) {
+            if (wrap) {
+                throw new UnsupportedOperationException();
+            }
 
             try {
                 getContext().loadFile(file.toString(), this);
@@ -985,6 +988,11 @@ public abstract class KernelNodes {
             }
 
             return true;
+        }
+
+        @Specialization
+        public boolean load(RubyString file, UndefinedPlaceholder wrap) {
+            return load(file, false);
         }
     }
 
@@ -1312,6 +1320,13 @@ public abstract class KernelNodes {
 
             if (feature.toString().equals("strscan") && Truffle.getRuntime().getCallerFrame().getCallNode()
                     .getEncapsulatingSourceSection().getSource().getName().endsWith("erb.rb")) {
+                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature.toString(), this));
+            }
+
+            // TODO CS 19-May-15 securerandom will use openssl if it's there, but we've only shimmed it
+
+            if (feature.toString().equals("openssl") && Truffle.getRuntime().getCallerFrame().getCallNode()
+                    .getEncapsulatingSourceSection().getSource().getName().endsWith("securerandom.rb")) {
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature.toString(), this));
             }
 

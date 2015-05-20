@@ -1,0 +1,1 @@
+fails:BigDecimal.double_fig returns the number of digits a Float number is allowed to have

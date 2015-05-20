@@ -1,0 +1,2 @@
+fails:BigDecimal#nan? returns true if self is not a number
+fails:BigDecimal#nan? returns false if self is not a NaN

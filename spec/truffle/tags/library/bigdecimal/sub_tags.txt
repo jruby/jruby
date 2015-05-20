@@ -1,0 +1,3 @@
+fails:BigDecimal#sub returns NaN if NaN is involved
+fails:BigDecimal#sub returns NaN if both values are infinite with the same signs
+fails:BigDecimal#sub returns Infinity or -Infinity if these are involved

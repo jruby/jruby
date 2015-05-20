@@ -1,0 +1,3 @@
+fails:BigDecimal#- returns NaN if NaN is involved
+fails:BigDecimal#- returns NaN both operands are infinite with the same sign
+fails:BigDecimal#- returns Infinity or -Infinity if these are involved

@@ -60,6 +60,7 @@ import org.jruby.util.cli.Options;
 import java.io.File;
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -222,7 +223,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         // Libraries from RubySL
         for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
                 "rubysl-complex", "rubysl-date", "rubysl-pathname",
-                "rubysl-tempfile", "rubysl-socket")) {
+                "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom")) {
             loadPath.slowPush(makeString(new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
         }
 
@@ -401,6 +402,10 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     public RubyString makeString(byte[] bytes) {
         return makeString(new ByteList(bytes));
+    }
+
+    public RubyString makeString(ByteBuffer bytes) {
+        return makeString(new ByteList(bytes.array()));
     }
 
     public RubyString makeString(ByteList bytes) {

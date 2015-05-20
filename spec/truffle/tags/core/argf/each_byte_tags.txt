@@ -1,3 +1,0 @@
-fails:ARGF.each_byte yields each byte of all streams to the passed block
-fails:ARGF.each_byte returns self when passed a block
-fails:ARGF.each_byte returns an Enumerator when passed no block

@@ -73,7 +73,10 @@ class MSpecScript
     '^' + SPEC_DIR + '/library/syslog',
 
     # masked out because of load-time errors that can't be tagged
-    '^' + SPEC_DIR + '/library/net/http'
+    '^' + SPEC_DIR + '/library/net/http',
+
+    # Module not available
+    '^' + SPEC_DIR + '/library/digest/bubblebabble'
   ]
 
   # Command Line specs

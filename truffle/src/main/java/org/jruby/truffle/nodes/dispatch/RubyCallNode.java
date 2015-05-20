@@ -186,6 +186,8 @@ public class RubyCallNode extends RubyNode {
     }
 
     private Object[] splat(Object argument) {
+        // TODO CS 19-May-15 this is a terrible mess and needs to go
+
         // TODO(CS): what happens if isn't just one argument, or it isn't an Array?
 
         if (!(argument instanceof RubyArray)) {

@@ -1,0 +1,2 @@
+fails:BigDecimal.limit returns the value before set if the passed argument is nil or is not specified
+fails:BigDecimal.limit use the global limit if no precision is specified

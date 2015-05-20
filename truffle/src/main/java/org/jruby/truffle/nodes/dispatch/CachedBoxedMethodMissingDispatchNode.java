@@ -145,29 +145,6 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             case RESPOND_TO_METHOD:
                 return false;
 
-            case READ_CONSTANT: {
-                if (isIndirect()) {
-                    return indirectCallNode.call(
-                            frame,
-                            method.getCallTarget(),
-                            RubyArguments.pack(
-                                    method,
-                                    method.getDeclarationFrame(),
-                                    receiverObject,
-                                    (RubyProc) blockObject,
-                                    new Object[]{getCachedNameAsSymbol()}));
-                } else {
-                    return callNode.call(
-                            frame,
-                            RubyArguments.pack(
-                                    method,
-                                    method.getDeclarationFrame(),
-                                    receiverObject,
-                                    (RubyProc) blockObject,
-                                    new Object[]{getCachedNameAsSymbol()}));
-                }
-            }
-
             default:
                 throw new UnsupportedOperationException();
         }

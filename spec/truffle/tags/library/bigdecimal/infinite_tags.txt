@@ -1,0 +1,4 @@
+fails:BigDecimal#infinite? returns 1 if self is Infinity
+fails:BigDecimal#infinite? returns -1 if self is -Infinity
+fails:BigDecimal#infinite? returns not true otherwise
+fails:BigDecimal#infinite? returns not true if self is NaN

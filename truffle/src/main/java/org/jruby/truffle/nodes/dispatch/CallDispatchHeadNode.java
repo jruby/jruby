@@ -23,7 +23,7 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
     @Child private BooleanCastNode booleanCastNode;
 
     public CallDispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, LexicalScope lexicalScope) {
-        super(context, ignoreVisibility, indirect, missingBehavior, lexicalScope, DispatchAction.CALL_METHOD);
+        super(context, ignoreVisibility, indirect, missingBehavior, DispatchAction.CALL_METHOD);
     }
 
     public Object call(

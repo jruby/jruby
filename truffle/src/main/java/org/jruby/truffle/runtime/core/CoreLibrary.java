@@ -30,6 +30,8 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodesFactory;
 import org.jruby.truffle.nodes.core.fixnum.FixnumNodesFactory;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
+import org.jruby.truffle.nodes.ext.DigestNodesFactory;
+import org.jruby.truffle.nodes.ext.ZlibNodesFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.nodes.objects.FreezeNode;
 import org.jruby.truffle.nodes.objects.FreezeNodeGen;
@@ -125,6 +127,7 @@ public class CoreLibrary {
     private final RubyModule rubiniusFFIModule;
     private final RubyModule signalModule;
     private final RubyModule truffleModule;
+    private final RubyClass bigDecimalClass;
     private final RubyClass encodingConverterClass;
     private final RubyClass encodingCompatibilityErrorClass;
     private final RubyClass methodClass;
@@ -340,6 +343,9 @@ public class CoreLibrary {
         defineModule(truffleModule, "Interop");
         defineModule(truffleModule, "Debug");
         defineModule(truffleModule, "Primitive");
+        defineModule(truffleModule, "Digest");
+        defineModule(truffleModule, "Zlib");
+        bigDecimalClass = defineClass(truffleModule, numericClass, "BigDecimal", new BigDecimalNodes.RubyBigDecimalAllocator());
 
         // Rubinius
 
@@ -442,6 +448,9 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(PosixNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(RubiniusTypeNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ThreadBacktraceLocationNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(DigestNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(BigDecimalNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ZlibNodesFactory.getFactories());
     }
 
     private void initializeGlobalVariables() {
@@ -813,6 +822,11 @@ public class CoreLibrary {
         return new RubyException(localJumpErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException noBlockGiven(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return localJumpError("no block given", currentNode);
+    }
+
     public RubyException unexpectedReturn(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return localJumpError("unexpected return", currentNode);
@@ -1046,6 +1060,11 @@ public class CoreLibrary {
         return new RubyException(getErrnoClass(Errno.EACCES), context.makeString(String.format("Permission denied - %s", path)), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException notDirectoryError(String path, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(getErrnoClass(Errno.ENOTDIR), context.makeString(String.format("Not a directory - %s", path)), RubyCallStack.getBacktrace(currentNode));
+    }
+
     public RubyException rangeError(int code, RubyEncoding encoding, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return rangeError(String.format("invalid codepoint %x in %s", code, encoding.getEncoding()), currentNode);
@@ -1128,6 +1147,10 @@ public class CoreLibrary {
 
     public RubyClass getBignumClass() {
         return bignumClass;
+    }
+
+    public RubyClass getBigDecimalClass() {
+        return bigDecimalClass;
     }
 
     public RubyClass getBindingClass() {

@@ -1,1 +1,3 @@
 exclude :test_tms_outputs_nicely, "needs investigation"
+exclude :test_benchmark_makes_extra_calcultations_with_an_Array_at_the_end_of_the_benchmark_and_show_the_result, "needs investigation"
+exclude :test_bm_correctly_output_when_no_label_is_given, "needs investigation"

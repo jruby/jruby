@@ -2,7 +2,7 @@
 
 ruby/test_alias.rb
 
-# ruby/test_argf.rb
+# ruby/test_argf.rb # spawn needed for tests
 # ruby/test_array.rb # StackOverflowError null java.lang.ClassLoader.getClassLoadingLock(ClassLoader.java:461) (RubyTruffleError)
 ruby/test_assignment.rb
 ruby/test_autoload.rb
@@ -71,7 +71,7 @@ ruby/test_proc.rb
 
 # ruby/test_process.rb # cannot load such file -- io/wait
 ruby/test_rand.rb
-# ruby/test_range.rb # cannot load such file -- bigdecimal
+ruby/test_range.rb
 ruby/test_rational.rb
 ruby/test_rational2.rb
 ruby/test_readpartial.rb
@@ -107,7 +107,7 @@ test_pp.rb
 test_cmath.rb
 test_delegate.rb
 test_find.rb
-# test_ipaddr.rb # cannot load such file -- ipaddr
+test_ipaddr.rb
 
 test_mathn.rb
 
@@ -191,7 +191,7 @@ fileutils/test_verbose.rb
 io/console/test_io_console.rb
 
 json/test_json.rb
-# json/test_json_addition.rb #  cannot load such file -- bigdecimal
+json/test_json_addition.rb
 json/test_json_encoding.rb
 json/test_json_fixtures.rb
 json/test_json_generate.rb

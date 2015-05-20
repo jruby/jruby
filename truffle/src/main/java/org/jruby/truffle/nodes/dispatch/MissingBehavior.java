@@ -11,6 +11,5 @@ package org.jruby.truffle.nodes.dispatch;
 
 public enum MissingBehavior {
     RETURN_MISSING,
-    CALL_CONST_MISSING,
     CALL_METHOD_MISSING
 }

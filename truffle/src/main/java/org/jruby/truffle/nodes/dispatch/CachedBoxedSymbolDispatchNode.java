@@ -25,8 +25,6 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
 
     private final Assumption unmodifiedAssumption;
 
-    private final Object value;
-
     private final InternalMethod method;
     @Child private DirectCallNode callNode;
     @Child private IndirectCallNode indirectCallNode;
@@ -35,14 +33,12 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
             RubyContext context,
             Object cachedName,
             DispatchNode next,
-            Object value,
             InternalMethod method,
             boolean indirect,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
 
         unmodifiedAssumption = context.getCoreLibrary().getSymbolClass().getUnmodifiedAssumption();
-        this.value = value;
         this.method = method;
 
         if (method != null) {
@@ -120,9 +116,6 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
 
             case RESPOND_TO_METHOD:
                 return true;
-
-            case READ_CONSTANT:
-                return value;
 
             default:
                 throw new UnsupportedOperationException();

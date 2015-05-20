@@ -1,0 +1,5 @@
+fails:Zlib.adler32 calculates Adler checksum for string
+fails:Zlib.adler32 calculates Adler checksum for string and initial Adler value
+fails:Zlib.adler32 calculates the Adler checksum for string and initial Adler value for Bignums
+fails:Zlib.adler32 assumes that the initial value is given to adler, if adler is omitted
+fails:Zlib.adler32 it returns the CRC initial value, if string is omitted

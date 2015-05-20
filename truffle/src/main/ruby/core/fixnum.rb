@@ -34,6 +34,9 @@
 
 class Fixnum
 
+  # Have a copy in Fixnum of the Integer version, as MRI does
+  public :even?, :odd?, :succ
+
   def left_shift_fallback(other)
     # Fallback from Rubinius' Fixnum#<<, after the primitive call
 

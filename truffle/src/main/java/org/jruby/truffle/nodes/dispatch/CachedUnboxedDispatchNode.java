@@ -26,8 +26,6 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
     private final Class<?> expectedClass;
     private final Assumption unmodifiedAssumption;
 
-    private final Object value;
-
     private final InternalMethod method;
     @Child private DirectCallNode callNode;
     @Child private IndirectCallNode indirectCallNode;
@@ -38,14 +36,12 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
             DispatchNode next,
             Class<?> expectedClass,
             Assumption unmodifiedAssumption,
-            Object value,
             InternalMethod method,
             boolean indirect,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = unmodifiedAssumption;
-        this.value = value;
         this.method = method;
 
         if (method != null) {
@@ -123,9 +119,6 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
 
             case RESPOND_TO_METHOD:
                 return true;
-
-            case READ_CONSTANT:
-                return value;
 
             default:
                 throw new UnsupportedOperationException();

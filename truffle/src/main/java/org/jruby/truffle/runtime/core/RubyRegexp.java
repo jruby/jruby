@@ -211,9 +211,9 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     private RubyString makeString(RubyString source, int start, int length) {
-        final RubyString ret = getContext().makeString(source.getLogicalClass(), source.getByteList().makeShared(start, length).dup());
+        final ByteList bytes = new ByteList(source.getByteList(), start, length);
+        final RubyString ret = getContext().makeString(source.getLogicalClass(), bytes);
 
-        ret.getByteList().setEncoding(source.getByteList().getEncoding());
         ret.setCodeRange(source.getCodeRange());
 
         return ret;

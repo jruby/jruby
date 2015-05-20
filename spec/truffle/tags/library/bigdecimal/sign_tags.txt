@@ -1,0 +1,6 @@
+fails:BigDecimal#sign BigDecimal defines several constants for signs
+fails:BigDecimal#sign returns positive value if BigDecimal greater than 0
+fails:BigDecimal#sign returns negative value if BigDecimal less than 0
+fails:BigDecimal#sign returns positive zero if BigDecimal equals positve zero
+fails:BigDecimal#sign returns negative zero if BigDecimal equals negative zero
+fails:BigDecimal#sign returns BigDecimal::SIGN_NaN if BigDecimal is NaN

@@ -1,0 +1,2 @@
+fails:SecureRandom.random_bytes generates a random binary string of specified length
+fails:SecureRandom.random_bytes tries to convert the passed argument to an Integer using #to_int

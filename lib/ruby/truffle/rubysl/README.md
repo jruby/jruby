@@ -11,3 +11,4 @@ Commits for each library are:
 * rubysl-pathname `cdf215804c4349353a60226b5c1d71f695d45570`
 * rubysl-tempfile `97c4464b4d235f773aab537fbc80608a730a58fc`
 * rubysl-socket `3a8c965b36643208da81360ddb4ca7ba867cd3c4`
+* rubysl-securerandom `00e31daaf492f7987aa50750dfc3ebc8e8c42a7e`

@@ -1,0 +1,4 @@
+fails:BigDecimal#to_f returns number of type float
+fails:BigDecimal#to_f Floating point rounding occurs
+fails:BigDecimal#to_f properly handles special values
+fails:BigDecimal#to_f remembers negative zero when converted to float

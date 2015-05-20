@@ -20,13 +20,8 @@ import com.oracle.truffle.interop.messages.Receiver;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
 
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.KernelNodes;
-import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
-import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
-import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -43,7 +38,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     private final MissingBehavior missingBehavior;
 
     @Child private SingletonClassNode singletonClassNode;
-    @Child private KernelNodes.RequireNode requireNode;
 
     public UnresolvedDispatchNode(
             RubyContext context,
@@ -123,8 +117,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             DispatchNode first,
             Object receiverObject,
             Object methodName) {
-        final DispatchAction dispatchAction = getDispatchAction();
-
         final RubyClass callerClass;
 
         if (ignoreVisibility) {
@@ -133,43 +125,39 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
         }
 
-        if (dispatchAction == DispatchAction.CALL_METHOD || dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-            final InternalMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
+        final InternalMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
 
-            if (method == null) {
-                return createMethodMissingNode(first, methodName, receiverObject);
+        if (method == null) {
+            return createMethodMissingNode(first, methodName, receiverObject);
+        }
+
+        if (receiverObject instanceof Boolean) {
+            final Assumption falseUnmodifiedAssumption =
+                    getContext().getCoreLibrary().getFalseClass().getUnmodifiedAssumption();
+
+            final InternalMethod falseMethod =
+                    lookup(callerClass, false, methodName.toString(),
+                            ignoreVisibility);
+
+            final Assumption trueUnmodifiedAssumption =
+                    getContext().getCoreLibrary().getTrueClass().getUnmodifiedAssumption();
+
+            final InternalMethod trueMethod =
+                    lookup(callerClass, true, methodName.toString(),
+                            ignoreVisibility);
+
+            if ((falseMethod == null) && (trueMethod == null)) {
+                throw new UnsupportedOperationException();
             }
 
-            if (receiverObject instanceof Boolean) {
-                final Assumption falseUnmodifiedAssumption =
-                        getContext().getCoreLibrary().getFalseClass().getUnmodifiedAssumption();
-
-                final InternalMethod falseMethod =
-                        lookup(callerClass, false, methodName.toString(),
-                                ignoreVisibility);
-
-                final Assumption trueUnmodifiedAssumption =
-                        getContext().getCoreLibrary().getTrueClass().getUnmodifiedAssumption();
-
-                final InternalMethod trueMethod =
-                        lookup(callerClass, true, methodName.toString(),
-                                ignoreVisibility);
-
-                if ((falseMethod == null) && (trueMethod == null)) {
-                    throw new UnsupportedOperationException();
-                }
-
-                return new CachedBooleanDispatchNode(getContext(),
-                        methodName, first,
-                        falseUnmodifiedAssumption, null, falseMethod,
-                        trueUnmodifiedAssumption, null, trueMethod, indirect, getDispatchAction());
-            } else {
-                return new CachedUnboxedDispatchNode(getContext(),
-                        methodName, first, receiverObject.getClass(),
-                        getContext().getCoreLibrary().getLogicalClass(receiverObject).getUnmodifiedAssumption(), null, method, indirect, getDispatchAction());
-            }
+            return new CachedBooleanDispatchNode(getContext(),
+                    methodName, first,
+                    falseUnmodifiedAssumption, null, falseMethod,
+                    trueUnmodifiedAssumption, null, trueMethod, indirect, getDispatchAction());
         } else {
-            throw new UnsupportedOperationException();
+            return new CachedUnboxedDispatchNode(getContext(),
+                    methodName, first, receiverObject.getClass(),
+                    getContext().getCoreLibrary().getLogicalClass(receiverObject).getUnmodifiedAssumption(), method, indirect, getDispatchAction());
         }
     }
 
@@ -179,91 +167,19 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object receiverObject,
             Object methodName,
             Object argumentsObjects) {
-        final DispatchAction dispatchAction = getDispatchAction();
-
         final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
-        if (dispatchAction == DispatchAction.CALL_METHOD || dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-            final InternalMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
+        final InternalMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
 
-            if (method == null) {
-                return createMethodMissingNode(first, methodName, receiverObject);
-            }
-
-            if (receiverObject instanceof RubySymbol) {
-                return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, null, method, indirect, getDispatchAction());
-            } else {
-                return new CachedBoxedDispatchNode(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), null, method, indirect, getDispatchAction());
-            }
-
-        } else if (dispatchAction == DispatchAction.READ_CONSTANT) {
-            final RubyModule module = (RubyModule) receiverObject;
-            final RubyConstant constant = lookupConstant(module, methodName.toString(),
-                    ignoreVisibility);
-
-            if (constant == null) {
-                return createConstantMissingNode(first, methodName, callerClass, module);
-            }
-
-            if (constant.isAutoload()) {
-                if (requireNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
-                }
-
-                requireNode.require((RubyString) constant.getValue());
-
-                return doRubyBasicObject(frame, first, receiverObject, methodName, argumentsObjects);
-            } else {
-                // The module, the "receiver" is an instance of its singleton class.
-                if (singletonClassNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), getSourceSection(), null));
-                }
-                // RubyClass moduleSingletonClass = singletonClassNode.executeSingletonClass(frame, module);
-                RubyClass moduleSingletonClass = singletonClassNode.getNormalObjectSingletonClass(module);
-
-                // But we want to check the module assumption, not its singleton class assumption.
-                return new CachedBoxedDispatchNode(getContext(), methodName, first,
-                        moduleSingletonClass, module.getUnmodifiedAssumption(), constant.getValue(),
-                        null, indirect, getDispatchAction());
-            }
-        } else {
-            throw new UnsupportedOperationException();
+        if (method == null) {
+            return createMethodMissingNode(first, methodName, receiverObject);
         }
-    }
 
-    private DispatchNode createConstantMissingNode(
-            DispatchNode first,
-            Object methodName,
-            RubyClass callerClass,
-            RubyBasicObject receiverObject) {
-        switch (missingBehavior) {
-            case RETURN_MISSING: {
-                return new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first,
-                        receiverObject.getMetaClass(), indirect, getDispatchAction());
-            }
-
-            case CALL_CONST_MISSING: {
-                final InternalMethod method = lookup(callerClass, receiverObject, "const_missing", ignoreVisibility);
-
-                if (method == null) {
-                    throw new RaiseException(getContext().getCoreLibrary().runtimeError(
-                            receiverObject.toString() + " didn't have a #const_missing", this));
-                }
-
-                if (DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
-                    return new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
-                }
-
-                return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
-                        receiverObject.getMetaClass(), method, DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT, getDispatchAction());
-            }
-
-            default: {
-                throw new UnsupportedOperationException(missingBehavior.toString());
-            }
+        if (receiverObject instanceof RubySymbol) {
+            return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, method, indirect, getDispatchAction());
+        } else {
+            return new CachedBoxedDispatchNode(getContext(), methodName, first,
+                    getContext().getCoreLibrary().getMetaClass(receiverObject), method, indirect, getDispatchAction());
         }
     }
 

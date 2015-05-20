@@ -27,14 +27,12 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
     private final InternalMethod falseMethod;
     private final BranchProfile falseProfile = BranchProfile.create();
 
-    private final Object falseValue;
     @Child private DirectCallNode falseCallDirect;
 
     private final Assumption trueUnmodifiedAssumption;
     private final InternalMethod trueMethod;
     private final BranchProfile trueProfile = BranchProfile.create();
 
-    private final Object trueValue;
     @Child private DirectCallNode trueCallDirect;
 
     @Child private IndirectCallNode indirectCallNode;
@@ -55,7 +53,6 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
         this.falseUnmodifiedAssumption = falseUnmodifiedAssumption;
         this.falseMethod = falseMethod;
-        this.falseValue = falseValue;
 
         if (falseMethod != null) {
             if (!indirect) {
@@ -70,7 +67,6 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
         this.trueUnmodifiedAssumption = trueUnmodifiedAssumption;
         this.trueMethod = trueMethod;
-        this.trueValue = trueValue;
 
         if (trueMethod != null) {
             if (!indirect) {
@@ -151,9 +147,6 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                 case RESPOND_TO_METHOD:
                     return true;
 
-                case READ_CONSTANT:
-                    return trueValue;
-
                 default:
                     throw new UnsupportedOperationException();
             }
@@ -198,9 +191,6 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
                 case RESPOND_TO_METHOD:
                     return true;
-
-                case READ_CONSTANT:
-                    return falseValue;
 
                 default:
                     throw new UnsupportedOperationException();

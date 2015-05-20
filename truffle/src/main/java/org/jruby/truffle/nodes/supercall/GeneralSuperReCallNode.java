@@ -11,30 +11,33 @@ package org.jruby.truffle.nodes.supercall;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-
-import java.util.Arrays;
+import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyProc;
 
 public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
 
     private final boolean inBlock;
-    @Child private RubyNode reload;
+    private final boolean isSplatted;
+    @Children private final RubyNode[] reloadNodes;
     @Child private RubyNode block;
 
-    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, boolean inBlock, RubyNode reload, RubyNode block) {
+    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, boolean inBlock, boolean isSplatted, RubyNode[] reloadNodes, RubyNode block) {
         super(context, sourceSection);
         this.inBlock = inBlock;
-        this.reload = reload;
+        this.isSplatted = isSplatted;
+        this.reloadNodes = reloadNodes;
         this.block = block;
     }
 
+    @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
-        reload.execute(frame);
-
         final Object self = RubyArguments.getSelf(frame.getArguments());
 
         if (!guard(frame, self)) {
@@ -50,21 +53,37 @@ public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
             originalArguments = frame.getArguments();
         }
 
-        final Object[] superArguments = Arrays.copyOf(originalArguments, originalArguments.length);
+        Object[] superArguments = new Object[reloadNodes.length];
+
+        for (int n = 0; n < superArguments.length; n++) {
+            superArguments[n] = reloadNodes[n].execute(frame);
+        }
+
+        if (isSplatted) {
+            CompilerDirectives.transferToInterpreter();
+            assert superArguments.length == 1;
+            assert superArguments[0] instanceof RubyArray;
+            superArguments = ((RubyArray) superArguments[0]).slowToArray();
+        }
+
+        Object blockObject;
 
         if (block != null) {
-            Object blockObject = block.execute(frame);
+            blockObject = block.execute(frame);
 
             if (blockObject == nil()) {
                 blockObject = null;
             }
-
-            superArguments[RubyArguments.BLOCK_INDEX] = blockObject;
+        } else {
+            blockObject = RubyArguments.getBlock(originalArguments);
         }
 
-        superArguments[RubyArguments.METHOD_INDEX] = superMethod;
-
-        return callNode.call(frame, superArguments);
+        return callNode.call(frame, RubyArguments.pack(
+                superMethod,
+                RubyArguments.getDeclarationFrame(originalArguments),
+                RubyArguments.getSelf(originalArguments),
+                (RubyProc) blockObject,
+                superArguments));
     }
 
 }
