@@ -1,0 +1,5 @@
+fails:CSV.generate_line generates an empty string
+fails:CSV.generate_line generates the string 'foo,bar'
+fails:CSV.generate_line generates the string 'foo;bar'
+fails:CSV.generate_line generates the string 'foo,,bar'
+fails:CSV.generate_line generates the string 'foo;;bar'

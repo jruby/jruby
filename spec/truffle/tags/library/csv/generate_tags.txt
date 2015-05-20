@@ -1,0 +1,3 @@
+fails:CSV.generate returns CSV string
+fails:CSV.generate accepts a col separator
+fails:CSV.generate appends and returns the argument itself

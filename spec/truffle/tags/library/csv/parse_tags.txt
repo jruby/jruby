@@ -1,0 +1,15 @@
+fails:CSV.parse parses '' into []
+fails:"CSV.parse parses '\n' into [[]]"
+fails:CSV.parse parses 'foo' into [['foo']]
+fails:CSV.parse parses 'foo,bar,baz' into [['foo','bar','baz']]
+fails:CSV.parse parses 'foo,baz' into [[foo,nil,baz]]
+fails:"CSV.parse parses '\nfoo' into [[],['foo']]"
+fails:"CSV.parse parses 'foo\n' into [['foo']]"
+fails:"CSV.parse parses 'foo\nbar' into [['foo'],['bar']]"
+fails:"CSV.parse parses 'foo,bar\nbaz,quz' into [['foo','bar'],['baz','quz']]"
+fails:"CSV.parse parses 'foo,bar'\nbaz' into [['foo','bar'],['baz']]"
+fails:"CSV.parse parses 'foo\nbar,baz' into [['foo'],['bar','baz']]"
+fails:"CSV.parse parses '\n\nbar' into [[],[],'bar']]"
+fails:CSV.parse parses 'foo' into [['foo']] with a separator of ;
+fails:CSV.parse parses 'foo;bar' into [['foo','bar']] with a separator of ;
+fails:"CSV.parse parses 'foo;bar\nbaz;quz' into [['foo','bar'],['baz','quz']] with a separator of ;"

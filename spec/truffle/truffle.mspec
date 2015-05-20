@@ -123,10 +123,10 @@ class MSpecScript
     "spec/ruby/library/bigdecimal",
     "spec/ruby/library/zlib",
     "spec/ruby/library/socket",
+    "spec/ruby/library/csv",
 
     # Not yet explored
     "^spec/ruby/library/continuation",
-    "^spec/ruby/library/csv",
     "^spec/ruby/library/drb",
     "^spec/ruby/library/etc",
     "^spec/ruby/library/expect",
