@@ -41,11 +41,15 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Sysconf;
 import jnr.posix.Times;
+
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
+import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
@@ -62,6 +66,7 @@ import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.util.io.PosixShim;
+
 import sun.misc.Signal;
 
 import java.lang.management.ManagementFactory;
@@ -494,9 +499,18 @@ public abstract class VMPrimitiveNodes {
             final List<RubyArray> sectionKeyValues = new ArrayList<>();
 
             for (String key : getContext().getRubiniusConfiguration().getSection(section.toString())) {
+                Object value = getContext().getRubiniusConfiguration().get(key);
+                final String stringValue;
+                if (RubyGuards.isRubyBignum(value)) {
+                    stringValue = BignumNodes.getBigIntegerValue((RubyBasicObject) value).toString();
+                } else {
+                    // This toString() is fine as we only have boolean, int, long and RubyString in config.
+                    stringValue = value.toString();
+                }
+
                 sectionKeyValues.add(RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                         getContext().makeString(key),
-                        getContext().getRubiniusConfiguration().get(key)));
+                        getContext().makeString(stringValue)));
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), sectionKeyValues.toArray());
