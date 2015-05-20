@@ -64,6 +64,13 @@
     <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
   </Match>
 
+  <!-- Sometimes we really do want to compare strings by identity -->
+
+  <Match>
+    <Class name="org.jruby.truffle.nodes.constants.LookupConstantNode" />
+    <Bug pattern="ES_COMPARING_PARAMETER_STRING_WITH_EQ" />
+  </Match>
+
   <!-- Stuff where we're genuinely doing something complicated and we do know what we're doing -->
 
   <Match>
