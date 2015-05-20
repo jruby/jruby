@@ -103,7 +103,6 @@ class MSpecScript
     # Doesn't exist as Ruby code - basically need to write from scratch
     "^spec/ruby/library/openssl",
     "^spec/ruby/library/win32ole",
-    "^spec/ruby/library/yaml",
 
     # Uses the Rubinius FFI generator
     "^spec/ruby/library/etc",

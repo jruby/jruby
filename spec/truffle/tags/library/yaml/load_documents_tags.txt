@@ -1,0 +1,2 @@
+fails:YAML.load_documents calls the block on each succesive document
+fails:YAML.load_documents works on files

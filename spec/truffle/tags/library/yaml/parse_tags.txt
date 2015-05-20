@@ -1,0 +1,2 @@
+fails:YAML#parse with an empty string returns false
+fails:YAML#parse returns the value from the object
