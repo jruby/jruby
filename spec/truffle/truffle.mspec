@@ -122,6 +122,7 @@ class MSpecScript
     "spec/ruby/library/uri",
     "spec/ruby/library/bigdecimal",
     "spec/ruby/library/zlib",
+    "spec/ruby/library/socket",
 
     # Not yet explored
     "^spec/ruby/library/continuation",
@@ -144,7 +145,6 @@ class MSpecScript
     "^spec/ruby/library/weakref",
     "^spec/ruby/library/win32ole",
     "^spec/ruby/library/yaml",
-    "^spec/ruby/library/socket",
 
     # Load issues with 'delegate'.
     "^spec/ruby/library/delegate/delegate_class/instance_method_spec.rb",
