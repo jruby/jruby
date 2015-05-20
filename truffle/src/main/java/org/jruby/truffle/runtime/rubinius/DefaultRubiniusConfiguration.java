@@ -40,8 +40,12 @@ package org.jruby.truffle.runtime.rubinius;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
-import org.jruby.truffle.runtime.RubyContext;
 
+import org.jruby.truffle.nodes.core.BignumNodes;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+
+import java.math.BigInteger;
 import java.util.Arrays;
 
 public abstract class DefaultRubiniusConfiguration {
@@ -154,6 +158,10 @@ public abstract class DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.socket.AF_UNSPEC", context.makeString("0"));
         configuration.config("rbx.platform.socket.SOCK_STREAM", context.makeString("1"));
         configuration.config("rbx.platform.socket.SOCK_STREAM", context.makeString("1"));
+    }
+
+    protected static RubyBasicObject newBignum(RubyContext context, String value) {
+        return BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), new BigInteger(value));
     }
 
 }

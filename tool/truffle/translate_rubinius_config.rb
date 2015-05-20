@@ -11,14 +11,21 @@
 puts "        // Generated from tool/truffle/translate_rubinius_config.rb < ../rubinius/runtime/platform.conf"
 
 ARGF.each do |line|
-  match = line.match(/(?'var'rbx(\.\w+)*) = (?'value'.+)/)
-  next unless match
-  var = match[:var]
-  value = match[:value]
-  if /.*\.(offset|size|sizeof)$/ =~ var
-    code = value.to_s
+  next unless /^(?<var>rbx(\.\w+)*) = (?<value>.+)$/ =~ line
+  code = case value
+  when /^-?\d+$/
+    case Integer(value)
+    when (-2**31...2**31)
+      value
+    when (-2**63...2**63)
+      "#{value}L"
+    else
+      "newBignum(context, \"#{value}\")"
+    end
+  when "true"
+    value
   else
-    code = "context.makeString(\"#{value}\")"
+    "context.makeString(\"#{value}\")"
   end
   puts "        configuration.config(\"#{var}\", #{code});"
 end
