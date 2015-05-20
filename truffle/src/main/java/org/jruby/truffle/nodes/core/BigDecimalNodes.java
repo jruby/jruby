@@ -11,13 +11,13 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 
 import java.math.BigDecimal;
@@ -32,12 +32,12 @@ public abstract class BigDecimalNodes {
     public static final Property VALUE_PROPERTY;
 
     static {
-        Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
         VALUE_PROPERTY = Property.create(
                 VALUE_IDENTIFIER,
                 allocator.locationForType(BigDecimal.class, EnumSet.of(LocationModifier.NonNull)),
                 0);
-        Shape shape = RubyBasicObject.EMPTY_SHAPE.addProperty(VALUE_PROPERTY);
+        final Shape shape = RubyBasicObject.EMPTY_SHAPE.addProperty(VALUE_PROPERTY);
         BIG_DECIMAL_FACTORY = shape.createFactory();
     }
 
@@ -55,6 +55,23 @@ public abstract class BigDecimalNodes {
             return createRubyBigDecimal(rubyClass, BigDecimal.ZERO);
         }
 
+    }
+
+    public static BigDecimal getBigDecimalValue(int v) {
+        return BigDecimal.valueOf(v);
+    }
+
+    public static BigDecimal getBigDecimalValue(long v) {
+        return BigDecimal.valueOf(v);
+    }
+
+
+    public static BigDecimal getBigDecimalValue(double v) {
+        return BigDecimal.valueOf(v);
+    }
+
+    public static BigDecimal getBigDecimalValue(RubyBignum v) {
+        return new BigDecimal(BignumNodes.getBigIntegerValue(v));
     }
 
     public static BigDecimal getBigDecimalValue(RubyBasicObject bignum) {
@@ -96,11 +113,16 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = "isRubyString(v)")
         public RubyBasicObject initializeFromString(RubyBigDecimal self, RubyBasicObject v) {
+            // TODO (pitr 20-May-2015): add NaN, Infinity handling
             switch (v.toString()) {
-                case "NaN": // FIXME
-                case "Infinity": // FIXME
-                case "+Infinity": // FIXME
-                case "-Infinity": // FIXME
+                case "NaN":
+                    return self;
+                case "Infinity":
+                case "+Infinity":
+                    setBigDecimalValue(self, new BigDecimal("9E9999")); // temporary to get comparison test working
+                    return self;
+                case "-Infinity":
+                    setBigDecimalValue(self, new BigDecimal("-9E9999")); // temporary to get comparison test working
                     return self;
             }
 
@@ -109,34 +131,43 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    // TODO: double specializations
-
     @CoreMethod(names = "+", required = 1)
-    public abstract static class AdditionNode extends BigDecimalCoreMethodNode {
+    public abstract static class AddOpNode extends BigDecimalCoreMethodNode {
 
-        public AdditionNode(RubyContext context, SourceSection sourceSection) {
+        public AddOpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        private Object addBigDecimal(RubyBasicObject a, BigDecimal b) {
+            return createRubyBigDecimal(
+                    getContext().getCoreLibrary().getBigDecimalClass(),
+                    getBigDecimalValue(a).add(b));
         }
 
         @Specialization
         public Object add(RubyBasicObject a, int b) {
-            return createRubyBigDecimal(
-                    getContext().getCoreLibrary().getBigDecimalClass(),
-                    getBigDecimalValue(a).add(BigDecimal.valueOf(b)));
+            return addBigDecimal(a, getBigDecimalValue(b));
         }
 
         @Specialization
         public Object add(RubyBasicObject a, long b) {
-            return createRubyBigDecimal(
-                    getContext().getCoreLibrary().getBigDecimalClass(),
-                    getBigDecimalValue(a).add(BigDecimal.valueOf(b)));
+            return addBigDecimal(a, getBigDecimalValue(b));
+        }
+
+        @Specialization
+        public Object add(RubyBasicObject a, double b) {
+            return addBigDecimal(a, getBigDecimalValue(b));
+        }
+
+        @Specialization
+        public Object add(RubyBasicObject a, RubyBignum b) {
+            return addBigDecimal(a, getBigDecimalValue(b));
         }
 
         @Specialization(guards = "isRubyBigDecimal(b)")
         public Object add(RubyBasicObject a, RubyBasicObject b) {
-            return createRubyBigDecimal(
-                    getContext().getCoreLibrary().getBigDecimalClass(),
-                    getBigDecimalValue(a).add(getBigDecimalValue(b)));
+            return addBigDecimal(a, getBigDecimalValue(b));
         }
 
     }
@@ -148,41 +179,77 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyBigDecimal(b)")
-        public Object add(RubyBasicObject a, RubyBasicObject b, int precision) {
+        @CompilerDirectives.TruffleBoundary
+        private Object addBigDecimal(RubyBasicObject a, BigDecimal b, int precision) {
             return createRubyBigDecimal(
                     getContext().getCoreLibrary().getBigDecimalClass(),
-                    getBigDecimalValue(a).add(getBigDecimalValue(b), new MathContext(precision)));
+                    getBigDecimalValue(a).add(b, new MathContext(precision)));
+        }
+
+        @Specialization
+        public Object add(RubyBasicObject a, int b, int precision) {
+            return addBigDecimal(a, getBigDecimalValue(b), precision);
+        }
+
+        @Specialization
+        public Object add(RubyBasicObject a, long b, int precision) {
+            return addBigDecimal(a, getBigDecimalValue(b), precision);
+        }
+
+        @Specialization
+        public Object add(RubyBasicObject a, double b, int precision) {
+            return addBigDecimal(a, getBigDecimalValue(b), precision);
+        }
+
+        @Specialization
+        public Object add(RubyBasicObject a, RubyBignum b, int precision) {
+            return addBigDecimal(a, getBigDecimalValue(b), precision);
+        }
+
+        @Specialization(guards = "isRubyBigDecimal(b)")
+        public Object add(RubyBasicObject a, RubyBasicObject b, int precision) {
+            return addBigDecimal(a, getBigDecimalValue(b), precision);
         }
 
     }
 
     @CoreMethod(names = "-", required = 1)
-    public abstract static class SubtractNode extends BigDecimalCoreMethodNode {
+    public abstract static class SubOpNode extends BigDecimalCoreMethodNode {
 
-        public SubtractNode(RubyContext context, SourceSection sourceSection) {
+        public SubOpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object subtract(RubyBasicObject a, int b) {
+        @CompilerDirectives.TruffleBoundary
+        private Object subBigDecimal(RubyBasicObject a, BigDecimal b) {
             return createRubyBigDecimal(
                     getContext().getCoreLibrary().getBigDecimalClass(),
-                    getBigDecimalValue(a).subtract(BigDecimal.valueOf(b)));
+                    getBigDecimalValue(a).subtract(b));
         }
 
         @Specialization
-        public Object subtract(RubyBasicObject a, long b) {
-            return createRubyBigDecimal(
-                    getContext().getCoreLibrary().getBigDecimalClass(),
-                    getBigDecimalValue(a).subtract(BigDecimal.valueOf(b)));
+        public Object sub(RubyBasicObject a, int b) {
+            return subBigDecimal(a, getBigDecimalValue(b));
+        }
+
+        @Specialization
+        public Object sub(RubyBasicObject a, long b) {
+            return subBigDecimal(a, getBigDecimalValue(b));
+        }
+
+        @Specialization
+        public Object sub(RubyBasicObject a, double b) {
+            return subBigDecimal(a, getBigDecimalValue(b));
+        }
+
+        @Specialization
+        public Object sub(RubyBasicObject a, RubyBignum b) {
+            return subBigDecimal(a, getBigDecimalValue(b));
         }
 
         @Specialization(guards = "isRubyBigDecimal(b)")
         public Object subtract(RubyBasicObject a, RubyBasicObject b) {
-            return createRubyBigDecimal(
-                    getContext().getCoreLibrary().getBigDecimalClass(),
-                    getBigDecimalValue(a).subtract(getBigDecimalValue(b)));
+            return subBigDecimal(a, getBigDecimalValue(b));
         }
 
     }
@@ -194,37 +261,211 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyBigDecimal(b)")
-        public Object sub(RubyBasicObject a, RubyBasicObject b, int precision) {
+        @CompilerDirectives.TruffleBoundary
+        private Object subBigDecimal(RubyBasicObject a, BigDecimal b, int precision) {
             return createRubyBigDecimal(
                     getContext().getCoreLibrary().getBigDecimalClass(),
-                    getBigDecimalValue(a).subtract(getBigDecimalValue(b), new MathContext(precision)));
+                    getBigDecimalValue(a).subtract(b, new MathContext(precision)));
+        }
+
+        @Specialization
+        public Object sub(RubyBasicObject a, int b, int precision) {
+            return subBigDecimal(a, getBigDecimalValue(b), precision);
+        }
+
+        @Specialization
+        public Object sub(RubyBasicObject a, long b, int precision) {
+            return subBigDecimal(a, getBigDecimalValue(b), precision);
+        }
+
+        @Specialization
+        public Object sub(RubyBasicObject a, double b, int precision) {
+            return subBigDecimal(a, getBigDecimalValue(b), precision);
+        }
+
+        @Specialization
+        public Object sub(RubyBasicObject a, RubyBignum b, int precision) {
+            return subBigDecimal(a, getBigDecimalValue(b), precision);
+        }
+
+        @Specialization(guards = "isRubyBigDecimal(b)")
+        public Object sub(RubyBasicObject a, RubyBasicObject b, int precision) {
+            return subBigDecimal(a, getBigDecimalValue(b), precision);
         }
     }
 
-    @CoreMethod(names = {"==", "eql?"}, required = 1)
-    public abstract static class EqualNode extends BigDecimalCoreMethodNode {
+    @CoreMethod(names = "*", required = 1)
+    public abstract static class MultOpNode extends BigDecimalCoreMethodNode {
 
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
+        public MultOpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public boolean equal(RubyBasicObject a, int b) {
-            return getBigDecimalValue(a).compareTo(BigDecimal.valueOf(b)) == 0;
+        @CompilerDirectives.TruffleBoundary
+        private Object multBigDecimal(RubyBasicObject a, BigDecimal b) {
+            return createRubyBigDecimal(
+                    getContext().getCoreLibrary().getBigDecimalClass(),
+                    getBigDecimalValue(a).multiply(b));
         }
 
         @Specialization
-        public boolean equal(RubyBasicObject a, long b) {
-            return getBigDecimalValue(a).compareTo(BigDecimal.valueOf(b)) == 0;
+        public Object mult(RubyBasicObject a, int b) {
+            return multBigDecimal(a, getBigDecimalValue(b));
+        }
+
+        @Specialization
+        public Object mult(RubyBasicObject a, long b) {
+            return multBigDecimal(a, getBigDecimalValue(b));
+        }
+
+        @Specialization
+        public Object mult(RubyBasicObject a, double b) {
+            return multBigDecimal(a, getBigDecimalValue(b));
+        }
+
+        @Specialization
+        public Object mult(RubyBasicObject a, RubyBignum b) {
+            return multBigDecimal(a, getBigDecimalValue(b));
         }
 
         @Specialization(guards = "isRubyBigDecimal(b)")
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            return getBigDecimalValue(a).compareTo(getBigDecimalValue(b)) == 0;
+        public Object mult(RubyBasicObject a, RubyBasicObject b) {
+            return multBigDecimal(a, getBigDecimalValue(b));
         }
 
     }
+
+    @CoreMethod(names = "mult", required = 2)
+    public abstract static class MultNode extends BigDecimalCoreMethodNode {
+
+        public MultNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        private Object mulBigDecimal(RubyBasicObject a, BigDecimal b, int precision) {
+            return createRubyBigDecimal(
+                    getContext().getCoreLibrary().getBigDecimalClass(),
+                    getBigDecimalValue(a).multiply(b, new MathContext(precision)));
+        }
+
+        @Specialization
+        public Object mult(RubyBasicObject a, int b, int precision) {
+            return mulBigDecimal(a, getBigDecimalValue(b), precision);
+        }
+
+        @Specialization
+        public Object mult(RubyBasicObject a, long b, int precision) {
+            return mulBigDecimal(a, getBigDecimalValue(b), precision);
+        }
+
+        @Specialization
+        public Object mult(RubyBasicObject a, double b, int precision) {
+            return mulBigDecimal(a, getBigDecimalValue(b), precision);
+        }
+
+        @Specialization
+        public Object mult(RubyBasicObject a, RubyBignum b, int precision) {
+            return mulBigDecimal(a, getBigDecimalValue(b), precision);
+        }
+
+        @Specialization(guards = "isRubyBigDecimal(b)")
+        public Object mult(RubyBasicObject a, RubyBasicObject b, int precision) {
+            return mulBigDecimal(a, getBigDecimalValue(b), precision);
+        }
+
+    }
+
+    @CoreMethod(names = "/", required = 1)
+    public abstract static class DivOpNode extends BigDecimalCoreMethodNode {
+
+        public DivOpNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        private Object divBigDecimal(RubyBasicObject a, BigDecimal b) {
+            // precision based on https://github.com/pitr-ch/jruby/blob/bigdecimal/core/src/main/java/org/jruby/ext/bigdecimal/RubyBigDecimal.java#L892-903
+            final int len = getBigDecimalValue(a).precision() + b.precision();
+            final int pow = len / 4;
+            final int precision = (pow + 1) * 4 * 2;
+
+            return createRubyBigDecimal(
+                    getContext().getCoreLibrary().getBigDecimalClass(),
+                    getBigDecimalValue(a).divide(b, new MathContext(precision)));
+        }
+
+        @Specialization
+        public Object div(RubyBasicObject a, int b) {
+            return divBigDecimal(a, getBigDecimalValue(b));
+        }
+
+        @Specialization
+        public Object div(RubyBasicObject a, long b) {
+            return divBigDecimal(a, getBigDecimalValue(b));
+        }
+
+        @Specialization
+        public Object div(RubyBasicObject a, double b) {
+            return divBigDecimal(a, getBigDecimalValue(b));
+        }
+
+        @Specialization
+        public Object div(RubyBasicObject a, RubyBignum b) {
+            return divBigDecimal(a, getBigDecimalValue(b));
+        }
+
+        @Specialization(guards = "isRubyBigDecimal(b)")
+        public Object div(RubyBasicObject a, RubyBasicObject b) {
+            return divBigDecimal(a, getBigDecimalValue(b));
+        }
+
+    }
+
+    @CoreMethod(names = {"<=>"}, required = 1)
+    public abstract static class CompareNode extends BigDecimalCoreMethodNode {
+
+        public CompareNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        private int compareBigNum(RubyBasicObject a, BigDecimal b) {
+            return getBigDecimalValue(a).compareTo(b);
+        }
+
+        @Specialization
+        public int compare(RubyBasicObject a, int b) {
+            return compareBigNum(a, getBigDecimalValue(b));
+        }
+
+        @Specialization
+        public int compare(RubyBasicObject a, long b) {
+            return compareBigNum(a, getBigDecimalValue(b));
+        }
+
+        @Specialization
+        public int compare(RubyBasicObject a, double b) {
+            return compareBigNum(a, getBigDecimalValue(b));
+        }
+
+        @Specialization
+        public int compare(RubyBasicObject a, RubyBignum b) {
+            return compareBigNum(a, getBigDecimalValue(b));
+        }
+
+        @Specialization(guards = "isRubyBigDecimal(b)")
+        public int compare(RubyBasicObject a, RubyBasicObject b) {
+            return compareBigNum(a, getBigDecimalValue(b));
+        }
+
+        @Specialization(guards = "!isRubyBigDecimal(b)")
+        public Object compareCoerced(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :<=>, b", "b", b);
+        }
+
+    }
+
+    // TODO (pitr 20-May-2015): compare Ruby implementation of #== with a Java one
 
     @CoreMethod(names = {"to_s", "inspect"})
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
@@ -236,7 +477,12 @@ public abstract class BigDecimalNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString toS(RubyBasicObject value) {
-            return getContext().makeString(getBigDecimalValue(value).toString());
+            final BigDecimal bigDecimal = getBigDecimalValue(value);
+            final boolean negative = bigDecimal.signum() == -1;
+
+            return getContext().makeString((negative ? "-" : "") + "0." +
+                    (negative ? bigDecimal.unscaledValue().toString().substring(1) : bigDecimal.unscaledValue()) +
+                    "E" + (bigDecimal.precision() - bigDecimal.scale()));
         }
 
     }

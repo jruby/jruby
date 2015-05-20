@@ -1,4 +1,3 @@
-fails:BigDecimal#/ returns a / b
 fails:BigDecimal#/ returns 0 if divided by Infinity
 fails:BigDecimal#/ returns (+|-) Infinity if (+|-) Infinity divided by one
 fails:BigDecimal#/ returns NaN if Infinity / ((+|-) Infinity)
