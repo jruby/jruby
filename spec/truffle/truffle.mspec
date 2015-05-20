@@ -124,10 +124,10 @@ class MSpecScript
     "spec/ruby/library/zlib",
     "spec/ruby/library/socket",
     "spec/ruby/library/csv",
+    "spec/ruby/library/drb",
 
     # Not yet explored
     "^spec/ruby/library/continuation",
-    "^spec/ruby/library/drb",
     "^spec/ruby/library/etc",
     "^spec/ruby/library/expect",
     "^spec/ruby/library/fiber",
