@@ -50,6 +50,8 @@ public class RubiniusConfiguration {
     public static RubiniusConfiguration create(RubyContext context) {
         final RubiniusConfiguration configuration = new RubiniusConfiguration();
 
+        DefaultRubiniusConfiguration.load(configuration, context);
+
         switch (Platform.getPlatform().getOS()) {
             case DARWIN:
                 DarwinRubiniusConfiguration.load(configuration, context);
@@ -62,8 +64,6 @@ public class RubiniusConfiguration {
             default:
                 throw new UnsupportedOperationException();
         }
-
-        DefaultRubiniusConfiguration.load(configuration, context);
 
         return configuration;
     }
