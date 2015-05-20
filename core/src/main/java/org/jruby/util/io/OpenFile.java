@@ -895,7 +895,7 @@ public class OpenFile implements Finalizable {
     // MRI: NEED_READCONV
     public boolean needsReadConversion() {
         return Platform.IS_WINDOWS ?
-                (encs.enc2 != null || (encs.ecflags & ~EConvFlags.CRLF_NEWLINE_DECORATOR) != 0)
+                (encs.enc2 != null || (encs.ecflags & ~EConvFlags.CRLF_NEWLINE_DECORATOR) != 0) || isTextMode()
                 :
                 (encs.enc2 != null || NEED_NEWLINE_DECORATOR_ON_READ());
     }
@@ -917,6 +917,10 @@ public class OpenFile implements Finalizable {
             IRubyObject ecopts;
             byte[] sname, dname;
             ecflags = encs.ecflags & ~EConvFlags.NEWLINE_DECORATOR_WRITE_MASK;
+            if (isTextMode() && Platform.IS_WINDOWS) {
+                // we can't do O_TEXT so we always do CRLF translation on Windows
+                ecflags = ecflags | EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
+            }
             ecopts = encs.ecopts;
             if (encs.enc2 != null) {
                 sname = encs.enc2.getName();
