@@ -8,9 +8,10 @@
 
 module Zlib
 
+  NO_COMPRESSION      =  0
+  BEST_SPEED          =  1
+  BEST_COMPRESSION    =  9
   DEFAULT_COMPRESSION = -1
-  NO_COMPRESSION      = 0
-  BEST_SPEED          = 1
 
   def self.crc32(*args)
     Truffle::Zlib.crc32(*args)
@@ -18,7 +19,7 @@ module Zlib
 
   module Deflate
 
-    def self.deflate(message, level)
+    def self.deflate(message, level=DEFAULT_COMPRESSION)
       Truffle::Zlib.deflate(message, level)
     end
 
