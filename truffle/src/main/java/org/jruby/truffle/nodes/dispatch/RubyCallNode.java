@@ -23,7 +23,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.nodes.core.hash.HashLiteralNode;
-import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
+import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -285,8 +285,8 @@ public class RubyCallNode extends RubyNode {
             List<String> restKeywordLabels = new ArrayList<>();
             for (int j = 0; j < hashNode.size(); j++) {
                 Object key = hashNode.getKey(j);
-                boolean keyIsSymbol = key instanceof ObjectLiteralNode &&
-                        ((ObjectLiteralNode) key).getObject() instanceof RubySymbol;
+                boolean keyIsSymbol = key instanceof LiteralNode &&
+                        ((LiteralNode) key).getObject() instanceof RubySymbol;
 
                 if (!keyIsSymbol) {
                     // cannot optimize case where keyword label is dynamic (not a fixed RubySymbol)
@@ -294,14 +294,14 @@ public class RubyCallNode extends RubyNode {
                     return null;
                 }
 
-                final String label = ((ObjectLiteralNode) hashNode.getKey(j)).getObject().toString();
+                final String label = ((LiteralNode) hashNode.getKey(j)).getObject().toString();
                 restKeywordLabels.add(label);
             }
 
             for (String kwarg : kwargs) {
                 result[i] = new OptionalKeywordArgMissingNode(getContext(), null);
                 for (int j = 0; j < hashNode.size(); j++) {
-                    final String label = ((ObjectLiteralNode) hashNode.getKey(j)).getObject().toString();
+                    final String label = ((LiteralNode) hashNode.getKey(j)).getObject().toString();
 
                     if (label.equals(kwarg)) {
                         result[i] = hashNode.getValue(j);
@@ -323,7 +323,7 @@ public class RubyCallNode extends RubyNode {
 
                 for (String label : restKeywordLabels) {
                     for (int j = 0; j < hashNode.size(); j++) {
-                        final String argLabel = ((ObjectLiteralNode) hashNode.getKey(j)).getObject().toString();
+                        final String argLabel = ((LiteralNode) hashNode.getKey(j)).getObject().toString();
 
                         if (argLabel.equals(label)) {
                             keyValues[i++] = hashNode.getKey(j);

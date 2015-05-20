@@ -16,7 +16,7 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
-import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
+import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ public final class SequenceNode extends RubyNode {
 
         if (flattened.isEmpty()) {
             return new DefinedWrapperNode(context, sourceSection,
-                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                     "nil");
         } else if (flattened.size() == 1) {
             return flattened.get(0);
@@ -64,7 +64,7 @@ public final class SequenceNode extends RubyNode {
             final boolean lastNode = n == sequence.size() - 1;
             final RubyNode node = sequence.get(n);
 
-            if (node instanceof ObjectLiteralNode && ((ObjectLiteralNode) node).getObject() == context.getCoreLibrary().getNilObject()) {
+            if (node instanceof LiteralNode && ((LiteralNode) node).getObject() == context.getCoreLibrary().getNilObject()) {
                 if (allowTrailingNil && lastNode) {
                     flattened.add(node);
                 }

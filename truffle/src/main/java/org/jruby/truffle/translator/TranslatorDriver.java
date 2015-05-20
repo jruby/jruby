@@ -23,7 +23,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
-import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
+import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.methods.CatchNextNode;
 import org.jruby.truffle.nodes.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.nodes.methods.CatchReturnAsErrorNode;
@@ -154,7 +154,7 @@ public class TranslatorDriver {
             translator.parentSourceSection.push(sourceSection);
             try {
                 truffleNode = new DefinedWrapperNode(context, sourceSection,
-                        new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                        new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                         "nil");
             } finally {
                 translator.parentSourceSection.pop();

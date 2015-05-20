@@ -10,7 +10,7 @@
 package org.jruby.truffle.nodes.constants;
 
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
+import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -29,7 +29,7 @@ public class ReadConstantNode extends RubyNode {
         super(context, sourceSection);
         this.name = name;
         this.getConstantNode =
-                GetConstantNodeGen.create(context, sourceSection, receiver, new ObjectLiteralNode(context, sourceSection, name),
+                GetConstantNodeGen.create(context, sourceSection, receiver, new LiteralNode(context, sourceSection, name),
                         LookupConstantNodeGen.create(context, sourceSection, lexicalScope, null, null));
     }
 
