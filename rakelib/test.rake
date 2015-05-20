@@ -20,7 +20,8 @@ namespace :test do
   desc "Compile test code"
   task :compile do
     mkdir_p "test/target/test-classes"
-    sh "javac -cp lib/jruby.jar:test/target/junit.jar -d test/target/test-classes #{Dir['spec/java_integration/fixtures/**/*.java'].to_a.join(' ')}"
+    classpath = %w[lib/jruby.jar test/target/junit.jar].join(File::PATH_SEPARATOR)
+    sh "javac -cp #{classpath} -d test/target/test-classes #{Dir['spec/java_integration/fixtures/**/*.java'].to_a.join(' ')}"
   end
 
   short_tests = ['jruby', 'mri']
@@ -107,7 +108,8 @@ namespace :test do
     t.verbose = true
     t.ruby_opts << '-I.'
     t.ruby_opts << '-J-ea'
-    t.ruby_opts << '-J-cp test:test/target/test-classes:core/target/test-classes'
+    classpath = %w[test test/target/test-classes core/target/test-classes].join(File::PATH_SEPARATOR)
+    t.ruby_opts << "-J-cp #{classpath}"
   end
 
   permute_tests(:slow, compile_flags) do |t|
