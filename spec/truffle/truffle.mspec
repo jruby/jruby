@@ -179,5 +179,34 @@ class MSpecScript
   MSpec.enable_feature :generator
 
   set :files, get(:language) + get(:core) + get(:library) + get(:truffle)
+end
 
+if respond_to?(:ruby_exe)
+  class SlowSpecsTagger
+    def initialize
+      MSpec.register :exception, self
+    end
+
+    def exception(state)
+      if state.exception.is_a? SlowSpecException
+        tag = SpecTag.new("slow:#{state.describe} #{state.it}")
+        MSpec.write_tag(tag)
+      end
+    end
+  end
+
+  class SlowSpecException < Exception
+  end
+
+  class ::Object
+    alias old_ruby_exe ruby_exe
+    def ruby_exe(*args, &block)
+      if (MSpecScript.get(:xtags) || []).include? 'slow'
+        raise SlowSpecException, "Was tagged as slow as it uses ruby_exe(). Rerun specs."
+      end
+      old_ruby_exe(*args, &block)
+    end
+  end
+
+  SlowSpecsTagger.new
 end
