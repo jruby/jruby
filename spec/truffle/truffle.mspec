@@ -92,18 +92,21 @@ class MSpecScript
 
     # Not yet explored
     "^spec/ruby/library/continuation",
-    "^spec/ruby/library/etc",
     "^spec/ruby/library/fiber",
     "^spec/ruby/library/mathn",
     "^spec/ruby/library/net",
-    "^spec/ruby/library/openssl",
     "^spec/ruby/library/readline",
     "^spec/ruby/library/rexml",
     "^spec/ruby/library/syslog",
-    "^spec/ruby/library/timeout",
     "^spec/ruby/library/weakref",
+
+    # Doesn't exist as Ruby code - basically need to write from scratch
+    "^spec/ruby/library/openssl",
     "^spec/ruby/library/win32ole",
     "^spec/ruby/library/yaml",
+
+    # Uses the Rubinius FFI generator
+    "^spec/ruby/library/etc",
 
     # Load issues with 'delegate'.
     "^spec/ruby/library/delegate/delegate_class/instance_method_spec.rb",

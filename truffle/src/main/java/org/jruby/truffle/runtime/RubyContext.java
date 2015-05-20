@@ -224,7 +224,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         // Libraries from RubySL
         for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
                 "rubysl-complex", "rubysl-date", "rubysl-pathname",
-                "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom")) {
+                "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom",
+                "rubysl-timeout")) {
             loadPath.slowPush(makeString(new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
         }
 
