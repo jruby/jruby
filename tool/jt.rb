@@ -271,18 +271,18 @@ module Commands
     return test_pe(*args.drop(1)) if args.first == 'pe'
     return test_mri(*args.drop(1)) if args.first == 'mri'
     return test_specs(*args.drop(1)) if args.first == 'specs'
-    return test_specs(*args) if args.first == 'fast'
 
-    if args.size > 0
-      if args.first.start_with?('spec')
-        return test_specs(*args)
+    if args.empty?
+      test_specs(*args)
+      test_mri(*args)
+    else
+      path = args.first
+      if File.expand_path(path).start_with?("#{JRUBY_DIR}/test")
+        test_mri(*args)
       else
-        return test_mri(*args)
+        test_specs(*args)
       end
     end
-
-    test_specs(*args)
-    test_mri(*args)
   end
 
   def test_pe(*args)
