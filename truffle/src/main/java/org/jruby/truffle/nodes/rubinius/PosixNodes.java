@@ -497,6 +497,11 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @Specialization(guards = "isNil(hostName)")
+        public int getaddrinfo(RubyBasicObject hostName, RubyString serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
+            return getaddrinfo(getContext().makeString("0.0.0.0"), serviceName, hintsPointer, resultsPointer);
+        }
+
         @Specialization
         public int getaddrinfo(RubyString hostName, RubyString serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
             return nativeSockets().getaddrinfo(
