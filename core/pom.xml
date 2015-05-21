@@ -544,11 +544,6 @@
                   <mainClass>org.jruby.Main</mainClass>
                 </transformer>
               </transformers>
-              <artifactSet>
-                <excludes>
-                  <exclude>com.github.jnr:jffi:native</exclude>
-                </excludes>
-              </artifactSet>
             </configuration>
           </execution>
         </executions>
