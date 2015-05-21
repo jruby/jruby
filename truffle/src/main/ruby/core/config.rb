@@ -16,4 +16,9 @@ module RbConfig
     'RUBY_INSTALL_NAME' => 'rubytruffle',
     'ruby_version' => '2.2.0',
   }
+
+  def self.ruby
+    # TODO CS 19-May-15 should return argv[0]
+    nil
+  end
 end

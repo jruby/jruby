@@ -75,4 +75,11 @@ public interface NativeSockets {
 
     int accept(int socket, Pointer address, @Out IntByReference addressLength);
 
+    /*
+     * int
+     * gethostname(char *name, size_t namelen);
+     */
+
+    int gethostname(Pointer name, int namelen);
+
 }

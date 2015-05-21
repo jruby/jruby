@@ -600,4 +600,18 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "gethostname", isModuleFunction = true, required = 2)
+    public abstract static class GetHostNameNode extends CoreMethodArrayArgumentsNode {
+
+        public GetHostNameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int listen(RubyBasicObject name, int nameLength) {
+            return nativeSockets().gethostname(PointerPrimitiveNodes.getPointer(name), nameLength);
+        }
+
+    }
+
 }

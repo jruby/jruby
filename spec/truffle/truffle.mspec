@@ -94,7 +94,6 @@ class MSpecScript
     "^spec/ruby/library/continuation",
     "^spec/ruby/library/fiber",
     "^spec/ruby/library/mathn",
-    "^spec/ruby/library/net",
     "^spec/ruby/library/readline",
     "^spec/ruby/library/rexml",
     "^spec/ruby/library/syslog",
@@ -105,6 +104,10 @@ class MSpecScript
 
     # Uses the Rubinius FFI generator
     "^spec/ruby/library/etc",
+
+    # Hangs
+    "^spec/ruby/library/net/http",
+    "^spec/ruby/library/net/ftp",
 
     # Load issues with 'delegate'.
     "^spec/ruby/library/delegate/delegate_class/instance_method_spec.rb",
