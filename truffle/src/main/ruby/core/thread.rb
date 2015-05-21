@@ -21,3 +21,17 @@ class Thread
   end
 
 end
+
+class ThreadGroup
+
+  attr_reader :list
+
+  def initialize
+    @list = []
+  end
+
+  def add(thread)
+    @list.push thread
+  end
+
+end
