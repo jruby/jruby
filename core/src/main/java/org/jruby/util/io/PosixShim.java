@@ -91,7 +91,7 @@ public class PosixShim {
 
             int written = fd.chWrite.write(tmp);
 
-            if (written == 0) {
+            if (written == 0 && length > 0) {
                 // if it's a nonblocking write against a file and we've hit EOF, do EAGAIN
                 if (nonblock) {
                     errno = Errno.EAGAIN;
