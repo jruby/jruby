@@ -166,6 +166,9 @@ module Kernel
   end
   private :autoload?
 
+  alias_method :iterator?, :block_given?
+  module_function :iterator?
+
   def define_singleton_method(*args, &block)
     singleton_class.send(:define_method, *args, &block)
   end
@@ -301,6 +304,16 @@ module Kernel
     nil
   end
   module_function :puts
+
+  def readline(sep=$/)
+    ARGF.readline(sep)
+  end
+  module_function :readline
+
+  def readlines(sep=$/)
+    ARGF.readlines(sep)
+  end
+  module_function :readlines
 
   def loop
     return to_enum(:loop) unless block_given?
