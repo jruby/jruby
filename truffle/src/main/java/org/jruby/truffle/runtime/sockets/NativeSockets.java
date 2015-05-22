@@ -82,4 +82,28 @@ public interface NativeSockets {
 
     int gethostname(Pointer name, int namelen);
 
+    /*
+     * int
+     * select(int nfds, fd_set *restrict readfds, fd_set *restrict writefds,
+     *        fd_set *restrict errorfds, struct timeval *restrict timeout);
+     */
+
+    int select(int nfds, Pointer readfds, Pointer writefds, Pointer errorfds, Pointer timeout);
+
+    /*
+     * int
+     * getpeername(int socket, struct sockaddr *restrict address,
+     *             socklen_t *restrict address_len);
+     */
+
+    int getpeername(int socket, Pointer address, Pointer address_len);
+
+    /*
+     * int
+     * getsockname(int socket, struct sockaddr *restrict address,
+     *             socklen_t *restrict address_len);
+     */
+
+    int getsockname(int socket, Pointer address, Pointer address_len);
+
 }

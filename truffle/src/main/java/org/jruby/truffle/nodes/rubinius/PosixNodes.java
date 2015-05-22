@@ -613,8 +613,36 @@ public abstract class PosixNodes {
         }
 
         @Specialization
-        public int listen(RubyBasicObject name, int nameLength) {
+        public int getHostName(RubyBasicObject name, int nameLength) {
             return nativeSockets().gethostname(PointerPrimitiveNodes.getPointer(name), nameLength);
+        }
+
+    }
+
+    @CoreMethod(names = "_getpeername", isModuleFunction = true, required = 3)
+    public abstract static class GetPeerNameNode extends CoreMethodArrayArgumentsNode {
+
+        public GetPeerNameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getPeerName(int socket, RubyBasicObject address, RubyBasicObject addressLength) {
+            return nativeSockets().getpeername(socket, PointerPrimitiveNodes.getPointer(address), PointerPrimitiveNodes.getPointer(addressLength));
+        }
+
+    }
+
+    @CoreMethod(names = "_getsockname", isModuleFunction = true, required = 3)
+    public abstract static class GetSockNameNode extends CoreMethodArrayArgumentsNode {
+
+        public GetSockNameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getSockName(int socket, RubyBasicObject address, RubyBasicObject addressLength) {
+            return nativeSockets().getsockname(socket, PointerPrimitiveNodes.getPointer(address), PointerPrimitiveNodes.getPointer(addressLength));
         }
 
     }
