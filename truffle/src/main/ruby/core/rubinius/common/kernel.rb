@@ -315,6 +315,11 @@ module Kernel
   end
   module_function :readlines
 
+  def select(*args)
+    IO.select(*args)
+  end
+  module_function :select
+
   def loop
     return to_enum(:loop) unless block_given?
 
