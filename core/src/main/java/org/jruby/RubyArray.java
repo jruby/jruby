@@ -2797,7 +2797,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 IRubyObject tmp;
                 while (i < ary.realLength) {
                     IRubyObject elt = ary.values[ary.begin + i++];
-                    tmp = elt.checkArrayType();
+                    tmp = TypeConverter.checkArrayType(elt);
                     if (tmp.isNil() || (level >= 0 && stack.realLength / 2 >= level)) {
                         result.append(elt);
                     } else {
