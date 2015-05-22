@@ -107,7 +107,7 @@ public class JRubyFile extends JavaSecuredFile {
 
     public static String normalizeSeps(String path) {
         if (Platform.IS_WINDOWS) {
-            return path.replace(File.separatorChar, '/');
+            return path.replace('/', File.separatorChar);
         } else {
             return path;
         }
