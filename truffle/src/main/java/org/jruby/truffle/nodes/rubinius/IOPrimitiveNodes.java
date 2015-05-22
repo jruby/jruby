@@ -49,9 +49,14 @@ import jnr.ffi.byref.IntByReference;
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.sockets.FDSet;
+import org.jruby.truffle.runtime.sockets.FDSetFactory;
+import org.jruby.truffle.runtime.sockets.FDSetFactoryFactory;
+import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.util.ByteList;
 import org.jruby.util.Dir;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -465,6 +470,85 @@ public abstract class IOPrimitiveNodes {
             }
 
             return getContext().makeString(buffer);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "io_select", needsSelf = false)
+    public static abstract class IOSelectPrimitiveNode extends RubiniusPrimitiveNode {
+
+        private static final FDSetFactory fdSetFactory = FDSetFactoryFactory.create();
+
+        public IOSelectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization(guards = {"isNil(writables)", "isNil(errorables)"})
+        public Object select(VirtualFrame frame, RubyArray readables, RubyBasicObject writables, RubyBasicObject errorables, int timeout) {
+            final Object[] readableObjects = readables.slowToArray();
+            final int[] readableFds = getFileDescriptors(frame, readables);
+
+            final FDSet readableSet = fdSetFactory.create();
+
+            for (int fd : readableFds) {
+                readableSet.set(fd);
+            }
+
+            final int ready = getContext().getThreadManager().runOnce(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
+                @Override
+                public Integer block() throws InterruptedException {
+                    return nativeSockets().select(
+                            max(readableFds) + 1,
+                            readableSet.getPointer(),
+                            PointerPrimitiveNodes.NULL_POINTER,
+                            PointerPrimitiveNodes.NULL_POINTER,
+                            PointerPrimitiveNodes.NULL_POINTER);
+                }
+            });
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                    getSetObjects(readableObjects, readableFds, readableSet),
+                    RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass()),
+                    RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass()));
+        }
+
+        private int[] getFileDescriptors(VirtualFrame frame, RubyArray fileDescriptorArray) {
+            final Object[] objects = fileDescriptorArray.slowToArray();
+
+            final int[] fileDescriptors = new int[objects.length];
+
+            for (int n = 0; n < objects.length; n++) {
+                fileDescriptors[n] = (int) rubyWithSelf(frame, objects[n], "@descriptor");
+            }
+
+            return fileDescriptors;
+        }
+
+        private static int max(int[] values) {
+            assert values.length > 0;
+
+            int max = Integer.MIN_VALUE;
+
+            for (int n = 0; n < values.length; n++) {
+                max = Integer.max(max, values[n]);
+            }
+
+            return max;
+        }
+
+        private RubyArray getSetObjects(Object[] objects, int[] fds, FDSet set) {
+            final Object[] setObjects = new Object[objects.length];
+            int setFdsCount = 0;
+
+            for (int n = 0; n < objects.length; n++) {
+                if (set.isSet(fds[n])) {
+                    setObjects[setFdsCount] = objects[n];
+                    setFdsCount++;
+                }
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), setObjects, setFdsCount);
         }
 
     }
