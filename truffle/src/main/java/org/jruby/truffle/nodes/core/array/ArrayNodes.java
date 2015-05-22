@@ -3665,8 +3665,6 @@ public abstract class ArrayNodes {
 
                     final Object value = store[n];
 
-                    CompilerDirectives.transferToInterpreter();
-
                     if (yieldIsTruthy(frame, block,  new Object[]{value})) {
                         selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
                         selectedSize++;
@@ -3697,8 +3695,6 @@ public abstract class ArrayNodes {
                     }
 
                     final Object value = store[n];
-
-                    CompilerDirectives.transferToInterpreter();
 
                     if (yieldIsTruthy(frame, block, value)) {
                         selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
