@@ -1,5 +1,6 @@
 package org.jruby.runtime;
 
+import org.jruby.EvalType;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.parser.StaticScope;
@@ -84,5 +85,10 @@ public class MethodBlockBody extends ContextAwareBlockBody {
     @Override
     public ArgumentDescriptor[] getArgumentDescriptors() {
         return argsDesc;
+    }
+
+    @Override
+    public void setEvalType(EvalType evalType) {
+        // nop
     }
 }
