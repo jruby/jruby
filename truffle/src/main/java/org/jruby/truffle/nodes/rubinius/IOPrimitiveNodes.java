@@ -531,7 +531,7 @@ public abstract class IOPrimitiveNodes {
             int max = Integer.MIN_VALUE;
 
             for (int n = 0; n < values.length; n++) {
-                max = Integer.max(max, values[n]);
+                max = Math.max(max, values[n]);
             }
 
             return max;
