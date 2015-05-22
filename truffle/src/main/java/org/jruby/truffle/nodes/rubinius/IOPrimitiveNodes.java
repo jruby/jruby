@@ -437,8 +437,8 @@ public abstract class IOPrimitiveNodes {
             }
 
             if (newFd == -1) {
-                System.err.println(posix().errno());
-                throw new UnsupportedOperationException();
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
 
             return newFd;
