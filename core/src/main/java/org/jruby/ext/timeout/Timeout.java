@@ -42,6 +42,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyThread;
+import org.jruby.RubyTime;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
@@ -101,7 +102,7 @@ public class Timeout implements Library {
     @JRubyMethod(module = true)
     public static IRubyObject timeout(final ThreadContext context, IRubyObject timeout, IRubyObject seconds, Block block) {
         // No seconds, just yield
-        if (seconds.isNil() || Helpers.invoke(context, seconds, "zero?").isTrue()) {
+        if ( nilOrZeroSeconds(context, seconds) ) {
             return block.yieldSpecific(context);
         }
 
@@ -130,7 +131,7 @@ public class Timeout implements Library {
     @JRubyMethod(module = true)
     public static IRubyObject timeout(final ThreadContext context, IRubyObject timeout, IRubyObject seconds, IRubyObject exceptionType, Block block) {
         // No seconds, just yield
-        if (seconds.isNil() || Helpers.invoke(context, seconds, "zero?").isTrue()) {
+        if ( nilOrZeroSeconds(context, seconds) ) {
             return block.yieldSpecific(context);
         }
 
@@ -166,13 +167,18 @@ public class Timeout implements Library {
         }
     }
 
+    private static boolean nilOrZeroSeconds(final ThreadContext context, final IRubyObject seconds) {
+        return seconds.isNil() || Helpers.invoke(context, seconds, "zero?").isTrue();
+    }
+
     private static IRubyObject yieldWithTimeout(ThreadContext context,
         final IRubyObject seconds, final Block block,
         final Runnable runnable, final AtomicBoolean latch) throws RaiseException {
-        final double secs = seconds.convertToFloat().getDoubleValue();
+
+        final long micros = (long) ( RubyTime.convertTimeInterval(context, seconds) * 1000000 );
         Future timeoutFuture = null;
         try {
-            timeoutFuture = timeoutExecutor.schedule(runnable, (long) (secs * 1000000), TimeUnit.MICROSECONDS);
+            timeoutFuture = timeoutExecutor.schedule(runnable, micros, TimeUnit.MICROSECONDS);
             return block.yield(context, seconds);
         }
         finally {
