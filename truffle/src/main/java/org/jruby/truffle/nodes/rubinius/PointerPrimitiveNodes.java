@@ -264,6 +264,11 @@ public abstract class PointerPrimitiveNodes {
             return getPointer(pointer).getShort(offset);
         }
 
+        @Specialization(guards = "type == TYPE_USHORT")
+        public int getAtOffsetUShort(RubyBasicObject pointer, int offset, int type) {
+            return getPointer(pointer).getShort(offset);
+        }
+
         @Specialization(guards = "type == TYPE_LONG")
         public long getAtOffsetLong(RubyBasicObject pointer, int offset, int type) {
             return getPointer(pointer).getLong(offset);
