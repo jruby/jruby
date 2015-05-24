@@ -16,15 +16,6 @@ public abstract class FDSetFactoryFactory {
     public static FDSetFactory create() {
         switch (Platform.getPlatform().getOS()) {
             case DARWIN:
-                return new FDSetFactory() {
-
-                    @Override
-                    public FDSet create() {
-                        return new DarwinFDSet();
-                    }
-
-                };
-
             case LINUX:
                 return new FDSetFactory() {
                     @Override
