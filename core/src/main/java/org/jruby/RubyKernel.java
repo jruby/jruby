@@ -786,32 +786,25 @@ public class RubyKernel {
         if (args.length == 0) {
             // Zero sleeps forever
             milliseconds = 0;
-        } else {
-            if (!(args[0] instanceof RubyNumeric)) {
-                throw context.runtime.newTypeError("can't convert " + args[0].getMetaClass().getName() + " into time interval");
-            }
-            milliseconds = (long) (args[0].convertToFloat().getDoubleValue() * 1000);
-            if (milliseconds < 0) {
-                throw context.runtime.newArgumentError("time interval must be positive");
-            } else if (milliseconds == 0) {
-                // Explicit zero in MRI returns immediately
-                return context.runtime.newFixnum(0);
-            }
         }
-        long startTime = System.currentTimeMillis();
+        else {
+            milliseconds = (long) ( RubyTime.convertTimeInterval(context, args[0]) * 1000 );
+            // Explicit zero in MRI returns immediately
+            if ( milliseconds == 0 ) return context.runtime.newFixnum(0);
+        }
 
-        RubyThread rubyThread = context.getThread();
-
+        final long startTime = System.currentTimeMillis();
+        final RubyThread rubyThread = context.getThread();
         // Spurious wakeup-loop
         do {
             long loopStartTime = System.currentTimeMillis();
             try {
                 // We break if we know this sleep was explicitly woken up/interrupted
-                if (!rubyThread.sleep(milliseconds)) break;
-            } catch (InterruptedException iExcptn) {
-            }
+                if ( ! rubyThread.sleep(milliseconds) ) break;
+            } catch (InterruptedException ex) { /* no-op */ }
             milliseconds -= (System.currentTimeMillis() - loopStartTime);
-        } while (milliseconds > 0);
+        }
+        while (milliseconds > 0);
 
         return context.runtime.newFixnum(Math.round((System.currentTimeMillis() - startTime) / 1000.0));
     }
@@ -1983,22 +1976,22 @@ public class RubyKernel {
 
     @JRubyMethod(name = "respond_to?", compat = RUBY1_8)
     public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname) {
-        return ((RubyBasicObject)self).respond_to_p(mname);
+        return ((RubyBasicObject) self).respond_to_p(mname);
     }
 
     @JRubyMethod(name = "respond_to?", compat = RUBY1_9)
-    public static IRubyObject respond_to_p19(IRubyObject self, IRubyObject mname) {
-        return ((RubyBasicObject)self).respond_to_p19(mname);
+    public static RubyBoolean respond_to_p19(IRubyObject self, IRubyObject mname) {
+        return ((RubyBasicObject) self).respond_to_p19(mname);
     }
 
     @JRubyMethod(name = "respond_to?", compat = RUBY1_8)
     public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname, IRubyObject includePrivate) {
-        return ((RubyBasicObject)self).respond_to_p(mname, includePrivate);
+        return ((RubyBasicObject) self).respond_to_p(mname, includePrivate);
     }
 
     @JRubyMethod(name = "respond_to?", compat = RUBY1_9)
-    public static IRubyObject respond_to_p19(IRubyObject self, IRubyObject mname, IRubyObject includePrivate) {
-        return ((RubyBasicObject)self).respond_to_p19(mname, includePrivate);
+    public static RubyBoolean respond_to_p19(IRubyObject self, IRubyObject mname, IRubyObject includePrivate) {
+        return ((RubyBasicObject) self).respond_to_p19(mname, includePrivate);
     }
 
     @JRubyMethod(name = {"object_id", "__id__"}, compat = RUBY1_8)

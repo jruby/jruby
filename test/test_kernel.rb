@@ -69,7 +69,7 @@ class TestKernel < Test::Unit::TestCase
 
   def test_Array_should_use_to_ary_and_make_sure_that_it_returns_either_array_or_nil
     assert_equal [1], Kernel.Array(ToAryReturnsAnArray.new)
-    assert_raises(TypeError) { Kernel.Array(ToAryReturnsAnInteger.new) }    
+    assert_raises(TypeError) { Kernel.Array(ToAryReturnsAnInteger.new) }
   end
 
   class BothToAryAndToADefined; def to_ary() [3] end; def to_a() raise "to_a() should not be called" end; end
@@ -83,7 +83,7 @@ class TestKernel < Test::Unit::TestCase
   def test_Array_should_return_array_containing_argument_if_the_argument_has_neither_to_ary_nor_to_a
     assert_equal [1], Kernel.Array(1)
     assert_equal [:foo], Kernel.Array(:foo)
-    obj = NeitherToANorToAryDefined.new 
+    obj = NeitherToANorToAryDefined.new
     assert_equal [obj], Kernel.Array(obj)
   end
 
@@ -158,7 +158,7 @@ class TestKernel < Test::Unit::TestCase
       end
       been_at_fred2 = true
     end
-    assert been_at_fred2 
+    assert been_at_fred2
   end
 
   def test_invalid_throw_after_inner_catch_should_unwind_the_stack_all_the_way_to_the_top
@@ -208,7 +208,7 @@ class TestKernel < Test::Unit::TestCase
       fail "catch stack should have been cleaned up"
     end
   end
-  
+
 #  chomp
 #  chomp!
 
@@ -247,8 +247,8 @@ class TestKernel < Test::Unit::TestCase
 
     Kernel.eval("new_variable = another_variable = existing_variable")
 
-    assert_equal 0, existing_variable 
-    assert_equal 0, another_variable 
+    assert_equal 0, existing_variable
+    assert_equal 0, another_variable
     assert !(defined? new_variable)
   end
 
@@ -261,7 +261,7 @@ class TestKernel < Test::Unit::TestCase
 #  fork
 
   def test_format
-    assert_equal "Hello, world", Kernel.format("Hello, %s", "world") 
+    assert_equal "Hello, world", Kernel.format("Hello, %s", "world")
     assert_raises(TypeError) { Kernel.format("%01.3f", nil) }
   end
 
@@ -415,8 +415,8 @@ class TestKernel < Test::Unit::TestCase
 
   def test_sleep
     assert_raises(ArgumentError) { sleep(-10) }
-    # FIXME: below is true for MRI, but not for JRuby 
-    # assert_raises(TypeError) { sleep "foo" }
+    assert_raises(TypeError) { sleep "foo" }
+
     assert_equal 0, sleep(0)
     t1 = Time.now
     sleep(0.1)
@@ -424,6 +424,63 @@ class TestKernel < Test::Unit::TestCase
     # this should cover systems with 10 msec clock resolution
     assert t2 >= t1 + 0.08
   end
+
+  class SecDuration
+
+    def initialize(value); @value = value end
+
+    def respond_to?(name)
+      @value.respond_to?(name)
+    end
+
+    private
+
+    def method_missing(method, *args, &block)
+      @value.send(method, *args, &block)
+    end
+
+  end
+
+  def test_sleep_arg
+    sleep SecDuration.new(0.01)
+
+    begin
+      sleep SecDuration.new(-0.01)
+    rescue ArgumentError => e
+      assert_equal "time interval must be positive", e.message
+    else
+      fail 'argument error expected'
+    end
+
+    begin
+      sleep []
+    rescue TypeError => e
+      assert_equal "can't convert Array into time interval", e.message
+    else
+      fail 'type error expected'
+    end
+  end
+
+  class SecDuration19
+
+    def initialize(value); @value = value end
+
+    def respond_to_missing?(name, include_private = false)
+      @value.respond_to?(name)
+    end
+
+    private
+
+    def method_missing(method, *args, &block)
+      @value.send(method, *args, &block)
+    end
+
+  end
+
+  def test_sleep_arg19
+    sleep(SecDuration19.new(0.10))
+    assert_raises(ArgumentError) { sleep(SecDuration19.new(-0.01)) }
+  end if RUBY_VERSION > '1.9'
 
   def test_sprintf
     assert_equal 'Hello', Kernel.sprintf('Hello')
@@ -737,7 +794,7 @@ class TestKernel < Test::Unit::TestCase
         next
       end
       log "testing #{app}"
-      
+
       if (TESTAPP_DIR =~ /\s/) # spaces in paths, quote!
         app = '"' + app + '"'
       end
