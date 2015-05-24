@@ -16,7 +16,6 @@ public abstract class FDSetFactoryFactory {
     public static FDSetFactory create() {
         switch (Platform.getPlatform().getOS()) {
             case DARWIN:
-            case LINUX:
                 return new FDSetFactory() {
 
                     @Override
