@@ -74,7 +74,7 @@ public interface NativeSockets {
      *        socklen_t *restrict address_len);
      */
 
-    int accept(int socket, Pointer address, @In @Out IntByReference addressLength);
+    int accept(int socket, Pointer address, IntByReference addressLength);
 
     /*
      * int
