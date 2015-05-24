@@ -40,6 +40,14 @@ public abstract class ExceptionNodes {
             return nil();
         }
 
+        @Specialization(guards = {"isNil(object)"})
+        public RubyBasicObject initialize(RubyException exception, RubyBasicObject object) {
+            CompilerDirectives.transferToInterpreter();
+
+            exception.initialize(getContext().makeString(""));
+            return nil();
+        }
+
         @Specialization
         public RubyBasicObject initialize(RubyException exception, RubyString message) {
             CompilerDirectives.transferToInterpreter();
