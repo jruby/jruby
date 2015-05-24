@@ -14,12 +14,12 @@ import jnr.ffi.provider.MemoryManager;
 
 public class DarwinFDSet implements FDSet {
 
-    private final int INT32_SIZE = 4;
+    private static final int INT32_SIZE = 4;
 
-    private final int DARWIN_FD_SETSIZE = 1024;
-    private final int DARWIN_NBBY = 8;
-    private final int DARWIN_NFDBITS = INT32_SIZE * DARWIN_NBBY;
-    private final int FD_BITS_SIZE = __DARWIN_howmany(DARWIN_FD_SETSIZE, DARWIN_NFDBITS);
+    private static final int DARWIN_FD_SETSIZE = 1024;
+    private static final int DARWIN_NBBY = 8;
+    private static final int DARWIN_NFDBITS = INT32_SIZE * DARWIN_NBBY;
+    private static final int FD_BITS_SIZE = __DARWIN_howmany(DARWIN_FD_SETSIZE, DARWIN_NFDBITS);
 
     private static final MemoryManager memoryManager = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager();
 
