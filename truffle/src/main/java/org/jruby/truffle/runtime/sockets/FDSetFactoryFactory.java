@@ -26,6 +26,14 @@ public abstract class FDSetFactoryFactory {
 
                 };
 
+            case LINUX:
+                return new FDSetFactory() {
+                    @Override
+                    public FDSet create() {
+                        return new LinuxFDSet();
+                    }
+                };
+
             default:
                 throw new UnsupportedOperationException();
         }
