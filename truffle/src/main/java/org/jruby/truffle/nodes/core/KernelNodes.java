@@ -365,7 +365,7 @@ public abstract class KernelNodes {
 
             final RubyBasicObject newObject = self.getLogicalClass().allocate(this);
 
-            newObject.getObjectType().setInstanceVariables(newObject, self.getObjectType().getInstanceVariables(self));
+            RubyBasicObject.setInstanceVariables(newObject, RubyBasicObject.getInstanceVariables(self));
 
             return newObject;
         }
@@ -879,14 +879,14 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public Object instanceVariableSet(RubyBasicObject object, RubyString name, Object value) {
-            object.getObjectType().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
+            RubyBasicObject.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
         @TruffleBoundary
         @Specialization
         public Object instanceVariableSet(RubyBasicObject object, RubySymbol name, Object value) {
-            object.getObjectType().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
+            RubyBasicObject.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
@@ -903,7 +903,7 @@ public abstract class KernelNodes {
         public RubyArray instanceVariables(RubyBasicObject self) {
             CompilerDirectives.transferToInterpreter();
 
-            final Object[] instanceVariableNames = self.getObjectType().getFieldNames(self);
+            final Object[] instanceVariableNames = RubyBasicObject.getFieldNames(self);
 
             Arrays.sort(instanceVariableNames);
 

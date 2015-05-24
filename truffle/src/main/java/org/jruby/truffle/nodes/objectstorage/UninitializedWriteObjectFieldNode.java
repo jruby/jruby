@@ -49,7 +49,7 @@ public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
             newProperty = currentProperty;
             newProperty.setSafe(object.getDynamicObject(), value, null);
         } else {
-            object.getObjectType().setInstanceVariable(object, name, value);
+            RubyBasicObject.setInstanceVariable(object, name, value);
             newShape = object.getDynamicObject().getShape();
             newProperty = newShape.getProperty(name);
 

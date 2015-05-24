@@ -86,7 +86,7 @@ public class TryNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         final RubyBasicObject threadLocals = getContext().getThreadManager().getCurrentThread().getThreadLocals();
-        threadLocals.getObjectType().setInstanceVariable(threadLocals, "$!", exception.getRubyException());
+        RubyBasicObject.setInstanceVariable(threadLocals, "$!", exception.getRubyException());
 
         for (RescueNode rescue : rescueParts) {
             if (rescue.canHandle(frame, exception.getRubyException())) {
