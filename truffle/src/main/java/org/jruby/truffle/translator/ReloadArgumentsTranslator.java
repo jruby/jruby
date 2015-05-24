@@ -13,9 +13,9 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.ast.ArgumentNode;
-import org.jruby.ast.OptArgNode;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
@@ -35,6 +35,7 @@ public class ReloadArgumentsTranslator extends Translator {
     private final BodyTranslator methodBodyTranslator;
 
     private boolean isSplatted = false;
+    private int originalArgumentIndex = 0;
 
     public ReloadArgumentsTranslator(Node currentNode, RubyContext context, Source source, BodyTranslator methodBodyTranslator) {
         super(currentNode, context, source);
@@ -51,6 +52,7 @@ public class ReloadArgumentsTranslator extends Translator {
             if (node.getPre() != null) {
                 for (org.jruby.ast.Node arg : node.getPre().childNodes()) {
                     sequence.add(arg.accept(this));
+                    originalArgumentIndex++;
                 }
             }
 
@@ -74,17 +76,23 @@ public class ReloadArgumentsTranslator extends Translator {
     }
 
     @Override
-    public RubyNode visitArgumentNode(ArgumentNode node) {
+    public RubyNode visitArgumentNode(org.jruby.ast.ArgumentNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
         return new ReadLocalVariableNode(context, sourceSection, slot);
     }
 
     @Override
-    public RubyNode visitOptArgNode(OptArgNode node) {
+    public RubyNode visitOptArgNode(org.jruby.ast.OptArgNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
         return new ReadLocalVariableNode(context, sourceSection, slot);
+    }
+
+    @Override
+    public RubyNode visitMultipleAsgnNode(org.jruby.ast.MultipleAsgnNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
+        return new ReadPreArgumentNode(context, sourceSection, originalArgumentIndex, MissingArgumentBehaviour.NIL);
     }
 
     @Override
