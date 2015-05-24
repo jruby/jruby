@@ -50,7 +50,7 @@ public class LinuxFDSet implements FDSet {
 
     private void checkBounds(int fd) {
         if (fd < 0 || fd >= MAX_FDS) {
-            throw new IllegalArgumentException(String.format("Supplied file descriptor value must be > 0 and < %i", MAX_FDS));
+            throw new IllegalArgumentException(String.format("Supplied file descriptor value must be > 0 and < %d", MAX_FDS));
         }
     }
 
