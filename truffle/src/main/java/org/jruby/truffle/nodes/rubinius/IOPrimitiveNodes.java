@@ -495,7 +495,7 @@ public abstract class IOPrimitiveNodes {
                 readableSet.set(fd);
             }
 
-            final int ready = getContext().getThreadManager().runOnce(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
+            final int result = getContext().getThreadManager().runOnce(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
                     return nativeSockets().select(
@@ -506,6 +506,10 @@ public abstract class IOPrimitiveNodes {
                             PointerPrimitiveNodes.NULL_POINTER);
                 }
             });
+
+            if (result == -1) {
+                return nil();
+            }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     getSetObjects(readableObjects, readableFds, readableSet),
