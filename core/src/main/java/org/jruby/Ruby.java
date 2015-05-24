@@ -49,15 +49,14 @@ import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.StrNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
+import org.jruby.compiler.Compiler;
 import org.jruby.compiler.Constantizable;
-import org.jruby.compiler.NotCompilableException;
 import org.jruby.ext.thread.ThreadLibrary;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.util.ClassDefiningClassLoader;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import jnr.constants.Constant;
@@ -95,7 +94,6 @@ import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.ir.Compiler;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.persistence.IRReader;
@@ -218,6 +216,7 @@ public final class Ruby implements Constantizable {
      * The logger used to log relevant bits.
      */
     private static final Logger LOG = LoggerFactory.getLogger("Ruby");
+    private final Compiler compiler;
 
     /**
      * Create and initialize a new JRuby runtime. The properties of the
@@ -245,7 +244,6 @@ public final class Ruby implements Constantizable {
 
         this.staticScopeFactory = new StaticScopeFactory(this);
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
-        this.jitCompiler        = new JITCompiler(this);
         this.parserStats        = new ParserStats(this);
 
         Random myRandom;
@@ -281,11 +279,34 @@ public final class Ruby implements Constantizable {
             objectSpacer = DISABLED_OBJECTSPACE;
         }
 
+        if (config.getCompileMode().shouldJIT()) {
+            final Class<?> clazz;
+
+            try {
+                clazz = getJRubyClassLoader().loadClass("org.jruby.ir.Compiler");
+            } catch (Exception e) {
+                throw new RuntimeException("Compiler not available", e);
+            }
+
+            try {
+                Constructor<?> con = clazz.getConstructor();
+                compiler = (Compiler) con.newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException("Error while calling the constructor of the IR compiler", e);
+            }
+            jitCompiler = new JITCompiler(this);
+        } else {
+            compiler = null;
+            jitCompiler = null;
+        }
+
         reinitialize(false);
     }
 
     public void registerMBeans() {
-        this.beanManager.register(jitCompiler);
+        if (jitCompiler != null) {
+            this.beanManager.register(jitCompiler);
+        }
         this.beanManager.register(configBean);
         this.beanManager.register(parserStats);
         this.beanManager.register(runtimeBean);
@@ -763,7 +784,7 @@ public final class Ruby implements Constantizable {
         // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
         // FIXME: restore error once JIT should handle everything
         try {
-            scriptAndCode = tryCompile(scriptNode, new ClassDefiningJRubyClassLoader(getJRubyClassLoader()));
+            scriptAndCode = compiler.tryCompile(scriptNode, new ClassDefiningJRubyClassLoader(getJRubyClassLoader()), this);
             if (scriptAndCode != null && Options.JIT_LOGGING.load()) {
                 LOG.info("done compiling target script: " + scriptNode.getPosition().getFile());
             }
@@ -787,7 +808,7 @@ public final class Ruby implements Constantizable {
      * @return an instance of the successfully-compiled Script, or null.
      */
     public Script tryCompile(Node node) {
-        return tryCompile(node, new ClassDefiningJRubyClassLoader(getJRubyClassLoader())).script();
+        return compiler.tryCompile(node, new ClassDefiningJRubyClassLoader(getJRubyClassLoader()), this).script();
     }
 
     private void failForcedCompile(Node scriptNode) throws RaiseException {
@@ -800,20 +821,6 @@ public final class Ruby implements Constantizable {
         if (config.isJitLoggingVerbose() || config.isDebug()) {
             LOG.error("warning: could not compile: {}; full trace follows", node.getPosition().getFile());
             LOG.error(t.getMessage(), t);
-        }
-    }
-
-    private ScriptAndCode tryCompile(Node node, ClassDefiningClassLoader classLoader) {
-        try {
-            return Compiler.getInstance().execute(this, node, classLoader);
-        } catch (NotCompilableException e) {
-            if (Options.JIT_LOGGING.load()) {
-                LOG.error("failed to compile target script " + node.getPosition().getFile() + ": " + e.getLocalizedMessage());
-                if (Options.JIT_LOGGING_VERBOSE.load()) {
-                    LOG.error(e);
-                }
-            }
-            return null;
         }
     }
 
@@ -2986,7 +2993,7 @@ public final class Ruby implements Constantizable {
             // script was not found in cache above, so proceed to compile
             Node scriptNode = parseFile(readStream, filename, null);
             if (script == null) {
-                scriptAndCode = tryCompile(scriptNode, new ClassDefiningJRubyClassLoader(jrubyClassLoader));
+                scriptAndCode = compiler.tryCompile(scriptNode, new ClassDefiningJRubyClassLoader(jrubyClassLoader), this);
                 if (scriptAndCode != null) script = scriptAndCode.script();
             }
 

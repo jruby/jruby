@@ -6,6 +6,7 @@ package org.jruby.ir;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.ast.Node;
 import org.jruby.ast.executable.AbstractScript;
 import org.jruby.ast.executable.Script;
 import org.jruby.ast.executable.ScriptAndCode;
@@ -22,15 +23,34 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassDefiningClassLoader;
+import org.jruby.util.cli.Options;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 
-public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoader> {
+public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoader> implements org.jruby.compiler.Compiler {
+    private static final Logger LOG = LoggerFactory.getLogger("Compiler");
 
     // Compiler is singleton
-    private Compiler() {}
+    public Compiler() {}
+
+    @Override
+    public ScriptAndCode tryCompile(Node node, ClassDefiningClassLoader classLoader, Ruby ruby) {
+        try {
+            return getInstance().execute(ruby, node, classLoader);
+        } catch (NotCompilableException e) {
+            if (Options.JIT_LOGGING.load()) {
+                LOG.error("failed to compile target script " + node.getPosition().getFile() + ": " + e.getLocalizedMessage());
+                if (Options.JIT_LOGGING_VERBOSE.load()) {
+                    LOG.error(e);
+                }
+            }
+            return null;
+        }
+    }
 
     private static class CompilerHolder {
         // FIXME: Remove as singleton unless lifus does later
