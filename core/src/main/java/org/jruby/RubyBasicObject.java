@@ -587,7 +587,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public final boolean respondsTo(String name) {
         DynamicMethod method = getMetaClass().searchMethod("respond_to?");
-        if(method.equals(getRuntime().getRespondToMethod())) {
+        if ( method.equals(getRuntime().getRespondToMethod()) ) {
             // fastest path; builtin respond_to? which just does isMethodBound
             return getMetaClass().isMethodBound(name, false);
         } else if (!method.isUndefined()) {
@@ -597,6 +597,25 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             // slowest path, full callMethod to hit method_missing if present, or produce error
             return callMethod(getRuntime().getCurrentContext(), "respond_to?", getRuntime().newSymbol(name)).isTrue();
         }
+    }
+
+    /**
+     * Does this object respond to the specified message? Uses a
+     * shortcut if it can be proved that respond_to? haven't been
+     * overridden.
+     */
+    private boolean respondsTo(final ThreadContext context, final String name) {
+        DynamicMethod method = getMetaClass().searchMethod("respond_to?");
+        if ( method.equals(context.runtime.getRespondToMethod()) ) {
+            // fastest path; builtin respond_to? which just does isMethodBound
+            return getMetaClass().isMethodBound(name, false);
+        }
+        if ( ! method.isUndefined() ) {
+            // medium path, invoke user's respond_to? if defined
+            return method.call(context, this, metaClass, "respond_to?", getRuntime().newSymbol(name)).isTrue();
+        }
+        // slowest path, full callMethod to hit method_missing if present, or produce error
+        return callMethod(context, "respond_to?", getRuntime().newSymbol(name)).isTrue();
     }
 
     /**
@@ -1895,18 +1914,18 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * benefit is important for this method.
      */
     public RubyBoolean respond_to_p(IRubyObject mname) {
-        String name = mname.asJavaString();
+        final String name = mname.asJavaString();
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, true));
     }
 
-    public IRubyObject respond_to_p19(IRubyObject mname) {
-        String name = mname.asJavaString();
-        IRubyObject respond = getRuntime().newBoolean(getMetaClass().isMethodBound(name, true, true));
-        if (!respond.isTrue()) {
-            respond = Helpers.invoke(getRuntime().getCurrentContext(), this, "respond_to_missing?", mname, getRuntime().getFalse());
-            respond = getRuntime().newBoolean(respond.isTrue());
-        }
-        return respond;
+    public RubyBoolean respond_to_p19(IRubyObject mname) {
+        final Ruby runtime = getRuntime();
+        final String name = mname.asJavaString();
+        if ( getMetaClass().isMethodBound(name, true, true) ) return runtime.getTrue();
+        // MRI always passes down a symbol when calling respond_to_missing? :
+        if ( ! (mname instanceof RubySymbol) ) mname = runtime.newSymbol(name);
+        IRubyObject respond = Helpers.invoke(runtime.getCurrentContext(), this, "respond_to_missing?", mname, runtime.getFalse());
+        return runtime.newBoolean( respond.isTrue() );
     }
 
     /** obj_respond_to
@@ -1931,14 +1950,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate.isTrue()));
     }
 
-    public IRubyObject respond_to_p19(IRubyObject mname, IRubyObject includePrivate) {
-        String name = mname.asJavaString();
-        IRubyObject respond = getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate.isTrue()));
-        if (!respond.isTrue()) {
-            respond = Helpers.invoke(getRuntime().getCurrentContext(), this, "respond_to_missing?", mname, includePrivate);
-            respond = getRuntime().newBoolean(respond.isTrue());
-        }
-        return respond;
+    public RubyBoolean respond_to_p19(IRubyObject mname, IRubyObject includePrivate) {
+        final Ruby runtime = getRuntime();
+        final String name = mname.asJavaString();
+        if ( getMetaClass().isMethodBound(name, !includePrivate.isTrue()) ) return runtime.getTrue();
+        // MRI always passes down a symbol when calling respond_to_missing? :
+        if ( ! (mname instanceof RubySymbol) ) mname = runtime.newSymbol(name);
+        IRubyObject respond = Helpers.invoke(runtime.getCurrentContext(), this, "respond_to_missing?", mname, includePrivate);
+        return runtime.newBoolean( respond.isTrue() );
     }
 
     /** rb_obj_id_obsolete

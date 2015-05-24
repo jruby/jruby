@@ -111,7 +111,6 @@ end
 class TestRespondToMissing < Test::Unit::TestCase
 
   class Foo
-
     def respond_to_missing?(method, private = false)
       return true if method.to_s == 'foo'
       super(method, private)
@@ -128,6 +127,21 @@ class TestRespondToMissing < Test::Unit::TestCase
     assert obj.respond_to?(:to_s)
     assert ! obj.respond_to?(:fo)
     assert obj.respond_to?(:foo)
+
+    assert_equal :foo, obj.foo
+  end
+
+  class Bar
+    def respond_to_missing?(method, private = false)
+      method.eql? :bar
+    end
+  end
+
+  def test_respond_to_missing_gets_a_symbol_name
+    obj = Bar.new
+    assert obj.respond_to?(:bar)
+    assert ! obj.respond_to?(:ba)
+    assert obj.respond_to?('bar')
   end
 
 end if RUBY_VERSION > '1.9'
