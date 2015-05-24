@@ -483,9 +483,10 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isNil(writables)", "isNil(errorables)"})
         public Object select(VirtualFrame frame, RubyArray readables, RubyBasicObject writables, RubyBasicObject errorables, int timeout) {
+            CompilerDirectives.transferToInterpreter();
+
             final Object[] readableObjects = readables.slowToArray();
             final int[] readableFds = getFileDescriptors(frame, readables);
 
