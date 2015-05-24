@@ -1,0 +1,1 @@
+fails:YAML.dump_stream returns a YAML stream containing the objects passed

@@ -1327,6 +1327,7 @@ public abstract class KernelNodes {
 
             if (feature.toString().equals("openssl") && Truffle.getRuntime().getCallerFrame().getCallNode()
                     .getEncapsulatingSourceSection().getSource().getName().endsWith("securerandom.rb")) {
+                getContext().getCoreLibrary().getObjectClass().getConstants().remove("OpenSSL");
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature.toString(), this));
             }
 

@@ -252,8 +252,7 @@ project 'JRuby Core' do
                                         'shadedPattern' => 'org.jruby.org.objectweb' } ],
                    'outputFile' => '${jruby.basedir}/lib/jruby.jar',
                    'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main' } ],
-                   :artifactSet => { :excludes => ['com.github.jnr:jffi:native'] } )
+                                         'mainClass' => 'org.jruby.Main' } ] )
   end
 
   [:release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|

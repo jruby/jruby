@@ -18,7 +18,7 @@ public class RubyConstant {
     private final RubyModule declaringModule;
     private final Object value;
     private boolean isPrivate;
-    private boolean autoload;
+    private final boolean autoload;
 
     public RubyConstant(RubyModule declaringModule, Object value, boolean isPrivate, boolean autoload) {
         this.declaringModule = declaringModule;

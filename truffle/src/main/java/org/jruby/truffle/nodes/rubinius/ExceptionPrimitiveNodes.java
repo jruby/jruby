@@ -25,11 +25,16 @@ public abstract class ExceptionPrimitiveNodes {
     @RubiniusPrimitive(name = "exception_errno_error", needsSelf = false)
     public static abstract class ExceptionErrnoErrorPrimitiveNode extends RubiniusPrimitiveNode {
 
-        protected final int ENOENT = Errno.ENOENT.intValue();
-        protected final int EBADF = Errno.EBADF.intValue();
-        protected final int EEXIST = Errno.EEXIST.intValue();
-        protected final int EACCES = Errno.EACCES.intValue();
-        protected final int ENOTDIR = Errno.ENOTDIR.intValue();
+        // If you add a constant here, add it below in isExceptionSupported() too.
+        protected final static int ENOENT = Errno.ENOENT.intValue();
+        protected final static int EBADF = Errno.EBADF.intValue();
+        protected final static int EEXIST = Errno.EEXIST.intValue();
+        protected final static int EACCES = Errno.EACCES.intValue();
+        protected final static int ENOTDIR = Errno.ENOTDIR.intValue();
+
+        public static boolean isExceptionSupported(int errno) {
+            return errno == ENOENT || errno == EBADF || errno == EEXIST || errno == EACCES || errno == ENOTDIR;
+        }
 
         public ExceptionErrnoErrorPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -40,12 +45,12 @@ public abstract class ExceptionPrimitiveNodes {
             return getContext().getCoreLibrary().fileNotFoundError(message.toString(), this);
         }
 
-        @Specialization(guards = {"isNil(message)", "errno == ENOENT"})
+        @Specialization(guards = { "errno == ENOENT", "isNil(message)" })
         public RubyException enoent(Object message, int errno) {
             return getContext().getCoreLibrary().fileNotFoundError("nil", this);
         }
 
-        @Specialization(guards = {"isNil(message)", "errno == EBADF"})
+        @Specialization(guards = { "errno == EBADF", "isNil(message)" })
         public RubyException ebadf(Object message, int errno) {
             return getContext().getCoreLibrary().badFileDescriptor(this);
         }
@@ -55,7 +60,7 @@ public abstract class ExceptionPrimitiveNodes {
             return getContext().getCoreLibrary().fileExistsError(message.toString(), this);
         }
 
-        @Specialization(guards = {"isNil(message)", "errno == EEXIST"})
+        @Specialization(guards = { "errno == EEXIST", "isNil(message)" })
         public RubyException eexist(Object message, int errno) {
             return getContext().getCoreLibrary().fileExistsError("nil", this);
         }
@@ -72,30 +77,23 @@ public abstract class ExceptionPrimitiveNodes {
 
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "!isExceptionSupported(errno)")
-        public RubyException unsupported(RubyString message, int errno) {
-            final Errno errnoObject = Errno.valueOf(errno);
-
-            if (errnoObject == null) {
-                throw new UnsupportedOperationException("errno: " + errno + " " + message);
-            } else {
-                throw new UnsupportedOperationException("errno: " + errnoObject.name());
-            }
-        }
-
-        @CompilerDirectives.TruffleBoundary
-        @Specialization(guards = {"isNil(message)", "!isExceptionSupported(errno)"})
         public RubyException unsupported(Object message, int errno) {
             final Errno errnoObject = Errno.valueOf(errno);
 
+            final String messageString;
+            if (message instanceof RubyString) {
+                messageString = message.toString();
+            } else if (message == nil()) {
+                messageString = "nil";
+            } else {
+                messageString = "unsupported message type";
+            }
+
             if (errnoObject == null) {
-                throw new UnsupportedOperationException("errno: " + errno + " nil");
+                throw new UnsupportedOperationException("errno: " + errno + " " + messageString);
             } else {
                 throw new UnsupportedOperationException("errno: " + errnoObject.name());
             }
-        }
-
-        public static boolean isExceptionSupported(int errno) {
-            return Errno.ENOENT.intValue() == errno || Errno.EBADF.intValue() == errno || Errno.EEXIST.intValue() == errno || Errno.EACCES.intValue() == errno;
         }
 
     }

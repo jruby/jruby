@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
-import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
+import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -45,9 +45,9 @@ public class TryNode extends RubyNode {
         this.rescueParts = rescueParts;
         this.elsePart = elsePart;
         clearExceptionVariableNode = new WriteInstanceVariableNode(context, sourceSection, "$!",
-                new ObjectLiteralNode(context, sourceSection, context.getThreadManager().getCurrentThread().getThreadLocals()),
+                new LiteralNode(context, sourceSection, context.getThreadManager().getCurrentThread().getThreadLocals()),
                 new DefinedWrapperNode(context, sourceSection,
-                        new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                        new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                         "nil"),
                 true);
     }

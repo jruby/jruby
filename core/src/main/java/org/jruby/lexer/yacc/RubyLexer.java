@@ -46,6 +46,7 @@ import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.jruby.Ruby;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BignumNode;
@@ -314,7 +315,13 @@ public class RubyLexer {
         // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
         try {
             charset = current_enc.getCharset();
-            if (charset != null) return new String(bytes, begin + tokp, lex_p - tokp, charset);
+            if (charset != null) {
+                if (charset == RubyEncoding.UTF8) {
+                    return RubyEncoding.decodeUTF8(bytes, begin + tokp, lex_p - tokp);
+                } else {
+                    return new String(bytes, begin + tokp, lex_p - tokp, charset);
+                }
+            }
         } catch (UnsupportedCharsetException e) {}
 
 

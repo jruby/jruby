@@ -88,63 +88,26 @@ class MSpecScript
   set :core, core
 
   set :library, [
-    "spec/ruby/library/abbrev",
-    "spec/ruby/library/base64",
-    "spec/ruby/library/complex",
-    "spec/ruby/library/conditionvariable",
-    "spec/ruby/library/date",
-    "spec/ruby/library/datetime",
-    "spec/ruby/library/delegate",
-    "spec/ruby/library/digest/md5",
-    "spec/ruby/library/cgi",
-    "spec/ruby/library/erb",
-    "spec/ruby/library/getoptlong",
-    "spec/ruby/library/ipaddr",
-    "spec/ruby/library/matrix",
-    "spec/ruby/library/logger",
-    "spec/ruby/library/observer",
-    "spec/ruby/library/open3",
-    "spec/ruby/library/openstruct",
-    "spec/ruby/library/pathname",
-    "spec/ruby/library/prime",
-    "spec/ruby/library/resolv",
-    "spec/ruby/library/scanf",
-    "spec/ruby/library/securerandom",
-    "spec/ruby/library/set",
-    "spec/ruby/library/shellwords",
-    "spec/ruby/library/singleton",
-    "spec/ruby/library/stringio",
-    "spec/ruby/library/stringscanner",
-    "spec/ruby/library/tempfile",
-    "spec/ruby/library/thread",
-    "spec/ruby/library/time",
-    "spec/ruby/library/tmpdir",
-    "spec/ruby/library/uri",
-    "spec/ruby/library/bigdecimal",
-    "spec/ruby/library/zlib",
+    "spec/ruby/library",
 
     # Not yet explored
     "^spec/ruby/library/continuation",
-    "^spec/ruby/library/csv",
-    "^spec/ruby/library/digest/sha1",
-    "^spec/ruby/library/digest/sha256",
-    "^spec/ruby/library/digest/sha384",
-    "^spec/ruby/library/digest/sha512",
-    "^spec/ruby/library/drb",
-    "^spec/ruby/library/etc",
-    "^spec/ruby/library/expect",
     "^spec/ruby/library/fiber",
     "^spec/ruby/library/mathn",
-    "^spec/ruby/library/net",
-    "^spec/ruby/library/openssl",
     "^spec/ruby/library/readline",
     "^spec/ruby/library/rexml",
     "^spec/ruby/library/syslog",
-    "^spec/ruby/library/timeout",
     "^spec/ruby/library/weakref",
+
+    # Doesn't exist as Ruby code - basically need to write from scratch
     "^spec/ruby/library/win32ole",
-    "^spec/ruby/library/yaml",
-    "^spec/ruby/library/socket",
+
+    # Uses the Rubinius FFI generator
+    "^spec/ruby/library/etc",
+
+    # Hangs
+    "^spec/ruby/library/net/http",
+    "^spec/ruby/library/net/ftp",
 
     # Load issues with 'delegate'.
     "^spec/ruby/library/delegate/delegate_class/instance_method_spec.rb",
@@ -179,5 +142,34 @@ class MSpecScript
   MSpec.enable_feature :generator
 
   set :files, get(:language) + get(:core) + get(:library) + get(:truffle)
+end
 
+if respond_to?(:ruby_exe)
+  class SlowSpecsTagger
+    def initialize
+      MSpec.register :exception, self
+    end
+
+    def exception(state)
+      if state.exception.is_a? SlowSpecException
+        tag = SpecTag.new("slow:#{state.describe} #{state.it}")
+        MSpec.write_tag(tag)
+      end
+    end
+  end
+
+  class SlowSpecException < Exception
+  end
+
+  class ::Object
+    alias old_ruby_exe ruby_exe
+    def ruby_exe(*args, &block)
+      if (MSpecScript.get(:xtags) || []).include? 'slow'
+        raise SlowSpecException, "Was tagged as slow as it uses ruby_exe(). Rerun specs."
+      end
+      old_ruby_exe(*args, &block)
+    end
+  end
+
+  SlowSpecsTagger.new
 end

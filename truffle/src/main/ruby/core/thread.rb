@@ -20,4 +20,22 @@ class Thread
     @__thread_local_variables ||= {}
   end
 
+  def self.start(&block)
+    Thread.new &block
+  end
+
+end
+
+class ThreadGroup
+
+  attr_reader :list
+
+  def initialize
+    @list = []
+  end
+
+  def add(thread)
+    @list.push thread
+  end
+
 end

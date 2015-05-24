@@ -616,6 +616,11 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, this, name);
     }
 
+    /**
+     * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
+     *
+     * MRI: rb_check_funcall
+     */
     public IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name) {
         RubyClass klass = self.getMetaClass();
         DynamicMethod me;
@@ -645,7 +650,11 @@ public class RubyClass extends RubyModule {
         return null;
     }
 
-    // MRI: check_funcall_respond_to
+    /**
+     * Check if the method has a custom respond_to? and call it if so with the method ID we're hoping to call.
+     *
+     * MRI: check_funcall_respond_to
+     */
     private static boolean checkFuncallRespondTo(ThreadContext context, RubyClass klass, IRubyObject recv, String mid) {
         Ruby runtime = context.runtime;
         RubyClass defined_class;

@@ -784,11 +784,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public IRubyObject checkStringType() {
-        IRubyObject str = TypeConverter.convertToTypeWithCheck(this, getRuntime().getString(), "to_str");
-        if(!str.isNil() && !(str instanceof RubyString)) {
-            str = RubyString.newEmptyString(getRuntime());
-        }
-        return str;
+        return TypeConverter.checkStringType(getRuntime(), this);
     }
 
     /** rb_check_string_type
@@ -800,11 +796,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public IRubyObject checkStringType19() {
-        IRubyObject str = TypeConverter.convertToTypeWithCheck19(this, getRuntime().getString(), "to_str");
-        if(!str.isNil() && !(str instanceof RubyString)) {
-            str = RubyString.newEmptyString(getRuntime());
-        }
-        return str;
+        return TypeConverter.checkStringType(getRuntime(), this);
     }
 
     /** rb_check_array_type
@@ -814,7 +806,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     */
     @Override
     public IRubyObject checkArrayType() {
-        return TypeConverter.convertToTypeWithCheck(this, getRuntime().getArray(), "to_ary");
+        return TypeConverter.checkArrayType(getRuntime(), this);
     }
 
     /**

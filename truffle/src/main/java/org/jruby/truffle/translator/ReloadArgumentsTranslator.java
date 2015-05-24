@@ -17,7 +17,7 @@ import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.OptArgNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
+import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -90,7 +90,7 @@ public class ReloadArgumentsTranslator extends Translator {
     @Override
     protected RubyNode defaultVisit(org.jruby.ast.Node node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        return new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+        return new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
     }
 
     @Override

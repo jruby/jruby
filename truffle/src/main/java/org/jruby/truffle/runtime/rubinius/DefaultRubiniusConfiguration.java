@@ -40,8 +40,12 @@ package org.jruby.truffle.runtime.rubinius;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
-import org.jruby.truffle.runtime.RubyContext;
 
+import org.jruby.truffle.nodes.core.BignumNodes;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+
+import java.math.BigInteger;
 import java.util.Arrays;
 
 public abstract class DefaultRubiniusConfiguration {
@@ -75,7 +79,7 @@ public abstract class DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.file.S_ISVTX", FileStat.S_ISVTX);
 
         for (Fcntl fcntl : Fcntl.values()) {
-            if (fcntl.name().startsWith("F_")) {
+            if (fcntl.defined() && fcntl.name().startsWith("F_")) {
                 configuration.config("rbx.platform.fcntl." + fcntl.name(), fcntl.intValue());
             }
         }
@@ -83,7 +87,7 @@ public abstract class DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.fcntl.FD_CLOEXEC", 1); // TODO BJF 15-May-2015 Get from JNR constants or stdlib FFI
 
         for (OpenFlags openFlag : OpenFlags.values()) {
-            if (openFlag.name().startsWith("O_")) {
+            if (openFlag.defined() && openFlag.name().startsWith("O_")) {
                 configuration.config("rbx.platform.file." + openFlag.name(), openFlag.intValue());
             }
         }
@@ -154,6 +158,10 @@ public abstract class DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.socket.AF_UNSPEC", context.makeString("0"));
         configuration.config("rbx.platform.socket.SOCK_STREAM", context.makeString("1"));
         configuration.config("rbx.platform.socket.SOCK_STREAM", context.makeString("1"));
+    }
+
+    protected static RubyBasicObject newBignum(RubyContext context, String value) {
+        return BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), new BigInteger(value));
     }
 
 }

@@ -48,15 +48,7 @@ public class FeatureManager {
                 if (requireInPath(null, feature, currentNode)) {
                     return true;
                 }
-
             } else {
-                // Some features are handled specially
-
-                if (feature.equals("rbconfig")) {
-                    // Kernel#rbconfig is always there
-                    return true;
-                }
-
                 // Try each load path in turn
 
                 for (Object pathObject : context.getCoreLibrary().getLoadPath().slowToArray()) {

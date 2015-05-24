@@ -1,0 +1,3 @@
+fails:Net::HTTP.version_1_2 turns on net/http 1.2 features
+fails:Net::HTTP.version_1_2 returns true
+fails:Net::HTTP.version_1_2? returns the state of net/http 1.2 features

@@ -12,3 +12,5 @@ Commits for each library are:
 * rubysl-tempfile `97c4464b4d235f773aab537fbc80608a730a58fc`
 * rubysl-socket `3a8c965b36643208da81360ddb4ca7ba867cd3c4`
 * rubysl-securerandom `00e31daaf492f7987aa50750dfc3ebc8e8c42a7e`
+* rubysl-timeout `4208724abdbd4651b970f7340bffcd83c0458e8e`
+* rubysl-webrick `2de980d1e9b889060cdc204d9d153dd40b53425d`

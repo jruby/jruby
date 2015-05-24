@@ -10,3 +10,6 @@ fails:ARGF.read reads across two files consecutively
 fails:ARGF.read reads the contents of the same file twice
 fails:ARGF.read reads the contents of a special device file
 fails:ARGF.read reads the contents of the file with default encoding
+slow:ARGF.read reads the contents of stdin
+slow:ARGF.read reads a number of bytes from stdin
+slow:ARGF.read reads the contents of one file and stdin

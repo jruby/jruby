@@ -28,7 +28,7 @@ import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.dispatch.RespondToNode;
-import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
+import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.locals.FlipFlopStateNode;
 import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.nodes.methods.*;
@@ -91,7 +91,7 @@ class MethodTranslator extends BodyTranslator {
             }
         } else {
             body = new DefinedWrapperNode(context, sourceSection,
-                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                     "nil");
         }
 
@@ -142,7 +142,7 @@ class MethodTranslator extends BodyTranslator {
             prelude = SequenceNode.sequence(context, sourceSection,
                     new BehaveAsBlockNode(context, sourceSection,
                             new DefinedWrapperNode(context, sourceSection,
-                                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                                    new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                                     "nil"),
                             new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null)), preludeBuilder);
         } else {

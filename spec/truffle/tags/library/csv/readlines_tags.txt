@@ -1,0 +1,3 @@
+fails:CSV#readlines returns an Array of Array containing each element in a one-line CSV file
+fails:CSV#readlines returns an Array of Arrays containing each element in a multi-line CSV file
+fails:CSV#readlines returns nil for a missing value

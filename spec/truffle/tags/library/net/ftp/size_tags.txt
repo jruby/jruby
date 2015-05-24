@@ -1,0 +1,6 @@
+fails:Net::FTP#size sends the SIZE command to the server
+fails:Net::FTP#size returns the size of the passed file as Integer
+fails:Net::FTP#size raises a Net::FTPPermError when the response code is 500
+fails:Net::FTP#size raises a Net::FTPPermError when the response code is 501
+fails:Net::FTP#size raises a Net::FTPTempError when the response code is 421
+fails:Net::FTP#size raises a Net::FTPPermError when the response code is 550

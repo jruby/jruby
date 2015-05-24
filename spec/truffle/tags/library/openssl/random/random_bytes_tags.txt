@@ -1,0 +1,3 @@
+fails:OpenSSL::Random#random_bytes generates a random binary string of specified length
+fails:OpenSSL::Random#random_bytes generates different binary strings with subsequent invocations
+fails:OpenSSL::Random#random_bytes raises ArgumentError on negative arguments

@@ -27,7 +27,7 @@ import org.jruby.truffle.nodes.core.array.ArrayLiteralNode;
 import org.jruby.truffle.nodes.core.array.ArraySliceNodeGen;
 import org.jruby.truffle.nodes.core.array.PrimitiveArrayNodeFactory;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
-import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
+import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
 import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -176,7 +176,7 @@ public class LoadArgumentsTranslator extends Translator {
 
             if (localAsgnNode.getValueNode() == null) {
                 defaultValue = new DefinedWrapperNode(context, sourceSection,
-                        new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                        new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                         "nil");
             } else if (localAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
                 /*
@@ -193,7 +193,7 @@ public class LoadArgumentsTranslator extends Translator {
 
             if (dAsgnNode.getValueNode() == null) {
                 defaultValue = new DefinedWrapperNode(context, sourceSection,
-                        new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                        new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                         "nil");
             } else if (dAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
                 /*
@@ -415,7 +415,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         for (String parameterToClear : parametersToClearCollector.getParameters()) {
             nilSequence.add(((ReadNode) methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(parameterToClear, sourceSection)).makeWriteNode(new DefinedWrapperNode(context, sourceSection,
-                    new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                    new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                     "nil")));
         }
 
@@ -435,7 +435,7 @@ public class LoadArgumentsTranslator extends Translator {
                         new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)),
                         nil,
                         notNil == null ? new DefinedWrapperNode(context, sourceSection,
-                                new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                                new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                                 "nil") : notNil));
     }
 

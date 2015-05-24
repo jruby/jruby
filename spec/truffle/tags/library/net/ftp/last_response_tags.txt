@@ -1,0 +1,1 @@
+fails:Net::FTP#last_response returns the last response

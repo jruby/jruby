@@ -497,6 +497,11 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @Specialization(guards = "isNil(hostName)")
+        public int getaddrinfo(RubyBasicObject hostName, RubyString serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
+            return getaddrinfo(getContext().makeString("0.0.0.0"), serviceName, hintsPointer, resultsPointer);
+        }
+
         @Specialization
         public int getaddrinfo(RubyString hostName, RubyString serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
             return nativeSockets().getaddrinfo(
@@ -596,6 +601,48 @@ public abstract class PosixNodes {
         @Specialization
         public int listen(int socket, int backlog) {
             return nativeSockets().listen(socket, backlog);
+        }
+
+    }
+
+    @CoreMethod(names = "gethostname", isModuleFunction = true, required = 2)
+    public abstract static class GetHostNameNode extends CoreMethodArrayArgumentsNode {
+
+        public GetHostNameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getHostName(RubyBasicObject name, int nameLength) {
+            return nativeSockets().gethostname(PointerPrimitiveNodes.getPointer(name), nameLength);
+        }
+
+    }
+
+    @CoreMethod(names = "_getpeername", isModuleFunction = true, required = 3)
+    public abstract static class GetPeerNameNode extends CoreMethodArrayArgumentsNode {
+
+        public GetPeerNameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getPeerName(int socket, RubyBasicObject address, RubyBasicObject addressLength) {
+            return nativeSockets().getpeername(socket, PointerPrimitiveNodes.getPointer(address), PointerPrimitiveNodes.getPointer(addressLength));
+        }
+
+    }
+
+    @CoreMethod(names = "_getsockname", isModuleFunction = true, required = 3)
+    public abstract static class GetSockNameNode extends CoreMethodArrayArgumentsNode {
+
+        public GetSockNameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getSockName(int socket, RubyBasicObject address, RubyBasicObject addressLength) {
+            return nativeSockets().getsockname(socket, PointerPrimitiveNodes.getPointer(address), PointerPrimitiveNodes.getPointer(addressLength));
         }
 
     }

@@ -26,6 +26,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 
 @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
 public abstract class LookupConstantNode extends RubyNode {
@@ -49,13 +50,14 @@ public abstract class LookupConstantNode extends RubyNode {
 
     @Specialization(guards = {
             "module == cachedModule",
-            "name.equals(cachedName)"
+            "guardName(name, cachedName, sameNameProfile)"
     }, assumptions = "cachedModule.getUnmodifiedAssumption()", limit = "getCacheLimit()")
     protected RubyConstant lookupConstant(VirtualFrame frame, RubyModule module, String name,
             @Cached("module") RubyModule cachedModule,
             @Cached("name") String cachedName,
             @Cached("doLookup(cachedModule, cachedName)") RubyConstant constant,
-            @Cached("isVisible(cachedModule, constant)") boolean isVisible) {
+            @Cached("isVisible(cachedModule, constant)") boolean isVisible,
+            @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
         if (!isVisible) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateConstant(module, name, this));
@@ -80,6 +82,15 @@ public abstract class LookupConstantNode extends RubyNode {
     protected RubyConstant lookupNotModule(Object module, String name) {
         CompilerDirectives.transferToInterpreter();
         throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(module.toString(), "class/module", this));
+    }
+
+    protected boolean guardName(String name, String cachedName, ConditionProfile sameNameProfile) {
+        // This is likely as for literal constant lookup the name does not change and Symbols always return the same String.
+        if (sameNameProfile.profile(name == cachedName)) {
+            return true;
+        } else {
+            return name.equals(cachedName);
+        }
     }
 
     protected RubyConstant doLookup(RubyModule module, String name) {

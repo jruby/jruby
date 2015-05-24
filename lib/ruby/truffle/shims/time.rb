@@ -6,4 +6,14 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# Empty time file - everything is loaded by default at the moment
+class Time
+
+  def self.httpdate(string)
+    Time.now
+  end
+
+  def httpdate
+    to_s
+  end
+
+end

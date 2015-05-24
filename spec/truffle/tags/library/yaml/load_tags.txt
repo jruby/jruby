@@ -1,0 +1,12 @@
+fails:YAML.load returns a document from current io stream when io provided
+fails:YAML.load loads strings
+fails:YAML.load fails on invalid keys
+fails:YAML.load accepts symbols
+fails:YAML.load accepts numbers
+fails:YAML.load accepts collections
+fails:YAML.load parses start markers
+fails:YAML.load works with block sequence shortcuts
+fails:YAML.load works on complex keys
+fails:YAML.load loads a symbol key that contains spaces
+fails:YAML.load with iso8601 timestamp computes the microseconds
+fails:YAML.load with iso8601 timestamp rounds values smaller than 1 usec to 0 

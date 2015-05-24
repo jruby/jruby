@@ -1,4 +1,3 @@
-fails:BigDecimal#<= returns true if a <= b
 fails:BigDecimal#<= properly handles infinity values
 fails:BigDecimal#<= properly handles NaN values
 fails:BigDecimal#<= raises an ArgumentError if the argument can't be coerced into a BigDecimal

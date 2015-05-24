@@ -1,0 +1,2 @@
+fails:Net::FTP#storbinary sends the passed command and the passed File object's content to the server
+fails:Net::FTP#storbinary yields the transmitted content as binary blocks of the passed size

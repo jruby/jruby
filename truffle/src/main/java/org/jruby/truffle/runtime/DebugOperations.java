@@ -23,7 +23,7 @@ import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
+import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.objects.FreezeNode;
 import org.jruby.truffle.nodes.objects.FreezeNodeGen;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
@@ -147,7 +147,7 @@ public abstract class DebugOperations {
     }
 
     public static boolean verySlowIsFrozen(RubyContext context, Object object) {
-        return (boolean) executeInNewNode(IsFrozenNodeGen.create(context, null, new ObjectLiteralNode(context, null, object)));
+        return (boolean) executeInNewNode(IsFrozenNodeGen.create(context, null, new LiteralNode(context, null, object)));
     }
 
     private static void printASTForBacktrace(Node node, List<Node> activeNodes, int indentation) {
