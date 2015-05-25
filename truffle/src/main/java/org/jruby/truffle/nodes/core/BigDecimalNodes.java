@@ -19,6 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.object.BasicObjectType;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -27,7 +28,14 @@ import java.util.EnumSet;
 @CoreClass(name = "Truffle::BigDecimal")
 public abstract class BigDecimalNodes {
 
+    public static class BigDecimalType extends BasicObjectType {
+
+    }
+
+    public static final BigDecimalType BIG_DECIMAL_TYPE = new BigDecimalType();
+
     private static final HiddenKey VALUE_IDENTIFIER = new HiddenKey("value");
+    public static final Shape BIG_DECIMAL_SHAPE;
     private static final DynamicObjectFactory BIG_DECIMAL_FACTORY;
     public static final Property VALUE_PROPERTY;
 
@@ -37,15 +45,8 @@ public abstract class BigDecimalNodes {
                 VALUE_IDENTIFIER,
                 allocator.locationForType(BigDecimal.class, EnumSet.of(LocationModifier.NonNull)),
                 0);
-        final Shape shape = RubyBasicObject.EMPTY_SHAPE.addProperty(VALUE_PROPERTY);
-        BIG_DECIMAL_FACTORY = shape.createFactory();
-    }
-
-    // TODO (pitr 15-May-2015) figure out where to put RubyBigDecimal, or remove completely
-    public static class RubyBigDecimal extends RubyBasicObject {
-        public RubyBigDecimal(RubyClass rubyClass, DynamicObject dynamicObject) {
-            super(rubyClass, dynamicObject);
-        }
+        BIG_DECIMAL_SHAPE = RubyBasicObject.LAYOUT.createShape(BIG_DECIMAL_TYPE).addProperty(VALUE_PROPERTY);
+        BIG_DECIMAL_FACTORY = BIG_DECIMAL_SHAPE.createFactory();
     }
 
     public static class RubyBigDecimalAllocator implements Allocator {
@@ -84,18 +85,14 @@ public abstract class BigDecimalNodes {
         VALUE_PROPERTY.setSafe(bignum.getDynamicObject(), value, null);
     }
 
-    public static RubyBigDecimal createRubyBigDecimal(RubyClass rubyClass, BigDecimal value) {
-        return new RubyBigDecimal(rubyClass, BIG_DECIMAL_FACTORY.newInstance(value));
+    public static RubyBasicObject createRubyBigDecimal(RubyClass rubyClass, BigDecimal value) {
+        return new RubyBasicObject(rubyClass, BIG_DECIMAL_FACTORY.newInstance(value));
     }
 
     public abstract static class BigDecimalCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
         public BigDecimalCoreMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public static boolean isRubyBigDecimal(Object value) {
-            return value instanceof RubyBigDecimal;
         }
     }
 
@@ -107,12 +104,12 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization(guards = "isRubyBigDecimal(v)")
-        public RubyBasicObject initialize(RubyBigDecimal self, RubyBasicObject v) {
+        public RubyBasicObject initialize(RubyBasicObject self, RubyBasicObject v) {
             return v;
         }
 
         @Specialization(guards = "isRubyString(v)")
-        public RubyBasicObject initializeFromString(RubyBigDecimal self, RubyBasicObject v) {
+        public RubyBasicObject initializeFromString(RubyBasicObject self, RubyBasicObject v) {
             // TODO (pitr 20-May-2015): add NaN, Infinity handling
             switch (v.toString()) {
                 case "NaN":

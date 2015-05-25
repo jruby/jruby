@@ -20,7 +20,7 @@ import com.oracle.truffle.api.object.*;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.object.RubyObjectType;
+import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 import java.util.LinkedHashMap;
@@ -37,7 +37,7 @@ public class RubyBasicObject implements TruffleObject {
     public static final HiddenKey FROZEN_IDENTIFIER = new HiddenKey("frozen?");
 
     public static final Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);
-    public static final Shape EMPTY_SHAPE = LAYOUT.createShape(new RubyObjectType());
+    public static final Shape EMPTY_SHAPE = LAYOUT.createShape(new BasicObjectType());
 
     private final DynamicObject dynamicObject;
 
@@ -147,8 +147,8 @@ public class RubyBasicObject implements TruffleObject {
         return dynamicObject.getShape();
     }
 
-    public RubyObjectType getObjectType() {
-        return (RubyObjectType) dynamicObject.getShape().getObjectType();
+    public BasicObjectType getObjectType() {
+        return (BasicObjectType) dynamicObject.getShape().getObjectType();
     }
 
     public RubyClass getLogicalClass() {

@@ -11,6 +11,6 @@ package org.jruby.truffle.runtime.object;
 
 import com.oracle.truffle.api.object.ObjectType;
 
-public class RubyObjectType extends ObjectType {
+public class BasicObjectType extends ObjectType {
 
 }
