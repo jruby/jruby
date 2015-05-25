@@ -1888,7 +1888,7 @@ public class RubyModule extends RubyObject {
             module_exec(context, new IRubyObject[] {this}, block);
         }
 
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     public void addReadWriteAttribute(ThreadContext context, String name) {
@@ -1915,7 +1915,7 @@ public class RubyModule extends RubyObject {
 
         addAccessor(context, args[0].asJavaString().intern(), visibility, true, writeable);
 
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "attr", rest = true, visibility = PRIVATE, reads = VISIBILITY, compat = RUBY1_9)
@@ -1948,7 +1948,7 @@ public class RubyModule extends RubyObject {
             addAccessor(context, args[i].asJavaString().intern(), visibility, true, false);
         }
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     /** rb_mod_attr_writer
@@ -1963,7 +1963,7 @@ public class RubyModule extends RubyObject {
             addAccessor(context, args[i].asJavaString().intern(), visibility, false, true);
         }
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
 
@@ -1988,7 +1988,7 @@ public class RubyModule extends RubyObject {
             addAccessor(context, args[i].asJavaString().intern(), visibility, true, true);
         }
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     /**
