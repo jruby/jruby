@@ -163,7 +163,7 @@ public abstract class KernelNodes {
         private boolean areEqual(VirtualFrame frame, Object left, Object right) {
             if (equalNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                equalNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), false, false, null));
+                equalNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
             return equalNode.callBoolean(frame, left, "==", null, right);
@@ -192,7 +192,7 @@ public abstract class KernelNodes {
 
         public NotMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            matchNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            matchNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         @Specialization
@@ -387,7 +387,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
             copyNode = CopyNodeFactory.create(context, sourceSection, null);
             // Calls private initialize_clone on the new copy.
-            initializeCloneNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.CALL_METHOD_MISSING);
+            initializeCloneNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
             isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             freezeNode = FreezeNodeGen.create(context, sourceSection, null);
             singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
@@ -425,7 +425,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
             copyNode = CopyNodeFactory.create(context, sourceSection, null);
             // Calls private initialize_dup on the new copy.
-            initializeDupNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.CALL_METHOD_MISSING);
+            initializeDupNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
         @Specialization

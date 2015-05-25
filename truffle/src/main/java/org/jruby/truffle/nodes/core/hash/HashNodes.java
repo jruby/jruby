@@ -137,7 +137,7 @@ public abstract class HashNodes {
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
-            eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
             equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
             callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupEntryNode = new LookupEntryNode(context, sourceSection);
@@ -252,7 +252,7 @@ public abstract class HashNodes {
         public SetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
-            eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
             equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
         }
 
@@ -481,7 +481,7 @@ public abstract class HashNodes {
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
-            eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupEntryNode = new LookupEntryNode(context, sourceSection);
             yieldNode = new YieldDispatchHeadNode(context);
         }
@@ -642,7 +642,7 @@ public abstract class HashNodes {
         public Object each(VirtualFrame frame, RubyHash hash, UndefinedPlaceholder block) {
             if (toEnumNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
             InternalMethod method = RubyArguments.getMethod(frame.getArguments());
@@ -856,7 +856,7 @@ public abstract class HashNodes {
 
         public MergeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         @Specialization(guards = {"isPackedArrayStorage(hash)", "isNullStorage(other)", "!isCompareByIdentity(hash)"})
@@ -1021,7 +1021,7 @@ public abstract class HashNodes {
         public Object merge(VirtualFrame frame, RubyHash hash, Object other, Object block) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
             
             final RubyProc blockProc;

@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
@@ -98,7 +99,7 @@ public abstract class BasicObjectNodes {
 
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            equalNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         @Specialization
@@ -270,7 +271,9 @@ public abstract class BasicObjectNodes {
         public SendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
 
-            dispatchNode = DispatchHeadNodeFactory.createMethodCall(context, true, DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT, MissingBehavior.CALL_METHOD_MISSING);
+            dispatchNode = new CallDispatchHeadNode(context, true,
+                    DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT,
+                    MissingBehavior.CALL_METHOD_MISSING);
 
             if (DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
                 dispatchNode.forceUncached();
