@@ -45,3 +45,6 @@ wait_until_port_open
 curl http://localhost:$PORT/
 kill -9 $!
 wait
+
+echo "Coverage..."
+jt run -Xtruffle.coverage=true test/truffle/coverage/test.rb
