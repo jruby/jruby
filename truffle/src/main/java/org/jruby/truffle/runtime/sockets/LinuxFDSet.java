@@ -24,7 +24,7 @@ public class LinuxFDSet implements FDSet {
     private final Pointer bitmap;
 
     public LinuxFDSet() {
-        bitmap = memoryManager.allocateDirect(MAX_FDS / FIELD_SIZE_IN_BITS);
+        bitmap = memoryManager.allocateDirect(MAX_FDS / 8);
     }
 
     @Override

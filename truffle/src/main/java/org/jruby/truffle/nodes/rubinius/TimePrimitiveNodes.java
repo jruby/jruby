@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
@@ -212,42 +213,29 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_s_from_array", needsSelf = true)
+    @RubiniusPrimitive(name = "time_s_from_array", needsSelf = true, lowerFixnumParameters = { 0 /*sec*/, 6 /*nsec*/, 7 /*isdst*/})
     public static abstract class TimeSFromArrayPrimitiveNode extends RubiniusPrimitiveNode {
 
         public TimeSFromArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isNil(sec)", "isNil(nsec)"})
-        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, Object sec, int min, int hour, int mday, int month, int year,
-                                       Object nsec, int isdst, boolean fromutc, Object utcoffset) {
-            return timeSFromArray(frame, timeClass, 0, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
-        }
-
-        @Specialization(guards = "isNil(nsec)")
-        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
-                                       Object nsec, int isdst, boolean fromutc, Object utcoffset) {
-            return buildTime(frame, timeClass, sec, min, hour, mday, month, year, 0, isdst, fromutc, utcoffset);
-        }
-
-        @Specialization
-        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, long sec, int min, int hour, int mday, int month, int year,
-                                       int nsec, int isdst, boolean fromutc, Object utcoffset) {
-            // TODO CS 15-Feb-15 that cast
-            return buildTime(frame, timeClass, (int) sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
-        }
-
         @Specialization
         public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
-                                       long nsec, int isdst, boolean fromutc, Object utcoffset) {
-            // TODO CS 15-Feb-15 that cast
-            return buildTime(frame, timeClass, sec, min, hour, mday, month, year, (int) nsec, isdst, fromutc, utcoffset);
+                int nsec, int isdst, boolean fromutc, Object utcoffset) {
+            return buildTime(frame, timeClass, sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
         }
 
-        @Specialization
-        public RubyTime buildTime(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
+        @Specialization(guards = "!isInteger(sec) || !isInteger(nsec)")
+        public RubyTime timeSFromArrayFallback(VirtualFrame frame, RubyClass timeClass, Object sec, int min, int hour, int mday, int month, int year,
+                                       Object nsec, int isdst, boolean fromutc, Object utcoffset) {
+            return null; // Primitive failure
+        }
+
+        private RubyTime buildTime(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
                                        int nsec, int isdst, boolean fromutc, Object utcoffset) {
+            CompilerDirectives.transferToInterpreter();
+
             if (sec < 0 || sec > 59 ||
                     min < 0 || min > 59 ||
                     hour < 0 || hour > 23 ||
@@ -281,40 +269,7 @@ public abstract class TimePrimitiveNodes {
             }
         }
 
-        @Specialization(guards = "isNil(nsec)")
-        public RubyTime timeSFromArray(RubyClass timeClass, RubyBasicObject sec, int min, int hour, int mday, int month, int year,
-                                       Object nsec, int isdst, boolean fromutc, Object utcoffset) {
-            return null;
-        }
-
-        @Specialization
-        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
-                                       long nsec, int isdst, boolean fromutc, Object utcoffset) {
-            return timeSFromArray(frame, timeClass, sec, min, hour, mday, month, year, (int) nsec, isdst, fromutc, utcoffset);
-        }
-
-        @Specialization
-        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
-                                       int nsec, long isdst, boolean fromutc, Object utcoffset) {
-            return timeSFromArray(frame, timeClass, sec, min, hour, mday, month, year, nsec, (int) isdst, fromutc, utcoffset);
-        }
-
-        @Specialization(guards = "isNil(nsec)")
-        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
-                                       Object nsec, int isdst, boolean fromutc, Object utcoffset) {
-            final int secondsWhole = (int) sec;
-            final int nanosecondsFractional = (int) ((sec * 1_000_000_000) - (secondsWhole * 1_000_000_000));
-            return buildTime(frame, timeClass, secondsWhole, min, hour, mday, month, year, nanosecondsFractional, isdst, fromutc, utcoffset);
-        }
-
-        @Specialization
-        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
-                                       int nsec, int isdst, boolean fromutc, Object utcoffset) {
-            final int secondsWhole = (int) sec;
-            return buildTime(frame, timeClass, secondsWhole, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
-        }
-
-        private int cast(Object value) {
+        private static int cast(Object value) {
             if (value instanceof Integer) {
                 return (int) value;
             } else if (value instanceof Long) {

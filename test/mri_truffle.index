@@ -111,12 +111,12 @@ test_ipaddr.rb
 
 test_mathn.rb
 
-# test_mutex_m.rb # cannot load such file -- mutex_m
+test_mutex_m.rb
 test_open3.rb
 test_pp.rb
 test_prettyprint.rb
 test_prime.rb
-# test_pstore.rb
+test_pstore.rb
 # test_pty.rb
 # test_securerandom.rb
 test_set.rb
@@ -173,8 +173,8 @@ date/test_date_strptime.rb
 date/test_date_parse.rb
 date/test_switch_hitter.rb
 
-# digest/test_digest.rb
-# digest/test_digest_extend.rb
+digest/test_digest.rb
+# digest/test_digest_extend.rb # all failed
 
 erb/test_erb.rb
 erb/test_erb_m17n.rb
