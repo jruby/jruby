@@ -116,7 +116,7 @@ test_open3.rb
 test_pp.rb
 test_prettyprint.rb
 test_prime.rb
-# test_pstore.rb
+test_pstore.rb
 # test_pty.rb
 # test_securerandom.rb
 test_set.rb
