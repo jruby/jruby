@@ -36,7 +36,6 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
-import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
@@ -708,7 +707,7 @@ public abstract class KernelNodes {
             final FrameSlot slot = caller.getFrameDescriptor().findFrameSlot("$_");
 
             if (slot != null) {
-                caller.setObject(slot, WrapInThreadLocalNode.wrap(getContext(), rubyLine));
+                caller.setObject(slot, ThreadLocalObject.wrap(getContext(), rubyLine));
             }
 
             return rubyLine;

@@ -1441,7 +1441,13 @@ public class BodyTranslator extends Translator {
                 }
             }
 
-            return ((ReadNode) localVarNode).makeWriteNode(rhs);
+            RubyNode assignment = ((ReadNode) localVarNode).makeWriteNode(rhs);
+
+            if (name.equals("$_")) {
+                assignment = GetFromThreadLocalNodeGen.create(context, sourceSection, assignment);
+            }
+
+            return assignment;
         } else {
             final LiteralNode globalVariablesObjectNode = new LiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
             return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);

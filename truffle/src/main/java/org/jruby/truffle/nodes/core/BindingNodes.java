@@ -17,14 +17,13 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.globals.GetFromThreadLocalNode;
-import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNode;
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.nodes.locals.WriteFrameSlotNode;
 import org.jruby.truffle.nodes.locals.WriteFrameSlotNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBinding;
@@ -117,7 +116,11 @@ public abstract class BindingNodes {
             }
 
             final Object value = frame.getValue(frameSlot);
-            return GetFromThreadLocalNode.get(getContext(), value);
+            if (value instanceof ThreadLocalObject) {
+                return ((ThreadLocalObject) value).get();
+            } else {
+                return value;
+            }
         }
 
         protected FrameDescriptor getFrameDescriptor(RubyBinding binding) {
@@ -192,7 +195,7 @@ public abstract class BindingNodes {
         public Object localVariableSetLastLine(RubyBinding binding, RubySymbol symbol, Object value) {
             final MaterializedFrame frame = binding.getFrame();
             final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(symbol.toString());
-            frame.setObject(frameSlot, WrapInThreadLocalNode.wrap(getContext(), value));
+            frame.setObject(frameSlot, ThreadLocalObject.wrap(getContext(), value));
             return value;
         }
 
