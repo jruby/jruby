@@ -21,7 +21,7 @@ class Thread
   end
 
   def self.start(&block)
-    Thread.new &block
+    Thread.new(&block)
   end
 
 end
