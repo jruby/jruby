@@ -1931,50 +1931,31 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * in both the compiler and the interpreter, the performance
      * benefit is important for this method.
      */
-    public RubyBoolean respond_to_p(IRubyObject mname) {
+    public final RubyBoolean respond_to_p(IRubyObject mname) {
         final String name = mname.asJavaString();
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, true));
     }
 
-    public RubyBoolean respond_to_p19(IRubyObject mname) {
-        final Ruby runtime = getRuntime();
-        final String name = mname.asJavaString();
-        if ( getMetaClass().isMethodBound(name, true, true) ) return runtime.getTrue();
-        // MRI always passes down a symbol when calling respond_to_missing? :
-        if ( ! (mname instanceof RubySymbol) ) mname = runtime.newSymbol(name);
-        IRubyObject respond = Helpers.invoke(runtime.getCurrentContext(), this, "respond_to_missing?", mname, runtime.getFalse());
-        return runtime.newBoolean( respond.isTrue() );
+    public final RubyBoolean respond_to_p19(IRubyObject mname) {
+        return respond_to_p19(mname, false);
     }
 
-    /** obj_respond_to
-     *
-     * respond_to?( aSymbol, includePriv=false ) -> true or false
-     *
-     * Returns true if this object responds to the given method. Private
-     * methods are included in the search only if the optional second
-     * parameter evaluates to true.
-     *
-     * @return true if this responds to the given method
-     *
-     * !!! For some reason MRI shows the arity of respond_to? as -1, when it should be -2; that's why this is rest instead of required, optional = 1
-     *
-     * Going back to splitting according to method arity. MRI is wrong
-     * about most of these anyway, and since we have arity splitting
-     * in both the compiler and the interpreter, the performance
-     * benefit is important for this method.
-     */
-    public RubyBoolean respond_to_p(IRubyObject mname, IRubyObject includePrivate) {
+    public final RubyBoolean respond_to_p(IRubyObject mname, IRubyObject includePrivate) {
         String name = mname.asJavaString();
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate.isTrue()));
     }
 
-    public RubyBoolean respond_to_p19(IRubyObject mname, IRubyObject includePrivate) {
+    public final RubyBoolean respond_to_p19(IRubyObject mname, IRubyObject includePrivate) {
+        return respond_to_p19(mname, includePrivate.isTrue());
+    }
+
+    private RubyBoolean respond_to_p19(IRubyObject mname, final boolean includePrivate) {
         final Ruby runtime = getRuntime();
         final String name = mname.asJavaString();
-        if ( getMetaClass().isMethodBound(name, !includePrivate.isTrue()) ) return runtime.getTrue();
-        // MRI always passes down a symbol when calling respond_to_missing? :
+        if ( getMetaClass().isMethodBound(name, !includePrivate, true) ) return runtime.getTrue();
+        // MRI (1.9) always passes down a symbol when calling respond_to_missing?
         if ( ! (mname instanceof RubySymbol) ) mname = runtime.newSymbol(name);
-        IRubyObject respond = Helpers.invoke(runtime.getCurrentContext(), this, "respond_to_missing?", mname, includePrivate);
+        IRubyObject respond = Helpers.invoke(runtime.getCurrentContext(), this, "respond_to_missing?", mname, runtime.newBoolean(includePrivate));
         return runtime.newBoolean( respond.isTrue() );
     }
 
