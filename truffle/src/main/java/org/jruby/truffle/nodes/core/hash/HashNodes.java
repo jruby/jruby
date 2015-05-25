@@ -1179,8 +1179,11 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class RehashNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private HashNode hashNode;
+
         public RehashNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            hashNode = new HashNode(context, sourceSection);
         }
 
         @Specialization(guards = "isNullStorage(hash)")
@@ -1189,8 +1192,20 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "isPackedArrayStorage(hash)")
-        public RubyHash rehashPackedArray(RubyHash hash) {
-            // Nothing to do as we weren't using the hash code anyway
+        public RubyHash rehashPackedArray(VirtualFrame frame, RubyHash hash) {
+            assert HashOperations.verifyStore(hash);
+
+            final Object[] store = (Object[]) hash.getStore();
+            final int size = hash.getSize();
+
+            for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
+                if (n < size) {
+                    PackedArrayStrategy.setHashed(store, n, hashNode.hash(frame, PackedArrayStrategy.getKey(store, n)));
+                }
+            }
+            
+            assert HashOperations.verifyStore(hash);
+
             return hash;
         }
 
