@@ -111,7 +111,7 @@ test_ipaddr.rb
 
 test_mathn.rb
 
-# test_mutex_m.rb # cannot load such file -- mutex_m
+test_mutex_m.rb
 test_open3.rb
 test_pp.rb
 test_prettyprint.rb
