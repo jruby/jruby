@@ -16,6 +16,9 @@ require 'digest/sha1'
 
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 
+JDEBUG_PORT = 51819
+JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},suspend=y"
+
 # wait for sub-processes to handle the interrupt
 trap(:INT) {}
 
@@ -226,7 +229,7 @@ module Commands
     end
 
     if args.delete('--jdebug')
-      jruby_args += %w[-J-agentlib:jdwp=transport=dt_socket,server=y,address=51819,suspend=y]
+      jruby_args << JDEBUG
     end
 
     if args.delete('--server')
@@ -301,10 +304,13 @@ module Commands
       options += %w[--excl-tag slow]
     end
 
-    if args.first == '--graal'
-      args.shift
+    if args.delete('--graal')
       env_vars["JAVACMD"] = Utilities.find_graal
       options << '-T-J-server'
+    end
+
+    if args.delete('--jdebug')
+      options << "-T#{JDEBUG}"
     end
 
     mspec_env env_vars, 'run', *options, *args
