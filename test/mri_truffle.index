@@ -118,7 +118,7 @@ test_prettyprint.rb
 test_prime.rb
 test_pstore.rb
 # test_pty.rb
-# test_securerandom.rb
+test_securerandom.rb
 test_set.rb
 test_shellwords.rb
 test_singleton.rb
