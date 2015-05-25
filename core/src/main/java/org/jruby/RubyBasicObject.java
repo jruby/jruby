@@ -56,6 +56,7 @@ import org.jruby.runtime.Visibility;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.CompatVersion.*;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.builtin.InternalVariables;
@@ -586,36 +587,59 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * overridden.
      */
     public final boolean respondsTo(String name) {
-        DynamicMethod method = getMetaClass().searchMethod("respond_to?");
-        if ( method.equals(getRuntime().getRespondToMethod()) ) {
-            // fastest path; builtin respond_to? which just does isMethodBound
-            return getMetaClass().isMethodBound(name, false);
-        } else if (!method.isUndefined()) {
-            // medium path, invoke user's respond_to? if defined
-            return method.call(getRuntime().getCurrentContext(), this, metaClass, "respond_to?", getRuntime().newSymbol(name)).isTrue();
-        } else {
-            // slowest path, full callMethod to hit method_missing if present, or produce error
-            return callMethod(getRuntime().getCurrentContext(), "respond_to?", getRuntime().newSymbol(name)).isTrue();
-        }
-    }
+        final Ruby runtime = getRuntime();
+        if ( runtime.is1_9() ) return respondsTo19(runtime, name);
 
-    /**
-     * Does this object respond to the specified message? Uses a
-     * shortcut if it can be proved that respond_to? haven't been
-     * overridden.
-     */
-    private boolean respondsTo(final ThreadContext context, final String name) {
-        DynamicMethod method = getMetaClass().searchMethod("respond_to?");
-        if ( method.equals(context.runtime.getRespondToMethod()) ) {
+        final DynamicMethod method = getMetaClass().searchMethod("respond_to?");
+        if ( method.equals(runtime.getRespondToMethod()) ) {
             // fastest path; builtin respond_to? which just does isMethodBound
             return getMetaClass().isMethodBound(name, false);
         }
+        final RubySymbol mname = runtime.newSymbol(name);
         if ( ! method.isUndefined() ) {
             // medium path, invoke user's respond_to? if defined
-            return method.call(context, this, metaClass, "respond_to?", getRuntime().newSymbol(name)).isTrue();
+            return method.call(runtime.getCurrentContext(), this, metaClass, "respond_to?", mname).isTrue();
         }
         // slowest path, full callMethod to hit method_missing if present, or produce error
-        return callMethod(context, "respond_to?", getRuntime().newSymbol(name)).isTrue();
+        return callMethod(runtime.getCurrentContext(), "respond_to?", mname).isTrue();
+    }
+
+    private boolean respondsTo19(final Ruby runtime, final String name) {
+        final DynamicMethod respondTo = getMetaClass().searchMethod("respond_to?");
+        final DynamicMethod respondToMissing = getMetaClass().searchMethod("respond_to_missing?");
+
+        if ( respondTo.equals(runtime.getRespondToMethod()) &&
+             respondToMissing.equals(runtime.getRespondToMissingMethod()) ) {
+            // fastest path; builtin respond_to? which just does isMethodBound
+            return getMetaClass().isMethodBound(name, false);
+        }
+
+        final ThreadContext context = runtime.getCurrentContext();
+        final RubySymbol mname = runtime.newSymbol(name);
+        final boolean respondToUndefined = respondTo.isUndefined();
+        if ( ! ( respondToUndefined && respondToMissing.isUndefined() ) ) {
+            // medium path, invoke user's respond_to?/respond_to_missing? if defined
+            final DynamicMethod method; final String respondName;
+            if ( respondToUndefined ) {
+                method = respondToMissing; respondName = "respond_to_missing?";
+            } else {
+                method = respondTo; respondName = "respond_to?";
+            }
+            // We have to check and enforce arity
+            final Arity arity = method.getArity();
+            if ( arity.isFixed() ) {
+                if ( arity.required() == 1 ) {
+                    return method.call(context, this, metaClass, respondName, mname).isTrue();
+                }
+                //if ( arity.required() != 2 ) {
+                //    throw runtime.newArgumentError(respondName + " must accept 1 or 2 arguments (requires " + arity.getValue() + ")");
+                //}
+            }
+            return method.call(context, this, metaClass, respondName, mname, runtime.getTrue()).isTrue();
+        }
+
+        // slowest path, full callMethod to hit method_missing if present, or produce error
+        return callMethod(context, "respond_to?", mname).isTrue();
     }
 
     /**
@@ -628,20 +652,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Does this object respond to the specified message via "method_missing?"
      */
-    public final boolean respondsToMissing(String name, boolean priv) {
+    public final boolean respondsToMissing(String name, boolean incPrivate) {
         DynamicMethod method = getMetaClass().searchMethod("respond_to_missing?");
         // perhaps should try a smart version as for respondsTo above?
-        if(method.isUndefined()) {
-            return false;
-        } else {
-            return method.call(
-                    getRuntime().getCurrentContext(),
-                    this,
-                    metaClass,
-                    "respond_to_missing?",
-                    getRuntime().newSymbol(name),
-                    getRuntime().newBoolean(priv)).isTrue();
-        }
+        if ( method.isUndefined() ) return false;
+        final Ruby runtime = getRuntime();
+        return method.call(runtime.getCurrentContext(), this, getMetaClass(),
+            "respond_to_missing?", runtime.newSymbol(name), runtime.newBoolean(incPrivate)
+        ).isTrue();
     }
 
     /**
