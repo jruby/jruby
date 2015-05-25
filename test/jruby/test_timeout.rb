@@ -4,6 +4,7 @@ require 'socket'
 require 'net/http'
 
 class TestTimeout < Test::Unit::TestCase
+
   def test_timeout_for_loop
     n = 10000000
     assert_raises(Timeout::Error) do
@@ -13,7 +14,7 @@ class TestTimeout < Test::Unit::TestCase
 
   def do_timeout(time, count, pass_expected, timeout_expected = 0, &block)
     pass = timeout = error = 0
-    count.times do |i|
+    count.times do
       begin
         Timeout::timeout(time, &block)
         pass += 1
@@ -70,7 +71,7 @@ class TestTimeout < Test::Unit::TestCase
     assert_raises Net::OpenTimeout do
       http = Net::HTTP.new('8.8.8.8')
       http.open_timeout = 0.001
-      response = http.start do |h|
+      http.start do |h|
         h.request_get '/index.html'
         # ensure we timeout even if we're fast
         sleep(0.01)
@@ -145,4 +146,42 @@ class TestTimeout < Test::Unit::TestCase
 
     assert_equal expected, result
   end
+
+  class Seconds
+
+    attr_reader :value
+
+    def initialize(value); @value = value end
+
+    def self.===(other); other.is_a?(Seconds) end
+
+    def ==(other)
+      if Seconds === other
+        other.value == value
+      else
+        other == value
+      end
+    end
+
+    def eql?(other); other.is_a?(Seconds) && self == other end
+
+    def divmod(divisor)
+      value.divmod(divisor)
+    end
+
+    private
+
+    def method_missing(method, *args, &block)
+      value.send(method, *args, &block)
+    end
+
+  end
+
+  def test_timeout_interval_argument
+    assert_equal 42, Timeout::timeout(Seconds.new(2)) { 42 }
+    assert_raises(Timeout::Error) do
+      Timeout::timeout(Seconds.new(0.3)) { sleep(0.5) }
+    end
+  end
+
 end

@@ -29,7 +29,6 @@ package org.jruby;
 
 import org.jcodings.Encoding;
 import org.jruby.ir.interpreter.Interpreter;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.ivars.VariableAccessor;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -59,6 +58,7 @@ import org.jruby.runtime.Visibility;
 import static org.jruby.anno.FrameField.*;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.builtin.InternalVariables;
@@ -588,40 +588,43 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public final boolean respondsTo(String name) {
-        Ruby runtime = getRuntime();
+        final Ruby runtime = getRuntime();
 
-        DynamicMethod respondTo = getMetaClass().searchMethod("respond_to?");
-        DynamicMethod respondToMissing = getMetaClass().searchMethod("respond_to_missing?");
+        final DynamicMethod respondTo = getMetaClass().searchMethod("respond_to?");
+        final DynamicMethod respondToMissing = getMetaClass().searchMethod("respond_to_missing?");
 
-        if(respondTo.equals(runtime.getRespondToMethod()) && respondToMissing.equals(runtime.getRespondToMissingMethod())) {
+        if ( respondTo.equals(runtime.getRespondToMethod()) &&
+             respondToMissing.equals(runtime.getRespondToMissingMethod()) ) {
             // fastest path; builtin respond_to? which just does isMethodBound
             return getMetaClass().isMethodBound(name, false);
-        } else if (!(respondTo.isUndefined() && respondToMissing.isUndefined())) {
-            // medium path, invoke user's respond_to?/respond_to_missing? if defined
-            DynamicMethod method;
-            String methodName;
-            if (respondTo.isUndefined()) {
-                method = respondToMissing;
-                methodName = "respond_to_missing?";
-            } else {
-                method = respondTo;
-                methodName = "respond_to?";
-            }
-
-            // We have to check and enforce arity
-            Arity arity = method.getArity();
-            ThreadContext context = runtime.getCurrentContext();
-            if (arity.isFixed() && arity.required() == 1) {
-                return method.call(context, this, metaClass, methodName, runtime.newSymbol(name)).isTrue();
-            } else if (arity.isFixed() && arity.required() != 2) {
-                throw runtime.newArgumentError(methodName + " must accept 1 or 2 arguments (requires " + arity.getValue() + ")");
-            }
-
-            return method.call(context, this, metaClass, methodName, runtime.newSymbol(name), runtime.newBoolean(true)).isTrue();
-        } else {
-            // slowest path, full callMethod to hit method_missing if present, or produce error
-            return callMethod(runtime.getCurrentContext(), "respond_to?", runtime.newSymbol(name)).isTrue();
         }
+
+        final ThreadContext context = runtime.getCurrentContext();
+        final RubySymbol mname = runtime.newSymbol(name);
+        final boolean respondToUndefined = respondTo.isUndefined();
+        if ( ! ( respondToUndefined && respondToMissing.isUndefined() ) ) {
+            // medium path, invoke user's respond_to?/respond_to_missing? if defined
+            final DynamicMethod method; final String respondName;
+            if ( respondToUndefined ) {
+                method = respondToMissing; respondName = "respond_to_missing?";
+            } else {
+                method = respondTo; respondName = "respond_to?";
+            }
+            // We have to check and enforce arity
+            final Arity arity = method.getArity();
+            if ( arity.isFixed() ) {
+                if ( arity.required() == 1 ) {
+                    return method.call(context, this, metaClass, respondName, mname).isTrue();
+                }
+                if ( arity.required() != 2 ) {
+                    throw runtime.newArgumentError(respondName + " must accept 1 or 2 arguments (requires " + arity.getValue() + ")");
+                }
+            }
+            return method.call(context, this, metaClass, respondName, mname, runtime.getTrue()).isTrue();
+        }
+
+        // slowest path, full callMethod to hit method_missing if present, or produce error
+        return callMethod(context, "respond_to?", mname).isTrue();
     }
 
     /**
@@ -636,20 +639,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Does this object respond to the specified message via "method_missing?"
      */
     @Override
-    public final boolean respondsToMissing(String name, boolean priv) {
+    public final boolean respondsToMissing(String name, boolean incPrivate) {
         DynamicMethod method = getMetaClass().searchMethod("respond_to_missing?");
         // perhaps should try a smart version as for respondsTo above?
-        if(method.isUndefined()) {
-            return false;
-        } else {
-            return method.call(
-                    getRuntime().getCurrentContext(),
-                    this,
-                    metaClass,
-                    "respond_to_missing?",
-                    getRuntime().newSymbol(name),
-                    getRuntime().newBoolean(priv)).isTrue();
-        }
+        if ( method.isUndefined() ) return false;
+        final Ruby runtime = getRuntime();
+        return method.call(runtime.getCurrentContext(), this, getMetaClass(),
+            "respond_to_missing?", runtime.newSymbol(name), runtime.newBoolean(incPrivate)
+        ).isTrue();
     }
 
     /**
@@ -1553,7 +1550,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public final int getNativeTypeIndex() {
         return getNativeClassIndex().ordinal();
     }
-    
+
     @Override
     public ClassIndex getNativeClassIndex() {
         return ClassIndex.BASICOBJECT;
@@ -1877,10 +1874,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * operation.
      */
     public static class Finalizer implements Finalizable {
-        private RubyFixnum id;
+        private final RubyFixnum id;
+        private final AtomicBoolean finalized;
         private IRubyObject firstFinalizer;
         private List<IRubyObject> finalizers;
-        private AtomicBoolean finalized;
 
         public Finalizer(RubyFixnum id) {
             this.id = id;
@@ -1995,51 +1992,32 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * in both the compiler and the interpreter, the performance
      * benefit is important for this method.
      */
-    public RubyBoolean respond_to_p(IRubyObject mname) {
-        String name = mname.asJavaString();
+    public final RubyBoolean respond_to_p(IRubyObject mname) {
+        final String name = mname.asJavaString();
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, true));
     }
 
-    public IRubyObject respond_to_p19(IRubyObject mname) {
-        String name = mname.asJavaString();
-        IRubyObject respond = getRuntime().newBoolean(getMetaClass().isMethodBound(name, true, true));
-        if (!respond.isTrue()) {
-            respond = Helpers.invoke(getRuntime().getCurrentContext(), this, "respond_to_missing?", mname, getRuntime().getFalse());
-            respond = getRuntime().newBoolean(respond.isTrue());
-        }
-        return respond;
+    public final RubyBoolean respond_to_p19(IRubyObject mname) {
+        return respond_to_p19(mname, false);
     }
 
-    /** obj_respond_to
-     *
-     * respond_to?( aSymbol, includePriv=false ) -> true or false
-     *
-     * Returns true if this object responds to the given method. Private
-     * methods are included in the search only if the optional second
-     * parameter evaluates to true.
-     *
-     * @return true if this responds to the given method
-     *
-     * !!! For some reason MRI shows the arity of respond_to? as -1, when it should be -2; that's why this is rest instead of required, optional = 1
-     *
-     * Going back to splitting according to method arity. MRI is wrong
-     * about most of these anyway, and since we have arity splitting
-     * in both the compiler and the interpreter, the performance
-     * benefit is important for this method.
-     */
-    public RubyBoolean respond_to_p(IRubyObject mname, IRubyObject includePrivate) {
+    public final RubyBoolean respond_to_p(IRubyObject mname, IRubyObject includePrivate) {
         String name = mname.asJavaString();
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate.isTrue()));
     }
 
-    public IRubyObject respond_to_p19(IRubyObject mname, IRubyObject includePrivate) {
-        String name = mname.asJavaString();
-        IRubyObject respond = getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate.isTrue()));
-        if (!respond.isTrue()) {
-            respond = Helpers.invoke(getRuntime().getCurrentContext(), this, "respond_to_missing?", mname, includePrivate);
-            respond = getRuntime().newBoolean(respond.isTrue());
-        }
-        return respond;
+    public final RubyBoolean respond_to_p19(IRubyObject mname, IRubyObject includePrivate) {
+        return respond_to_p19(mname, includePrivate.isTrue());
+    }
+
+    private RubyBoolean respond_to_p19(IRubyObject mname, final boolean includePrivate) {
+        final Ruby runtime = getRuntime();
+        final String name = mname.asJavaString();
+        if ( getMetaClass().isMethodBound(name, !includePrivate, true) ) return runtime.getTrue();
+        // MRI (1.9) always passes down a symbol when calling respond_to_missing?
+        if ( ! (mname instanceof RubySymbol) ) mname = runtime.newSymbol(name);
+        IRubyObject respond = Helpers.invoke(runtime.getCurrentContext(), this, "respond_to_missing?", mname, runtime.newBoolean(includePrivate));
+        return runtime.newBoolean( respond.isTrue() );
     }
 
     /** rb_obj_id

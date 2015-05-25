@@ -151,31 +151,30 @@ public class RubyDir extends RubyObject {
 
 // ----- Ruby Class Methods ----------------------------------------------------
 
-    private static List<ByteList> dirGlobs(ThreadContext context, String cwd, IRubyObject[] args, int flags) {
-        List<ByteList> dirs = new ArrayList<ByteList>();
+    private static ArrayList<ByteList> dirGlobs(ThreadContext context, String cwd, IRubyObject[] args, int flags) {
+        ArrayList<ByteList> dirs = new ArrayList<ByteList>();
 
-        for (int i = 0; i < args.length; i++) {
+        for ( int i = 0; i < args.length; i++ ) {
             dirs.addAll(Dir.push_glob(context.runtime, cwd, globArgumentAsByteList(context, args[i]), flags));
         }
 
         return dirs;
     }
 
-    private static IRubyObject asRubyStringList(Ruby runtime, List<ByteList> dirs) {
-        List<RubyString> allFiles = new ArrayList<RubyString>();
+    private static RubyArray asRubyStringList(Ruby runtime, List<ByteList> dirs) {
+        final int size = dirs.size();
+        if ( size == 0 ) return RubyArray.newEmptyArray(runtime);
+
         Encoding enc = runtime.getDefaultExternalEncoding();
         if (enc == null) {
             enc = UTF8;
         }
 
-        for (ByteList dir : dirs) {
-            allFiles.add(RubyString.newString(runtime, dir, enc));
+        IRubyObject[] dirStrings = new IRubyObject[ size ];
+        for ( int i = 0; i < size; i++ ) {
+            dirStrings[i] = RubyString.newString(runtime, dirs.get(i), enc);
         }
-
-        IRubyObject[] tempFileList = new IRubyObject[allFiles.size()];
-        allFiles.toArray(tempFileList);
-
-        return runtime.newArrayNoCopy(tempFileList);
+        return RubyArray.newArrayNoCopy(runtime, dirStrings);
     }
 
     private static String getCWD(Ruby runtime) {
@@ -459,12 +458,12 @@ public class RubyDir extends RubyObject {
 
     private static IRubyObject mkdirCommon(Ruby runtime, String path, IRubyObject[] args) {
         File newDir = getDir(runtime, path, false);
-        
-        
+
+
         String name = path.replace('\\', '/');
 
         boolean startsWithDriveLetterOnWindows = RubyFile.startsWithDriveLetterOnWindows(name);
-        
+
         // don't attempt to create a dir for drive letters
         if (startsWithDriveLetterOnWindows) {
             // path is just drive letter plus :
@@ -507,7 +506,7 @@ public class RubyDir extends RubyObject {
             return block.yield(context, directory);
         } finally {
             directory.close();
-        }        
+        }
     }
 
 // ----- Ruby Instance Methods -------------------------------------------------
@@ -603,11 +602,11 @@ public class RubyDir extends RubyObject {
     public IRubyObject path(ThreadContext context) {
         return path == null ? context.runtime.getNil() : path.strDup(context.runtime);
     }
-    
+
     @JRubyMethod
     public IRubyObject to_path(ThreadContext context) {
         return path(context);
-    }    
+    }
 
     /** Returns the next entry from this directory. */
     @JRubyMethod(name = "read")
@@ -636,7 +635,7 @@ public class RubyDir extends RubyObject {
         // Capture previous exception if any.
         IRubyObject exception = runtime.getGlobalVariables().get("$!");
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
-        
+
         try {
             return runtime.newFileStat(path.asJavaString(), false).directory_p();
         } catch (Exception e) {

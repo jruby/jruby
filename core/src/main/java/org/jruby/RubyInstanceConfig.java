@@ -116,7 +116,7 @@ public class RubyInstanceConfig {
         try {
             environment = System.getenv();
         } catch (SecurityException se) {
-            environment = new HashMap();
+            environment = new HashMap<String,String>();
         }
     }
 
@@ -387,8 +387,8 @@ public class RubyInstanceConfig {
                 }
                 return getInput();
             } else {
-                String script = getScriptFileName();
-                InputStream stream = null;
+                final String script = getScriptFileName();
+                final InputStream stream;
                 if (script.startsWith("file:") && script.indexOf(".jar!/") != -1) {
                     stream = new URL("jar:" + script).openStream();
                 } else if (script.startsWith("classpath:")) {
@@ -424,7 +424,7 @@ public class RubyInstanceConfig {
     }
 
     private static InputStream findScript(File file) throws IOException {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         BufferedReader br = new BufferedReader(new FileReader(file));
         String currentLine = br.readLine();
         while (currentLine != null && !isRubyShebangLine(currentLine)) {
@@ -437,8 +437,8 @@ public class RubyInstanceConfig {
         do {
             currentLine = br.readLine();
             if (currentLine != null) {
-            buf.append(currentLine);
-            buf.append("\n");
+                buf.append(currentLine);
+                buf.append("\n");
             }
         } while (!(currentLine == null || currentLine.contains("__END__") || currentLine.contains("\026")));
         return new BufferedInputStream(new ByteArrayInputStream(buf.toString().getBytes()), 8192);
@@ -691,8 +691,10 @@ public class RubyInstanceConfig {
     }
 
     public void setEnvironment(Map newEnvironment) {
-        if (newEnvironment == null) newEnvironment = new HashMap();
-        environment = newEnvironment;
+        if (newEnvironment == null) {
+            newEnvironment = new HashMap<String, String>();
+        }
+        this.environment = newEnvironment;
     }
 
     public Map getEnvironment() {
@@ -1448,7 +1450,7 @@ public class RubyInstanceConfig {
     private String currentDirectory;
 
     /** Environment variables; defaults to System.getenv() in constructor */
-    private Map environment;
+    private Map<String, String> environment;
     private String[] argv = {};
 
     private final boolean jitLogging;

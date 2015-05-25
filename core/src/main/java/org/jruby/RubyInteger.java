@@ -19,7 +19,7 @@
  * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -62,7 +62,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
  * @author  jpetersen
  */
 @JRubyClass(name="Integer", parent="Numeric", include="Precision")
-public abstract class RubyInteger extends RubyNumeric { 
+public abstract class RubyInteger extends RubyNumeric {
 
     public static RubyClass createIntegerClass(Ruby runtime) {
         RubyClass integer = runtime.defineClass("Integer", runtime.getNumeric(),
@@ -71,13 +71,13 @@ public abstract class RubyInteger extends RubyNumeric {
 
         integer.setClassIndex(ClassIndex.INTEGER);
         integer.setReifiedClass(RubyInteger.class);
-        
+
         integer.kindOf = new RubyModule.JavaClassKindOf(RubyInteger.class);
 
         integer.getSingletonClass().undefineMethod("new");
 
         integer.defineAnnotatedMethods(RubyInteger.class);
-        
+
         return integer;
     }
 
@@ -88,15 +88,15 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyInteger(RubyClass rubyClass) {
         super(rubyClass);
     }
-    
+
     public RubyInteger(Ruby runtime, RubyClass rubyClass, boolean useObjectSpace) {
         super(runtime, rubyClass, useObjectSpace);
-    }     
+    }
 
     @Deprecated
     public RubyInteger(Ruby runtime, RubyClass rubyClass, boolean useObjectSpace, boolean canBeTainted) {
         super(runtime, rubyClass, useObjectSpace, canBeTainted);
-    }     
+    }
 
     @Override
     public RubyInteger convertToInteger() {
@@ -110,11 +110,11 @@ public abstract class RubyInteger extends RubyNumeric {
 
     /*  ================
      *  Instance Methods
-     *  ================ 
+     *  ================
      */
 
     /** int_int_p
-     * 
+     *
      */
     @Override
     @JRubyMethod(name = "integer?")
@@ -123,7 +123,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     /** int_upto
-     * 
+     *
      */
     @JRubyMethod
     public IRubyObject upto(ThreadContext context, IRubyObject to, Block block) {
@@ -185,7 +185,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     /** int_downto
-     * 
+     *
      */
     // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
     @JRubyMethod
@@ -283,7 +283,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     /** int_succ
-     * 
+     *
      */
     @JRubyMethod(name = {"succ", "next"})
     public IRubyObject succ(ThreadContext context) {
@@ -312,7 +312,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     /** int_chr
-     * 
+     *
      */
     public RubyString chr(ThreadContext context) {
         return chr19(context);
@@ -331,7 +331,7 @@ public abstract class RubyInteger extends RubyNumeric {
                 throw runtime.newRangeError(this.toString() + " out of char range");
             } else {
                 if (enc == null) enc = USASCIIEncoding.INSTANCE;
-                return RubyString.newStringNoCopy(runtime, fromEncodedBytes(runtime, enc, (int)value), enc, 0);
+                return RubyString.newStringNoCopy(runtime, fromEncodedBytes(runtime, enc, value), enc, 0);
             }
         }
     }
@@ -361,7 +361,7 @@ public abstract class RubyInteger extends RubyNumeric {
         }
 
         if (n <= 0) throw runtime.newRangeError(this.toString() + " out of char range");
-        
+
         ByteList bytes = new ByteList(n);
 
         boolean ok = false;
@@ -381,7 +381,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     /** int_ord
-     * 
+     *
      */
     @JRubyMethod(name = "ord")
     public IRubyObject ord(ThreadContext context) {
@@ -389,7 +389,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     /** int_to_i
-     * 
+     *
      */
     @JRubyMethod(name = {"to_i", "to_int", "floor", "ceil", "truncate"})
     public IRubyObject to_i() {
@@ -412,14 +412,14 @@ public abstract class RubyInteger extends RubyNumeric {
         if (ndigits > 0) return RubyKernel.new_float(this, this);
         if (ndigits == 0) return this;
         Ruby runtime = context.runtime;
-        
+
         long bytes = (this instanceof RubyFixnum) ? 8 : RubyFixnum.fix2long(callMethod("size"));
         /* If 10**N/2 > this, return 0 */
         /* We have log_256(10) > 0.415241 and log_256(1/2)=-0.125 */
         if (-0.415241 * ndigits - 0.125 > bytes) {
             return RubyFixnum.zero(runtime);
         }
-        
+
         IRubyObject f = Numeric.int_pow(context, 10, -ndigits);
 
         if (this instanceof RubyFixnum && f instanceof RubyFixnum) {
@@ -443,7 +443,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     /** integer_to_r
-     * 
+     *
      */
     @JRubyMethod(name = "to_r")
     public IRubyObject to_r(ThreadContext context) {
@@ -457,7 +457,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
         return to_r(context);
     }
-    
+
 
     @JRubyMethod(name = "odd?")
     public RubyBoolean odd_p(ThreadContext context) {
@@ -483,25 +483,25 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     /** rb_gcd
-     * 
+     *
      */
     @JRubyMethod(name = "gcd")
     public IRubyObject gcd(ThreadContext context, IRubyObject other) {
         checkInteger(context, other);
         return f_gcd(context, this, RubyRational.intValue(context, other));
-    }    
+    }
 
     /** rb_lcm
-     * 
+     *
      */
     @JRubyMethod(name = "lcm")
     public IRubyObject lcm(ThreadContext context, IRubyObject other) {
         checkInteger(context, other);
         return f_lcm(context, this, RubyRational.intValue(context, other));
-    }    
+    }
 
     /** rb_gcdlcm
-     * 
+     *
      */
     @JRubyMethod(name = "gcdlcm")
     public IRubyObject gcdlcm(ThreadContext context, IRubyObject other) {
@@ -524,11 +524,11 @@ public abstract class RubyInteger extends RubyNumeric {
 
     /*  ================
      *  Singleton Methods
-     *  ================ 
+     *  ================
      */
 
     /** rb_int_induced_from
-     * 
+     *
      */
     @Deprecated
     public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject other) {
