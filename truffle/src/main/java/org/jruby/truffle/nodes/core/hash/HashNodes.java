@@ -389,7 +389,7 @@ public abstract class HashNodes {
         @Specialization(guards = "isBucketsStorage(hash)")
         public Object setBuckets(VirtualFrame frame, RubyHash hash, RubyString key, Object value) {
             if (hash.isCompareByIdentity()) {
-                return setBuckets(frame, hash, key, value);
+                return setBuckets(frame, hash, (Object) key, value);
             } else {
                 return setBuckets(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value);
             }
@@ -1203,7 +1203,7 @@ public abstract class HashNodes {
                     PackedArrayStrategy.setHashed(store, n, hashNode.hash(frame, PackedArrayStrategy.getKey(store, n)));
                 }
             }
-            
+
             assert HashOperations.verifyStore(hash);
 
             return hash;
