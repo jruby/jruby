@@ -1,2 +1,0 @@
-fails:BigDecimal#<=> returns nil if NaN is involved
-fails:BigDecimal#<=> returns nil if the argument is nil
