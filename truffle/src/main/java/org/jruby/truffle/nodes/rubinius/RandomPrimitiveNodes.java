@@ -9,9 +9,10 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyNumeric;
@@ -20,7 +21,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
 
 import java.math.BigInteger;
 
@@ -66,13 +66,13 @@ public abstract class RandomPrimitiveNodes {
         }
 
         @Specialization
-        public long randomizerRandInt(RubyBasicObject random, Integer limit) {
-            return RandomPrimitiveHelper.randomInt(getContext().getRuntime().getCurrentContext().getRuntime(), limit);
+        public long randomizerRandInt(RubyBasicObject random, int limit) {
+            return randomizerRandLong(random, (long) limit);
         }
 
         @Specialization
-        public long randomizerRandInt(RubyBasicObject random, Long limit) {
-            return RandomPrimitiveHelper.randomInt(getContext().getRuntime().getCurrentContext().getRuntime(), limit);
+        public long randomizerRandLong(RubyBasicObject random, long limit) {
+            return RandomPrimitiveHelper.randomInt(getContext().getRuntime(), limit);
         }
     }
 
@@ -83,36 +83,29 @@ public abstract class RandomPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject randomizerGenSeed(RubyBasicObject random) {
-            BigInteger integer = RandomPrimitiveHelper.randomSeed(getContext().getRuntime().getCurrentContext().getRuntime());
+            BigInteger integer = RandomPrimitiveHelper.randomSeed(getContext().getRuntime());
             return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), integer);
         }
     }
 
     static class RandomPrimitiveHelper {
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         public static BigInteger randomSeed(Ruby context) {
             return RubyRandom.randomSeed(context).getBigIntegerValue();
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         public static long randomInt(Ruby context, long limit) {
             RubyFixnum fixnum = context.newFixnum(limit);
             return generateRandomInt(context, fixnum);
         }
 
-        @CompilerDirectives.TruffleBoundary
-        public static long randomInt(Ruby context, int limit) {
-            RubyFixnum fixnum = context.newFixnum(limit);
-            return generateRandomInt(context, fixnum);
-        }
-
         public static long generateRandomInt(Ruby context, RubyFixnum limit) {
-            IRubyObject params[] = new IRubyObject[1];
-            params[0] = limit;
+            IRubyObject params[] = new IRubyObject[] { limit };
             RubyNumeric num = (RubyNumeric) RubyRandom.randCommon19(context.getCurrentContext(), null, params);
             return num.getLongValue();
         }
