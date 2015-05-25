@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
@@ -46,7 +47,7 @@ public abstract class TimePrimitiveNodes {
             return new RubyTime(timeClass, now(readTimeZoneNode.executeRubyString(frame)), nil());
         }
         
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         private DateTime now(RubyString timeZone) {
             return DateTime.now(org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(), timeZone.toString()));
         }
@@ -68,7 +69,7 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_s_specific", needsSelf = false)
+    @RubiniusPrimitive(name = "time_s_specific", needsSelf = false, lowerFixnumParameters = { 0, 1 })
     public static abstract class TimeSSpecificPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child private ReadTimeZoneNode readTimeZoneNode;
@@ -78,48 +79,27 @@ public abstract class TimePrimitiveNodes {
             readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
-        @Specialization(guards = {"isTrue(isUTC)", "isNil(offset)"})
-        public RubyTime timeSSpecificUTC(long seconds, long nanoseconds, boolean isUTC, Object offset) {
-            return timeSSpecificUTC((int) seconds, (int) nanoseconds, isUTC, offset);
-        }
-
-        @Specialization(guards = {"isTrue(isUTC)", "isNil(offset)"})
-        public RubyTime timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, Object offset) {
-            return timeSSpecificUTC((int) seconds, nanoseconds, isUTC, offset);
-        }
-
-        @Specialization(guards = {"isTrue(isUTC)", "isNil(offset)"})
+        @Specialization(guards = { "isTrue(isUTC)", "isNil(offset)" })
         public RubyTime timeSSpecificUTC(int seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = seconds * 1_000L + (nanoseconds / 1_000_000);
             return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds), nil());
         }
 
-
-        @Specialization(guards = {"!isTrue(isUTC)", "isNil(offset)"})
-        public RubyTime timeSSpecific(VirtualFrame frame, long seconds, long nanoseconds, boolean isUTC, Object offset) {
-            return timeSSpecific(frame, (int) seconds, (int) nanoseconds, isUTC, offset);
-        }
-
-        @Specialization(guards = {"!isTrue(isUTC)", "isNil(offset)"})
-        public RubyTime timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, Object offset) {
-            return timeSSpecific(frame, (int) seconds, nanoseconds, isUTC, offset);
-        }
-
-        @Specialization(guards = {"!isTrue(isUTC)", "isNil(offset)"})
+        @Specialization(guards = { "!isTrue(isUTC)", "isNil(offset)" })
         public RubyTime timeSSpecific(VirtualFrame frame, int seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = (long) seconds * 1_000 + ((long) nanoseconds / 1_000_000);
-            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds, readTimeZoneNode.executeRubyString(frame)), offset);
+            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), localtime(milliseconds, readTimeZoneNode.executeRubyString(frame)), offset);
         }
 
-        @CompilerDirectives.TruffleBoundary
-        public DateTime time(long milliseconds) {
+        @TruffleBoundary
+        private DateTime time(long milliseconds) {
             return new DateTime(milliseconds, DateTimeZone.UTC);
         }
 
-        @CompilerDirectives.TruffleBoundary
-        private DateTime time(long milliseconds, RubyString timeZone) {
+        @TruffleBoundary
+        private DateTime localtime(long milliseconds, RubyString timeZone) {
             return new DateTime(milliseconds, org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(), timeZone.toString()));
         }
 
@@ -160,7 +140,7 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyArray timeDecompose(RubyTime time) {
             final DateTime dateTime = time.getDateTime();
@@ -203,7 +183,7 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString timeStrftime(RubyTime time, RubyString format) {
             final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
