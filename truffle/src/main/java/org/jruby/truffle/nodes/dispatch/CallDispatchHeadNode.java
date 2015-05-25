@@ -11,9 +11,9 @@ package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -22,7 +22,7 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
 
     @Child private BooleanCastNode booleanCastNode;
 
-    public CallDispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, LexicalScope lexicalScope) {
+    public CallDispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior) {
         super(context, ignoreVisibility, indirect, missingBehavior, DispatchAction.CALL_METHOD);
     }
 
