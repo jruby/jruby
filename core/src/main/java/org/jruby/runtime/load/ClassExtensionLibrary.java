@@ -28,9 +28,12 @@
 package org.jruby.runtime.load;
 
 import jnr.posix.JavaSecuredFile;
+
 import org.jruby.Ruby;
 
 import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The ClassExtensionLibrary wraps a class which implements BasicLibraryService,
@@ -43,6 +46,8 @@ import java.net.URL;
 public class ClassExtensionLibrary implements Library {
     private final Class theClass;
     private final String name;
+
+    private static Pattern URI_LIKE = Pattern.compile("(uri:classloader|file|jar|jar:file:uri):/?/?");
 
     /**
      * Try to locate an extension service in the current classloader resources. This happens
@@ -63,10 +68,18 @@ public class ClassExtensionLibrary implements Library {
      * @return a ClassExtensionLibrary that will boot the ext, or null if none was found
      */
     static ClassExtensionLibrary tryFind(Ruby runtime, String searchName) {
+        final boolean isAbsolute;
+        Matcher matcher = URI_LIKE.matcher(searchName);
+        if (matcher.matches()) {
+            searchName = matcher.replaceFirst("");
+            isAbsolute = true;
+        }
+        else {
+            isAbsolute = new JavaSecuredFile(searchName).isAbsolute();
+        }
+
         // Create package name, by splitting on / and successively accumulating elements to form a class name
         String[] elts = searchName.split("/");
-
-        boolean isAbsolute = new JavaSecuredFile(searchName).isAbsolute();
 
         String simpleName = buildSimpleName(elts[elts.length - 1]);
 
