@@ -47,4 +47,4 @@ kill -9 $!
 wait
 
 echo "Coverage..."
-jt run -Xtruffle.coverage=true test/truffle/coverage/test.rb
+bin/jruby -X+T -Xtruffle.coverage=true test/truffle/coverage/test.rb
