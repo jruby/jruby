@@ -162,10 +162,10 @@ public class ShellLauncher {
 
         public void start() throws IOException {
             config = new RubyInstanceConfig(parentRuntime.getInstanceConfig());
-            
+
             config.setEnvironment(environmentMap(env));
             config.setCurrentDirectory(pwd.toString());
-            
+
             if (pipedStreams) {
                 config.setInput(new PipedInputStream(processInput));
                 config.setOutput(new PrintStream(new PipedOutputStream(processOutput)));
@@ -294,7 +294,7 @@ public class ShellLauncher {
                     }
                 }
             }
-            
+
             ary = new String[i];
             System.arraycopy(ret, 0, ary, 0, i);
             return ary;
@@ -479,13 +479,13 @@ public class ShellLauncher {
         if (env.isNil() || !(env instanceof Map)) {
             env = null;
         }
-        
+
         IRubyObject[] rawArgs = args.convertToArray().toJavaArray();
-        
+
         OutputStream output = runtime.getOutputStream();
         OutputStream error = runtime.getErrorStream();
         InputStream input = runtime.getInputStream();
-        
+
         try {
             Process aProcess = null;
             File pwd = new File(runtime.getCurrentDirectory());
@@ -506,7 +506,7 @@ public class ShellLauncher {
             } catch (SecurityException se) {
                 throw runtime.newSecurityError(se.getLocalizedMessage());
             }
-            
+
             if (wait) {
                 handleStreams(runtime, aProcess, input, output, error);
                 try {
@@ -616,14 +616,14 @@ public class ShellLauncher {
             return reflectPidFromProcess(process);
         }
     }
-    
+
     private static final Class UNIXProcess;
     private static final Field UNIXProcess_pid;
     private static final Class ProcessImpl;
     private static final Field ProcessImpl_handle;
     private interface PidGetter { public long getPid(Process process); }
     private static final PidGetter PID_GETTER;
-    
+
     static {
         // default PidGetter
         PidGetter pg = new PidGetter() {
@@ -631,7 +631,7 @@ public class ShellLauncher {
                 return process.hashCode();
             }
         };
-        
+
         Class up = null;
         Field pid = null;
         try {
@@ -731,7 +731,11 @@ public class ShellLauncher {
     public static POpenProcess popen(Ruby runtime, IRubyObject[] strings, Map env, ModeFlags modes) throws IOException {
         return new POpenProcess(popenShared(runtime, strings, env), runtime, modes);
     }
-    
+
+    public static POpenProcess popen(Ruby runtime, IRubyObject string, Map env, ModeFlags modes) throws IOException {
+        return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, env, true), runtime, modes);
+    }
+
     @Deprecated
     public static POpenProcess popen(Ruby runtime, IRubyObject string, IOOptions modes) throws IOException {
         return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, null, true), runtime, modes);
@@ -757,7 +761,7 @@ public class ShellLauncher {
     }
 
     private static Process popenShared(Ruby runtime, IRubyObject[] strings, Map env) throws IOException {
-        return popenShared(runtime, strings, env, true);
+        return popenShared(runtime, strings, env, false);
     }
 
     private static Process popenShared(Ruby runtime, IRubyObject[] strings, Map env, boolean addShell) throws IOException {
@@ -840,7 +844,7 @@ public class ShellLauncher {
      */
     public static InputStream unwrapBufferedStream(InputStream filteredStream) {
         if (RubyInstanceConfig.NO_UNWRAP_PROCESS_STREAMS) return filteredStream;
-        
+
         // Java 7+ uses a stream that drains the child on exit, which when
         // unwrapped breaks because the channel gets drained prematurely.
 //        System.out.println("class is :" + filteredStream.getClass().getName());
@@ -927,7 +931,7 @@ public class ShellLauncher {
         public POpenProcess(Process child, Ruby runtime, IOOptions modes) {
             this(child, runtime, modes.getModeFlags());
         }
-        
+
         public POpenProcess(Process child, Ruby runtime, ModeFlags modes) {
             this.child = child;
 
@@ -948,7 +952,7 @@ public class ShellLauncher {
                 pumpInput(child, runtime);
             }
 
-            pumpInerr(child, runtime);            
+            pumpInerr(child, runtime);
         }
 
         public POpenProcess(Process child) {
@@ -1434,7 +1438,7 @@ public class ShellLauncher {
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());
         }
-        
+
         return aProcess;
     }
 
@@ -1682,7 +1686,7 @@ public class ShellLauncher {
         return RbConfigLibrary.jrubyShell();
     }
 
-    private static boolean shouldUseShell(String command) {
+    public static boolean shouldUseShell(String command) {
         boolean useShell = false;
         for (char c : command.toCharArray()) {
             if (c != ' ' && !Character.isLetter(c) && "*?{}[]<>()~&|\\$;'`\"\n".indexOf(c) != -1) {

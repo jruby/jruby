@@ -36,7 +36,6 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
-import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
@@ -163,7 +162,7 @@ public abstract class KernelNodes {
         private boolean areEqual(VirtualFrame frame, Object left, Object right) {
             if (equalNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                equalNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), false, false, null));
+                equalNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
             return equalNode.callBoolean(frame, left, "==", null, right);
@@ -192,7 +191,7 @@ public abstract class KernelNodes {
 
         public NotMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            matchNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            matchNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         @Specialization
@@ -365,7 +364,7 @@ public abstract class KernelNodes {
 
             final RubyBasicObject newObject = self.getLogicalClass().allocate(this);
 
-            newObject.getObjectType().setInstanceVariables(newObject, self.getObjectType().getInstanceVariables(self));
+            RubyBasicObject.setInstanceVariables(newObject, RubyBasicObject.getInstanceVariables(self));
 
             return newObject;
         }
@@ -387,7 +386,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
             copyNode = CopyNodeFactory.create(context, sourceSection, null);
             // Calls private initialize_clone on the new copy.
-            initializeCloneNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.CALL_METHOD_MISSING);
+            initializeCloneNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
             isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             freezeNode = FreezeNodeGen.create(context, sourceSection, null);
             singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
@@ -425,7 +424,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
             copyNode = CopyNodeFactory.create(context, sourceSection, null);
             // Calls private initialize_dup on the new copy.
-            initializeDupNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.CALL_METHOD_MISSING);
+            initializeDupNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
         @Specialization
@@ -708,7 +707,7 @@ public abstract class KernelNodes {
             final FrameSlot slot = caller.getFrameDescriptor().findFrameSlot("$_");
 
             if (slot != null) {
-                caller.setObject(slot, WrapInThreadLocalNode.wrap(getContext(), rubyLine));
+                caller.setObject(slot, ThreadLocalObject.wrap(getContext(), rubyLine));
             }
 
             return rubyLine;
@@ -879,14 +878,14 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public Object instanceVariableSet(RubyBasicObject object, RubyString name, Object value) {
-            object.getObjectType().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
+            RubyBasicObject.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
         @TruffleBoundary
         @Specialization
         public Object instanceVariableSet(RubyBasicObject object, RubySymbol name, Object value) {
-            object.getObjectType().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
+            RubyBasicObject.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
@@ -903,7 +902,7 @@ public abstract class KernelNodes {
         public RubyArray instanceVariables(RubyBasicObject self) {
             CompilerDirectives.transferToInterpreter();
 
-            final Object[] instanceVariableNames = self.getObjectType().getFieldNames(self);
+            final Object[] instanceVariableNames = RubyBasicObject.getFieldNames(self);
 
             Arrays.sort(instanceVariableNames);
 

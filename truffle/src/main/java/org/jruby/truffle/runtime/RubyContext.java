@@ -468,7 +468,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     public org.jruby.RubyString toJRuby(RubyString string) {
         final org.jruby.RubyString jrubyString = runtime.newString(string.getByteList().dup());
 
-        final Object tainted = string.getObjectType().getInstanceVariable(string, RubyBasicObject.TAINTED_IDENTIFIER);
+        final Object tainted = RubyBasicObject.getInstanceVariable(string, RubyBasicObject.TAINTED_IDENTIFIER);
 
         if (tainted instanceof Boolean && (boolean) tainted) {
             jrubyString.setTaint(true);
@@ -529,7 +529,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         final RubyString truffleString = new RubyString(getCoreLibrary().getStringClass(), jrubyString.getByteList().dup());
 
         if (jrubyString.isTaint()) {
-            truffleString.getObjectType().setInstanceVariable(truffleString, RubyBasicObject.TAINTED_IDENTIFIER, true);
+            RubyBasicObject.setInstanceVariable(truffleString, RubyBasicObject.TAINTED_IDENTIFIER, true);
         }
 
         return truffleString;
@@ -639,7 +639,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     @Override
     public Object execute(final org.jruby.ast.RootNode rootNode) {
-        coreLibrary.getGlobalVariablesObject().getObjectType().setInstanceVariable(
+        RubyBasicObject.setInstanceVariable(
                 coreLibrary.getGlobalVariablesObject(), "$0",
                 toTruffle(runtime.getGlobalVariables().get("$0")));
 

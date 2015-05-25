@@ -42,7 +42,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
     private void callInherited(VirtualFrame frame, RubyClass superClass, RubyClass subClass) {
         if (inheritedNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            inheritedNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
         }
         inheritedNode.call(frame, superClass, "inherited", null, subClass);
     }

@@ -1,2 +1,1 @@
 fails:Hash#[] finds a value via an identical key even when its #eql? isn't reflexive
-fails:Hash#[] does not compare keys with different #hash values via #eql?

@@ -1176,7 +1176,7 @@ public abstract class FixnumNodes {
         public Object leftShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
             return fallbackCallNode.call(frame, a, "left_shift_fallback", null, b);
@@ -1304,7 +1304,7 @@ public abstract class FixnumNodes {
         public Object rightShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
             return fallbackCallNode.call(frame, a, "right_shift_fallback", null, b);

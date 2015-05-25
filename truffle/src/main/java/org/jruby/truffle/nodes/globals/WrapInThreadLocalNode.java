@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.ThreadLocalObject;
 
 /**
  * Wrap a child value in a new {@link ThreadLocal} so that a value can be stored in a location such as a frame without
@@ -32,25 +33,8 @@ public abstract class WrapInThreadLocalNode extends RubyNode {
     }
 
     @Specialization
-    public ThreadLocal<?> wrap(Object value) {
-        return wrap(getContext(), value);
-    }
-
-    public static ThreadLocal<Object> wrap(RubyContext context, Object value) {
-        final RubyContext finalContext = context;
-
-        final ThreadLocal<Object> threadLocal = new ThreadLocal<Object>() {
-
-            @Override
-            protected Object initialValue() {
-                return finalContext.getCoreLibrary().getNilObject();
-            }
-
-        };
-
-        threadLocal.set(value);
-
-        return threadLocal;
+    public ThreadLocalObject wrap(Object value) {
+        return ThreadLocalObject.wrap(getContext(), value);
     }
 
 }

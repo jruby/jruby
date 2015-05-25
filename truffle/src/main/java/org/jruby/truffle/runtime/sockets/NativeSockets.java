@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.sockets;
 
 import jnr.ffi.Pointer;
+import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
 import jnr.ffi.byref.IntByReference;
 
@@ -73,7 +74,7 @@ public interface NativeSockets {
      *        socklen_t *restrict address_len);
      */
 
-    int accept(int socket, Pointer address, @Out IntByReference addressLength);
+    int accept(int socket, Pointer address, IntByReference addressLength);
 
     /*
      * int

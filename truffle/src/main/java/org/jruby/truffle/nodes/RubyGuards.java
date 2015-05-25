@@ -10,6 +10,8 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.interop.TruffleObject;
+import org.jruby.truffle.nodes.core.BigDecimalNodes;
+import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 
@@ -96,7 +98,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isThreadLocal(Object value) {
-        return value instanceof ThreadLocal;
+        return value instanceof ThreadLocalObject;
     }
 
     public static boolean isForeignObject(Object object) {
@@ -113,6 +115,10 @@ public abstract class RubyGuards {
 
     public static boolean isInfinity(double value) {
         return Double.isInfinite(value);
+    }
+
+    public static boolean isRubyBigDecimal(RubyBasicObject value) {
+        return value.getDynamicObject().getShape().getObjectType() == BigDecimalNodes.BIG_DECIMAL_TYPE;
     }
 
 }

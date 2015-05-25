@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2007, 2008 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -29,6 +29,7 @@ package org.jruby.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import jnr.posix.POSIX;
@@ -38,8 +39,8 @@ import org.jruby.RubyEncoding;
 import org.jruby.platform.Platform;
 
 /**
- * This class exists as a counterpart to the dir.c file in 
- * MRI source. It contains many methods useful for 
+ * This class exists as a counterpart to the dir.c file in
+ * MRI source. It contains many methods useful for
  * File matching and Globbing.
  *
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -87,7 +88,7 @@ public class Dir {
             byte c = bytes[pat++];
             switch(c) {
             case '?':
-                if(s >= send || (pathname && isdirsep(string[s])) || 
+                if(s >= send || (pathname && isdirsep(string[s])) ||
                    (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1]))))) {
                     return FNM_NOMATCH;
                 }
@@ -126,7 +127,7 @@ public class Dir {
                 }
                 return FNM_NOMATCH;
             case '[':
-                if(s >= send || (pathname && isdirsep(string[s]) || 
+                if(s >= send || (pathname && isdirsep(string[s]) ||
                                  (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1])))))) {
                     return FNM_NOMATCH;
                 }
@@ -154,13 +155,13 @@ public class Dir {
                         if(Character.toLowerCase((char)c) != Character.toLowerCase((char)string[s])) {
                             return FNM_NOMATCH;
                         }
-                        
+
                     } else {
                         if(c != (char)string[s]) {
                             return FNM_NOMATCH;
                         }
                     }
-                    
+
                 }
                 s++;
                 break;
@@ -172,7 +173,7 @@ public class Dir {
     public static int fnmatch(
             byte[] bytes, int pstart, int pend,
             byte[] string, int sstart, int send, int flags) {
-        
+
         // This method handles '**/' patterns and delegates to
         // fnmatch_helper for the main work.
 
@@ -296,122 +297,122 @@ public class Dir {
     }
 
     public static List<ByteList> push_glob(Ruby runtime, String cwd, ByteList globByteList, int flags) {
-        List<ByteList> result = new ArrayList<ByteList>();
         if (globByteList.length() > 0) {
+            final ArrayList<ByteList> result = new ArrayList<ByteList>();
             push_braces(runtime, cwd, result, new GlobPattern(globByteList, flags));
+            return result;
         }
 
-        return result;
+        return Collections.emptyList();
     }
-    
+
     private static class GlobPattern {
-        final byte[] bytes;        
+        final byte[] bytes;
         final int begin;
         final int end;
-        
-        int flags;
-        int index;
 
-        public GlobPattern(ByteList bytelist, int flags) {
-            this(bytelist.getUnsafeBytes(), bytelist.getBegin(),  bytelist.getBegin() + bytelist.getRealSize(), flags);
+        private int index;
+
+        private final int flags;
+
+        GlobPattern(ByteList bytes, int flags) {
+            this(bytes.getUnsafeBytes(), bytes.getBegin(),  bytes.getBegin() + bytes.getRealSize(), flags);
         }
-        
-        public GlobPattern(byte[] bytes, int index, int end, int flags) {
+
+        GlobPattern(byte[] bytes, int index, int end, int flags) {
             this.bytes = bytes;
             this.index = index;
             this.begin = index;
             this.end = end;
             this.flags = flags;
         }
-        
+
         public int findClosingIndexOf(int leftTokenIndex) {
             if (leftTokenIndex == -1 || leftTokenIndex > end) return -1;
-            
+
             byte leftToken = bytes[leftTokenIndex];
             byte rightToken;
-            
+
             switch (leftToken) {
             case '{': rightToken = '}'; break;
             case '[': rightToken = ']'; break;
             default: return -1;
             }
-            
+
             int nest = 1; // leftToken made us start as nest 1
             index = leftTokenIndex + 1;
             while (hasNext()) {
                 byte c = next();
-                
+
                 if (c == leftToken) {
                     nest++;
                 } else if (c == rightToken && --nest == 0) {
                     return index();
                 }
             }
-            
+
             return -1;
         }
-        
+
         public boolean hasNext() {
             return index < end;
         }
-        
+
         public void reset() {
             index = begin;
         }
-        
+
         public void setIndex(int value) {
             index = value;
         }
-        
+
         // Get index of last read byte
         public int index() {
             return index - 1;
         }
-        
+
         public int indexOf(byte c) {
             while (hasNext()) if (next() == c) return index();
-            
+
             return -1;
         }
-        
+
         public byte next() {
             return bytes[index++];
         }
 
     }
 
-    public static interface GlobFunc {
-        int call(byte[] ptr, int p, int len, Object ary);
+    public static interface GlobFunc<T> {
+        int call(byte[] ptr, int p, int len, T ary);
     }
 
     private static class GlobArgs {
-        GlobFunc func;
-        int c = -1;
-        List<ByteList> v;
-        
-        public GlobArgs(GlobFunc func, List<ByteList> arg) {
+        final GlobFunc<List<ByteList>> func;
+        final List<ByteList> arg;
+        private int c = -1;
+
+        GlobArgs(GlobFunc<List<ByteList>> func, List<ByteList> arg) {
             this.func = func;
-            this.v = arg;
+            this.arg = arg;
         }
     }
 
-    public final static GlobFunc push_pattern = new GlobFunc() {
-            @SuppressWarnings("unchecked")
-            public int call(byte[] ptr, int p, int len, Object ary) {
-                ((List) ary).add(new ByteList(ptr, p, len));
-                return 0;
-            }
-        };
-    public final static GlobFunc glob_caller = new GlobFunc() {
-        public int call(byte[] ptr, int p, int len, Object ary) {
-            GlobArgs args = (GlobArgs)ary;
+    final static GlobFunc<List<ByteList>> push_pattern = new GlobFunc<List<ByteList>>() {
+        public int call(byte[] ptr, int p, int len, List<ByteList> ary) {
+            ary.add(new ByteList(ptr, p, len));
+            return 0;
+        }
+    };
+    private final static GlobFunc<GlobArgs> glob_caller = new GlobFunc<GlobArgs>() {
+        public int call(byte[] ptr, int p, int len, GlobArgs args) {
             args.c = p;
-            return args.func.call(ptr, args.c, len, args.v);
+            return args.func.call(ptr, args.c, len, args.arg);
         }
     };
 
     /*
-     * Process {}'s (example: Dir.glob("{jruby,jython}/README*") 
+     * Process {}'s (example: Dir.glob("{jruby,jython}/README*")
      */
     private static int push_braces(Ruby runtime, String cwd, List<ByteList> result, GlobPattern pattern) {
         pattern.reset();
@@ -419,10 +420,10 @@ public class Dir {
         int rbrace = pattern.findClosingIndexOf(lbrace);// index of right-most brace
 
         // No, mismatched or escaped braces..Move along..nothing to see here
-        if (lbrace == -1 || rbrace == -1 || 
-                lbrace > 0 && pattern.bytes[lbrace-1] == '\\' || 
+        if (lbrace == -1 || rbrace == -1 ||
+                lbrace > 0 && pattern.bytes[lbrace-1] == '\\' ||
                 rbrace > 0 && pattern.bytes[rbrace-1] == '\\') {
-            ByteList unescaped = new ByteList(pattern.bytes.length-1);
+            ByteList unescaped = new ByteList(pattern.bytes.length - 1);
             for (int i = pattern.begin; i < pattern.end; i++) {
                 byte b = pattern.bytes[i];
                 if (b == '\\' && i < pattern.bytes.length - 1) {
@@ -434,12 +435,12 @@ public class Dir {
                     unescaped.append(b);
                 }
             }
-            return push_globs(runtime, cwd, result, unescaped.getUnsafeBytes(), unescaped.begin(), unescaped.length(), pattern.flags);
+            return push_globs(runtime, cwd, result, unescaped, pattern.flags);
         }
 
-        // Peel onion...make subpatterns out of outer layer of glob and recall with each subpattern 
+        // Peel onion...make subpatterns out of outer layer of glob and recall with each subpattern
         // Example: foo{a{c},b}bar -> fooa{c}bar, foobbar
-        ByteList buf = new ByteList(20);
+        final ByteList bytes = new ByteList(20);
         int middleRegionIndex;
         int i = lbrace;
         while (pattern.bytes[i] != '}') {
@@ -448,20 +449,20 @@ public class Dir {
                 if (pattern.bytes[i] == '{') i = pattern.findClosingIndexOf(i); // skip inner braces
             }
 
-            buf.length(0);
-            buf.append(pattern.bytes, pattern.begin, lbrace - pattern.begin);
-            buf.append(pattern.bytes, middleRegionIndex, i - middleRegionIndex);
-            buf.append(pattern.bytes, rbrace + 1, pattern.end - (rbrace + 1));
-            int status = push_braces(runtime, cwd, result, new GlobPattern(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(),pattern.flags));
-            if(status != 0) return status;
+            bytes.length(0);
+            bytes.append(pattern.bytes, pattern.begin, lbrace - pattern.begin);
+            bytes.append(pattern.bytes, middleRegionIndex, i - middleRegionIndex);
+            bytes.append(pattern.bytes, rbrace + 1, pattern.end - (rbrace + 1));
+            int status = push_braces(runtime, cwd, result, new GlobPattern(bytes, pattern.flags));
+            if (status != 0) return status;
         }
-        
+
         return 0; // All braces pushed..
     }
 
-    private static int push_globs(Ruby runtime, String cwd, List<ByteList> ary, byte[] pattern, int pbegin, int pend, int pflags) {
-        pflags |= FNM_SYSCASE;
-        return glob_helper(runtime, cwd, pattern, pbegin, pend, -1, pflags, glob_caller, new GlobArgs(push_pattern, ary));
+    private static int push_globs(Ruby runtime, String cwd, List<ByteList> ary, ByteList pattern, int flags) {
+        flags |= FNM_SYSCASE;
+        return glob_helper(runtime, cwd, pattern, -1, flags, glob_caller, new GlobArgs(push_pattern, ary));
     }
 
     public static ArrayList<String> braces(String pattern, int flags, ArrayList<String> patterns) {
@@ -548,7 +549,7 @@ public class Dir {
         int open = 0;
 
         for (int i = begin; i < end; i++) {
-            switch(bytes[i]) {
+            switch (bytes[i]) {
             case '?':
             case '*':
                 return true;
@@ -564,36 +565,34 @@ public class Dir {
 
                 break;
             default:
-                if (FNM_SYSCASE == 0 && nocase && Character.isLetter((char)(bytes[i]&0xFF))) return true;
+                if (FNM_SYSCASE == 0 && nocase && Character.isLetter((char)(bytes[i] & 0xFF))) return true;
             }
         }
 
         return false;
     }
 
-    private static int remove_backslashes(byte[] bytes, int index, int len) {
-        int t = index;
-        
-        for (; index < len; index++, t++) {
-            if (bytes[index] == '\\' && ++index == len) break;
-            
-            bytes[t] = bytes[index];
+    private static int remove_backslashes(byte[] bytes, int index, int end) {
+        int i = index;
+        for ( ; index < end; index++, i++ ) {
+            if (bytes[index] == '\\' && ++index == end) break;
+
+            bytes[i] = bytes[index];
         }
-        
-        return t;
+        return i;
     }
 
-    private static int strchr(byte[] bytes, int begin, int end, byte ch) {
-        for (int i = begin; i < end; i++) {
-            if (bytes[i] == ch) return i;
+    private static int indexOf(byte[] bytes, int begin, int end, final byte ch) {
+        for ( int i = begin; i < end; i++ ) {
+            if ( bytes[i] == ch ) return i;
         }
-        
+
         return -1;
     }
 
     private static byte[] extract_path(byte[] bytes, int begin, int end) {
         int len = end - begin;
-        
+
         if (len > 1 && bytes[end-1] == '/' && (!DOSISH || (len < 2 || bytes[end-2] != ':'))) len--;
 
         byte[] alloc = new byte[len];
@@ -602,51 +601,44 @@ public class Dir {
     }
 
     private static byte[] extract_elem(byte[] bytes, int begin, int end) {
-        int elementEnd = strchr(bytes, begin, end, (byte)'/');
+        int elementEnd = indexOf(bytes, begin, end, (byte)'/');
         if (elementEnd == -1) elementEnd = end;
-        
+
         return extract_path(bytes, begin, elementEnd);
     }
-    
+
     // Win drive letter X:/
     private static boolean beginsWithDriveLetter(byte[] path, int begin, int end) {
-        return DOSISH && begin + 2 < end && path[begin + 1] == ':' && isdirsep(path[begin + 2]); 
+        return DOSISH && begin + 2 < end && path[begin + 1] == ':' && isdirsep(path[begin + 2]);
     }
 
     // Is this nothing or literally root directory for the OS.
     private static boolean isRoot(byte[] base) {
         int length = base.length;
-        
+
         return length == 0 ||  // empty
                length == 1 && isdirsep(base[0]) || // Just '/'
-               length == 3 && beginsWithDriveLetter(base, 0, length); // Just X:/ 
+               length == 3 && beginsWithDriveLetter(base, 0, length); // Just X:/
     }
-    
+
     private static boolean isAbsolutePath(byte[] path, int begin, int length) {
         return isdirsep(path[begin]) || beginsWithDriveLetter(path, begin, length);
     }
 
-    private static String[] files(FileResource directory) {
-        String[] files = directory.list();
-        
-        if (files != null) {
-            return files;
-        } else {
-            return new String[0];
-        }
+    private static String[] files(final FileResource directory) {
+        final String[] files = directory.list();
+        return files == null ? new String[0] : files;
     }
 
     private static final class DirGlobber {
         public final ByteList link;
 
-        public DirGlobber(ByteList link) {
-            this.link = link;
-        }
+        DirGlobber(ByteList link) { this.link = link; }
     }
 
     private static boolean isSpecialFile(String name) {
         int length = name.length();
-        
+
         if (length < 1 || length > 3 || name.charAt(0) != '.') return false;
         if (length == 1) return true;
         char c = name.charAt(1);
@@ -654,8 +646,8 @@ public class Dir {
         return c == '.' && name.charAt(2) == '/';
     }
 
-    private static int addToResultIfExists(Ruby runtime, String cwd, byte[] bytes, int begin, int end, int flags, GlobFunc func, GlobArgs arg) {
-        String fileName = newStringFromUTF8(bytes, begin, end - begin);
+    private static int addToResultIfExists(Ruby runtime, String cwd, byte[] bytes, int begin, int end, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
+        final String fileName = newStringFromUTF8(bytes, begin, end - begin);
 
         // FIXME: Ultimately JRubyFile.createResource should do this but all 1.7.x is only selectively honoring raw
         // paths and using system drive make it absolute.  MRI does this on many methods we don't.
@@ -673,7 +665,7 @@ public class Dir {
             // On case-insenstive file systems any case string will 'exists',
             // but what does it display as if you ls/dir it?
             /* No idea what this is doing =/
-             
+
               if ((flags & FNM_CASEFOLD) != 0 && !isSpecialFile(fileName)) {
                 try {
                     String realName = file.getCanonicalFile().getName();
@@ -694,155 +686,155 @@ public class Dir {
                     end = bytes.length;
                 } catch (Exception e) {} // Failure will just use what we pass in
             }*/
-            
+
             return func.call(bytes, begin, end - begin, arg);
         }
 
         return 0;
     }
 
-    private static int glob_helper(Ruby runtime, String cwd, byte[] bytes, int begin, int end, int sub, int flags, GlobFunc func, GlobArgs arg) {
-        int p,m;
-        int status = 0;
-        byte[] newpath = null;
-        FileResource st;
-        p = sub != -1 ? sub : begin;
+    private static int glob_helper(Ruby runtime, String cwd, ByteList path, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
+        final int begin = path.getBegin();
+        final int end = begin + path.getRealSize();
+        return glob_helper(runtime, cwd, path.getUnsafeBytes(), begin, end, sub, flags, func, arg);
+    }
 
-        if (!has_magic(bytes, p, end, flags)) {
-            if (DOSISH || (flags & FNM_NOESCAPE) == 0) {
-                newpath = new byte[end];
-                System.arraycopy(bytes,0,newpath,0,end);
-                if (sub != -1) {
-                    p = (sub - begin);
-                    end = remove_backslashes(newpath, p, end);
-                    sub = p;
-                } else {
-                    end = remove_backslashes(newpath, 0, end);
-                    bytes = newpath;
+    private static int glob_helper(Ruby runtime, String cwd,
+        byte[] path, int begin, int end, int sub,
+        final int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
+        int status = 0;
+
+        int p = sub != -1 ? sub : begin;
+
+        if ( ! has_magic(path, p, end, flags) ) {
+            if ( DOSISH || (flags & FNM_NOESCAPE) == 0 ) {
+                if ( sub != -1 ) { // can modify path (our internal buf[])
+                    end = remove_backslashes(path, sub, end);
+                }
+                else {
+                    final int len = end - begin;
+                    final byte[] newPath = new byte[len];
+                    System.arraycopy(path, begin, newPath, 0, len);
+                    begin = 0; end = remove_backslashes(newPath, 0, len);
+                    path = newPath;
                 }
             }
 
-            if (isAbsolutePath(bytes, begin, end)) {
-                status = addToResultIfExists(runtime, null, bytes, begin, end, flags, func, arg);
-            } else if ((end - begin) > 0) { // Length check is a hack.  We should not be reeiving "" as a filename ever.
-                status = addToResultIfExists(runtime, cwd, bytes, begin, end, flags, func, arg);
+            if ( (end - begin) > 0 ) {
+                if ( isAbsolutePath(path, begin, end) ) {
+                    status = addToResultIfExists(runtime, null, path, begin, end, flags, func, arg);
+                } else {
+                    status = addToResultIfExists(runtime, cwd, path, begin, end, flags, func, arg);
+                }
             }
 
             return status;
         }
-        
-        ByteList buf = new ByteList(20);
-        List<DirGlobber> link = new ArrayList<DirGlobber>();
-        mainLoop: while(p != -1 && status == 0) {
-            if (bytes[p] == '/') p++;
 
-            m = strchr(bytes, p, end, (byte)'/');
-            if(has_magic(bytes, p, m == -1 ? end : m, flags)) {
+        final ArrayList<DirGlobber> links = new ArrayList<DirGlobber>();
+
+        ByteList buf = new ByteList(20); FileResource resource;
+        mainLoop: while(p != -1 && status == 0) {
+            if ( path[p] == '/' ) p++;
+
+            final int s = indexOf(path, p, end, (byte) '/');
+            if ( has_magic(path, p, s == -1 ? end : s, flags) ) {
                 finalize: do {
-                    byte[] base = extract_path(bytes, begin, p);
-                    byte[] dir = begin == p ? new byte[]{'.'} : base; 
-                    byte[] magic = extract_elem(bytes,p,end);
+                    byte[] base = extract_path(path, begin, p);
+                    byte[] dir = begin == p ? new byte[] { '.' } : base;
+                    byte[] magic = extract_elem(path, p, end);
                     boolean recursive = false;
 
-                    st = JRubyFile.createResource(runtime, cwd, newStringFromUTF8(dir));
+                    resource = JRubyFile.createResource(runtime, cwd, newStringFromUTF8(dir, 0, dir.length));
 
-                    if (st.isDirectory()) {
-                        if(m != -1 && Arrays.equals(magic, DOUBLE_STAR)) {
-                            int n = base.length;
+                    if ( resource.isDirectory() ) {
+                        if ( s != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
+                            final int n = base.length;
                             recursive = true;
                             buf.length(0);
                             buf.append(base);
-                            buf.append(bytes, (base.length > 0 ? m : m + 1), end - (base.length > 0 ? m : m + 1));
-                            status = glob_helper(runtime, cwd, buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), n, flags, func, arg);
-                            if(status != 0) {
-                                break finalize;
-                            }
+                            buf.append(path, (n > 0 ? s : s + 1), end - (n > 0 ? s : s + 1));
+                            status = glob_helper(runtime, cwd, buf, n, flags, func, arg);
+                            if ( status != 0 ) break finalize;
                         }
                     } else {
                         break mainLoop;
                     }
 
-                    String[] dirp = files(st);
+                    final String[] files = files(resource);
 
-                    for(int i=0;i<dirp.length;i++) {
-                        if(recursive) {
-                            byte[] bs = getBytesInUTF8(dirp[i]);
-                            if (fnmatch(STAR,0,1,bs,0,bs.length,flags) != 0) {
+                    for ( int i = 0; i < files.length; i++ ) {
+                        final String file = files[i];
+                        final byte[] fileBytes = getBytesInUTF8(file);
+                        if (recursive) {
+                            if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) {
                                 continue;
                             }
                             buf.length(0);
                             buf.append(base);
-                            buf.append(isRoot(base) ? EMPTY : SLASH );
-                            buf.append(getBytesInUTF8(dirp[i]));
-                            st = JRubyFile.createResource(runtime, cwd, newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
-                            if(!st.isSymLink() && st.isDirectory() && !".".equals(dirp[i]) && !"..".equals(dirp[i])) {
-                                int t = buf.getRealSize();
+                            buf.append( isRoot(base) ? EMPTY : SLASH );
+                            buf.append( getBytesInUTF8(file) );
+                            resource = JRubyFile.createResource(runtime, cwd, newStringFromUTF8(buf));
+                            if ( !resource.isSymLink() && resource.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
+                                final int len = buf.getRealSize();
                                 buf.append(SLASH);
                                 buf.append(DOUBLE_STAR);
-                                buf.append(bytes, m, end - m);
-                                status = glob_helper(runtime, cwd, buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), t, flags, func, arg);
-                                if(status != 0) {
-                                    break;
-                                }
+                                buf.append(path, s, end - s);
+                                status = glob_helper(runtime, cwd, buf, buf.getBegin() + len, flags, func, arg);
+                                if ( status != 0 ) break;
                             }
                             continue;
                         }
-                        byte[] bs = getBytesInUTF8(dirp[i]);
-                        if(fnmatch(magic,0,magic.length,bs,0, bs.length,flags) == 0) {
+                        if ( fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0 ) {
                             buf.length(0);
                             buf.append(base);
-                            buf.append(isRoot(base) ? EMPTY : SLASH );
-                            buf.append(getBytesInUTF8(dirp[i]));
-                            if(m == -1) {
-                                status = func.call(buf.getUnsafeBytes(),0, buf.getRealSize(),arg);
-                                if(status != 0) {
-                                    break;
-                                }
+                            buf.append( isRoot(base) ? EMPTY : SLASH );
+                            buf.append( getBytesInUTF8(file) );
+                            if ( s == -1 ) {
+                                status = func.call(buf.getUnsafeBytes(), 0, buf.getRealSize(), arg);
+                                if ( status != 0 ) break;
                                 continue;
                             }
-                            link.add(new DirGlobber(buf));
+                            links.add(new DirGlobber(buf));
                             buf = new ByteList(20);
                         }
                     }
                 } while(false);
 
-                if (link.size() > 0) {
-                    for (DirGlobber globber : link) {
-                        ByteList b = globber.link;
-                        if (status == 0) {
-                            st = JRubyFile.createResource(runtime, cwd, newStringFromUTF8(b.getUnsafeBytes(), 0, b.getRealSize()));
-                            if(st.isDirectory()) {
-                                int len = b.getRealSize();
+                if ( links.size() > 0 ) {
+                    for ( DirGlobber globber : links ) {
+                        final ByteList link = globber.link;
+                        if ( status == 0 ) {
+                            resource = JRubyFile.createResource(runtime, cwd, newStringFromUTF8(link));
+                            if ( resource.isDirectory() ) {
+                                final int len = link.getRealSize();
                                 buf.length(0);
-                                buf.append(b);
-                                buf.append(bytes, m, end - m);
-                                status = glob_helper(runtime, cwd, buf.getUnsafeBytes(),0, buf.getRealSize(),len,flags,func,arg);
+                                buf.append(link);
+                                buf.append(path, s, end - s);
+                                status = glob_helper(runtime, cwd, buf, buf.getBegin() + len, flags, func, arg);
                             }
                         }
                     }
                     break mainLoop;
                 }
             }
-            p = m;
+            p = s;
         }
         return status;
     }
 
-    private static ByteList fixBytesForJarInUTF8(byte[] buf, int offset, int len) {
-        String path = newStringFromUTF8(buf, offset, len);
-        path = path.replace(".jar/", ".jar!");
-        return new ByteList(path.getBytes());
+    private static byte[] getBytesInUTF8(final String str) {
+        return RubyEncoding.encodeUTF8(str);
     }
 
-    private static byte[] getBytesInUTF8(String s) {
-        return RubyEncoding.encodeUTF8(s);
+    private static String newStringFromUTF8(final ByteList bytes) {
+        final int offset = bytes.getBegin();
+        final int length = bytes.getRealSize();
+        return RubyEncoding.decodeUTF8(bytes.getUnsafeBytes(), offset, length);
     }
 
-    private static String newStringFromUTF8(byte[] buf, int offset, int len) {
-        return RubyEncoding.decodeUTF8(buf, offset, len);
+    private static String newStringFromUTF8(final byte[] bytes, int offset, int len) {
+        return RubyEncoding.decodeUTF8(bytes, offset, len);
     }
 
-    private static String newStringFromUTF8(byte[] buf) {
-        return RubyEncoding.decodeUTF8(buf);
-    }
 }

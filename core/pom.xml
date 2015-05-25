@@ -91,6 +91,7 @@
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
       <version>0.9</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -101,6 +102,7 @@
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
       <version>0.8</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -116,6 +118,7 @@
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
       <version>2.0.3</version>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>

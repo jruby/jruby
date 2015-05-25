@@ -18,8 +18,11 @@ public class DispatchHeadNodeFactory {
                 context,
                 false,
                 false,
-                MissingBehavior.CALL_METHOD_MISSING,
-                null);
+                MissingBehavior.CALL_METHOD_MISSING);
+    }
+
+    public static CallDispatchHeadNode createMethodCallOnSelf(RubyContext context) {
+        return createMethodCall(context, true);
     }
 
     public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility) {
@@ -27,8 +30,7 @@ public class DispatchHeadNodeFactory {
                 context,
                 ignoreVisibility,
                 false,
-                MissingBehavior.CALL_METHOD_MISSING,
-                null);
+                MissingBehavior.CALL_METHOD_MISSING);
     }
 
     public static CallDispatchHeadNode createMethodCall(RubyContext context, MissingBehavior missingBehavior) {
@@ -36,8 +38,7 @@ public class DispatchHeadNodeFactory {
                 context,
                 false,
                 false,
-                missingBehavior,
-                null);
+                missingBehavior);
     }
 
     public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
@@ -45,21 +46,7 @@ public class DispatchHeadNodeFactory {
                 context,
                 ignoreVisibility,
                 false,
-                missingBehavior,
-                null);
-    }
-
-    public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior) {
-        return new CallDispatchHeadNode(
-                context,
-                ignoreVisibility,
-                indirect,
-                missingBehavior,
-                null);
-    }
-
-    public static CallDispatchHeadNode createMethodCallOnSelf(RubyContext context) {
-        return createMethodCall(context, true);
+                missingBehavior);
     }
 
 }

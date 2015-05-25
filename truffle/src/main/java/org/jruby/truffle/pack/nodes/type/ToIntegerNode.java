@@ -9,10 +9,13 @@
  */
 package org.jruby.truffle.pack.nodes.type;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -23,6 +26,8 @@ import java.math.BigInteger;
         @NodeChild(value = "value", type = PackNode.class),
 })
 public abstract class ToIntegerNode extends PackNode {
+
+    @Child private CallDispatchHeadNode integerNode;
 
     public ToIntegerNode(RubyContext context) {
         super(context);
@@ -48,6 +53,16 @@ public abstract class ToIntegerNode extends PackNode {
     @Specialization
     public long toInteger(VirtualFrame frame, double value) {
         return (long) value;
+    }
+
+    @Specialization(guards = {"!isInteger(value)", "!isLong(value)", "!isRubyBignum(value)"})
+    public Object toInteger(VirtualFrame frame, Object value) {
+        if (integerNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            integerNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+        }
+
+        return integerNode.call(frame, getContext().getCoreLibrary().getKernelModule(), "Integer", null, value);
     }
 
 }

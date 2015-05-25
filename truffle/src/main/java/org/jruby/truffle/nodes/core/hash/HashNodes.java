@@ -137,7 +137,7 @@ public abstract class HashNodes {
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
-            eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
             equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
             callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupEntryNode = new LookupEntryNode(context, sourceSection);
@@ -252,7 +252,7 @@ public abstract class HashNodes {
         public SetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
-            eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
             equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
         }
 
@@ -389,7 +389,7 @@ public abstract class HashNodes {
         @Specialization(guards = "isBucketsStorage(hash)")
         public Object setBuckets(VirtualFrame frame, RubyHash hash, RubyString key, Object value) {
             if (hash.isCompareByIdentity()) {
-                return setBuckets(frame, hash, key, value);
+                return setBuckets(frame, hash, (Object) key, value);
             } else {
                 return setBuckets(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value);
             }
@@ -481,7 +481,7 @@ public abstract class HashNodes {
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
-            eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupEntryNode = new LookupEntryNode(context, sourceSection);
             yieldNode = new YieldDispatchHeadNode(context);
         }
@@ -642,7 +642,7 @@ public abstract class HashNodes {
         public Object each(VirtualFrame frame, RubyHash hash, UndefinedPlaceholder block) {
             if (toEnumNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
             InternalMethod method = RubyArguments.getMethod(frame.getArguments());
@@ -856,7 +856,7 @@ public abstract class HashNodes {
 
         public MergeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         @Specialization(guards = {"isPackedArrayStorage(hash)", "isNullStorage(other)", "!isCompareByIdentity(hash)"})
@@ -1021,7 +1021,7 @@ public abstract class HashNodes {
         public Object merge(VirtualFrame frame, RubyHash hash, Object other, Object block) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
             
             final RubyProc blockProc;
@@ -1179,8 +1179,11 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class RehashNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private HashNode hashNode;
+
         public RehashNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            hashNode = new HashNode(context, sourceSection);
         }
 
         @Specialization(guards = "isNullStorage(hash)")
@@ -1189,8 +1192,20 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "isPackedArrayStorage(hash)")
-        public RubyHash rehashPackedArray(RubyHash hash) {
-            // Nothing to do as we weren't using the hash code anyway
+        public RubyHash rehashPackedArray(VirtualFrame frame, RubyHash hash) {
+            assert HashOperations.verifyStore(hash);
+
+            final Object[] store = (Object[]) hash.getStore();
+            final int size = hash.getSize();
+
+            for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
+                if (n < size) {
+                    PackedArrayStrategy.setHashed(store, n, hashNode.hash(frame, PackedArrayStrategy.getKey(store, n)));
+                }
+            }
+
+            assert HashOperations.verifyStore(hash);
+
             return hash;
         }
 

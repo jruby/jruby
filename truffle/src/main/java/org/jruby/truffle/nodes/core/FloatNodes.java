@@ -224,7 +224,7 @@ public abstract class FloatNodes {
         public Object div(VirtualFrame frame, double a, Object b) {
             if (redoCoercedNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                redoCoercedNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+                redoCoercedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
             return redoCoercedNode.call(frame, a, "redo_coerced", null, getContext().getSymbolTable().getSymbol("/"), b);
@@ -407,7 +407,7 @@ public abstract class FloatNodes {
         public Object equal(VirtualFrame frame, double a, RubyBasicObject b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
             return fallbackCallNode.call(frame, a, "equal_fallback", null, b);

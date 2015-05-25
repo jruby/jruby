@@ -71,7 +71,7 @@ public abstract class FormatFloatNode extends PackNode {
                     builder.append(".");
                     builder.append(zeroPadding);
                 }
-            } else if (zeroPadding != FormatDirective.DEFAULT) {
+            } else if (zeroPadding != FormatDirective.DEFAULT && zeroPadding != 0) {
                 builder.append("0");
                 builder.append(zeroPadding);
             }

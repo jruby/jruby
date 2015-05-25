@@ -254,11 +254,14 @@ public class RubyModule extends RubyObject {
         return autoloads == Collections.EMPTY_MAP ? autoloads = new ConcurrentHashMap<String, Autoload>(4, 0.9f, 1) : autoloads;
     }
 
+    @SuppressWarnings("unchecked")
     public void addIncludingHierarchy(IncludedModule hierarchy) {
         synchronized (getRuntime().getHierarchyLock()) {
-            Set<RubyClass> oldIncludingHierarchies = includingHierarchies;
-            if (oldIncludingHierarchies == Collections.EMPTY_SET) includingHierarchies = oldIncludingHierarchies = new WeakHashSet(4);
-            oldIncludingHierarchies.add(hierarchy);
+            Set<RubyClass> including = this.includingHierarchies;
+            if (including == Collections.EMPTY_SET) {
+                including = this.includingHierarchies = new WeakHashSet(4);
+            }
+            including.add(hierarchy);
         }
     }
 
@@ -500,6 +503,9 @@ public class RubyModule extends RubyObject {
         // First, we count the parents
         int parentCount = 0;
         for (RubyModule p = getParent() ; p != null && p != objectClass ; p = p.getParent()) {
+            // Break out of cyclic namespaces like C::A = C2; C2::A = C (jruby/jruby#2314)
+            if (p == this) break;
+
             parentCount++;
         }
 
@@ -508,6 +514,9 @@ public class RubyModule extends RubyObject {
         int i = parentCount - 1;
         int totalLength = name.length() + parentCount * 2; // name length + enough :: for all parents
         for (RubyModule p = getParent() ; p != null && p != objectClass ; p = p.getParent(), i--) {
+            // Break out of cyclic namespaces like C::A = C2; C2::A = C (jruby/jruby#2314)
+            if (p == this) break;
+
             String pName = p.getBaseName();
 
             // This is needed when the enclosing class or module is a singleton.
@@ -3736,9 +3745,8 @@ public class RubyModule extends RubyObject {
     protected Map<String, IRubyObject> getClassVariables() {
         if (CLASSVARS_UPDATER == null) {
             return getClassVariablesForWriteSynchronized();
-        } else {
-            return getClassVariablesForWriteAtomic();
         }
+        return getClassVariablesForWriteAtomic();
     }
 
     /**
@@ -3748,19 +3756,17 @@ public class RubyModule extends RubyObject {
      * @return the class vars map, ready for assignment
      */
     private Map<String,IRubyObject> getClassVariablesForWriteSynchronized() {
-        Map myClassVars = classVariables;
-        if (myClassVars == Collections.EMPTY_MAP) {
+        Map<String, IRubyObject> myClassVars = classVariables;
+        if ( myClassVars == Collections.EMPTY_MAP ) {
             synchronized (this) {
                 myClassVars = classVariables;
 
-                if (myClassVars == Collections.EMPTY_MAP) {
+                if ( myClassVars == Collections.EMPTY_MAP ) {
                     return classVariables = new ConcurrentHashMap<String, IRubyObject>(4, 0.75f, 2);
-                } else {
-                    return myClassVars;
                 }
+                return myClassVars;
             }
         }
-
         return myClassVars;
     }
 
@@ -3773,14 +3779,12 @@ public class RubyModule extends RubyObject {
      */
     private Map<String,IRubyObject> getClassVariablesForWriteAtomic() {
         while (true) {
-            Map myClassVars = classVariables;
-            Map newClassVars;
+            Map<String, IRubyObject> myClassVars = classVariables;
 
-            if (myClassVars == Collections.EMPTY_MAP) {
-                newClassVars = new ConcurrentHashMap<String, IRubyObject>(4, 0.75f, 2);
-            } else {
-                return myClassVars;
-            }
+            if ( myClassVars != Collections.EMPTY_MAP ) return myClassVars;
+
+            Map<String, IRubyObject> newClassVars;
+            newClassVars = new ConcurrentHashMap<String, IRubyObject>(4, 0.75f, 2);
 
             // proceed with atomic update of table, or retry
             if (CLASSVARS_UPDATER.compareAndSet(this, myClassVars, newClassVars)) {
@@ -4311,6 +4315,17 @@ public class RubyModule extends RubyObject {
         setFlag(USER0_F, cacheProxy);
     }
 
+    @Override
+    public Object toJava(Class target) {
+        if (target == Class.class) { // try java_class for proxy modules
+            if ( respondsTo("java_class") ) {
+                return callMethod("java_class").toJava(target);
+            }
+        }
+
+        return super.toJava(target);
+    }
+
     public Set<String> discoverInstanceVariables() {
         HashSet<String> set = new HashSet();
         RubyModule cls = this;
@@ -4409,17 +4424,19 @@ public class RubyModule extends RubyObject {
     /** The moduel where this refinement was defined */
     private volatile RubyModule definedAt = null;
 
-    private static final AtomicReferenceFieldUpdater CLASSVARS_UPDATER;
+    private static final AtomicReferenceFieldUpdater<RubyModule, Map> CLASSVARS_UPDATER;
 
     static {
-        AtomicReferenceFieldUpdater updater = null;
+        AtomicReferenceFieldUpdater<RubyModule, Map> updater = null;
         try {
             updater = AtomicReferenceFieldUpdater.newUpdater(RubyModule.class, Map.class, "classVariables");
-        } catch (RuntimeException re) {
-            if (re.getCause() instanceof AccessControlException) {
+        }
+        catch (final RuntimeException ex) {
+            if (ex.getCause() instanceof AccessControlException) {
                 // security prevented creation; fall back on synchronized assignment
-            } else {
-                throw re;
+            }
+            else {
+                throw ex;
             }
         }
         CLASSVARS_UPDATER = updater;

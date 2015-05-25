@@ -18,7 +18,7 @@ module RbConfig
   }
 
   def self.ruby
-    # TODO CS 19-May-15 should return argv[0]
-    nil
+    # TODO CS 19-May-15 should return the original command? Not sure that's possible
+    "ruby"
   end
 end

@@ -29,7 +29,7 @@ public class WhenSplatNode extends RubyNode {
         super(context, sourceSection);
         this.readCaseExpression = readCaseExpression;
         this.splat = splat;
-        dispatchCaseEqual = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+        dispatchCaseEqual = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
     @Override

@@ -44,10 +44,6 @@ class Hash
     nil
   end
 
-  def merge_fallback(other, &block)
-    merge(Rubinius::Type.coerce_to other, Hash, :to_hash, &block)
-  end
-
   def find_item(key)
     value = _get_or_undefined(key)
     if undefined.equal?(value)
@@ -56,6 +52,20 @@ class Hash
       # TODO CS 7-Mar-15 maybe we should return the stored key?
       KeyValue.new(key, value)
     end
+  end
+
+  def merge_fallback(other, &block)
+    merge(Rubinius::Type.coerce_to other, Hash, :to_hash, &block)
+  end
+
+  # Rubinius' Hash#reject taints but we don't want this
+
+  def reject(&block)
+    return to_enum(:reject) unless block_given?
+    copy = dup
+    copy.untaint
+    copy.delete_if(&block)
+    copy
   end
 
 end

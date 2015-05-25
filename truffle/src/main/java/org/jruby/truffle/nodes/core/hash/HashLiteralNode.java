@@ -105,7 +105,7 @@ public abstract class HashLiteralNode extends RubyNode {
         public SmallHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
             super(context, sourceSection, keyValues);
             hashNode = new HashNode(context, sourceSection);
-            equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            equalNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         @ExplodeLoop
