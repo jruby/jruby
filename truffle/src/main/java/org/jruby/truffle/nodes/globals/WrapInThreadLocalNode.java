@@ -27,6 +27,21 @@ import org.jruby.truffle.runtime.RubyContext;
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class WrapInThreadLocalNode extends RubyNode {
 
+    public static class ThreadLocalObject extends ThreadLocal<Object> {
+
+        private final RubyContext context;
+
+        public ThreadLocalObject(RubyContext context) {
+            this.context = context;
+        }
+
+        @Override
+        protected Object initialValue() {
+            return context.getCoreLibrary().getNilObject();
+        }
+
+    }
+
     public WrapInThreadLocalNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
@@ -37,19 +52,8 @@ public abstract class WrapInThreadLocalNode extends RubyNode {
     }
 
     public static ThreadLocal<Object> wrap(RubyContext context, Object value) {
-        final RubyContext finalContext = context;
-
-        final ThreadLocal<Object> threadLocal = new ThreadLocal<Object>() {
-
-            @Override
-            protected Object initialValue() {
-                return finalContext.getCoreLibrary().getNilObject();
-            }
-
-        };
-
+        final ThreadLocalObject threadLocal = new ThreadLocalObject(context);
         threadLocal.set(value);
-
         return threadLocal;
     }
 
