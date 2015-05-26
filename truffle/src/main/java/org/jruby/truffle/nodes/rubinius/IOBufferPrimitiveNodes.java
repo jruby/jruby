@@ -40,8 +40,11 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -51,10 +54,82 @@ import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
 
+import java.util.EnumSet;
+
 public abstract class IOBufferPrimitiveNodes {
 
     private static final int IOBUFFER_SIZE = 32768;
     private static final int STACK_BUF_SZ = 8192;
+
+    private static final String WRITE_SYNCHED_IDENTIFIER = "@write_synced";
+    private static final Property WRITE_SYNCHED_PROPERTY;
+
+    private static final String STORAGE_IDENTIFIER = "@storage";
+    private static final Property STORAGE_PROPERTY;
+
+    private static final String USED_IDENTIFIER = "@used";
+    private static final Property USED_PROPERTY;
+
+    private static final String START_IDENTIFIER = "@start";
+    private static final Property START_PROPERTY;
+
+    private static final String TOTAL_IDENTIFIER = "@total";
+    private static final Property TOTAL_PROPERTY;
+
+    private static final DynamicObjectFactory IO_BUFFER_FACTORY;
+
+    static {
+        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+
+        WRITE_SYNCHED_PROPERTY = Property.create(WRITE_SYNCHED_IDENTIFIER, allocator.locationForType(Boolean.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        STORAGE_PROPERTY = Property.create(STORAGE_IDENTIFIER, allocator.locationForType(RubiniusByteArray.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        USED_PROPERTY = Property.create(USED_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        START_PROPERTY = Property.create(START_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        TOTAL_PROPERTY = Property.create(TOTAL_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
+
+        IO_BUFFER_FACTORY = RubyBasicObject.EMPTY_SHAPE
+                .addProperty(WRITE_SYNCHED_PROPERTY)
+                .addProperty(STORAGE_PROPERTY)
+                .addProperty(USED_PROPERTY)
+                .addProperty(START_PROPERTY)
+                .addProperty(TOTAL_PROPERTY)
+                .createFactory();
+    }
+
+    public static void setWriteSynched(RubyBasicObject io, boolean writeSynched) {
+        assert io.getDynamicObject().getShape().hasProperty(WRITE_SYNCHED_IDENTIFIER);
+
+        try {
+            WRITE_SYNCHED_PROPERTY.set(io.getDynamicObject(), writeSynched, io.getDynamicObject().getShape());
+        } catch (IncompatibleLocationException | FinalLocationException e) {
+            throw new UnsupportedOperationException(e);
+        }
+    }
+
+    private static RubiniusByteArray getStorage(RubyBasicObject io) {
+        assert io.getDynamicObject().getShape().hasProperty(STORAGE_IDENTIFIER);
+        return (RubiniusByteArray) STORAGE_PROPERTY.get(io.getDynamicObject(), true);
+    }
+
+    private static int getUsed(RubyBasicObject io) {
+        assert io.getDynamicObject().getShape().hasProperty(USED_IDENTIFIER);
+        return (int) USED_PROPERTY.get(io.getDynamicObject(), true);
+    }
+
+    public static void setUsed(RubyBasicObject io, int used) {
+        assert io.getDynamicObject().getShape().hasProperty(USED_IDENTIFIER);
+
+        try {
+            USED_PROPERTY.set(io.getDynamicObject(), used, io.getDynamicObject().getShape());
+        } catch (IncompatibleLocationException | FinalLocationException e) {
+            throw new UnsupportedOperationException(e);
+        }
+    }
+
+    private static int getTotal(RubyBasicObject io) {
+        assert io.getDynamicObject().getShape().hasProperty(TOTAL_IDENTIFIER);
+        return (int) TOTAL_PROPERTY.get(io.getDynamicObject(), true);
+    }
 
     @RubiniusPrimitive(name = "iobuffer_allocate")
     public static abstract class IOBufferAllocatePrimitiveNode extends RubiniusPrimitiveNode {
@@ -65,14 +140,12 @@ public abstract class IOBufferPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject allocate(VirtualFrame frame, RubyClass classToAllocate) {
-            final RubyBasicObject ioBuffer = new RubyBasicObject(classToAllocate);
-            rubyWithSelf(frame, ioBuffer, "@write_synced = true");
-            rubyWithSelf(frame, ioBuffer, "@storage = storage", "storage",
-                    new RubiniusByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)));
-            rubyWithSelf(frame, ioBuffer, "@used = 0");
-            rubyWithSelf(frame, ioBuffer, "@start = 0");
-            rubyWithSelf(frame, ioBuffer, "@total = total", "total", IOBUFFER_SIZE);
-            return ioBuffer;
+            return new RubyBasicObject(classToAllocate, IO_BUFFER_FACTORY.newInstance(
+                    true,
+                    new RubiniusByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
+                    0,
+                    0,
+                    IOBUFFER_SIZE));
         }
 
     }
@@ -86,22 +159,22 @@ public abstract class IOBufferPrimitiveNodes {
 
         @Specialization
         public int unshift(VirtualFrame frame, RubyBasicObject ioBuffer, RubyString string, int startPosition) {
-            rubyWithSelf(frame, ioBuffer, "@write_synced = false");
+            setWriteSynched(ioBuffer, false);
 
             int stringSize = string.getByteList().realSize() - startPosition;
-            final int usedSpace = (int) rubyWithSelf(frame, ioBuffer, "@used");
+            final int usedSpace = getUsed(ioBuffer);
             final int availableSpace = IOBUFFER_SIZE - usedSpace;
 
             if (stringSize > availableSpace) {
                 stringSize = availableSpace;
             }
 
-            ByteList storage = ((RubiniusByteArray) rubyWithSelf(frame, ioBuffer, "@storage")).getBytes();
+            ByteList storage = getStorage(ioBuffer).getBytes();
 
             // Data is copied here - can we do something COW?
             System.arraycopy(string.getByteList().unsafeBytes(), startPosition, storage.getUnsafeBytes(), usedSpace, stringSize);
 
-            rubyWithSelf(frame, ioBuffer, "@used = used", "used", usedSpace + stringSize);
+            setUsed(ioBuffer, usedSpace + stringSize);
 
             return stringSize;
         }
@@ -117,7 +190,7 @@ public abstract class IOBufferPrimitiveNodes {
 
         @Specialization
         public int fill(VirtualFrame frame, RubyBasicObject ioBuffer, RubyBasicObject io) {
-            final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
+            final int fd = IOPrimitiveNodes.getDescriptor(io);
 
             // TODO CS 21-Apr-15 allocating this buffer for each read is crazy
             final byte[] readBuffer = new byte[STACK_BUF_SZ];
@@ -161,19 +234,19 @@ public abstract class IOBufferPrimitiveNodes {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().internalError("IO buffer overrun", this));
                 }
-                final int used = (int) rubyWithSelf(frame, ioBuffer, "@used");
-                final ByteList storage = ((RubiniusByteArray) rubyWithSelf(frame, ioBuffer, "@storage")).getBytes();
+                final int used = getUsed(ioBuffer);
+                final ByteList storage = getStorage(ioBuffer).getBytes();
                 System.arraycopy(readBuffer, 0, storage.getUnsafeBytes(), storage.getBegin() + used, bytesRead);
                 storage.setRealSize(used + bytesRead);
-                rubyWithSelf(frame, ioBuffer, "@used = used", "used", used + bytesRead);
+                setUsed(ioBuffer, used + bytesRead);
             }
 
             return bytesRead;
         }
 
         private int left(VirtualFrame frame, RubyBasicObject ioBuffer) {
-            final int total = (int) rubyWithSelf(frame, ioBuffer, "@total");
-            final int used = (int) rubyWithSelf(frame, ioBuffer, "@used");
+            final int total = getTotal(ioBuffer);
+            final int used = getUsed(ioBuffer);
             return total - used;
         }
 

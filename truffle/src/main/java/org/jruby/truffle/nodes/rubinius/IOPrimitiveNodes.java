@@ -112,7 +112,7 @@ public abstract class IOPrimitiveNodes {
         }
     }
 
-    private static int getDescriptor(RubyBasicObject io) {
+    public static int getDescriptor(RubyBasicObject io) {
         assert io.getDynamicObject().getShape().hasProperty(DESCRIPTOR_IDENTIFIER);
         return (int) DESCRIPTOR_PROPERTY.get(io.getDynamicObject(), true);
     }
