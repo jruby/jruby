@@ -334,8 +334,9 @@ public class RubySocket extends RubyBasicSocket {
     @JRubyMethod(name = {"socketpair", "pair"}, meta = true)
     public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
         ProtocolFamily pf = SocketUtils.protocolFamilyFromArg(protocol);
+        if (pf == null ) pf = ProtocolFamily.PF_UNIX;
 
-        if (pf != pf.PF_UNIX) {
+        if (pf != ProtocolFamily.PF_UNIX && pf.ordinal() != 0) {
             throw context.runtime.newErrnoEOPNOTSUPPError("Socket.socketpair only supports streaming UNIX sockets");
         }
 
@@ -345,7 +346,9 @@ public class RubySocket extends RubyBasicSocket {
     @JRubyMethod(name = {"socketpair", "pair"}, meta = true)
     public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject domain, IRubyObject type) {
         AddressFamily af = SocketUtils.addressFamilyFromArg(domain);
+        if (af == null) af = AddressFamily.AF_UNIX;
         Sock s = SocketUtils.sockFromArg(type);
+        if (s == null) s = Sock.SOCK_STREAM;
 
         if (af != AddressFamily.AF_UNIX || s != Sock.SOCK_STREAM) {
             throw context.runtime.newErrnoEOPNOTSUPPError("Socket.socketpair only supports streaming UNIX sockets");
