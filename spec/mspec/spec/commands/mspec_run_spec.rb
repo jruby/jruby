@@ -2,6 +2,9 @@ require 'spec_helper'
 require 'mspec/runner/mspec'
 require 'mspec/commands/mspec-run'
 
+one_spec = File.expand_path(File.dirname(__FILE__)) + '/fixtures/one_spec.rb'
+two_spec = File.expand_path(File.dirname(__FILE__)) + '/fixtures/two_spec.rb'
+
 describe MSpecRun, ".new" do
   before :each do
     @script = MSpecRun.new
@@ -16,7 +19,7 @@ describe MSpecRun, "#options" do
   before :each do
     @stdout, $stdout = $stdout, IOStub.new
 
-    @argv = ["a", "b"]
+    @argv = [one_spec, two_spec]
     @options, @config = new_option
     MSpecOptions.stub(:new).and_return(@options)
 
@@ -50,7 +53,7 @@ describe MSpecRun, "#options" do
 
   it "provides a custom action (block) to the config option" do
     @script.should_receive(:load).with("cfg.mspec")
-    @script.options ["-B", "cfg.mspec", "a"]
+    @script.options ["-B", "cfg.mspec", one_spec]
   end
 
   it "enables the name option" do
