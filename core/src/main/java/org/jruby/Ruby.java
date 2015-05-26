@@ -3701,6 +3701,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("ENOENT"), message);
     }
 
+    public RaiseException newErrnoEOPNOTSUPPError(String message) {
+        return newRaiseException(getErrno().getClass("EOPNOTSUPP"), message);
+    }
+
     public RaiseException newErrnoESPIPEError(String message) {
         return newRaiseException(getErrno().getClass("ESPIPE"), message);
     }
