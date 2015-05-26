@@ -65,7 +65,7 @@ module Utilities
   end
 
   def self.igv_running?
-    `ps`.lines.any? { |p| p.include? 'mxtool/mx.py igv' }
+    `ps a`.lines.any? { |p| p.include? 'mxtool/mx.py igv' }
   end
 
   def self.ensure_igv_running
@@ -237,7 +237,7 @@ module Commands
     end
 
     if args.delete('--igv')
-      raise "--igv doesn't work on master - you need a branch that builds against latest graal" if Utilities.git_branch == 'master'
+      warn "warning: --igv might not work on master - if it does not, use truffle-head instead which builds against latest graal" if Utilities.git_branch == 'master'
       Utilities.ensure_igv_running
       jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
     end
