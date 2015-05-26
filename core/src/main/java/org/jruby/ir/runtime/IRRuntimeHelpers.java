@@ -1031,9 +1031,17 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static RubyHash constructHashFromArray(Ruby runtime, IRubyObject[] pairs) {
-        RubyHash hash = RubyHash.newHash(runtime);
+        int length = pairs.length / 2;
+        boolean useSmallHash = length <= 10;
+
+        RubyHash hash = useSmallHash ? RubyHash.newHash(runtime) : RubyHash.newSmallHash(runtime);
         for (int i = 0; i < pairs.length;) {
-            hash.fastASet(runtime, pairs[i++], pairs[i++], true);
+            if (useSmallHash) {
+                hash.fastASetSmall(runtime, pairs[i++], pairs[i++], true);
+            } else {
+                hash.fastASet(runtime, pairs[i++], pairs[i++], true);
+            }
+
         }
         return hash;
     }
