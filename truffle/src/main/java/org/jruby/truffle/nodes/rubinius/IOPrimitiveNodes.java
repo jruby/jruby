@@ -112,24 +112,9 @@ public abstract class IOPrimitiveNodes {
         }
     }
 
-    private static Object getIBuffer(RubyBasicObject io) {
-        assert io.getDynamicObject().getShape().hasProperty(IBUFFER_IDENTIFIER);
-        return IBUFFER_PROPERTY.get(io.getDynamicObject(), true);
-    }
-
-    private static Object getLineNo(RubyBasicObject io) {
-        assert io.getDynamicObject().getShape().hasProperty(LINENO_IDENTIFIER);
-        return IBUFFER_PROPERTY.get(io.getDynamicObject(), true);
-    }
-
     private static int getDescriptor(RubyBasicObject io) {
         assert io.getDynamicObject().getShape().hasProperty(DESCRIPTOR_IDENTIFIER);
         return (int) DESCRIPTOR_PROPERTY.get(io.getDynamicObject(), true);
-    }
-
-    private static Object getMode(RubyBasicObject io) {
-        assert io.getDynamicObject().getShape().hasProperty(MODE_IDENTIFIER);
-        return MODE_PROPERTY.get(io.getDynamicObject(), true);
     }
 
     public static void setDescriptor(RubyBasicObject io, int newDescriptor) {
