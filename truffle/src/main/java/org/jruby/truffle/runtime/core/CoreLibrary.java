@@ -135,6 +135,7 @@ public class CoreLibrary {
     private final RubyClass byteArrayClass;
     private final RubyClass fiberErrorClass;
     private final RubyClass threadErrorClass;
+    private final RubyClass ioBufferClass;
 
     private final RubyArray argv;
     private final RubyBasicObject globalVariablesObject;
@@ -321,6 +322,8 @@ public class CoreLibrary {
         timeClass = defineClass("Time", new RubyTime.TimeAllocator());
         trueClass = defineClass("TrueClass", NO_ALLOCATOR);
         unboundMethodClass = defineClass("UnboundMethod", NO_ALLOCATOR);
+        final RubyClass ioClass = defineClass("IO", new IOPrimitiveNodes.IOAllocator());
+        ioBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
 
         // Modules
 
@@ -1375,6 +1378,10 @@ public class CoreLibrary {
 
     public RubyClass getThreadBacktraceLocationClass() {
         return threadBacktraceLocationClass;
+    }
+
+    public RubyClass getIOBufferClass() {
+        return ioBufferClass;
     }
 
 }
