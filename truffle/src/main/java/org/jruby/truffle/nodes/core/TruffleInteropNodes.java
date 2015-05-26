@@ -20,7 +20,6 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.interop.TruffleGlobalScope;
 import com.oracle.truffle.interop.messages.Argument;
 import com.oracle.truffle.interop.messages.Execute;
 import com.oracle.truffle.interop.messages.GetSize;
@@ -34,20 +33,9 @@ import com.oracle.truffle.interop.messages.Unbox;
 import com.oracle.truffle.interop.messages.Write;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
 
-
 @CoreClass(name = "Truffle::Interop")
 public abstract class TruffleInteropNodes {
 
-	private static TruffleGlobalScope globalScope;
-	
-	public static void setGlobalScope(TruffleGlobalScope globalScope) {
-		TruffleInteropNodes.globalScope = globalScope;
-	}
-	
-	public static TruffleGlobalScope getGlobalScope() {
-		return globalScope;
-	}
-	
     @CoreMethod(names = "interop_to_ruby_primitive", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class InteropToRubyNode extends CoreMethodArrayArgumentsNode {
 
@@ -314,10 +302,11 @@ public abstract class TruffleInteropNodes {
         }
 
     }
-    
+
+    /*
+
     @CoreMethod(names = "export", isModuleFunction = true, needsSelf = false, required = 2)
     public abstract static class ExportNode extends CoreMethodArrayArgumentsNode {
-
 
         public ExportNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -338,7 +327,7 @@ public abstract class TruffleInteropNodes {
         protected static String rubyStringToString(RubyString rubyString) {
         	return rubyString.toString();
         }
-        
+
         protected TruffleGlobalScope getGlobal() {
         	return globalScope;
         }
@@ -366,10 +355,12 @@ public abstract class TruffleInteropNodes {
         protected FrameSlot getSlot(RubyString rubyString) {
         	return globalScope.getFrameSlot(rubyString.toString());
         }
-        
+
         protected TruffleGlobalScope getGlobal() {
         	return globalScope;
         }
 
     }
+
+    */
 }
