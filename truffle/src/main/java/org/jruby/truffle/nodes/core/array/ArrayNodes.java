@@ -961,7 +961,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "delete_at", required = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "delete_at", required = 1, raiseIfFrozenSelf = true, lowerFixnumParameters = 0)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "array"),
         @NodeChild(type = RubyNode.class, value = "index")

@@ -149,15 +149,15 @@ cgi/test_cgi_util.rb
 
 # coverage/test_coverage.rb
 
-# csv/test_csv_parsing.rb
-# csv/test_csv_writing.rb
-# csv/test_data_converters.rb
-# csv/test_encodings.rb
-# csv/test_features.rb
-# csv/test_headers.rb
-# csv/test_interface.rb
-# csv/test_row.rb
-# csv/test_table.rb
+csv/test_csv_parsing.rb
+csv/test_csv_writing.rb
+csv/test_data_converters.rb
+# csv/test_encodings.rb # missing ObjectSpace define_finalizer specialization
+# csv/test_features.rb # `const_missing': uninitialized constant Zlib::GzipWriter
+csv/test_headers.rb
+# csv/test_interface.rb # missing ObjectSpace define_finalizer specialization
+csv/test_row.rb
+csv/test_table.rb
 
 date/test_date.rb
 date/test_date_arith.rb
