@@ -39,6 +39,7 @@ jruby/test_integer_overflows
 jruby/test_ivar_table_integrity
 jruby/test_io
 jruby/test_load
+jruby/test_load_gem_extensions
 jruby/test_method
 jruby/test_method_cache
 jruby/test_method_override_and_caching
