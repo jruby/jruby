@@ -292,14 +292,16 @@ public class RubyEnumerable {
         try {
             callEach(runtime, context, self, Arity.OPTIONAL, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    // note the we do not want to call the block with packed args, since to match MRI behavior,
-                    // the block's test is against the raw args (using block.arity() rather than the Arity.OPTIONAL
-                    // we pass to callEach)
-                    if (!block.call(ctx, largs).isTrue()) {
-                        throw JumpException.SPECIAL_JUMP;
+                    final IRubyObject larg; boolean ary = false;
+                    switch (largs.length) {
+                        case 0:  larg = ctx.nil; break;
+                        case 1:  larg = largs[0]; break;
+                        default: larg = RubyArray.newArrayNoCopy(ctx.runtime, largs); ary = true;
                     }
-                    IRubyObject packedArg = packEnumValues(ctx.runtime, largs);
-                    synchronized (result) { result.append(packedArg); }
+
+                    IRubyObject val = ary ? block.yieldArray(ctx, larg, null, null) : block.yield(ctx, larg);
+                    if ( ! val.isTrue() ) throw JumpException.SPECIAL_JUMP;
+                    synchronized (result) { result.append(larg); }
                     return ctx.nil;
                 }
             });
@@ -761,19 +763,15 @@ public class RubyEnumerable {
 
             callEach19(runtime, context, self, block.arity(), new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject larg;
-                    boolean newAry = false;
-                    if (largs.length == 0) {
-                        larg = ctx.nil;
-                    } else if (largs.length == 1) {
-                        larg = largs[0];
-                    } else {
-                        newAry = true;
-                        larg = RubyArray.newArrayNoCopy(ctx.runtime, largs);
+                    final IRubyObject larg; boolean ary = false;
+                    switch (largs.length) {
+                        case 0:  larg = ctx.nil; break;
+                        case 1:  larg = largs[0]; break;
+                        default: larg = RubyArray.newArrayNoCopy(ctx.runtime, largs); ary = true;
                     }
-                    
-                    IRubyObject value = newAry ? block.yieldArray(ctx, larg, null, null) : block.yield(ctx, larg);
-                    synchronized (result) { result.append(value); }
+                    IRubyObject val = ary ? block.yieldArray(ctx, larg, null, null) : block.yield(ctx, larg);
+
+                    synchronized (result) { result.append(val); }
                     return ctx.nil;
                 }
             });
