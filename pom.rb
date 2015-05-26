@@ -30,12 +30,12 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   license 'LGPL 3', 'http://www.gnu.org/licenses/lgpl-3.0-standalone.html'
   license 'EPL', 'http://www.eclipse.org/legal/epl-v10.html'
 
-  plugin_repository( 'https://oss.sonatype.org/content/repositories/snapshots/',
+  plugin_repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
                      :id => 'sonatype' ) do
     releases 'false'
     snapshots 'true'
   end
-  repository( 'https://oss.sonatype.org/content/repositories/snapshots/',
+  repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
               :id => 'sonatype' ) do
     releases 'false'
     snapshots 'true'
@@ -274,8 +274,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
 
     distribution_management do
-      repository( "file:#{snapshots_dir}/maven", :id => 'local releases' )
-      snapshot_repository( "file:#{snapshots_dir}/maven",
+      repository( :url => "file:#{snapshots_dir}/maven", :id => 'local releases' )
+      snapshot_repository( :url => "file:#{snapshots_dir}/maven",
                            :id => 'local snapshots' )
     end
     build do
