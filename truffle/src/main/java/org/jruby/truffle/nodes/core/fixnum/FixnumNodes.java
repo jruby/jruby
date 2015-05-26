@@ -151,16 +151,6 @@ public abstract class FixnumNodes {
             return (long) a - (long) b;
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long sub(int a, long b) {
-            return ExactMath.subtractExact(a, b);
-        }
-
-        @Specialization
-        public Object subWithOverflow(int a, long b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
-        }
-
         @Specialization(guards = "isRubyBignum(b)")
         public Object sub(int a, RubyBasicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).subtract(BignumNodes.getBigIntegerValue(b)));
@@ -174,16 +164,6 @@ public abstract class FixnumNodes {
         @Specialization(guards = "!isRubyBignum(b)")
         public Object subCoerced(VirtualFrame frame, int a, RubyBasicObject b) {
             return ruby(frame, "redo_coerced :-, b", "b", b);
-        }
-
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long sub(long a, int b) {
-            return ExactMath.subtractExact(a, b);
-        }
-
-        @Specialization
-        public Object subWithOverflow(long a, int b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -230,17 +210,6 @@ public abstract class FixnumNodes {
             return (long) a * (long) b;
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public Object mul(int a, long b) {
-            return ExactMath.multiplyExact(a, b);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public Object mulWithOverflow(int a, long b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
-        }
-
         @Specialization
         public double mul(int a, double b) {
             return a * b;
@@ -255,17 +224,6 @@ public abstract class FixnumNodes {
         @Specialization(guards = "!isRubyBignum(b)")
         public Object mulCoerced(VirtualFrame frame, int a, RubyBasicObject b) {
             return ruby(frame, "redo_coerced :*, b", "b", b);
-        }
-
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long mul(long a, int b) {
-            return ExactMath.multiplyExact(a, b);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public Object mulWithOverflow(long a, int b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -370,16 +328,6 @@ public abstract class FixnumNodes {
             }
         }
 
-        @Specialization(rewriteOn = UnexpectedResultException.class)
-        public long div(int a, long b) throws UnexpectedResultException {
-            return div((long) a, b);
-        }
-
-        @Specialization
-        public Object divEdgeCase(int a, long b) {
-            return divEdgeCase((long) a, b);
-        }
-
         @Specialization
         public double div(int a, double b) {
             return a / b;
@@ -393,16 +341,6 @@ public abstract class FixnumNodes {
         @Specialization(guards = "!isRubyBignum(b)")
         public Object divCoerced(VirtualFrame frame, int a, RubyBasicObject b) {
             return ruby(frame, "redo_coerced :/, b", "b", b);
-        }
-
-        @Specialization(rewriteOn = UnexpectedResultException.class)
-        public long div(long a, int b) throws UnexpectedResultException {
-            return div(a, (long) b);
-        }
-
-        @Specialization
-        public Object divEdgeCase(long a, int b) {
-            return divEdgeCase(a, (long) b);
         }
 
         @Specialization(rewriteOn = UnexpectedResultException.class)
@@ -503,11 +441,6 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public long mod(int a, long b) {
-            return mod((long) a, b);
-        }
-
-        @Specialization
         public double mod(int a, double b) {
             return mod((long) a, b);
         }
@@ -526,11 +459,6 @@ public abstract class FixnumNodes {
             }
 
             return mod;
-        }
-
-        @Specialization
-        public long mod(long a, int b) {
-            return mod(a, (long) b);
         }
 
         @Specialization
@@ -583,11 +511,6 @@ public abstract class FixnumNodes {
             return divModNode.execute(a, b);
         }
 
-        @Specialization
-        public RubyArray divMod(int a, long b) {
-            return divModNode.execute(a, b);
-        }
-
         @Specialization(guards = "isRubyBignum(b)")
         public RubyArray divMod(int a, RubyBasicObject b) {
             return divModNode.execute(a, BignumNodes.getBigIntegerValue(b));
@@ -595,11 +518,6 @@ public abstract class FixnumNodes {
 
         @Specialization
         public RubyArray divMod(int a, double b) {
-            return divModNode.execute(a, b);
-        }
-
-        @Specialization
-        public RubyArray divMod(long a, int b) {
             return divModNode.execute(a, b);
         }
 
@@ -633,11 +551,6 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public boolean less(int a, long b) {
-            return a < b;
-        }
-
-        @Specialization
         public boolean less(int a, double b) {
             return a < b;
         }
@@ -645,11 +558,6 @@ public abstract class FixnumNodes {
         @Specialization(guards = "isRubyBignum(b)")
         public boolean less(int a, RubyBasicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) < 0;
-        }
-
-        @Specialization
-        public boolean less(long a, int b) {
-            return a < b;
         }
 
         @Specialization
@@ -692,11 +600,6 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public boolean lessEqual(int a, long b) {
-            return a <= b;
-        }
-
-        @Specialization
         public boolean lessEqual(int a, double b) {
             return a <= b;
         }
@@ -704,11 +607,6 @@ public abstract class FixnumNodes {
         @Specialization(guards = "isRubyBignum(b)")
         public boolean lessEqual(int a, RubyBasicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) <= 0;
-        }
-
-        @Specialization
-        public boolean lessEqual(long a, int b) {
-            return a <= b;
         }
 
         @Specialization
@@ -743,11 +641,6 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public boolean equal(int a, long b) {
-            return a == b;
-        }
-
-        @Specialization
         public boolean equal(int a, double b) {
             return a == b;
         }
@@ -755,11 +648,6 @@ public abstract class FixnumNodes {
         @Specialization(guards = "isRubyBignum(b)")
         public boolean equal(int a, RubyBasicObject b) {
             return BigInteger.valueOf(a).equals(BignumNodes.getBigIntegerValue(b));
-        }
-
-        @Specialization
-        public boolean equal(long a, int b) {
-            return a == b;
         }
 
         @Specialization
@@ -801,11 +689,6 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public int compare(int a, long b) {
-            return Long.compare(a, b);
-        }
-
-        @Specialization
         public int compare(int a, double b) {
             return Double.compare(a, b);
         }
@@ -813,11 +696,6 @@ public abstract class FixnumNodes {
         @Specialization(guards = "isRubyBignum(b)")
         public int compare(int a, RubyBasicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b));
-        }
-
-        @Specialization
-        public int compare(long a, int b) {
-            return Long.compare(a, b);
         }
 
         @Specialization
@@ -859,11 +737,6 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public boolean greaterEqual(int a, long b) {
-            return a >= b;
-        }
-
-        @Specialization
         public boolean greaterEqual(int a, double b) {
             return a >= b;
         }
@@ -871,11 +744,6 @@ public abstract class FixnumNodes {
         @Specialization(guards = "isRubyBignum(b)")
         public boolean greaterEqual(int a, RubyBasicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) >= 0;
-        }
-
-        @Specialization
-        public boolean greaterEqual(long a, int b) {
-            return a >= b;
         }
 
         @Specialization
@@ -907,11 +775,6 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public boolean greater(int a, long b) {
-            return a > b;
-        }
-
-        @Specialization
         public boolean greater(int a, double b) {
             return a > b;
         }
@@ -920,11 +783,6 @@ public abstract class FixnumNodes {
         public boolean greater(int a, RubyBasicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)
             ) > 0;
-        }
-
-        @Specialization
-        public boolean greater(long a, int b) {
-            return a > b;
         }
 
         @Specialization
@@ -975,19 +833,9 @@ public abstract class FixnumNodes {
             return a & b;
         }
 
-        @Specialization
-        public long bitAnd(int a, long b) {
-            return a & b;
-        }
-
         @Specialization(guards = "isRubyBignum(b)")
         public Object bitAnd(int a, RubyBasicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).and(BignumNodes.getBigIntegerValue(b)));
-        }
-
-        @Specialization
-        public long bitAnd(long a, int b) {
-            return a & b;
         }
 
         @Specialization
@@ -1013,19 +861,9 @@ public abstract class FixnumNodes {
             return a | b;
         }
 
-        @Specialization
-        public long bitOr(int a, long b) {
-            return a | b;
-        }
-
         @Specialization(guards = "isRubyBignum(b)")
         public Object bitOr(int a, RubyBasicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).or(BignumNodes.getBigIntegerValue(b)));
-        }
-
-        @Specialization
-        public long bitOr(long a, int b) {
-            return a | b;
         }
 
         @Specialization
@@ -1051,19 +889,9 @@ public abstract class FixnumNodes {
             return a ^ b;
         }
 
-        @Specialization
-        public long bitXOr(int a, long b) {
-            return a ^ b;
-        }
-
         @Specialization(guards = "isRubyBignum(b)")
         public Object bitXOr(int a, RubyBasicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).xor(BignumNodes.getBigIntegerValue(b)));
-        }
-
-        @Specialization
-        public long bitXOr(long a, int b) {
-            return a ^ b;
         }
 
         @Specialization
