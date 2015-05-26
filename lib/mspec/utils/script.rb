@@ -62,7 +62,7 @@ class MSpecScript
   # Returns +true+ if the file was located in +config[:path]+,
   # possibly appending +config[:config_ext]. Returns +false+
   # otherwise.
-  def load(target)
+  def try_load(target)
     names = [target]
     unless target[-6..-1] == config[:config_ext]
       names << target + config[:config_ext]
@@ -80,20 +80,24 @@ class MSpecScript
     false
   end
 
+  def load(target)
+    try_load(target) or abort "Could not load config file #{target}"
+  end
+
   # Attempts to load a default config file. First tries to load
   # 'default.mspec'. If that fails, attempts to load a config
   # file name constructed from the value of RUBY_ENGINE and the
   # first two numbers in RUBY_VERSION. For example, on MRI 1.8.6,
   # the file name would be 'ruby.1.8.mspec'.
   def load_default
-    load 'default.mspec'
+    try_load 'default.mspec'
 
     if Object.const_defined?(:RUBY_ENGINE)
       engine = RUBY_ENGINE
     else
       engine = 'ruby'
     end
-    load "#{engine}.#{SpecGuard.ruby_version}.mspec"
+    try_load "#{engine}.#{SpecGuard.ruby_version}.mspec"
   end
 
   # Callback for enabling custom options. This version is a no-op.
@@ -106,7 +110,15 @@ class MSpecScript
   # Registers all filters and actions.
   def register
     if config[:formatter].nil?
-      config[:formatter] = STDOUT.tty? ? SpinnerFormatter : @files.size < 50 ? DottedFormatter : FileFormatter
+      # For some unidentified reason, running specs under MRI 2.0
+      # with the SpinnerFormatter adds a lot of errors.
+      buggy_spinner_formatter = RUBY_NAME == "ruby" && RUBY_VERSION < "2.1"
+
+      if STDOUT.tty? and !buggy_spinner_formatter
+        config[:formatter] = SpinnerFormatter
+      else
+        config[:formatter] = @files.size < 50 ? DottedFormatter : FileFormatter
+      end
     end
 
     if config[:formatter]
@@ -159,11 +171,10 @@ class MSpecScript
   # If it is a directory, returns all *_spec.rb files in the
   # directory and subdirectories.
   #
-  # If unable to resolve +partial+, returns <tt>Dir[partial]</tt>.
+  # If unable to resolve +partial+, +Kernel.abort+ is called.
   def entries(partial)
     file = partial + "_spec.rb"
-    patterns = [partial]
-    patterns << file
+    patterns = [partial, file]
     if config[:prefix]
       patterns << File.join(config[:prefix], partial)
       patterns << File.join(config[:prefix], file)
@@ -171,14 +182,14 @@ class MSpecScript
 
     patterns.each do |pattern|
       expanded = File.expand_path(pattern)
-      return [expanded] if File.file?(expanded)
-
-      specs = File.join(pattern, "/**/*_spec.rb")
-      specs = File.expand_path(specs) rescue specs
-      return Dir[specs].sort if File.directory?(expanded)
+      if File.file?(expanded)
+        return [expanded]
+      elsif File.directory?(expanded)
+        return Dir["#{expanded}/**/*_spec.rb"].sort
+      end
     end
 
-    Dir[partial]
+    abort "Could not find spec file #{partial}"
   end
 
   # Resolves each entry in +list+ to a set of files.
@@ -210,7 +221,7 @@ class MSpecScript
     $VERBOSE = nil unless ENV['OUTPUT_WARNINGS']
     script = new
     script.load_default
-    script.load '~/.mspecrc'
+    script.try_load '~/.mspecrc'
     script.options
     script.signals
     script.register
