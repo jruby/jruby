@@ -97,16 +97,6 @@ public abstract class FixnumNodes {
             return a + b;
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long add(int a, long b) {
-            return ExactMath.addExact(a, b);
-        }
-
-        @Specialization
-        public Object addWithOverflow(int a, long b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).add(BigInteger.valueOf(b)));
-        }
-
         @Specialization(guards = "isRubyBignum(b)")
         public Object add(int a, RubyBasicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).add(BignumNodes.getBigIntegerValue(b)));
@@ -115,16 +105,6 @@ public abstract class FixnumNodes {
         @Specialization(guards = "!isRubyBignum(b)")
         public Object addCoerced(VirtualFrame frame, int a, RubyBasicObject b) {
             return ruby(frame, "redo_coerced :+, b", "b", b);
-        }
-
-        @Specialization(rewriteOn = ArithmeticException.class)
-        public long add(long a, int b) {
-            return ExactMath.addExact(a, b);
-        }
-
-        @Specialization
-        public Object addWithOverflow(long a, int b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).add(BigInteger.valueOf(b)));
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
