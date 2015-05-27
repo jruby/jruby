@@ -24,6 +24,20 @@ class Thread
     Thread.new(&block)
   end
 
+  def self.abort_on_exception
+    false
+  end
+
+  def self.abort_on_exception=(value)
+  end
+
+  def abort_on_exception
+    false
+  end
+
+  def abort_on_exception=(value)
+  end
+
 end
 
 class ThreadGroup
