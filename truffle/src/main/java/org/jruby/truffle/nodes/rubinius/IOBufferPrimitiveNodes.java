@@ -94,11 +94,11 @@ public abstract class IOBufferPrimitiveNodes {
                 .createFactory();
     }
 
-    public static void setWriteSynched(RubyBasicObject io, boolean writeSynched) {
+    public static void setWriteSynced(RubyBasicObject io, boolean writeSynced) {
         assert io.getDynamicObject().getShape().hasProperty(WRITE_SYNCED_IDENTIFIER);
 
         try {
-            WRITE_SYNCED_PROPERTY.set(io.getDynamicObject(), writeSynched, io.getDynamicObject().getShape());
+            WRITE_SYNCED_PROPERTY.set(io.getDynamicObject(), writeSynced, io.getDynamicObject().getShape());
         } catch (IncompatibleLocationException | FinalLocationException e) {
             throw new UnsupportedOperationException(e);
         }
@@ -157,7 +157,7 @@ public abstract class IOBufferPrimitiveNodes {
 
         @Specialization
         public int unshift(VirtualFrame frame, RubyBasicObject ioBuffer, RubyString string, int startPosition) {
-            setWriteSynched(ioBuffer, false);
+            setWriteSynced(ioBuffer, false);
 
             int stringSize = string.getByteList().realSize() - startPosition;
             final int usedSpace = getUsed(ioBuffer);
