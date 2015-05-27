@@ -484,6 +484,7 @@ public class CoreLibrary {
         // Set constants
 
         objectClass.setConstant(node, "RUBY_VERSION", RubyString.fromJavaString(stringClass, Constants.RUBY_VERSION));
+        objectClass.setConstant(node, "JRUBY_VERSION", RubyString.fromJavaString(stringClass, Constants.VERSION));
         objectClass.setConstant(node, "RUBY_PATCHLEVEL", Constants.RUBY_PATCHLEVEL);
         objectClass.setConstant(node, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, Constants.ENGINE + "+truffle"));
         objectClass.setConstant(node, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, Constants.PLATFORM));
