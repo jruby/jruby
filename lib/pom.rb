@@ -31,7 +31,7 @@ default_gems =
    ImportedGem.new( 'rake', 'rake.version', true ),
    ImportedGem.new( 'rdoc', 'rdoc.version', true ),
    ImportedGem.new( 'json', 'json.version', true, false ),
-   ImportedGem.new( 'jar-dependencies', '0.1.13', true )
+   ImportedGem.new( 'jar-dependencies', '0.1.14', true )
   ]
 
 project 'JRuby Lib Setup' do
