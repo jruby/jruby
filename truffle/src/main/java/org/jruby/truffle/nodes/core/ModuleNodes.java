@@ -11,7 +11,6 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -19,7 +18,6 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -35,10 +33,10 @@ import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
-import org.jruby.truffle.nodes.coerce.SymbolOrToStrNode;
-import org.jruby.truffle.nodes.coerce.SymbolOrToStrNodeGen;
+import org.jruby.truffle.nodes.coerce.NameToJavaStringNode;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
+import org.jruby.truffle.nodes.coerce.NameToJavaStringNodeGen;
 import org.jruby.truffle.nodes.constants.GetConstantNode;
 import org.jruby.truffle.nodes.constants.GetConstantNodeGen;
 import org.jruby.truffle.nodes.constants.LookupConstantNodeGen;
@@ -46,10 +44,6 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.KernelNodes.BindingNode;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
-import org.jruby.truffle.nodes.dispatch.DispatchAction;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.MissingBehavior;
-import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -305,12 +299,12 @@ public abstract class ModuleNodes {
 
         @CreateCast("newName")
         public RubyNode coercetNewNameToString(RubyNode newName) {
-            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), newName);
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), newName);
         }
 
         @CreateCast("oldName")
         public RubyNode coerceOldNameToString(RubyNode oldName) {
-            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), oldName);
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), oldName);
         }
 
         @Specialization
@@ -720,7 +714,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -825,7 +819,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -859,7 +853,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization(guards = "!isScoped(name)")
@@ -943,7 +937,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -975,7 +969,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -1179,7 +1173,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -1372,7 +1366,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -1420,7 +1414,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -1467,7 +1461,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -1524,7 +1518,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -1571,7 +1565,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -1690,7 +1684,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return SymbolOrToStrNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
@@ -1709,19 +1703,19 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "remove_method", argumentsAsArray = true, visibility = Visibility.PRIVATE)
     public abstract static class RemoveMethodNode extends CoreMethodArrayArgumentsNode {
 
-        @Child SymbolOrToStrNode symbolOrToStrNode;
+        @Child NameToJavaStringNode nameToJavaStringNode;
         @Child RaiseIfFrozenNode raiseIfFrozenNode;
 
         public RemoveMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.symbolOrToStrNode = SymbolOrToStrNodeGen.create(context, sourceSection, null);
+            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
             this.raiseIfFrozenNode = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
         }
 
         @Specialization
         public RubyModule removeMethod(VirtualFrame frame, RubyModule module, Object[] args) {
             for (Object arg : args) {
-                final String name = symbolOrToStrNode.executeToJavaString(frame, arg);
+                final String name = nameToJavaStringNode.executeToJavaString(frame, arg);
                 raiseIfFrozenNode.execute(frame);
 
                 if (module.getMethods().containsKey(name)) {
@@ -1855,12 +1849,12 @@ public abstract class ModuleNodes {
         private final Visibility visibility;
 
         @Child SingletonClassNode singletonClassNode;
-        @Child SymbolOrToStrNode symbolOrToStrNode;
+        @Child NameToJavaStringNode nameToJavaStringNode;
 
         public SetMethodVisibilityNode(RubyContext context, SourceSection sourceSection, Visibility visibility) {
             super(context, sourceSection);
             this.visibility = visibility;
-            this.symbolOrToStrNode = SymbolOrToStrNodeGen.create(context, sourceSection, null);
+            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
             this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         }
 
@@ -1868,7 +1862,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         RubyModule setMethodVisibility(VirtualFrame frame, RubyModule module, Object name) {
-            final String methodName = symbolOrToStrNode.executeToJavaString(frame, name);
+            final String methodName = nameToJavaStringNode.executeToJavaString(frame, name);
 
             final InternalMethod method = module.deepMethodSearch(methodName);
 

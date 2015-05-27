@@ -23,12 +23,16 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 
+/**
+ * Take a Symbol or some object accepting #to_str
+ * and convert it to a Java String.
+ */
 @NodeChild(value = "child", type = RubyNode.class)
-public abstract class SymbolOrToStrNode extends RubyNode {
+public abstract class NameToJavaStringNode extends RubyNode {
 
     @Child private CallDispatchHeadNode toStr;
 
-    public SymbolOrToStrNode(RubyContext context, SourceSection sourceSection) {
+    public NameToJavaStringNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         toStr = DispatchHeadNodeFactory.createMethodCall(context);
     }
