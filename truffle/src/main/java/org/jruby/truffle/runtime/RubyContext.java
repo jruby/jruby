@@ -319,6 +319,10 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return instanceEval(code, self, "(eval)", currentNode);
     }
 
+    public Object eval(Source source) {
+        return execute(source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.EVAL, getCoreLibrary().getMainObject(), null, null, NodeWrapper.IDENTITY);
+    }
+
     @TruffleBoundary
     public Object eval(String code, RubyBinding binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
         return eval(ByteList.create(code), binding, ownScopeForAssignments, filename, currentNode);
