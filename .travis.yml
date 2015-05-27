@@ -30,6 +30,13 @@ matrix:
     # there is one integration test which uses a external jar for jdk7+
     - jdk: oraclejdk7
       env: TARGET='main'
+    # nice to have at least some feedback on jdk 7/8
+    - jdk: openjdk7
+      env: TARGET='test-extended'
+    - jdk: openjdk7
+      env: TARGET='spec:ruby19:fast'
+    - jdk: oraclejdk8
+      env: TARGET='spec:ruby19:fast'
   fast_finish: true
 
 branches:
@@ -37,9 +44,10 @@ branches:
     - master
     - jruby-1_7
     - /^test-.*$/
+    - /^ha-feature/
 
-before_install:
-  - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
+#before_install:
+#  - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
 
 install: /bin/true
 # |^[[:space:]]*\[exec\][[:space:]]*$
