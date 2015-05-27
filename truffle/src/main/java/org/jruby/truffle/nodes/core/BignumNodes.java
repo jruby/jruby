@@ -672,7 +672,7 @@ public abstract class BignumNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public boolean even(RubyBasicObject value) {
-            return getBigIntegerValue(value).getLowestSetBit() != 0;
+            return !getBigIntegerValue(value).testBit(0);
         }
 
     }
@@ -687,6 +687,21 @@ public abstract class BignumNodes {
         @Specialization
         public int hash(RubyBasicObject value) {
             return getBigIntegerValue(value).hashCode();
+        }
+
+    }
+
+    @CoreMethod(names = "odd?")
+    public abstract static class OddNode extends BignumCoreMethodNode {
+
+        public OddNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public boolean odd(RubyBasicObject value) {
+            return getBigIntegerValue(value).testBit(0);
         }
 
     }
