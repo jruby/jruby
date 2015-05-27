@@ -149,7 +149,7 @@ public class URLResource extends AbstractFileResource {
         return Channels.newChannel(inputStream());
     }
 
-    public static FileResource create(ClassLoader cl, String pathname) {
+    public static FileResource create(ClassLoader cl, String pathname, boolean isFile) {
       try
       {
           pathname = new URI(pathname.replaceFirst("^/*", "/")).normalize().getPath().replaceAll("^/([.][.]/)*", "");
@@ -157,30 +157,30 @@ public class URLResource extends AbstractFileResource {
           pathname = pathname.replaceAll("^[.]?/*", "");
       }
       URL url = cl.getResource(pathname);
-      String[] files = listClassLoaderFiles(cl, pathname);
+      String[] files = isFile ? null : listClassLoaderFiles(cl, pathname);
       return new URLResource(URI_CLASSLOADER + pathname,
                              cl,
                              url == null ? null : pathname,
                              files);
     }
 
-    public static FileResource createClassloaderURI(Ruby runtime, String pathname) {
-        return create(runtime.getJRubyClassLoader(), pathname);
+    public static FileResource createClassloaderURI(Ruby runtime, String pathname, boolean isFile) {
+        return create(runtime.getJRubyClassLoader(), pathname, isFile);
     }
 
-    public static FileResource create(Ruby runtime, String pathname)
+    public static FileResource create(Ruby runtime, String pathname, boolean isFile)
     {
         if (!pathname.startsWith(URI)) {
             return null;
         }
         pathname = pathname.substring(URI.length());
         if (pathname.startsWith(CLASSLOADER)) {
-            return createClassloaderURI(runtime, pathname.substring(CLASSLOADER.length()));
+            return createClassloaderURI(runtime, pathname.substring(CLASSLOADER.length()), isFile);
         }
-        return createRegularURI(pathname);
+        return createRegularURI(pathname, isFile);
     }
 
-    private static FileResource createRegularURI(String pathname) {
+    private static FileResource createRegularURI(String pathname, boolean isFile) {
         URL url;
         try
         {
@@ -200,7 +200,7 @@ public class URLResource extends AbstractFileResource {
             // file does not exists
             return new URLResource(URI + pathname, (URL)null, null);
         }
-        String[] files = listFiles(pathname);
+        String[] files = isFile ? null : listFiles(pathname);
         if (files != null) {
             return new URLResource(URI + pathname, (URL)null, files);
         }
@@ -252,12 +252,9 @@ public class URLResource extends AbstractFileResource {
     }
 
     private static String[] listClassLoaderFiles(ClassLoader classloader, String pathname) {
-        if (pathname.endsWith(".rb") || pathname.endsWith(".class") || pathname.endsWith(".jar")) {
-            return null;
-        }
         try
         {
-            pathname = pathname + (pathname.equals("") ? ".jrubydir" : "/.jrubydir");
+            pathname += pathname.equals("") ? ".jrubydir" : "/.jrubydir";
             Enumeration<URL> urls = classloader.getResources(pathname);
             if (!urls.hasMoreElements()) {
                 return null;
@@ -280,9 +277,6 @@ public class URLResource extends AbstractFileResource {
     }
 
     private static String[] listFiles(String pathname) {
-        if (pathname.endsWith(".rb") || pathname.endsWith(".class") || pathname.endsWith(".jar")) {
-            return null;
-        }
         try
         {
             InputStream is = new URL(pathname + "/.jrubydir").openStream();

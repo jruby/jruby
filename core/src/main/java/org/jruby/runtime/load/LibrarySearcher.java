@@ -174,7 +174,7 @@ class LibrarySearcher {
         String pathWithSuffix = fullPath + suffix;
 
         DebugLog.Resource.logTry(pathWithSuffix);
-        FileResource resource = JRubyFile.createResource(runtime, pathWithSuffix);
+        FileResource resource = JRubyFile.createResourceAsFile(runtime, pathWithSuffix);
         if (resource.exists()) {
             DebugLog.Resource.logFound(pathWithSuffix);
             String scriptName = resolveScriptName(resource, pathWithSuffix);

@@ -394,7 +394,7 @@ public class RubyInstanceConfig {
                 } else if (script.startsWith("classpath:")) {
                     stream = getScriptSourceFromJar(script);
                 } else if (script.startsWith("uri:classloader:")) {
-                    FileResource urlResource = URLResource.create(loader, script);
+                    FileResource urlResource = URLResource.create(loader, script, true);
                     stream = urlResource.inputStream();
                 } else {
                     File file = JRubyFile.create(getCurrentDirectory(), getScriptFileName());
