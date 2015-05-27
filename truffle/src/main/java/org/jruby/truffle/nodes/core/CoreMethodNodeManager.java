@@ -25,7 +25,6 @@ import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -154,7 +153,7 @@ public class CoreMethodNodeManager {
 
         final Arity arity = new Arity(required,  optional, methodDetails.getMethodAnnotation().argumentsAsArray(), false, false, 0);
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, arity, methodDetails.getIndicativeName(), false, null, true);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, methodDetails.getIndicativeName(), false, null, true);
 
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 
@@ -194,23 +193,21 @@ public class CoreMethodNodeManager {
             argumentsNodes.add(new ReadBlockNode(context, sourceSection, UndefinedPlaceholder.INSTANCE));
         }
 
-        RubyNode methodNode = null;
-        final NodeFactory<?> nodeFactory = methodDetails.getNodeFactory();
+        final RubyNode methodNode;
+        final NodeFactory<? extends RubyNode> nodeFactory = methodDetails.getNodeFactory();
         List<List<Class<?>>> signatures = nodeFactory.getNodeSignatures();
-        assert !signatures.isEmpty();
 
-        for (List<Class<?>> signature : signatures) {
-            if (signature.size() >= 1 && signature.get(0) != RubyContext.class && signature.get(0) != nodeFactory.getNodeClass()) {
-                throw new TruffleFatalException("Copy constructor with wrong type for previous in "+nodeFactory.getNodeClass()+" : "+signature.get(0), null);
-            } else if (signature.size() >= 3 && signature.get(2) == RubyNode[].class) {
-                methodNode = methodDetails.getNodeFactory().createNode(context, sourceSection, argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]));
-            } else {
-                Object[] args = new Object[2 + argumentsNodes.size()];
-                args[0] = context;
-                args[1] = sourceSection;
-                System.arraycopy(argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]), 0, args, 2, argumentsNodes.size());
-                methodNode = methodDetails.getNodeFactory().createNode(args);
-            }
+        assert signatures.size() == 1;
+        List<Class<?>> signature = signatures.get(0);
+
+        if (signature.size() >= 3 && signature.get(2) == RubyNode[].class) {
+            methodNode = nodeFactory.createNode(context, sourceSection, argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]));
+        } else {
+            Object[] args = new Object[2 + argumentsNodes.size()];
+            args[0] = context;
+            args[1] = sourceSection;
+            System.arraycopy(argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]), 0, args, 2, argumentsNodes.size());
+            methodNode = nodeFactory.createNode(args);
         }
 
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
