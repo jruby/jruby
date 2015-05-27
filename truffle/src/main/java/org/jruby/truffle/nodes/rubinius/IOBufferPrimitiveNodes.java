@@ -40,11 +40,9 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
-import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -61,8 +59,8 @@ public abstract class IOBufferPrimitiveNodes {
     private static final int IOBUFFER_SIZE = 32768;
     private static final int STACK_BUF_SZ = 8192;
 
-    private static final String WRITE_SYNCHED_IDENTIFIER = "@write_synced";
-    private static final Property WRITE_SYNCHED_PROPERTY;
+    private static final String WRITE_SYNCED_IDENTIFIER = "@write_synced";
+    private static final Property WRITE_SYNCED_PROPERTY;
 
     private static final String STORAGE_IDENTIFIER = "@storage";
     private static final Property STORAGE_PROPERTY;
@@ -81,14 +79,14 @@ public abstract class IOBufferPrimitiveNodes {
     static {
         final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
 
-        WRITE_SYNCHED_PROPERTY = Property.create(WRITE_SYNCHED_IDENTIFIER, allocator.locationForType(Boolean.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        WRITE_SYNCED_PROPERTY = Property.create(WRITE_SYNCED_IDENTIFIER, allocator.locationForType(Boolean.class, EnumSet.of(LocationModifier.NonNull)), 0);
         STORAGE_PROPERTY = Property.create(STORAGE_IDENTIFIER, allocator.locationForType(RubiniusByteArray.class, EnumSet.of(LocationModifier.NonNull)), 0);
         USED_PROPERTY = Property.create(USED_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
         START_PROPERTY = Property.create(START_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
         TOTAL_PROPERTY = Property.create(TOTAL_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
 
         IO_BUFFER_FACTORY = RubyBasicObject.EMPTY_SHAPE
-                .addProperty(WRITE_SYNCHED_PROPERTY)
+                .addProperty(WRITE_SYNCED_PROPERTY)
                 .addProperty(STORAGE_PROPERTY)
                 .addProperty(USED_PROPERTY)
                 .addProperty(START_PROPERTY)
@@ -97,10 +95,10 @@ public abstract class IOBufferPrimitiveNodes {
     }
 
     public static void setWriteSynched(RubyBasicObject io, boolean writeSynched) {
-        assert io.getDynamicObject().getShape().hasProperty(WRITE_SYNCHED_IDENTIFIER);
+        assert io.getDynamicObject().getShape().hasProperty(WRITE_SYNCED_IDENTIFIER);
 
         try {
-            WRITE_SYNCHED_PROPERTY.set(io.getDynamicObject(), writeSynched, io.getDynamicObject().getShape());
+            WRITE_SYNCED_PROPERTY.set(io.getDynamicObject(), writeSynched, io.getDynamicObject().getShape());
         } catch (IncompatibleLocationException | FinalLocationException e) {
             throw new UnsupportedOperationException(e);
         }
