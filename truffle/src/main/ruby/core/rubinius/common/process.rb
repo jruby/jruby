@@ -68,6 +68,14 @@ module Process
     Struct::Tms.new(*cpu_times)
   end
 
+  def self.getpgid(pid)
+    pid = Rubinius::Type.coerce_to pid, Integer, :to_int
+
+    ret = FFI::Platform::POSIX.getpgid(pid)
+    Errno.handle if ret == -1
+    ret
+  end
+
   @maxgroups = 32
   class << self
     attr_reader :maxgroups

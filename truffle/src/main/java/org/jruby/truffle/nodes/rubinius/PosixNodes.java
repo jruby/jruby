@@ -503,6 +503,20 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "getpgid", isModuleFunction = true, required = 1)
+    public abstract static class GetpgidNode extends CoreMethodArrayArgumentsNode {
+
+        public GetpgidNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getpgid(int pid) {
+            return posix().getpgid(pid);
+        }
+
+    }
+
     @CoreMethod(names = "getpgrp", isModuleFunction = true)
     public abstract static class GetpgrpNode extends CoreMethodArrayArgumentsNode {
 
