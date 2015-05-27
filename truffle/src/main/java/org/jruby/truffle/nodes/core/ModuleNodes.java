@@ -871,7 +871,7 @@ public abstract class ModuleNodes {
 
         @Specialization(guards = "!inherit")
         public Object getConstantNoInherit(VirtualFrame frame, RubyModule module, RubySymbol name, boolean inherit) {
-            return getConstantNoInherit(module, name.toString());
+            return getConstantNoInherit(module, name.toString(), this);
         }
 
         // String
@@ -887,7 +887,7 @@ public abstract class ModuleNodes {
 
         @Specialization(guards = { "!inherit", "!isScoped(name)" })
         public Object getConstantNoInherit(VirtualFrame frame, RubyModule module, RubyString name, boolean inherit) {
-            return getConstantNoInherit(module, name.toString());
+            return getConstantNoInherit(module, name.toString(), this);
         }
 
         // Scoped String
@@ -902,8 +902,8 @@ public abstract class ModuleNodes {
         }
 
         @TruffleBoundary
-        private Object getConstantNoInherit(RubyModule module, String name) {
-            final RubyConstant constant = module.getConstants().get(name);
+        private Object getConstantNoInherit(RubyModule module, String name, Node currentNode) {
+            final RubyConstant constant = ModuleOperations.lookupConstantWithInherit(getContext(), module, name, false, currentNode);
 
             if (constant == null) {
                 CompilerDirectives.transferToInterpreter();
