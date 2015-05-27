@@ -1,2 +1,0 @@
-fails:Process.gid also goes by Process::GID.rid
-fails:Process.gid also goes by Process::Sys.getgid

@@ -290,4 +290,177 @@ module Process
     end
   end
 
+  module Sys
+    class << self
+      def getegid
+        ret = FFI::Platform::POSIX.getegid
+        Errno.handle if ret == -1
+        ret
+      end
+
+      def geteuid
+        ret = FFI::Platform::POSIX.geteuid
+        Errno.handle if ret == -1
+        ret
+      end
+
+      def getgid
+        ret = FFI::Platform::POSIX.getgid
+        Errno.handle if ret == -1
+        ret
+      end
+
+      def getuid
+        ret = FFI::Platform::POSIX.getuid
+        Errno.handle if ret == -1
+        ret
+      end
+
+      def issetugid
+        raise "not implemented"
+      end
+
+      def setgid(gid)
+        gid = Rubinius::Type.coerce_to gid, Integer, :to_int
+
+        ret = FFI::Platform::POSIX.setgid gid
+        Errno.handle if ret == -1
+        nil
+      end
+
+      def setuid(uid)
+        uid = Rubinius::Type.coerce_to uid, Integer, :to_int
+
+        ret = FFI::Platform::POSIX.setuid uid
+        Errno.handle if ret == -1
+        nil
+      end
+
+      def setegid(egid)
+        egid = Rubinius::Type.coerce_to egid, Integer, :to_int
+
+        ret = FFI::Platform::POSIX.setegid egid
+        Errno.handle if ret == -1
+        nil
+      end
+
+      def seteuid(euid)
+        euid = Rubinius::Type.coerce_to euid, Integer, :to_int
+
+        ret = FFI::Platform::POSIX.seteuid euid
+        Errno.handle if ret == -1
+        nil
+      end
+
+      def setrgid(rgid)
+        setregid(rgid, -1)
+      end
+
+      def setruid(ruid)
+        setreuid(ruid, -1)
+      end
+
+      def setregid(rid, eid)
+        rid = Rubinius::Type.coerce_to rid, Integer, :to_int
+        eid = Rubinius::Type.coerce_to eid, Integer, :to_int
+
+        ret = FFI::Platform::POSIX.setregid rid, eid
+        Errno.handle if ret == -1
+        nil
+      end
+
+      def setreuid(rid, eid)
+        rid = Rubinius::Type.coerce_to rid, Integer, :to_int
+        eid = Rubinius::Type.coerce_to eid, Integer, :to_int
+
+        ret = FFI::Platform::POSIX.setreuid rid, eid
+        Errno.handle if ret == -1
+        nil
+      end
+
+      def setresgid(rid, eid, sid)
+        rid = Rubinius::Type.coerce_to rid, Integer, :to_int
+        eid = Rubinius::Type.coerce_to eid, Integer, :to_int
+        sid = Rubinius::Type.coerce_to sid, Integer, :to_int
+
+        ret = FFI::Platform::POSIX.setresgid rid, eid, sid
+        Errno.handle if ret == -1
+        nil
+      end
+
+      def setresuid(rid, eid, sid)
+        rid = Rubinius::Type.coerce_to rid, Integer, :to_int
+        eid = Rubinius::Type.coerce_to eid, Integer, :to_int
+        sid = Rubinius::Type.coerce_to sid, Integer, :to_int
+
+        ret = FFI::Platform::POSIX.setresuid rid, eid, sid
+        Errno.handle if ret == -1
+        nil
+      end
+    end
+  end
+
+  module GID
+    class << self
+      def change_privilege(gid)
+        gid = Rubinius::Type.coerce_to gid, Integer, :to_int
+
+        ret = FFI::Platform::POSIX.setregid(gid, gid)
+        Errno.handle if ret == -1
+        gid
+      end
+
+      def eid
+        ret = FFI::Platform::POSIX.getegid
+        Errno.handle if ret == -1
+        ret
+      end
+
+      def eid=(gid)
+        gid = Rubinius::Type.coerce_to gid, Integer, :to_int
+
+        ret = FFI::Platform::POSIX.setegid(gid)
+        Errno.handle if ret == -1
+        gid
+      end
+      alias_method :grant_privilege, :eid=
+
+      def re_exchange
+        real = FFI::Platform::POSIX.getgid
+        Errno.handle if real == -1
+        eff = FFI::Platform::POSIX.getegid
+        Errno.handle if eff == -1
+        ret = FFI::Platform::POSIX.setregid(eff, real)
+        Errno.handle if ret == -1
+        eff
+      end
+
+      def re_exchangeable?
+        true
+      end
+
+      def rid
+        ret = FFI::Platform::POSIX.getgid
+        Errno.handle if ret == -1
+        ret
+      end
+
+      def sid_available?
+        true
+      end
+
+      def switch
+        eff = re_exchange
+        if block_given?
+          ret = yield
+          re_exchange
+          return ret
+        else
+          return eff
+        end
+      end
+
+    end
+  end
+
 end
