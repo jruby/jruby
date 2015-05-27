@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -34,6 +35,7 @@ import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.coerce.NameToJavaStringNode;
+import org.jruby.truffle.nodes.coerce.NameToSymbolOrStringNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.coerce.NameToJavaStringNodeGen;
@@ -853,24 +855,56 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
-        @Specialization(guards = "!isScoped(name)")
-        public Object getConstant(VirtualFrame frame, RubyModule module, String name, UndefinedPlaceholder inherit) {
+        // Symbol
+        @Specialization
+        public Object getConstant(VirtualFrame frame, RubyModule module, RubySymbol name, UndefinedPlaceholder inherit) {
             return getConstant(frame, module, name, true);
         }
 
-        @Specialization(guards = { "!isScoped(name)", "inherit" })
-        public Object getConstant(VirtualFrame frame, RubyModule module, String name, boolean inherit) {
-            return getConstantNode.executeGetConstant(frame, module, name);
+        @Specialization(guards = "inherit")
+        public Object getConstant(VirtualFrame frame, RubyModule module, RubySymbol name, boolean inherit) {
+            return getConstantNode.executeGetConstant(frame, module, name.toString());
         }
 
-        @Specialization(guards = { "!isScoped(name)", "!inherit" })
-        public Object getConstantNoInherit(VirtualFrame frame, RubyModule module, String name, boolean inherit) {
-            CompilerDirectives.transferToInterpreter();
+        @Specialization(guards = "!inherit")
+        public Object getConstantNoInherit(VirtualFrame frame, RubyModule module, RubySymbol name, boolean inherit) {
+            return getConstantNoInherit(module, name.toString());
+        }
 
-            RubyConstant constant = module.getConstants().get(name);
+        // String
+        @Specialization(guards = "!isScoped(name)")
+        public Object getConstant(VirtualFrame frame, RubyModule module, RubyString name, UndefinedPlaceholder inherit) {
+            return getConstant(frame, module, name, true);
+        }
+
+        @Specialization(guards = { "inherit", "!isScoped(name)" })
+        public Object getConstant(VirtualFrame frame, RubyModule module, RubyString name, boolean inherit) {
+            return getConstantNode.executeGetConstant(frame, module, name.toString());
+        }
+
+        @Specialization(guards = { "!inherit", "!isScoped(name)" })
+        public Object getConstantNoInherit(VirtualFrame frame, RubyModule module, RubyString name, boolean inherit) {
+            return getConstantNoInherit(module, name.toString());
+        }
+
+        // Scoped String
+        @Specialization(guards = "isScoped(fullName)")
+        public Object getConstantScoped(VirtualFrame frame, RubyModule module, RubyString fullName, UndefinedPlaceholder inherit) {
+            return getConstantScoped(frame, module, fullName, true);
+        }
+
+        @Specialization(guards = "isScoped(fullName)")
+        public Object getConstantScoped(VirtualFrame frame, RubyModule module, RubyString fullName, boolean inherit) {
+            return getConstantScoped(module, fullName.toString(), inherit);
+        }
+
+        @TruffleBoundary
+        private Object getConstantNoInherit(RubyModule module, String name) {
+            final RubyConstant constant = module.getConstants().get(name);
+
             if (constant == null) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(module, name, this));
@@ -879,21 +913,8 @@ public abstract class ModuleNodes {
             }
         }
 
-        @Specialization(guards = "isScoped(fullName)")
-        public Object getConstantScoped(VirtualFrame frame, RubyModule module, String fullName, UndefinedPlaceholder inherit) {
-            return getConstantScoped(frame, module, fullName, true);
-        }
-
-        @Specialization(guards = "isScoped(fullName)")
-        public Object getConstantScoped(VirtualFrame frame, RubyModule module, String fullName, boolean inherit) {
-            CompilerDirectives.transferToInterpreter();
-
-            Object fullNameObject = RubyArguments.getUserArgument(frame.getArguments(), 0);
-            if (fullNameObject instanceof RubySymbol && !IdUtil.isValidConstantName19(fullName)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", fullName), fullName, this));
-            }
-
+        @TruffleBoundary
+        private Object getConstantScoped(RubyModule module, String fullName, boolean inherit) {
             RubyConstant constant = ModuleOperations.lookupScopedConstant(getContext(), module, fullName, inherit, this);
             if (constant == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -903,8 +924,10 @@ public abstract class ModuleNodes {
             }
         }
 
-        boolean isScoped(String name) {
-            return name.contains("::");
+        @TruffleBoundary
+        boolean isScoped(RubyString name) {
+            // TODO (eregon, 27 May 2015): Any way to make this efficient?
+            return name.toString().contains("::");
         }
 
     }
