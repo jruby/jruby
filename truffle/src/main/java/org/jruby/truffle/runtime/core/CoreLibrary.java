@@ -1038,6 +1038,12 @@ public class CoreLibrary {
         return new RubyException(ioErrorClass, context.makeString(String.format("Error reading file -  %s", fileName)), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException badAddressError(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(getErrnoClass(Errno.EFAULT), context.makeString("Bad address"), RubyCallStack.getBacktrace(currentNode));
+    }
+
+
     public RubyException badFileDescriptor(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(getErrnoClass(Errno.EBADF), context.makeString("Bad file descriptor"), RubyCallStack.getBacktrace(currentNode));

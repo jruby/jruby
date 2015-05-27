@@ -337,6 +337,34 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "getpriority", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1})
+    public abstract static class GetPriorityNode extends CoreMethodArrayArgumentsNode {
+
+        public GetPriorityNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getpriority(int kind, int id) {
+            return posix().getpriority(kind, id);
+        }
+
+    }
+
+    @CoreMethod(names = "setpriority", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 1, 2})
+    public abstract static class SetPriorityNode extends CoreMethodArrayArgumentsNode {
+
+        public SetPriorityNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int setpriority(int kind, int id, int priority) {
+            return posix().setpriority(kind, id, priority);
+        }
+
+    }
+
     @CoreMethod(names = "flock", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1})
     public abstract static class FlockNode extends CoreMethodArrayArgumentsNode {
 
@@ -437,6 +465,21 @@ public abstract class PosixNodes {
         @Specialization
         public int errno() {
             return posix().errno();
+        }
+
+    }
+
+    @CoreMethod(names = "errno=", isModuleFunction = true, required = 1)
+    public abstract static class ErrnoAssignNode extends CoreMethodArrayArgumentsNode {
+
+        public ErrnoAssignNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int errno(int errno) {
+            posix().errno(errno);
+            return 0;
         }
 
     }

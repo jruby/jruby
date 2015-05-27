@@ -28,6 +28,9 @@
 
 module Process
   module Constants
+    PRIO_PGRP    = Rubinius::Config['rbx.platform.process.PRIO_PGRP']
+    PRIO_PROCESS = Rubinius::Config['rbx.platform.process.PRIO_PROCESS']
+    PRIO_USER    = Rubinius::Config['rbx.platform.process.PRIO_USER']
     WNOHANG = 1
   end
   include Constants
@@ -66,6 +69,26 @@ module Process
 
   def self.egid
     ret = FFI::Platform::POSIX.getegid
+    Errno.handle if ret == -1
+    ret
+  end
+
+  def self.getpriority(kind, id)
+    kind = Rubinius::Type.coerce_to kind, Integer, :to_int
+    id =   Rubinius::Type.coerce_to id, Integer, :to_int
+
+    FFI::Platform::POSIX.errno = 0
+    ret = FFI::Platform::POSIX.getpriority(kind, id)
+    Errno.handle
+    ret
+  end
+
+  def self.setpriority(kind, id, priority)
+    kind = Rubinius::Type.coerce_to kind, Integer, :to_int
+    id =   Rubinius::Type.coerce_to id, Integer, :to_int
+    priority = Rubinius::Type.coerce_to priority, Integer, :to_int
+
+    ret = FFI::Platform::POSIX.setpriority(kind, id, priority)
     Errno.handle if ret == -1
     ret
   end
