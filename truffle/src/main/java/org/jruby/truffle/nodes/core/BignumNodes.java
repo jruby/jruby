@@ -97,11 +97,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public Object add(RubyBasicObject a, int b) {
-            return fixnumOrBignum(getBigIntegerValue(a).add(BigInteger.valueOf(b)));
-        }
-
-        @Specialization
         public Object add(RubyBasicObject a, long b) {
             return fixnumOrBignum(getBigIntegerValue(a).add(BigInteger.valueOf(b)));
         }
@@ -126,11 +121,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public Object sub(RubyBasicObject a, int b) {
-            return fixnumOrBignum(getBigIntegerValue(a).subtract(BigInteger.valueOf(b)));
-        }
-
-        @Specialization
         public Object sub(RubyBasicObject a, long b) {
             return fixnumOrBignum(getBigIntegerValue(a).subtract(BigInteger.valueOf(b)));
         }
@@ -152,12 +142,6 @@ public abstract class BignumNodes {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public Object mul(RubyBasicObject a, int b) {
-            return fixnumOrBignum(getBigIntegerValue(a).multiply(BigInteger.valueOf(b)));
         }
 
         @TruffleBoundary
@@ -187,11 +171,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public Object div(RubyBasicObject a, int b) {
-            return fixnumOrBignum(getBigIntegerValue(a).divide(BigInteger.valueOf(b)));
-        }
-
-        @Specialization
         public Object div(RubyBasicObject a, long b) {
             return fixnumOrBignum(getBigIntegerValue(a).divide(BigInteger.valueOf(b)));
         }
@@ -213,18 +192,6 @@ public abstract class BignumNodes {
 
         public ModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object mod(RubyBasicObject a, int b) {
-            if (b == 0) {
-                throw new ArithmeticException("divide by zero");
-            } else if (b < 0) {
-                final BigInteger bigint = BigInteger.valueOf(b);
-                final BigInteger mod = getBigIntegerValue(a).mod(bigint.negate());
-                return fixnumOrBignum(mod.add(bigint));
-            }
-            return fixnumOrBignum(getBigIntegerValue(a).mod(BigInteger.valueOf(b)));
         }
 
         @Specialization
@@ -267,11 +234,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public boolean less(RubyBasicObject a, int b) {
-            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) < 0;
-        }
-
-        @Specialization
         public boolean less(RubyBasicObject a, long b) {
             return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) < 0;
         }
@@ -298,11 +260,6 @@ public abstract class BignumNodes {
 
         public LessEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        @Specialization
-        public boolean lessEqual(RubyBasicObject a, int b) {
-            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) <= 0;
         }
 
         @Specialization
@@ -379,11 +336,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public int compare(RubyBasicObject a, int b) {
-            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b));
-        }
-
-        @Specialization
         public int compare(RubyBasicObject a, long b) {
             return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b));
         }
@@ -411,11 +363,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public boolean greaterEqual(RubyBasicObject a, int b) {
-            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) >= 0;
-        }
-
-        @Specialization
         public boolean greaterEqual(RubyBasicObject a, long b) {
             return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) >= 0;
         }
@@ -436,11 +383,6 @@ public abstract class BignumNodes {
 
         public GreaterNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        @Specialization
-        public boolean greater(RubyBasicObject a, int b) {
-            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) > 0;
         }
 
         @Specialization
@@ -467,11 +409,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public Object bitAnd(RubyBasicObject a, int b) {
-            return fixnumOrBignum(getBigIntegerValue(a).and(BigInteger.valueOf(b)));
-        }
-
-        @Specialization
         public Object bitAnd(RubyBasicObject a, long b) {
             return fixnumOrBignum(getBigIntegerValue(a).and(BigInteger.valueOf(b)));
         }
@@ -490,11 +427,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public Object bitOr(RubyBasicObject a, int b) {
-            return fixnumOrBignum(getBigIntegerValue(a).or(BigInteger.valueOf(b)));
-        }
-
-        @Specialization
         public Object bitOr(RubyBasicObject a, long b) {
             return fixnumOrBignum(getBigIntegerValue(a).or(BigInteger.valueOf(b)));
         }
@@ -510,11 +442,6 @@ public abstract class BignumNodes {
 
         public BitXOrNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object bitXOr(RubyBasicObject a, int b) {
-            return fixnumOrBignum(getBigIntegerValue(a).xor(BigInteger.valueOf(b)));
         }
 
         @Specialization
@@ -643,11 +570,6 @@ public abstract class BignumNodes {
         public DivModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             divModNode = new GeneralDivModNode(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyArray divMod(RubyBasicObject a, int b) {
-            return divModNode.execute(getBigIntegerValue(a), b);
         }
 
         @Specialization
