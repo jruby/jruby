@@ -157,7 +157,14 @@
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>ruby-maven</artifactId>
-      <version>3.1.1.0.11</version>
+      <version>3.3.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>ruby-maven-libs</artifactId>
+      <version>3.3.3</version>
       <type>gem</type>
       <scope>provided</scope>
     </dependency>
