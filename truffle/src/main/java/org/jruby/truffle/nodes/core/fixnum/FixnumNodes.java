@@ -97,11 +97,6 @@ public abstract class FixnumNodes {
             return a + b;
         }
 
-        @Specialization(guards = "isRubyBignum(b)")
-        public Object add(int a, RubyBasicObject b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).add(BignumNodes.getBigIntegerValue(b)));
-        }
-
         @Specialization(guards = "!isRubyBignum(b)")
         public Object addCoerced(VirtualFrame frame, int a, RubyBasicObject b) {
             return ruby(frame, "redo_coerced :+, b", "b", b);
@@ -149,11 +144,6 @@ public abstract class FixnumNodes {
         @Specialization
         public long subWithOverflow(int a, int b) {
             return (long) a - (long) b;
-        }
-
-        @Specialization(guards = "isRubyBignum(b)")
-        public Object sub(int a, RubyBasicObject b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).subtract(BignumNodes.getBigIntegerValue(b)));
         }
 
         @Specialization
@@ -213,12 +203,6 @@ public abstract class FixnumNodes {
         @Specialization
         public double mul(int a, double b) {
             return a * b;
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyBignum(b)")
-        public Object mul(int a, RubyBasicObject b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).multiply(BignumNodes.getBigIntegerValue(b)));
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
@@ -333,11 +317,6 @@ public abstract class FixnumNodes {
             return a / b;
         }
 
-        @Specialization(guards = "isRubyBignum(b)")
-        public int div(int a, RubyBasicObject b) {
-            return 0;
-        }
-
         @Specialization(guards = "!isRubyBignum(b)")
         public Object divCoerced(VirtualFrame frame, int a, RubyBasicObject b) {
             return ruby(frame, "redo_coerced :/, b", "b", b);
@@ -408,7 +387,6 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public int div(long a, RubyBasicObject b) {
-            // TODO(CS): not entirely sure this is correct
             return 0;
         }
 
@@ -441,11 +419,6 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public double mod(int a, double b) {
-            return mod((long) a, b);
-        }
-
-        @Specialization
         public double mod(long a, double b) {
             if (b == 0) {
                 throw new ArithmeticException("divide by zero");
@@ -474,11 +447,6 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public Object mod(int a, RubyBasicObject b) {
-            return mod((long) a, b);
-        }
-
-        @Specialization(guards = "isRubyBignum(b)")
         public Object mod(long a, RubyBasicObject b) {
             CompilerDirectives.transferToInterpreter();
 
@@ -504,16 +472,6 @@ public abstract class FixnumNodes {
         public DivModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             divModNode = new GeneralDivModNode(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyArray divMod(int a, int b) {
-            return divModNode.execute(a, b);
-        }
-
-        @Specialization(guards = "isRubyBignum(b)")
-        public RubyArray divMod(int a, RubyBasicObject b) {
-            return divModNode.execute(a, BignumNodes.getBigIntegerValue(b));
         }
 
         @Specialization
@@ -575,12 +533,7 @@ public abstract class FixnumNodes {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) < 0;
         }
 
-        @Specialization(guards = {"!isRubyBignum(b)", "!isInteger(b)", "!isLong(b)", "!isDouble(b)"})
-        public Object less(VirtualFrame frame, int a, Object b) {
-            return ruby(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
-        }
-
-        @Specialization(guards = {"!isRubyBignum(b)", "!isInteger(b)", "!isLong(b)", "!isDouble(b)"})
+        @Specialization(guards = { "!isRubyBignum(b)", "!isInteger(b)", "!isLong(b)", "!isDouble(b)" })
         public Object less(VirtualFrame frame, long a, Object b) {
             return ruby(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
         }
@@ -833,11 +786,6 @@ public abstract class FixnumNodes {
             return a & b;
         }
 
-        @Specialization(guards = "isRubyBignum(b)")
-        public Object bitAnd(int a, RubyBasicObject b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).and(BignumNodes.getBigIntegerValue(b)));
-        }
-
         @Specialization
         public long bitAnd(long a, long b) {
             return a & b;
@@ -861,11 +809,6 @@ public abstract class FixnumNodes {
             return a | b;
         }
 
-        @Specialization(guards = "isRubyBignum(b)")
-        public Object bitOr(int a, RubyBasicObject b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).or(BignumNodes.getBigIntegerValue(b)));
-        }
-
         @Specialization
         public long bitOr(long a, long b) {
             return a | b;
@@ -887,11 +830,6 @@ public abstract class FixnumNodes {
         @Specialization
         public int bitXOr(int a, int b) {
             return a ^ b;
-        }
-
-        @Specialization(guards = "isRubyBignum(b)")
-        public Object bitXOr(int a, RubyBasicObject b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).xor(BignumNodes.getBigIntegerValue(b)));
         }
 
         @Specialization
@@ -934,16 +872,6 @@ public abstract class FixnumNodes {
         @Specialization(guards = {"isPositive(b)", "canShiftIntoInt(a, b)"})
         public int leftShift(int a, long b) {
             return a << b;
-        }
-
-        @Specialization(guards = {"isPositive(b)", "canShiftIntoLong(a, b)"})
-        public long leftShiftToLong(int a, int b) {
-            return leftShiftToLong((long) a, b);
-        }
-
-        @Specialization(guards = {"isPositive(b)"})
-        public Object leftShiftWithOverflow(int a, int b) {
-            return leftShiftWithOverflow((long) a, b);
         }
 
         @Specialization(guards = "isStrictlyNegative(b)")
@@ -1275,12 +1203,6 @@ public abstract class FixnumNodes {
         @Specialization
         public RubyString toS(long n, UndefinedPlaceholder undefined) {
             return getContext().makeString(Long.toString(n));
-        }
-
-        @CompilerDirectives.TruffleBoundary
-        @Specialization
-        public RubyString toS(int n, int base) {
-            return toS((long) n, base);
         }
 
         @CompilerDirectives.TruffleBoundary
