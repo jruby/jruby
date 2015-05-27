@@ -647,7 +647,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public boolean equal(int a, RubyBasicObject b) {
-            return BigInteger.valueOf(a).equals(BignumNodes.getBigIntegerValue(b));
+            return false;
         }
 
         @Specialization
@@ -662,7 +662,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public boolean equal(long a, RubyBasicObject b) {
-            return BigInteger.valueOf(a).equals(BignumNodes.getBigIntegerValue(b));
+            return false;
         }
 
         @Specialization(guards = {

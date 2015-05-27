@@ -333,12 +333,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean equal(RubyBasicObject a, int b) {
-            return getBigIntegerValue(a).equals(BigInteger.valueOf(b));
+            return false;
         }
 
         @Specialization
         public boolean equal(RubyBasicObject a, long b) {
-            return getBigIntegerValue(a).equals(BigInteger.valueOf(b));
+            return false;
         }
 
         @Specialization
