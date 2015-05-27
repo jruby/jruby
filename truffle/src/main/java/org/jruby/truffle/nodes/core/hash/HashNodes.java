@@ -34,7 +34,7 @@ import java.util.Collection;
 @CoreClass(name = "Hash")
 public abstract class HashNodes {
 
-    @CoreMethod(names = "[]", onSingleton = true, argumentsAsArray = true, reallyDoesNeedSelf = true)
+    @CoreMethod(names = "[]", constructor = true, argumentsAsArray = true)
     @ImportStatic(HashGuards.class)
     public abstract static class ConstructNode extends CoreMethodArrayArgumentsNode {
 

@@ -88,18 +88,18 @@ public class CoreMethodNodeManager {
 
         assert module != null : fullName;
 
-        final CoreMethod anno = methodDetails.getMethodAnnotation();
+        final CoreMethod method = methodDetails.getMethodAnnotation();
 
-        final List<String> names = Arrays.asList(anno.names());
+        final List<String> names = Arrays.asList(method.names());
         assert names.size() >= 1;
 
-        final Visibility visibility = anno.visibility();
+        final Visibility visibility = method.visibility();
 
-        if (anno.isModuleFunction()) {
+        if (method.isModuleFunction()) {
             if (visibility != Visibility.PUBLIC) {
                 System.err.println("WARNING: visibility ignored when isModuleFunction in " + methodDetails.getIndicativeName());
             }
-            if (anno.onSingleton()) {
+            if (method.onSingleton()) {
                 System.err.println("WARNING: Either onSingleton or isModuleFunction for " + methodDetails.getIndicativeName());
             }
             if (!module.isOnlyAModule()) {
@@ -107,16 +107,12 @@ public class CoreMethodNodeManager {
             }
         }
 
-        // Do not use needsSelf=true in module functions, it is either the module/class or the instance.
-        // Usage of needsSelf is quite rare for singleton methods (except constructors).
-        final boolean needsSelf = !anno.isModuleFunction() && !anno.onSingleton() && anno.needsSelf() || anno.reallyDoesNeedSelf();
+        final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
 
-        final RubyRootNode rootNode = makeGenericMethod(context, methodDetails, needsSelf);
-
-        if (anno.isModuleFunction()) {
+        if (method.isModuleFunction()) {
             addMethod(module, rootNode, names, Visibility.PRIVATE);
             addMethod(getSingletonClass(module), rootNode, names, Visibility.PUBLIC);
-        } else if (anno.onSingleton()) {
+        } else if (method.onSingleton()) {
             addMethod(getSingletonClass(module), rootNode, names, visibility);
         } else {
             addMethod(module, rootNode, names, visibility);
@@ -139,7 +135,7 @@ public class CoreMethodNodeManager {
         }
     }
 
-    private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails, boolean needsSelf) {
+    private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails) {
         final CoreMethod method = methodDetails.getMethodAnnotation();
 
         final CoreSourceSection sourceSection = new CoreSourceSection(methodDetails.getClassAnnotation().name(), method.names()[0]);
@@ -158,6 +154,10 @@ public class CoreMethodNodeManager {
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, methodDetails.getIndicativeName(), false, null, true);
 
         final List<RubyNode> argumentsNodes = new ArrayList<>();
+
+        // Do not use needsSelf=true in module functions, it is either the module/class or the instance.
+        // Usage of needsSelf is quite rare for singleton methods (except constructors).
+        final boolean needsSelf = method.constructor() || (!method.isModuleFunction() && !method.onSingleton() && method.needsSelf());
 
         if (needsSelf) {
             RubyNode readSelfNode = new SelfNode(context, sourceSection);
