@@ -28,10 +28,37 @@
 
 module Process
   module Constants
+    EXIT_SUCCESS = Rubinius::Config['rbx.platform.process.EXIT_SUCCESS'] || 0
+    EXIT_FAILURE = Rubinius::Config['rbx.platform.process.EXIT_FAILURE'] || 1
+
     PRIO_PGRP    = Rubinius::Config['rbx.platform.process.PRIO_PGRP']
     PRIO_PROCESS = Rubinius::Config['rbx.platform.process.PRIO_PROCESS']
     PRIO_USER    = Rubinius::Config['rbx.platform.process.PRIO_USER']
+
+    RLIM_INFINITY  = Rubinius::Config['rbx.platform.process.RLIM_INFINITY']
+    RLIM_SAVED_MAX = Rubinius::Config['rbx.platform.process.RLIM_SAVED_MAX']
+    RLIM_SAVED_CUR = Rubinius::Config['rbx.platform.process.RLIM_SAVED_CUR']
+
+    RLIMIT_AS      = Rubinius::Config['rbx.platform.process.RLIMIT_AS']
+    RLIMIT_CORE    = Rubinius::Config['rbx.platform.process.RLIMIT_CORE']
+    RLIMIT_CPU     = Rubinius::Config['rbx.platform.process.RLIMIT_CPU']
+    RLIMIT_DATA    = Rubinius::Config['rbx.platform.process.RLIMIT_DATA']
+    RLIMIT_FSIZE   = Rubinius::Config['rbx.platform.process.RLIMIT_FSIZE']
+    RLIMIT_MEMLOCK = Rubinius::Config['rbx.platform.process.RLIMIT_MEMLOCK']
+    RLIMIT_NOFILE  = Rubinius::Config['rbx.platform.process.RLIMIT_NOFILE']
+    RLIMIT_NPROC   = Rubinius::Config['rbx.platform.process.RLIMIT_NPROC']
+    RLIMIT_RSS     = Rubinius::Config['rbx.platform.process.RLIMIT_RSS']
+    RLIMIT_SBSIZE  = Rubinius::Config['rbx.platform.process.RLIMIT_SBSIZE']
+    RLIMIT_STACK   = Rubinius::Config['rbx.platform.process.RLIMIT_STACK']
+
+    RLIMIT_RTPRIO     = Rubinius::Config['rbx.platform.process.RLIMIT_RTPRIO']
+    RLIMIT_RTTIME     = Rubinius::Config['rbx.platform.process.RLIMIT_RTTIME']
+    RLIMIT_SIGPENDING = Rubinius::Config['rbx.platform.process.RLIMIT_SIGPENDING']
+    RLIMIT_MSGQUEUE   = Rubinius::Config['rbx.platform.process.RLIMIT_MSGQUEUE']
+    RLIMIT_NICE       = Rubinius::Config['rbx.platform.process.RLIMIT_NICE']
+
     WNOHANG = 1
+    WUNTRACED = 2
   end
   include Constants
 
