@@ -32,12 +32,12 @@ public abstract class ExceptionPrimitiveNodes {
         protected final static int ENOENT = Errno.ENOENT.intValue();
         protected final static int EBADF = Errno.EBADF.intValue();
         protected final static int EEXIST = Errno.EEXIST.intValue();
-        protected final static int EFAULT = Errno.EFAULT.intValue();
         protected final static int EACCES = Errno.EACCES.intValue();
+        protected final static int EFAULT = Errno.EFAULT.intValue();
         protected final static int ENOTDIR = Errno.ENOTDIR.intValue();
 
         public static boolean isExceptionSupported(int errno) {
-            return errno == ENOENT || errno == EBADF || errno == EEXIST || errno == EACCES || errno == ENOTDIR || errno == EFAULT;
+            return errno == ENOENT || errno == EBADF || errno == EEXIST || errno == EACCES || errno == EFAULT || errno == ENOTDIR;
         }
 
         public ExceptionErrnoErrorPrimitiveNode(RubyContext context, SourceSection sourceSection) {
