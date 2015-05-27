@@ -9,6 +9,10 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyProc;
 
 import java.util.Deque;
@@ -17,8 +21,14 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class AtExitManager {
 
+    private final RubyContext context;
+
     private final Deque<RubyProc> runOnExit = new ConcurrentLinkedDeque<>();
     private final Deque<RubyProc> runOnExitAlways = new ConcurrentLinkedDeque<>();
+
+    public AtExitManager(RubyContext context) {
+        this.context = context;
+    }
 
     public void add(RubyProc block, boolean always) {
         if (always) {
@@ -47,7 +57,17 @@ public class AtExitManager {
                 break;
             }
 
-            block.rootCall();
+            try {
+                block.rootCall();
+            } catch (RaiseException e) {
+                final RubyException rubyException = e.getRubyException();
+
+                for (String line : Backtrace.DISPLAY_FORMATTER.format(context, rubyException, rubyException.getBacktrace())) {
+                    System.err.println(line);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
