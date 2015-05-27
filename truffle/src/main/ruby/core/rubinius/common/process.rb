@@ -49,6 +49,12 @@ module Process
     end
   end
 
+  def self.getpgrp
+    ret = FFI::Platform::POSIX.getpgrp
+    Errno.handle if ret == -1
+    ret
+  end
+
   def self.uid
     ret = FFI::Platform::POSIX.getuid
     Errno.handle if ret == -1
