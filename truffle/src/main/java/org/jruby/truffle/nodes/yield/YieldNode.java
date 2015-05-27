@@ -10,9 +10,11 @@
 package org.jruby.truffle.nodes.yield;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -59,7 +61,7 @@ public class YieldNode extends RubyNode {
         return dispatch.dispatch(frame, block, argumentsObjects);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     private Object[] unsplat(Object[] argumentsObjects) {
         // TOOD(CS): what is the error behaviour here?
         assert argumentsObjects.length == 1;

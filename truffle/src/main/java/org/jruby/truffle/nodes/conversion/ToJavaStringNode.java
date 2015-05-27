@@ -10,10 +10,12 @@
 package org.jruby.truffle.nodes.conversion;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -30,13 +32,13 @@ public abstract class ToJavaStringNode extends RubyNode {
 
     // TODO(CS): cache the conversion to a Java String? Or should the user do that themselves?
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     @Specialization
     protected String toJavaString(RubySymbol symbol) {
         return symbol.toString();
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     @Specialization
     protected String toJavaString(RubyString string) {
         return string.toString();

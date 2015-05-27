@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
@@ -85,7 +86,7 @@ public class RubyBasicObject implements TruffleObject {
         this.metaClass = metaClass;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public long verySlowGetObjectID() {
         // TODO(CS): we should specialise on reading this in the #object_id method and anywhere else it's used
         Property property = dynamicObject.getShape().getProperty(OBJECT_ID_IDENTIFIER);
@@ -162,7 +163,7 @@ public class RubyBasicObject implements TruffleObject {
     public static class BasicObjectAllocator implements Allocator {
 
         // TODO(CS): why on earth is this a boundary? Seems like a really bad thing.
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
             return new RubyBasicObject(rubyClass);
@@ -176,7 +177,7 @@ public class RubyBasicObject implements TruffleObject {
         return String.format("RubyBasicObject@%x<logicalClass=%s>", System.identityHashCode(this), logicalClass.getName());
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static void setInstanceVariable(RubyBasicObject receiver, Object name, Object value) {
         Shape shape = receiver.getDynamicObject().getShape();
         Property property = shape.getProperty(name);
@@ -187,14 +188,14 @@ public class RubyBasicObject implements TruffleObject {
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static void setInstanceVariables(RubyBasicObject receiver, Map<Object, Object> instanceVariables) {
         for (Map.Entry<Object, Object> entry : instanceVariables.entrySet()) {
             setInstanceVariable(receiver, entry.getKey(), entry.getValue());
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static Object getInstanceVariable(RubyBasicObject receiver, Object name) {
         Shape shape = receiver.getDynamicObject().getShape();
         Property property = shape.getProperty(name);
@@ -205,7 +206,7 @@ public class RubyBasicObject implements TruffleObject {
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static Map<Object, Object> getInstanceVariables(RubyBasicObject receiver) {
         Shape shape = receiver.getDynamicObject().getShape();
         Map<Object, Object> vars = new LinkedHashMap<>();
@@ -216,13 +217,13 @@ public class RubyBasicObject implements TruffleObject {
         return vars;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static Object[] getFieldNames(RubyBasicObject receiver) {
         List<Object> keys = receiver.getDynamicObject().getShape().getKeyList();
         return keys.toArray(new Object[keys.size()]);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static boolean isFieldDefined(RubyBasicObject receiver, String name) {
         return receiver.getDynamicObject().getShape().hasProperty(name);
     }

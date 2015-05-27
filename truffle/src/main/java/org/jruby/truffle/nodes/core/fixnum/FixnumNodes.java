@@ -1139,13 +1139,13 @@ public abstract class FixnumNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString inspect(int n) {
             return getContext().makeString(Integer.toString(n));
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString inspect(long n) {
             return getContext().makeString(Long.toString(n));
@@ -1193,19 +1193,19 @@ public abstract class FixnumNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString toS(int n, UndefinedPlaceholder undefined) {
             return getContext().makeString(Integer.toString(n));
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString toS(long n, UndefinedPlaceholder undefined) {
             return getContext().makeString(Long.toString(n));
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString toS(long n, int base) {
             if (base < 2 || base > 36) {

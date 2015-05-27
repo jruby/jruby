@@ -10,6 +10,8 @@
 package org.jruby.truffle.runtime.hash;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -25,7 +27,7 @@ public class HashOperations {
         return verySlowFromEntries(context.getCoreLibrary().getHashClass(), entries, byIdentity);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static RubyHash verySlowFromEntries(RubyClass hashClass, List<KeyValue> entries, boolean byIdentity) {
         final RubyHash hash = new RubyHash(hashClass, null, null, null, 0, null);
         verySlowSetKeyValues(hash, entries, byIdentity);
@@ -86,7 +88,7 @@ public class HashOperations {
         System.err.println(builder);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static List<KeyValue> verySlowToKeyValues(RubyHash hash) {
         final List<KeyValue> keyValues = new ArrayList<>();
 
@@ -109,7 +111,7 @@ public class HashOperations {
         return keyValues;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static HashLookupResult verySlowFindBucket(RubyHash hash, Object key, boolean byIdentity) {
         final Object hashValue = DebugOperations.send(hash.getContext(), key, "hash", null);
 
@@ -151,7 +153,7 @@ public class HashOperations {
         return new HashLookupResult(hashed, bucketIndex, previousEntry, null);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static void verySlowSetAtBucket(RubyHash hash, HashLookupResult hashLookupResult, Object key, Object value) {
         assert verifyStore(hash);
 
@@ -176,7 +178,7 @@ public class HashOperations {
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static boolean verySlowSetInBuckets(RubyHash hash, Object key, Object value, boolean byIdentity) {
         assert verifyStore(hash);
 
@@ -192,7 +194,7 @@ public class HashOperations {
         return hashLookupResult.getEntry() == null;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static void verySlowSetKeyValues(RubyHash hash, List<KeyValue> keyValues, boolean byIdentity) {
         assert verifyStore(hash);
 

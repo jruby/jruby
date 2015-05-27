@@ -10,9 +10,12 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -91,7 +94,7 @@ public abstract class ExceptionPrimitiveNodes {
             return getContext().getCoreLibrary().notDirectoryError(message.toString(), this);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "!isExceptionSupported(errno)")
         public RubyException unsupported(Object message, int errno) {
             final Errno errnoObject = Errno.valueOf(errno);

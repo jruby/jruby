@@ -38,6 +38,7 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
@@ -46,8 +47,8 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
-
 import jnr.ffi.byref.IntByReference;
+
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
@@ -276,7 +277,7 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public boolean fnmatch(RubyString pattern, RubyString path, int flags) {
             return Dir.fnmatch(pattern.getByteList().getUnsafeBytes(),
@@ -568,7 +569,7 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = {"isNil(writables)", "isNil(errorables)"})
         public Object select(RubyArray readables, RubyBasicObject writables, RubyBasicObject errorables, int timeout) {
             final Object[] readableObjects = readables.slowToArray();

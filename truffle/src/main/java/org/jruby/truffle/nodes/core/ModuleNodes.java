@@ -88,7 +88,7 @@ public abstract class ModuleNodes {
             return includes(metaClassNode.executeMetaClass(frame, instance), module);
         }
         
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         public boolean includes(RubyModule metaClass, RubyModule module) {
             return ModuleOperations.includesModule(metaClass, module);
         }
@@ -995,25 +995,25 @@ public abstract class ModuleNodes {
             return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubySymbol defineMethod(RubyModule module, String name, UndefinedPlaceholder proc, UndefinedPlaceholder block) {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("needs either proc or block", this));
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubySymbol defineMethod(RubyModule module, String name, UndefinedPlaceholder proc, RubyProc block) {
             return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubySymbol defineMethod(RubyModule module, String name, RubyProc proc, UndefinedPlaceholder block) {
             return defineMethod(module, name, proc);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubySymbol defineMethod(RubyModule module, String name, RubyMethod method, UndefinedPlaceholder block) {
             module.addMethod(this, method.getMethod().withName(name));

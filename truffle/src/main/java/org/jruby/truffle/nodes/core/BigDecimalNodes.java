@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
@@ -135,7 +136,7 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         private Object addBigDecimal(RubyBasicObject a, BigDecimal b) {
             return createRubyBigDecimal(
                     getContext().getCoreLibrary().getBigDecimalClass(),
@@ -176,7 +177,7 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         private Object addBigDecimal(RubyBasicObject a, BigDecimal b, int precision) {
             return createRubyBigDecimal(
                     getContext().getCoreLibrary().getBigDecimalClass(),
@@ -217,7 +218,7 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         private Object subBigDecimal(RubyBasicObject a, BigDecimal b) {
             return createRubyBigDecimal(
                     getContext().getCoreLibrary().getBigDecimalClass(),
@@ -258,7 +259,7 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         private Object subBigDecimal(RubyBasicObject a, BigDecimal b, int precision) {
             return createRubyBigDecimal(
                     getContext().getCoreLibrary().getBigDecimalClass(),
@@ -298,7 +299,7 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         private Object multBigDecimal(RubyBasicObject a, BigDecimal b) {
             return createRubyBigDecimal(
                     getContext().getCoreLibrary().getBigDecimalClass(),
@@ -339,7 +340,7 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         private Object mulBigDecimal(RubyBasicObject a, BigDecimal b, int precision) {
             return createRubyBigDecimal(
                     getContext().getCoreLibrary().getBigDecimalClass(),
@@ -380,7 +381,7 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         private Object divBigDecimal(RubyBasicObject a, BigDecimal b) {
             // precision based on https://github.com/pitr-ch/jruby/blob/bigdecimal/core/src/main/java/org/jruby/ext/bigdecimal/RubyBigDecimal.java#L892-903
             final int len = getBigDecimalValue(a).precision() + b.precision();
@@ -471,7 +472,7 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString toS(RubyBasicObject value) {
             final BigDecimal bigDecimal = getBigDecimalValue(value);

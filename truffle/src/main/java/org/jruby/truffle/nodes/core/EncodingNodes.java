@@ -403,7 +403,7 @@ public abstract class EncodingNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString toS(RubyEncoding encoding) {
             final ByteList name = encoding.getName().dup();

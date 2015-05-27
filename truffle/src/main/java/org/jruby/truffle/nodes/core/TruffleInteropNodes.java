@@ -10,12 +10,14 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.interop.messages.*;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -176,7 +178,7 @@ public abstract class TruffleInteropNodes {
             return node.executeForeign(frame, receiver, slowPathToString(identifier));
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         private static String slowPathToString(RubyString identifier) {
             return identifier.toString();
         }
@@ -219,7 +221,7 @@ public abstract class TruffleInteropNodes {
             return node.executeForeign(frame, receiver, slowPathToString(identifier), value);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         private static String slowPathToString(RubyString identifier) {
             return identifier.toString();
         }

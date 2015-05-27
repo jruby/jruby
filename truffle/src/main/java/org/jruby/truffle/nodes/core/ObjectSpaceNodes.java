@@ -10,9 +10,11 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -34,7 +36,7 @@ public abstract class ObjectSpaceNodes {
             return id2Ref((long) id);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public Object id2Ref(long id) {
             if (id == ObjectIDOperations.NIL) {
@@ -128,7 +130,7 @@ public abstract class ObjectSpaceNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyArray defineFinalizer(Object object, RubyProc finalizer) {
             getContext().getObjectSpaceManager().defineFinalizer((RubyBasicObject) object, finalizer);
@@ -143,7 +145,7 @@ public abstract class ObjectSpaceNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public Object undefineFinalizer(Object object) {
             getContext().getObjectSpaceManager().undefineFinalizer((RubyBasicObject) object);

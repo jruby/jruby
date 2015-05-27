@@ -10,11 +10,13 @@
 package org.jruby.truffle.pack.nodes.type;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
@@ -73,19 +75,19 @@ public abstract class ToStringNode extends PackNode {
 
     // TODO CS 31-Mar-15 these boundaries and slow versions are not ideal
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     @Specialization(guards = "convertNumbersToStrings")
     public ByteList toString(int value) {
         return new ByteList(Integer.toString(value).getBytes(StandardCharsets.US_ASCII));
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     @Specialization(guards = "convertNumbersToStrings")
     public ByteList toString(long value) {
         return new ByteList(Long.toString(value).getBytes(StandardCharsets.US_ASCII));
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     @Specialization(guards = "convertNumbersToStrings")
     public ByteList toString(double value) {
         return new ByteList(Double.toString(value).getBytes(StandardCharsets.US_ASCII));

@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
@@ -59,7 +60,7 @@ public class ThreadBacktraceLocationNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString absolutePath(RubyBasicObject threadBacktraceLocation) {
             final Activation activation = getActivation(threadBacktraceLocation);
@@ -84,7 +85,7 @@ public class ThreadBacktraceLocationNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public int lineno(RubyBasicObject threadBacktraceLocation) {
             final Activation activation = getActivation(threadBacktraceLocation);
@@ -103,7 +104,7 @@ public class ThreadBacktraceLocationNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString toS(RubyBasicObject threadBacktraceLocation) {
             final Activation activation = getActivation(threadBacktraceLocation);

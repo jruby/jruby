@@ -38,6 +38,7 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
@@ -472,7 +473,7 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public Object get(RubyString key) {
             final Object value = getContext().getRubiniusConfiguration().get(key.toString());
@@ -493,7 +494,7 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyArray getSection(RubyString section) {
             final List<RubyArray> sectionKeyValues = new ArrayList<>();
@@ -525,7 +526,7 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public Object waitPID(final int input_pid, boolean no_hang) {
             // Transliterated from Rubinius C++ - not tidied up significantly to make merging changes easier

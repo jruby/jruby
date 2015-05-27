@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
@@ -300,7 +301,7 @@ public abstract class RubyNode extends Node {
         return getContext().eval(expression, binding, true, "inline-ruby", this);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     private MaterializedFrame setupFrame(Object self, Object... arguments) {
         final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
                 RubyArguments.pack(null, null, self, null, new Object[]{}));

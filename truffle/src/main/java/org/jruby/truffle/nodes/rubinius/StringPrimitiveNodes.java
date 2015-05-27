@@ -54,11 +54,13 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
@@ -118,7 +120,7 @@ public abstract class StringPrimitiveNodes {
             taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyArray stringAwkSplit(RubyString string, int lim) {
             final List<RubyString> ret = new ArrayList<>();
@@ -326,7 +328,7 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public Object stringChrAt(RubyString string, int byteIndex) {
             // Taken from Rubinius's Character::create_from.
@@ -534,7 +536,7 @@ public abstract class StringPrimitiveNodes {
                     new ByteList(new byte[]{(byte) code}, encoding.getEncoding()));
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "!isSimple(code, encoding)")
         public RubyString stringFromCodepoint(int code, RubyEncoding encoding) {
             final int length;
@@ -670,7 +672,7 @@ public abstract class StringPrimitiveNodes {
             return stringByteCharacterIndex(string, index, start);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = { "!isSingleByteOptimizableOrAsciiCompatible(string)", "!isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
         public int stringByteCharacterIndex(RubyString string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index and Encoding::find_byte_character_index.
@@ -699,7 +701,7 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public Object stringCharacterIndex(RubyString string, RubyString pattern, int offset) {
             if (offset < 0) {
@@ -1080,7 +1082,7 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public Object stringToInum(RubyString string, int fixBase, boolean strict) {
             try {

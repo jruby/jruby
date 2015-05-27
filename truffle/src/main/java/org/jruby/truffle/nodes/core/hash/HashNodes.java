@@ -10,12 +10,14 @@
 package org.jruby.truffle.nodes.core.hash;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -633,7 +635,7 @@ public abstract class HashNodes {
             return hash;
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         private Collection<KeyValue> verySlowToKeyValues(RubyHash hash) {
             return HashOperations.verySlowToKeyValues(hash);
         }
@@ -747,7 +749,7 @@ public abstract class HashNodes {
             return self;
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "isBucketsStorage(from)")
         public RubyHash dupBuckets(RubyHash self, RubyHash from) {
             if (self == from) {

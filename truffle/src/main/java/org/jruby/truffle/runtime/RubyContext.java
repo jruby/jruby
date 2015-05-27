@@ -289,17 +289,17 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public RubySymbol getSymbol(String name) {
         return symbolTable.getSymbol(name, ASCIIEncoding.INSTANCE);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public RubySymbol getSymbol(String name, Encoding encoding) {
         return symbolTable.getSymbol(name, encoding);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public RubySymbol getSymbol(ByteList name) {
         return symbolTable.getSymbol(name);
     }

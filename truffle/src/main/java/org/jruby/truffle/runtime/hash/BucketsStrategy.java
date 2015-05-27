@@ -9,7 +9,8 @@
  */
 package org.jruby.truffle.runtime.hash;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+
 import org.jruby.truffle.runtime.core.RubyHash;
 
 import java.util.Arrays;
@@ -71,7 +72,7 @@ public abstract class BucketsStrategy {
         assert HashOperations.verifyStore(hash);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static void resize(RubyHash hash) {
         assert HashOperations.verifyStore(hash);
 

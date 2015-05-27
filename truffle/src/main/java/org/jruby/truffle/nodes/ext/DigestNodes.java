@@ -10,9 +10,11 @@
 package org.jruby.truffle.nodes.ext;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.ext.digest.BubbleBabble;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
@@ -81,7 +83,7 @@ public abstract class DigestNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject md5() {
             return createDigest(getContext(), Algorithm.MD5);
@@ -96,7 +98,7 @@ public abstract class DigestNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject sha1() {
             return createDigest(getContext(), Algorithm.SHA1);
@@ -111,7 +113,7 @@ public abstract class DigestNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject sha256() {
             return createDigest(getContext(), Algorithm.SHA256);
@@ -126,7 +128,7 @@ public abstract class DigestNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject sha384() {
             return createDigest(getContext(), Algorithm.SHA384);
@@ -141,7 +143,7 @@ public abstract class DigestNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject sha512() {
             return createDigest(getContext(), Algorithm.SHA512);
@@ -156,7 +158,7 @@ public abstract class DigestNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject update(RubyBasicObject digestObject, RubyString message) {
             final ByteList bytes = message.getByteList();
@@ -173,7 +175,7 @@ public abstract class DigestNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject reset(RubyBasicObject digestObject) {
             getDigest(digestObject).reset();
@@ -189,7 +191,7 @@ public abstract class DigestNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString digest(RubyBasicObject digestObject) {
             final MessageDigest digest = getDigest(digestObject);
@@ -216,7 +218,7 @@ public abstract class DigestNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public int digestLength(RubyBasicObject digestObject) {
             return getDigest(digestObject).getDigestLength();
@@ -231,7 +233,7 @@ public abstract class DigestNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString bubblebabble(RubyString message) {
             final ByteList byteList = message.getByteList();

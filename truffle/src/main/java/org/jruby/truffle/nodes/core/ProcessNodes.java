@@ -10,12 +10,15 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.signal.SignalOperations;
+
 import sun.misc.Signal;
 
 @CoreClass(name = "Process")
@@ -85,7 +88,7 @@ public abstract class ProcessNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public int kill(RubySymbol signalName, int pid) {
             int self = posix().getpid();
