@@ -25,17 +25,11 @@ class Thread
   end
 
   def self.abort_on_exception
-    false
+    current.abort_on_exception
   end
 
   def self.abort_on_exception=(value)
-  end
-
-  def abort_on_exception
-    false
-  end
-
-  def abort_on_exception=(value)
+    current.abort_on_exception = value
   end
 
 end
