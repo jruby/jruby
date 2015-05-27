@@ -60,19 +60,9 @@ class LibrarySearcher {
     }
 
     public FoundLibrary findLibrary(String baseName, SuffixType suffixType) {
-        boolean searchedForServiceLibrary = false;
-
         for (String suffix : suffixType.getSuffixes()) {
             FoundLibrary library = findBuiltinLibrary(baseName, suffix);
             if (library == null) library = findResourceLibrary(baseName, suffix);
-
-            // Since searching for a service library doesn't take the suffix into account, there's no need
-            // to perform it more than once.
-            if (library == null && !searchedForServiceLibrary) {
-                library = findServiceLibrary(baseName, suffix);
-                searchedForServiceLibrary = true;
-            }
-
             if (library != null) {
                 return library;
             }
@@ -92,17 +82,6 @@ class LibrarySearcher {
                     namePlusSuffix);
         }
         return null;
-    }
-
-    private FoundLibrary findServiceLibrary(String name, String ignored) {
-        DebugLog.JarExtension.logTry(name);
-        Library extensionLibrary = ClassExtensionLibrary.tryFind(runtime, name);
-        if (extensionLibrary != null) {
-            DebugLog.JarExtension.logFound(name);
-            return new FoundLibrary(extensionLibrary, name);
-        } else {
-            return null;
-        }
     }
 
     private FoundLibrary findResourceLibrary(String baseName, String suffix) {
