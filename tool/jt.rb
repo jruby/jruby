@@ -259,6 +259,8 @@ module Commands
         "EXCLUDES" => "test/mri/excludes_truffle"
     }
     jruby_args = %w[-J-Xmx2G -X+T -Xtruffle.exceptions.print_java]
+    # We need the bundled minitest as the one is stdlib is not compatible
+    jruby_args << "-Itest/mri/lib"
 
     if args.empty?
       args = File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
