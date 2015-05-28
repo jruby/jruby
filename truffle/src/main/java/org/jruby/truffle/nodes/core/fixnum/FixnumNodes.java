@@ -697,6 +697,14 @@ public abstract class FixnumNodes {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) > 0;
         }
 
+        @Specialization(guards = {
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)",
+                "!isRubyBignum(b)"})
+        public Object compare(VirtualFrame frame, Object a, Object b) {
+            return ruby(frame, "b, a = math_coerce(other, :compare_error); a > b", "other", b);
+        }
     }
 
     @CoreMethod(names = "~")

@@ -16,18 +16,17 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.EnumSet;
+import java.util.regex.Pattern;
 
 @CoreClass(name = "Truffle::BigDecimal")
 public abstract class BigDecimalNodes {
@@ -48,7 +47,9 @@ public abstract class BigDecimalNodes {
     public static final Property VALUE_PROPERTY;
     public static final Property TYPE_PROPERTY;
 
-    public enum Type {NEGATIVE_INFINITY, POSITIVE_INFINITY, POSITIVE_ZERO, NEGATIVE_ZERO, NAN, NORMAL}
+    public enum Type {
+        NEGATIVE_INFINITY, POSITIVE_INFINITY, NEGATIVE_ZERO, NAN, NORMAL
+    }
 
     static {
         final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
@@ -130,20 +131,16 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
-        public static boolean isRubyBigDecimal(RubyBasicObject value, Type type) {
-            return RubyGuards.isRubyBigDecimal(value) && getBigDecimalType(value) == type;
+        public static boolean isNormal(RubyBasicObject value) {
+            return getBigDecimalType(value) == Type.NORMAL;
         }
 
-        public static boolean isNormalRubyBigDecimal(RubyBasicObject value) {
-            return isRubyBigDecimal(value, Type.NORMAL);
+        public static boolean isNormalZero(RubyBasicObject value) {
+            return getBigDecimalValue(value).compareTo(BigDecimal.ZERO) == 0;
         }
 
-        public static boolean isSpecialRubyBigDecimal(RubyBasicObject value) {
-            return RubyGuards.isRubyBigDecimal(value) && getBigDecimalType(value) != Type.NORMAL;
-        }
-
-        public static boolean isSpecialNanRubyBigDecimal(RubyBasicObject value) {
-            return isRubyBigDecimal(value, Type.NAN);
+        public static boolean isNan(RubyBasicObject value) {
+            return getBigDecimalType(value) == Type.NAN;
         }
 
         protected RubyBasicObject createRubyBigDecimal(Type type) {
@@ -158,24 +155,60 @@ public abstract class BigDecimalNodes {
 
     // TODO (pitr 21-May-2015) cache special BigDecimal instances
 
-    @CoreMethod(names = "initialize", required = 1)
+    @CoreMethod(names = "initialize", required = 1, optional = 1)
     public abstract static class InitializeNode extends BigDecimalCoreMethodNode {
+
+        private final static Pattern NUMBER_PATTERN;
+        private final static Pattern ZERO_PATTERN;
+
+        static {
+            final String exponent = "([eE][+-]?)?\\d*";
+            NUMBER_PATTERN = Pattern.compile("^([+-]?\\d*\\.?\\d*" + exponent + ").*");
+            ZERO_PATTERN = Pattern.compile("^[+-]?0*\\.?0*" + exponent);
+        }
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyBigDecimal(v)")
-        public RubyBasicObject initialize(RubyBasicObject self, RubyBasicObject v) {
-            return v;
+        @Specialization
+        public RubyBasicObject initialize(RubyBasicObject self, int value) {
+            setBigDecimalValue(self, getBigDecimalValue(value));
+            return self;
+        }
+
+        @Specialization
+        public RubyBasicObject initialize(RubyBasicObject self, long value) {
+            setBigDecimalValue(self, getBigDecimalValue(value));
+            return self;
+        }
+
+        @Specialization
+        public RubyBasicObject initialize(RubyBasicObject self, double value) {
+            setBigDecimalValue(self, getBigDecimalValue(value));
+            return self;
+        }
+
+        @Specialization()
+        public RubyBasicObject initialize(RubyBasicObject self, RubyBignum value) {
+            setBigDecimalValue(self, getBigDecimalValue(value));
+            return self;
+        }
+
+        @Specialization(guards = "isRubyBigDecimal(value)")
+        public RubyBasicObject initialize(RubyBasicObject self, RubyBasicObject value) {
+            setBigDecimalValue(self, getBigDecimalValue(value));
+            return self;
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(v)")
-        public RubyBasicObject initializeFromString(RubyBasicObject self, RubyBasicObject v) {
-            // TODO (pitr 21-May-2015): add profile?
-            // TODO (pitr 25-May-2015): construction of positive and negative zero
-            switch (v.toString()) {
+        public RubyBasicObject initializeFromStringWithException(RubyBasicObject self, RubyBasicObject v) {
+            String strValue = v.toString().trim();
+
+            // TODO (pitr 26-May-2015): create specialization without trims and other cleanups, use rewriteOn, special value specializations
+
+            switch (strValue) {
                 case "NaN":
                     setBigDecimalValue(self, Type.NAN);
                     return self;
@@ -186,10 +219,30 @@ public abstract class BigDecimalNodes {
                 case "-Infinity":
                     setBigDecimalValue(self, Type.NEGATIVE_INFINITY);
                     return self;
-                default:
-                    setBigDecimalValue(self, new BigDecimal(v.toString()));
+                case "-0":
+                    setBigDecimalValue(self, Type.NEGATIVE_ZERO);
                     return self;
             }
+
+            // Convert String to Java understandable format (for BigDecimal).
+            strValue = strValue.replaceFirst("[dD]", "E");                  // 1. MRI allows d and D as exponent separators
+            strValue = strValue.replaceAll("_", "");                        // 2. MRI allows underscores anywhere
+            strValue = NUMBER_PATTERN.matcher(strValue).replaceFirst("$1"); // 3. MRI ignores the trailing junk
+
+            try {
+                final BigDecimal value = new BigDecimal(strValue);
+                setBigDecimalValue(self, value);
+                if (value.compareTo(BigDecimal.ZERO) == 0 && strValue.startsWith("-"))
+                    setBigDecimalValue(self, Type.NEGATIVE_ZERO);
+
+            } catch (NumberFormatException e) {
+                if (ZERO_PATTERN.matcher(strValue).matches()) {
+                    setBigDecimalValue(self, BigDecimal.ZERO);
+                } else {
+                    throw e;
+                }
+            }
+            return self;
         }
     }
 
@@ -205,32 +258,37 @@ public abstract class BigDecimalNodes {
             return createRubyBigDecimal(getBigDecimalValue(a).add(b));
         }
 
-        @Specialization(guards = "isNormalRubyBigDecimal(a)")
+        @Specialization(guards = "isNormal(a)")
         public Object add(RubyBasicObject a, int b) {
             return addBigDecimal(a, getBigDecimalValue(b));
         }
 
-        @Specialization(guards = "isNormalRubyBigDecimal(a)")
+        @Specialization(guards = "isNormal(a)")
         public Object add(RubyBasicObject a, long b) {
             return addBigDecimal(a, getBigDecimalValue(b));
         }
 
-        @Specialization(guards = "isNormalRubyBigDecimal(a)")
+        @Specialization(guards = "isNormal(a)")
         public Object add(RubyBasicObject a, double b) {
             return addBigDecimal(a, getBigDecimalValue(b));
         }
 
-        @Specialization(guards = "isNormalRubyBigDecimal(a)")
+        @Specialization(guards = "isNormal(a)")
         public Object add(RubyBasicObject a, RubyBignum b) {
             return addBigDecimal(a, getBigDecimalValue(b));
         }
 
-        @Specialization(guards = {"isNormalRubyBigDecimal(a)", "isNormalRubyBigDecimal(b)"})
+        @Specialization(guards = {
+                "isNormal(a)",
+                "isRubyBigDecimal(b)",
+                "isNormal(b)"})
         public Object addNormal(RubyBasicObject a, RubyBasicObject b) {
             return addBigDecimal(a, getBigDecimalValue(b));
         }
 
-        @Specialization(guards = "isSpecialRubyBigDecimal(a) || isSpecialRubyBigDecimal(b)")
+        @Specialization(guards = {
+                "isRubyBigDecimal(b)",
+                "!isNormal(a) || !isNormal(b)"})
         public Object addSpecial(RubyBasicObject a, RubyBasicObject b) {
             final Type aType = getBigDecimalType(a);
             final Type bType = getBigDecimalType(b);
@@ -246,14 +304,14 @@ public abstract class BigDecimalNodes {
             if (aType == Type.NEGATIVE_INFINITY || bType == Type.NEGATIVE_INFINITY)
                 return createRubyBigDecimal(Type.NEGATIVE_INFINITY);
 
-            // a,b are either normal or +-zero
-
-            BigDecimal sum = BigDecimal.ZERO;
-            if (isNormalRubyBigDecimal(a)) sum = sum.add(getBigDecimalValue(a));
-            if (isNormalRubyBigDecimal(b)) sum = sum.add(getBigDecimalValue(b));
-            return createRubyBigDecimal(sum);
+            // one is NEGATIVE_ZERO and second is NORMAL
+            if (isNormal(a))
+                return a;
+            else
+                return b;
         }
 
+        // TODO (pitr 28-may-2015): should it support coerce?
     }
 
     @CoreMethod(names = "add", required = 2)
@@ -330,6 +388,46 @@ public abstract class BigDecimalNodes {
         @Specialization(guards = "isRubyBigDecimal(b)")
         public Object subtract(RubyBasicObject a, RubyBasicObject b) {
             return subBigDecimal(a, getBigDecimalValue(b));
+        }
+
+    }
+
+    @CoreMethod(names = "-@")
+    public abstract static class NegNode extends BigDecimalCoreMethodNode {
+
+        public NegNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = {
+                "isNormal(value)",
+                "!isNormalZero(value)"})
+        public Object negNormal(RubyBasicObject value) {
+            return createRubyBigDecimal(getBigDecimalValue(value).negate());
+        }
+
+        @Specialization(guards = {
+                "isNormal(value)",
+                "isNormalZero(value)"})
+        public Object negNormalZero(RubyBasicObject value) {
+            return createRubyBigDecimal(Type.NEGATIVE_ZERO);
+        }
+
+        @Specialization(guards = "!isNormal(value)")
+        public Object negSpecial(RubyBasicObject value) {
+            switch (getBigDecimalType(value)) {
+                case POSITIVE_INFINITY:
+                    return createRubyBigDecimal(Type.NEGATIVE_INFINITY);
+                case NEGATIVE_INFINITY:
+                    return createRubyBigDecimal(Type.POSITIVE_INFINITY);
+                case NEGATIVE_ZERO:
+                    return createRubyBigDecimal(BigDecimal.ZERO);
+                case NAN:
+                    return value;
+                default:
+                    throw new RuntimeException(); // never reached
+
+            }
         }
 
     }
@@ -501,66 +599,73 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
-        private int compareBigNum(RubyBasicObject a, BigDecimal b) {
+        @TruffleBoundary
+        private int compareBigDecimal(RubyBasicObject a, BigDecimal b) {
             return getBigDecimalValue(a).compareTo(b);
         }
 
         // TODO (pitr 25-May-2015): how to reduce the number of specializations? or is this usual?
 
-        @Specialization(guards = "isNormalRubyBigDecimal(a)")
+        @Specialization(guards = "isNormal(a)")
         public int compare(RubyBasicObject a, int b) {
-            return compareBigNum(a, getBigDecimalValue(b));
+            return compareBigDecimal(a, getBigDecimalValue(b));
         }
 
-        @Specialization(guards = "isNormalRubyBigDecimal(a)")
+        @Specialization(guards = "isNormal(a)")
         public int compare(RubyBasicObject a, long b) {
-            return compareBigNum(a, getBigDecimalValue(b));
+            return compareBigDecimal(a, getBigDecimalValue(b));
         }
 
-        @Specialization(guards = "isNormalRubyBigDecimal(a)")
+        @Specialization(guards = "isNormal(a)")
         public int compare(RubyBasicObject a, double b) {
-            return compareBigNum(a, getBigDecimalValue(b));
+            return compareBigDecimal(a, getBigDecimalValue(b));
         }
 
-        @Specialization(guards = "isNormalRubyBigDecimal(a)")
+        @Specialization(guards = "isNormal(a)")
         public int compare(RubyBasicObject a, RubyBignum b) {
-            return compareBigNum(a, getBigDecimalValue(b));
+            return compareBigDecimal(a, getBigDecimalValue(b));
         }
 
-        @Specialization(guards = {"isNormalRubyBigDecimal(a)", "isNormalRubyBigDecimal(b)"})
+        @Specialization(guards = {
+                "isNormal(a)",
+                "isRubyBigDecimal(b)",
+                "isNormal(b)"})
         public int compareNormal(RubyBasicObject a, RubyBasicObject b) {
-            return compareBigNum(a, getBigDecimalValue(b));
+            return compareBigDecimal(a, getBigDecimalValue(b));
         }
 
-        @Specialization(guards = "isSpecialRubyBigDecimal(a)")
+        @Specialization(guards = "!isNormal(a)")
         public Object compareSpecial(RubyBasicObject a, int b) {
             return compareSpecial(a, createRubyBigDecimal(getBigDecimalValue(b)));
         }
 
-        @Specialization(guards = "isSpecialRubyBigDecimal(a)")
+        @Specialization(guards = "!isNormal(a)")
         public Object compareSpecial(RubyBasicObject a, long b) {
             return compareSpecial(a, createRubyBigDecimal(getBigDecimalValue(b)));
         }
 
-        @Specialization(guards = "isSpecialRubyBigDecimal(a)")
+        @Specialization(guards = "!isNormal(a)")
         public Object compareSpecial(RubyBasicObject a, double b) {
             return compareSpecial(a, createRubyBigDecimal(getBigDecimalValue(b)));
         }
 
-        @Specialization(guards = "isSpecialRubyBigDecimal(a)")
+        @Specialization(guards = "!isNormal(a)")
         public Object compareSpecial(RubyBasicObject a, RubyBignum b) {
             return compareSpecial(a, createRubyBigDecimal(getBigDecimalValue(b)));
         }
 
-        @Specialization(guards = "isSpecialNanRubyBigDecimal(a)")
+        @Specialization(guards = {
+                "!isNormal(a)",
+                "isNan(a)"})
         public Object compareSpecialNan(RubyBasicObject a, RubyBasicObject b) {
             return nil();
         }
 
+        @TruffleBoundary
         @Specialization(guards = {
-                "!isSpecialNanRubyBigDecimal(a)",
-                "isSpecialRubyBigDecimal(a) || isSpecialRubyBigDecimal(b)",
-                "isRubyBigDecimal(b)"})
+                "isRubyBigDecimal(b)",
+                "!isNormal(a) || !isNormal(b)",
+                "isNormal(a) || !isNan(a)"})
         public Object compareSpecial(RubyBasicObject a, RubyBasicObject b) {
             final Type aType = getBigDecimalType(a);
             final Type bType = getBigDecimalType(b);
@@ -570,25 +675,27 @@ public abstract class BigDecimalNodes {
             if (aType == Type.POSITIVE_INFINITY || bType == Type.NEGATIVE_INFINITY) return 1;
             if (aType == Type.NEGATIVE_INFINITY || bType == Type.POSITIVE_INFINITY) return -1;
 
-            // a and b are +-ZERO or normal
+            // a and b have finite value
 
             final BigDecimal aCompare;
             final BigDecimal bCompare;
 
-            if (aType == Type.POSITIVE_ZERO || aType == Type.NEGATIVE_ZERO) aCompare = BigDecimal.ZERO;
+            if (aType == Type.NEGATIVE_ZERO) aCompare = BigDecimal.ZERO;
             else aCompare = getBigDecimalValue(a);
-            if (bType == Type.POSITIVE_ZERO || bType == Type.NEGATIVE_ZERO) bCompare = BigDecimal.ZERO;
+            if (bType == Type.NEGATIVE_ZERO) bCompare = BigDecimal.ZERO;
             else bCompare = getBigDecimalValue(b);
 
             return aCompare.compareTo(bCompare);
         }
 
-        @Specialization(guards = {"isRubyBigDecimal(a)", "isNil(b)"})
+        @Specialization(guards = "isNil(b)")
         public Object compareNil(RubyBasicObject a, RubyBasicObject b) {
             return nil();
         }
 
-        @Specialization(guards = {"isRubyBigDecimal(a)", "!isRubyBigDecimal(b)", "!isNil(b)"})
+        @Specialization(guards = {
+                "!isRubyBigDecimal(b)",
+                "!isNil(b)"})
         public Object compareCoerced(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
             return ruby(frame, "redo_coerced :<=>, b", "b", b);
         }
@@ -597,32 +704,6 @@ public abstract class BigDecimalNodes {
 
     // TODO (pitr 20-May-2015): compare Ruby implementation of #== with a Java one
 
-    @CoreMethod(names = {"to_s", "inspect"})
-    public abstract static class ToSNode extends BigDecimalCoreMethodNode {
-
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isNormalRubyBigDecimal(value)")
-        public RubyBasicObject toS(RubyBasicObject value) {
-            final BigDecimal bigDecimal = getBigDecimalValue(value);
-            final boolean negative = bigDecimal.signum() == -1;
-
-            String string = (negative ? "-" : "") + "0." +
-                    (negative ? bigDecimal.unscaledValue().toString().substring(1) : bigDecimal.unscaledValue()) +
-                    "E" + (bigDecimal.precision() - bigDecimal.scale());
-            return createString(string);
-        }
-
-        @Specialization(guards = "isSpecialRubyBigDecimal(value)")
-        public RubyBasicObject toSSpecial(RubyBasicObject value) {
-            return createString(getBigDecimalType(value).toString());
-        }
-
-    }
-
     @CoreMethod(names = "zero?")
     public abstract static class ZeroNode extends BigDecimalCoreMethodNode {
 
@@ -630,20 +711,59 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isNormalRubyBigDecimal(value)")
+        @Specialization(guards = "isNormal(value)")
         public boolean zeroNormal(RubyBasicObject value) {
             return getBigDecimalValue(value).compareTo(BigDecimal.ZERO) == 0;
         }
 
-        @Specialization(guards = "isSpecialRubyBigDecimal(value)")
+        @Specialization(guards = "!isNormal(value)")
         public boolean zeroSpecial(RubyBasicObject value) {
             switch (getBigDecimalType(value)) {
-                case POSITIVE_ZERO:
                 case NEGATIVE_ZERO:
                     return true;
                 default:
                     return false;
             }
+        }
+
+    }
+
+    @CoreMethod(names = "sign")
+    public abstract static class SignNode extends BigDecimalCoreMethodNode {
+
+        public SignNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = {
+                "isNormal(value)",
+                "isNormalZero(value)"})
+        public int signNormalZero(RubyBasicObject value) {
+            return 1;
+        }
+
+        @Specialization(guards = {
+                "isNormal(value)",
+                "!isNormalZero(value)"})
+        public int signNormal(RubyBasicObject value) {
+            return getBigDecimalValue(value).signum() * 2;
+        }
+
+        @Specialization(guards = "!isNormal(value)")
+        public int signSpecial(RubyBasicObject value) {
+            // TODO (pitr 26-May-2015): should be using const look up nodes to use values of BigDecimal::SIGN_* constants
+            switch (getBigDecimalType(value)) {
+                case NEGATIVE_INFINITY:
+                    return -3;
+                case POSITIVE_INFINITY:
+                    return 3;
+                case NEGATIVE_ZERO:
+                    return -1;
+                case NAN:
+                    return 0;
+            }
+            // TODO (pitr 28-may-2015): is it ok to throw exception in unreachable branch?
+            throw new RuntimeException();
         }
 
     }
@@ -655,12 +775,12 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isNormalRubyBigDecimal(value)")
+        @Specialization(guards = "isNormal(value)")
         public boolean nanNormal(RubyBasicObject value) {
             return false;
         }
 
-        @Specialization(guards = "isSpecialRubyBigDecimal(value)")
+        @Specialization(guards = "!isNormal(value)")
         public boolean nanSpecial(RubyBasicObject value) {
             return getBigDecimalType(value) == Type.NAN;
         }
@@ -674,12 +794,12 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isNormalRubyBigDecimal(value)")
+        @Specialization(guards = "isNormal(value)")
         public boolean finiteNormal(RubyBasicObject value) {
             return true;
         }
 
-        @Specialization(guards = "isSpecialRubyBigDecimal(value)")
+        @Specialization(guards = "!isNormal(value)")
         public boolean finiteSpecial(RubyBasicObject value) {
             switch (getBigDecimalType(value)) {
                 case POSITIVE_INFINITY:
@@ -693,5 +813,109 @@ public abstract class BigDecimalNodes {
 
     }
 
+    @CoreMethod(names = "infinite?")
+    public abstract static class InfiniteNode extends BigDecimalCoreMethodNode {
+
+        public InfiniteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isNormal(value)")
+        public RubyBasicObject infiniteNormal(RubyBasicObject value) {
+            return nil();
+        }
+
+        @Specialization(guards = "!isNormal(value)")
+        public Object infiniteSpecial(RubyBasicObject value) {
+            switch (getBigDecimalType(value)) {
+                case POSITIVE_INFINITY:
+                    return +1;
+                case NEGATIVE_INFINITY:
+                    return -1;
+                default:
+                    return nil();
+            }
+        }
+
+    }
+
+    @CoreMethod(names = "precs")
+    public abstract static class PrecsNode extends BigDecimalCoreMethodNode {
+
+        public PrecsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isNormal(value)")
+        public RubyBasicObject precsNormal(RubyBasicObject value) {
+            final BigDecimal bigDecimalValue = getBigDecimalValue(value).abs();
+            // TODO (pitr 26-May-2015): replace with ArrayBuilder node
+            return createArray(
+                    new int[]{
+                            bigDecimalValue.stripTrailingZeros().unscaledValue().toString().length(),
+                            bigDecimalValue.unscaledValue().toString().length()},
+                    2);
+        }
+
+        @Specialization(guards = "!isNormal(value)")
+        public Object precsSpecial(RubyBasicObject value) {
+            // TODO (pitr 26-May-2015): replace with ArrayBuilder node
+            return createArray(new int[]{1, 1}, 2);
+        }
+
+    }
+
+    @CoreMethod(names = {"to_s", "inspect"})
+    public abstract static class ToSNode extends BigDecimalCoreMethodNode {
+
+        public ToSNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isNormal(value)")
+        public RubyBasicObject toSNormal(RubyBasicObject value) {
+            final BigDecimal bigDecimal = getBigDecimalValue(value);
+            final boolean negative = bigDecimal.signum() == -1;
+
+            return createString(
+                    (negative ? "-" : "") + "0." +
+                            (negative ? bigDecimal.unscaledValue().toString().substring(1) : bigDecimal.unscaledValue()) +
+                            "E" + (bigDecimal.precision() - bigDecimal.scale()));
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "!isNormal(value)")
+        public RubyBasicObject toSSpecial(RubyBasicObject value) {
+            return createString(getBigDecimalType(value).toString());
+        }
+
+    }
+
+    @CoreMethod(names = "to_f")
+    public abstract static class ToFNode extends BigDecimalCoreMethodNode {
+
+        public ToFNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isNormal(value)")
+        public double toFNormal(RubyBasicObject value) {
+            return getBigDecimalValue(value).doubleValue();
+        }
+
+        @Specialization(guards = "!isNormal(value)")
+        public double toFSpecial(RubyBasicObject value) {
+            final Type type = getBigDecimalType(value);
+            if (type == Type.NAN) return Double.NaN;
+            if (type == Type.POSITIVE_INFINITY) return Double.POSITIVE_INFINITY;
+            if (type == Type.NEGATIVE_INFINITY) return Double.NEGATIVE_INFINITY;
+            if (type == Type.NEGATIVE_ZERO) return 0.0D;
+            throw new RuntimeException();
+        }
+
+    }
 
 }

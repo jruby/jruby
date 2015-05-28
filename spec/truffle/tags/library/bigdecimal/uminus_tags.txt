@@ -1,2 +1,0 @@
-fails:BigDecimal#-@ negates self
-fails:BigDecimal#-@ properly handles special values
