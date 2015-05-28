@@ -34,18 +34,14 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public RubyBasicObject initialize(RubyException exception, UndefinedPlaceholder message) {
-            CompilerDirectives.transferToInterpreter();
-
             exception.initialize(nil());
-            return nil();
+            return exception;
         }
 
-        @Specialization
+        @Specialization(guards = "!isUndefinedPlaceholder(message)")
         public RubyBasicObject initialize(RubyException exception, Object message) {
-            CompilerDirectives.transferToInterpreter();
-
             exception.initialize(message);
-            return nil();
+            return exception;
         }
 
     }
