@@ -34,4 +34,5 @@ fails:Process.setrlimit when passed a String coerces 'RTPRIO' into RLIMIT_RTPRIO
 fails:Process.setrlimit when passed a String coerces 'SIGPENDING' into RLIMIT_SIGPENDING
 fails:Process.setrlimit when passed a String coerces 'MSGQUEUE' into RLIMIT_MSGQUEUE
 fails:Process.setrlimit when passed a String coerces 'NICE' into RLIMIT_NICE
-
+fails:Process.setrlimit when passed a Symbol coerces :RTTIME into RLIMIT_RTTIME
+fails:Process.setrlimit when passed a String coerces 'RTTIME' into RLIMIT_RTTIME
