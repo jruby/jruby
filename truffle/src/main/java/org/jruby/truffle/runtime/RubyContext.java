@@ -320,7 +320,12 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public Object eval(Source source) {
-        return execute(source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.EVAL, getCoreLibrary().getMainObject(), null, null, NodeWrapper.IDENTITY);
+        return execute(source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.EVAL, getCoreLibrary().getMainObject(), null, null, new NodeWrapper() {
+            @Override
+            public RubyNode wrap(RubyNode node) {
+                return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PRIVATE, "simple eval", node);
+            }
+        });
     }
 
     @TruffleBoundary
