@@ -130,6 +130,11 @@ module Process
     uid
   end
 
+  def self.gid=(gid)
+    gid = Rubinius::Type.coerce_to gid, Integer, :to_int
+    Process::Sys.setgid gid
+  end
+
   def self.euid=(uid)
     # the 4 rescue clauses below are needed
     # until respond_to? can be used to query the implementation of methods attached via FFI

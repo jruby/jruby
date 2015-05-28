@@ -351,6 +351,20 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "setgid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0)
+    public abstract static class SetgidNode extends CoreMethodArrayArgumentsNode {
+
+        public SetgidNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int setgid(int gid) {
+            return posix().setgid(gid);
+        }
+
+    }
+
     @CoreMethod(names = "setpriority", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 1, 2})
     public abstract static class SetPriorityNode extends CoreMethodArrayArgumentsNode {
 
