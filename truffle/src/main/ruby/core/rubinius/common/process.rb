@@ -90,6 +90,12 @@ module Process
     ret
   end
 
+  def self.ppid
+    ret = FFI::Platform::POSIX.getppid
+    Errno.handle if ret == -1
+    ret
+  end
+
   def self.uid=(uid)
     # the 4 rescue clauses below are needed
     # until respond_to? can be used to query the implementation of methods attached via FFI

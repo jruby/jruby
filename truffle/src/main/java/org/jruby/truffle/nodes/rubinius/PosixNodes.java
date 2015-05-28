@@ -615,6 +615,20 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "getppid", isModuleFunction = true)
+    public abstract static class GetppidNode extends CoreMethodArrayArgumentsNode {
+
+        public GetppidNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getppid() {
+            return posix().getppid();
+        }
+
+    }
+
     @CoreMethod(names = "symlink", isModuleFunction = true, required = 2)
     public abstract static class SymlinkNode extends CoreMethodArrayArgumentsNode {
 
