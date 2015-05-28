@@ -1060,7 +1060,12 @@ public class BodyTranslator extends Translator {
             }
 
             e.declareVar(node.getName());
-            readNode = e.findLocalVarNode(node.getName(), translate(node.getPosition()));
+
+            // Searching for a local variable must start at the base environment, even though we may have determined
+            // the variable should be declared in a parent frame descriptor.  This is so the search can determine
+            // whether to return a ReadLocalVariableNode or a ReadDeclarationVariableNode and potentially record the
+            // fact that a declaration frame is needed.
+            readNode = environment.findLocalVarNode(node.getName(), translate(node.getPosition()));
         }
 
         return readNode;
