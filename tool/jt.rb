@@ -256,7 +256,7 @@ module Commands
 
   def test_mri(*args)
     env_vars = {
-        "EXCLUDES" => "test/mri/excludes_truffle"
+      "EXCLUDES" => "test/mri/excludes_truffle"
     }
     jruby_args = %w[-J-Xmx2G -X+T -Xtruffle.exceptions.print_java]
 
@@ -264,9 +264,8 @@ module Commands
       args = File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
     end
 
-    command = %w[test/mri/runner.rb -v --color=never --tty=no -q --]
-    args.unshift(*command)
-    raw_sh(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args)
+    command = %w[test/mri/runner.rb -v --color=never --tty=no -q]
+    raw_sh(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *command, *args)
   end
   private :test_mri
 
