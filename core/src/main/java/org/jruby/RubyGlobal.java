@@ -286,19 +286,9 @@ public class RubyGlobal {
         } else {
             switch (stdio) {
                 case IN:
-                    stream = ShellLauncher.unwrapFilterInputStream((InputStream)stream);
-                    if (stream instanceof FileInputStream) {
-                        return ((FileInputStream)stream).getChannel();
-                    }
-
                     return Channels.newChannel((InputStream)stream);
                 case OUT:
                 case ERR:
-                    stream = ShellLauncher.unwrapFilterOutputStream((OutputStream)stream);
-                    if (stream instanceof FileOutputStream) {
-                        return ((FileOutputStream)stream).getChannel();
-                    }
-
                     return Channels.newChannel((OutputStream)stream);
                 default: throw new RuntimeException("invalid stdio: " + stdio);
             }
