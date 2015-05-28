@@ -404,46 +404,46 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = {"to_a", "entries"}, compat = CompatVersion.RUBY1_8)
     public static IRubyObject to_a(ThreadContext context, IRubyObject self) {
-        Ruby runtime = context.runtime;
-        RubyArray result = runtime.newArray();
-        callEach(runtime, context, self, Arity.OPTIONAL, new AppendBlockCallback(runtime, result));
+        final Ruby runtime = context.runtime;
+        final RubyArray result = runtime.newArray();
+        callEach(runtime, context, self, Arity.OPTIONAL, new AppendBlockCallback(result));
         return result;
     }
 
     @JRubyMethod(name = {"to_a", "entries"}, rest = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject to_a(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        RubyArray result = runtime.newArray();
+        final Ruby runtime = context.runtime;
+        final RubyArray result = runtime.newArray();
         Helpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(),
-                Arity.OPTIONAL, new AppendBlockCallback(runtime, result), context));
+                Arity.OPTIONAL, new AppendBlockCallback(result), context));
         return result;
     }
 
     @JRubyMethod(name = {"to_a", "entries"}, compat = CompatVersion.RUBY1_9)
     public static IRubyObject to_a19(ThreadContext context, IRubyObject self) {
-        Ruby runtime = context.runtime;
-        RubyArray result = runtime.newArray();
-        callEach(runtime, context, self, Arity.OPTIONAL, new AppendBlockCallback(runtime, result));
+        final Ruby runtime = context.runtime;
+        final RubyArray result = runtime.newArray();
+        callEach(runtime, context, self, Arity.OPTIONAL, new AppendBlockCallback(result));
         result.infectBy(self);
         return result;
     }
 
     @JRubyMethod(name = {"to_a", "entries"}, rest = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject to_a19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        RubyArray result = runtime.newArray();
+        final Ruby runtime = context.runtime;
+        final RubyArray result = runtime.newArray();
         Helpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(),
-                Arity.OPTIONAL, new AppendBlockCallback(runtime, result), context));
+                Arity.OPTIONAL, new AppendBlockCallback(result), context));
         result.infectBy(self);
         return result;
     }
 
     @JRubyMethod
     public static IRubyObject sort(ThreadContext context, IRubyObject self, final Block block) {
-        Ruby runtime = context.runtime;
-        RubyArray result = runtime.newArray();
+        final Ruby runtime = context.runtime;
+        final RubyArray result = runtime.newArray();
 
-        callEach(runtime, context, self, Arity.OPTIONAL, new AppendBlockCallback(runtime, result));
+        callEach(runtime, context, self, Arity.OPTIONAL, new AppendBlockCallback(result));
         result.sort_bang(context, block);
 
         return result;
@@ -741,7 +741,7 @@ public class RubyEnumerable {
                 }
             });
         } else {
-            callEach(runtime, context, self, Arity.ONE_ARGUMENT, new AppendBlockCallback(runtime, result));
+            callEach(runtime, context, self, Arity.ONE_ARGUMENT, new AppendBlockCallback(result));
         }
         return result;
     }
@@ -900,23 +900,22 @@ public class RubyEnumerable {
         return block.isGiven() ? partitionCommon(context, self, block) : enumeratorize(context.runtime, self, "partition");
     }
 
-    static class EachWithIndex implements BlockCallback {
+    static final class EachWithIndex implements BlockCallback {
         private int index;
         private final Block block;
-        private final Ruby runtime;
 
-        public EachWithIndex(ThreadContext ctx, Block block) {
-            this(ctx, block, 0);
-        }
-
-        public EachWithIndex(ThreadContext ctx, Block block, int index) {
+        EachWithIndex(Block block, int index) {
             this.block = block;
-            this.runtime = ctx.runtime;
             this.index = index;
         }
 
+        EachWithIndex(Block block) {
+            this.block = block;
+            this.index = 0;
+        }
+
         public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
-            return this.block.call(context, packEnumValues(runtime, iargs), runtime.newFixnum(index++));
+            return this.block.call(context, packEnumValues(context, iargs), context.runtime.newFixnum(index++));
         }
     }
 
@@ -924,7 +923,7 @@ public class RubyEnumerable {
      * Package the arguments appropriately depending on how many there are
      * Corresponds to rb_enum_values_pack in MRI
      */
-    static IRubyObject packEnumValues(Ruby runtime, IRubyObject[] args) {
+    private static IRubyObject packEnumValues(Ruby runtime, IRubyObject[] args) {
         if (args.length < 2) {
             return args.length == 0 ? runtime.getNil() : args[0];
         }
@@ -932,7 +931,11 @@ public class RubyEnumerable {
         return runtime.newArrayNoCopy(args);
     }
 
-    private static IRubyObject packEnumValues(ThreadContext context, IRubyObject[] args) {
+    /**
+     * Package the arguments appropriately depending on how many there are
+     * Corresponds to rb_enum_values_pack in MRI
+     */
+    static IRubyObject packEnumValues(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
             case 0:  return context.nil;
             case 1:  return args[0];
@@ -941,12 +944,12 @@ public class RubyEnumerable {
     }
 
     public static IRubyObject each_with_indexCommon(ThreadContext context, IRubyObject self, Block block) {
-        callEach(context.runtime, context, self, Arity.OPTIONAL, new EachWithIndex(context, block));
+        callEach(context.runtime, context, self, Arity.OPTIONAL, new EachWithIndex(block));
         return self;
     }
 
     public static IRubyObject each_with_indexCommon19(ThreadContext context, IRubyObject self, Block block, IRubyObject[] args) {
-        callEach(context.runtime, context, self, args, Arity.OPTIONAL, new EachWithIndex(context, block));
+        callEach(context.runtime, context, self, args, Arity.OPTIONAL, new EachWithIndex(block));
         return self;
     }
 
@@ -1848,17 +1851,22 @@ public class RubyEnumerable {
     }
 
     public static final class AppendBlockCallback implements BlockCallback {
-        private Ruby runtime;
-        private RubyArray result;
 
+        private final RubyArray result;
+
+        // @Deprecated
         public AppendBlockCallback(Ruby runtime, RubyArray result) {
-            this.runtime = runtime;
+            this.result = result;
+        }
+
+        AppendBlockCallback(final RubyArray result) {
             this.result = result;
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
-            result.append(packEnumValues(runtime, largs));
-            return runtime.getNil();
+            result.append( packEnumValues(context, largs) );
+            return context.nil;
         }
+
     }
 }
