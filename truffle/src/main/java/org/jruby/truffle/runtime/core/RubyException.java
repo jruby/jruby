@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.backtrace.Backtrace;
  */
 public class RubyException extends RubyBasicObject {
 
-    private RubyString message;
+    private Object message;
     private Backtrace backtrace;
 
     public RubyException(RubyClass rubyClass) {
@@ -27,19 +27,19 @@ public class RubyException extends RubyBasicObject {
         message = rubyClass.getContext().makeString("");
     }
 
-    public RubyException(RubyClass rubyClass, RubyString message, Backtrace backtrace) {
+    public RubyException(RubyClass rubyClass, Object message, Backtrace backtrace) {
         this(rubyClass);
         initialize(message);
         this.backtrace = backtrace;
     }
 
-    public void initialize(RubyString message) {
+    public void initialize(Object message) {
         assert message != null;
         this.message = message;
     }
 
     // TODO (eregon 16 Apr. 2015): MRI does a dynamic calls to "message"
-    public RubyString getMessage() {
+    public Object getMessage() {
         return message;
     }
 

@@ -36,20 +36,12 @@ public abstract class ExceptionNodes {
         public RubyBasicObject initialize(RubyException exception, UndefinedPlaceholder message) {
             CompilerDirectives.transferToInterpreter();
 
-            exception.initialize(getContext().makeString(""));
-            return nil();
-        }
-
-        @Specialization(guards = {"isNil(object)"})
-        public RubyBasicObject initialize(RubyException exception, RubyBasicObject object) {
-            CompilerDirectives.transferToInterpreter();
-
-            exception.initialize(getContext().makeString(""));
+            exception.initialize(nil());
             return nil();
         }
 
         @Specialization
-        public RubyBasicObject initialize(RubyException exception, RubyString message) {
+        public RubyBasicObject initialize(RubyException exception, Object message) {
             CompilerDirectives.transferToInterpreter();
 
             exception.initialize(message);
@@ -111,26 +103,8 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public RubyString message(RubyException exception) {
+        public Object message(RubyException exception) {
             return exception.getMessage();
-        }
-
-    }
-
-    @CoreMethod(names = "to_s")
-    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
-
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyString toS(RubyException exception) {
-            if (exception.getMessage().length() == 0) {
-                return getContext().makeString(exception.getLogicalClass().getName());
-            } else {
-                return getContext().makeString(exception.getMessage().getByteList());
-            }
         }
 
     }

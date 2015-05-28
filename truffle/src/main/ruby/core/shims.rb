@@ -217,3 +217,11 @@ unless ENV['HOME']
                   end
   end
 end
+
+class Exception
+
+  def to_s
+    message.to_s
+  end
+
+end
