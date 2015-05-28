@@ -90,6 +90,62 @@ module Process
     ret
   end
 
+  def self.uid=(uid)
+    # the 4 rescue clauses below are needed
+    # until respond_to? can be used to query the implementation of methods attached via FFI
+    # atm respond_to returns true if a method is attached but not implemented on the platform
+    uid = Rubinius::Type.coerce_to uid, Integer, :to_int
+    begin
+      ret = FFI::Platform::POSIX.setresuid(uid, -1, -1)
+    rescue NotImplementedError
+      begin
+        ret = FFI::Platform::POSIX.setreuid(uid, -1)
+      rescue NotImplementedError
+        begin
+          ret = FFI::Platform::POSIX.setruid(uid)
+        rescue NotImplementedError
+          if Process.euid == uid
+            ret = FFI::Platform::POSIX.setuid(uid)
+          else
+            raise NotImplementedError
+          end
+        end
+      end
+    end
+
+    Errno.handle if ret == -1
+
+    uid
+  end
+
+  def self.euid=(uid)
+    # the 4 rescue clauses below are needed
+    # until respond_to? can be used to query the implementation of methods attached via FFI
+    # atm respond_to returns true if a method is attached but not implemented on the platform
+    uid = Rubinius::Type.coerce_to uid, Integer, :to_int
+    begin
+      ret = FFI::Platform::POSIX.setresuid(-1, uid, -1)
+    rescue NotImplementedError
+      begin
+        ret = FFI::Platform::POSIX.setreuid(-1, uid)
+      rescue NotImplementedError
+        begin
+          ret = FFI::Platform::POSIX.seteuid(uid)
+        rescue NotImplementedError
+          if Process.uid == uid
+            ret = FFI::Platform::POSIX.setuid(uid)
+          else
+            raise NotImplementedError
+          end
+        end
+      end
+    end
+
+    Errno.handle if ret == -1
+
+    uid
+  end
+
   def self.uid
     ret = FFI::Platform::POSIX.getuid
     Errno.handle if ret == -1

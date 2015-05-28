@@ -29,6 +29,7 @@ public abstract class ExceptionPrimitiveNodes {
     public static abstract class ExceptionErrnoErrorPrimitiveNode extends RubiniusPrimitiveNode {
 
         // If you add a constant here, add it below in isExceptionSupported() too.
+        protected final static int EPERM = Errno.EPERM.intValue();
         protected final static int ENOENT = Errno.ENOENT.intValue();
         protected final static int EBADF = Errno.EBADF.intValue();
         protected final static int EEXIST = Errno.EEXIST.intValue();
@@ -37,11 +38,21 @@ public abstract class ExceptionPrimitiveNodes {
         protected final static int ENOTDIR = Errno.ENOTDIR.intValue();
 
         public static boolean isExceptionSupported(int errno) {
-            return errno == ENOENT || errno == EBADF || errno == EEXIST || errno == EACCES || errno == EFAULT || errno == ENOTDIR;
+            return errno == EPERM || errno == ENOENT || errno == EBADF || errno == EEXIST || errno == EACCES || errno == EFAULT || errno == ENOTDIR;
         }
 
         public ExceptionErrnoErrorPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+        }
+
+        @Specialization(guards = "errno == EPERM")
+        public RubyException eperm(RubyString message, int errno) {
+            return getContext().getCoreLibrary().operationNotPermittedError(message.toString(), this);
+        }
+
+        @Specialization(guards = {"errno == EPERM", "isNil(message)"})
+        public RubyException eperm(Object message, int errno) {
+            return getContext().getCoreLibrary().operationNotPermittedError("nil", this);
         }
 
         @Specialization(guards = "errno == ENOENT")

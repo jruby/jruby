@@ -365,6 +365,76 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "setresuid", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 1, 2})
+    public abstract static class SetResuidNode extends CoreMethodArrayArgumentsNode {
+
+        public SetResuidNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int setresuid(int uid, int id, int priority) {
+            throw new RaiseException(getContext().getCoreLibrary().notImplementedError("setresuid", this));
+        }
+
+    }
+
+    @CoreMethod(names = "seteuid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0)
+    public abstract static class SetEuidNode extends CoreMethodArrayArgumentsNode {
+
+        public SetEuidNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int seteuid(int uid) {
+            return posix().seteuid(uid);
+        }
+
+    }
+
+    @CoreMethod(names = "setreuid", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1})
+    public abstract static class SetReuidNode extends CoreMethodArrayArgumentsNode {
+
+        public SetReuidNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int setreuid(int uid, int id) {
+            throw new RaiseException(getContext().getCoreLibrary().notImplementedError("setreuid", this));
+        }
+
+    }
+
+    @CoreMethod(names = "setruid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0)
+    public abstract static class SetRuidNode extends CoreMethodArrayArgumentsNode {
+
+        public SetRuidNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int setruid(int uid) {
+            throw new RaiseException(getContext().getCoreLibrary().notImplementedError("setruid", this));
+        }
+
+    }
+
+    @CoreMethod(names = "setuid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0)
+    public abstract static class SetUidNode extends CoreMethodArrayArgumentsNode {
+
+        public SetUidNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int setuid(int uid) {
+            return posix().setuid(uid);
+        }
+
+    }
+
     @CoreMethod(names = "flock", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1})
     public abstract static class FlockNode extends CoreMethodArrayArgumentsNode {
 

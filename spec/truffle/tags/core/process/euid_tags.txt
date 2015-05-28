@@ -1,3 +1,1 @@
-fails:Process.euid= raises TypeError if not passed an Integer
-fails:Process.euid= raises Errno::ERPERM if run by a non superuser trying to set the superuser id
 fails:Process.euid= raises Errno::ERPERM if run by a non superuser trying to set the superuser id from username
