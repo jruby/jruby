@@ -64,6 +64,12 @@ module Process
 
   FFI = Rubinius::FFI
 
+  def self.setsid
+    pgid = FFI::Platform::POSIX.setsid
+    Errno.handle if pgid == -1
+    pgid
+  end
+
   def self.times
     Struct::Tms.new(*cpu_times)
   end

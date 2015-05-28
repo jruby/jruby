@@ -435,6 +435,20 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "setsid", isModuleFunction = true)
+    public abstract static class SetSidNode extends CoreMethodArrayArgumentsNode {
+
+        public SetSidNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int setsid() {
+            return posix().setsid();
+        }
+
+    }
+
     @CoreMethod(names = "flock", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1})
     public abstract static class FlockNode extends CoreMethodArrayArgumentsNode {
 
