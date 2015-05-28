@@ -595,7 +595,7 @@ public abstract class ArrayNodes {
                     CompilerDirectives.transferToInterpreter();
                     writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                 }
-                Object[] values = ArrayUtils.box(value.getStore());
+                Object[] values = value.slowToArray();
                 if (value.getSize() == length || (begin + length + 1) > array.getSize()) {
                     int i = begin;
                     for (Object obj : values) {

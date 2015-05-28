@@ -135,7 +135,7 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     public Object[] slowToArray() {
-        return Arrays.copyOf(ArrayUtils.box(store), size);
+        return ArrayUtils.boxUntil(store, size);
     }
 
     public Object slowShift() {

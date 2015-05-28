@@ -1,2 +1,0 @@
-fails:Process.egid also goes by Process::GID.eid
-fails:Process.egid also goes by Process::Sys.getegid

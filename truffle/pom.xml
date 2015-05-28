@@ -54,9 +54,6 @@
               <goal>compile</goal>
             </goals>
             <configuration>
-              <annotationProcessors>
-                <annotationProcessor>com.oracle.truffle.dsl.processor.TruffleProcessor</annotationProcessor>
-              </annotationProcessors>
               <generatedSourcesDirectory>target/generated-sources</generatedSourcesDirectory>
               <compilerArgs>
                 <compilerArg>-XDignore.symbol.file=true</compilerArg>

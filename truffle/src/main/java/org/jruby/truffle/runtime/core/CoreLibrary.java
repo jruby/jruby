@@ -94,6 +94,7 @@ public class CoreLibrary {
     private final RubyClass nameErrorClass;
     private final RubyClass nilClass;
     private final RubyClass noMethodErrorClass;
+    private final RubyClass notImplementedErrorClass;
     private final RubyClass numericClass;
     private final RubyClass objectClass;
     private final RubyClass procClass;
@@ -270,7 +271,7 @@ public class CoreLibrary {
         // ScriptError
         RubyClass scriptErrorClass = defineClass(exceptionClass, "ScriptError");
         loadErrorClass = defineClass(scriptErrorClass, "LoadError");
-        defineClass(scriptErrorClass, "NotImplementedError");
+        notImplementedErrorClass = defineClass(scriptErrorClass, "NotImplementedError");
         syntaxErrorClass = defineClass(scriptErrorClass, "SyntaxError");
 
         // SecurityError
@@ -1014,6 +1015,11 @@ public class CoreLibrary {
         return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), context.makeString("divided by 0"), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException notImplementedError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(notImplementedErrorClass, context.makeString(String.format("Method %s not implemented", message)), RubyCallStack.getBacktrace(currentNode));
+    }
+
     public RubyException syntaxError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(syntaxErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
@@ -1063,6 +1069,11 @@ public class CoreLibrary {
     public RubyException dirNotEmptyError(String path, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(getErrnoClass(Errno.ENOTEMPTY), context.makeString(String.format("Directory not empty - %s", path)), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException operationNotPermittedError(String path, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(getErrnoClass(Errno.EPERM), context.makeString(String.format("Operation not permitted - %s", path)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException permissionDeniedError(String path, Node currentNode) {
