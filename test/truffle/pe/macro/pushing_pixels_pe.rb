@@ -35,4 +35,4 @@ module PushingPixelsFixtures
 
 end
 
-tagged_example "PushingPixelsFixtures::Bar.new.foo(14, 8, 6)"
+example "PushingPixelsFixtures::Bar.new.foo(14, 8, 6)"

@@ -11,8 +11,10 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
@@ -210,7 +212,7 @@ public final class RubyArray extends RubyBasicObject {
         this.size = size;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     private static Object randomizeStorageStrategy(RubyContext context, Object store, int size) {
         // Use any type for empty arrays
 

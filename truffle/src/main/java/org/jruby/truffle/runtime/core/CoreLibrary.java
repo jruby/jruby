@@ -135,6 +135,7 @@ public class CoreLibrary {
     private final RubyClass byteArrayClass;
     private final RubyClass fiberErrorClass;
     private final RubyClass threadErrorClass;
+    private final RubyClass ioBufferClass;
 
     private final RubyArray argv;
     private final RubyBasicObject globalVariablesObject;
@@ -321,6 +322,8 @@ public class CoreLibrary {
         timeClass = defineClass("Time", new RubyTime.TimeAllocator());
         trueClass = defineClass("TrueClass", NO_ALLOCATOR);
         unboundMethodClass = defineClass("UnboundMethod", NO_ALLOCATOR);
+        final RubyClass ioClass = defineClass("IO", new IOPrimitiveNodes.IOAllocator());
+        ioBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
 
         // Modules
 
@@ -481,6 +484,7 @@ public class CoreLibrary {
         // Set constants
 
         objectClass.setConstant(node, "RUBY_VERSION", RubyString.fromJavaString(stringClass, Constants.RUBY_VERSION));
+        objectClass.setConstant(node, "JRUBY_VERSION", RubyString.fromJavaString(stringClass, Constants.VERSION));
         objectClass.setConstant(node, "RUBY_PATCHLEVEL", Constants.RUBY_PATCHLEVEL);
         objectClass.setConstant(node, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, Constants.ENGINE + "+truffle"));
         objectClass.setConstant(node, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, Constants.PLATFORM));
@@ -1035,6 +1039,12 @@ public class CoreLibrary {
         return new RubyException(ioErrorClass, context.makeString(String.format("Error reading file -  %s", fileName)), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException badAddressError(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(getErrnoClass(Errno.EFAULT), context.makeString("Bad address"), RubyCallStack.getBacktrace(currentNode));
+    }
+
+
     public RubyException badFileDescriptor(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(getErrnoClass(Errno.EBADF), context.makeString("Bad file descriptor"), RubyCallStack.getBacktrace(currentNode));
@@ -1375,6 +1385,10 @@ public class CoreLibrary {
 
     public RubyClass getThreadBacktraceLocationClass() {
         return threadBacktraceLocationClass;
+    }
+
+    public RubyClass getIOBufferClass() {
+        return ioBufferClass;
     }
 
 }

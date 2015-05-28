@@ -280,4 +280,33 @@ public abstract class ThreadNodes {
 
     }
 
+    @CoreMethod(names = "abort_on_exception")
+    public abstract static class AbortOnExceptionNode extends CoreMethodArrayArgumentsNode {
+
+        public AbortOnExceptionNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean abortOnException(RubyThread self) {
+            return self.isAbortOnException();
+        }
+
+    }
+
+    @CoreMethod(names = "abort_on_exception=", required = 1)
+    public abstract static class SetAbortOnExceptionNode extends CoreMethodArrayArgumentsNode {
+
+        public SetAbortOnExceptionNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject setAbortOnException(RubyThread self, boolean abortOnException) {
+            self.setAbortOnException(abortOnException);
+            return nil();
+        }
+
+    }
+
 }

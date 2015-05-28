@@ -10,9 +10,11 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -124,7 +126,7 @@ public abstract class FixnumPrimitiveNodes {
             }
         }
         
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         public BigInteger bigPow(long a, int b) {
             return BigInteger.valueOf(a).pow(b);
             
@@ -139,7 +141,7 @@ public abstract class FixnumPrimitiveNodes {
             }
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "isRubyBignum(b)")
         public Object powBignum(long a, RubyBasicObject b) {
             if (a == 0) {

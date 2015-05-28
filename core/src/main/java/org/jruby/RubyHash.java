@@ -1015,13 +1015,8 @@ public class RubyHash extends RubyObject implements Map {
         } else {
             checkIterating();
             if (!key.isFrozen()) {
-                if (isComparedByIdentity()) {
-                    // when comparing by identity, we don't want to be too eager about deduping
-                    key = key.strDup(runtime, key.getMetaClass().getRealClass());
-                    key.setFrozen(true);
-                } else {
-                    key = runtime.freezeAndDedupString(key);
-                }
+                key = key.strDup(runtime, key.getMetaClass().getRealClass());
+                key.setFrozen(true);
             }
             internalPut(key, value, false);
         }
@@ -1033,12 +1028,9 @@ public class RubyHash extends RubyObject implements Map {
             entry.value = value;
         } else {
             checkIterating();
-            if (isComparedByIdentity()) {
-                // when comparing by identity, we don't want to be too eager about deduping
+            if (!key.isFrozen()) {
                 key = key.strDup(runtime, key.getMetaClass().getRealClass());
                 key.setFrozen(true);
-            } else {
-                key = runtime.freezeAndDedupString(key);
             }
             internalPutSmall(key, value, false);
         }

@@ -38,11 +38,14 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
+
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -84,7 +87,7 @@ public abstract class DirPrimitiveNodes {
             writePositionNode = new WriteHeadObjectFieldNode(positionKey);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "isNil(encoding)")
         public RubyBasicObject open(RubyBasicObject dir, RubyString path, RubyBasicObject encoding) {
             // TODO CS 22-Apr-15 race conditions here
@@ -107,7 +110,7 @@ public abstract class DirPrimitiveNodes {
             return nil();
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject open(RubyBasicObject dir, RubyString path, RubyEncoding encoding) {
             // TODO BJF 30-APR-2015 HandleEncoding
@@ -130,7 +133,7 @@ public abstract class DirPrimitiveNodes {
             writePositionNode = new WriteHeadObjectFieldNode(positionKey);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public Object read(RubyBasicObject dir) {
             final int position;
@@ -173,7 +176,7 @@ public abstract class DirPrimitiveNodes {
             writePositionNode = new WriteHeadObjectFieldNode(positionKey);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public Object control(RubyBasicObject dir, int kind, int position) {
             switch (kind) {
@@ -205,7 +208,7 @@ public abstract class DirPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject open(RubyBasicObject dir) {
             return nil();

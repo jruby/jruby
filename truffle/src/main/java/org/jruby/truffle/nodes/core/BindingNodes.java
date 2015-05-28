@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -17,6 +18,7 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNode;
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.nodes.locals.WriteFrameSlotNode;
@@ -92,7 +94,7 @@ public abstract class BindingNodes {
             }
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "!isLastLine(symbol)")
         public Object localVariableGetUncached(RubyBinding binding, RubySymbol symbol) {
             final MaterializedFrame frame = binding.getFrame();
@@ -105,7 +107,7 @@ public abstract class BindingNodes {
             return frame.getValue(frameSlot);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "isLastLine(symbol)")
         public Object localVariableGetLastLine(RubyBinding binding, RubySymbol symbol) {
             final MaterializedFrame frame = binding.getFrame();
@@ -181,7 +183,7 @@ public abstract class BindingNodes {
             return writeLocalVariableNode.executeWrite(binding.getFrame(), value);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "!isLastLine(symbol)")
         public Object localVariableSetUncached(RubyBinding binding, RubySymbol symbol, Object value) {
             final MaterializedFrame frame = binding.getFrame();
@@ -190,7 +192,7 @@ public abstract class BindingNodes {
             return value;
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "isLastLine(symbol)")
         public Object localVariableSetLastLine(RubyBinding binding, RubySymbol symbol, Object value) {
             final MaterializedFrame frame = binding.getFrame();
@@ -237,7 +239,7 @@ public abstract class BindingNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyArray localVariables(RubyBinding binding) {
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());

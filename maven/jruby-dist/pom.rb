@@ -109,7 +109,7 @@ project 'JRuby Dist' do
       execute :pack_sources do |ctx|
         require 'fileutils'
 
-        revision = `git show`.gsub( /\n.*|commit /, '' )
+        revision = `git log -1 --format="%H"`.chomp
       
         basefile = "#{ctx.project.build.directory}/#{ctx.project.artifactId}-#{ctx.project.version}-src"
         

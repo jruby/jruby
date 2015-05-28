@@ -27,21 +27,23 @@ public @interface CoreMethod {
 
     /**
      * Defines the method on the singleton class.
-     * needsSelf is always false.
+     * {@link needsSelf} is always false.
      * */
     boolean onSingleton() default false;
 
     /**
+     * Like {@link #onSingleton()} but with {@link #needsSelf()} always true.
+     */
+    boolean constructor() default false;
+
+    /**
      * Defines the method as public on the singleton class
      * and as a private instance method.
-     * needsSelf is always false.
+     * {@link needsSelf} is always false.
      */
     boolean isModuleFunction() default false;
 
     boolean needsSelf() default true;
-
-    // TODO CS 3-Mar-15 needsSelf() gets ignored in some cases - see CoreMethodNodeManager#addMethod
-    boolean reallyDoesNeedSelf() default false;
 
     int required() default 0;
 

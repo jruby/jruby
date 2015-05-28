@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.array;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -332,7 +333,7 @@ public abstract class ArrayUtils {
         return longs;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public static int capacity(int current, int needed) {
         if (needed < 16) {
             return 16;

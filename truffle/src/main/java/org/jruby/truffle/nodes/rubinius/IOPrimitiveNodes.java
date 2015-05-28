@@ -38,15 +38,22 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
-
 import jnr.ffi.byref.IntByReference;
+
 import org.jruby.RubyEncoding;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -63,24 +70,88 @@ import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.EnumSet;
 
 public abstract class IOPrimitiveNodes {
 
     private static int STDOUT = 1;
 
+    private static final String IBUFFER_IDENTIFIER = "@ibuffer";
+    private static final Property IBUFFER_PROPERTY;
+
+    private static final String LINENO_IDENTIFIER = "@lineno";
+    private static final Property LINENO_PROPERTY;
+
+    private static final String DESCRIPTOR_IDENTIFIER = "@descriptor";
+    private static final Property DESCRIPTOR_PROPERTY;
+
+    private static final String MODE_IDENTIFIER = "@mode";
+    private static final Property MODE_PROPERTY;
+
+    private static final DynamicObjectFactory IO_FACTORY;
+
+    static {
+        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+
+        IBUFFER_PROPERTY = Property.create(IBUFFER_IDENTIFIER, allocator.locationForType(RubyBasicObject.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        LINENO_PROPERTY = Property.create(LINENO_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        DESCRIPTOR_PROPERTY = Property.create(DESCRIPTOR_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        MODE_PROPERTY = Property.create(MODE_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
+
+        IO_FACTORY = RubyBasicObject.EMPTY_SHAPE
+                .addProperty(IBUFFER_PROPERTY)
+                .addProperty(LINENO_PROPERTY)
+                .addProperty(DESCRIPTOR_PROPERTY)
+                .addProperty(MODE_PROPERTY)
+                .createFactory();
+    }
+
+    public static class IOAllocator implements Allocator {
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+            return new RubyBasicObject(rubyClass, IO_FACTORY.newInstance(context.getCoreLibrary().getNilObject(), 0, 0, context.getCoreLibrary().getNilObject()));
+        }
+    }
+
+    public static int getDescriptor(RubyBasicObject io) {
+        assert io.getDynamicObject().getShape().hasProperty(DESCRIPTOR_IDENTIFIER);
+        return (int) DESCRIPTOR_PROPERTY.get(io.getDynamicObject(), true);
+    }
+
+    public static void setDescriptor(RubyBasicObject io, int newDescriptor) {
+        assert io.getDynamicObject().getShape().hasProperty(DESCRIPTOR_IDENTIFIER);
+
+        try {
+            DESCRIPTOR_PROPERTY.set(io.getDynamicObject(), newDescriptor, io.getDynamicObject().getShape());
+        } catch (IncompatibleLocationException | FinalLocationException e) {
+            throw new UnsupportedOperationException(e);
+        }
+    }
+
+    public static void setMode(RubyBasicObject io, int newMode) {
+        assert io.getDynamicObject().getShape().hasProperty(MODE_IDENTIFIER);
+
+        try {
+            MODE_PROPERTY.set(io.getDynamicObject(), newMode, io.getDynamicObject().getShape());
+        } catch (IncompatibleLocationException | FinalLocationException e) {
+            throw new UnsupportedOperationException(e);
+        }
+    }
+
     @RubiniusPrimitive(name = "io_allocate")
     public static abstract class IOAllocatePrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private CallDispatchHeadNode newBufferNode;
+
         public IOAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            newBufferNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         @Specialization
         public RubyBasicObject allocate(VirtualFrame frame, RubyClass classToAllocate) {
-            final RubyBasicObject object = new RubyBasicObject(classToAllocate);
-            rubyWithSelf(frame, object, "@ibuffer = IO::InternalBuffer.new");
-            rubyWithSelf(frame, object, "@lineno = 0");
-            return object;
+            final Object buffer = newBufferNode.call(frame, getContext().getCoreLibrary().getIOBufferClass(), "new", null);
+            return new RubyBasicObject(classToAllocate, IO_FACTORY.newInstance(buffer, 0, 0, nil()));
         }
 
     }
@@ -88,8 +159,13 @@ public abstract class IOPrimitiveNodes {
     @RubiniusPrimitive(name = "io_connect_pipe", needsSelf = false)
     public static abstract class IOConnectPipeNode extends RubiniusPrimitiveNode {
 
+        private final int RDONLY;
+        private final int WRONLY;
+
         public IOConnectPipeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            RDONLY = (int) context.getRubiniusConfiguration().get("rbx.platform.file.O_RDONLY");
+            WRONLY = (int) context.getRubiniusConfiguration().get("rbx.platform.file.O_WRONLY");
         }
 
         @Specialization
@@ -104,11 +180,11 @@ public abstract class IOPrimitiveNodes {
             newOpenFd(fds[0]);
             newOpenFd(fds[1]);
 
-            rubyWithSelf(frame, lhs, "@descriptor = fd", "fd", fds[0]);
-            rubyWithSelf(frame, lhs, "@mode = File::Constants::RDONLY");
+            setDescriptor(lhs, fds[0]);
+            setMode(lhs, RDONLY);
 
-            rubyWithSelf(frame, rhs, "@descriptor = fd", "fd", fds[1]);
-            rubyWithSelf(frame, rhs, "@mode = File::Constants::WRONLY");
+            setDescriptor(rhs, fds[1]);
+            setMode(rhs, WRONLY);
 
             return true;
         }
@@ -188,7 +264,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public int ftruncate(VirtualFrame frame, RubyBasicObject io, long length) {
-            final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
+            final int fd = getDescriptor(io);
             return posix().ftruncate(fd, length);
         }
 
@@ -201,7 +277,7 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public boolean fnmatch(RubyString pattern, RubyString path, int flags) {
             return Dir.fnmatch(pattern.getByteList().getUnsafeBytes(),
@@ -225,7 +301,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public RubyBasicObject ensureOpen(VirtualFrame frame, RubyBasicObject file) {
             // TODO BJF 13-May-2015 Handle nil case
-            final int fd = (int) rubyWithSelf(frame, file, "@descriptor");
+            final int fd = getDescriptor(file);
             if(fd == -1){
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().ioError("closed stream",this));
@@ -241,14 +317,17 @@ public abstract class IOPrimitiveNodes {
     @RubiniusPrimitive(name = "io_reopen")
     public static abstract class IOReopenPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private CallDispatchHeadNode resetBufferingNode;
+
         public IOReopenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         @Specialization
         public Object reopen(VirtualFrame frame, RubyBasicObject file, RubyBasicObject io) {
-            final int fd = (int) rubyWithSelf(frame, file, "@descriptor");
-            final int fdOther = (int) rubyWithSelf(frame, io, "@descriptor");
+            final int fd = getDescriptor(file);
+            final int fdOther = getDescriptor(io);
 
             final int result = posix().dup2(fd, fdOther);
             if (result == -1) {
@@ -261,9 +340,9 @@ public abstract class IOPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
-            rubyWithSelf(frame, file, "@mode = mode", "mode", mode);
+            setMode(file, mode);
 
-            rubyWithSelf(frame, io, "reset_buffering");
+            resetBufferingNode.call(frame, io, "reset_buffering", null);
 
             return nil();
         }
@@ -273,13 +352,16 @@ public abstract class IOPrimitiveNodes {
     @RubiniusPrimitive(name = "io_reopen_path")
     public static abstract class IOReopenPathPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private CallDispatchHeadNode resetBufferingNode;
+
         public IOReopenPathPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         @Specialization
         public Object reopenPath(VirtualFrame frame, RubyBasicObject file, RubyString path, int mode) {
-            int fd = (int) rubyWithSelf(frame, file, "@descriptor");
+            int fd = getDescriptor(file);
             final String pathString = path.toString();
 
             int otherFd = posix().open(pathString, mode, 666);
@@ -292,7 +374,7 @@ public abstract class IOPrimitiveNodes {
             if (result == -1) {
                 final int errno = posix().errno();
                 if (errno == Errno.EBADF.intValue()) {
-                    rubyWithSelf(frame, file, "@descriptor = desc", "desc", otherFd);
+                    setDescriptor(file, otherFd);
                     fd = otherFd;
                 } else {
                     if (otherFd > 0) {
@@ -312,9 +394,9 @@ public abstract class IOPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
-            rubyWithSelf(frame, file, "@mode = mode", "mode", newMode);
+            setMode(file, newMode);
 
-            rubyWithSelf(frame, file, "reset_buffering");
+            resetBufferingNode.call(frame, file, "reset_buffering", null);
 
             return nil();
         }
@@ -330,7 +412,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public int write(VirtualFrame frame, RubyBasicObject file, RubyString string) {
-            final int fd = (int) rubyWithSelf(frame, file, "@descriptor");
+            final int fd = getDescriptor(file);
 
             if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
                 getContext().getDebugStandardOut().write(string.getByteList().unsafeBytes(), string.getByteList().begin(), string.getByteList().length());
@@ -368,20 +450,24 @@ public abstract class IOPrimitiveNodes {
     @RubiniusPrimitive(name = "io_close")
     public static abstract class IOClosePrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private CallDispatchHeadNode ensureOpenNode;
+
         public IOClosePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            ensureOpenNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         @Specialization
         public int close(VirtualFrame frame, RubyBasicObject io) {
-            rubyWithSelf(frame, io, "ensure_open");
-            final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
+            ensureOpenNode.call(frame, io, "ensure_open", null);
+
+            final int fd = getDescriptor(io);
 
             if (fd == -1) {
                 return 0;
             }
 
-            rubyWithSelf(frame, io, "@descriptor = -1");
+            setDescriptor(io, -1);
 
             if (fd < 3) {
                 return 0;
@@ -408,7 +494,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public int seek(VirtualFrame frame, RubyBasicObject io, int amount, int whence) {
-            final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
+            final int fd = getDescriptor(io);
             return posix().lseek(fd, amount, whence);
         }
 
@@ -423,7 +509,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public int accept(VirtualFrame frame, RubyBasicObject io) {
-            final int fd = (int) rubyWithSelf(frame, io, "@descriptor");
+            final int fd = getDescriptor(io);
 
             final IntByReference addressLength = new IntByReference(16);
             final long address = UnsafeHolder.U.allocateMemory(addressLength.intValue());
@@ -455,7 +541,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public RubyString sysread(VirtualFrame frame, RubyBasicObject file, int length) {
-            final int fd = (int) rubyWithSelf(frame, file, "@descriptor");
+            final int fd = getDescriptor(file);
 
             final ByteBuffer buffer = ByteBuffer.allocate(length);
 
@@ -483,12 +569,11 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization(guards = {"isNil(writables)", "isNil(errorables)"})
-        public Object select(VirtualFrame frame, RubyArray readables, RubyBasicObject writables, RubyBasicObject errorables, int timeout) {
-            CompilerDirectives.transferToInterpreter();
-
+        public Object select(RubyArray readables, RubyBasicObject writables, RubyBasicObject errorables, int timeout) {
             final Object[] readableObjects = readables.slowToArray();
-            final int[] readableFds = getFileDescriptors(frame, readables);
+            final int[] readableFds = getFileDescriptors(readables);
 
             final FDSet readableSet = fdSetFactory.create();
 
@@ -518,13 +603,17 @@ public abstract class IOPrimitiveNodes {
                     RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass()));
         }
 
-        private int[] getFileDescriptors(VirtualFrame frame, RubyArray fileDescriptorArray) {
+        private int[] getFileDescriptors(RubyArray fileDescriptorArray) {
             final Object[] objects = fileDescriptorArray.slowToArray();
 
             final int[] fileDescriptors = new int[objects.length];
 
             for (int n = 0; n < objects.length; n++) {
-                fileDescriptors[n] = (int) rubyWithSelf(frame, objects[n], "@descriptor");
+                if (!(objects[n] instanceof RubyBasicObject)) {
+                    throw new UnsupportedOperationException();
+                }
+
+                fileDescriptors[n] = getDescriptor((RubyBasicObject) objects[n]);
             }
 
             return fileDescriptors;

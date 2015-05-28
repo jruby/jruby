@@ -46,6 +46,7 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -76,6 +77,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.jruby.RubyArray;
+
+import static org.jruby.runtime.Helpers.arrayOf;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -326,6 +329,32 @@ public class RubySocket extends RubyBasicSocket {
     @JRubyMethod(meta = true)
     public static IRubyObject ip_address_list(ThreadContext context, IRubyObject self) {
         return SocketUtils.ip_address_list(context);
+    }
+
+    @JRubyMethod(name = {"socketpair", "pair"}, meta = true)
+    public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
+        ProtocolFamily pf = SocketUtils.protocolFamilyFromArg(protocol);
+        if (pf == null ) pf = ProtocolFamily.PF_UNIX;
+
+        if (pf != ProtocolFamily.PF_UNIX && pf.ordinal() != 0) {
+            throw context.runtime.newErrnoEOPNOTSUPPError("Socket.socketpair only supports streaming UNIX sockets");
+        }
+
+        return socketpair(context, recv, domain, type);
+    }
+
+    @JRubyMethod(name = {"socketpair", "pair"}, meta = true)
+    public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject domain, IRubyObject type) {
+        AddressFamily af = SocketUtils.addressFamilyFromArg(domain);
+        if (af == null) af = AddressFamily.AF_UNIX;
+        Sock s = SocketUtils.sockFromArg(type);
+        if (s == null) s = Sock.SOCK_STREAM;
+
+        if (af != AddressFamily.AF_UNIX || s != Sock.SOCK_STREAM) {
+            throw context.runtime.newErrnoEOPNOTSUPPError("Socket.socketpair only supports streaming UNIX sockets");
+        }
+
+        return RubyUNIXSocket.socketpair(context, recv, arrayOf(domain, type));
     }
 
     @Override

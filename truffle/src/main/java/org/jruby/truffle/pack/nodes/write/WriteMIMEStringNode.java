@@ -10,10 +10,12 @@
 package org.jruby.truffle.pack.nodes.write;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
@@ -46,7 +48,7 @@ public abstract class WriteMIMEStringNode extends PackNode {
         return null;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     private ByteList encode(ByteList bytes) {
         // TODO CS 30-Mar-15 should write our own optimizable version of MIME
         final ByteList output = new ByteList();

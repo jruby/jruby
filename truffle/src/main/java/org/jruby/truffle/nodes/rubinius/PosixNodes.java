@@ -337,6 +337,34 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "getpriority", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1})
+    public abstract static class GetPriorityNode extends CoreMethodArrayArgumentsNode {
+
+        public GetPriorityNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getpriority(int kind, int id) {
+            return posix().getpriority(kind, id);
+        }
+
+    }
+
+    @CoreMethod(names = "setpriority", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 1, 2})
+    public abstract static class SetPriorityNode extends CoreMethodArrayArgumentsNode {
+
+        public SetPriorityNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int setpriority(int kind, int id, int priority) {
+            return posix().setpriority(kind, id, priority);
+        }
+
+    }
+
     @CoreMethod(names = "flock", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1})
     public abstract static class FlockNode extends CoreMethodArrayArgumentsNode {
 
@@ -441,6 +469,21 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "errno=", isModuleFunction = true, required = 1)
+    public abstract static class ErrnoAssignNode extends CoreMethodArrayArgumentsNode {
+
+        public ErrnoAssignNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int errno(int errno) {
+            posix().errno(errno);
+            return 0;
+        }
+
+    }
+
     @CoreMethod(names = "fcntl", isModuleFunction = true, required = 3)
     public abstract static class FcntlNode extends CoreMethodArrayArgumentsNode {
 
@@ -456,6 +499,34 @@ public abstract class PosixNodes {
         @Specialization
         public int fcntl(int fd, int fcntl, int arg) {
             return posix().fcntlInt(fd, Fcntl.valueOf(fcntl), arg);
+        }
+
+    }
+
+    @CoreMethod(names = "getpgid", isModuleFunction = true, required = 1)
+    public abstract static class GetpgidNode extends CoreMethodArrayArgumentsNode {
+
+        public GetpgidNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getpgid(int pid) {
+            return posix().getpgid(pid);
+        }
+
+    }
+
+    @CoreMethod(names = "getpgrp", isModuleFunction = true)
+    public abstract static class GetpgrpNode extends CoreMethodArrayArgumentsNode {
+
+        public GetpgrpNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getpgrp() {
+            return posix().getpgrp();
         }
 
     }

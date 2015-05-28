@@ -16,6 +16,7 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +30,8 @@ import java.util.Arrays;
  */
 public class FeatureManager {
 
+    private final boolean SHOW_RESOLUTION = Options.TRUFFLE_REQUIRE_SHOW_RESOLUTION.load();
+
     private final RubyContext context;
 
     private Source mainScriptSource = null;
@@ -37,6 +40,8 @@ public class FeatureManager {
     public FeatureManager(RubyContext context) {
         this.context = context;
     }
+
+    // TODO CS 27-May-15 we should do lookup in one phase, returning a path, and then do the load
 
     public boolean require(String feature, Node currentNode) throws IOException {
         final RubyConstant dataConstantBefore = ModuleOperations.lookupConstant(context, LexicalScope.NONE, context.getCoreLibrary().getObjectClass(), "DATA");
@@ -76,11 +81,11 @@ public class FeatureManager {
     private boolean requireInPath(String path, String feature, Node currentNode) throws IOException {
         String fullPath = new File(path, feature).getPath();
 
-        if (requireFile(fullPath, currentNode)) {
+        if (requireFile(feature, fullPath, currentNode)) {
             return true;
         }
 
-        if (requireFile(fullPath + ".rb", currentNode)) {
+        if (requireFile(feature, fullPath + ".rb", currentNode)) {
             return true;
         }
 
@@ -91,7 +96,7 @@ public class FeatureManager {
         return path.startsWith("uri:classloader:") || path.startsWith("core:") || new File(path).isAbsolute();
     }
 
-    private boolean requireFile(String path, Node currentNode) throws IOException {
+    private boolean requireFile(String feature, String path, Node currentNode) throws IOException {
         // We expect '/' in various classpath URLs, so normalize Windows file paths to use '/'
         path = path.replace('\\', '/');
 
@@ -112,6 +117,10 @@ public class FeatureManager {
                 return false;
             }
 
+            if (SHOW_RESOLUTION) {
+                System.err.printf("resolved %s -> %s\n", feature, coreFileName);
+            }
+
             context.getCoreLibrary().loadRubyCore(coreFileName, "uri:classloader:/");
             context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(path));
 
@@ -130,6 +139,9 @@ public class FeatureManager {
                 return false;
             }
 
+            if (SHOW_RESOLUTION) {
+                System.err.printf("resolved %s -> %s\n", feature, coreFileName);
+            }
 
             context.getCoreLibrary().loadRubyCore(coreFileName, "core:/");
             context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(path));
@@ -153,6 +165,10 @@ public class FeatureManager {
             }
 
             context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(expandedPath));
+
+            if (SHOW_RESOLUTION) {
+                System.err.printf("resolved %s -> %s\n", feature, expandedPath);
+            }
 
             // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.
             context.loadFile(path, currentNode);

@@ -16,10 +16,13 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.util.IdUtil;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -59,13 +62,22 @@ public abstract class GetConstantNode extends RubyNode {
 
     @Specialization(guards = "constant == null")
     protected Object missingConstant(VirtualFrame frame, RubyModule module, String name, Object constant,
+            @Cached("isValidConstantName(name)") boolean isValidConstantName,
             @Cached("createConstMissingNode()") CallDispatchHeadNode constMissingNode,
             @Cached("getContext().getSymbol(name)") RubySymbol symbolName) {
+        if (!isValidConstantName) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
+        }
         return constMissingNode.call(frame, module, "const_missing", null, symbolName);
     }
 
     protected RequireNode createRequireNode() {
         return KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {});
+    }
+
+    protected boolean isValidConstantName(String name) {
+        return IdUtil.isValidConstantName19(name);
     }
 
     protected CallDispatchHeadNode createConstMissingNode() {

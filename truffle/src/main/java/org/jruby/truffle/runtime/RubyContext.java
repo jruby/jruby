@@ -155,7 +155,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         featureManager = new FeatureManager(this);
         traceManager = new TraceManager();
-        atExitManager = new AtExitManager();
+        atExitManager = new AtExitManager(this);
 
         threadManager = new ThreadManager(this);
         threadManager.initialize();
@@ -288,17 +288,17 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public RubySymbol getSymbol(String name) {
         return symbolTable.getSymbol(name, ASCIIEncoding.INSTANCE);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public RubySymbol getSymbol(String name, Encoding encoding) {
         return symbolTable.getSymbol(name, encoding);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public RubySymbol getSymbol(ByteList name) {
         return symbolTable.getSymbol(name);
     }
@@ -316,6 +316,10 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     public Object instanceEval(ByteList code, Object self, Node currentNode) {
         return instanceEval(code, self, "(eval)", currentNode);
+    }
+
+    public Object eval(Source source) {
+        return execute(source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.EVAL, getCoreLibrary().getMainObject(), null, null, NodeWrapper.IDENTITY);
     }
 
     @TruffleBoundary

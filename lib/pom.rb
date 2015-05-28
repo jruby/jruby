@@ -29,7 +29,7 @@ default_gems =
    ImportedGem.new( 'power_assert', 'power_assert.version', true ),
    ImportedGem.new( 'psych', '2.0.14.pre1', true ),
    ImportedGem.new( 'json', 'json.version', true ),
-   ImportedGem.new( 'jar-dependencies', '0.1.13', true )
+   ImportedGem.new( 'jar-dependencies', '0.1.14', true )
   ]
 
 project 'JRuby Lib Setup' do
@@ -86,7 +86,8 @@ project 'JRuby Lib Setup' do
     end
   end
 
-  gem 'ruby-maven', '3.1.1.0.11', :scope => :provided
+  gem 'ruby-maven', '3.3.0', :scope => :provided
+  gem 'ruby-maven-libs', '3.3.3', :scope => :provided
 
   default_gemnames = default_gems.collect { |g| g.name }
 

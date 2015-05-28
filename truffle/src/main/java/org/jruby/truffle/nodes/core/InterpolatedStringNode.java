@@ -10,10 +10,12 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.ToSNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
@@ -65,7 +67,7 @@ public final class InterpolatedStringNode extends RubyNode {
         return string;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     private RubyString concat(RubyString[] strings) {
         // TODO(CS): there is a lot of copying going on here - and I think this is sometimes inner loop stuff
 

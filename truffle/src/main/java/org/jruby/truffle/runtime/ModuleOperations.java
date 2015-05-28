@@ -164,7 +164,7 @@ public abstract class ModuleOperations {
         return lookupConstantWithInherit(context, module, lastSegment, inherit, currentNode);
     }
 
-    private static RubyConstant lookupConstantWithInherit(RubyContext context, RubyModule module, String name, boolean inherit, Node currentNode) {
+    public static RubyConstant lookupConstantWithInherit(RubyContext context, RubyModule module, String name, boolean inherit, Node currentNode) {
         if (!IdUtil.isValidConstantName19(name)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, currentNode));

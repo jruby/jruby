@@ -10,11 +10,9 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
@@ -24,7 +22,6 @@ import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -32,7 +29,6 @@ import org.jruby.truffle.runtime.core.*;
 
 import java.math.BigInteger;
 import java.util.EnumSet;
-import java.util.concurrent.locks.ReentrantLock;
 
 @CoreClass(name = "Bignum")
 public abstract class BignumNodes {
@@ -97,11 +93,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public Object add(RubyBasicObject a, int b) {
-            return fixnumOrBignum(getBigIntegerValue(a).add(BigInteger.valueOf(b)));
-        }
-
-        @Specialization
         public Object add(RubyBasicObject a, long b) {
             return fixnumOrBignum(getBigIntegerValue(a).add(BigInteger.valueOf(b)));
         }
@@ -126,11 +117,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public Object sub(RubyBasicObject a, int b) {
-            return fixnumOrBignum(getBigIntegerValue(a).subtract(BigInteger.valueOf(b)));
-        }
-
-        @Specialization
         public Object sub(RubyBasicObject a, long b) {
             return fixnumOrBignum(getBigIntegerValue(a).subtract(BigInteger.valueOf(b)));
         }
@@ -152,12 +138,6 @@ public abstract class BignumNodes {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public Object mul(RubyBasicObject a, int b) {
-            return fixnumOrBignum(getBigIntegerValue(a).multiply(BigInteger.valueOf(b)));
         }
 
         @TruffleBoundary
@@ -187,11 +167,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public Object div(RubyBasicObject a, int b) {
-            return fixnumOrBignum(getBigIntegerValue(a).divide(BigInteger.valueOf(b)));
-        }
-
-        @Specialization
         public Object div(RubyBasicObject a, long b) {
             return fixnumOrBignum(getBigIntegerValue(a).divide(BigInteger.valueOf(b)));
         }
@@ -213,18 +188,6 @@ public abstract class BignumNodes {
 
         public ModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object mod(RubyBasicObject a, int b) {
-            if (b == 0) {
-                throw new ArithmeticException("divide by zero");
-            } else if (b < 0) {
-                final BigInteger bigint = BigInteger.valueOf(b);
-                final BigInteger mod = getBigIntegerValue(a).mod(bigint.negate());
-                return fixnumOrBignum(mod.add(bigint));
-            }
-            return fixnumOrBignum(getBigIntegerValue(a).mod(BigInteger.valueOf(b)));
         }
 
         @Specialization
@@ -267,11 +230,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public boolean less(RubyBasicObject a, int b) {
-            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) < 0;
-        }
-
-        @Specialization
         public boolean less(RubyBasicObject a, long b) {
             return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) < 0;
         }
@@ -298,11 +256,6 @@ public abstract class BignumNodes {
 
         public LessEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        @Specialization
-        public boolean lessEqual(RubyBasicObject a, int b) {
-            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) <= 0;
         }
 
         @Specialization
@@ -333,12 +286,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean equal(RubyBasicObject a, int b) {
-            return getBigIntegerValue(a).equals(BigInteger.valueOf(b));
+            return false;
         }
 
         @Specialization
         public boolean equal(RubyBasicObject a, long b) {
-            return getBigIntegerValue(a).equals(BigInteger.valueOf(b));
+            return false;
         }
 
         @Specialization
@@ -379,11 +332,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public int compare(RubyBasicObject a, int b) {
-            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b));
-        }
-
-        @Specialization
         public int compare(RubyBasicObject a, long b) {
             return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b));
         }
@@ -411,11 +359,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public boolean greaterEqual(RubyBasicObject a, int b) {
-            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) >= 0;
-        }
-
-        @Specialization
         public boolean greaterEqual(RubyBasicObject a, long b) {
             return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) >= 0;
         }
@@ -436,11 +379,6 @@ public abstract class BignumNodes {
 
         public GreaterNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        @Specialization
-        public boolean greater(RubyBasicObject a, int b) {
-            return getBigIntegerValue(a).compareTo(BigInteger.valueOf(b)) > 0;
         }
 
         @Specialization
@@ -467,11 +405,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public Object bitAnd(RubyBasicObject a, int b) {
-            return fixnumOrBignum(getBigIntegerValue(a).and(BigInteger.valueOf(b)));
-        }
-
-        @Specialization
         public Object bitAnd(RubyBasicObject a, long b) {
             return fixnumOrBignum(getBigIntegerValue(a).and(BigInteger.valueOf(b)));
         }
@@ -490,11 +423,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public Object bitOr(RubyBasicObject a, int b) {
-            return fixnumOrBignum(getBigIntegerValue(a).or(BigInteger.valueOf(b)));
-        }
-
-        @Specialization
         public Object bitOr(RubyBasicObject a, long b) {
             return fixnumOrBignum(getBigIntegerValue(a).or(BigInteger.valueOf(b)));
         }
@@ -510,11 +438,6 @@ public abstract class BignumNodes {
 
         public BitXOrNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object bitXOr(RubyBasicObject a, int b) {
-            return fixnumOrBignum(getBigIntegerValue(a).xor(BigInteger.valueOf(b)));
         }
 
         @Specialization
@@ -646,11 +569,6 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public RubyArray divMod(RubyBasicObject a, int b) {
-            return divModNode.execute(getBigIntegerValue(a), b);
-        }
-
-        @Specialization
         public RubyArray divMod(RubyBasicObject a, long b) {
             return divModNode.execute(getBigIntegerValue(a), b);
         }
@@ -669,10 +587,10 @@ public abstract class BignumNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public boolean even(RubyBasicObject value) {
-            return getBigIntegerValue(value).getLowestSetBit() != 0;
+            return !getBigIntegerValue(value).testBit(0);
         }
 
     }
@@ -687,6 +605,21 @@ public abstract class BignumNodes {
         @Specialization
         public int hash(RubyBasicObject value) {
             return getBigIntegerValue(value).hashCode();
+        }
+
+    }
+
+    @CoreMethod(names = "odd?")
+    public abstract static class OddNode extends BignumCoreMethodNode {
+
+        public OddNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public boolean odd(RubyBasicObject value) {
+            return getBigIntegerValue(value).testBit(0);
         }
 
     }
@@ -732,7 +665,7 @@ public abstract class BignumNodes {
             return getContext().makeString(getBigIntegerValue(value).toString());
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString toS(RubyBasicObject value, int base) {
             if (base < 2 || base > 36) {

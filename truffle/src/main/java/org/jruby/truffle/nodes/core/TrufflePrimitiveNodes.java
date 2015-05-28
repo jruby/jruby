@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
@@ -17,6 +18,7 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -127,7 +129,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public long gcTime() {
             return RubyGC.getCollectionTime();
@@ -156,7 +158,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject assertNotCompiled() {
             throw new RaiseException(getContext().getCoreLibrary().runtimeError("Truffle::Primitive.assert_not_compiled can only be called lexically", this));
@@ -185,7 +187,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString dumpString(RubyString string) {
             final StringBuilder builder = new StringBuilder();
@@ -206,7 +208,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public boolean graal() {
             return Truffle.getRuntime().getName().toLowerCase(Locale.ENGLISH).contains("graal");
@@ -235,7 +237,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString graalVersion() {
             return getContext().makeString(System.getProperty("graal.version", "unknown"));
@@ -250,7 +252,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject simpleShell() {
             new SimpleShell(getContext()).run(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), this);
@@ -266,7 +268,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyHash coverageResult() {
             if (getContext().getCoverageTracker() == null) {
@@ -326,7 +328,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject attach(RubyString file, int line, RubyProc block) {
             getContext().getAttachmentsManager().attach(file.toString(), line, block);
@@ -342,7 +344,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject detach(RubyString file, int line) {
             getContext().getAttachmentsManager().detach(file.toString(), line);
@@ -358,7 +360,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public boolean cExtLoad(RubyArray initFunctions, RubyArray cFlags, RubyArray files) {
             final CExtSubsystem subsystem = CExtManager.getSubsystem();
@@ -401,7 +403,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public boolean cExtSupported() {
             return CExtManager.getSubsystem() != null;
@@ -416,7 +418,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject debugPrint(RubyString string) {
             System.err.println(string.toString());
@@ -432,7 +434,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString homeDirectory() {
             return getContext().makeString(getContext().getRuntime().getJRubyHome());
@@ -461,7 +463,7 @@ public abstract class TrufflePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public Object atExit(boolean always, RubyProc block) {
             getContext().getAtExitManager().add(block, always);

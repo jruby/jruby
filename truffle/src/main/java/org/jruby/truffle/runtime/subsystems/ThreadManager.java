@@ -10,7 +10,9 @@
 package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
@@ -56,7 +58,7 @@ public class ThreadManager {
      * from the current Java thread. Remember to call {@link #leaveGlobalLock} again before
      * blocking.
      */
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public void enterGlobalLock(RubyThread thread) {
         globalLock.lock();
         currentThread = thread;
@@ -68,7 +70,7 @@ public class ThreadManager {
      * executing any Ruby code. You probably want to use this with a {@code finally} statement to
      * make sure that happens
      */
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public RubyThread leaveGlobalLock() {
         if (!globalLock.isHeldByCurrentThread()) {
             throw new RuntimeException("You don't own this lock!");
@@ -93,7 +95,7 @@ public class ThreadManager {
      * @param action must not touch any Ruby state
      * @return the first non-null return value from {@code action}
      */
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public <T> T runUntilResult(BlockingActionWithoutGlobalLock<T> action) {
         T result = null;
 
@@ -112,7 +114,7 @@ public class ThreadManager {
      * @param action must not touch any Ruby state
      * @return the return value from {@code action} or null if interrupted
      */
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public <T> T runOnce(BlockingActionWithoutGlobalLock<T> action) {
         T result = null;
         final RubyThread runningThread = leaveGlobalLock();

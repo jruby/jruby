@@ -3701,6 +3701,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("ENOENT"), message);
     }
 
+    public RaiseException newErrnoEOPNOTSUPPError(String message) {
+        return newRaiseException(getErrno().getClass("EOPNOTSUPP"), message);
+    }
+
     public RaiseException newErrnoESPIPEError(String message) {
         return newRaiseException(getErrno().getClass("ESPIPE"), message);
     }
@@ -4736,8 +4740,8 @@ public final class Ruby implements Constantizable {
      * @return the freeze-duped version of the string
      */
     public RubyString freezeAndDedupString(RubyString string) {
-        if (string.getMetaClass().isSingleton()) {
-            // never cache a singleton
+        if (string.getMetaClass() == stringClass) {
+            // never cache a non-natural String
             RubyString duped = string.strDup(this);
             duped.setFrozen(true);
             return duped;

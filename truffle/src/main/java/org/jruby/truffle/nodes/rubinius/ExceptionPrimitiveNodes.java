@@ -10,9 +10,12 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -30,10 +33,11 @@ public abstract class ExceptionPrimitiveNodes {
         protected final static int EBADF = Errno.EBADF.intValue();
         protected final static int EEXIST = Errno.EEXIST.intValue();
         protected final static int EACCES = Errno.EACCES.intValue();
+        protected final static int EFAULT = Errno.EFAULT.intValue();
         protected final static int ENOTDIR = Errno.ENOTDIR.intValue();
 
         public static boolean isExceptionSupported(int errno) {
-            return errno == ENOENT || errno == EBADF || errno == EEXIST || errno == EACCES || errno == ENOTDIR;
+            return errno == ENOENT || errno == EBADF || errno == EEXIST || errno == EACCES || errno == EFAULT || errno == ENOTDIR;
         }
 
         public ExceptionErrnoErrorPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -70,12 +74,27 @@ public abstract class ExceptionPrimitiveNodes {
             return getContext().getCoreLibrary().permissionDeniedError(message.toString(), this);
         }
 
+        @Specialization(guards = {"errno == EACCES", "isNil(message)"})
+        public RubyException eacces(Object message, int errno) {
+            return getContext().getCoreLibrary().permissionDeniedError("nil", this);
+        }
+
+        @Specialization(guards = "errno == EFAULT")
+        public RubyException efault(RubyString message, int errno) {
+            return getContext().getCoreLibrary().badAddressError(this);
+        }
+
+        @Specialization(guards = {"errno == EFAULT", "isNil(message)"})
+        public RubyException efault(Object message, int errno) {
+            return getContext().getCoreLibrary().badAddressError(this);
+        }
+
         @Specialization(guards = "errno == ENOTDIR")
         public RubyException enotdir(RubyString message, int errno) {
             return getContext().getCoreLibrary().notDirectoryError(message.toString(), this);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "!isExceptionSupported(errno)")
         public RubyException unsupported(Object message, int errno) {
             final Errno errnoObject = Errno.valueOf(errno);

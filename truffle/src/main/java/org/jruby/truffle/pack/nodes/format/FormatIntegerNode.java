@@ -10,9 +10,11 @@
 package org.jruby.truffle.pack.nodes.format;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.parser.FormatDirective;
@@ -50,7 +52,7 @@ public abstract class FormatIntegerNode extends PackNode {
         return doFormat(value);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     @Specialization(guards = "isRubyBignum(value)")
     public ByteList format(RubyBasicObject value) {
         final BigInteger bigInteger = BignumNodes.getBigIntegerValue(value);
@@ -87,7 +89,7 @@ public abstract class FormatIntegerNode extends PackNode {
         return new ByteList(formatted.getBytes(StandardCharsets.US_ASCII));
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     protected ByteList doFormat(Object value) {
         // TODO CS 3-May-15 write this without building a string and formatting
 

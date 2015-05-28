@@ -10,10 +10,12 @@
 package org.jruby.truffle.nodes.arguments;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.utilities.ValueProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -70,7 +72,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     private Object lookupKeywordInHash(RubyHash hash) {
         for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
             if (keyValue.getKey().toString().equals(name)) {

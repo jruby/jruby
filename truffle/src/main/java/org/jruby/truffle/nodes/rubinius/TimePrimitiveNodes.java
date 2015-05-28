@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -69,7 +70,7 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_s_specific", needsSelf = false, lowerFixnumParameters = { 0, 1 })
+    @RubiniusPrimitive(name = "time_s_specific", needsSelf = false, lowerFixnumParameters = { 1 })
     public static abstract class TimeSSpecificPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child private ReadTimeZoneNode readTimeZoneNode;
@@ -80,17 +81,27 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization(guards = { "isTrue(isUTC)", "isNil(offset)" })
-        public RubyTime timeSSpecificUTC(int seconds, int nanoseconds, boolean isUTC, Object offset) {
+        public RubyTime timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
-            final long milliseconds = seconds * 1_000L + (nanoseconds / 1_000_000);
+            final long milliseconds = getMillis(seconds, nanoseconds);
             return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds), nil());
         }
 
         @Specialization(guards = { "!isTrue(isUTC)", "isNil(offset)" })
-        public RubyTime timeSSpecific(VirtualFrame frame, int seconds, int nanoseconds, boolean isUTC, Object offset) {
+        public RubyTime timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
-            final long milliseconds = (long) seconds * 1_000 + ((long) nanoseconds / 1_000_000);
+            final long milliseconds = getMillis(seconds, nanoseconds);
             return new RubyTime(getContext().getCoreLibrary().getTimeClass(), localtime(milliseconds, readTimeZoneNode.executeRubyString(frame)), offset);
+        }
+
+        private long getMillis(long seconds, int nanoseconds) {
+            try {
+                return ExactMath.addExact(ExactMath.multiplyExact(seconds, 1000L), (nanoseconds / 1_000_000));
+            } catch (ArithmeticException e) {
+                CompilerDirectives.transferToInterpreter();
+                String message = String.format("UNIX epoch + %d seconds out of range for Time (Joda-Time limitation)", seconds);
+                throw new RaiseException(getContext().getCoreLibrary().rangeError(message, this));
+            }
         }
 
         @TruffleBoundary

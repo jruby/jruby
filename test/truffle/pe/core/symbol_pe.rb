@@ -10,4 +10,4 @@ example ":foo"
 example ":foo == :foo"
 
 # fails because != is !(==), and the inner call to == is not inlined
-tagged_example ":foo != :bar"
+example ":foo != :bar"

@@ -94,12 +94,12 @@ public class RubyRegexp extends RubyBasicObject {
         return options;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public Object matchCommon(RubyString source, boolean operator, boolean setNamedCaptures) {
         return matchCommon(source, operator, setNamedCaptures, 0);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public Object matchCommon(RubyString source, boolean operator, boolean setNamedCaptures, int startPos) {
         final byte[] stringBytes = source.getByteList().bytes();
         final Matcher matcher = regex.matcher(stringBytes);
@@ -108,7 +108,7 @@ public class RubyRegexp extends RubyBasicObject {
         return matchCommon(source, operator, setNamedCaptures, matcher, startPos, range);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public Object matchCommon(RubyString source, boolean operator, boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
         final ByteList bytes = source.getByteList();
         final RubyContext context = getContext();
@@ -240,7 +240,7 @@ public class RubyRegexp extends RubyBasicObject {
         setInstanceVariable(getContext().getThreadManager().getCurrentThread().getThreadLocals(), name, value);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public RubyString gsub(RubyString string, String replacement) {
         final RubyContext context = getContext();
 
@@ -283,7 +283,7 @@ public class RubyRegexp extends RubyBasicObject {
         return context.makeString(builder.toString());
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public RubyString sub(String string, String replacement) {
         final RubyContext context = getContext();
 
@@ -303,7 +303,7 @@ public class RubyRegexp extends RubyBasicObject {
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public RubyString[] split(final RubyString string, final boolean useLimit, final int limit) {
         final RubyContext context = getContext();
 
@@ -368,7 +368,7 @@ public class RubyRegexp extends RubyBasicObject {
         return strings.toArray(new RubyString[strings.size()]);
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public Object scan(RubyString string) {
         final RubyContext context = getContext();
 

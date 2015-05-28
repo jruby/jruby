@@ -53,6 +53,8 @@ public class RubyThread extends RubyBasicObject {
 
     private final List<Lock> ownedLocks = new ArrayList<>(); // Always accessed by the same underlying Java thread.
 
+    private boolean abortOnException = false;
+
     public RubyThread(RubyClass rubyClass, ThreadManager manager) {
         super(rubyClass);
         this.manager = manager;
@@ -219,6 +221,14 @@ public class RubyThread extends RubyBasicObject {
 
     public RubyFiber getRootFiber() {
         return fiberManager.getRootFiber();
+    }
+
+    public boolean isAbortOnException() {
+        return abortOnException;
+    }
+
+    public void setAbortOnException(boolean abortOnException) {
+        this.abortOnException = abortOnException;
     }
 
     public static class ThreadAllocator implements Allocator {

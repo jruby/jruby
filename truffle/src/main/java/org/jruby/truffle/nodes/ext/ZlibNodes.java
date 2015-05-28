@@ -11,9 +11,11 @@ package org.jruby.truffle.nodes.ext;
 
 import com.jcraft.jzlib.JZlib;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.ext.digest.BubbleBabble;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
@@ -50,7 +52,7 @@ public abstract class ZlibNodes {
             return 0;
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public long crc32(RubyString message, UndefinedPlaceholder initial) {
             final ByteList bytes = message.getByteList();
@@ -64,7 +66,7 @@ public abstract class ZlibNodes {
             return crc32(message, (long) initial);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public long crc32(RubyString message, long initial) {
             final ByteList bytes = message.getByteList();
@@ -73,7 +75,7 @@ public abstract class ZlibNodes {
             return JZlib.crc32_combine(initial, crc32.getValue(), bytes.length());
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "isRubyBignum(initial)")
         public long crc32(RubyString message, RubyBasicObject initial) {
             throw new RaiseException(getContext().getCoreLibrary().rangeError("bignum too big to convert into `unsigned long'", this));
@@ -90,7 +92,7 @@ public abstract class ZlibNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString deflate(RubyString message, int level) {
             final Deflater deflater = new Deflater(level);
@@ -122,7 +124,7 @@ public abstract class ZlibNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
         public RubyString inflate(RubyString message) {
             final Inflater inflater = new Inflater();
