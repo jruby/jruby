@@ -42,6 +42,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaInternalBlockBody;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
@@ -1760,12 +1761,17 @@ public class RubyEnumerable {
         return enumerator;
     }
 
-    static class ChunkArg {
-        public RubyProc categorize;
-        public IRubyObject state;
-        public IRubyObject prev_value;
-        public IRubyObject prev_elts;
-        public IRubyObject yielder;
+    private static class ChunkArg {
+
+        private ChunkArg(final ThreadContext context, IRubyObject state) {
+            this.state = state;
+            this.prev_elts = this.prev_value = context.nil;
+        }
+
+        final IRubyObject state;
+
+        IRubyObject prev_value;
+        IRubyObject prev_elts;
     }
 
     // chunk_i
@@ -1778,75 +1784,75 @@ public class RubyEnumerable {
             this.enumerator = enumerator;
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
-            IRubyObject args = packEnumValues(context, largs);
-            final ChunkArg arg = new ChunkArg();
-            IRubyObject enumerable = (IRubyObject)enumerator.getInternalVariables().getInternalVariable("chunk_enumerable");
-            arg.categorize = (RubyProc)enumerator.getInternalVariables().getInternalVariable("chunk_categorize");
-            arg.state = (IRubyObject)enumerator.getInternalVariables().getInternalVariable("chunk_initial_state");
-            arg.prev_value = runtime.getNil();
-            arg.prev_elts = runtime.getNil();
-            arg.yielder = args;
+        public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+            InternalVariables variables = enumerator.getInternalVariables();
+            final IRubyObject enumerable = (IRubyObject) variables.getInternalVariable("chunk_enumerable");
+            final RubyProc categorize = (RubyProc) variables.getInternalVariable("chunk_categorize");
+            final IRubyObject state = (IRubyObject) variables.getInternalVariable("chunk_initial_state");
+            final IRubyObject yielder = packEnumValues(context, args);
+            final ChunkArg arg = new ChunkArg(context, (state.isNil() ? null : state.dup()));
 
-            if(!arg.state.isNil()) {
-                arg.state = arg.state.dup();
-            }
-
-            final IRubyObject alone = runtime.newSymbol("_alone");
-            final IRubyObject separator = runtime.newSymbol("_separator");
+            final RubySymbol alone = runtime.newSymbol("_alone");
+            final RubySymbol separator = runtime.newSymbol("_separator");
 
             callEach(runtime, context, enumerable, Arity.OPTIONAL, new BlockCallback() {
+
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        IRubyObject packedArgs = packEnumValues(ctx, largs);
-                        IRubyObject v;
-                        if(arg.state.isNil()) {
-                            if (arg.categorize.getBlock().arity().getValue() == 1) {
+                        final IRubyObject larg = packEnumValues(ctx, largs);
+                        final IRubyObject v;
+                        if ( arg.state == null ) {
+                            if ( categorize.getBlock().arity().getValue() == 1 ) {
                                 // if chunk's categorize block has arity one, we pass it the packed args
-                                v = arg.categorize.callMethod(ctx, "call", packedArgs);
+                                v = categorize.callMethod(ctx, "call", larg);
                             } else {
                                 // else we let it spread the args as it sees fit for its arity
-                                v = arg.categorize.callMethod(ctx, "call", largs);
+                                v = categorize.callMethod(ctx, "call", largs);
                             }
                         } else {
-                            v = arg.categorize.callMethod(ctx, "call", new IRubyObject[]{packedArgs, arg.state});
+                            v = categorize.callMethod(ctx, "call", new IRubyObject[]{ larg, arg.state });
                         }
 
-                        if(v == alone) {
-                            if(!arg.prev_value.isNil()) {
-                                arg.yielder.callMethod(ctx, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
-                                arg.prev_value = arg.prev_elts = runtime.getNil();
+                        if ( v == alone ) {
+                            if ( ! arg.prev_value.isNil() ) {
+                                yielder.callMethod(ctx, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
+                                arg.prev_value = arg.prev_elts = ctx.nil;
                             }
-                            arg.yielder.callMethod(ctx, "<<", runtime.newArray(v, runtime.newArray(packedArgs)));
-                        } else if(v.isNil() || v == separator) {
-                            if(!arg.prev_value.isNil()) {
-                                arg.yielder.callMethod(ctx, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
-                                arg.prev_value = arg.prev_elts = runtime.getNil();
+                            yielder.callMethod(ctx, "<<", runtime.newArray(v, runtime.newArray(larg)));
+                        }
+                        else if ( v.isNil() || v == separator ) {
+                            if( ! arg.prev_value.isNil() ) {
+                                yielder.callMethod(ctx, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
+                                arg.prev_value = arg.prev_elts = ctx.nil;
                             }
-                        } else if((v instanceof RubySymbol) && v.toString().charAt(0) == '_') {
+                        }
+                        else if ( (v instanceof RubySymbol) && v.toString().charAt(0) == '_' ) {
                             throw runtime.newRuntimeError("symbol begins with an underscore is reserved");
-                        } else {
-                            if(arg.prev_value.isNil()) {
+                        }
+                        else {
+                            if ( arg.prev_value.isNil() ) {
                                 arg.prev_value = v;
-                                arg.prev_elts = runtime.newArray(packedArgs);
-                            } else {
-                                if(arg.prev_value.equals(v)) {
-                                    ((RubyArray)arg.prev_elts).append(packedArgs);
-                                } else {
-                                    arg.yielder.callMethod(ctx, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
+                                arg.prev_elts = runtime.newArray(larg);
+                            }
+                            else {
+                                if ( arg.prev_value.equals(v) ) {
+                                    ((RubyArray) arg.prev_elts).append(larg);
+                                }
+                                else {
+                                    yielder.callMethod(ctx, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
                                     arg.prev_value = v;
-                                    arg.prev_elts = runtime.newArray(packedArgs);
+                                    arg.prev_elts = runtime.newArray(larg);
                                 }
                             }
                         }
-                        return runtime.getNil();
+                        return ctx.nil;
                     }
                 });
 
-            if(!arg.prev_elts.isNil()) {
-                arg.yielder.callMethod(context, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
+            if ( ! arg.prev_elts.isNil() ) {
+                yielder.callMethod(context, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
             }
 
-            return runtime.getNil();
+            return context.nil;
         }
     }
 
