@@ -138,6 +138,15 @@ describe "Pointer" do
       expect(FFI::MemoryPointer.new(:int, 1).type_size).to eq(FFI.type_size(:int))
     end
   end
+
+  it "is not eql? for purposes of hash lookup (GH-2995)" do
+    a = FFI::Pointer.new(0)
+    b = FFI::Pointer.new(0)
+
+    expect(a == b).to eq true
+    expect(a.eql? b).to eq false
+    expect(Hash[a,true][b]).to eq nil
+  end
 end
 
 describe "AutoPointer" do
