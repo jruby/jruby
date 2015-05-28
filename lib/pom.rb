@@ -86,8 +86,7 @@ project 'JRuby Lib Setup' do
     end
   end
 
-  gem 'ruby-maven', '3.3.0', :scope => :provided
-  gem 'ruby-maven-libs', '3.3.3', :scope => :provided
+  gem 'ruby-maven', '3.3.2', :scope => :provided
 
   default_gemnames = default_gems.collect { |g| g.name }
 

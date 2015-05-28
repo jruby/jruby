@@ -12,8 +12,8 @@ project 'JRuby Dist' do
               'jruby.plugins.version' => '1.0.9', # Not sure why but wo this pom.xml get 1.0.8
               'main.basedir' => '${project.parent.parent.basedir}' )
 
-  # pre-installed gems - not default gems !
-  gem 'ruby-maven', '3.1.1.0.11', :scope => 'provided'
+  # pre-installed gems - not yet default gems !
+  gem 'ruby-maven', '3.3.2', :scope => 'provided'
 
   # HACK: add torquebox repo only when building from filesystem
   # not when using the pom as "dependency" in some other projects
