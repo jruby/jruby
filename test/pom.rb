@@ -38,12 +38,9 @@ project 'JRuby Integration Tests' do
   id 'org.jruby:jruby-tests'
 
   repository( 'http://rubygems-proxy.torquebox.org/releases',
+              :id => 'tb-rubygems-releases' )
+  repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
               :id => 'rubygems-releases' )
-  repository( 'http://rubygems-proxy.torquebox.org/prereleases',
-              :id => 'rubygems-prereleases' ) do
-    releases 'false'
-    snapshots 'true'
-  end
 
   plugin_repository( 'https://oss.sonatype.org/content/repositories/snapshots/',
                      :id => 'sonatype' ) do
