@@ -118,7 +118,7 @@ public class FeatureManager {
             }
 
             if (SHOW_RESOLUTION) {
-                System.err.printf("resolved %s -> %s\n", feature, coreFileName);
+                System.err.printf("resolved %s -> %s%n", feature, coreFileName);
             }
 
             context.getCoreLibrary().loadRubyCore(coreFileName, "uri:classloader:/");
@@ -140,7 +140,7 @@ public class FeatureManager {
             }
 
             if (SHOW_RESOLUTION) {
-                System.err.printf("resolved %s -> %s\n", feature, coreFileName);
+                System.err.printf("resolved %s -> %s%n", feature, coreFileName);
             }
 
             context.getCoreLibrary().loadRubyCore(coreFileName, "core:/");
@@ -167,7 +167,7 @@ public class FeatureManager {
             context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(expandedPath));
 
             if (SHOW_RESOLUTION) {
-                System.err.printf("resolved %s -> %s\n", feature, expandedPath);
+                System.err.printf("resolved %s -> %s%n", feature, expandedPath);
             }
 
             // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.
