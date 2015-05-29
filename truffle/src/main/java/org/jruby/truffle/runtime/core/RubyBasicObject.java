@@ -19,9 +19,12 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.hash.HashOperations;
+import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
@@ -119,6 +122,12 @@ public class RubyBasicObject implements TruffleObject {
     public ForeignAccessFactory getForeignAccessFactory() {
         if (RubyGuards.isRubyMethod(this)) {
             return new RubyMethodForeignAccessFactory(getContext());
+        } else if (this instanceof RubyArray) {
+            return new ArrayForeignAccessFactory(getContext());
+        } else if (this instanceof RubyHash) {
+            return new HashForeignAccessFactory(getContext());
+        } else if (this instanceof RubyString) {
+            return new StringForeignAccessFactory(getContext());
         } else {
             return new BasicForeignAccessFactory(getContext());
         }
@@ -139,6 +148,23 @@ public class RubyBasicObject implements TruffleObject {
     }
 
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
+        if (this instanceof RubyArray) {
+            for (Object object : ArrayNodes.slowToArray((RubyArray) this)) {
+                if (object instanceof RubyBasicObject) {
+                    ((RubyBasicObject) object).visitObjectGraph(visitor);
+                }
+            }
+        } else if (this instanceof RubyHash) {
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues((RubyHash) this)) {
+                if (keyValue.getKey() instanceof RubyBasicObject) {
+                    ((RubyBasicObject) keyValue.getKey()).visitObjectGraph(visitor);
+                }
+
+                if (keyValue.getValue() instanceof RubyBasicObject) {
+                    ((RubyBasicObject) keyValue.getValue()).visitObjectGraph(visitor);
+                }
+            }
+        }
     }
 
     public boolean isNumeric() {

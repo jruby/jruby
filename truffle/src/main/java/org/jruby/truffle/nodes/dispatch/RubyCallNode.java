@@ -22,6 +22,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashLiteralNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
@@ -384,7 +385,7 @@ public class RubyCallNode extends RubyNode {
         final Object self = RubyArguments.getSelf(frame.getArguments());
 
         if (method == null) {
-            final Object r = respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, context.makeString(methodName));
+            final Object r = respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, createString(methodName));
 
             if (r != DispatchNode.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
                 return nil();
@@ -395,7 +396,7 @@ public class RubyCallNode extends RubyNode {
             return nil();
         }
 
-        return context.makeString("method");
+        return createString("method");
     }
 
     public String getName() {

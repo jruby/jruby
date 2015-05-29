@@ -9,13 +9,13 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.jruby.truffle.nodes.core.BignumNodes;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DoesRespondDispatchHeadNode;
@@ -23,7 +23,6 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
 
 import java.math.BigInteger;
 
@@ -46,12 +45,12 @@ public abstract class FixnumPrimitiveNodes {
 
         @Specialization
         public RubyArray coerce(int a, int b) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new int[]{b, a}, 2);
+            return createArray(new int[]{b, a}, 2);
         }
 
         @Specialization
         public RubyArray coerce(long a, int b) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new long[]{b, a}, 2);
+            return createArray(new long[]{b, a}, 2);
         }
 
         @Specialization(guards = "!isInteger(b)")

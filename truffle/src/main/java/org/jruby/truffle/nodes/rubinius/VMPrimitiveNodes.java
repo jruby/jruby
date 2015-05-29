@@ -48,11 +48,7 @@ import jnr.posix.Times;
 
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
-import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
-import org.jruby.truffle.nodes.core.BignumNodes;
-import org.jruby.truffle.nodes.core.KernelNodes;
-import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
@@ -167,7 +163,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public RubyString vmGetModuleName(RubyModule module) {
-            return getContext().makeString(module.getName());
+            return createString(module.getName());
         }
 
     }
@@ -417,7 +413,7 @@ public abstract class VMPrimitiveNodes {
             final double tutime = 0;
             final double tstime = 0;
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new double[]{
+            return createArray(new double[]{
                     utime,
                     stime,
                     cutime,
@@ -511,8 +507,8 @@ public abstract class VMPrimitiveNodes {
                 }
 
                 sectionKeyValues.add(ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                        getContext().makeString(key),
-                        getContext().makeString(stringValue)));
+                        createString(key),
+                        createString(stringValue)));
             }
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), sectionKeyValues.toArray());

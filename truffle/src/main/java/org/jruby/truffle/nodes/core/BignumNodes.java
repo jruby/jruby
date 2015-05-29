@@ -535,7 +535,7 @@ public abstract class BignumNodes {
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
             // b is converted to a Bignum here in other implementations.
             Object[] store = new Object[] { b, a };
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
+            return createArray(store, store.length);
         }
 
         @Specialization
@@ -545,7 +545,7 @@ public abstract class BignumNodes {
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
             // b is converted to a Bignum here in other implementations.
             Object[] store = new Object[] { b, a };
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
+            return createArray(store, store.length);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
@@ -553,7 +553,7 @@ public abstract class BignumNodes {
             CompilerDirectives.transferToInterpreter();
 
             Object[] store = new Object[] { b, a };
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
+            return createArray(store, store.length);
         }
 
     }
@@ -662,7 +662,7 @@ public abstract class BignumNodes {
         @TruffleBoundary
         @Specialization
         public RubyString toS(RubyBasicObject value, NotProvided base) {
-            return getContext().makeString(getBigIntegerValue(value).toString());
+            return createString(getBigIntegerValue(value).toString());
         }
 
         @TruffleBoundary
@@ -673,7 +673,7 @@ public abstract class BignumNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
-            return getContext().makeString(getBigIntegerValue(value).toString(base));
+            return createString(getBigIntegerValue(value).toString(base));
         }
 
     }

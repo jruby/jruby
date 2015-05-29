@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -123,7 +124,7 @@ public class FeatureManager {
             }
 
             context.getCoreLibrary().loadRubyCore(coreFileName, "uri:classloader:/");
-            ArrayNodes.slowPush(context.getCoreLibrary().getLoadedFeatures(), context.makeString(path));
+            ArrayNodes.slowPush(context.getCoreLibrary().getLoadedFeatures(), StringNodes.createString(context.getCoreLibrary().getStringClass(), path));
 
             return true;
         }
@@ -145,7 +146,7 @@ public class FeatureManager {
             }
 
             context.getCoreLibrary().loadRubyCore(coreFileName, "core:/");
-            ArrayNodes.slowPush(context.getCoreLibrary().getLoadedFeatures(), context.makeString(path));
+            ArrayNodes.slowPush(context.getCoreLibrary().getLoadedFeatures(), StringNodes.createString(context.getCoreLibrary().getStringClass(), path));
 
             return true;
         } else {
@@ -165,7 +166,7 @@ public class FeatureManager {
                 }
             }
 
-            ArrayNodes.slowPush(context.getCoreLibrary().getLoadedFeatures(), context.makeString(expandedPath));
+            ArrayNodes.slowPush(context.getCoreLibrary().getLoadedFeatures(), StringNodes.createString(context.getCoreLibrary().getStringClass(), expandedPath));
 
             if (SHOW_RESOLUTION) {
                 System.err.printf("resolved %s -> %s%n", feature, expandedPath);
@@ -188,7 +189,7 @@ public class FeatureManager {
     public static String expandPath(RubyContext context, String fileName) {
         // TODO (nirvdrum 11-Feb-15) This needs to work on Windows without calling into non-Truffle JRuby.
         if (context.isRunningOnWindows()) {
-            final org.jruby.RubyString path = context.toJRuby(context.makeString(fileName));
+            final org.jruby.RubyString path = context.toJRuby(StringNodes.createString(context.getCoreLibrary().getStringClass(), fileName));
             final org.jruby.RubyString expanded = (org.jruby.RubyString) org.jruby.RubyFile.expand_path19(
                     context.getRuntime().getCurrentContext(),
                     null,

@@ -150,7 +150,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization
         public RubyString escape(RubyString pattern) {
-            return getContext().makeString(org.jruby.RubyRegexp.quote19(new ByteList(pattern.getByteList()), true).toString());
+            return createString(org.jruby.RubyRegexp.quote19(new ByteList(pattern.getByteList()), true).toString());
         }
 
     }
@@ -179,7 +179,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public RubyString match(RubyRegexp regexp) {
-            return new RubyString(getContext().getCoreLibrary().getStringClass(), ((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), regexp.getSource(), regexp.getRegex().getOptions()).inspect19()).getByteList());
+            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), regexp.getSource(), regexp.getRegex().getOptions()).inspect19()).getByteList());
         }
 
     }
@@ -258,7 +258,7 @@ public abstract class RegexpNodes {
         @Specialization
         public RubyString quote(RubyString raw) {
             boolean isAsciiOnly = raw.getByteList().getEncoding().isAsciiCompatible() && raw.scanForCodeRange() == CR_7BIT;
-            return getContext().makeString(org.jruby.RubyRegexp.quote19(raw.getByteList(), isAsciiOnly));
+            return createString(org.jruby.RubyRegexp.quote19(raw.getByteList(), isAsciiOnly));
         }
 
         @Specialization
@@ -291,7 +291,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public RubyString source(RubyRegexp regexp) {
-            return getContext().makeString(regexp.getSource().dup());
+            return createString(regexp.getSource().dup());
         }
 
     }
@@ -305,7 +305,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public RubyString to_s(RubyRegexp regexp) {
-            return new RubyString(getContext().getCoreLibrary().getStringClass(), ((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), regexp.getSource(), regexp.getRegex().getOptions()).to_s()).getByteList());
+            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), regexp.getSource(), regexp.getRegex().getOptions()).to_s()).getByteList());
         }
 
     }

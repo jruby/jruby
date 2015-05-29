@@ -119,7 +119,7 @@ public abstract class KernelNodes {
             }
 
             // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
-            return context.makeString(resultBuilder.toString(), RubyEncoding.getEncoding("UTF-8").getEncoding());
+            return createString(resultBuilder.toString(), RubyEncoding.getEncoding("UTF-8").getEncoding());
         }
 
     }
@@ -330,7 +330,7 @@ public abstract class KernelNodes {
                 locations[n] = ThreadBacktraceLocationNodes.createRubyThreadBacktraceLocation(threadBacktraceLocationClass, activation);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), locations, locations.length);
+            return createArray(locations, locations.length);
         }
     }
 
@@ -699,7 +699,7 @@ public abstract class KernelNodes {
                 }
             });
 
-            final RubyString rubyLine = getContext().makeString(line);
+            final RubyString rubyLine = createString(line);
 
             // Set the local variable $_ in the caller
 
@@ -907,7 +907,7 @@ public abstract class KernelNodes {
 
             Arrays.sort(instanceVariableNames);
 
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = createEmptyArray();
 
             for (Object name : instanceVariableNames) {
                 if (name instanceof String) {
@@ -1007,7 +1007,7 @@ public abstract class KernelNodes {
         public RubyArray localVariables() {
             CompilerDirectives.transferToInterpreter();
 
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = createEmptyArray();
 
             for (Object name : Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
                 if (name instanceof String) {
@@ -1540,7 +1540,7 @@ public abstract class KernelNodes {
             RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
 
             if (!metaClass.isSingleton()) {
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+                return createEmptyArray();
             }
 
             CompilerDirectives.transferToInterpreter();
@@ -1731,7 +1731,7 @@ public abstract class KernelNodes {
         }
 
         private RubyString finishFormat(ByteList format, PackResult result) {
-            final RubyString string = getContext().makeString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
+            final RubyString string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
 
             if (format.length() == 0) {
                 StringNodes.forceEncoding(string, USASCIIEncoding.INSTANCE);
@@ -1913,7 +1913,7 @@ public abstract class KernelNodes {
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
-            return getContext().makeString("#<" + className + ":0x" + hexID + ">");
+            return createString("#<" + className + ":0x" + hexID + ">");
         }
 
     }

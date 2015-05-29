@@ -9,25 +9,13 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.interop.ForeignAccessFactory;
-import com.oracle.truffle.api.nodes.Node;
 import org.jcodings.Encoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.runtime.Helpers;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
-import org.jruby.truffle.nodes.objects.Allocator;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
-import org.jruby.util.io.EncodingUtils;
 
-/**
- * Represents the Ruby {@code String} class.
- */
 public class RubyString extends RubyBasicObject implements CodeRangeable {
 
     public ByteList bytes;
@@ -42,11 +30,6 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     @TruffleBoundary
     public String toString() {
         return Helpers.decodeByteList(getContext().getRuntime(), bytes);
-    }
-
-    @Override
-    public ForeignAccessFactory getForeignAccessFactory() {
-        return new StringForeignAccessFactory(getContext());
     }
 
     @Override

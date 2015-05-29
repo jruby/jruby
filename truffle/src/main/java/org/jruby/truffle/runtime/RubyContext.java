@@ -200,7 +200,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         for (IRubyObject arg : ((org.jruby.RubyArray) runtime.getObject().getConstant("ARGV")).toJavaArray()) {
             assert arg != null;
 
-            ArrayNodes.slowPush(coreLibrary.getArgv(), makeString(arg.toString()));
+            ArrayNodes.slowPush(coreLibrary.getArgv(), StringNodes.createString(coreLibrary.getStringClass(), arg.toString()));
         }
 
         // Set the load path
@@ -218,28 +218,28 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
             if (!excludedLibPaths.contains(path.toString())) {
-                ArrayNodes.slowPush(loadPath, makeString(new File(path.toString()).getAbsolutePath()));
+                ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(path.toString()).getAbsolutePath()));
             }
         }
 
         // Load our own stdlib path
 
         // Libraries copied unmodified from MRI
-        ArrayNodes.slowPush(loadPath, makeString(new File(home, "lib/ruby/truffle/mri").toString()));
+        ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/mri").toString()));
 
         // Our own implementations
-        ArrayNodes.slowPush(loadPath, makeString(new File(home, "lib/ruby/truffle/truffle").toString()));
+        ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/truffle").toString()));
 
         // Libraries from RubySL
         for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
                 "rubysl-complex", "rubysl-date", "rubysl-pathname",
                 "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom",
                 "rubysl-timeout", "rubysl-webrick")) {
-            ArrayNodes.slowPush(loadPath, makeString(new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
+            ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
         }
 
         // Shims
-        ArrayNodes.slowPush(loadPath, makeString(new File(home, "lib/ruby/truffle/shims").toString()));
+        ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/shims").toString()));
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {
@@ -392,50 +392,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         threadManager.shutdown();
     }
 
-    public RubyString makeString(String string) {
-        return makeString(coreLibrary.getStringClass(), string);
-    }
-
-    public RubyString makeString(RubyClass stringClass, String string) {
-        return StringNodes.fromJavaString(stringClass, string);
-    }
-
-    public RubyString makeString(String string, Encoding encoding) {
-        return makeString(coreLibrary.getStringClass(), string, encoding);
-    }
-
-    public RubyString makeString(RubyClass stringClass, String string, Encoding encoding) {
-        return StringNodes.fromJavaString(stringClass, string, encoding);
-    }
-
-    public RubyString makeString(char string) {
-        return makeString(Character.toString(string));
-    }
-
-    public RubyString makeString(char string, Encoding encoding) {
-        return makeString(Character.toString(string), encoding);
-    }
-
-    public RubyString makeString(RubyClass stringClass, char string, Encoding encoding) {
-        return makeString(stringClass, Character.toString(string), encoding);
-    }
-
-    public RubyString makeString(byte[] bytes) {
-        return makeString(new ByteList(bytes));
-    }
-
-    public RubyString makeString(ByteBuffer bytes) {
-        return makeString(new ByteList(bytes.array()));
-    }
-
-    public RubyString makeString(ByteList bytes) {
-        return makeString(coreLibrary.getStringClass(), bytes);
-    }
-
-    public RubyString makeString(RubyClass stringClass, ByteList bytes) {
-        return StringNodes.fromByteList(stringClass, bytes);
-    }
-
     public Object makeTuple(VirtualFrame frame, CallDispatchHeadNode newTupleNode, Object... values) {
         return newTupleNode.call(frame, getCoreLibrary().getTupleClass(), "create", null, values);
     }
@@ -545,7 +501,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public RubyString toTruffle(org.jruby.RubyString jrubyString) {
-        final RubyString truffleString = new RubyString(getCoreLibrary().getStringClass(), jrubyString.getByteList().dup());
+        final RubyString truffleString = StringNodes.createString(getCoreLibrary().getStringClass(), jrubyString.getByteList().dup());
 
         if (jrubyString.isTaint()) {
             RubyBasicObject.setInstanceVariable(truffleString, RubyBasicObject.TAINTED_IDENTIFIER, true);

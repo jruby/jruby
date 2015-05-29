@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.ext;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.*;
@@ -19,6 +18,7 @@ import org.jruby.ext.digest.BubbleBabble;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -206,7 +206,7 @@ public abstract class DigestNodes {
                 throw new RuntimeException(e);
             }
 
-            return getContext().makeString(clonedDigest.digest());
+            return createString(clonedDigest.digest());
         }
 
     }
@@ -237,7 +237,7 @@ public abstract class DigestNodes {
         @Specialization
         public RubyString bubblebabble(RubyString message) {
             final ByteList byteList = message.getByteList();
-            return getContext().makeString(BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
+            return createString(BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
         }
 
     }

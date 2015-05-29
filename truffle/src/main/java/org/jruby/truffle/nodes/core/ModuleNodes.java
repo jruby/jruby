@@ -748,7 +748,7 @@ public abstract class ModuleNodes {
         public RubyArray getClassVariables(RubyModule module) {
             CompilerDirectives.transferToInterpreter();
 
-            final RubyArray array = new RubyArray(module.getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = ArrayNodes.createEmptyArray(module.getContext().getCoreLibrary().getArrayClass());
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
                 ArrayNodes.slowPush(array, RubySymbol.newSymbol(module.getContext(), variable));
@@ -1258,7 +1258,7 @@ public abstract class ModuleNodes {
                 return nil();
             }
 
-            return getContext().makeString(module.getName());
+            return createString(module.getName());
         }
     }
 
@@ -1765,7 +1765,7 @@ public abstract class ModuleNodes {
         public RubyString toS(RubyModule module) {
             CompilerDirectives.transferToInterpreter();
 
-            return getContext().makeString(module.getName());
+            return createString(module.getName());
         }
 
     }
@@ -1816,7 +1816,7 @@ public abstract class ModuleNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("user " + uname.toString() + " does not exist", this));
             }
-            return getContext().makeString(passwd.getHome());
+            return createString(passwd.getHome());
         }
 
     }

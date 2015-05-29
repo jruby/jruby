@@ -61,7 +61,7 @@ public abstract class MatchDataNodes {
             final Object[] values = matchData.getValues();
             final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, index);
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, length);
+            return createArray(store, length);
         }
 
         @Specialization
@@ -118,7 +118,7 @@ public abstract class MatchDataNodes {
             final int length = exclusiveEnd - normalizedIndex;
 
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, length);
+            return createArray(store, length);
         }
 
     }
@@ -258,7 +258,7 @@ public abstract class MatchDataNodes {
             CompilerDirectives.transferToInterpreter();
 
             final ByteList bytes = matchData.getGlobal().getByteList().dup();
-            return getContext().makeString(bytes);
+            return createString(bytes);
         }
     }
 

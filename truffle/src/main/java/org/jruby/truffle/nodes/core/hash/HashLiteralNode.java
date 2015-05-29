@@ -89,7 +89,7 @@ public abstract class HashLiteralNode extends RubyNode {
         @ExplodeLoop
         @Override
         public RubyHash executeRubyHash(VirtualFrame frame) {
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, null, 0, null);
+            return HashNodes.createEmptyHash(getContext().getCoreLibrary().getHashClass());
         }
 
     }
@@ -147,7 +147,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 size++;
             }
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, store, size, null);
+            return HashNodes.createHash(getContext().getCoreLibrary().getHashClass(), null, null, store, size, null);
         }
 
     }

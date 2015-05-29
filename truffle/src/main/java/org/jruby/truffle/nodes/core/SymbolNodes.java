@@ -70,7 +70,7 @@ public abstract class SymbolNodes {
         @TruffleBoundary
         @Specialization
         public RubyArray allSymbols() {
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = createEmptyArray();
 
             for (RubySymbol s : getContext().getSymbolTable().allSymbols()) {
                 ArrayNodes.slowPush(array, s);
@@ -225,7 +225,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubyString toS(RubySymbol symbol) {
-            return getContext().makeString(symbol.getSymbolBytes().dup());
+            return createString(symbol.getSymbolBytes().dup());
         }
 
     }
@@ -240,7 +240,7 @@ public abstract class SymbolNodes {
         @TruffleBoundary
         @Specialization
         public RubyString inspect(RubySymbol symbol) {
-            return getContext().makeString(symbol.getJRubySymbol().inspect(getContext().getRuntime().getCurrentContext()).asString().decodeString());
+            return createString(symbol.getJRubySymbol().inspect(getContext().getRuntime().getCurrentContext()).asString().decodeString());
         }
 
     }

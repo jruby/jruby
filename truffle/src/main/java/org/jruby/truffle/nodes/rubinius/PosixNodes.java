@@ -19,11 +19,11 @@ import org.jruby.platform.Platform;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.rubinius.RubiniusConfiguration;
 
 import java.nio.charset.StandardCharsets;
 
@@ -242,15 +242,11 @@ public abstract class PosixNodes {
         public int readlink(RubyString path, RubyBasicObject pointer, int bufsize) {
             final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
 
-            final byte[] buffer = new byte[bufsize];
-
-            final int result = posix().readlink(pathString, buffer, bufsize);
+            final int result = posix().readlink(pathString, PointerPrimitiveNodes.getPointer(pointer), bufsize);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
-
-            PointerPrimitiveNodes.getPointer(pointer).put(0, buffer, 0, buffer.length);
 
             return result;
         }
@@ -682,7 +678,7 @@ public abstract class PosixNodes {
 
         @Specialization(guards = "isNil(hostName)")
         public int getaddrinfo(RubyBasicObject hostName, RubyString serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
-            return getaddrinfo(getContext().makeString("0.0.0.0"), serviceName, hintsPointer, resultsPointer);
+            return getaddrinfo(createString("0.0.0.0"), serviceName, hintsPointer, resultsPointer);
         }
 
         @Specialization

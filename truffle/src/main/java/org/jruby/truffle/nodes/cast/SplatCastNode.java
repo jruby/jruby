@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayDupNode;
 import org.jruby.truffle.nodes.core.array.ArrayDupNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -64,7 +65,7 @@ public abstract class SplatCastNode extends RubyNode {
     public RubyArray splat(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+                return createEmptyArray();
 
             case ARRAY_WITH_NIL:
                 return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());
@@ -94,7 +95,7 @@ public abstract class SplatCastNode extends RubyNode {
         }
 
         // MRI tries to call dynamic respond_to? here.
-        Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, getContext().makeString(method), true);
+        Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, createString(method), true);
         if (respondToResult != DispatchNode.MISSING && respondToCast.executeBoolean(frame, respondToResult)) {
             final Object array = toA.call(frame, object, method, null);
 

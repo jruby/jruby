@@ -61,7 +61,7 @@ public final class ArrayConcatNode extends RubyNode {
             store = arrayBuilderNode.append(store, length, childObject);
             length++;
         }
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilderNode.finish(store, length), length);
+        return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilderNode.finish(store, length), length);
     }
 
     @ExplodeLoop
@@ -83,7 +83,7 @@ public final class ArrayConcatNode extends RubyNode {
             }
         }
 
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilderNode.finish(store, length), length);
+        return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilderNode.finish(store, length), length);
     }
 
     @ExplodeLoop
