@@ -252,11 +252,11 @@ public abstract class MethodNodes {
         }
 
         @Specialization
-        public RubyUnboundMethod unbind(VirtualFrame frame, RubyBasicObject method) {
+        public RubyBasicObject unbind(VirtualFrame frame, RubyBasicObject method) {
             CompilerDirectives.transferToInterpreter();
 
             RubyClass receiverClass = classNode.executeGetClass(frame, getReceiver(method));
-            return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), receiverClass, getMethod(method));
+            return UnboundMethodNodes.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), receiverClass, getMethod(method));
         }
 
     }

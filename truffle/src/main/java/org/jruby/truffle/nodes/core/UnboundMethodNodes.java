@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 
@@ -26,9 +27,54 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.object.BasicObjectType;
+
+import java.util.EnumSet;
 
 @CoreClass(name = "UnboundMethod")
 public abstract class UnboundMethodNodes {
+
+    public static class MethodType extends BasicObjectType {
+
+    }
+
+    public static final MethodType UNBOUND_METHOD_TYPE = new MethodType();
+
+    private static final HiddenKey ORIGIN_IDENTIFIER = new HiddenKey("origin");
+    public static final Property ORIGIN_PROPERTY;
+
+    private static final HiddenKey METHOD_IDENTIFIER = new HiddenKey("method");
+    public static final Property METHOD_PROPERTY;
+
+    private static final DynamicObjectFactory UNBOUND_METHOD_FACTORY;
+
+    static {
+        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+
+        ORIGIN_PROPERTY = Property.create(ORIGIN_IDENTIFIER, allocator.locationForType(RubyModule.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
+        METHOD_PROPERTY = Property.create(METHOD_IDENTIFIER, allocator.locationForType(InternalMethod.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
+
+        final Shape shape = RubyBasicObject.LAYOUT.createShape(UNBOUND_METHOD_TYPE)
+                .addProperty(ORIGIN_PROPERTY)
+                .addProperty(METHOD_PROPERTY);
+
+        UNBOUND_METHOD_FACTORY = shape.createFactory();
+    }
+
+    public static RubyBasicObject createUnboundMethod(RubyClass rubyClass, RubyModule origin, InternalMethod method) {
+        return new RubyBasicObject(rubyClass, UNBOUND_METHOD_FACTORY.newInstance(origin, method));
+    }
+
+    public static RubyModule getOrigin(RubyBasicObject method) {
+        assert method.getDynamicObject().getShape().hasProperty(ORIGIN_IDENTIFIER);
+        return (RubyModule) ORIGIN_PROPERTY.get(method.getDynamicObject(), true);
+    }
+
+    public static InternalMethod getMethod(RubyBasicObject method) {
+        assert method.getDynamicObject().getShape().hasProperty(METHOD_IDENTIFIER);
+        return (InternalMethod) METHOD_PROPERTY.get(method.getDynamicObject(), true);
+    }
 
     @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
@@ -37,13 +83,13 @@ public abstract class UnboundMethodNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        boolean equal(RubyUnboundMethod self, RubyUnboundMethod other) {
-            return self.getMethod() == other.getMethod() && self.getOrigin() == other.getOrigin();
+        @Specialization(guards = "isRubyUnboundMethod(other)")
+        boolean equal(RubyBasicObject self, RubyBasicObject other) {
+            return getMethod(self) == getMethod(other) && getOrigin(self) == getOrigin(other);
         }
 
         @Specialization(guards = "!isRubyUnboundMethod(other)")
-        boolean equal(RubyUnboundMethod self, Object other) {
+        boolean equal(RubyBasicObject self, Object other) {
             return false;
         }
 
@@ -57,8 +103,8 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public int arity(RubyUnboundMethod method) {
-            return method.getMethod().getSharedMethodInfo().getArity().getArityNumber();
+        public int arity(RubyBasicObject method) {
+            return getMethod(method).getSharedMethodInfo().getArity().getArityNumber();
         }
 
     }
@@ -81,10 +127,10 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public RubyBasicObject bind(VirtualFrame frame, RubyUnboundMethod unboundMethod, Object object) {
+        public RubyBasicObject bind(VirtualFrame frame, RubyBasicObject unboundMethod, Object object) {
             CompilerDirectives.transferToInterpreter();
 
-            RubyModule module = unboundMethod.getMethod().getDeclaringModule();
+            RubyModule module = getMethod(unboundMethod).getDeclaringModule();
             // the (redundant) instanceof is to satisfy FindBugs with the following cast
             if (module instanceof RubyClass && !ModuleOperations.canBindMethodTo(module, metaClass(frame, object))) {
                 CompilerDirectives.transferToInterpreter();
@@ -95,7 +141,7 @@ public abstract class UnboundMethodNodes {
                 }
             }
 
-            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, unboundMethod.getMethod());
+            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, getMethod(unboundMethod));
         }
 
     }
@@ -108,8 +154,8 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public RubySymbol name(RubyUnboundMethod unboundMethod) {
-            return getContext().getSymbol(unboundMethod.getMethod().getName());
+        public RubySymbol name(RubyBasicObject unboundMethod) {
+            return getContext().getSymbol(getMethod(unboundMethod).getName());
         }
 
     }
@@ -123,8 +169,8 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public RubyModule origin(RubyUnboundMethod unboundMethod) {
-            return unboundMethod.getOrigin();
+        public RubyModule origin(RubyBasicObject unboundMethod) {
+            return getOrigin(unboundMethod);
         }
 
     }
@@ -137,8 +183,8 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public RubyModule owner(RubyUnboundMethod unboundMethod) {
-            return unboundMethod.getMethod().getDeclaringModule();
+        public RubyModule owner(RubyBasicObject unboundMethod) {
+            return getMethod(unboundMethod).getDeclaringModule();
         }
 
     }
@@ -152,8 +198,8 @@ public abstract class UnboundMethodNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyArray parameters(RubyUnboundMethod method) {
-            final ArgsNode argsNode = method.getMethod().getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
+        public RubyArray parameters(RubyBasicObject method) {
+            final ArgsNode argsNode = getMethod(method).getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
 
             final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
 
@@ -172,8 +218,8 @@ public abstract class UnboundMethodNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object sourceLocation(RubyUnboundMethod unboundMethod) {
-            SourceSection sourceSection = unboundMethod.getMethod().getSharedMethodInfo().getSourceSection();
+        public Object sourceLocation(RubyBasicObject unboundMethod) {
+            SourceSection sourceSection = getMethod(unboundMethod).getSharedMethodInfo().getSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
                 return nil();

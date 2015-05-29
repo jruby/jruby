@@ -1020,11 +1020,11 @@ public abstract class ModuleNodes {
             return getContext().getSymbolTable().getSymbol(name);
         }
 
-        @Specialization
-        public RubySymbol defineMethod(VirtualFrame frame, RubyModule module, String name, RubyUnboundMethod method, UndefinedPlaceholder block) {
+        @Specialization(guards = "isRubyUnboundMethod(method)")
+        public RubySymbol defineMethod(VirtualFrame frame, RubyModule module, String name, RubyBasicObject method, UndefinedPlaceholder block) {
             CompilerDirectives.transferToInterpreter();
 
-            RubyModule origin = method.getOrigin();
+            RubyModule origin = UnboundMethodNodes.getOrigin(method);
             if (!ModuleOperations.canBindMethodTo(origin, module)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be a subclass of " + origin.getName(), this));
@@ -1032,7 +1032,7 @@ public abstract class ModuleNodes {
 
             // TODO CS 5-Apr-15 TypeError if the method came from a singleton
 
-            return addMethod(module, name, method.getMethod());
+            return addMethod(module, name, UnboundMethodNodes.getMethod(method));
         }
 
         private RubySymbol defineMethod(RubyModule module, String name, RubyProc proc) {
@@ -1488,7 +1488,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyUnboundMethod publicInstanceMethod(RubyModule module, String name) {
+        public RubyBasicObject publicInstanceMethod(RubyModule module, String name) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO(CS, 11-Jan-15) cache this lookup
@@ -1502,7 +1502,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateMethod(name, module, this));
             }
 
-            return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), module, method);
+            return UnboundMethodNodes.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), module, method);
         }
 
     }
@@ -1592,7 +1592,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyUnboundMethod instanceMethod(RubyModule module, String name) {
+        public RubyBasicObject instanceMethod(RubyModule module, String name) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO(CS, 11-Jan-15) cache this lookup
@@ -1603,7 +1603,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(name, module, this));
             }
 
-            return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), module, method);
+            return UnboundMethodNodes.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), module, method);
         }
 
     }
