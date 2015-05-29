@@ -146,4 +146,12 @@ public abstract class RubyGuards {
         return value.getDynamicObject().getShape().getObjectType() == BigDecimalNodes.BIG_DECIMAL_TYPE;
     }
 
+    public static boolean isNegative(int size) {
+        return size < 0;
+    }
+
+    public static boolean isNegative(long size) {
+        return size < 0;
+    }
+
 }
