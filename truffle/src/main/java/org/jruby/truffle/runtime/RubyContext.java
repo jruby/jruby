@@ -40,6 +40,7 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.core.LoadRequiredLibrariesNode;
 import org.jruby.truffle.nodes.core.SetTopLevelBindingNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.exceptions.TopLevelRaiseHandler;
@@ -389,7 +390,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public RubyString makeString(RubyClass stringClass, String string) {
-        return RubyString.fromJavaString(stringClass, string);
+        return StringNodes.fromJavaString(stringClass, string);
     }
 
     public RubyString makeString(String string, Encoding encoding) {
@@ -397,7 +398,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public RubyString makeString(RubyClass stringClass, String string, Encoding encoding) {
-        return RubyString.fromJavaString(stringClass, string, encoding);
+        return StringNodes.fromJavaString(stringClass, string, encoding);
     }
 
     public RubyString makeString(char string) {
@@ -425,7 +426,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public RubyString makeString(RubyClass stringClass, ByteList bytes) {
-        return RubyString.fromByteList(stringClass, bytes);
+        return StringNodes.fromByteList(stringClass, bytes);
     }
 
     public Object makeTuple(VirtualFrame frame, CallDispatchHeadNode newTupleNode, Object... values) {

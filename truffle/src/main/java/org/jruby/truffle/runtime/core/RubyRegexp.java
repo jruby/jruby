@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
@@ -21,6 +20,7 @@ import org.jcodings.Encoding;
 import org.joni.*;
 import org.joni.exception.SyntaxException;
 import org.joni.exception.ValueException;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -360,7 +360,7 @@ public class RubyRegexp extends RubyBasicObject {
 
         // Suppress trailing empty fields if not using a limit and the supplied limit isn't negative.
         if (!useLimit && limit == 0) {
-            while (! strings.isEmpty() && (strings.get(strings.size() - 1).length() == 0)) {
+            while (! strings.isEmpty() && (StringNodes.length(strings.get(strings.size() - 1)) == 0)) {
                 strings.remove(strings.size() - 1);
             }
         }

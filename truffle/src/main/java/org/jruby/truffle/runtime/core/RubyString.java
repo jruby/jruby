@@ -30,65 +30,18 @@ import org.jruby.util.io.EncodingUtils;
  */
 public class RubyString extends RubyBasicObject implements CodeRangeable {
 
-    private ByteList bytes;
-    private int codeRange = StringSupport.CR_UNKNOWN;
+    public ByteList bytes;
+    public int codeRange = StringSupport.CR_UNKNOWN;
 
     public RubyString(RubyClass stringClass, ByteList bytes) {
         super(stringClass);
         this.bytes = bytes;
     }
 
-    public static RubyString fromJavaString(RubyClass stringClass, String string) {
-        return new RubyString(stringClass, new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), USASCIIEncoding.INSTANCE, false));
-    }
-
-    public static RubyString fromJavaString(RubyClass stringClass, String string, Encoding encoding) {
-        return new RubyString(stringClass, new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), encoding, false));
-    }
-
-    public static RubyString fromByteList(RubyClass stringClass, ByteList bytes) {
-        return new RubyString(stringClass, bytes);
-    }
-
-    public void set(ByteList bytes) {
-        this.bytes = bytes;
-    }
-
-    public void forceEncoding(Encoding encoding) {
-        modify();
-        clearCodeRange();
-        StringSupport.associateEncoding(this, encoding);
-        clearCodeRange();
-    }
-
     @Override
     @TruffleBoundary
     public String toString() {
         return Helpers.decodeByteList(getContext().getRuntime(), bytes);
-    }
-
-    public int length() {
-        if (CompilerDirectives.injectBranchProbability(
-                CompilerDirectives.FASTPATH_PROBABILITY,
-                StringSupport.isSingleByteOptimizable(this, getByteList().getEncoding()))) {
-
-            return getByteList().getRealSize();
-
-        } else {
-            return StringSupport.strLengthFromRubyString(this);
-        }
-    }
-
-    public int normalizeIndex(int length, int index) {
-        return ArrayNodes.normalizeIndex(length, index);
-    }
-
-    public int normalizeIndex(int index) {
-        return normalizeIndex(length(), index);
-    }
-
-    public int clampExclusiveIndex(int index) {
-        return ArrayNodes.clampExclusiveIndex(bytes.length(), index);
     }
 
     @Override
@@ -171,34 +124,9 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         return encoding;
     }
 
-    @TruffleBoundary
-    public Encoding checkEncoding(CodeRangeable other, Node node) {
-        final Encoding encoding = StringSupport.areCompatible(this, other);
-
-        if (encoding == null) {
-            throw new RaiseException(
-                    getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(
-                            this.getByteList().getEncoding().toString(),
-                            other.getByteList().getEncoding().toString(),
-                            node)
-            );
-        }
-
-        return encoding;
-    }
-
     @Override
     public ByteList getByteList() {
         return bytes;
-    }
-
-    public static class StringAllocator implements Allocator {
-
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyString(rubyClass, new ByteList());
-        }
-
     }
 
     @TruffleBoundary
@@ -206,7 +134,4 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         return StringSupport.codeRangeScan(bytes.getEncoding(), bytes);
     }
 
-    public boolean singleByteOptimizable() {
-        return StringSupport.isSingleByteOptimizable(this, EncodingUtils.STR_ENC_GET(this));
-    }
 }

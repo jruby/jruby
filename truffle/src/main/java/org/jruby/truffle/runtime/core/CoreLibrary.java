@@ -316,7 +316,7 @@ public class CoreLibrary {
         processModule = defineModule("Process");
         rangeClass = defineClass("Range", new RubyRange.RangeAllocator());
         regexpClass = defineClass("Regexp", new RubyRegexp.RegexpAllocator());
-        stringClass = defineClass("String", new RubyString.StringAllocator());
+        stringClass = defineClass("String", new StringNodes.StringAllocator());
         symbolClass = defineClass("Symbol", NO_ALLOCATOR);
         threadClass = defineClass("Thread", new RubyThread.ThreadAllocator());
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
@@ -473,7 +473,7 @@ public class CoreLibrary {
         Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
         RubyBasicObject.setInstanceVariable(globals, "$VERBOSE", value);
 
-        final RubyString defaultRecordSeparator = RubyString.fromJavaString(stringClass, CLI_RECORD_SEPARATOR);
+        final RubyString defaultRecordSeparator = StringNodes.fromJavaString(stringClass, CLI_RECORD_SEPARATOR);
         node.freezeNode.executeFreeze(defaultRecordSeparator);
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
@@ -485,13 +485,13 @@ public class CoreLibrary {
     private void initializeConstants() {
         // Set constants
 
-        objectClass.setConstant(node, "RUBY_VERSION", RubyString.fromJavaString(stringClass, Constants.RUBY_VERSION));
-        objectClass.setConstant(node, "JRUBY_VERSION", RubyString.fromJavaString(stringClass, Constants.VERSION));
+        objectClass.setConstant(node, "RUBY_VERSION", StringNodes.fromJavaString(stringClass, Constants.RUBY_VERSION));
+        objectClass.setConstant(node, "JRUBY_VERSION", StringNodes.fromJavaString(stringClass, Constants.VERSION));
         objectClass.setConstant(node, "RUBY_PATCHLEVEL", Constants.RUBY_PATCHLEVEL);
-        objectClass.setConstant(node, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, Constants.ENGINE + "+truffle"));
-        objectClass.setConstant(node, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, Constants.PLATFORM));
-        objectClass.setConstant(node, "RUBY_RELEASE_DATE", RubyString.fromJavaString(stringClass, Constants.COMPILE_DATE));
-        objectClass.setConstant(node, "RUBY_DESCRIPTION", RubyString.fromJavaString(stringClass, OutputStrings.getVersionString()));
+        objectClass.setConstant(node, "RUBY_ENGINE", StringNodes.fromJavaString(stringClass, Constants.ENGINE + "+truffle"));
+        objectClass.setConstant(node, "RUBY_PLATFORM", StringNodes.fromJavaString(stringClass, Constants.PLATFORM));
+        objectClass.setConstant(node, "RUBY_RELEASE_DATE", StringNodes.fromJavaString(stringClass, Constants.COMPILE_DATE));
+        objectClass.setConstant(node, "RUBY_DESCRIPTION", StringNodes.fromJavaString(stringClass, OutputStrings.getVersionString()));
 
         // BasicObject knows itself
         basicObjectClass.setConstant(node, "BasicObject", basicObjectClass);

@@ -2854,17 +2854,17 @@ public abstract class ArrayNodes {
             final RubyString string = getContext().makeString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
 
             if (format.length() == 0) {
-                string.forceEncoding(USASCIIEncoding.INSTANCE);
+                StringNodes.forceEncoding(string, USASCIIEncoding.INSTANCE);
             } else {
                 switch (result.getEncoding()) {
                     case DEFAULT:
                     case ASCII_8BIT:
                         break;
                     case US_ASCII:
-                        string.forceEncoding(USASCIIEncoding.INSTANCE);
+                        StringNodes.forceEncoding(string, USASCIIEncoding.INSTANCE);
                         break;
                     case UTF_8:
-                        string.forceEncoding(UTF8Encoding.INSTANCE);
+                        StringNodes.forceEncoding(string, UTF8Encoding.INSTANCE);
                         break;
                     default:
                         throw new UnsupportedOperationException();

@@ -28,6 +28,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -52,6 +53,7 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodes;
@@ -69,6 +71,73 @@ import java.util.Arrays;
 
 @CoreClass(name = "String")
 public abstract class StringNodes {
+
+    public static RubyString fromJavaString(RubyClass stringClass, String string) {
+        return new RubyString(stringClass, new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), USASCIIEncoding.INSTANCE, false));
+    }
+
+    public static RubyString fromJavaString(RubyClass stringClass, String string, Encoding encoding) {
+        return new RubyString(stringClass, new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), encoding, false));
+    }
+
+    public static RubyString fromByteList(RubyClass stringClass, ByteList bytes) {
+        return new RubyString(stringClass, bytes);
+    }
+
+    public static void set(RubyString string, ByteList bytes) {
+        string.bytes = bytes;
+    }
+
+    public static void forceEncoding(RubyString string, Encoding encoding) {
+        string.modify();
+        string.clearCodeRange();
+        StringSupport.associateEncoding(string, encoding);
+        string.clearCodeRange();
+    }
+
+    public static int length(RubyString string) {
+        if (CompilerDirectives.injectBranchProbability(
+                CompilerDirectives.FASTPATH_PROBABILITY,
+                StringSupport.isSingleByteOptimizable(string, string.getByteList().getEncoding()))) {
+
+            return string.getByteList().getRealSize();
+
+        } else {
+            return StringSupport.strLengthFromRubyString(string);
+        }
+    }
+
+    public static int normalizeIndex(int length, int index) {
+        return ArrayNodes.normalizeIndex(length, index);
+    }
+
+    public static int normalizeIndex(RubyString rubyString, int index) {
+        return normalizeIndex(length(rubyString), index);
+    }
+
+    public static int clampExclusiveIndex(RubyString string, int index) {
+        return ArrayNodes.clampExclusiveIndex(string.bytes.length(), index);
+    }
+
+    @TruffleBoundary
+    public static Encoding checkEncoding(RubyString string, CodeRangeable other, Node node) {
+        final Encoding encoding = StringSupport.areCompatible(string, other);
+
+        if (encoding == null) {
+            throw new RaiseException(
+                    string.getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(
+                            string.getByteList().getEncoding().toString(),
+                            other.getByteList().getEncoding().toString(),
+                            node)
+            );
+        }
+
+        return encoding;
+    }
+
+    public static boolean singleByteOptimizable(RubyString string) {
+        return StringSupport.isSingleByteOptimizable(string, EncodingUtils.STR_ENC_GET(string));
+    }
 
     @CoreMethod(names = "+", required = 1)
     @NodeChildren({
@@ -89,7 +158,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString add(RubyString string, RubyString other) {
-            final Encoding enc = string.checkEncoding(other, this);
+            final Encoding enc = checkEncoding(string, other, this);
             final RubyString ret = getContext().makeString(getContext().getCoreLibrary().getStringClass(),
                     StringSupport.addByteLists(string.getByteList(), other.getByteList()));
 
@@ -406,7 +475,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object getIndex(VirtualFrame frame, RubyString string, int index, UndefinedPlaceholder undefined) {
-            int normalizedIndex = string.normalizeIndex(index);
+            int normalizedIndex = normalizeIndex(string, index);
             final ByteList bytes = string.getByteList();
 
             if (normalizedIndex < 0 || normalizedIndex >= bytes.length()) {
@@ -449,7 +518,7 @@ public abstract class StringNodes {
             }
 
             final int stringLength = sizeNode.executeInteger(frame, string);
-            begin = string.normalizeIndex(stringLength, begin);
+            begin = normalizeIndex(stringLength, begin);
 
             if (begin < 0 || begin > stringLength) {
                 outOfBounds.enter();
@@ -460,8 +529,8 @@ public abstract class StringNodes {
                     return getContext().makeString(string.getLogicalClass(), "", string.getByteList().getEncoding());
                 }
 
-                end = string.normalizeIndex(stringLength, end);
-                int length = string.clampExclusiveIndex(doesExcludeEnd ? end : end + 1);
+                end = normalizeIndex(stringLength, end);
+                int length = clampExclusiveIndex(string, doesExcludeEnd ? end : end + 1);
 
                 if (length > stringLength) {
                     length = stringLength;
@@ -759,7 +828,7 @@ public abstract class StringNodes {
             for (int i = 1; i < otherStrings.length; i++) {
                 otherStr = otherStrings[i];
 
-                enc = string.checkEncoding(otherStr, this);
+                enc = checkEncoding(string, otherStr, this);
                 tables = StringSupport.trSetupTable(otherStr.getByteList(), getContext().getRuntime(), table, tables, false, enc);
             }
 
@@ -873,7 +942,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         private Object deleteBangSlow(RubyString string, RubyString... otherStrings) {
             RubyString otherString = otherStrings[0];
-            Encoding enc = string.checkEncoding(otherString, this);
+            Encoding enc = checkEncoding(string, otherString, this);
 
             boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
             StringSupport.TrTables tables = StringSupport.trSetupTable(otherString.getByteList(),
@@ -881,7 +950,7 @@ public abstract class StringNodes {
                     squeeze, null, true, enc);
 
             for (int i = 1; i < otherStrings.length; i++) {
-                enc = string.checkEncoding(otherStrings[i], this);
+                enc = checkEncoding(string, otherStrings[i], this);
                 tables = StringSupport.trSetupTable(otherStrings[i].getByteList(), getContext().getRuntime(), squeeze, tables, false, enc);
             }
 
@@ -923,7 +992,7 @@ public abstract class StringNodes {
             if (newByteList.equal(string.getByteList())) {
                 return nil();
             } else {
-                string.set(newByteList);
+                set(string, newByteList);
                 return string;
             }
         }
@@ -1075,7 +1144,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString forceEncoding(RubyString string, RubyEncoding encoding) {
-            string.forceEncoding(encoding.getEncoding());
+            StringNodes.forceEncoding(string, encoding.getEncoding());
             return string;
         }
 
@@ -1175,7 +1244,7 @@ public abstract class StringNodes {
             }
 
             // TODO (nirvdrum 03-Apr-15): Rather than dup every time, we should do CoW on String mutations.
-            self.set(from.getByteList().dup());
+            set(self, from.getByteList().dup());
             self.setCodeRange(from.getCodeRange());
 
             return self;
@@ -1763,7 +1832,7 @@ public abstract class StringNodes {
 
             string.modifyAndKeepCodeRange();
 
-            if (singleByteOptimizableProfile.profile(string.singleByteOptimizable())) {
+            if (singleByteOptimizableProfile.profile(singleByteOptimizable(string))) {
                 if (! StringSupport.singleByteSqueeze(string.getByteList(), squeeze)) {
                     return nil();
                 }
@@ -1796,16 +1865,16 @@ public abstract class StringNodes {
             }
 
             RubyString otherStr = otherStrings[0];
-            Encoding enc = string.checkEncoding(otherStr, this);
+            Encoding enc = checkEncoding(string, otherStr, this);
             final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
             StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.getByteList(), getContext().getRuntime(), squeeze, null, true, enc);
 
-            boolean singlebyte = string.singleByteOptimizable() && otherStr.singleByteOptimizable();
+            boolean singlebyte = singleByteOptimizable(string) && singleByteOptimizable(otherStr);
 
             for (int i = 1; i < otherStrings.length; i++) {
                 otherStr = otherStrings[i];
                 enc = string.checkEncoding(otherStr);
-                singlebyte = singlebyte && otherStr.singleByteOptimizable();
+                singlebyte = singlebyte && singleByteOptimizable(otherStr);
                 tables = StringSupport.trSetupTable(otherStr.getByteList(), getContext().getRuntime(), squeeze, tables, false, enc);
             }
 
@@ -1844,7 +1913,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public RubyString succ(RubyString string) {
-            if (string.length() > 0) {
+            if (length(string) > 0) {
                 return getContext().makeString(string.getLogicalClass(), StringSupport.succCommon(getContext().getRuntime(), string.getByteList()));
             } else {
                 return getContext().makeString(string.getLogicalClass(), "");
@@ -1863,7 +1932,7 @@ public abstract class StringNodes {
         @Specialization
         public RubyString succBang(RubyString string) {
             if (string.getByteList().getRealSize() > 0) {
-                string.set(StringSupport.succCommon(getContext().getRuntime(), string.getByteList()));
+                set(string, StringSupport.succCommon(getContext().getRuntime(), string.getByteList()));
             }
 
             return string;
@@ -2196,7 +2265,7 @@ public abstract class StringNodes {
             if (byteListString.equal(string.getByteList())) {
                 return nil();
             } else {
-                string.set(byteListString);
+                set(string, byteListString);
                 return string;
             }
         }
@@ -2305,7 +2374,7 @@ public abstract class StringNodes {
         public RubyString clear(RubyString string) {
             ByteList empty = ByteList.EMPTY_BYTELIST;
             empty.setEncoding(string.getByteList().getEncoding());
-            string.set(empty);
+            set(string, empty);
             return string;
         }
     }
@@ -2323,7 +2392,7 @@ public abstract class StringNodes {
         }
 
         public static int checkIndex(RubyString string, int index, RubyNode node) {
-            if (index > string.length()) {
+            if (index > length(string)) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
@@ -2331,14 +2400,14 @@ public abstract class StringNodes {
             }
 
             if (index < 0) {
-                if (-index > string.length()) {
+                if (-index > length(string)) {
                     CompilerDirectives.transferToInterpreter();
 
                     throw new RaiseException(
                             node.getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), node));
                 }
 
-                index += string.length();
+                index += length(string);
             }
 
             return index;
@@ -2385,4 +2454,12 @@ public abstract class StringNodes {
         }
     }
 
+    public static class StringAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+            return new RubyString(rubyClass, new ByteList());
+        }
+
+    }
 }

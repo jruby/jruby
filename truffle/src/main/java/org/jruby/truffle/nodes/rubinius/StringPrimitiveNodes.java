@@ -222,7 +222,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final int normalizedIndex = string.normalizeIndex(index);
+            final int normalizedIndex = StringNodes.normalizeIndex(string, index);
 
             if (normalizedIndex > bytes.length()) {
                 return nil();
@@ -854,7 +854,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final Encoding encoding = string.checkEncoding(pattern, this);
+            final Encoding encoding = StringNodes.checkEncoding(string, pattern, this);
             int p = string.getByteList().getBegin();
             final int e = p + string.getByteList().getRealSize();
             int pp = pattern.getByteList().getBegin();
