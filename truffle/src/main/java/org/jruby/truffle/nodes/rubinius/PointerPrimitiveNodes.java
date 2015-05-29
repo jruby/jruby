@@ -197,7 +197,7 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_set_at_offset", lowerFixnumParameters = {0, 2})
+    @RubiniusPrimitive(name = "pointer_set_at_offset")
     @ImportStatic(RubiniusTypes.class)
     public static abstract class PointerSetAtOffsetPrimitiveNode extends RubiniusPrimitiveNode {
 
@@ -206,8 +206,14 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization(guards = "type == TYPE_INT")
-        public int setAtOffset(RubyBasicObject pointer, int offset, int type, int value) {
+        public int setAtOffsetInt(RubyBasicObject pointer, int offset, int type, int value) {
             getPointer(pointer).putInt(offset, value);
+            return value;
+        }
+
+        @Specialization(guards = "type == TYPE_LONG")
+        public long setAtOffsetLong(RubyBasicObject pointer, int offset, int type, long value) {
+            getPointer(pointer).putLong(offset, value);
             return value;
         }
 
