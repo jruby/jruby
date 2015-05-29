@@ -28,7 +28,7 @@ import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.BasicObjectType;
@@ -133,7 +133,7 @@ public abstract class MethodNodes {
         }
 
         @Specialization
-        public Object call(VirtualFrame frame, RubyBasicObject method, Object[] arguments, UndefinedPlaceholder block) {
+        public Object call(VirtualFrame frame, RubyBasicObject method, Object[] arguments, NotProvided block) {
             return doCall(frame, method, arguments, null);
         }
 

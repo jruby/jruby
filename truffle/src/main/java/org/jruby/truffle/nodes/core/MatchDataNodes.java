@@ -21,7 +21,7 @@ import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
@@ -41,7 +41,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public Object getIndex(RubyMatchData matchData, int index, UndefinedPlaceholder undefinedPlaceholder) {
+        public Object getIndex(RubyMatchData matchData, int index, NotProvided length) {
             CompilerDirectives.transferToInterpreter();
 
             final Object[] values = matchData.getValues();
@@ -65,13 +65,13 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public Object getIndex(RubyMatchData matchData, RubySymbol index, UndefinedPlaceholder undefinedPlaceholder) {
+        public Object getIndex(RubyMatchData matchData, RubySymbol index, NotProvided length) {
             CompilerDirectives.transferToInterpreter();
 
             try {
                 final int i = matchData.getBackrefNumber(index.getSymbolBytes());
 
-                return getIndex(matchData, i, UndefinedPlaceholder.INSTANCE);
+                return getIndex(matchData, i, NotProvided.INSTANCE);
             } catch (final ValueException e) {
                 CompilerDirectives.transferToInterpreter();
 
@@ -81,13 +81,13 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public Object getIndex(RubyMatchData matchData, RubyString index, UndefinedPlaceholder undefinedPlaceholder) {
+        public Object getIndex(RubyMatchData matchData, RubyString index, NotProvided length) {
             CompilerDirectives.transferToInterpreter();
 
             try {
                 final int i = matchData.getBackrefNumber(index.getByteList());
 
-                return getIndex(matchData, i, UndefinedPlaceholder.INSTANCE);
+                return getIndex(matchData, i, NotProvided.INSTANCE);
             }
             catch (final ValueException e) {
                 CompilerDirectives.transferToInterpreter();
@@ -98,7 +98,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization(guards = {"!isRubySymbol(index)", "!isRubyString(index)", "!isIntegerFixnumRange(index)"})
-        public Object getIndex(VirtualFrame frame, RubyMatchData matchData, Object index, UndefinedPlaceholder undefinedPlaceholder) {
+        public Object getIndex(VirtualFrame frame, RubyMatchData matchData, Object index, NotProvided length) {
             CompilerDirectives.transferToInterpreter();
 
             if (toIntNode == null) {
@@ -106,11 +106,11 @@ public abstract class MatchDataNodes {
                 toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            return getIndex(matchData, toIntNode.doInt(frame, index), UndefinedPlaceholder.INSTANCE);
+            return getIndex(matchData, toIntNode.doInt(frame, index), NotProvided.INSTANCE);
         }
 
         @Specialization(guards = {"!isRubySymbol(range)", "!isRubyString(range)"})
-        public Object getIndex(VirtualFrame frame, RubyMatchData matchData, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefinedPlaceholder) {
+        public Object getIndex(VirtualFrame frame, RubyMatchData matchData, RubyRange.IntegerFixnumRange range, NotProvided len) {
             final Object[] values = matchData.getValues();
             final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, range.getBegin());
             final int end = ArrayNodes.normalizeIndex(values.length, range.getEnd());

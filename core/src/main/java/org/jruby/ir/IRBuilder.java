@@ -975,7 +975,7 @@ public class IRBuilder {
         addInstr(new LabelInstr(rBeginLabel));
         addInstr(new ExceptionRegionStartMarkerInstr(rescueLabel));
         Variable callResult = (Variable)codeBlock.run();
-        addInstr(new JumpInstr(rEndLabel));
+        addInstr(new JumpInstr(rEndLabel, true));
         addInstr(new ExceptionRegionEndMarkerInstr());
 
         // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
@@ -1331,8 +1331,8 @@ public class IRBuilder {
         addInstr(new ExceptionRegionStartMarkerInstr(rescueLabel));
         Object v1 = protectedCode.run(); // YIELD: Run the protected code block
         addInstr(new CopyInstr(rv, (Operand)v1));
+        addInstr(new JumpInstr(rEndLabel, true));
         addInstr(new ExceptionRegionEndMarkerInstr());
-        addInstr(new JumpInstr(rEndLabel));
 
         // SSS FIXME: Create an 'Exception' operand type to eliminate the constant lookup below
         // We could preload a set of constant objects that are preloaded at boot time and use them
@@ -3040,7 +3040,7 @@ public class IRBuilder {
 
     private Operand buildRescueInternal(RescueNode rescueNode, EnsureBlockInfo ensure) {
         // Labels marking start, else, end of the begin-rescue(-ensure)-end block
-        Label rBeginLabel = ensure.regionStart;
+        Label rBeginLabel = getNewLabel();
         Label rEndLabel   = ensure.end;
         Label rescueLabel = getNewLabel(); // Label marking start of the first rescue code.
 
@@ -3092,7 +3092,7 @@ public class IRBuilder {
             // - If we dont have any ensure blocks, simply jump to the end of the rescue block
             // - If we do, execute the ensure code.
             ensure.cloneIntoHostScope(this);
-            addInstr(new JumpInstr(rEndLabel));
+            addInstr(new JumpInstr(rEndLabel, true));
         }   //else {
             // If the body had an explicit return, the return instruction IR build takes care of setting
             // up execution of all necessary ensure blocks.  So, nothing to do here!
@@ -3176,7 +3176,7 @@ public class IRBuilder {
             // around the current rescue block)
             activeEnsureBlockStack.peek().cloneIntoHostScope(this);
 
-            addInstr(new JumpInstr(endLabel));
+            addInstr(new JumpInstr(endLabel, true));
         }
     }
 

@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -136,7 +136,7 @@ public abstract class IntegerNodes {
         }
 
         @Specialization
-        public RubyArray times(VirtualFrame frame, int n, UndefinedPlaceholder block) {
+        public RubyArray times(VirtualFrame frame, int n, NotProvided block) {
             final int[] array = new int[n];
 
             for (int i = 0; i < n; i++) {

@@ -14,13 +14,13 @@ import org.jruby.truffle.nodes.core.BigDecimalNodes;
 import org.jruby.truffle.nodes.core.MethodNodes;
 import org.jruby.truffle.nodes.core.UnboundMethodNodes;
 import org.jruby.truffle.runtime.ThreadLocalObject;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.core.*;
 
 public abstract class RubyGuards {
 
-    public static boolean isUndefinedPlaceholder(Object value) {
-        return value instanceof UndefinedPlaceholder;
+    public static boolean isNotProvided(Object value) {
+        return value instanceof NotProvided;
     }
 
     public static boolean isBoolean(Object value) {

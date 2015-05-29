@@ -42,7 +42,7 @@ import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.pack.runtime.exceptions.*;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.RedoException;
@@ -574,7 +574,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object index(VirtualFrame frame, RubyArray array, int index, UndefinedPlaceholder undefined) {
+        public Object index(VirtualFrame frame, RubyArray array, int index, NotProvided length) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
@@ -598,7 +598,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object slice(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+        public Object slice(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, NotProvided len) {
             final int normalizedIndex = normalizeIndex(array, range.getBegin());
 
             if (normalizedIndex < 0 || normalizedIndex > getSize(array)) {
@@ -623,11 +623,11 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = {"!isInteger(a)", "!isIntegerFixnumRange(a)"})
-        public Object fallbackIndex(VirtualFrame frame, RubyArray array, Object a, UndefinedPlaceholder undefined) {
+        public Object fallbackIndex(VirtualFrame frame, RubyArray array, Object a, NotProvided length) {
             return fallback(frame, array, fromObjects(getContext().getCoreLibrary().getArrayClass(), a));
         }
 
-        @Specialization(guards = {"!isIntegerFixnumRange(a)", "!isUndefinedPlaceholder(b)"})
+        @Specialization(guards = { "!isIntegerFixnumRange(a)", "!isNotProvided(b)" })
         public Object fallbackSlice(VirtualFrame frame, RubyArray array, Object a, Object b) {
             return fallback(frame, array, fromObjects(getContext().getCoreLibrary().getArrayClass(), a, b));
         }
@@ -660,7 +660,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = {"!isInteger(indexObject)", "!isIntegerFixnumRange(indexObject)"})
-        public Object set(VirtualFrame frame, RubyArray array, Object indexObject, Object value, UndefinedPlaceholder unused) {
+        public Object set(VirtualFrame frame, RubyArray array, Object indexObject, Object value, NotProvided unused) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
@@ -670,7 +670,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object set(VirtualFrame frame, RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
+        public Object set(VirtualFrame frame, RubyArray array, int index, Object value, NotProvided unused) {
             final int normalizedIndex = normalizeIndex(array, index);
             if (normalizedIndex < 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -684,7 +684,7 @@ public abstract class ArrayNodes {
             return writeNode.executeWrite(frame, array, index, value);
         }
 
-        @Specialization(guards = {"!isRubyArray(value)", "!isUndefinedPlaceholder(value)", "!isInteger(lengthObject)"})
+        @Specialization(guards = { "!isRubyArray(value)", "!isNotProvided(value)", "!isInteger(lengthObject)" })
         public Object setObject(VirtualFrame frame, RubyArray array, int start, Object lengthObject, Object value) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -694,7 +694,7 @@ public abstract class ArrayNodes {
             return setObject(frame, array, start, length, value);
         }
 
-        @Specialization(guards = {"!isRubyArray(value)", "!isUndefinedPlaceholder(value)", "!isInteger(startObject)"})
+        @Specialization(guards = { "!isRubyArray(value)", "!isNotProvided(value)", "!isInteger(startObject)" })
         public Object setObject(VirtualFrame frame, RubyArray array, Object startObject, int length, Object value) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -704,7 +704,7 @@ public abstract class ArrayNodes {
             return setObject(frame, array, start, length, value);
         }
 
-        @Specialization(guards = {"!isRubyArray(value)", "!isUndefinedPlaceholder(value)", "!isInteger(startObject)", "!isInteger(lengthObject)"})
+        @Specialization(guards = { "!isRubyArray(value)", "!isNotProvided(value)", "!isInteger(startObject)", "!isInteger(lengthObject)" })
         public Object setObject(VirtualFrame frame, RubyArray array, Object startObject, Object lengthObject, Object value) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -715,7 +715,7 @@ public abstract class ArrayNodes {
             return setObject(frame, array, start, length, value);
         }
 
-        @Specialization(guards = { "!isRubyArray(value)", "!isUndefinedPlaceholder(value)" })
+        @Specialization(guards = { "!isRubyArray(value)", "!isNotProvided(value)" })
         public Object setObject(VirtualFrame frame, RubyArray array, int start, int length, Object value) {
             CompilerDirectives.transferToInterpreter();
 
@@ -898,7 +898,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "!isRubyArray(other)")
-        public Object setRange(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, Object other, UndefinedPlaceholder unused) {
+        public Object setRange(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, Object other, NotProvided unused) {
             final int normalizedStart = normalizeIndex(array, range.getBegin());
             int normalizedEnd = range.doesExcludeEnd() ? normalizeIndex(array, range.getEnd()) - 1 : normalizeIndex(array, range.getEnd());
             if (normalizedEnd < 0) {
@@ -913,7 +913,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "!areBothIntegerFixnum(array, other)")
-        public Object setRangeArray(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
+        public Object setRangeArray(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, NotProvided unused) {
             final int normalizedStart = normalizeIndex(array, range.getBegin());
             if (normalizedStart < 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -930,7 +930,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "areBothIntegerFixnum(array, other)" )
-        public Object setIntegerFixnumRange(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
+        public Object setIntegerFixnumRange(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, NotProvided unused) {
             if (range.doesExcludeEnd()) {
                 CompilerDirectives.transferToInterpreter();
                 return setRangeArray(frame, array, range, other, unused);
@@ -1425,7 +1425,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object eachEnumerator(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
+        public Object eachEnumerator(VirtualFrame frame, RubyArray array, NotProvided block) {
             if (toEnumNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -1730,7 +1730,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object eachWithIndexObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
+        public Object eachWithIndexObject(VirtualFrame frame, RubyArray array, NotProvided block) {
             return ruby(frame, "to_enum(:each_with_index)");
         }
 
@@ -1827,8 +1827,8 @@ public abstract class ArrayNodes {
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
-        @Specialization(guards = {"!isInteger(object)", "!isLong(object)", "!isUndefinedPlaceholder(object)", "!isRubyArray(object)"})
-        public RubyArray initialize(VirtualFrame frame, RubyArray array, Object object, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+        @Specialization(guards = { "!isInteger(object)", "!isLong(object)", "!isNotProvided(object)", "!isRubyArray(object)" })
+        public RubyArray initialize(VirtualFrame frame, RubyArray array, Object object, NotProvided defaultValue, NotProvided block) {
 
             RubyArray copy = null;
             if (respondToToAryNode == null) {
@@ -1848,7 +1848,7 @@ public abstract class ArrayNodes {
             }
 
             if (copy != null) {
-                return initialize(array, copy, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+                return initialize(array, copy, NotProvided.INSTANCE, NotProvided.INSTANCE);
             } else {
                 if (toIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
@@ -1856,9 +1856,9 @@ public abstract class ArrayNodes {
                 }
                 int size = toIntNode.doInt(frame, object);
                 if (size < 0) {
-                    return initializeNegative(array, size, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+                    return initializeNegative(array, size, NotProvided.INSTANCE, NotProvided.INSTANCE);
                 } else {
-                    return initialize(array, size, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+                    return initialize(array, size, NotProvided.INSTANCE, NotProvided.INSTANCE);
                 }
 
             }
@@ -1867,28 +1867,28 @@ public abstract class ArrayNodes {
 
 
         @Specialization
-        public RubyArray initialize(RubyArray array, UndefinedPlaceholder size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+        public RubyArray initialize(RubyArray array, NotProvided size, NotProvided defaultValue, NotProvided block) {
             return initialize(array, 0, nil(), block);
         }
 
         @Specialization
-        public RubyArray initialize(RubyArray array, UndefinedPlaceholder size, UndefinedPlaceholder defaultValue, RubyProc block) {
-            return initialize(array, 0, nil(), UndefinedPlaceholder.INSTANCE);
+        public RubyArray initialize(RubyArray array, NotProvided size, NotProvided defaultValue, RubyProc block) {
+            return initialize(array, 0, nil(), NotProvided.INSTANCE);
         }
 
         @Specialization(guards = "!isNegative(array, size)")
-        public RubyArray initialize(RubyArray array, int size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+        public RubyArray initialize(RubyArray array, int size, NotProvided defaultValue, NotProvided block) {
             return initialize(array, size, nil(), block);
         }
 
         @Specialization(guards = "isNegative(array, size)")
-        public RubyArray initializeNegative(RubyArray array, int size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+        public RubyArray initializeNegative(RubyArray array, int size, NotProvided defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization(guards = "!isNegative(array, size)")
-        public RubyArray initialize(RubyArray array, long size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+        public RubyArray initialize(RubyArray array, long size, NotProvided defaultValue, NotProvided block) {
             if (size > Integer.MAX_VALUE) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("array size too big", this));
             }
@@ -1896,13 +1896,13 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isNegative(array, size)")
-        public RubyArray initializeNegative(RubyArray array, long size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+        public RubyArray initializeNegative(RubyArray array, long size, NotProvided defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization(guards = "!isNegative(array, size)")
-        public RubyArray initialize(RubyArray array, int size, int defaultValue, UndefinedPlaceholder block) {
+        public RubyArray initialize(RubyArray array, int size, int defaultValue, NotProvided block) {
             final int[] store = new int[size];
             Arrays.fill(store, defaultValue);
             setStore(array, store, size);
@@ -1910,13 +1910,13 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isNegative(array, size)")
-        public RubyArray initializeNegative(RubyArray array, int size, int defaultValue, UndefinedPlaceholder block) {
+        public RubyArray initializeNegative(RubyArray array, int size, int defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization(guards = "!isNegative(array, size)")
-        public RubyArray initialize(RubyArray array, int size, long defaultValue, UndefinedPlaceholder block) {
+        public RubyArray initialize(RubyArray array, int size, long defaultValue, NotProvided block) {
             final long[] store = new long[size];
             Arrays.fill(store, defaultValue);
             setStore(array, store, size);
@@ -1924,13 +1924,13 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isNegative(array, size)")
-        public RubyArray initializeNegative(RubyArray array, int size, long defaultValue, UndefinedPlaceholder block) {
+        public RubyArray initializeNegative(RubyArray array, int size, long defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization(guards = "!isNegative(array, size)")
-        public RubyArray initialize(RubyArray array, int size, double defaultValue, UndefinedPlaceholder block) {
+        public RubyArray initialize(RubyArray array, int size, double defaultValue, NotProvided block) {
             final double[] store = new double[size];
             Arrays.fill(store, defaultValue);
             setStore(array, store, size);
@@ -1938,53 +1938,53 @@ public abstract class ArrayNodes {
         }
         
         @Specialization(guards = "isNegative(array, size)")
-        public RubyArray initializeNegative(RubyArray array, int size, double defaultValue, UndefinedPlaceholder block) {
+        public RubyArray initializeNegative(RubyArray array, int size, double defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
-        @Specialization(guards = {"!isUndefinedPlaceholder(defaultValue)", "!isNegative(array, size)"})
-        public RubyArray initialize(RubyArray array, int size, Object defaultValue, UndefinedPlaceholder block) {
+        @Specialization(guards = { "!isNotProvided(defaultValue)", "!isNegative(array, size)" })
+        public RubyArray initialize(RubyArray array, int size, Object defaultValue, NotProvided block) {
             final Object[] store = new Object[size];
             Arrays.fill(store, defaultValue);
             setStore(array, store, size);
             return array;
         }
 
-        @Specialization(guards = {"!isUndefinedPlaceholder(defaultValue)", "isNegative(array, size)"})
-        public RubyArray initializeNegative(RubyArray array, int size, Object defaultValue, UndefinedPlaceholder block) {
+        @Specialization(guards = { "!isNotProvided(defaultValue)", "isNegative(array, size)" })
+        public RubyArray initializeNegative(RubyArray array, int size, Object defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
-        @Specialization(guards = {"!isInteger(sizeObject)", "!isUndefinedPlaceholder(defaultValue)"})
-        public RubyArray initialize(VirtualFrame frame, RubyArray array, Object sizeObject, Object defaultValue, UndefinedPlaceholder block) {
+        @Specialization(guards = { "!isInteger(sizeObject)", "!isNotProvided(defaultValue)" })
+        public RubyArray initialize(VirtualFrame frame, RubyArray array, Object sizeObject, Object defaultValue, NotProvided block) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
             }
             int size = toIntNode.doInt(frame, sizeObject);
             if (size < 0) {
-                return initializeNegative(array, size, defaultValue, UndefinedPlaceholder.INSTANCE);
+                return initializeNegative(array, size, defaultValue, NotProvided.INSTANCE);
             } else {
-                return initialize(array, size, defaultValue, UndefinedPlaceholder.INSTANCE);
+                return initialize(array, size, defaultValue, NotProvided.INSTANCE);
             }
 
         }
 
-        @Specialization(guards = {"!isUndefinedPlaceholder(defaultValue)", "!isNegative(array, size)"})
+        @Specialization(guards = { "!isNotProvided(defaultValue)", "!isNegative(array, size)" })
         public Object initialize(VirtualFrame frame, RubyArray array, int size, Object defaultValue, RubyProc block) {
-            return initialize(frame, array, size, UndefinedPlaceholder.INSTANCE, block);
+            return initialize(frame, array, size, NotProvided.INSTANCE, block);
         }
 
-        @Specialization(guards = {"!isUndefinedPlaceholder(defaultValue)", "isNegative(array, size)"})
+        @Specialization(guards = { "!isNotProvided(defaultValue)", "isNegative(array, size)" })
         public Object initializeNegative(VirtualFrame frame, RubyArray array, int size, Object defaultValue, RubyProc block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization(guards = "!isNegative(array, size)")
-        public Object initialize(VirtualFrame frame, RubyArray array, int size, UndefinedPlaceholder defaultValue, RubyProc block) {
+        public Object initialize(VirtualFrame frame, RubyArray array, int size, NotProvided defaultValue, RubyProc block) {
             Object store = arrayBuilder.start();
 
             int count = 0;
@@ -2010,20 +2010,20 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isNegative(array, size)")
-        public Object initializeNegative(VirtualFrame frame, RubyArray array, int size, UndefinedPlaceholder defaultValue, RubyProc block) {
+        public Object initializeNegative(VirtualFrame frame, RubyArray array, int size, NotProvided defaultValue, RubyProc block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization
-        public RubyArray initialize(RubyArray array, RubyArray copy, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+        public RubyArray initialize(RubyArray array, RubyArray copy, NotProvided defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             setStore(array, slowToArray(copy), getSize(copy));
             return array;
         }
 
         @Specialization
-        public RubyArray initialize(RubyArray array, RubyArray copy, UndefinedPlaceholder defaultValue, RubyProc block) {
+        public RubyArray initialize(RubyArray array, RubyArray copy, NotProvided defaultValue, RubyProc block) {
             CompilerDirectives.transferToInterpreter();
             setStore(array, slowToArray(copy), getSize(copy));
             return array;
@@ -2213,7 +2213,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object inject(VirtualFrame frame, RubyArray array, RubySymbol symbol, UndefinedPlaceholder unused) {
+        public Object inject(VirtualFrame frame, RubyArray array, RubySymbol symbol, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
             final Object[] store = slowToArray(array);
@@ -2938,7 +2938,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object pop(RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+        public Object pop(RubyArray array, NotProvided n) {
             if (popOneNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 popOneNode = insert(PopOneNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
@@ -2947,7 +2947,7 @@ public abstract class ArrayNodes {
             return popOneNode.executePopOne(array);
         }
 
-        @Specialization(guards = {"isNullOrEmpty(array)","!isUndefinedPlaceholder(object)"})
+        @Specialization(guards = { "isNullOrEmpty(array)", "!isNotProvided(object)" })
         public Object popNilWithNum(VirtualFrame frame, RubyArray array, Object object) {
             if (object instanceof Integer && ((Integer) object) < 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -3096,7 +3096,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = {"isIntegerFixnum(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"}, rewriteOn = UnexpectedResultException.class)
+        @Specialization(guards = { "isIntegerFixnum(array)", "!isInteger(object)", "!isNotProvided(object)" }, rewriteOn = UnexpectedResultException.class)
         public RubyArray popIntegerFixnumInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -3120,7 +3120,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(contains = "popIntegerFixnumInBoundsWithNumObj", guards = {"isIntegerFixnum(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"} )
+        @Specialization(contains = "popIntegerFixnumInBoundsWithNumObj", guards = { "isIntegerFixnum(array)", "!isInteger(object)", "!isNotProvided(object)" })
         public Object popIntegerFixnumWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -3144,7 +3144,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = {"isLongFixnum(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"} , rewriteOn = UnexpectedResultException.class)
+        @Specialization(guards = { "isLongFixnum(array)", "!isInteger(object)", "!isNotProvided(object)" }, rewriteOn = UnexpectedResultException.class)
         public RubyArray popLongFixnumInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -3168,7 +3168,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(contains = "popLongFixnumInBoundsWithNumObj", guards = {"isLongFixnum(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"})
+        @Specialization(contains = "popLongFixnumInBoundsWithNumObj", guards = { "isLongFixnum(array)", "!isInteger(object)", "!isNotProvided(object)" })
         public Object popLongFixnumWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -3191,7 +3191,7 @@ public abstract class ArrayNodes {
                 return result;            }
         }
 
-        @Specialization(guards = {"isFloat(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"}, rewriteOn = UnexpectedResultException.class)
+        @Specialization(guards = { "isFloat(array)", "!isInteger(object)", "!isNotProvided(object)" }, rewriteOn = UnexpectedResultException.class)
         public RubyArray popFloatInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -3214,7 +3214,7 @@ public abstract class ArrayNodes {
                 return result;}
         }
 
-        @Specialization(contains = "popFloatInBoundsWithNumObj", guards = {"isFloat(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"})
+        @Specialization(contains = "popFloatInBoundsWithNumObj", guards = { "isFloat(array)", "!isInteger(object)", "!isNotProvided(object)" })
         public Object popFloatWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -3237,7 +3237,7 @@ public abstract class ArrayNodes {
                 return result;}
         }
 
-        @Specialization(guards = {"isObject(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"})
+        @Specialization(guards = { "isObject(array)", "!isInteger(object)", "!isNotProvided(object)" })
         public Object popObjectWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -3976,12 +3976,12 @@ public abstract class ArrayNodes {
         public abstract Object executeShift(VirtualFrame frame, RubyArray array, Object n);
 
         @Specialization(guards = "isNullOrEmpty(array)")
-        public Object shiftNil(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+        public Object shiftNil(VirtualFrame frame, RubyArray array, NotProvided n) {
             return nil();
         }
 
         @Specialization(guards = "isIntegerFixnum(array)", rewriteOn = UnexpectedResultException.class)
-        public int shiftIntegerFixnumInBounds(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) throws UnexpectedResultException {
+        public int shiftIntegerFixnumInBounds(VirtualFrame frame, RubyArray array, NotProvided n) throws UnexpectedResultException {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 throw new UnexpectedResultException(nil());
             } else {
@@ -3996,7 +3996,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(contains = "shiftIntegerFixnumInBounds", guards = "isIntegerFixnum(array)")
-        public Object shiftIntegerFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+        public Object shiftIntegerFixnum(VirtualFrame frame, RubyArray array, NotProvided n) {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
             } else {
@@ -4011,7 +4011,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isLongFixnum(array)", rewriteOn = UnexpectedResultException.class)
-        public long shiftLongFixnumInBounds(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) throws UnexpectedResultException {
+        public long shiftLongFixnumInBounds(VirtualFrame frame, RubyArray array, NotProvided n) throws UnexpectedResultException {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 throw new UnexpectedResultException(nil());
             } else {
@@ -4026,7 +4026,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(contains = "shiftLongFixnumInBounds", guards = "isLongFixnum(array)")
-        public Object shiftLongFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+        public Object shiftLongFixnum(VirtualFrame frame, RubyArray array, NotProvided n) {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
             } else {
@@ -4041,7 +4041,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isFloat(array)", rewriteOn = UnexpectedResultException.class)
-        public double shiftFloatInBounds(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) throws UnexpectedResultException {
+        public double shiftFloatInBounds(VirtualFrame frame, RubyArray array, NotProvided n) throws UnexpectedResultException {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 throw new UnexpectedResultException(nil());
             } else {
@@ -4056,7 +4056,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(contains = "shiftFloatInBounds", guards = "isFloat(array)")
-        public Object shiftFloat(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+        public Object shiftFloat(VirtualFrame frame, RubyArray array, NotProvided n) {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
             } else {
@@ -4071,7 +4071,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isObject(array)")
-        public Object shiftObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+        public Object shiftObject(VirtualFrame frame, RubyArray array, NotProvided n) {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, getSize(array) == 0)) {
                 return nil();
             } else {
@@ -4085,7 +4085,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = {"isNullOrEmpty(array)","!isUndefinedPlaceholder(object)"})
+        @Specialization(guards = { "isNullOrEmpty(array)", "!isNotProvided(object)" })
         public Object shiftNilWithNum(VirtualFrame frame, RubyArray array, Object object) {
             if (object instanceof Integer && ((Integer) object) < 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -4244,7 +4244,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = {"isIntegerFixnum(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"}, rewriteOn = UnexpectedResultException.class)
+        @Specialization(guards = { "isIntegerFixnum(array)", "!isInteger(object)", "!isNotProvided(object)" }, rewriteOn = UnexpectedResultException.class)
         public RubyArray shiftIntegerFixnumInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -4269,7 +4269,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(contains = "shiftIntegerFixnumInBoundsWithNumObj", guards = {"isIntegerFixnum(array)", "!isInteger(object)", "!isUndefinedPlaceholder(object)"} )
+        @Specialization(contains = "shiftIntegerFixnumInBoundsWithNumObj", guards = { "isIntegerFixnum(array)", "!isInteger(object)", "!isNotProvided(object)" })
         public Object shiftIntegerFixnumWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -4294,7 +4294,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = {"isLongFixnum(array)", "!isInteger(object)", "!isUndefinedPlaceholder(object)"} , rewriteOn = UnexpectedResultException.class)
+        @Specialization(guards = { "isLongFixnum(array)", "!isInteger(object)", "!isNotProvided(object)" }, rewriteOn = UnexpectedResultException.class)
         public RubyArray shiftLongFixnumInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -4319,7 +4319,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(contains = "shiftLongFixnumInBoundsWithNumObj", guards = {"isLongFixnum(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"})
+        @Specialization(contains = "shiftLongFixnumInBoundsWithNumObj", guards = { "isLongFixnum(array)", "!isInteger(object)", "!isNotProvided(object)" })
         public Object shiftLongFixnumWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -4343,7 +4343,7 @@ public abstract class ArrayNodes {
                 return result;          }
         }
 
-        @Specialization(guards = {"isFloat(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"}, rewriteOn = UnexpectedResultException.class)
+        @Specialization(guards = { "isFloat(array)", "!isInteger(object)", "!isNotProvided(object)" }, rewriteOn = UnexpectedResultException.class)
         public RubyArray shiftFloatInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -4368,7 +4368,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(contains = "shiftFloatInBoundsWithNumObj", guards = {"isFloat(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"})
+        @Specialization(contains = "shiftFloatInBoundsWithNumObj", guards = { "isFloat(array)", "!isInteger(object)", "!isNotProvided(object)" })
         public Object shiftFloatWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -4393,7 +4393,7 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = {"isObject(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"})
+        @Specialization(guards = { "isObject(array)", "!isInteger(object)", "!isNotProvided(object)" })
         public Object shiftObjectWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -4452,7 +4452,7 @@ public abstract class ArrayNodes {
 
         @ExplodeLoop
         @Specialization(guards = {"isIntegerFixnum(array)", "isSmall(array)"})
-        public RubyArray sortVeryShortIntegerFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
+        public RubyArray sortVeryShortIntegerFixnum(VirtualFrame frame, RubyArray array, NotProvided block) {
             final int[] store = (int[]) getStore(array);
             final int[] newStore = new int[store.length];
 
@@ -4480,7 +4480,7 @@ public abstract class ArrayNodes {
 
         @ExplodeLoop
         @Specialization(guards = {"isLongFixnum(array)", "isSmall(array)"})
-        public RubyArray sortVeryShortLongFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
+        public RubyArray sortVeryShortLongFixnum(VirtualFrame frame, RubyArray array, NotProvided block) {
             final long[] store = (long[]) getStore(array);
             final long[] newStore = new long[store.length];
 
@@ -4507,7 +4507,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = {"isObject(array)", "isSmall(array)"})
-        public RubyArray sortVeryShortObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
+        public RubyArray sortVeryShortObject(VirtualFrame frame, RubyArray array, NotProvided block) {
             final Object[] oldStore = (Object[]) getStore(array);
             final Object[] store = Arrays.copyOf(oldStore, oldStore.length);
 
@@ -4536,7 +4536,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"!isNull(array)", "!isSmall(array)"})
         public Object sortUsingRubinius(VirtualFrame frame, RubyArray array, Object block) {
-            if (block == UndefinedPlaceholder.INSTANCE) {
+            if (block == NotProvided.INSTANCE) {
                 return ruby(frame, "sorted = dup; Rubinius.privately { sorted.isort!(0, right) }; sorted", "right", getSize(array));
             } else {
                 return ruby(frame, "sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted", "right", getSize(array), "block", block);

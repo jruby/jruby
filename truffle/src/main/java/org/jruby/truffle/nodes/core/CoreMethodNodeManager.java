@@ -198,7 +198,7 @@ public class CoreMethodNodeManager {
         }
 
         if (method.needsBlock()) {
-            argumentsNodes.add(new ReadBlockNode(context, sourceSection, UndefinedPlaceholder.INSTANCE));
+            argumentsNodes.add(new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE));
         }
 
         final RubyNode methodNode;

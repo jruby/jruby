@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyException;
@@ -33,12 +33,12 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public RubyBasicObject initialize(RubyException exception, UndefinedPlaceholder message) {
+        public RubyBasicObject initialize(RubyException exception, NotProvided message) {
             exception.initialize(nil());
             return exception;
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(message)")
+        @Specialization(guards = "!isNotProvided(message)")
         public RubyBasicObject initialize(RubyException exception, Object message) {
             exception.initialize(message);
             return exception;
@@ -78,7 +78,7 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public RubyBasicObject captureBacktrace(RubyException exception, UndefinedPlaceholder offset) {
+        public RubyBasicObject captureBacktrace(RubyException exception, NotProvided offset) {
             return captureBacktrace(exception, 1);
         }
 
