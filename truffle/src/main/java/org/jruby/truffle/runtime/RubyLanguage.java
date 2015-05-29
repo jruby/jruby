@@ -13,24 +13,32 @@ import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.source.Source;
 
 import java.io.IOException;
+import org.jruby.Ruby;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
+@TruffleLanguage.Registration(name = "Ruby", mimeType = "application/x-ruby")
 public class RubyLanguage extends TruffleLanguage {
 
     private final RubyContext context;
 
-    public RubyLanguage(Env env, RubyContext context) {
+    public RubyLanguage(Env env) {
         super(env);
-        this.context = context;
+        Ruby r = Ruby.newInstance();
+        this.context = new RubyContext(r, env);
     }
 
     @Override
     protected Object eval(Source source) throws IOException {
-        throw new UnsupportedOperationException();
+        try {
+            return context.eval(source);
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
     }
 
     @Override
     protected Object findExportedSymbol(String s) {
-        throw new UnsupportedOperationException();
+        return context.findExportedObject(s);
     }
 
     @Override
@@ -40,7 +48,7 @@ public class RubyLanguage extends TruffleLanguage {
 
     @Override
     protected boolean isObjectOfLanguage(Object o) {
-        throw new UnsupportedOperationException();
+        return o instanceof RubyBasicObject;
     }
 
 }

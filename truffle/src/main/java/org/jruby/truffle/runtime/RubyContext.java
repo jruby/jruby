@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.Probe;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
@@ -107,10 +108,17 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     private final PrintStream debugStandardOut;
 
+    private Map<String,TruffleObject> exported;
+    private final TruffleLanguage.Env env;
+
     public RubyContext(Ruby runtime) {
+        this(runtime, null);
+    }
+    public RubyContext(Ruby runtime, TruffleLanguage.Env env) {
         latestInstance = this;
 
         assert runtime != null;
+        this.env = env;
 
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
@@ -698,4 +706,18 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return debugStandardOut;
     }
 
+    public void exportObject(RubyString name, TruffleObject object) {
+        if (exported == null) {
+            exported = new HashMap<>();
+        }
+        exported.put(name.toString(), object);
+    }
+
+    public Object findExportedObject(String name) {
+        return exported == null ? null : exported.get(name);
+    }
+
+    public Object importObject(RubyString name) {
+        return env.importSymbol(name.toString());
+    }
 }
