@@ -18,6 +18,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -129,7 +130,7 @@ public class ExceptionTranslatingNode extends RubyNode {
                     builder.append(ArrayNodes.getSize(array));
                     builder.append("]");
                 } else if (value instanceof RubyHash) {
-                    final Object store = ((RubyHash) value).getStore();
+                    final Object store = HashNodes.getStore(((RubyHash) value));
 
                     if (store == null) {
                         builder.append("[null]");

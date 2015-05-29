@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.hash.HashLiteralNode;
+import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -76,7 +77,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
             entries.add(new KeyValue(keyValue.getKey(), keyValue.getValue()));
         }
 
-        return HashOperations.verySlowFromEntries(getContext(), entries, hash.isCompareByIdentity());
+        return HashOperations.verySlowFromEntries(getContext(), entries, HashNodes.isCompareByIdentity(hash));
     }
 
 }

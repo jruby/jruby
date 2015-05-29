@@ -29,6 +29,7 @@ import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodesFactory;
 import org.jruby.truffle.nodes.core.fixnum.FixnumNodesFactory;
+import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
 import org.jruby.truffle.nodes.ext.DigestNodesFactory;
 import org.jruby.truffle.nodes.ext.ZlibNodesFactory;
@@ -306,7 +307,7 @@ public class CoreLibrary {
         falseClass = defineClass("FalseClass", NO_ALLOCATOR);
         fiberClass = defineClass("Fiber", new RubyFiber.FiberAllocator());
         defineModule("FileTest");
-        hashClass = defineClass("Hash", new RubyHash.HashAllocator());
+        hashClass = defineClass("Hash", new HashNodes.HashAllocator());
         matchDataClass = defineClass("MatchData");
         methodClass = defineClass("Method", NO_ALLOCATOR);
         defineClass("Mutex", new MutexNodes.MutexAllocator());

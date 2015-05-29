@@ -41,14 +41,14 @@ public class LookupEntryNode extends RubyNode {
     public HashLookupResult lookup(VirtualFrame frame, RubyHash hash, Object key) {
         final int hashed = hashNode.hash(frame, key);
 
-        final Entry[] entries = (Entry[]) hash.getStore();
+        final Entry[] entries = (Entry[]) HashNodes.getStore(hash);
         final int index = BucketsStrategy.getBucketIndex(hashed, entries.length);
         Entry entry = entries[index];
 
         Entry previousEntry = null;
 
         while (entry != null) {
-            if (byIdentityProfile.profile(hash.isCompareByIdentity())) {
+            if (byIdentityProfile.profile(HashNodes.isCompareByIdentity(hash))) {
                 if (equalNode.executeReferenceEqual(frame, key, entry.getKey())) {
                     return new HashLookupResult(hashed, index, previousEntry, entry);
                 }
