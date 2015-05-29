@@ -106,7 +106,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
         if (superMethod == null) {
             return nil();
         } else {
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "super");
+            return createString("super");
         }
     }
 

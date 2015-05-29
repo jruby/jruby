@@ -103,7 +103,7 @@ public abstract class TrufflePrimitiveNodes {
 
             });
 
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), source);
+            return createString(source);
         }
 
     }
@@ -175,7 +175,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public RubyString javaClassOf(Object value) {
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), value.getClass().getSimpleName());
+            return createString(value.getClass().getSimpleName());
         }
 
     }
@@ -196,7 +196,7 @@ public abstract class TrufflePrimitiveNodes {
                 builder.append(String.format("\\x%02x", b));
             }
 
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), builder.toString());
+            return createString(builder.toString());
         }
 
     }
@@ -240,7 +240,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public RubyString graalVersion() {
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), System.getProperty("graal.version", "unknown"));
+            return createString(System.getProperty("graal.version", "unknown"));
         }
 
     }
@@ -280,7 +280,7 @@ public abstract class TrufflePrimitiveNodes {
             for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
                 final Object[] store = lineCountsStore(source.getValue());
                 final RubyArray array = createArray(store, store.length);
-                keyValues.add(new KeyValue(StringNodes.createString(getContext().getCoreLibrary().getStringClass(), source.getKey().getPath()), array));
+                keyValues.add(new KeyValue(createString(source.getKey().getPath()), array));
             }
 
             return HashOperations.verySlowFromEntries(getContext(), keyValues, false);
@@ -437,7 +437,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public RubyString homeDirectory() {
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), getContext().getRuntime().getJRubyHome());
+            return createString(getContext().getRuntime().getJRubyHome());
         }
 
     }
@@ -451,7 +451,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public RubyString hostOS() {
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), RbConfigLibrary.getOSName());
+            return createString(RbConfigLibrary.getOSName());
         }
 
     }

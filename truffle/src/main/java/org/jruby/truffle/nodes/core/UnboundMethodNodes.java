@@ -225,7 +225,7 @@ public abstract class UnboundMethodNodes {
             if (sourceSection instanceof NullSourceSection) {
                 return nil();
             } else {
-                RubyString file = StringNodes.createString(getContext().getCoreLibrary().getStringClass(), sourceSection.getSource().getName());
+                RubyString file = createString(sourceSection.getSource().getName());
                 return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                         file, sourceSection.getStartLine());
             }

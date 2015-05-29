@@ -23,6 +23,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 
+import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
@@ -31,6 +33,9 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
+import org.jruby.util.ByteList;
+
+import java.nio.ByteBuffer;
 
 @TypeSystemReference(RubyTypes.class)
 @ImportStatic(RubyGuards.class)
@@ -241,6 +246,30 @@ public abstract class RubyNode extends Node {
 
     protected RubyBasicObject nil() {
         return getContext().getCoreLibrary().getNilObject();
+    }
+
+    protected RubyString createEmptyString() {
+        return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
+    }
+
+    protected RubyString createString(String string) {
+        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), string);
+    }
+
+    protected RubyString createString(String string, Encoding encoding) {
+        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), string, encoding);
+    }
+
+    protected RubyString createString(byte[] bytes) {
+        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
+    }
+
+    protected RubyString createString(ByteBuffer bytes) {
+        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
+    }
+
+    protected RubyString createString(ByteList bytes) {
+        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
     }
 
     protected RubyArray createEmptyArray() {

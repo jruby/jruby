@@ -206,7 +206,7 @@ public abstract class DigestNodes {
                 throw new RuntimeException(e);
             }
 
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), clonedDigest.digest());
+            return createString(clonedDigest.digest());
         }
 
     }
@@ -237,7 +237,7 @@ public abstract class DigestNodes {
         @Specialization
         public RubyString bubblebabble(RubyString message) {
             final ByteList byteList = message.getByteList();
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
+            return createString(BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
         }
 
     }

@@ -48,7 +48,7 @@ public class ReadConstantNode extends RubyNode {
 
         if (name.equals("Encoding")) {
             // Work-around so I don't have to load the iconv library - runners/formatters/junit.rb.
-            return StringNodes.createString(context.getCoreLibrary().getStringClass(), "constant");
+            return createString("constant");
         }
 
         final Object receiverObject;
@@ -83,7 +83,7 @@ public class ReadConstantNode extends RubyNode {
         if (constant == null) {
             return nil();
         } else {
-            return StringNodes.createString(context.getCoreLibrary().getStringClass(), "constant");
+            return createString("constant");
         }
     }
 

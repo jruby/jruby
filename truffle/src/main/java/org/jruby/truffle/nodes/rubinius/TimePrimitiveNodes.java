@@ -173,13 +173,13 @@ public abstract class TimePrimitiveNodes {
             final boolean isdst = false;
 
             // TODO CS 14-Feb-15 uses debug send
-            final String envTimeZoneString = DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "TZ")).toString();
+            final String envTimeZoneString = DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, createString("TZ")).toString();
             String zoneString = org.jruby.RubyTime.zoneHelper(envTimeZoneString, dateTime, false);
             Object zone;
             if (zoneString.matches(".*-\\d+")) {
                 zone = nil();
             } else {
-                zone = StringNodes.createString(getContext().getCoreLibrary().getStringClass(), zoneString);
+                zone = createString(zoneString);
             }
 
             final Object[] decomposed = new Object[]{sec, min, hour, day, month, year, wday, yday, isdst, zone};
@@ -200,7 +200,7 @@ public abstract class TimePrimitiveNodes {
         public RubyString timeStrftime(RubyTime time, RubyString format) {
             final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
             // TODO CS 15-Feb-15 ok to just pass nanoseconds as 0?
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), rdf.formatToByteList(rdf.compilePattern(format.getByteList(), false), time.getDateTime(), 0, null));
+            return createString(rdf.formatToByteList(rdf.compilePattern(format.getByteList(), false), time.getDateTime(), 0, null));
         }
 
     }
@@ -240,7 +240,7 @@ public abstract class TimePrimitiveNodes {
             if (fromutc) {
                 zone = DateTimeZone.UTC;
             } else if (utcoffset == nil()) {
-                String tz = DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "TZ")).toString();
+                String tz = DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, createString("TZ")).toString();
                 zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(), tz);
             } else if (utcoffset instanceof Integer) {
                 zone = DateTimeZone.forOffsetMillis(((int) utcoffset) * 1_000);

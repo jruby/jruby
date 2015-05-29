@@ -32,7 +32,7 @@ public class SelfNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "self");
+        return createString("self");
     }
 
 }

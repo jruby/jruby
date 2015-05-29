@@ -128,6 +128,10 @@ public abstract class StringNodes {
         return StringSupport.isSingleByteOptimizable(string, EncodingUtils.STR_ENC_GET(string));
     }
 
+    public static RubyString createEmptyString(RubyClass stringClass) {
+        return createString(stringClass, new ByteList());
+    }
+
     public static RubyString createString(RubyClass stringClass, String string) {
         return createString(stringClass, string, USASCIIEncoding.INSTANCE);
     }
@@ -137,11 +141,11 @@ public abstract class StringNodes {
     }
 
     public static RubyString createString(RubyClass stringClass, byte[] bytes) {
-        return new RubyString(stringClass, new ByteList(bytes));
+        return createString(stringClass, new ByteList(bytes));
     }
 
     public static RubyString createString(RubyClass stringClass, ByteBuffer bytes) {
-        return new RubyString(stringClass, new ByteList(bytes.array()));
+        return createString(stringClass, new ByteList(bytes.array()));
     }
 
     public static RubyString createString(RubyClass stringClass, ByteList bytes) {
@@ -168,7 +172,7 @@ public abstract class StringNodes {
         @Specialization
         public RubyString add(RubyString string, RubyString other) {
             final Encoding enc = checkEncoding(string, other, this);
-            final RubyString ret = createString(getContext().getCoreLibrary().getStringClass(), StringSupport.addByteLists(string.getByteList(), other.getByteList()));
+            final RubyString ret = createString(StringSupport.addByteLists(string.getByteList(), other.getByteList()));
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -209,7 +213,7 @@ public abstract class StringNodes {
             }
 
             outputBytes.setEncoding(inputBytes.getEncoding());
-            final RubyString ret = createString(string.getLogicalClass(), outputBytes);
+            final RubyString ret = StringNodes.createString(string.getLogicalClass(), outputBytes);
             ret.setCodeRange(string.getCodeRange());
 
             return ret;
@@ -534,7 +538,9 @@ public abstract class StringNodes {
             } else {
 
                 if (begin == stringLength) {
-                    return createString(string.getLogicalClass(), "", string.getByteList().getEncoding());
+                    final ByteList byteList = new ByteList();
+                    byteList.setEncoding(string.getByteList().getEncoding());
+                    return StringNodes.createString(string.getLogicalClass(), byteList);
                 }
 
                 end = normalizeIndex(stringLength, end);
@@ -981,7 +987,7 @@ public abstract class StringNodes {
         @Specialization
         public RubyString downcase(RubyString string) {
             final ByteList newByteList = StringNodesHelper.downcase(getContext().getRuntime(), string.getByteList());
-            return createString(string.getLogicalClass(), newByteList);
+            return StringNodes.createString(string.getLogicalClass(), newByteList);
         }
     }
 
@@ -1101,7 +1107,7 @@ public abstract class StringNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            final RubyString ret = createString(string.getLogicalClass(), substringBytes);
+            final RubyString ret = StringNodes.createString(string.getLogicalClass(), substringBytes);
 
             return taintResultNode.maybeTaint(string, ret);
         }
@@ -1643,7 +1649,7 @@ public abstract class StringNodes {
 
             ByteList outputBytes = dumpCommon(string);
 
-            final RubyString result = createString(string.getLogicalClass(), outputBytes);
+            final RubyString result = StringNodes.createString(string.getLogicalClass(), outputBytes);
             result.getByteList().setEncoding(string.getByteList().getEncoding());
             result.setCodeRange(StringSupport.CR_7BIT);
 
@@ -1666,7 +1672,7 @@ public abstract class StringNodes {
             outputBytes.append((byte) '"');
             outputBytes.append((byte) ')');
 
-            final RubyString result = createString(string.getLogicalClass(), outputBytes);
+            final RubyString result = StringNodes.createString(string.getLogicalClass(), outputBytes);
             result.getByteList().setEncoding(ASCIIEncoding.INSTANCE);
             result.setCodeRange(StringSupport.CR_7BIT);
 
@@ -1922,9 +1928,9 @@ public abstract class StringNodes {
         @Specialization
         public RubyString succ(RubyString string) {
             if (length(string) > 0) {
-                return createString(string.getLogicalClass(), StringSupport.succCommon(getContext().getRuntime(), string.getByteList()));
+                return StringNodes.createString(string.getLogicalClass(), StringSupport.succCommon(getContext().getRuntime(), string.getByteList()));
             } else {
-                return createString(string.getLogicalClass(), "");
+                return StringNodes.createEmptyString(string.getLogicalClass());
             }
         }
     }
@@ -2253,7 +2259,7 @@ public abstract class StringNodes {
         @Specialization
         public RubyString upcase(RubyString string) {
             final ByteList byteListString = StringNodesHelper.upcase(getContext().getRuntime(), string.getByteList());
-            return createString(string.getLogicalClass(), byteListString);
+            return StringNodes.createString(string.getLogicalClass(), byteListString);
         }
 
     }

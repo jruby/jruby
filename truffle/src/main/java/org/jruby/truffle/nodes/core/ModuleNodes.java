@@ -1258,7 +1258,7 @@ public abstract class ModuleNodes {
                 return nil();
             }
 
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), module.getName());
+            return createString(module.getName());
         }
     }
 
@@ -1765,7 +1765,7 @@ public abstract class ModuleNodes {
         public RubyString toS(RubyModule module) {
             CompilerDirectives.transferToInterpreter();
 
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), module.getName());
+            return createString(module.getName());
         }
 
     }
@@ -1816,7 +1816,7 @@ public abstract class ModuleNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("user " + uname.toString() + " does not exist", this));
             }
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), passwd.getHome());
+            return createString(passwd.getHome());
         }
 
     }

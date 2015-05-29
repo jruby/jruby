@@ -163,7 +163,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public RubyString vmGetModuleName(RubyModule module) {
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), module.getName());
+            return createString(module.getName());
         }
 
     }
@@ -507,8 +507,8 @@ public abstract class VMPrimitiveNodes {
                 }
 
                 sectionKeyValues.add(ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                        StringNodes.createString(getContext().getCoreLibrary().getStringClass(), key),
-                        StringNodes.createString(getContext().getCoreLibrary().getStringClass(), stringValue)));
+                        createString(key),
+                        createString(stringValue)));
             }
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), sectionKeyValues.toArray());

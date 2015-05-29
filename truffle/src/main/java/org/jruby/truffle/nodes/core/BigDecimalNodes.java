@@ -480,7 +480,7 @@ public abstract class BigDecimalNodes {
             String string = (negative ? "-" : "") + "0." +
                     (negative ? bigDecimal.unscaledValue().toString().substring(1) : bigDecimal.unscaledValue()) +
                     "E" + (bigDecimal.precision() - bigDecimal.scale());
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), string);
+            return createString(string);
         }
 
     }

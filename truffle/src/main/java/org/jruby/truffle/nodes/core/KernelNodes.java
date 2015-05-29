@@ -119,7 +119,7 @@ public abstract class KernelNodes {
             }
 
             // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
-            return StringNodes.createString(context.getCoreLibrary().getStringClass(), resultBuilder.toString(), RubyEncoding.getEncoding("UTF-8").getEncoding());
+            return createString(resultBuilder.toString(), RubyEncoding.getEncoding("UTF-8").getEncoding());
         }
 
     }
@@ -699,7 +699,7 @@ public abstract class KernelNodes {
                 }
             });
 
-            final RubyString rubyLine = StringNodes.createString(getContext().getCoreLibrary().getStringClass(), line);
+            final RubyString rubyLine = createString(line);
 
             // Set the local variable $_ in the caller
 
@@ -1731,7 +1731,7 @@ public abstract class KernelNodes {
         }
 
         private RubyString finishFormat(ByteList format, PackResult result) {
-            final RubyString string = StringNodes.createString(getContext().getCoreLibrary().getStringClass(), new ByteList(result.getOutput(), 0, result.getOutputLength()));
+            final RubyString string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
 
             if (format.length() == 0) {
                 StringNodes.forceEncoding(string, USASCIIEncoding.INSTANCE);
@@ -1913,7 +1913,7 @@ public abstract class KernelNodes {
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "#<" + className + ":0x" + hexID + ">");
+            return createString("#<" + className + ":0x" + hexID + ">");
         }
 
     }

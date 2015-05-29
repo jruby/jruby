@@ -76,7 +76,7 @@ public class YieldNode extends RubyNode {
         if (RubyArguments.getBlock(frame.getArguments()) == null) {
             return nil();
         } else {
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "yield");
+            return createString("yield");
         }
     }
 

@@ -42,8 +42,8 @@ public class TraceNode extends RubyNode {
         traceAssumption = context.getTraceManager().getTraceAssumption();
         traceFunc = null;
         callNode = null;
-        event = StringNodes.createString(context.getCoreLibrary().getStringClass(), "line");
-        file = StringNodes.createString(context.getCoreLibrary().getStringClass(), sourceSection.getSource().getName());
+        event = createString("line");
+        file = createString(sourceSection.getSource().getName());
         line = sourceSection.getStartLine();
     }
 

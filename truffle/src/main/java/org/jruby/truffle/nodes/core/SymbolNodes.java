@@ -225,7 +225,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubyString toS(RubySymbol symbol) {
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), symbol.getSymbolBytes().dup());
+            return createString(symbol.getSymbolBytes().dup());
         }
 
     }
@@ -240,7 +240,7 @@ public abstract class SymbolNodes {
         @TruffleBoundary
         @Specialization
         public RubyString inspect(RubySymbol symbol) {
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), symbol.getJRubySymbol().inspect(getContext().getRuntime().getCurrentContext()).asString().decodeString());
+            return createString(symbol.getJRubySymbol().inspect(getContext().getRuntime().getCurrentContext()).asString().decodeString());
         }
 
     }

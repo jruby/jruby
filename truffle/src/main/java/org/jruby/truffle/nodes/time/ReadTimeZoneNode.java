@@ -27,7 +27,7 @@ public class ReadTimeZoneNode extends RubyNode {
     public ReadTimeZoneNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         hashNode = DispatchHeadNodeFactory.createMethodCall(context);
-        TZ = StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "TZ");
+        TZ = createString("TZ");
     }
 
     @Override
@@ -37,7 +37,7 @@ public class ReadTimeZoneNode extends RubyNode {
         // TODO CS 4-May-15 not sure how TZ ends up being nil
 
         if (tz == nil()) {
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "UTC");
+            return createString("UTC");
         } else if (tz instanceof RubyString) {
             return (RubyString) tz;
         } else {

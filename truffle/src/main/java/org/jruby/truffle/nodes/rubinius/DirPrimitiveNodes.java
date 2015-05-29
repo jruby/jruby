@@ -147,14 +147,14 @@ public abstract class DirPrimitiveNodes {
             writePositionNode.execute(dir, position + 1);
 
             if (position == -2) {
-                return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), ".");
+                return createString(".");
             } else if (position == -1) {
-                return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "..");
+                return createString("..");
             } else {
                 final String[] contents = (String[]) readContentsNode.execute(dir);
 
                 if (position < contents.length) {
-                    return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), contents[position]);
+                    return createString(contents[position]);
                 } else {
                     return nil();
                 }

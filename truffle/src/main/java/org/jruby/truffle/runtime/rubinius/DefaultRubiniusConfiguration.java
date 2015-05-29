@@ -45,6 +45,7 @@ import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyString;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -163,6 +164,10 @@ public abstract class DefaultRubiniusConfiguration {
 
     protected static RubyBasicObject newBignum(RubyContext context, String value) {
         return BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), new BigInteger(value));
+    }
+
+    protected static RubyString string(RubyContext context, String value) {
+        return StringNodes.createString(context.getCoreLibrary().getStringClass(), value);
     }
 
 }

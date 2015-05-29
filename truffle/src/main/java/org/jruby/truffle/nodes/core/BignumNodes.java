@@ -662,7 +662,7 @@ public abstract class BignumNodes {
         @TruffleBoundary
         @Specialization
         public RubyString toS(RubyBasicObject value, NotProvided base) {
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), getBigIntegerValue(value).toString());
+            return createString(getBigIntegerValue(value).toString());
         }
 
         @TruffleBoundary
@@ -673,7 +673,7 @@ public abstract class BignumNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), getBigIntegerValue(value).toString(base));
+            return createString(getBigIntegerValue(value).toString(base));
         }
 
     }

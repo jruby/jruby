@@ -95,7 +95,7 @@ public abstract class SplatCastNode extends RubyNode {
         }
 
         // MRI tries to call dynamic respond_to? here.
-        Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), method), true);
+        Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, createString(method), true);
         if (respondToResult != DispatchNode.MISSING && respondToCast.executeBoolean(frame, respondToResult)) {
             final Object array = toA.call(frame, object, method, null);
 

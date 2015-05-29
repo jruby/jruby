@@ -26,7 +26,7 @@ public class RubyException extends RubyBasicObject {
 
     public RubyException(RubyClass rubyClass) {
         super(rubyClass);
-        message = StringNodes.createString(rubyClass.getContext().getCoreLibrary().getStringClass(), "");
+        message = StringNodes.createEmptyString(rubyClass.getContext().getCoreLibrary().getStringClass());
     }
 
     public RubyException(RubyClass rubyClass, Object message, Backtrace backtrace) {

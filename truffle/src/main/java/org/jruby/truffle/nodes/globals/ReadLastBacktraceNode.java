@@ -35,7 +35,7 @@ public class ReadLastBacktraceNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "global-variable");
+        return createString("global-variable");
     }
 
     @Override

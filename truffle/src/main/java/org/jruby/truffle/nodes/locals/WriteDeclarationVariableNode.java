@@ -47,7 +47,7 @@ public class WriteDeclarationVariableNode extends RubyNode implements WriteNode 
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "assignment");
+        return createString("assignment");
     }
 
 }

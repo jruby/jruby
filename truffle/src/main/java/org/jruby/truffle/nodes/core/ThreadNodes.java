@@ -179,7 +179,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyBasicObject raise(VirtualFrame frame, RubyThread thread, RubyClass exceptionClass, NotProvided message) {
-            return raise(frame, thread, exceptionClass, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), ""));
+            return raise(frame, thread, exceptionClass, createEmptyString());
         }
 
         @Specialization
@@ -224,7 +224,7 @@ public abstract class ThreadNodes {
                 }
             }
 
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), self.getStatus().bytes);
+            return createString(self.getStatus().bytes);
         }
 
     }

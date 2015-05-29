@@ -36,6 +36,6 @@ public abstract class IndexLabelToRubyNode extends TargetableRubyNode {
 
     @TruffleBoundary
     private RubyString toString(String index) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), index);
+        return createString(index);
     }
 }

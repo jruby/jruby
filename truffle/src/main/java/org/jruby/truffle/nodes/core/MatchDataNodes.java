@@ -258,7 +258,7 @@ public abstract class MatchDataNodes {
             CompilerDirectives.transferToInterpreter();
 
             final ByteList bytes = matchData.getGlobal().getByteList().dup();
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
+            return createString(bytes);
         }
     }
 

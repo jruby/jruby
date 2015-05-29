@@ -666,7 +666,7 @@ public abstract class FloatNodes {
         @TruffleBoundary
         @Specialization
         public RubyString toS(double value) {
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), Double.toString(value));
+            return createString(Double.toString(value));
         }
 
     }

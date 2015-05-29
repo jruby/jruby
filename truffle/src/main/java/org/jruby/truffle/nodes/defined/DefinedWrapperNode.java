@@ -34,7 +34,7 @@ public class DefinedWrapperNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), definition);
+        return createString(definition);
     }
 
 }

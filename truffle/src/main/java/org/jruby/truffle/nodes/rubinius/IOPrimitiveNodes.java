@@ -555,7 +555,7 @@ public abstract class IOPrimitiveNodes {
                 toRead -= readIteration;
             }
 
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), buffer);
+            return createString(buffer);
         }
 
     }

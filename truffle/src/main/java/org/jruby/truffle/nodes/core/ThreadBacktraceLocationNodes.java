@@ -61,12 +61,12 @@ public class ThreadBacktraceLocationNodes {
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
-                return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), sourceSection.getShortDescription());
+                return createString(sourceSection.getShortDescription());
             }
 
             // TODO CS 30-Apr-15: not absolute - not sure how to solve that
 
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), sourceSection.getSource().getPath());
+            return createString(sourceSection.getSource().getPath());
         }
 
     }
@@ -105,10 +105,10 @@ public class ThreadBacktraceLocationNodes {
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
-                return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), sourceSection.getShortDescription());
+                return createString(sourceSection.getShortDescription());
             }
 
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), String.format("%s:%d:in `%s'",
+            return createString(String.format("%s:%d:in `%s'",
                         sourceSection.getSource().getShortName(),
                         sourceSection.getStartLine(),
                         sourceSection.getIdentifier()));
