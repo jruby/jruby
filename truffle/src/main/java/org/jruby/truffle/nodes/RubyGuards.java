@@ -12,16 +12,17 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.interop.TruffleObject;
 import org.jruby.truffle.nodes.core.BigDecimalNodes;
 import org.jruby.truffle.nodes.core.MethodNodes;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.UnboundMethodNodes;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.core.*;
 
 public abstract class RubyGuards {
 
-    public static boolean isNotProvided(Object value) {
-        return value instanceof NotProvided;
-    }
+    // Basic Java types
 
     public static boolean isBoolean(Object value) {
         return value instanceof Boolean;
@@ -39,18 +40,31 @@ public abstract class RubyGuards {
         return value instanceof Double;
     }
 
+    // Ruby types
+
     public static boolean isRubyBignum(Object value) {
         return value instanceof RubyBignum;
+    }
+
+    public static boolean isRubyBigDecimal(RubyBasicObject value) {
+        return value.getDynamicObject().getShape().getObjectType() == BigDecimalNodes.BIG_DECIMAL_TYPE;
     }
 
     public static boolean isIntegerFixnumRange(Object value) {
         return value instanceof RubyRange.IntegerFixnumRange;
     }
 
-    public static boolean isRubyArray(Object value) {
-        return value instanceof RubyArray;
+    public static boolean isRubyRange(Object value) {
+        return value instanceof RubyRange;
     }
 
+    public static boolean isRubyArray(Object value) {
+        return (value instanceof RubyBasicObject) && isRubyArray((RubyBasicObject) value);
+    }
+
+    public static boolean isRubyArray(RubyBasicObject value) {
+        return value.getDynamicObject().getShape().getObjectType() == ArrayNodes.ARRAY_TYPE;
+    }
     public static boolean isRubyBinding(Object value) {
         return value instanceof RubyBinding;
     }
@@ -60,15 +74,15 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyHash(Object value) {
-        return value instanceof RubyHash;
+        return (value instanceof RubyBasicObject) && isRubyHash((RubyBasicObject) value);
+    }
+
+    public static boolean isRubyHash(RubyBasicObject value) {
+        return value.getDynamicObject().getShape().getObjectType() == HashNodes.HASH_TYPE;
     }
 
     public static boolean isRubyModule(Object value) {
         return value instanceof RubyModule;
-    }
-
-    public static boolean isRubyRange(Object value) {
-        return value instanceof RubyRange;
     }
 
     public static boolean isRubyRegexp(Object value) {
@@ -76,7 +90,11 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyString(Object value) {
-        return value instanceof RubyString;
+        return (value instanceof RubyBasicObject) && isRubyString((RubyBasicObject) value);
+    }
+
+    public static boolean isRubyString(RubyBasicObject value) {
+        return value.getDynamicObject().getShape().getObjectType() == StringNodes.STRING_TYPE;
     }
 
     public static boolean isRubyEncoding(Object value) {
@@ -107,6 +125,8 @@ public abstract class RubyGuards {
         return value instanceof RubyBasicObject;
     }
 
+    // Internal types
+
     public static boolean isThreadLocal(Object value) {
         return value instanceof ThreadLocalObject;
     }
@@ -115,9 +135,17 @@ public abstract class RubyGuards {
         return (object instanceof TruffleObject) && !(object instanceof RubyBasicObject);
     }
 
-    public static boolean isTrue(boolean value) {
-        return value;
+    // Sentinels
+
+    public static boolean wasProvided(Object value) {
+        return !(wasNotProvided(value));
     }
+
+    public static boolean wasNotProvided(Object value) {
+        return value instanceof NotProvided;
+    }
+
+    // Values
 
     public static boolean isNaN(double value) {
         return Double.isNaN(value);
@@ -125,10 +153,6 @@ public abstract class RubyGuards {
 
     public static boolean isInfinity(double value) {
         return Double.isInfinite(value);
-    }
-
-    public static boolean isRubyBigDecimal(RubyBasicObject value) {
-        return value.getDynamicObject().getShape().getObjectType() == BigDecimalNodes.BIG_DECIMAL_TYPE;
     }
 
 }

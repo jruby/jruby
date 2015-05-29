@@ -31,14 +31,14 @@ public abstract class ArrayGetTailNode extends RubyNode {
         this.index = index;
     }
 
-    @Specialization(guards = "isNull(array)")
+    @Specialization(guards = "isNullArray(array)")
     public RubyArray getTailNull(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
         return createEmptyArray();
     }
 
-    @Specialization(guards = "isIntegerFixnum(array)")
+    @Specialization(guards = "isIntArray(array)")
     public RubyArray getTailIntegerFixnum(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
@@ -49,7 +49,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isLongFixnum(array)")
+    @Specialization(guards = "isLongArray(array)")
     public RubyArray getTailLongFixnum(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
@@ -60,7 +60,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isFloat(array)")
+    @Specialization(guards = "isDoubleArray(array)")
     public RubyArray getTailFloat(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
@@ -71,7 +71,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isObject(array)")
+    @Specialization(guards = "isObjectArray(array)")
     public RubyArray getTailObject(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 

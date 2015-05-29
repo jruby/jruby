@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.ByteList;
@@ -21,8 +22,8 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     public ByteList bytes;
     public int codeRange = StringSupport.CR_UNKNOWN;
 
-    public RubyString(RubyClass stringClass, ByteList bytes) {
-        super(stringClass);
+    public RubyString(RubyClass stringClass, ByteList bytes, DynamicObject dynamicObject) {
+        super(stringClass, dynamicObject);
         this.bytes = bytes;
     }
 

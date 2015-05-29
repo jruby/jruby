@@ -34,27 +34,27 @@ public abstract class ArrayDupNode extends RubyNode {
 
     public abstract RubyArray executeDup(VirtualFrame frame, RubyArray array);
 
-    @Specialization(guards = "isNull(from)")
+    @Specialization(guards = "isNullArray(from)")
     public RubyArray dupNull(RubyArray from) {
         return createEmptyArray();
     }
 
-    @Specialization(guards = "isIntegerFixnum(from)")
+    @Specialization(guards = "isIntArray(from)")
     public RubyArray dupIntegerFixnum(RubyArray from) {
         return createArray(Arrays.copyOf((int[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }
 
-    @Specialization(guards = "isLongFixnum(from)")
+    @Specialization(guards = "isLongArray(from)")
     public RubyArray dupLongFixnum(RubyArray from) {
         return createArray(Arrays.copyOf((long[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }
 
-    @Specialization(guards = "isFloat(from)")
+    @Specialization(guards = "isDoubleArray(from)")
     public RubyArray dupFloat(RubyArray from) {
         return createArray(Arrays.copyOf((double[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }
 
-    @Specialization(guards = "isObject(from)")
+    @Specialization(guards = "isObjectArray(from)")
     public RubyArray dupObject(RubyArray from) {
         return createArray(Arrays.copyOf((Object[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }

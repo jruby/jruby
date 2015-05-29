@@ -31,29 +31,29 @@ public abstract class PopOneNode extends RubyNode {
 
     // Pop from an empty array
 
-    @Specialization(guards = "isEmpty(array)")
+    @Specialization(guards = "isEmptyArray(array)")
     public RubyBasicObject popOneEmpty(RubyArray array) {
         return nil();
     }
 
     // Pop from a non-empty array
 
-    @Specialization(guards = {"!isEmpty(array)", "isIntegerFixnum(array)"})
+    @Specialization(guards = {"!isEmptyArray(array)", "isIntArray(array)"})
     public Object popOneInteger(RubyArray array) {
         return popOneGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)));
     }
 
-    @Specialization(guards = {"!isEmpty(array)", "isLongFixnum(array)"})
+    @Specialization(guards = {"!isEmptyArray(array)", "isLongArray(array)"})
     public Object popOneLong(RubyArray array) {
         return popOneGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)));
     }
 
-    @Specialization(guards = {"!isEmpty(array)", "isFloat(array)"})
+    @Specialization(guards = {"!isEmptyArray(array)", "isDoubleArray(array)"})
     public Object popOneDouble(RubyArray array) {
         return popOneGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)));
     }
 
-    @Specialization(guards = {"!isEmpty(array)", "isObject(array)"})
+    @Specialization(guards = {"!isEmptyArray(array)", "isObjectArray(array)"})
     public Object popOneObject(RubyArray array) {
         return popOneGeneric(array, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)));
     }

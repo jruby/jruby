@@ -612,12 +612,12 @@ public abstract class ModuleNodes {
             return classEvalSource(frame, module, code, file.toString());
         }
 
-        @Specialization(guards = "!isNotProvided(code)")
+        @Specialization(guards = "wasProvided(code)")
         public Object classEval(VirtualFrame frame, RubyModule module, Object code, NotProvided file, NotProvided line, NotProvided block) {
             return classEvalSource(frame, module, toStr(frame, code), file.toString());
         }
 
-        @Specialization(guards = "!isNotProvided(file)")
+        @Specialization(guards = "wasProvided(file)")
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, Object file, NotProvided line, NotProvided block) {
             return classEvalSource(frame, module, code, toStr(frame, file).toString());
         }
@@ -648,7 +648,7 @@ public abstract class ModuleNodes {
             throw new RaiseException(getContext().getCoreLibrary().argumentError(0, 1, 2, this));
         }
 
-        @Specialization(guards = "!isNotProvided(code)")
+        @Specialization(guards = "wasProvided(code)")
         public Object classEval(RubyModule self, Object code, NotProvided file, NotProvided line, RubyProc block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(1, 0, this));
@@ -801,7 +801,7 @@ public abstract class ModuleNodes {
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), constantsArray.toArray(new Object[constantsArray.size()]));
         }
 
-        @Specialization(guards = "!isNotProvided(inherit)")
+        @Specialization(guards = "wasProvided(inherit)")
         public RubyArray constants(VirtualFrame frame, RubyModule module, Object inherit) {
             return constants(module, booleanCast(frame, inherit));
         }

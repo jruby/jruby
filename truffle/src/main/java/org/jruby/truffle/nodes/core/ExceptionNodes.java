@@ -38,7 +38,7 @@ public abstract class ExceptionNodes {
             return exception;
         }
 
-        @Specialization(guards = "!isNotProvided(message)")
+        @Specialization(guards = "wasProvided(message)")
         public RubyBasicObject initialize(RubyException exception, Object message) {
             exception.initialize(message);
             return exception;
