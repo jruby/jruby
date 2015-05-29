@@ -62,7 +62,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
         final RubyHash hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
 
         if (hash == null) {
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, null, 0, null);
+            return HashNodes.createEmptyHash(getContext().getCoreLibrary().getHashClass());
         }
 
         final List<KeyValue> entries = new ArrayList<>();

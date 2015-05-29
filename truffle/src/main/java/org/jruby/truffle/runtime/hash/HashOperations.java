@@ -29,7 +29,7 @@ public class HashOperations {
 
     @TruffleBoundary
     public static RubyHash verySlowFromEntries(RubyClass hashClass, List<KeyValue> entries, boolean byIdentity) {
-        final RubyHash hash = new RubyHash(hashClass, null, null, null, 0, null);
+        final RubyHash hash = HashNodes.createEmptyHash(hashClass);
         verySlowSetKeyValues(hash, entries, byIdentity);
         assert HashOperations.verifyStore(hash);
         return hash;
