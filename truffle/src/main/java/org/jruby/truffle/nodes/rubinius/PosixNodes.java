@@ -297,6 +297,28 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "utimes", isModuleFunction = true, required = 2)
+    public abstract static class UtimesNode extends CoreMethodArrayArgumentsNode {
+
+        public UtimesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int utimes(RubyString path, RubyBasicObject pointer) {
+            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
+
+            final int result = posix().utimes(pathString, PointerPrimitiveNodes.getPointer(pointer));
+            if (result == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+
+            return result;
+        }
+
+    }
+
     @CoreMethod(names = "mkdir", isModuleFunction = true, required = 2)
     public abstract static class MkdirNode extends CoreMethodArrayArgumentsNode {
 
