@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -478,9 +477,10 @@ public abstract class BigDecimalNodes {
             final BigDecimal bigDecimal = getBigDecimalValue(value);
             final boolean negative = bigDecimal.signum() == -1;
 
-            return getContext().makeString((negative ? "-" : "") + "0." +
+            String string = (negative ? "-" : "") + "0." +
                     (negative ? bigDecimal.unscaledValue().toString().substring(1) : bigDecimal.unscaledValue()) +
-                    "E" + (bigDecimal.precision() - bigDecimal.scale()));
+                    "E" + (bigDecimal.precision() - bigDecimal.scale());
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), string);
         }
 
     }

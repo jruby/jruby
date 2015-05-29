@@ -20,7 +20,6 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -663,7 +662,7 @@ public abstract class BignumNodes {
         @TruffleBoundary
         @Specialization
         public RubyString toS(RubyBasicObject value, NotProvided base) {
-            return getContext().makeString(getBigIntegerValue(value).toString());
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), getBigIntegerValue(value).toString());
         }
 
         @TruffleBoundary
@@ -674,7 +673,7 @@ public abstract class BignumNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
-            return getContext().makeString(getBigIntegerValue(value).toString(base));
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), getBigIntegerValue(value).toString(base));
         }
 
     }

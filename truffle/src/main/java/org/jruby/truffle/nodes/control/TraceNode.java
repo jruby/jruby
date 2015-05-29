@@ -17,6 +17,7 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBinding;
@@ -41,8 +42,8 @@ public class TraceNode extends RubyNode {
         traceAssumption = context.getTraceManager().getTraceAssumption();
         traceFunc = null;
         callNode = null;
-        event = context.makeString("line");
-        file = context.makeString(sourceSection.getSource().getName());
+        event = StringNodes.createString(context.getCoreLibrary().getStringClass(), "line");
+        file = StringNodes.createString(context.getCoreLibrary().getStringClass(), sourceSection.getSource().getName());
         line = sourceSection.getStartLine();
     }
 

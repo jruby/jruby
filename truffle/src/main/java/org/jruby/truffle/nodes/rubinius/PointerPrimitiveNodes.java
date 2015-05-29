@@ -18,12 +18,12 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import jnr.ffi.Pointer;
 
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.rubinius.RubiniusConfiguration;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.util.ByteList;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -177,7 +177,7 @@ public abstract class PointerPrimitiveNodes {
         public RubyString readString(RubyBasicObject pointer, int length) {
             final byte[] bytes = new byte[length];
             getPointer(pointer).get(0, bytes, 0, length);
-            return getContext().makeString(bytes);
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
         }
 
     }
@@ -282,7 +282,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization(guards = "type == TYPE_STRING")
         public RubyString getAtOffsetString(RubyBasicObject pointer, int offset, int type) {
-            return getContext().makeString(getPointer(pointer).getString(offset));
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), getPointer(pointer).getString(offset));
         }
 
         @Specialization(guards = "type == TYPE_PTR")
@@ -324,7 +324,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public RubyString readStringToNull(RubyBasicObject pointer) {
-            return getContext().makeString(MemoryIO.getInstance().getZeroTerminatedByteArray(getPointer(pointer).address()));
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), MemoryIO.getInstance().getZeroTerminatedByteArray(getPointer(pointer).address()));
         }
 
     }

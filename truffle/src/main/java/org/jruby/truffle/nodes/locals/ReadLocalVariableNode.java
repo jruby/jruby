@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.translator.ReadNode;
 import org.jruby.truffle.translator.Translator;
@@ -46,12 +47,12 @@ public class ReadLocalVariableNode extends RubyNode implements ReadNode {
         if (Translator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(readFrameSlotNode.getFrameSlot().getIdentifier())) {
             if (Translator.ALWAYS_DEFINED_GLOBALS.contains(readFrameSlotNode.getFrameSlot().getIdentifier())
                     || readFrameSlotNode.executeRead(frame) != nil()) {
-                return getContext().makeString("global-variable");
+                return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "global-variable");
             } else {
                 return nil();
             }
         } else {
-            return getContext().makeString("local-variable");
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "local-variable");
         }
     }
 

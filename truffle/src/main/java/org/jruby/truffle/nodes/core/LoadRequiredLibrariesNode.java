@@ -36,7 +36,7 @@ public class LoadRequiredLibrariesNode extends RubyNode {
         Collection<String> requiredLibraries = getContext().getRuntime().getInstanceConfig().getRequiredLibraries();
 
         for (String requiredLibrary : requiredLibraries) {
-            requireNode.call(frame, self, "require", null, getContext().makeString(requiredLibrary));
+            requireNode.call(frame, self, "require", null, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), requiredLibrary));
         }
 
         return nil();

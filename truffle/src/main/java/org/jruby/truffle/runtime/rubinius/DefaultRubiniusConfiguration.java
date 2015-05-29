@@ -42,6 +42,7 @@ import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
 
 import org.jruby.truffle.nodes.core.BignumNodes;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
@@ -154,10 +155,10 @@ public abstract class DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.io.SEEK_CUR", 1);
         configuration.config("rbx.platform.io.SEEK_END", 2);
 
-        configuration.config("rbx.platform.socket.AI_PASSIVE", context.makeString("1"));
-        configuration.config("rbx.platform.socket.AF_UNSPEC", context.makeString("0"));
-        configuration.config("rbx.platform.socket.SOCK_STREAM", context.makeString("1"));
-        configuration.config("rbx.platform.socket.SOCK_STREAM", context.makeString("1"));
+        configuration.config("rbx.platform.socket.AI_PASSIVE", StringNodes.createString(context.getCoreLibrary().getStringClass(), "1"));
+        configuration.config("rbx.platform.socket.AF_UNSPEC", StringNodes.createString(context.getCoreLibrary().getStringClass(), "0"));
+        configuration.config("rbx.platform.socket.SOCK_STREAM", StringNodes.createString(context.getCoreLibrary().getStringClass(), "1"));
+        configuration.config("rbx.platform.socket.SOCK_STREAM", StringNodes.createString(context.getCoreLibrary().getStringClass(), "1"));
     }
 
     protected static RubyBasicObject newBignum(RubyContext context, String value) {

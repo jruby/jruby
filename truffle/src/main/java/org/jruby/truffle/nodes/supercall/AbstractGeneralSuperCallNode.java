@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -105,7 +106,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
         if (superMethod == null) {
             return nil();
         } else {
-            return getContext().makeString("super");
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "super");
         }
     }
 

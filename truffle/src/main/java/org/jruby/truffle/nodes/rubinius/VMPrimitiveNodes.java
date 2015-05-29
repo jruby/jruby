@@ -48,11 +48,7 @@ import jnr.posix.Times;
 
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
-import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
-import org.jruby.truffle.nodes.core.BignumNodes;
-import org.jruby.truffle.nodes.core.KernelNodes;
-import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
@@ -167,7 +163,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public RubyString vmGetModuleName(RubyModule module) {
-            return getContext().makeString(module.getName());
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), module.getName());
         }
 
     }
@@ -511,8 +507,8 @@ public abstract class VMPrimitiveNodes {
                 }
 
                 sectionKeyValues.add(ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                        getContext().makeString(key),
-                        getContext().makeString(stringValue)));
+                        StringNodes.createString(getContext().getCoreLibrary().getStringClass(), key),
+                        StringNodes.createString(getContext().getCoreLibrary().getStringClass(), stringValue)));
             }
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), sectionKeyValues.toArray());

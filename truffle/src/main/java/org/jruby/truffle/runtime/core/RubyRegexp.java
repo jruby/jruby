@@ -213,7 +213,7 @@ public class RubyRegexp extends RubyBasicObject {
 
     private RubyString makeString(RubyString source, int start, int length) {
         final ByteList bytes = new ByteList(source.getByteList(), start, length);
-        final RubyString ret = getContext().makeString(source.getLogicalClass(), bytes);
+        final RubyString ret = StringNodes.createString(source.getLogicalClass(), bytes);
 
         ret.setCodeRange(source.getCodeRange());
 
@@ -281,7 +281,7 @@ public class RubyRegexp extends RubyBasicObject {
             end = StringSupport.positionEndForScan(string.getByteList(), matcher, encoding, p, range);
         }
 
-        return context.makeString(builder.toString());
+        return StringNodes.createString(context.getCoreLibrary().getStringClass(), builder.toString());
     }
 
     @TruffleBoundary
@@ -294,13 +294,13 @@ public class RubyRegexp extends RubyBasicObject {
         final int match = matcher.search(0, stringBytes.length, Option.DEFAULT);
 
         if (match == -1) {
-            return context.makeString(string);
+            return StringNodes.createString(context.getCoreLibrary().getStringClass(), string);
         } else {
             final StringBuilder builder = new StringBuilder();
             builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, 0, matcher.getBegin())));
             builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(replacement.getBytes(StandardCharsets.UTF_8))));
             builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, matcher.getEnd(), stringBytes.length - matcher.getEnd())));
-            return context.makeString(builder.toString());
+            return StringNodes.createString(context.getCoreLibrary().getStringClass(), builder.toString());
         }
     }
 
@@ -330,12 +330,12 @@ public class RubyRegexp extends RubyBasicObject {
             while ((end = matcher.search(start, range, Option.NONE)) >= 0) {
                 if (start == end + begin && matcher.getBegin() == matcher.getEnd()) {
                     if (len == 0) {
-                        strings.add(context.makeString(""));
+                        strings.add(StringNodes.createString(context.getCoreLibrary().getStringClass(), ""));
                         break;
 
                     } else if (lastNull) {
                         final int substringLength = StringSupport.length(encoding, byteArray, begin + beg, range);
-                        strings.add(context.makeString(bytes.makeShared(beg, substringLength).dup()));
+                        strings.add(StringNodes.createString(context.getCoreLibrary().getStringClass(), bytes.makeShared(beg, substringLength).dup()));
                         beg = start - begin;
 
                     } else {
@@ -344,7 +344,7 @@ public class RubyRegexp extends RubyBasicObject {
                         continue;
                     }
                 } else {
-                    strings.add(context.makeString(bytes.makeShared(beg, end - beg).dup()));
+                    strings.add(StringNodes.createString(context.getCoreLibrary().getStringClass(), bytes.makeShared(beg, end - beg).dup()));
                     beg = matcher.getEnd();
                     start = begin + beg;
                 }
@@ -355,7 +355,7 @@ public class RubyRegexp extends RubyBasicObject {
             }
 
             if (len > 0 && (useLimit || len > beg || limit < 0)) {
-                strings.add(context.makeString(bytes.makeShared(beg, len - beg).dup()));
+                strings.add(StringNodes.createString(context.getCoreLibrary().getStringClass(), bytes.makeShared(beg, len - beg).dup()));
             }
         }
 

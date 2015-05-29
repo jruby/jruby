@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.time;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -26,7 +27,7 @@ public class ReadTimeZoneNode extends RubyNode {
     public ReadTimeZoneNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         hashNode = DispatchHeadNodeFactory.createMethodCall(context);
-        TZ = getContext().makeString("TZ");
+        TZ = StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "TZ");
     }
 
     @Override
@@ -36,7 +37,7 @@ public class ReadTimeZoneNode extends RubyNode {
         // TODO CS 4-May-15 not sure how TZ ends up being nil
 
         if (tz == nil()) {
-            return getContext().makeString("UTC");
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "UTC");
         } else if (tz instanceof RubyString) {
             return (RubyString) tz;
         } else {

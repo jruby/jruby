@@ -9,26 +9,19 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 
-import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyString;
 
-import java.math.BigInteger;
 import java.util.EnumSet;
-import java.util.concurrent.locks.ReentrantLock;
 
 @CoreClass(name = "Thread::Backtrace::Location")
 public class ThreadBacktraceLocationNodes {
@@ -68,12 +61,12 @@ public class ThreadBacktraceLocationNodes {
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
-                return getContext().makeString(sourceSection.getShortDescription());
+                return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), sourceSection.getShortDescription());
             }
 
             // TODO CS 30-Apr-15: not absolute - not sure how to solve that
 
-            return getContext().makeString(sourceSection.getSource().getPath());
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), sourceSection.getSource().getPath());
         }
 
     }
@@ -112,13 +105,13 @@ public class ThreadBacktraceLocationNodes {
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
-                return getContext().makeString(sourceSection.getShortDescription());
+                return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), sourceSection.getShortDescription());
             }
 
-            return getContext().makeString(String.format("%s:%d:in `%s'",
-                    sourceSection.getSource().getShortName(),
-                    sourceSection.getStartLine(),
-                    sourceSection.getIdentifier()));
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), String.format("%s:%d:in `%s'",
+                        sourceSection.getSource().getShortName(),
+                        sourceSection.getStartLine(),
+                        sourceSection.getIdentifier()));
         }
 
     }

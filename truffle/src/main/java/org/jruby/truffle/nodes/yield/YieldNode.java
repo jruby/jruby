@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -75,7 +76,7 @@ public class YieldNode extends RubyNode {
         if (RubyArguments.getBlock(frame.getArguments()) == null) {
             return nil();
         } else {
-            return getContext().makeString("yield");
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "yield");
         }
     }
 

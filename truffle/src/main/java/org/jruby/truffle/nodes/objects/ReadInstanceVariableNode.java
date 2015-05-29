@@ -17,6 +17,7 @@ import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -99,12 +100,12 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             final RubyBasicObject receiverValue = (RubyBasicObject) receiver.execute(frame);
 
             if (readNode.getName().equals("$~") || readNode.getName().equals("$!")) {
-                return getContext().makeString("global-variable");
+                return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "global-variable");
             } else if (readNode.isSet(receiverValue)) {
                 if (readNode.execute(receiverValue) == nil()) {
                     return nil();
                 } else {
-                    return getContext().makeString("global-variable");
+                    return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "global-variable");
                 }
             } else {
                 return nil();
@@ -122,7 +123,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             final Property storageLocation = layout.getProperty(readNode.getName());
 
             if (storageLocation != null) {
-                return context.makeString("instance-variable");
+                return StringNodes.createString(context.getCoreLibrary().getStringClass(), "instance-variable");
             } else {
                 return nil();
             }

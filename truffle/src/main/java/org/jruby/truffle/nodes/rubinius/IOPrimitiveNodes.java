@@ -50,6 +50,7 @@ import jnr.constants.platform.Fcntl;
 import jnr.ffi.byref.IntByReference;
 
 import org.jruby.RubyEncoding;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -554,7 +555,7 @@ public abstract class IOPrimitiveNodes {
                 toRead -= readIteration;
             }
 
-            return getContext().makeString(buffer);
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), buffer);
         }
 
     }

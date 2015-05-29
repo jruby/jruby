@@ -19,11 +19,11 @@ import org.jruby.platform.Platform;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.rubinius.RubiniusConfiguration;
 
 import java.nio.charset.StandardCharsets;
 
@@ -678,7 +678,7 @@ public abstract class PosixNodes {
 
         @Specialization(guards = "isNil(hostName)")
         public int getaddrinfo(RubyBasicObject hostName, RubyString serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
-            return getaddrinfo(getContext().makeString("0.0.0.0"), serviceName, hintsPointer, resultsPointer);
+            return getaddrinfo(StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "0.0.0.0"), serviceName, hintsPointer, resultsPointer);
         }
 
         @Specialization

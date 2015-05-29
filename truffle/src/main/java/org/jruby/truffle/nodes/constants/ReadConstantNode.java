@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.constants;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyConstant;
@@ -47,7 +48,7 @@ public class ReadConstantNode extends RubyNode {
 
         if (name.equals("Encoding")) {
             // Work-around so I don't have to load the iconv library - runners/formatters/junit.rb.
-            return context.makeString("constant");
+            return StringNodes.createString(context.getCoreLibrary().getStringClass(), "constant");
         }
 
         final Object receiverObject;
@@ -82,7 +83,7 @@ public class ReadConstantNode extends RubyNode {
         if (constant == null) {
             return nil();
         } else {
-            return context.makeString("constant");
+            return StringNodes.createString(context.getCoreLibrary().getStringClass(), "constant");
         }
     }
 

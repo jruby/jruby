@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.core.array;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.*;
@@ -542,7 +541,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null, null}));
             }
-            if (respondToToStrNode.doesRespondTo(frame, object, getContext().makeString("to_str"), false)) {
+            if (respondToToStrNode.doesRespondTo(frame, object, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "to_str"), false)) {
                 return ruby(frame, "join(sep.to_str)", "sep", object);
             } else {
                 if (toIntNode == null) {
@@ -650,7 +649,7 @@ public abstract class ArrayNodes {
 
             InternalMethod method = RubyArguments.getMethod(frame.getArguments());
             return fallbackNode.call(frame, array, "element_reference_fallback", null,
-                    getContext().makeString(method.getName()), args);
+                    StringNodes.createString(getContext().getCoreLibrary().getStringClass(), method.getName()), args);
         }
 
     }
@@ -1842,7 +1841,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null, null}));
             }
-            if (respondToToAryNode.doesRespondTo(frame, object, getContext().makeString("to_ary"), true)) {
+            if (respondToToAryNode.doesRespondTo(frame, object, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "to_ary"), true)) {
                 if (toAryNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
@@ -2858,7 +2857,7 @@ public abstract class ArrayNodes {
         }
 
         private RubyString finishPack(ByteList format, PackResult result) {
-            final RubyString string = getContext().makeString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
+            final RubyString string = StringNodes.createString(getContext().getCoreLibrary().getStringClass(), new ByteList(result.getOutput(), 0, result.getOutputLength()));
 
             if (format.length() == 0) {
                 StringNodes.forceEncoding(string, USASCIIEncoding.INSTANCE);

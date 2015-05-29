@@ -37,7 +37,6 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -46,6 +45,7 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import jnr.constants.platform.Errno;
 
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -147,14 +147,14 @@ public abstract class DirPrimitiveNodes {
             writePositionNode.execute(dir, position + 1);
 
             if (position == -2) {
-                return getContext().makeString(".");
+                return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), ".");
             } else if (position == -1) {
-                return getContext().makeString("..");
+                return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "..");
             } else {
                 final String[] contents = (String[]) readContentsNode.execute(dir);
 
                 if (position < contents.length) {
-                    return getContext().makeString(contents[position]);
+                    return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), contents[position]);
                 } else {
                     return nil();
                 }

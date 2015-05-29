@@ -21,7 +21,6 @@ import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -295,7 +294,7 @@ public abstract class EncodingNodes {
         public RubyString localeCharacterMap() {
             CompilerDirectives.transferToInterpreter();
             final ByteList name = new ByteList(getContext().getRuntime().getEncodingService().getLocaleEncoding().getName());
-            return getContext().makeString(name);
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), name);
         }
     }
 
@@ -339,7 +338,7 @@ public abstract class EncodingNodes {
 
             final RubyEncoding[] encodings = RubyEncoding.cloneEncodingList();
             for (int i = 0; i < encodings.length; i++) {
-                final Object upcased = upcaseNode.call(frame, getContext().makeString(encodings[i].getName()), "upcase", null);
+                final Object upcased = upcaseNode.call(frame, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), encodings[i].getName()), "upcase", null);
                 final Object key = toSymNode.call(frame, upcased, "to_sym", null);
                 final Object value = newTupleNode.call(frame, getContext().getCoreLibrary().getTupleClass(), "create", null, nil(), i);
 
@@ -351,9 +350,9 @@ public abstract class EncodingNodes {
                 final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
                         ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)i.next());
 
-                final Object upcased = upcaseNode.call(frame, getContext().makeString(new ByteList(e.bytes, e.p, e.end - e.p)), "upcase", null);
+                final Object upcased = upcaseNode.call(frame, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), new ByteList(e.bytes, e.p, e.end - e.p)), "upcase", null);
                 final Object key = toSymNode.call(frame, upcased, "to_sym", null);
-                final RubyString alias = getContext().makeString(new ByteList(e.bytes, e.p, e.end - e.p));
+                final RubyString alias = StringNodes.createString(getContext().getCoreLibrary().getStringClass(), new ByteList(e.bytes, e.p, e.end - e.p));
                 final int index = e.value.getIndex();
 
 
@@ -362,19 +361,19 @@ public abstract class EncodingNodes {
             }
 
             final Encoding defaultInternalEncoding = getContext().getRuntime().getDefaultInternalEncoding();
-            final Object internalTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("internal"), indexLookup(encodings, defaultInternalEncoding));
+            final Object internalTuple = getContext().makeTuple(frame, newTupleNode, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "internal"), indexLookup(encodings, defaultInternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("INTERNAL"), internalTuple);
 
             final Encoding defaultExternalEncoding = getContext().getRuntime().getDefaultExternalEncoding();
-            final Object externalTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("external"), indexLookup(encodings, defaultExternalEncoding));
+            final Object externalTuple = getContext().makeTuple(frame, newTupleNode, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "external"), indexLookup(encodings, defaultExternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("EXTERNAL"), externalTuple);
 
             final Encoding localeEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
-            final Object localeTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("locale"), indexLookup(encodings, localeEncoding));
+            final Object localeTuple = getContext().makeTuple(frame, newTupleNode, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "locale"), indexLookup(encodings, localeEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("LOCALE"), localeTuple);
 
             final Encoding filesystemEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
-            final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("filesystem"), indexLookup(encodings, filesystemEncoding));
+            final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "filesystem"), indexLookup(encodings, filesystemEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("FILESYSTEM"), filesystemTuple);
 
             return ret;
@@ -409,7 +408,7 @@ public abstract class EncodingNodes {
         public RubyString toS(RubyEncoding encoding) {
             final ByteList name = encoding.getName().dup();
             name.setEncoding(ASCIIEncoding.INSTANCE);
-            return getContext().makeString(name);
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), name);
         }
     }
 
