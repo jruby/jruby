@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.runtime.core;
 
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.interop.InteropNode;
 import org.jruby.truffle.runtime.RubyContext;
