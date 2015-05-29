@@ -140,15 +140,21 @@ public class RubyComparable {
         return callCmpMethod(context, recv, other, context.runtime.getFalse());
     }
 
-    private static IRubyObject callCmpMethod(ThreadContext context, IRubyObject recv, IRubyObject other, IRubyObject returnValueOnError) {
-        Ruby runtime = context.runtime;
+    private static IRubyObject callCmpMethod(final ThreadContext context, final IRubyObject recv, final IRubyObject other, IRubyObject returnValueOnError) {
+        final Ruby runtime = context.runtime;
         
         if (recv == other) return runtime.getTrue();
 
         IRubyObject savedError = runtime.getGlobalVariables().get("$!");
 
         try {
-            IRubyObject result = invokedynamic(context, recv, OP_CMP, other);
+            IRubyObject result = runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
+                @Override
+                public IRubyObject call(IRubyObject obj, boolean recur) {
+                    if (recur) return runtime.getNil();
+                    return invokedynamic(context, recv, OP_CMP, other);
+                }
+            }, recv);
 
             // This is only to prevent throwing exceptions by cmperr - it has poor performance
             if (result.isNil()) {
