@@ -17,6 +17,8 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jcodings.specific.USASCIIEncoding;
@@ -50,6 +52,7 @@ import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.cli.Options;
@@ -59,6 +62,20 @@ import java.util.Random;
 
 @CoreClass(name = "Array")
 public abstract class ArrayNodes {
+
+    public static class ArrayType extends BasicObjectType {
+
+    }
+
+    public static final ArrayType ARRAY_TYPE = new ArrayType();
+
+    private static final DynamicObjectFactory ARRAY_FACTORY;
+
+    static {
+        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+        final Shape shape = RubyBasicObject.LAYOUT.createShape(ARRAY_TYPE);
+        ARRAY_FACTORY = shape.createFactory();
+    }
 
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
     public static final boolean RANDOMIZE_STORAGE_ARRAY = Options.TRUFFLE_RANDOMIZE_STORAGE_ARRAY.load();
@@ -306,23 +323,23 @@ public abstract class ArrayNodes {
     }
 
     public static RubyArray createArray(RubyClass arrayClass, int[] store, int size) {
-        return createGeneralArray(arrayClass, (Object) store, size);
+        return createGeneralArray(arrayClass, store, size);
     }
 
     public static RubyArray createArray(RubyClass arrayClass, long[] store, int size) {
-        return createGeneralArray(arrayClass, (Object) store, size);
+        return createGeneralArray(arrayClass, store, size);
     }
 
     public static RubyArray createArray(RubyClass arrayClass, double[] store, int size) {
-        return createGeneralArray(arrayClass, (Object) store, size);
+        return createGeneralArray(arrayClass, store, size);
     }
 
     public static RubyArray createArray(RubyClass arrayClass, Object[] store, int size) {
-        return createGeneralArray(arrayClass, (Object) store, size);
+        return createGeneralArray(arrayClass, store, size);
     }
 
     public static RubyArray createGeneralArray(RubyClass arrayClass, Object store, int size) {
-        return new RubyArray(arrayClass, store, size);
+        return new RubyArray(arrayClass, store, size, ARRAY_FACTORY.newInstance());
     }
 
     @CoreMethod(names = "+", required = 1)

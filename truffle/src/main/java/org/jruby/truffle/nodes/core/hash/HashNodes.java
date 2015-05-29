@@ -15,6 +15,8 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -33,11 +35,26 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.hash.*;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.object.BasicObjectType;
 
 import java.util.Collection;
 
 @CoreClass(name = "Hash")
 public abstract class HashNodes {
+
+    public static class HashType extends BasicObjectType {
+
+    }
+
+    public static final HashType HASH_TYPE = new HashType();
+
+    private static final DynamicObjectFactory HASH_FACTORY;
+
+    static {
+        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+        final Shape shape = RubyBasicObject.LAYOUT.createShape(HASH_TYPE);
+        HASH_FACTORY = shape.createFactory();
+    }
 
     public static RubyProc getDefaultBlock(RubyHash hash) {
         return hash.defaultBlock;
@@ -108,7 +125,7 @@ public abstract class HashNodes {
     }
 
     public static RubyHash createHash(RubyClass hashClass, RubyProc defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence) {
-        return new RubyHash(hashClass, defaultBlock, defaultValue, store, size, firstInSequence);
+        return new RubyHash(hashClass, defaultBlock, defaultValue, store, size, firstInSequence, HASH_FACTORY.newInstance());
     }
 
     @CoreMethod(names = "[]", constructor = true, argumentsAsArray = true)

@@ -29,6 +29,8 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -62,6 +64,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
@@ -72,6 +75,20 @@ import java.util.Arrays;
 
 @CoreClass(name = "String")
 public abstract class StringNodes {
+
+    public static class StringType extends BasicObjectType {
+
+    }
+
+    public static final StringType STRING_TYPE = new StringType();
+
+    private static final DynamicObjectFactory STRING_FACTORY;
+
+    static {
+        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+        final Shape shape = RubyBasicObject.LAYOUT.createShape(STRING_TYPE);
+        STRING_FACTORY = shape.createFactory();
+    }
 
     public static void set(RubyString string, ByteList bytes) {
         string.bytes = bytes;
@@ -149,7 +166,7 @@ public abstract class StringNodes {
     }
 
     public static RubyString createString(RubyClass stringClass, ByteList bytes) {
-        return new RubyString(stringClass, bytes);
+        return new RubyString(stringClass, bytes, STRING_FACTORY.newInstance());
     }
 
     @CoreMethod(names = "+", required = 1)
