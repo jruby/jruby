@@ -613,7 +613,7 @@ public class BodyTranslator extends Translator {
 
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
             BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();
-            translated = new CatchBreakFromCallNode(context, sourceSection, translated, blockDef.getBlockID());
+            translated = new CatchBreakNode(context, sourceSection, translated, blockDef.getBlockID());
         }
 
         // return instrumenter.instrumentAsCall(translated, node.getName());
@@ -2755,7 +2755,7 @@ public class BodyTranslator extends Translator {
             loop = WhileNode.createDoWhile(context, sourceSection, condition, body);
         }
 
-        return new CatchBreakFromCallNode(context, sourceSection, loop, whileBlockID);
+        return new CatchBreakNode(context, sourceSection, loop, whileBlockID);
     }
 
     @Override

@@ -19,9 +19,10 @@ import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.translator.TranslatorEnvironment.BlockID;
 
 /**
- * Catch a {@code break} jump in a block at the top level and handle it as a return.
+ * Catch a {@code break} from a call with a block containing a break
+ * or inside a while/until loop.
  */
-public class CatchBreakFromCallNode extends RubyNode {
+public class CatchBreakNode extends RubyNode {
 
     @Child private RubyNode body;
 
@@ -30,7 +31,7 @@ public class CatchBreakFromCallNode extends RubyNode {
     private final BranchProfile breakProfile = BranchProfile.create();
     private final ConditionProfile matchingBreakProfile = ConditionProfile.createCountingProfile();
 
-    public CatchBreakFromCallNode(RubyContext context, SourceSection sourceSection, RubyNode body, BlockID blockID) {
+    public CatchBreakNode(RubyContext context, SourceSection sourceSection, RubyNode body, BlockID blockID) {
         super(context, sourceSection);
         this.body = body;
         this.blockID = blockID;
