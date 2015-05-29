@@ -197,7 +197,7 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "pointer_set_at_offset")
+    @RubiniusPrimitive(name = "pointer_set_at_offset", lowerFixnumParameters = {0, 1})
     @ImportStatic(RubiniusTypes.class)
     public static abstract class PointerSetAtOffsetPrimitiveNode extends RubiniusPrimitiveNode {
 
