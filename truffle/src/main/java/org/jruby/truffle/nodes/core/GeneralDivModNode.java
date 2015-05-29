@@ -40,10 +40,6 @@ public class GeneralDivModNode extends RubyNode {
         fixnumOrBignumRemainder = new FixnumOrBignumNode(context, sourceSection);
     }
 
-    public RubyArray execute(int a, double b) {
-        return divMod(a, b);
-    }
-
     public RubyArray execute(long a, long b) {
         return divMod(a, b);
     }
@@ -61,10 +57,6 @@ public class GeneralDivModNode extends RubyNode {
     }
 
     public RubyArray execute(BigInteger a, BigInteger b) {
-        return divMod(a, b);
-    }
-
-    public RubyArray execute(double a, int b) {
         return divMod(a, b);
     }
 
