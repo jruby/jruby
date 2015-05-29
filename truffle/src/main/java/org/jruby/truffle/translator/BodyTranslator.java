@@ -367,12 +367,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitBreakNode(org.jruby.ast.BreakNode node) {
-        if (!(environment.isBlock() || translatingWhile)) {
-            // TODO(CS 10-Jan-15): must raise a proper exception rather, but not sure if it should be a JRuby exception or a Truffle one
-            System.err.printf("%s:%d: Invalid break%n", node.getPosition().getFile(), node.getPosition().getLine() + 1);
-            System.err.printf("%s: compile error (SyntaxError)%n", node.getPosition().getFile());
-            System.exit(1);
-        }
+        assert environment.isBlock() || translatingWhile : "The parser did not see an invalid break";
 
         final SourceSection sourceSection = translate(node.getPosition());
 
