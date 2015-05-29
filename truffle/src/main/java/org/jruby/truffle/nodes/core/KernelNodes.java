@@ -301,12 +301,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray callerLocations(UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2) {
+        public RubyArray callerLocations(NotProvided omit, NotProvided length) {
             return callerLocations(1, -1);
         }
 
         @Specialization
-        public RubyArray callerLocations(int omit, UndefinedPlaceholder undefined) {
+        public RubyArray callerLocations(int omit, NotProvided length) {
             return callerLocations(omit, -1);
         }
 
@@ -468,7 +468,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object eval(VirtualFrame frame, RubyString source, UndefinedPlaceholder binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
+        public Object eval(VirtualFrame frame, RubyString source, NotProvided binding, NotProvided filename, NotProvided lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             return getContext().eval(source.getByteList(), getCallerBinding(frame), true, this);
@@ -479,18 +479,18 @@ public abstract class KernelNodes {
             CompilerDirectives.transferToInterpreter();
 
             // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename.
-            return eval(frame, source, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+            return eval(frame, source, NotProvided.INSTANCE, NotProvided.INSTANCE, NotProvided.INSTANCE);
         }
 
         @Specialization
-        public Object eval(RubyString source, RubyBinding binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
+        public Object eval(RubyString source, RubyBinding binding, NotProvided filename, NotProvided lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             return getContext().eval(source.getByteList(), binding, false, this);
         }
 
         @Specialization
-        public Object eval(RubyString source, RubyBinding binding, RubyString filename, UndefinedPlaceholder lineNumber) {
+        public Object eval(RubyString source, RubyBinding binding, RubyString filename, NotProvided lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             return getContext().eval(source.getByteList(), binding, false, filename.toString(), this);
@@ -504,7 +504,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization(guards = "!isRubyBinding(badBinding)")
-        public Object eval(RubyString source, RubyBasicObject badBinding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
+        public Object eval(RubyString source, RubyBasicObject badBinding, NotProvided filename, NotProvided lineNumber) {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(badBinding, "binding", this));
         }
     }
@@ -571,7 +571,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object exit(UndefinedPlaceholder exitCode) {
+        public Object exit(NotProvided exitCode) {
             return exit(0);
         }
 
@@ -603,7 +603,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyBasicObject exit(UndefinedPlaceholder exitCode) {
+        public RubyBasicObject exit(NotProvided exitCode) {
             return exit(1);
         }
 
@@ -991,7 +991,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean load(RubyString file, UndefinedPlaceholder wrap) {
+        public boolean load(RubyString file, NotProvided wrap) {
             return load(file, false);
         }
     }
@@ -1084,7 +1084,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray methods(VirtualFrame frame, Object self, UndefinedPlaceholder regular) {
+        public RubyArray methods(VirtualFrame frame, Object self, NotProvided regular) {
             return methods(frame, self, true);
         }
 
@@ -1141,7 +1141,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray privateMethods(VirtualFrame frame, Object self, UndefinedPlaceholder includeAncestors) {
+        public RubyArray privateMethods(VirtualFrame frame, Object self, NotProvided includeAncestors) {
             return privateMethods(frame, self, true);
         }
 
@@ -1195,7 +1195,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray protectedMethods(VirtualFrame frame, Object self, UndefinedPlaceholder includeAncestors) {
+        public RubyArray protectedMethods(VirtualFrame frame, Object self, NotProvided includeAncestors) {
             return protectedMethods(frame, self, true);
         }
 
@@ -1231,7 +1231,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray publicMethods(VirtualFrame frame, Object self, UndefinedPlaceholder includeAncestors) {
+        public RubyArray publicMethods(VirtualFrame frame, Object self, NotProvided includeAncestors) {
             return publicMethods(frame, self, true);
         }
 
@@ -1263,7 +1263,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public double rand(UndefinedPlaceholder undefined) {
+        public double rand(NotProvided max) {
             return getContext().getRandom().nextDouble();
         }
 
@@ -1408,7 +1408,7 @@ public abstract class KernelNodes {
         public abstract boolean executeDoesRespondTo(VirtualFrame frame, Object object, Object name, boolean includePrivate);
 
         @Specialization
-        public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, UndefinedPlaceholder checkVisibility) {
+        public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, NotProvided checkVisibility) {
             return doesRespondTo(frame, object, name, false);
         }
 
@@ -1427,7 +1427,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, UndefinedPlaceholder checkVisibility) {
+        public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, NotProvided checkVisibility) {
             return doesRespondTo(frame, object, name, false);
         }
 
@@ -1455,12 +1455,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean doesRespondToMissing(Object object, RubyString name, UndefinedPlaceholder includeAll) {
+        public boolean doesRespondToMissing(Object object, RubyString name, NotProvided includeAll) {
             return false;
         }
 
         @Specialization
-        public boolean doesRespondToMissing(Object object, RubySymbol name, UndefinedPlaceholder includeAll) {
+        public boolean doesRespondToMissing(Object object, RubySymbol name, NotProvided includeAll) {
             return false;
         }
 
@@ -1531,7 +1531,7 @@ public abstract class KernelNodes {
         public abstract RubyArray executeSingletonMethods(VirtualFrame frame, Object self, boolean includeAncestors);
 
         @Specialization
-        public RubyArray singletonMethods(VirtualFrame frame, Object self, UndefinedPlaceholder includeAncestors) {
+        public RubyArray singletonMethods(VirtualFrame frame, Object self, NotProvided includeAncestors) {
             return singletonMethods(frame, self, true);
         }
 
@@ -1591,7 +1591,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public long sleep(UndefinedPlaceholder duration) {
+        public long sleep(NotProvided duration) {
             // TODO: this should actually be "forever".
             return doSleepMillis(Long.MAX_VALUE);
         }
@@ -1613,7 +1613,7 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "isRubiniusUndefined(duration)")
         public long sleep(RubyBasicObject duration) {
-            return sleep(UndefinedPlaceholder.INSTANCE);
+            return sleep(NotProvided.INSTANCE);
         }
 
         @Specialization(guards = "!isRubiniusUndefined(duration)")

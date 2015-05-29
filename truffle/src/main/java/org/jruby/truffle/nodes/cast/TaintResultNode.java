@@ -81,7 +81,7 @@ public class TaintResultNode extends RubyNode {
             }
 
             // It's possible the taintFromParameter value was misconfigured by the user, but the far more likely
-            // scenario is that the argument at that position is an UndefinedPlaceholder, which doesn't take up
+            // scenario is that the argument at that position is a NotProvided argument, which doesn't take up
             // a space in the frame.
             if (taintFromParameter < RubyArguments.getUserArgumentsCount(frame.getArguments())) {
                 final Object argument = RubyArguments.getUserArgument(frame.getArguments(), taintFromParameter);

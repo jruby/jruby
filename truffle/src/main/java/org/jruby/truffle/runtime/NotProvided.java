@@ -10,15 +10,15 @@
 package org.jruby.truffle.runtime;
 
 /**
- * The {@link UndefinedPlaceholder} is a value that represents an undefined value in Ruby. This is
- * used to differentiate between nil and the true absence of a value, such as an argument that has
- * not been passed.
+ * The {@link NotProvided} instance represents an argument which was <i>not provided</i>. 
+ * This is necessary as we need to differentiate based on the number of passed arguments
+ * and there is not a single default value that fits for omitted arguments.
  */
-public final class UndefinedPlaceholder {
+public final class NotProvided {
 
-    public static final UndefinedPlaceholder INSTANCE = new UndefinedPlaceholder();
+    public static final NotProvided INSTANCE = new NotProvided();
 
-    private UndefinedPlaceholder() {
+    private NotProvided() {
     }
 
 }

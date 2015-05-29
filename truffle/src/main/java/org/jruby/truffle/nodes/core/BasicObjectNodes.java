@@ -24,7 +24,7 @@ import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.array.ArrayUtils;
@@ -177,14 +177,14 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public Object instanceEval(VirtualFrame frame, Object receiver, RubyString string, UndefinedPlaceholder block) {
+        public Object instanceEval(VirtualFrame frame, Object receiver, RubyString string, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
             return getContext().instanceEval(string.getByteList(), receiver, this);
         }
 
         @Specialization
-        public Object instanceEval(VirtualFrame frame, Object receiver, UndefinedPlaceholder string, RubyProc block) {
+        public Object instanceEval(VirtualFrame frame, Object receiver, NotProvided string, RubyProc block) {
             return yield.dispatchWithModifiedSelf(frame, block, receiver, receiver);
         }
 
@@ -205,7 +205,7 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public Object instanceExec(Object receiver, Object[] arguments, UndefinedPlaceholder block) {
+        public Object instanceExec(Object receiver, Object[] arguments, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
             throw new RaiseException(getContext().getCoreLibrary().localJumpError("no block given", this));
@@ -221,7 +221,7 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public Object methodMissing(Object self, Object[] args, UndefinedPlaceholder block) {
+        public Object methodMissing(Object self, Object[] args, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
             return methodMissing(self, args, (RubyProc) null);
@@ -281,7 +281,7 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public Object send(VirtualFrame frame, Object self, Object[] args, UndefinedPlaceholder block) {
+        public Object send(VirtualFrame frame, Object self, Object[] args, NotProvided block) {
             return send(frame, self, args, (RubyProc) null);
         }
 

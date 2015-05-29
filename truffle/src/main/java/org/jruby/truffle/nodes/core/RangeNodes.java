@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.core.array.ArrayBuilderNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -146,12 +146,12 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public Object each(VirtualFrame frame, RubyRange.LongFixnumRange range, UndefinedPlaceholder proc) {
+        public Object each(VirtualFrame frame, RubyRange.LongFixnumRange range, NotProvided proc) {
             return ruby(frame, "each_internal(&block)", "block", nil());
         }
 
         @Specialization
-        public Object each(VirtualFrame frame, RubyRange.ObjectRange range, UndefinedPlaceholder proc) {
+        public Object each(VirtualFrame frame, RubyRange.ObjectRange range, NotProvided proc) {
             return ruby(frame, "each_internal(&block)", "block", nil());
         }
 
@@ -208,7 +208,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public RubyRange.ObjectRange initialize(RubyRange.ObjectRange range, Object begin, Object end, UndefinedPlaceholder undefined) {
+        public RubyRange.ObjectRange initialize(RubyRange.ObjectRange range, Object begin, Object end, NotProvided excludeEnd) {
             return initialize(range, begin, end, false);
         }
 
@@ -318,63 +318,63 @@ public abstract class RangeNodes {
             return range;
         }
 
-        @Specialization(guards = {"!isStepValidInt(range, step, block)","!isUndefinedPlaceholder(step)"})
+        @Specialization(guards = { "!isStepValidInt(range, step, block)", "!isNotProvided(step)" })
         public Object stepFallback(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, RubyProc block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
 
-        @Specialization(guards = {"!isStepValidInt(range, step, block)","!isUndefinedPlaceholder(step)"})
+        @Specialization(guards = { "!isStepValidInt(range, step, block)", "!isNotProvided(step)" })
         public Object stepFallback(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, RubyProc block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
 
         @Specialization
-        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder step, UndefinedPlaceholder block) {
+        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, NotProvided step, NotProvided block) {
             return ruby(frame, "step_internal");
         }
 
         @Specialization
-        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder step, RubyProc block) {
+        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, NotProvided step, RubyProc block) {
             return ruby(frame, "step_internal(&block)", "block", block);
         }
 
-        @Specialization(guards = {"!isInteger(step)","!isLong(step)","!isUndefinedPlaceholder(step)"})
-        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, UndefinedPlaceholder block) {
+        @Specialization(guards = { "!isInteger(step)", "!isLong(step)", "!isNotProvided(step)" })
+        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, NotProvided block) {
             return ruby(frame, "step_internal(step)", "step", step);
         }
 
         @Specialization
-        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, UndefinedPlaceholder step, UndefinedPlaceholder block) {
+        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, NotProvided step, NotProvided block) {
             return ruby(frame, "step_internal");
         }
 
         @Specialization
-        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, UndefinedPlaceholder step, RubyProc block) {
+        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, NotProvided step, RubyProc block) {
             return ruby(frame, "step_internal(&block)", "block", block);
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(step)")
-        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, UndefinedPlaceholder block) {
+        @Specialization(guards = "!isNotProvided(step)")
+        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, NotProvided block) {
             return ruby(frame, "step_internal(step)", "step", step);
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(step)")
+        @Specialization(guards = "!isNotProvided(step)")
         public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, RubyProc block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
 
         @Specialization
-        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, UndefinedPlaceholder step, UndefinedPlaceholder block) {
+        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, NotProvided step, NotProvided block) {
             return ruby(frame, "step_internal");
         }
 
         @Specialization
-        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, UndefinedPlaceholder step, RubyProc block) {
+        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, NotProvided step, RubyProc block) {
             return ruby(frame, "step_internal(&block)", "block", block);
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(step)")
-        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, UndefinedPlaceholder block) {
+        @Specialization(guards = "!isNotProvided(step)")
+        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, NotProvided block) {
             return ruby(frame, "step_internal(step)", "step", step);
         }
 

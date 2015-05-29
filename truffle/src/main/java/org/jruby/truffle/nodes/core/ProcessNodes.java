@@ -15,7 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 
@@ -40,12 +40,12 @@ public abstract class ProcessNodes {
         }
 
         @Specialization(guards = "isMonotonic(clock_id)")
-        Object clock_gettime_monotonic(int clock_id, UndefinedPlaceholder unit) {
+        Object clock_gettime_monotonic(int clock_id, NotProvided unit) {
             return clock_gettime_monotonic(CLOCK_MONOTONIC, floatSecondSymbol);
         }
 
         @Specialization(guards = "isRealtime(clock_id)")
-        Object clock_gettime_realtime(int clock_id, UndefinedPlaceholder unit) {
+        Object clock_gettime_realtime(int clock_id, NotProvided unit) {
             return clock_gettime_realtime(CLOCK_REALTIME, floatSecondSymbol);
         }
 

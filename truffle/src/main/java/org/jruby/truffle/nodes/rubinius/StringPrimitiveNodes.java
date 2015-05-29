@@ -72,7 +72,7 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.StringNodesFactory;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
@@ -200,7 +200,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringByteSubstring(RubyString string, int index, UndefinedPlaceholder length) {
+        public Object stringByteSubstring(RubyString string, int index, NotProvided length) {
             final Object subString = stringByteSubstring(string, index, 1);
 
             if (subString == nil()) {
@@ -249,7 +249,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringByteSubstring(RubyString string, double index, UndefinedPlaceholder length) {
+        public Object stringByteSubstring(RubyString string, double index, NotProvided length) {
             return stringByteSubstring(string, (int) index, 1);
         }
 
@@ -287,7 +287,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringByteSubstring(RubyString string, RubyRange range, UndefinedPlaceholder unused) {
+        public Object stringByteSubstring(RubyString string, RubyRange range, NotProvided length) {
             return null;
         }
 

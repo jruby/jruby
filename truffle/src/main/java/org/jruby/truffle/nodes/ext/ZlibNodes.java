@@ -21,7 +21,7 @@ import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -48,13 +48,13 @@ public abstract class ZlibNodes {
         }
 
         @Specialization
-        public int crc32(UndefinedPlaceholder message, UndefinedPlaceholder initial) {
+        public int crc32(NotProvided message, NotProvided initial) {
             return 0;
         }
 
         @TruffleBoundary
         @Specialization
-        public long crc32(RubyString message, UndefinedPlaceholder initial) {
+        public long crc32(RubyString message, NotProvided initial) {
             final ByteList bytes = message.getByteList();
             final CRC32 crc32 = new CRC32();
             crc32.update(bytes.unsafeBytes(), bytes.begin(), bytes.length());

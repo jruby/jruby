@@ -21,7 +21,7 @@ import org.jcodings.transcode.EConvResult;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
@@ -39,7 +39,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
 
         @Specialization
-        public Object encodingConverterAllocate(RubyClass encodingConverterClass, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2) {
+        public Object encodingConverterAllocate(RubyClass encodingConverterClass, NotProvided unused1, NotProvided unused2) {
             return new RubyEncodingConverter(encodingConverterClass, null);
         }
 
@@ -160,7 +160,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
 
         @Specialization
-        public RubyString encodingConverterPutback(RubyEncodingConverter encodingConverter, UndefinedPlaceholder maxBytes) {
+        public RubyString encodingConverterPutback(RubyEncodingConverter encodingConverter, NotProvided maxBytes) {
             // Taken from org.jruby.RubyConverter#putback.
 
             final EConv ec = encodingConverter.getEConv();

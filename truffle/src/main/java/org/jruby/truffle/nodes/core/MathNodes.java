@@ -21,7 +21,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.dispatch.UseMethodMissingException;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -619,27 +619,27 @@ public abstract class MathNodes {
         }
 
         @Specialization
-        public double function(int a, UndefinedPlaceholder b) {
+        public double function(int a, NotProvided b) {
             return doFunction(a);
         }
 
         @Specialization
-        public double function(long a, UndefinedPlaceholder b) {
+        public double function(long a, NotProvided b) {
             return doFunction(a);
         }
 
         @Specialization(guards = "isRubyBignum(a)")
-        public double function(RubyBasicObject a, UndefinedPlaceholder b) {
+        public double function(RubyBasicObject a, NotProvided b) {
             return doFunction(BignumNodes.getBigIntegerValue(a).doubleValue());
         }
 
         @Specialization
-        public double function(double a, UndefinedPlaceholder b) {
+        public double function(double a, NotProvided b) {
             return doFunction(a);
         }
 
         @Specialization
-        public double function(VirtualFrame frame, Object a, UndefinedPlaceholder b) {
+        public double function(VirtualFrame frame, Object a, NotProvided b) {
             if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return doFunction(

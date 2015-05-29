@@ -28,7 +28,7 @@ import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.hash.*;
@@ -555,7 +555,7 @@ public abstract class HashNodes {
         public Object deleteNull(VirtualFrame frame, RubyHash hash, Object key, Object block) {
             assert HashOperations.verifyStore(hash);
 
-            if (block == UndefinedPlaceholder.INSTANCE) {
+            if (block == NotProvided.INSTANCE) {
                 return nil();
             } else {
                 return yieldNode.dispatch(frame, (RubyProc) block, key);
@@ -587,7 +587,7 @@ public abstract class HashNodes {
 
             assert HashOperations.verifyStore(hash);
 
-            if (block == UndefinedPlaceholder.INSTANCE) {
+            if (block == NotProvided.INSTANCE) {
                 return nil();
             } else {
                 return yieldNode.dispatch(frame, (RubyProc) block, key);
@@ -601,7 +601,7 @@ public abstract class HashNodes {
             final HashLookupResult hashLookupResult = lookupEntryNode.lookup(frame, hash, key);
 
             if (hashLookupResult.getEntry() == null) {
-                if (block == UndefinedPlaceholder.INSTANCE) {
+                if (block == NotProvided.INSTANCE) {
                     return nil();
                 } else {
                     return yieldNode.dispatch(frame, (RubyProc) block, key);
@@ -704,7 +704,7 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public Object each(VirtualFrame frame, RubyHash hash, UndefinedPlaceholder block) {
+        public Object each(VirtualFrame frame, RubyHash hash, NotProvided block) {
             if (toEnumNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
@@ -745,7 +745,7 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public RubyHash initialize(RubyHash hash, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+        public RubyHash initialize(RubyHash hash, NotProvided defaultValue, NotProvided block) {
             setStore(hash, null, 0, null, null);
             setDefaultValue(hash, null);
             setDefaultBlock(hash, null);
@@ -753,22 +753,22 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public RubyHash initialize(RubyHash hash, UndefinedPlaceholder defaultValue, RubyProc block) {
+        public RubyHash initialize(RubyHash hash, NotProvided defaultValue, RubyProc block) {
             setStore(hash, null, 0, null, null);
             setDefaultValue(hash, null);
             setDefaultBlock(hash, block);
             return hash;
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(defaultValue)")
-        public RubyHash initialize(RubyHash hash, Object defaultValue, UndefinedPlaceholder block) {
+        @Specialization(guards = "!isNotProvided(defaultValue)")
+        public RubyHash initialize(RubyHash hash, Object defaultValue, NotProvided block) {
             setStore(hash, null, 0, null, null);
             setDefaultValue(hash, defaultValue);
             setDefaultBlock(hash, null);
             return hash;
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(defaultValue)")
+        @Specialization(guards = "!isNotProvided(defaultValue)")
         public Object initialize(RubyHash hash, Object defaultValue, RubyProc block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("wrong number of arguments (1 for 0)", this));
@@ -925,7 +925,7 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = {"isPackedArrayStorage(hash)", "isNullStorage(other)", "!isCompareByIdentity(hash)"})
-        public RubyHash mergePackedArrayNull(RubyHash hash, RubyHash other, UndefinedPlaceholder block) {
+        public RubyHash mergePackedArrayNull(RubyHash hash, RubyHash other, NotProvided block) {
             final Object[] store = (Object[]) getStore(hash);
             final Object[] copy = PackedArrayStrategy.copyStore(store);
             return new RubyHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), copy, getSize(hash), null);
@@ -933,7 +933,7 @@ public abstract class HashNodes {
 
         @ExplodeLoop
         @Specialization(guards = {"isPackedArrayStorage(hash)", "isPackedArrayStorage(other)", "!isCompareByIdentity(hash)"})
-        public RubyHash mergePackedArrayPackedArray(VirtualFrame frame, RubyHash hash, RubyHash other, UndefinedPlaceholder block) {
+        public RubyHash mergePackedArrayPackedArray(VirtualFrame frame, RubyHash hash, RubyHash other, NotProvided block) {
             // TODO(CS): what happens with the default block here? Which side does it get merged from?
             assert HashOperations.verifyStore(hash);
             assert HashOperations.verifyStore(other);
@@ -1022,7 +1022,7 @@ public abstract class HashNodes {
         
         // TODO CS 3-Mar-15 need negative guards on this
         @Specialization(guards = "!isCompareByIdentity(hash)")
-        public RubyHash mergeBucketsBuckets(RubyHash hash, RubyHash other, UndefinedPlaceholder block) {
+        public RubyHash mergeBucketsBuckets(RubyHash hash, RubyHash other, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
             final RubyHash merged = new RubyHash(hash.getLogicalClass(), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null);
@@ -1091,7 +1091,7 @@ public abstract class HashNodes {
             
             final RubyProc blockProc;
             
-            if (block == UndefinedPlaceholder.INSTANCE) {
+            if (block == NotProvided.INSTANCE) {
                 blockProc = null;
             } else {
                 blockProc = (RubyProc) block;

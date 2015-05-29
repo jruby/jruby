@@ -20,7 +20,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 
@@ -570,7 +570,7 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public Object round(double n, UndefinedPlaceholder undefinedPlaceholder) {
+        public Object round(double n, NotProvided ndigits) {
             // Algorithm copied from JRuby - not shared as we want to branch profile it
 
             if (Double.isInfinite(n)) {
@@ -606,7 +606,7 @@ public abstract class FloatNodes {
             return fixnumOrBignum.fixnumOrBignum(f);
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(ndigits)")
+        @Specialization(guards = "!isNotProvided(ndigits)")
         public Object round(VirtualFrame frame, double n, Object ndigits) {
             return ruby(frame, "round_internal(ndigits)", "ndigits", ndigits);
         }

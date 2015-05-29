@@ -598,27 +598,27 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, UndefinedPlaceholder file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, NotProvided file, NotProvided line, NotProvided block) {
             return classEvalSource(frame, module, code, "(eval)");
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, NotProvided line, NotProvided block) {
             return classEvalSource(frame, module, code, file.toString());
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, int line, UndefinedPlaceholder block) {
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, int line, NotProvided block) {
             return classEvalSource(frame, module, code, file.toString());
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(code)")
-        public Object classEval(VirtualFrame frame, RubyModule module, Object code, UndefinedPlaceholder file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
+        @Specialization(guards = "!isNotProvided(code)")
+        public Object classEval(VirtualFrame frame, RubyModule module, Object code, NotProvided file, NotProvided line, NotProvided block) {
             return classEvalSource(frame, module, toStr(frame, code), file.toString());
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(file)")
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, Object file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
+        @Specialization(guards = "!isNotProvided(file)")
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, Object file, NotProvided line, NotProvided block) {
             return classEvalSource(frame, module, code, toStr(frame, file).toString());
         }
 
@@ -638,18 +638,18 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule self, UndefinedPlaceholder code, UndefinedPlaceholder file, UndefinedPlaceholder line, RubyProc block) {
+        public Object classEval(VirtualFrame frame, RubyModule self, NotProvided code, NotProvided file, NotProvided line, RubyProc block) {
             return yield.dispatchWithModifiedSelf(frame, block, self);
         }
 
         @Specialization
-        public Object classEval(RubyModule self, UndefinedPlaceholder code, UndefinedPlaceholder file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
+        public Object classEval(RubyModule self, NotProvided code, NotProvided file, NotProvided line, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(0, 1, 2, this));
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(code)")
-        public Object classEval(RubyModule self, Object code, UndefinedPlaceholder file, UndefinedPlaceholder line, RubyProc block) {
+        @Specialization(guards = "!isNotProvided(code)")
+        public Object classEval(RubyModule self, Object code, NotProvided file, NotProvided line, RubyProc block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(1, 0, this));
         }
@@ -674,7 +674,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object classExec(VirtualFrame frame, RubyModule self, Object[] args, UndefinedPlaceholder block) {
+        public Object classExec(VirtualFrame frame, RubyModule self, Object[] args, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().noBlockGiven(this));
         }
@@ -775,7 +775,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray constants(RubyModule module, UndefinedPlaceholder inherit) {
+        public RubyArray constants(RubyModule module, NotProvided inherit) {
             return constants(module, true);
         }
 
@@ -801,7 +801,7 @@ public abstract class ModuleNodes {
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), constantsArray.toArray(new Object[constantsArray.size()]));
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(inherit)")
+        @Specialization(guards = "!isNotProvided(inherit)")
         public RubyArray constants(VirtualFrame frame, RubyModule module, Object inherit) {
             return constants(module, booleanCast(frame, inherit));
         }
@@ -826,7 +826,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public boolean isConstDefined(RubyModule module, String name, UndefinedPlaceholder inherit) {
+        public boolean isConstDefined(RubyModule module, String name, NotProvided inherit) {
             return isConstDefined(module, name, true);
         }
 
@@ -861,7 +861,7 @@ public abstract class ModuleNodes {
 
         // Symbol
         @Specialization
-        public Object getConstant(VirtualFrame frame, RubyModule module, RubySymbol name, UndefinedPlaceholder inherit) {
+        public Object getConstant(VirtualFrame frame, RubyModule module, RubySymbol name, NotProvided inherit) {
             return getConstant(frame, module, name, true);
         }
 
@@ -877,7 +877,7 @@ public abstract class ModuleNodes {
 
         // String
         @Specialization(guards = "!isScoped(name)")
-        public Object getConstant(VirtualFrame frame, RubyModule module, RubyString name, UndefinedPlaceholder inherit) {
+        public Object getConstant(VirtualFrame frame, RubyModule module, RubyString name, NotProvided inherit) {
             return getConstant(frame, module, name, true);
         }
 
@@ -893,7 +893,7 @@ public abstract class ModuleNodes {
 
         // Scoped String
         @Specialization(guards = "isScoped(fullName)")
-        public Object getConstantScoped(VirtualFrame frame, RubyModule module, RubyString fullName, UndefinedPlaceholder inherit) {
+        public Object getConstantScoped(VirtualFrame frame, RubyModule module, RubyString fullName, NotProvided inherit) {
             return getConstantScoped(frame, module, fullName, true);
         }
 
@@ -998,31 +998,31 @@ public abstract class ModuleNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, String name, UndefinedPlaceholder proc, UndefinedPlaceholder block) {
+        public RubySymbol defineMethod(RubyModule module, String name, NotProvided proc, NotProvided block) {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("needs either proc or block", this));
         }
 
         @TruffleBoundary
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, String name, UndefinedPlaceholder proc, RubyProc block) {
-            return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
+        public RubySymbol defineMethod(RubyModule module, String name, NotProvided proc, RubyProc block) {
+            return defineMethod(module, name, block, NotProvided.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, String name, RubyProc proc, UndefinedPlaceholder block) {
+        public RubySymbol defineMethod(RubyModule module, String name, RubyProc proc, NotProvided block) {
             return defineMethod(module, name, proc);
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyMethod(method)")
-        public RubySymbol defineMethod(RubyModule module, String name, RubyBasicObject method, UndefinedPlaceholder block) {
+        public RubySymbol defineMethod(RubyModule module, String name, RubyBasicObject method, NotProvided block) {
             module.addMethod(this, MethodNodes.getMethod(method).withName(name));
             return getContext().getSymbolTable().getSymbol(name);
         }
 
         @Specialization(guards = "isRubyUnboundMethod(method)")
-        public RubySymbol defineMethod(VirtualFrame frame, RubyModule module, String name, RubyBasicObject method, UndefinedPlaceholder block) {
+        public RubySymbol defineMethod(VirtualFrame frame, RubyModule module, String name, RubyBasicObject method, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
             RubyModule origin = UnboundMethodNodes.getOrigin(method);
@@ -1102,7 +1102,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule initialize(RubyModule module, UndefinedPlaceholder block) {
+        public RubyModule initialize(RubyModule module, NotProvided block) {
             return module;
         }
 
@@ -1201,7 +1201,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public boolean isMethodDefined(RubyModule module, String name, UndefinedPlaceholder inherit) {
+        public boolean isMethodDefined(RubyModule module, String name, NotProvided inherit) {
             return isMethodDefined(module, name, true);
         }
 
@@ -1411,7 +1411,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray protectedInstanceMethods(RubyModule module, UndefinedPlaceholder argument) {
+        public RubyArray protectedInstanceMethods(RubyModule module, NotProvided includeAncestors) {
             return protectedInstanceMethods(module, true);
         }
 
@@ -1459,7 +1459,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray privateInstanceMethods(RubyModule module, UndefinedPlaceholder argument) {
+        public RubyArray privateInstanceMethods(RubyModule module, NotProvided includeAncestors) {
             return privateInstanceMethods(module, true);
         }
 
@@ -1516,7 +1516,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray publicInstanceMethods(RubyModule module, UndefinedPlaceholder argument) {
+        public RubyArray publicInstanceMethods(RubyModule module, NotProvided includeAncestors) {
             return publicInstanceMethods(module, true);
         }
 
@@ -1563,7 +1563,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray instanceMethods(RubyModule module, UndefinedPlaceholder argument) {
+        public RubyArray instanceMethods(RubyModule module, NotProvided argument) {
             return instanceMethods(module, true);
         }
 

@@ -27,7 +27,7 @@ import jnr.posix.POSIX;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 
@@ -66,11 +66,11 @@ public abstract class RubyNode extends Node {
 
     // Utility methods to execute and expect a particular type
 
-    public UndefinedPlaceholder executeUndefinedPlaceholder(VirtualFrame frame) throws UnexpectedResultException {
+    public NotProvided executeNotProvided(VirtualFrame frame) throws UnexpectedResultException {
         final Object value = execute(frame);
 
-        if (value instanceof UndefinedPlaceholder) {
-            return (UndefinedPlaceholder) value;
+        if (value instanceof NotProvided) {
+            return (NotProvided) value;
         } else {
             throw new UnexpectedResultException(value);
         }

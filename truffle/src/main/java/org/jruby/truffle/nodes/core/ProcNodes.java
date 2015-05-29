@@ -27,7 +27,7 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.Memo;
@@ -78,7 +78,7 @@ public abstract class ProcNodes {
         }
 
         @Specialization
-        public Object call(VirtualFrame frame, RubyProc proc, Object[] args, UndefinedPlaceholder block) {
+        public Object call(VirtualFrame frame, RubyProc proc, Object[] args, NotProvided block) {
             return yieldNode.dispatch(frame, proc, args);
         }
 
@@ -107,7 +107,7 @@ public abstract class ProcNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject initialize(RubyProc proc, UndefinedPlaceholder block) {
+        public RubyBasicObject initialize(RubyProc proc, NotProvided block) {
             final Memo<Integer> frameCount = new Memo<>(0);
 
             // The parent will be the Proc.new call.  We need to go an extra level up in order to get the parent

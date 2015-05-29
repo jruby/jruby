@@ -59,7 +59,7 @@ import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
@@ -474,7 +474,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object getIndex(VirtualFrame frame, RubyString string, int index, UndefinedPlaceholder undefined) {
+        public Object getIndex(VirtualFrame frame, RubyString string, int index, NotProvided length) {
             int normalizedIndex = normalizeIndex(string, index);
             final ByteList bytes = string.getByteList();
 
@@ -487,23 +487,23 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = { "!isRubyRange(index)", "!isRubyRegexp(index)", "!isRubyString(index)" })
-        public Object getIndex(VirtualFrame frame, RubyString string, Object index, UndefinedPlaceholder undefined) {
-            return getIndex(frame, string, getToIntNode().doInt(frame, index), undefined);
+        public Object getIndex(VirtualFrame frame, RubyString string, Object index, NotProvided length) {
+            return getIndex(frame, string, getToIntNode().doInt(frame, index), length);
         }
 
         @Specialization
-        public Object sliceIntegerRange(VirtualFrame frame, RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+        public Object sliceIntegerRange(VirtualFrame frame, RubyString string, RubyRange.IntegerFixnumRange range, NotProvided length) {
             return sliceRange(frame, string, range.getBegin(), range.getEnd(), range.doesExcludeEnd());
         }
 
         @Specialization
-        public Object sliceLongRange(VirtualFrame frame, RubyString string, RubyRange.LongFixnumRange range, UndefinedPlaceholder undefined) {
+        public Object sliceLongRange(VirtualFrame frame, RubyString string, RubyRange.LongFixnumRange range, NotProvided length) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values should be properly lowered, only if possible.
             return sliceRange(frame, string, (int) range.getBegin(), (int) range.getEnd(), range.doesExcludeEnd());
         }
 
         @Specialization
-        public Object sliceObjectRange(VirtualFrame frame, RubyString string, RubyRange.ObjectRange range, UndefinedPlaceholder undefined) {
+        public Object sliceObjectRange(VirtualFrame frame, RubyString string, RubyRange.ObjectRange range, NotProvided length) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values may return Fixnums beyond int boundaries and we should handle that -- Bignums are always errors.
             final int coercedBegin = getToIntNode().doInt(frame, range.getBegin());
             final int coercedEnd = getToIntNode().doInt(frame, range.getEnd());
@@ -551,29 +551,29 @@ public abstract class StringNodes {
             return getSubstringNode().execute(frame, string, start, length);
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(length)")
+        @Specialization(guards = "!isNotProvided(length)")
         public Object slice(VirtualFrame frame, RubyString string, int start, Object length) {
             return slice(frame, string, start, getToIntNode().doInt(frame, length));
         }
 
-        @Specialization(guards = { "!isRubyRange(start)", "!isRubyRegexp(start)", "!isRubyString(start)", "!isUndefinedPlaceholder(length)" })
+        @Specialization(guards = { "!isRubyRange(start)", "!isRubyRegexp(start)", "!isRubyString(start)", "!isNotProvided(length)" })
         public Object slice(VirtualFrame frame, RubyString string, Object start, Object length) {
             return slice(frame, string, getToIntNode().doInt(frame, start), getToIntNode().doInt(frame, length));
         }
 
         @Specialization
-        public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, UndefinedPlaceholder capture) {
+        public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, NotProvided capture) {
             return slice(frame, string, regexp, 0);
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(capture)")
+        @Specialization(guards = "!isNotProvided(capture)")
         public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, Object capture) {
             // Extracted from Rubinius's definition of String#[].
             return ruby(frame, "match, str = subpattern(index, other); Regexp.last_match = match; str", "index", regexp, "other", capture);
         }
 
         @Specialization
-        public Object slice(VirtualFrame frame, RubyString string, RubyString matchStr, UndefinedPlaceholder undefined) {
+        public Object slice(VirtualFrame frame, RubyString string, RubyString matchStr, NotProvided length) {
             if (includeNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 includeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -1226,7 +1226,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString initialize(RubyString self, UndefinedPlaceholder from) {
+        public RubyString initialize(RubyString self, NotProvided from) {
             return self;
         }
 
@@ -1250,7 +1250,7 @@ public abstract class StringNodes {
             return self;
         }
 
-        @Specialization(guards = { "!isRubyString(from)", "!isUndefinedPlaceholder(from)" })
+        @Specialization(guards = { "!isRubyString(from)", "!isNotProvided(from)" })
         public RubyString initialize(VirtualFrame frame, RubyString self, Object from) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1679,7 +1679,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyArray scan(RubyString string, RubyString regexpString, UndefinedPlaceholder block) {
+        public RubyArray scan(RubyString string, RubyString regexpString, NotProvided block) {
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.getByteList(), Option.DEFAULT);
             return scan(string, regexp, block);
         }
@@ -1691,7 +1691,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyArray scan(RubyString string, RubyRegexp regexp, UndefinedPlaceholder block) {
+        public RubyArray scan(RubyString string, RubyRegexp regexp, NotProvided block) {
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) regexp.scan(string));
         }
 
@@ -1993,11 +1993,11 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object sum(VirtualFrame frame, RubyString string, UndefinedPlaceholder bits) {
+        public Object sum(VirtualFrame frame, RubyString string, NotProvided bits) {
             return sum(frame, string, 16);
         }
 
-        @Specialization(guards = {"!isInteger(bits)", "!isLong(bits)", "!isUndefinedPlaceholder(bits)"})
+        @Specialization(guards = { "!isInteger(bits)", "!isLong(bits)", "!isNotProvided(bits)" })
         public Object sum(VirtualFrame frame, RubyString string, Object bits) {
             return ruby(frame, "sum Rubinius::Type.coerce_to(bits, Fixnum, :to_int)", "bits", bits);
         }

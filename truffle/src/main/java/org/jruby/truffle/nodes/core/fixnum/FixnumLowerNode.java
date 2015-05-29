@@ -13,7 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyRange;
@@ -69,7 +69,7 @@ public class FixnumLowerNode extends RubyNode {
             }
         }
 
-        if (hasSeenUndefined && value instanceof UndefinedPlaceholder) {
+        if (hasSeenUndefined && value instanceof NotProvided) {
             return value;
         }
 
@@ -103,7 +103,7 @@ public class FixnumLowerNode extends RubyNode {
             }
         }
 
-        if (value instanceof UndefinedPlaceholder) {
+        if (value instanceof NotProvided) {
             hasSeenUndefined = true;
             return value;
         }
@@ -177,9 +177,9 @@ public class FixnumLowerNode extends RubyNode {
     }
 
     @Override
-    public UndefinedPlaceholder executeUndefinedPlaceholder(VirtualFrame frame) throws UnexpectedResultException {
+    public NotProvided executeNotProvided(VirtualFrame frame) throws UnexpectedResultException {
         try {
-            return super.executeUndefinedPlaceholder(frame);
+            return super.executeNotProvided(frame);
         } catch (UnexpectedResultException e) {
             if (e.getResult() instanceof Long && canLower((long) e.getResult())) {
                 hasNeededToLowerLongFixnum = true;

@@ -23,7 +23,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 
@@ -661,7 +661,7 @@ public abstract class BignumNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(RubyBasicObject value, UndefinedPlaceholder undefined) {
+        public RubyString toS(RubyBasicObject value, NotProvided base) {
             return getContext().makeString(getBigIntegerValue(value).toString());
         }
 
