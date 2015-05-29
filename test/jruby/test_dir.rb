@@ -219,6 +219,19 @@ class TestDir < Test::Unit::TestCase
     end
   end
 
+  # GH-2972
+  def test_mkdir_within_classloader
+    assert_raise(Errno::EACCES) do
+      Dir.mkdir 'uri:classloader://new_dir'
+    end
+    assert_raise(Errno::EACCES) do
+      FileUtils.mkdir 'uri:classloader://new_dir'
+    end
+    assert_raise(Errno::EACCES) do
+      FileUtils.mkdir_p 'uri:classloader://new_dir'
+    end
+  end
+
   # JRUBY-4983
   def test_entries_unicode
     utf8_dir = "testDir_1/glk\u00a9"

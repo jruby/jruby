@@ -25,7 +25,7 @@ public class URLResource extends AbstractFileResource {
 
     public static String URI = "uri:";
     public static String CLASSLOADER = "classloader:";
-    public static String URI_CLASSLOADER = URI + CLASSLOADER + "/";
+    public static String URI_CLASSLOADER = URI + CLASSLOADER;
 
     private final String uri;
 
@@ -150,7 +150,7 @@ public class URLResource extends AbstractFileResource {
     }
 
     public static FileResource create(ClassLoader cl, String pathname, boolean isFile) {
-      try
+        try
       {
           pathname = new URI(pathname.replaceFirst("^/*", "/")).normalize().getPath().replaceAll("^/([.][.]/)*", "");
       } catch (URISyntaxException e) {
@@ -158,7 +158,7 @@ public class URLResource extends AbstractFileResource {
       }
       URL url = cl.getResource(pathname);
       String[] files = isFile ? null : listClassLoaderFiles(cl, pathname);
-      return new URLResource(URI_CLASSLOADER + pathname,
+      return new URLResource(URI_CLASSLOADER + "/" + pathname,
                              cl,
                              url == null ? null : pathname,
                              files);
