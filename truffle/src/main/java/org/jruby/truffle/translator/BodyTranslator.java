@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -77,6 +78,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.translator.TranslatorEnvironment.BlockID;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;
@@ -2726,8 +2728,12 @@ public class BodyTranslator extends Translator {
         }
 
         final RubyNode body;
+        final BlockID whileBlockID = environment.getParseEnvironment().allocateBlockID();
+
         final boolean oldTranslatingWhile = translatingWhile;
         translatingWhile = true;
+        BlockID oldBlockID = environment.getBlockID();
+        environment.setBlockIDForWhile(whileBlockID);
         try {
             if (node.getBodyNode().isNil()) {
                 body = new DefinedWrapperNode(context, sourceSection,
@@ -2737,6 +2743,7 @@ public class BodyTranslator extends Translator {
                 body = node.getBodyNode().accept(this);
             }
         } finally {
+            environment.setBlockIDForWhile(oldBlockID);
             translatingWhile = oldTranslatingWhile;
         }
 
@@ -2748,7 +2755,7 @@ public class BodyTranslator extends Translator {
             loop = WhileNode.createDoWhile(context, sourceSection, condition, body);
         }
 
-        return new CatchBreakFromCallNode(context, sourceSection, loop, environment.getBlockID());
+        return new CatchBreakFromCallNode(context, sourceSection, loop, whileBlockID);
     }
 
     @Override

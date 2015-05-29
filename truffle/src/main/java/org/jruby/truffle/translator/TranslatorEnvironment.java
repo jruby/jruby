@@ -38,7 +38,7 @@ public class TranslatorEnvironment {
 
     private final long returnID;
     private final boolean isBlock;
-    private final BlockID blockID;
+    private BlockID blockID;
 
     private final boolean ownScopeForAssignments;
     private final boolean neverAssignInParentScope;
@@ -67,7 +67,6 @@ public class TranslatorEnvironment {
         this.neverAssignInParentScope = neverAssignInParentScope;
         this.sharedMethodInfo = sharedMethodInfo;
         this.namedMethodName = namedMethodName;
-        assert isBlock == (blockID != null);
         this.isBlock = isBlock;
         this.blockID = blockID;
     }
@@ -224,4 +223,9 @@ public class TranslatorEnvironment {
     public BlockID getBlockID() {
         return blockID;
     }
+
+    public void setBlockIDForWhile(BlockID blockID) {
+        this.blockID = blockID;
+    }
+
 }
