@@ -78,7 +78,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.translator.TranslatorEnvironment.BlockID;
+import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;
@@ -387,7 +387,7 @@ public class BodyTranslator extends Translator {
             resultNode = node.getValueNode().accept(this);
         }
 
-        return new BreakNode(context, sourceSection, environment.getBlockID(), resultNode);
+        return new BreakNode(context, sourceSection, environment.getBreakID(), resultNode);
     }
 
     @Override
@@ -613,7 +613,7 @@ public class BodyTranslator extends Translator {
 
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
             BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();
-            translated = new CatchBreakNode(context, sourceSection, translated, blockDef.getBlockID());
+            translated = new CatchBreakNode(context, sourceSection, translated, blockDef.getBreakID());
         }
 
         // return instrumenter.instrumentAsCall(translated, node.getName());
@@ -1714,7 +1714,7 @@ public class BodyTranslator extends Translator {
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), hasOwnScope, false,
-                sharedMethodInfo, environment.getNamedMethodName(), true, environment.getParseEnvironment().allocateBlockID());
+                sharedMethodInfo, environment.getNamedMethodName(), true, environment.getParseEnvironment().allocateBreakID());
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source, argsNode);
         methodCompiler.translatingForStatement = translatingForStatement;
 
@@ -2728,12 +2728,12 @@ public class BodyTranslator extends Translator {
         }
 
         final RubyNode body;
-        final BlockID whileBlockID = environment.getParseEnvironment().allocateBlockID();
+        final BreakID whileBreakID = environment.getParseEnvironment().allocateBreakID();
 
         final boolean oldTranslatingWhile = translatingWhile;
         translatingWhile = true;
-        BlockID oldBlockID = environment.getBlockID();
-        environment.setBlockIDForWhile(whileBlockID);
+        BreakID oldBreakID = environment.getBreakID();
+        environment.setBreakIDForWhile(whileBreakID);
         try {
             if (node.getBodyNode().isNil()) {
                 body = new DefinedWrapperNode(context, sourceSection,
@@ -2743,7 +2743,7 @@ public class BodyTranslator extends Translator {
                 body = node.getBodyNode().accept(this);
             }
         } finally {
-            environment.setBlockIDForWhile(oldBlockID);
+            environment.setBreakIDForWhile(oldBreakID);
             translatingWhile = oldTranslatingWhile;
         }
 
@@ -2755,7 +2755,7 @@ public class BodyTranslator extends Translator {
             loop = WhileNode.createDoWhile(context, sourceSection, condition, body);
         }
 
-        return new CatchBreakNode(context, sourceSection, loop, whileBlockID);
+        return new CatchBreakNode(context, sourceSection, loop, whileBreakID);
     }
 
     @Override
@@ -2849,7 +2849,7 @@ public class BodyTranslator extends Translator {
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), false, false,
-                sharedMethodInfo, sharedMethodInfo.getName(), true, environment.getParseEnvironment().allocateBlockID());
+                sharedMethodInfo, sharedMethodInfo.getName(), true, environment.getParseEnvironment().allocateBreakID());
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
 
         final RubyNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo);

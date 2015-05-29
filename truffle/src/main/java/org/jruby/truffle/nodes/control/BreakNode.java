@@ -14,23 +14,23 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.BreakException;
-import org.jruby.truffle.translator.TranslatorEnvironment.BlockID;
+import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
 
 public class BreakNode extends RubyNode {
 
-    private final BlockID blockID;
+    private final BreakID breakID;
 
     @Child private RubyNode child;
 
-    public BreakNode(RubyContext context, SourceSection sourceSection, BlockID blockID, RubyNode child) {
+    public BreakNode(RubyContext context, SourceSection sourceSection, BreakID breakID, RubyNode child) {
         super(context, sourceSection);
-        this.blockID = blockID;
+        this.breakID = breakID;
         this.child = child;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        throw new BreakException(blockID, child.execute(frame));
+        throw new BreakException(breakID, child.execute(frame));
     }
 
 }

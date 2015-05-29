@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TranslatorEnvironment {
 
-    public static class BlockID {
+    public static class BreakID {
     };
 
     private final RubyContext context;
@@ -38,7 +38,7 @@ public class TranslatorEnvironment {
 
     private final long returnID;
     private final boolean isBlock;
-    private BlockID blockID;
+    private BreakID breakID;
 
     private final boolean ownScopeForAssignments;
     private final boolean neverAssignInParentScope;
@@ -56,7 +56,7 @@ public class TranslatorEnvironment {
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, ParseEnvironment parseEnvironment,
             long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
-            SharedMethodInfo sharedMethodInfo, String namedMethodName, boolean isBlock, BlockID blockID,
+            SharedMethodInfo sharedMethodInfo, String namedMethodName, boolean isBlock, BreakID breakID,
             FrameDescriptor frameDescriptor) {
         this.context = context;
         this.parent = parent;
@@ -68,13 +68,13 @@ public class TranslatorEnvironment {
         this.sharedMethodInfo = sharedMethodInfo;
         this.namedMethodName = namedMethodName;
         this.isBlock = isBlock;
-        this.blockID = blockID;
+        this.breakID = breakID;
     }
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, ParseEnvironment parseEnvironment,
             long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
-            SharedMethodInfo methodIdentifier, String namedMethodName, boolean isBlock, BlockID blockID) {
-        this(context, parent, parseEnvironment, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName, isBlock, blockID,
+            SharedMethodInfo methodIdentifier, String namedMethodName, boolean isBlock, BreakID breakID) {
+        this(context, parent, parseEnvironment, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName, isBlock, breakID,
                 new FrameDescriptor(context.getCoreLibrary().getNilObject()));
     }
 
@@ -220,12 +220,12 @@ public class TranslatorEnvironment {
         return isBlock;
     }
 
-    public BlockID getBlockID() {
-        return blockID;
+    public BreakID getBreakID() {
+        return breakID;
     }
 
-    public void setBlockIDForWhile(BlockID blockID) {
-        this.blockID = blockID;
+    public void setBreakIDForWhile(BreakID breakID) {
+        this.breakID = breakID;
     }
 
 }

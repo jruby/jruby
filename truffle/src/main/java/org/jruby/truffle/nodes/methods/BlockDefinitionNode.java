@@ -18,7 +18,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.truffle.translator.TranslatorEnvironment.BlockID;
+import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
 
 /**
  * Create a RubyProc to pass as a block to the called method.
@@ -37,11 +37,11 @@ public class BlockDefinitionNode extends RubyNode {
     private final CallTarget callTargetForMethods;
 
     private final boolean requiresDeclarationFrame;
-    private final BlockID blockID;
+    private final BreakID breakID;
 
     public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, SharedMethodInfo sharedMethodInfo,
                                boolean requiresDeclarationFrame, CallTarget callTargetForBlocks,
-                               CallTarget callTargetForProcs, CallTarget callTargetForMethods, BlockID blockID) {
+                               CallTarget callTargetForProcs, CallTarget callTargetForMethods, BreakID breakID) {
         super(context, sourceSection);
         this.sharedMethodInfo = sharedMethodInfo;
 
@@ -50,11 +50,11 @@ public class BlockDefinitionNode extends RubyNode {
         this.callTargetForMethods = callTargetForMethods;
 
         this.requiresDeclarationFrame = requiresDeclarationFrame;
-        this.blockID = blockID;
+        this.breakID = breakID;
     }
 
-    public BlockID getBlockID() {
-        return blockID;
+    public BreakID getBreakID() {
+        return breakID;
     }
 
     @Override

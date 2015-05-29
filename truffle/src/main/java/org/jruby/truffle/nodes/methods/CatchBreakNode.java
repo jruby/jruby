@@ -16,7 +16,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.BreakException;
-import org.jruby.truffle.translator.TranslatorEnvironment.BlockID;
+import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
 
 /**
  * Catch a {@code break} from a call with a block containing a break
@@ -26,15 +26,15 @@ public class CatchBreakNode extends RubyNode {
 
     @Child private RubyNode body;
 
-    private final BlockID blockID;
+    private final BreakID breakID;
 
     private final BranchProfile breakProfile = BranchProfile.create();
     private final ConditionProfile matchingBreakProfile = ConditionProfile.createCountingProfile();
 
-    public CatchBreakNode(RubyContext context, SourceSection sourceSection, RubyNode body, BlockID blockID) {
+    public CatchBreakNode(RubyContext context, SourceSection sourceSection, RubyNode body, BreakID breakID) {
         super(context, sourceSection);
         this.body = body;
-        this.blockID = blockID;
+        this.breakID = breakID;
     }
 
     @Override
@@ -44,7 +44,7 @@ public class CatchBreakNode extends RubyNode {
         } catch (BreakException e) {
             breakProfile.enter();
 
-            if (matchingBreakProfile.profile(e.getBlockID() == blockID)) {
+            if (matchingBreakProfile.profile(e.getBreakID() == breakID)) {
                 return e.getResult();
             } else {
                 throw e;
