@@ -241,9 +241,8 @@ public abstract class PosixNodes {
         @Specialization
         public int readlink(RubyString path, RubyBasicObject pointer, int bufsize) {
             final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
-            final long address = PointerPrimitiveNodes.getPointer(pointer).address();
 
-            final int result = posix().readlink(pathString, address, bufsize);
+            final int result = posix().readlink(pathString, PointerPrimitiveNodes.getPointer(pointer), bufsize);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
