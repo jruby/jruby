@@ -53,6 +53,7 @@ import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.objects.ClassNode;
@@ -509,12 +510,12 @@ public abstract class VMPrimitiveNodes {
                     stringValue = value.toString();
                 }
 
-                sectionKeyValues.add(RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                sectionKeyValues.add(ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                         getContext().makeString(key),
                         getContext().makeString(stringValue)));
             }
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), sectionKeyValues.toArray());
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), sectionKeyValues.toArray());
         }
 
     }
@@ -583,7 +584,7 @@ public abstract class VMPrimitiveNodes {
                 stopsig = PosixShim.WAIT_MACROS.WSTOPSIG(status);
             }
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), output, termsig, stopsig, pid);
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), output, termsig, stopsig, pid);
         }
 
     }

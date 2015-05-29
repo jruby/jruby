@@ -70,6 +70,7 @@ import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.core.StringGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.StringNodesFactory;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -174,7 +175,7 @@ public abstract class StringPrimitiveNodes {
 
             if (len > 0 && (limit || len > b || lim < 0)) ret.add(makeString(string, b, len - b));
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), ret.toArray());
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), ret.toArray());
         }
 
         private RubyString makeString(RubyString source, int index, int length) {

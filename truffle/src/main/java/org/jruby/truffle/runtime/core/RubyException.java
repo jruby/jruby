@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -61,7 +62,7 @@ public class RubyException extends RubyBasicObject {
             array[n] = getContext().makeString(lines[n]);
         }
 
-        return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), array);
+        return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), array);
     }
 
     public static class ExceptionAllocator implements Allocator {

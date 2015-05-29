@@ -20,6 +20,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -52,9 +53,9 @@ public abstract class HashNodes {
         public Object construct(VirtualFrame frame, RubyClass hashClass, Object[] args) {
             final RubyArray array = (RubyArray) args[0];
 
-            final Object[] store = (Object[]) array.getStore();
+            final Object[] store = (Object[]) ArrayNodes.getStore(array);
 
-            final int size = array.getSize();
+            final int size = ArrayNodes.getSize(array);
             final Object[] newStore = PackedArrayStrategy.createStore();
 
             for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
@@ -68,12 +69,12 @@ public abstract class HashNodes {
 
                     final RubyArray pairArray = (RubyArray) pair;
 
-                    if (!(pairArray.getStore() instanceof Object[])) {
+                    if (!(ArrayNodes.getStore(pairArray) instanceof Object[])) {
                         CompilerDirectives.transferToInterpreter();
                         return constructFallback(frame, hashClass, args);
                     }
 
-                    final Object[] pairStore = (Object[]) pairArray.getStore();
+                    final Object[] pairStore = (Object[]) ArrayNodes.getStore(pairArray);
 
                     final Object key = pairStore[0];
                     final Object value = pairStore[1];
@@ -89,7 +90,7 @@ public abstract class HashNodes {
 
         @Specialization
         public Object constructFallback(VirtualFrame frame, RubyClass hashClass, Object[] args) {
-            return ruby(frame, "_constructor_fallback(*args)", "args", RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args));
+            return ruby(frame, "_constructor_fallback(*args)", "args", ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), args));
         }
 
         public static boolean isSmallArrayOfPairs(Object[] args) {
@@ -105,11 +106,11 @@ public abstract class HashNodes {
 
             final RubyArray array = (RubyArray) arg;
 
-            if (!(array.getStore() instanceof Object[])) {
+            if (!(ArrayNodes.getStore(array) instanceof Object[])) {
                 return false;
             }
 
-            final Object[] store = (Object[]) array.getStore();
+            final Object[] store = (Object[]) ArrayNodes.getStore(array);
 
             if (store.length > PackedArrayStrategy.MAX_ENTRIES) {
                 return false;
@@ -835,7 +836,7 @@ public abstract class HashNodes {
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
 
             for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
-                array.slowPush(yield(frame, block, keyValue.getKey(), keyValue.getValue()));
+                ArrayNodes.slowPush(array, yield(frame, block, keyValue.getKey(), keyValue.getValue()));
             }
 
             return array;
@@ -1093,7 +1094,7 @@ public abstract class HashNodes {
 
             assert HashOperations.verifyStore(hash);
             
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), key, value);
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), key, value);
         }
 
         @Specialization(guards = {"!isEmpty(hash)", "isBucketsStorage(hash)"})
@@ -1152,7 +1153,7 @@ public abstract class HashNodes {
 
             assert HashOperations.verifyStore(hash);
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), key, value);
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), key, value);
         }
 
     }

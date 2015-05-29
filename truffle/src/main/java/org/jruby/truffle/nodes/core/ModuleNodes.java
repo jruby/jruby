@@ -46,6 +46,7 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.KernelNodes.BindingNode;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -335,7 +336,7 @@ public abstract class ModuleNodes {
                 ancestors.add(module);
             }
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), ancestors.toArray(new Object[ancestors.size()]));
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), ancestors.toArray(new Object[ancestors.size()]));
         }
     }
 
@@ -750,7 +751,7 @@ public abstract class ModuleNodes {
             final RubyArray array = new RubyArray(module.getContext().getCoreLibrary().getArrayClass());
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
-                array.slowPush(RubySymbol.newSymbol(module.getContext(), variable));
+                ArrayNodes.slowPush(array, RubySymbol.newSymbol(module.getContext(), variable));
             }
             return array;
         }
@@ -797,7 +798,7 @@ public abstract class ModuleNodes {
                 }
             }
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), constantsArray.toArray(new Object[constantsArray.size()]));
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), constantsArray.toArray(new Object[constantsArray.size()]));
         }
 
         @Specialization(guards = "!isUndefinedPlaceholder(inherit)")
@@ -1179,7 +1180,7 @@ public abstract class ModuleNodes {
                 }
             }
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
         }
     }
 
@@ -1286,7 +1287,7 @@ public abstract class ModuleNodes {
                 lexicalScope = lexicalScope.getParent();
             }
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
         }
     }
 
@@ -1419,7 +1420,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     module.filterMethods(includeAncestors, MethodFilter.PROTECTED).toArray());
         }
     }
@@ -1466,7 +1467,7 @@ public abstract class ModuleNodes {
         public RubyArray privateInstanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     module.filterMethods(includeAncestors, MethodFilter.PRIVATE).toArray());
         }
     }
@@ -1523,7 +1524,7 @@ public abstract class ModuleNodes {
         public RubyArray publicInstanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     module.filterMethods(includeAncestors, MethodFilter.PUBLIC).toArray());
         }
     }
@@ -1570,7 +1571,7 @@ public abstract class ModuleNodes {
         public RubyArray instanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     module.filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
     }

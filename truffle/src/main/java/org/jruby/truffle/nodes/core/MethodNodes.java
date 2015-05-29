@@ -23,6 +23,7 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -234,7 +235,7 @@ public abstract class MethodNodes {
                 return nil();
             } else {
                 RubyString file = getContext().makeString(sourceSection.getSource().getName());
-                return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                         file, sourceSection.getStartLine());
             }
         }

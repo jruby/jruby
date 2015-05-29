@@ -50,8 +50,8 @@ import jnr.constants.platform.Fcntl;
 import jnr.ffi.byref.IntByReference;
 
 import org.jruby.RubyEncoding;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
@@ -69,7 +69,6 @@ import org.jruby.util.Dir;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.EnumSet;
 
 public abstract class IOPrimitiveNodes {
@@ -572,7 +571,7 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = {"isNil(writables)", "isNil(errorables)"})
         public Object select(RubyArray readables, RubyBasicObject writables, RubyBasicObject errorables, int timeout) {
-            final Object[] readableObjects = readables.slowToArray();
+            final Object[] readableObjects = ArrayNodes.slowToArray(readables);
             final int[] readableFds = getFileDescriptors(readables);
 
             final FDSet readableSet = fdSetFactory.create();
@@ -597,14 +596,14 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     getSetObjects(readableObjects, readableFds, readableSet),
-                    RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass()),
-                    RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass()));
+                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()),
+                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()));
         }
 
         private int[] getFileDescriptors(RubyArray fileDescriptorArray) {
-            final Object[] objects = fileDescriptorArray.slowToArray();
+            final Object[] objects = ArrayNodes.slowToArray(fileDescriptorArray);
 
             final int[] fileDescriptors = new int[objects.length];
 

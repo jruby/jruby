@@ -299,7 +299,7 @@ public class CoreLibrary {
 
         // Classes defined in Object
 
-        arrayClass = defineClass("Array", new RubyArray.ArrayAllocator());
+        arrayClass = defineClass("Array", new ArrayNodes.ArrayAllocator());
         bindingClass = defineClass("Binding", new RubyBinding.BindingAllocator());
         dirClass = defineClass("Dir");
         encodingClass = defineClass("Encoding", NO_ALLOCATOR);
@@ -523,7 +523,7 @@ public class CoreLibrary {
         int i = 0;
         for (Map.Entry<String, Integer> signal : SignalOperations.SIGNALS_LIST.entrySet()) {
             RubyString signalName = context.makeString(signal.getKey());
-            signals[i++] = RubyArray.fromObjects(arrayClass, signalName, signal.getValue());
+            signals[i++] = ArrayNodes.fromObjects(arrayClass, signalName, signal.getValue());
         }
 
         signalModule.setConstant(node, "SIGNAL_LIST", new RubyArray(arrayClass, signals, signals.length));

@@ -42,10 +42,10 @@ public abstract class ArrayDropTailNode extends RubyNode {
     public RubyArray getHeadIntegerFixnum(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= array.getSize()) {
+        if (index >= ArrayNodes.getSize(array)) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((int[]) array.getStore(), 0, array.getSize() - index), array.getSize() - index);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((int[]) ArrayNodes.getStore(array), 0, ArrayNodes.getSize(array) - index), ArrayNodes.getSize(array) - index);
         }
     }
 
@@ -53,11 +53,11 @@ public abstract class ArrayDropTailNode extends RubyNode {
     public RubyArray geHeadLongFixnum(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= array.getSize()) {
+        if (index >= ArrayNodes.getSize(array)) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            final int size = array.getSize() - index;
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((long[]) array.getStore(), 0, size), size);
+            final int size = ArrayNodes.getSize(array) - index;
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((long[]) ArrayNodes.getStore(array), 0, size), size);
         }
     }
 
@@ -65,11 +65,11 @@ public abstract class ArrayDropTailNode extends RubyNode {
     public RubyArray getHeadFloat(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= array.getSize()) {
+        if (index >= ArrayNodes.getSize(array)) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            final int size = array.getSize() - index;
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((double[]) array.getStore(), 0, size), size);
+            final int size = ArrayNodes.getSize(array) - index;
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((double[]) ArrayNodes.getStore(array), 0, size), size);
         }
     }
 
@@ -77,11 +77,11 @@ public abstract class ArrayDropTailNode extends RubyNode {
     public RubyArray getHeadObject(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= array.getSize()) {
+        if (index >= ArrayNodes.getSize(array)) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            final int size = array.getSize() - index;
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((Object[]) array.getStore(), 0, size), size);
+            final int size = ArrayNodes.getSize(array) - index;
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((Object[]) ArrayNodes.getStore(array), 0, size), size);
         }
     }
 

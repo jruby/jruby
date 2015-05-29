@@ -48,6 +48,7 @@ import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayCoreMethodNode;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -1622,7 +1623,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyArray scan(RubyString string, RubyRegexp regexp, UndefinedPlaceholder block) {
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) regexp.scan(string));
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) regexp.scan(string));
         }
 
         @Specialization

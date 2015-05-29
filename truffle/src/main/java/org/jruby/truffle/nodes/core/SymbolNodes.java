@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
@@ -72,7 +73,7 @@ public abstract class SymbolNodes {
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (RubySymbol s : getContext().getSymbolTable().allSymbols()) {
-                array.slowPush(s);
+                ArrayNodes.slowPush(array, s);
             }
             return array;
         }

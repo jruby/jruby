@@ -19,6 +19,7 @@ import org.joni.exception.ValueException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -44,7 +45,7 @@ public abstract class MatchDataNodes {
             CompilerDirectives.transferToInterpreter();
 
             final Object[] values = matchData.getValues();
-            final int normalizedIndex = RubyArray.normalizeIndex(values.length, index);
+            final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, index);
 
             if ((normalizedIndex < 0) || (normalizedIndex >= values.length)) {
                 return nil();
@@ -58,7 +59,7 @@ public abstract class MatchDataNodes {
             CompilerDirectives.transferToInterpreter();
             // TODO BJF 15-May-2015 Need to handle negative indexes and lengths and out of bounds
             final Object[] values = matchData.getValues();
-            final int normalizedIndex = RubyArray.normalizeIndex(values.length, index);
+            final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, index);
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, length);
         }
@@ -111,9 +112,9 @@ public abstract class MatchDataNodes {
         @Specialization(guards = {"!isRubySymbol(range)", "!isRubyString(range)"})
         public Object getIndex(VirtualFrame frame, RubyMatchData matchData, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefinedPlaceholder) {
             final Object[] values = matchData.getValues();
-            final int normalizedIndex = RubyArray.normalizeIndex(values.length, range.getBegin());
-            final int end = RubyArray.normalizeIndex(values.length, range.getEnd());
-            final int exclusiveEnd = RubyArray.clampExclusiveIndex(values.length, range.doesExcludeEnd() ? end : end + 1);
+            final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, range.getBegin());
+            final int end = ArrayNodes.normalizeIndex(values.length, range.getEnd());
+            final int exclusiveEnd = ArrayNodes.clampExclusiveIndex(values.length, range.doesExcludeEnd() ? end : end + 1);
             final int length = exclusiveEnd - normalizedIndex;
 
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
@@ -159,7 +160,7 @@ public abstract class MatchDataNodes {
         public RubyArray toA(RubyMatchData matchData) {
             CompilerDirectives.transferToInterpreter();
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getCaptures());
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getCaptures());
         }
     }
 
@@ -241,7 +242,7 @@ public abstract class MatchDataNodes {
         public RubyArray toA(RubyMatchData matchData) {
             CompilerDirectives.transferToInterpreter();
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getValues());
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getValues());
         }
     }
 
@@ -278,7 +279,7 @@ public abstract class MatchDataNodes {
                 indicies[n] = (int) args[n];
             }
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.valuesAt(indicies));
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.valuesAt(indicies));
         }
 
     }

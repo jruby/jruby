@@ -18,6 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayDupNode;
 import org.jruby.truffle.nodes.core.array.ArrayDupNodeGen;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
@@ -66,7 +67,7 @@ public abstract class SplatCastNode extends RubyNode {
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             case ARRAY_WITH_NIL:
-                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());
+                return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());
 
             default: {
                 CompilerAsserts.neverPartOfCompilation();
@@ -101,7 +102,7 @@ public abstract class SplatCastNode extends RubyNode {
                 return (RubyArray) array;
             } else if (array == nil() || array == DispatchNode.MISSING) {
                 CompilerDirectives.transferToInterpreter();
-                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
+                return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
             } else {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertTo(
                         object, getContext().getCoreLibrary().getArrayClass(), method, array, this)
@@ -109,7 +110,7 @@ public abstract class SplatCastNode extends RubyNode {
             }
         }
 
-        return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
+        return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
     }
 
 }

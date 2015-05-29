@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.runtime.Helpers;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -79,7 +80,7 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     public int normalizeIndex(int length, int index) {
-        return RubyArray.normalizeIndex(length, index);
+        return ArrayNodes.normalizeIndex(length, index);
     }
 
     public int normalizeIndex(int index) {
@@ -87,7 +88,7 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     public int clampExclusiveIndex(int index) {
-        return RubyArray.clampExclusiveIndex(bytes.length(), index);
+        return ArrayNodes.clampExclusiveIndex(bytes.length(), index);
     }
 
     @Override

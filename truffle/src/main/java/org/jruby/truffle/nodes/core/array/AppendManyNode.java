@@ -40,25 +40,25 @@ public abstract class AppendManyNode extends RubyNode {
 
     @Specialization(guards = "isEmpty(array)")
     public RubyArray appendManyEmpty(RubyArray array, int otherSize, int[] other) {
-        array.setStore(Arrays.copyOf(other, otherSize), otherSize);
+        ArrayNodes.setStore(array, Arrays.copyOf(other, otherSize), otherSize);
         return array;
     }
 
     @Specialization(guards = "isEmpty(array)")
     public RubyArray appendManyEmpty(RubyArray array, int otherSize, long[] other) {
-        array.setStore(Arrays.copyOf(other, otherSize), otherSize);
+        ArrayNodes.setStore(array, Arrays.copyOf(other, otherSize), otherSize);
         return array;
     }
 
     @Specialization(guards = "isEmpty(array)")
     public RubyArray appendManyEmpty(RubyArray array, int otherSize, double[] other) {
-        array.setStore(Arrays.copyOf(other, otherSize), otherSize);
+        ArrayNodes.setStore(array, Arrays.copyOf(other, otherSize), otherSize);
         return array;
     }
 
     @Specialization(guards = "isEmpty(array)")
     public RubyArray appendManyEmpty(RubyArray array, int otherSize, Object[] other) {
-        array.setStore(Arrays.copyOf(other, otherSize), otherSize);
+        ArrayNodes.setStore(array, Arrays.copyOf(other, otherSize), otherSize);
         return array;
     }
 
@@ -67,7 +67,7 @@ public abstract class AppendManyNode extends RubyNode {
     @Specialization(guards = "isIntegerFixnum(array)")
     public RubyArray appendManySameType(RubyArray array, int otherSize, int[] other,
                                    @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendManySameTypeGeneric(array, ArrayMirror.reflect((int[]) array.getStore()),
+        appendManySameTypeGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other), extendProfile);
         return array;
     }
@@ -75,7 +75,7 @@ public abstract class AppendManyNode extends RubyNode {
     @Specialization(guards = "isLongFixnum(array)")
     public RubyArray appendManySameType(RubyArray array, int otherSize, long[] other,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendManySameTypeGeneric(array, ArrayMirror.reflect((long[]) array.getStore()),
+        appendManySameTypeGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other), extendProfile);
         return array;
     }
@@ -83,7 +83,7 @@ public abstract class AppendManyNode extends RubyNode {
     @Specialization(guards = "isFloat(array)")
     public RubyArray appendManySameType(RubyArray array, int otherSize, double[] other,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendManySameTypeGeneric(array, ArrayMirror.reflect((double[]) array.getStore()),
+        appendManySameTypeGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other), extendProfile);
         return array;
     }
@@ -91,7 +91,7 @@ public abstract class AppendManyNode extends RubyNode {
     @Specialization(guards = "isObject(array)")
     public RubyArray appendManySameType(RubyArray array, int otherSize, Object[] other,
                                   @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendManySameTypeGeneric(array, ArrayMirror.reflect((Object[]) array.getStore()),
+        appendManySameTypeGeneric(array, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other), extendProfile);
         return array;
     }
@@ -99,7 +99,7 @@ public abstract class AppendManyNode extends RubyNode {
     public void appendManySameTypeGeneric(RubyArray array, ArrayMirror storeMirror,
                                           int otherSize, ArrayMirror otherStoreMirror,
                                           ConditionProfile extendProfile) {
-        final int oldSize = array.getSize();
+        final int oldSize = ArrayNodes.getSize(array);
         final int newSize = oldSize + otherSize;
 
         final ArrayMirror newStoreMirror;
@@ -111,7 +111,7 @@ public abstract class AppendManyNode extends RubyNode {
         }
 
         otherStoreMirror.copyTo(newStoreMirror, 0, oldSize, otherSize);
-        array.setStore(newStoreMirror.getArray(), newSize);
+        ArrayNodes.setStore(array, newStoreMirror.getArray(), newSize);
     }
 
     // Append something else into an Object[]
@@ -139,10 +139,10 @@ public abstract class AppendManyNode extends RubyNode {
 
     public void appendManyBoxIntoObjectGeneric(RubyArray array, int otherSize, ArrayMirror otherStoreMirror,
                                           ConditionProfile extendProfile) {
-        final int oldSize = array.getSize();
+        final int oldSize = ArrayNodes.getSize(array);
         final int newSize = oldSize + otherSize;
 
-        final Object[] oldStore = (Object[]) array.getStore();
+        final Object[] oldStore = (Object[]) ArrayNodes.getStore(array);
         final Object[] newStore;
 
         if (extendProfile.profile(newSize > oldStore.length)) {
@@ -152,22 +152,22 @@ public abstract class AppendManyNode extends RubyNode {
         }
 
         otherStoreMirror.copyTo(newStore, 0, oldSize, otherSize);
-        array.setStore(newStore, newSize);
+        ArrayNodes.setStore(array, newStore, newSize);
     }
 
     // Append forcing a generalization from int[] to long[]
 
     @Specialization(guards = "isIntegerFixnum(array)")
     public RubyArray appendManyLongIntoInteger(RubyArray array, int otherSize, long[] other) {
-        final int oldSize = array.getSize();
+        final int oldSize = ArrayNodes.getSize(array);
         final int newSize = oldSize + otherSize;
 
-        final int[] oldStore = (int[]) array.getStore();
+        final int[] oldStore = (int[]) ArrayNodes.getStore(array);
         long[] newStore = ArrayUtils.longCopyOf(oldStore, ArrayUtils.capacity(oldStore.length, newSize));
 
         System.arraycopy(other, 0, newStore, oldSize, otherSize);
 
-        array.setStore(newStore, newSize);
+        ArrayNodes.setStore(array, newStore, newSize);
         return array;
     }
 
@@ -175,59 +175,59 @@ public abstract class AppendManyNode extends RubyNode {
 
     @Specialization(guards = "isIntegerFixnum(array)")
     public RubyArray appendManyGeneralizeIntegerDouble(RubyArray array, int otherSize, double[] other) {
-        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((int[]) array.getStore()),
+        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other));
         return array;
     }
 
     @Specialization(guards = "isIntegerFixnum(array)")
     public RubyArray appendManyGeneralizeIntegerDouble(RubyArray array, int otherSize, Object[] other) {
-        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((int[]) array.getStore()),
+        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other));
         return array;
     }
 
     @Specialization(guards = "isLongFixnum(array)")
     public RubyArray appendManyGeneralizeLongDouble(RubyArray array, int otherSize, double[] other) {
-        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((long[]) array.getStore()),
+        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other));
         return array;
     }
 
     @Specialization(guards = "isLongFixnum(array)")
     public RubyArray appendManyGeneralizeLongDouble(RubyArray array, int otherSize, Object[] other) {
-        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((long[]) array.getStore()),
+        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other));
         return array;
     }
 
     @Specialization(guards = "isFloat(array)")
     public RubyArray appendManyGeneralizeDoubleInteger(RubyArray array, int otherSize, int[] other) {
-        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((double[]) array.getStore()),
+        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other));
         return array;
     }
 
     @Specialization(guards = "isFloat(array)")
     public RubyArray appendManyGeneralizeDoubleLong(RubyArray array, int otherSize, long[] other) {
-        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((double[]) array.getStore()),
+        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other));
         return array;
     }
 
     @Specialization(guards = "isFloat(array)")
     public RubyArray appendManyGeneralizeDoubleObject(RubyArray array, int otherSize, Object[] other) {
-        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((double[]) array.getStore()),
+        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other));
         return array;
     }
 
     public void appendManyGeneralizeGeneric(RubyArray array, ArrayMirror storeMirror, int otherSize, ArrayMirror otherStoreMirror) {
-        final int oldSize = array.getSize();
+        final int oldSize = ArrayNodes.getSize(array);
         final int newSize = oldSize + otherSize;
         Object[] newStore = storeMirror.getBoxedCopy(ArrayUtils.capacity(storeMirror.getLength(), newSize));
         otherStoreMirror.copyTo(newStore, 0, oldSize, otherSize);
-        array.setStore(newStore, newSize);
+        ArrayNodes.setStore(array, newStore, newSize);
     }
 
 }

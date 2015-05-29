@@ -21,6 +21,7 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -225,7 +226,7 @@ public abstract class UnboundMethodNodes {
                 return nil();
             } else {
                 RubyString file = getContext().makeString(sourceSection.getSource().getName());
-                return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                         file, sourceSection.getStartLine());
             }
         }
