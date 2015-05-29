@@ -1398,18 +1398,17 @@ public class OpenFile implements Finalizable {
                 }
             }
 
-            // kinda-hacky way to see if there's more data to read from a seekable channel
+            /*
+            Seekable channels (usually FileChannel) are treated as ready always. There are
+            three kinds we typically see:
+            1. files, which always select(2) as ready
+            2. stdio, which we can't select and can't check .size for available data
+            3. subprocess stdio, which we can't select and can't check .size either
+            In all three cases, without native fd logic, we can't do anything to determine
+            if the stream is ready, so we just assume it is and hope for the best.
+             */
             if (fd.chSeek != null) {
-                FileChannel fdSeek = fd.chSeek;
-                try {
-                    // not a real file, can't get size...we'll have to just read and block
-                    if (fdSeek.size() < 0) return true;
-
-                    // if current position is less than file size, read should not block
-                    return fdSeek.position() < fdSeek.size();
-                } catch (IOException ioe) {
-                    throw context.runtime.newIOErrorFromException(ioe);
-                }
+                return true;
             }
         } finally {
             if (locked) unlock();

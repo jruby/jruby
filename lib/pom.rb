@@ -70,6 +70,8 @@ project 'JRuby Lib Setup' do
   jar "org.jruby:jruby-core:#{version}", :scope => 'test'
 
   repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
+              :id => 'tb-rubygems-releases' )
+  repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
               :id => 'rubygems-releases' )
 
   plugin( :clean,

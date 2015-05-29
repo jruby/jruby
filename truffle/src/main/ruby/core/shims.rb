@@ -227,7 +227,11 @@ class Exception
   end
 
   def to_s
-    message.to_s
+    if message.nil?
+      self.class.to_s
+    else
+      message.to_s
+    end
   end
 
 end

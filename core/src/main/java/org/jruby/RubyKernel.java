@@ -318,9 +318,15 @@ public class RubyKernel {
         return defin.callMethod(context, "getc");
     }
 
+    // MRI: rb_f_gets
     @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return RubyArgsFile.gets(context, context.runtime.getArgsFile(), args);
+        Ruby runtime = context.runtime;
+
+        if (recv == runtime.getArgsFile()) {
+            return RubyArgsFile.gets(context, runtime.getArgsFile(), args);
+        }
+        return runtime.getArgsFile().callMethod(context, "gets", args);
     }
 
     @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)

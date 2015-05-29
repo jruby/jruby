@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -77,6 +78,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;
@@ -367,12 +369,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitBreakNode(org.jruby.ast.BreakNode node) {
-        if (!(environment.isBlock() || translatingWhile)) {
-            // TODO(CS 10-Jan-15): must raise a proper exception rather, but not sure if it should be a JRuby exception or a Truffle one
-            System.err.printf("%s:%d: Invalid break%n", node.getPosition().getFile(), node.getPosition().getLine() + 1);
-            System.err.printf("%s: compile error (SyntaxError)%n", node.getPosition().getFile());
-            System.exit(1);
-        }
+        assert environment.isBlock() || translatingWhile : "The parser did not see an invalid break";
 
         final SourceSection sourceSection = translate(node.getPosition());
 
@@ -390,7 +387,7 @@ public class BodyTranslator extends Translator {
             resultNode = node.getValueNode().accept(this);
         }
 
-        return new BreakNode(context, sourceSection, environment.getBlockID(), resultNode);
+        return new BreakNode(context, sourceSection, environment.getBreakID(), resultNode);
     }
 
     @Override
@@ -616,7 +613,7 @@ public class BodyTranslator extends Translator {
 
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
             BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();
-            translated = new CatchBreakFromCallNode(context, sourceSection, translated, blockDef.getBlockID());
+            translated = new CatchBreakNode(context, sourceSection, translated, blockDef.getBreakID());
         }
 
         // return instrumenter.instrumentAsCall(translated, node.getName());
@@ -685,6 +682,18 @@ public class BodyTranslator extends Translator {
             arguments.add(argsNode);
         }
 
+        final List<RubyNode> argumentsTranslated = new ArrayList<>();
+
+        for (org.jruby.ast.Node argument : arguments) {
+            argumentsTranslated.add(argument.accept(this));
+        }
+
+        if (extraArgument != null) {
+            argumentsTranslated.add(extraArgument);
+        }
+
+        final RubyNode[] argumentsTranslatedArray = argumentsTranslated.toArray(new RubyNode[argumentsTranslated.size()]);
+
         if (iterNode instanceof org.jruby.ast.BlockPassNode) {
             blockPassNode = ((org.jruby.ast.BlockPassNode) iterNode).getBodyNode();
         }
@@ -704,18 +713,6 @@ public class BodyTranslator extends Translator {
         } else {
             blockTranslated = null;
         }
-
-        final List<RubyNode> argumentsTranslated = new ArrayList<>();
-
-        for (org.jruby.ast.Node argument : arguments) {
-            argumentsTranslated.add(argument.accept(this));
-        }
-
-        if (extraArgument != null) {
-            argumentsTranslated.add(extraArgument);
-        }
-
-        final RubyNode[] argumentsTranslatedArray = argumentsTranslated.toArray(new RubyNode[argumentsTranslated.size()]);
 
         return new ArgumentsAndBlockTranslation(blockTranslated, argumentsTranslatedArray, isSplatted);
     }
@@ -1060,7 +1057,12 @@ public class BodyTranslator extends Translator {
             }
 
             e.declareVar(node.getName());
-            readNode = e.findLocalVarNode(node.getName(), translate(node.getPosition()));
+
+            // Searching for a local variable must start at the base environment, even though we may have determined
+            // the variable should be declared in a parent frame descriptor.  This is so the search can determine
+            // whether to return a ReadLocalVariableNode or a ReadDeclarationVariableNode and potentially record the
+            // fact that a declaration frame is needed.
+            readNode = environment.findLocalVarNode(node.getName(), translate(node.getPosition()));
         }
 
         return readNode;
@@ -1712,7 +1714,7 @@ public class BodyTranslator extends Translator {
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), hasOwnScope, false,
-                sharedMethodInfo, environment.getNamedMethodName(), true, environment.getParseEnvironment().allocateBlockID());
+                sharedMethodInfo, environment.getNamedMethodName(), true, environment.getParseEnvironment().allocateBreakID());
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source, argsNode);
         methodCompiler.translatingForStatement = translatingForStatement;
 
@@ -2726,8 +2728,12 @@ public class BodyTranslator extends Translator {
         }
 
         final RubyNode body;
+        final BreakID whileBreakID = environment.getParseEnvironment().allocateBreakID();
+
         final boolean oldTranslatingWhile = translatingWhile;
         translatingWhile = true;
+        BreakID oldBreakID = environment.getBreakID();
+        environment.setBreakIDForWhile(whileBreakID);
         try {
             if (node.getBodyNode().isNil()) {
                 body = new DefinedWrapperNode(context, sourceSection,
@@ -2737,6 +2743,7 @@ public class BodyTranslator extends Translator {
                 body = node.getBodyNode().accept(this);
             }
         } finally {
+            environment.setBreakIDForWhile(oldBreakID);
             translatingWhile = oldTranslatingWhile;
         }
 
@@ -2748,7 +2755,7 @@ public class BodyTranslator extends Translator {
             loop = WhileNode.createDoWhile(context, sourceSection, condition, body);
         }
 
-        return new CatchBreakFromCallNode(context, sourceSection, loop, environment.getBlockID());
+        return new CatchBreakNode(context, sourceSection, loop, whileBreakID);
     }
 
     @Override
@@ -2842,7 +2849,7 @@ public class BodyTranslator extends Translator {
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), false, false,
-                sharedMethodInfo, sharedMethodInfo.getName(), true, environment.getParseEnvironment().allocateBlockID());
+                sharedMethodInfo, sharedMethodInfo.getName(), true, environment.getParseEnvironment().allocateBreakID());
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
 
         final RubyNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo);

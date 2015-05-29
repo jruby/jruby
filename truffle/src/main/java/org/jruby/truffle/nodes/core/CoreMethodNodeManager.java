@@ -102,9 +102,15 @@ public class CoreMethodNodeManager {
             if (method.onSingleton()) {
                 System.err.println("WARNING: Either onSingleton or isModuleFunction for " + methodDetails.getIndicativeName());
             }
+            if (method.constructor()) {
+                System.err.println("WARNING: Either constructor or isModuleFunction for " + methodDetails.getIndicativeName());
+            }
             if (!module.isOnlyAModule()) {
                 System.err.println("WARNING: Using isModuleFunction on a Class for " + methodDetails.getIndicativeName());
             }
+        }
+        if (method.onSingleton() && method.constructor()) {
+            System.err.println("WARNING: Either onSingleton or isModuleFunction for " + methodDetails.getIndicativeName());
         }
 
         final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
@@ -112,7 +118,7 @@ public class CoreMethodNodeManager {
         if (method.isModuleFunction()) {
             addMethod(module, rootNode, names, Visibility.PRIVATE);
             addMethod(getSingletonClass(module), rootNode, names, Visibility.PUBLIC);
-        } else if (method.onSingleton()) {
+        } else if (method.onSingleton() || method.constructor()) {
             addMethod(getSingletonClass(module), rootNode, names, visibility);
         } else {
             addMethod(module, rootNode, names, visibility);

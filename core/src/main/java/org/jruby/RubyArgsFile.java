@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.IOException;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
+import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import jnr.posix.FileStat;
@@ -239,6 +240,7 @@ public class RubyArgsFile {
         return ((RubyIO) getData(context, recv, "no stream to set encoding").currentFile).external_encoding(context);
     }    
 
+    // MRI: argf_getline
     private static IRubyObject argf_getline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
 
@@ -269,21 +271,10 @@ public class RubyArgsFile {
     /** Read a line.
      * 
      */
-    @JRubyMethod(name = "gets", optional = 1)
+    @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        ArgsFileData data = ArgsFileData.getDataFrom(recv);
-
-        if (!data.next_argv(context)) return context.runtime.getNil();
-
-        IRubyObject line;
-        if (!(data.currentFile instanceof RubyIO)) {
-            line = data.currentFile.callMethod(context, "gets", args);
-        } else {
-            line = argf_getline(context, recv, args);
-        }
-
+        IRubyObject line = argf_getline(context, recv, args);
         context.setLastLine(line);
-        context.runtime.getGlobalVariables().set("$_", line);
         
         return line;
     }
