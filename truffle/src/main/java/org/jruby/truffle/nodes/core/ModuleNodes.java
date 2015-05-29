@@ -1014,9 +1014,9 @@ public abstract class ModuleNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubySymbol defineMethod(RubyModule module, String name, RubyMethod method, UndefinedPlaceholder block) {
-            module.addMethod(this, method.getMethod().withName(name));
+        @Specialization(guards = "isRubyMethod(method)")
+        public RubySymbol defineMethod(RubyModule module, String name, RubyBasicObject method, UndefinedPlaceholder block) {
+            module.addMethod(this, MethodNodes.getMethod(method).withName(name));
             return getContext().getSymbolTable().getSymbol(name);
         }
 

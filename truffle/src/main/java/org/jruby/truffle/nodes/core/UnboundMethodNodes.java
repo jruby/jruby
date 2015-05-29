@@ -81,7 +81,7 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public RubyMethod bind(VirtualFrame frame, RubyUnboundMethod unboundMethod, Object object) {
+        public RubyBasicObject bind(VirtualFrame frame, RubyUnboundMethod unboundMethod, Object object) {
             CompilerDirectives.transferToInterpreter();
 
             RubyModule module = unboundMethod.getMethod().getDeclaringModule();
@@ -95,7 +95,7 @@ public abstract class UnboundMethodNodes {
                 }
             }
 
-            return new RubyMethod(getContext().getCoreLibrary().getMethodClass(), object, unboundMethod.getMethod());
+            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, unboundMethod.getMethod());
         }
 
     }

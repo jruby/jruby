@@ -1043,16 +1043,16 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyMethod method(Object object, RubySymbol name) {
+        public RubyBasicObject method(Object object, RubySymbol name) {
             return method(object, name.toString());
         }
 
         @Specialization
-        public RubyMethod method(Object object, RubyString name) {
+        public RubyBasicObject method(Object object, RubyString name) {
             return method(object, name.toString());
         }
 
-        private RubyMethod method(Object object, String name) {
+        private RubyBasicObject method(Object object, String name) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO(CS, 11-Jan-15) cache this lookup
@@ -1065,7 +1065,7 @@ public abstract class KernelNodes {
                         name, getContext().getCoreLibrary().getLogicalClass(object), this));
             }
 
-            return new RubyMethod(getContext().getCoreLibrary().getMethodClass(), object, method);
+            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, method);
         }
 
     }
