@@ -684,7 +684,7 @@ public abstract class StringNodes {
                 store[n] = ((int) bytes[n]) & 0xFF;
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
+            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
         }
 
     }
@@ -1742,7 +1742,7 @@ public abstract class StringNodes {
                     }
 
                     final Object[] captures = ((RubyMatchData) matchData).getCaptures();
-                    yield(frame, block, new RubyArray(context.getCoreLibrary().getArrayClass(), captures, captures.length));
+                    yield(frame, block, ArrayNodes.createArray(context.getCoreLibrary().getArrayClass(), captures, captures.length));
 
                     lastGoodMatchData = matchData;
                     end = StringSupport.positionEndForScan(string.getByteList(), matcher, encoding, p, range);

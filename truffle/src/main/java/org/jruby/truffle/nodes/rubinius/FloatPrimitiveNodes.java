@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 
 import org.jruby.truffle.nodes.core.FixnumOrBignumNode;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -62,7 +63,7 @@ public abstract class FloatPrimitiveNodes {
 
             final int sign = value < 0 ? 1 : 0;
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(),
+            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(),
                     new Object[]{getContext().makeString(string), decimal, sign, string.length()}, 4);
         }
 

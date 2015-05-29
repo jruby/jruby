@@ -64,7 +64,7 @@ public abstract class SplatCastNode extends RubyNode {
     public RubyArray splat(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+                return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
 
             case ARRAY_WITH_NIL:
                 return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());

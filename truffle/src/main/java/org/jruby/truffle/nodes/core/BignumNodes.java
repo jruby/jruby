@@ -20,6 +20,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -535,7 +536,7 @@ public abstract class BignumNodes {
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
             // b is converted to a Bignum here in other implementations.
             Object[] store = new Object[] { b, a };
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
+            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
         }
 
         @Specialization
@@ -545,7 +546,7 @@ public abstract class BignumNodes {
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
             // b is converted to a Bignum here in other implementations.
             Object[] store = new Object[] { b, a };
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
+            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
@@ -553,7 +554,7 @@ public abstract class BignumNodes {
             CompilerDirectives.transferToInterpreter();
 
             Object[] store = new Object[] { b, a };
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
+            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
         }
 
     }

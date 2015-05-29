@@ -316,6 +316,30 @@ public abstract class ArrayNodes {
         return true;
     }
 
+    public static RubyArray createEmptyArray(RubyClass arrayClass) {
+        return new RubyArray(arrayClass, null, 0);
+    }
+
+    public static RubyArray createArray(RubyClass arrayClass, int[] store, int size) {
+        return createGeneralArray(arrayClass, (Object) store, size);
+    }
+
+    public static RubyArray createArray(RubyClass arrayClass, long[] store, int size) {
+        return createGeneralArray(arrayClass, (Object) store, size);
+    }
+
+    public static RubyArray createArray(RubyClass arrayClass, double[] store, int size) {
+        return createGeneralArray(arrayClass, (Object) store, size);
+    }
+
+    public static RubyArray createArray(RubyClass arrayClass, Object[] store, int size) {
+        return createGeneralArray(arrayClass, (Object) store, size);
+    }
+
+    public static RubyArray createGeneralArray(RubyClass arrayClass, Object store, int size) {
+        return new RubyArray(arrayClass, store, size);
+    }
+
     @CoreMethod(names = "+", required = 1)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "a"),
@@ -334,12 +358,12 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isNull(a)", "isNull(b)"})
         public RubyArray addNull(RubyArray a, RubyArray b) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+            return createEmptyArray(getContext().getCoreLibrary().getArrayClass());
         }
 
         @Specialization(guards = {"isObject(a)", "isNull(b)"})
         public RubyArray addObjectNull(RubyArray a, RubyArray b) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) getStore(a), getSize(a)), getSize(a));
+            return createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) getStore(a), getSize(a)), getSize(a));
         }
 
         @Specialization(guards = "areBothIntegerFixnum(a, b)")
@@ -348,7 +372,7 @@ public abstract class ArrayNodes {
             final int[] combined = new int[combinedSize];
             System.arraycopy(getStore(a), 0, combined, 0, getSize(a));
             System.arraycopy(getStore(b), 0, combined, getSize(a), getSize(b));
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
         }
 
         @Specialization(guards = "areBothLongFixnum(a, b)")
@@ -357,7 +381,7 @@ public abstract class ArrayNodes {
             final long[] combined = new long[combinedSize];
             System.arraycopy(getStore(a), 0, combined, 0, getSize(a));
             System.arraycopy(getStore(b), 0, combined, getSize(a), getSize(b));
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
         }
 
         @Specialization(guards = "areBothFloat(a, b)")
@@ -366,7 +390,7 @@ public abstract class ArrayNodes {
             final double[] combined = new double[combinedSize];
             System.arraycopy(getStore(a), 0, combined, 0, getSize(a));
             System.arraycopy(getStore(b), 0, combined, getSize(a), getSize(b));
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
         }
 
         @Specialization(guards = "areBothObject(a, b)")
@@ -375,25 +399,25 @@ public abstract class ArrayNodes {
             final Object[] combined = new Object[combinedSize];
             System.arraycopy(getStore(a), 0, combined, 0, getSize(a));
             System.arraycopy(getStore(b), 0, combined, getSize(a), getSize(b));
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
         }
 
         @Specialization(guards = {"isNull(a)", "isOtherIntegerFixnum(a, b)"})
         public RubyArray addNullIntegerFixnum(RubyArray a, RubyArray b) {
             final int size = getSize(b);
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((int[]) getStore(b), size), size);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((int[]) getStore(b), size), size);
         }
 
         @Specialization(guards = {"isNull(a)", "isOtherLongFixnum(a, b)"})
         public RubyArray addNullLongFixnum(RubyArray a, RubyArray b) {
             final int size = getSize(b);
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((long[]) getStore(b), size), size);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((long[]) getStore(b), size), size);
         }
 
         @Specialization(guards = {"isNull(a)", "isOtherObject(a, b)"})
         public RubyArray addNullObject(RubyArray a, RubyArray b) {
             final int size = getSize(b);
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) getStore(b), size), size);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) getStore(b), size), size);
         }
 
         @Specialization(guards = {"!isObject(a)", "isOtherObject(a, b)"})
@@ -402,7 +426,7 @@ public abstract class ArrayNodes {
             final Object[] combined = new Object[combinedSize];
             System.arraycopy(ArrayUtils.box(getStore(a)), 0, combined, 0, getSize(a));
             System.arraycopy(getStore(b), 0, combined, getSize(a), getSize(b));
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
         }
 
         @Specialization(guards = {"isObject(a)", "!isOtherObject(a, b)"})
@@ -411,19 +435,19 @@ public abstract class ArrayNodes {
             final Object[] combined = new Object[combinedSize];
             System.arraycopy(getStore(a), 0, combined, 0, getSize(a));
             System.arraycopy(ArrayUtils.box(getStore(b)), 0, combined, getSize(a), getSize(b));
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
         }
 
         @Specialization(guards = "isEmpty(a)")
         public RubyArray addEmpty(RubyArray a, RubyArray b) {
             final int size = getSize(b);
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(getStore(b)), size);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(getStore(b)), size);
         }
 
         @Specialization(guards = "isOtherEmpty(a, b)")
         public RubyArray addOtherEmpty(RubyArray a, RubyArray b) {
             final int size = getSize(a);
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(getStore(a)), size);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(getStore(a)), size);
         }
 
     }
@@ -444,7 +468,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
             }
-            return new RubyArray(array.getLogicalClass());
+            return createEmptyArray(array.getLogicalClass());
         }
 
         @Specialization(guards = "isIntegerFixnum(array)")
@@ -462,7 +486,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(array.getLogicalClass(), newStore, newStoreLength);
+            return createArray(array.getLogicalClass(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isLongFixnum(array)")
@@ -480,7 +504,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(array.getLogicalClass(), newStore, newStoreLength);
+            return createArray(array.getLogicalClass(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isFloat(array)")
@@ -498,7 +522,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(array.getLogicalClass(), newStore, newStoreLength);
+            return createArray(array.getLogicalClass(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isObject(array)")
@@ -516,7 +540,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(array.getLogicalClass(), newStore, newStoreLength);
+            return createArray(array.getLogicalClass(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -608,7 +632,7 @@ public abstract class ArrayNodes {
                 final int exclusiveEnd = clampExclusiveIndex(array, range.doesExcludeEnd() ? end : end + 1);
 
                 if (exclusiveEnd <= normalizedIndex) {
-                    return new RubyArray(array.getLogicalClass(), null, 0);
+                    return createEmptyArray(array.getLogicalClass());
                 }
 
                 final int length = exclusiveEnd - normalizedIndex;
@@ -1008,19 +1032,19 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntArray(array)")
         public RubyArray compactInt(RubyArray array) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(),
+            return createArray(getContext().getCoreLibrary().getArrayClass(),
                     Arrays.copyOf((int[]) getStore(array), getSize(array)), getSize(array));
         }
 
         @Specialization(guards = "isLongArray(array)")
         public RubyArray compactLong(RubyArray array) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(),
+            return createArray(getContext().getCoreLibrary().getArrayClass(),
                     Arrays.copyOf((long[]) getStore(array), getSize(array)), getSize(array));
         }
 
         @Specialization(guards = "isDoubleArray(array)")
         public RubyArray compactDouble(RubyArray array) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(),
+            return createArray(getContext().getCoreLibrary().getArrayClass(),
                     Arrays.copyOf((double[]) getStore(array), getSize(array)), getSize(array));
         }
 
@@ -1041,12 +1065,12 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), newStore, m);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), newStore, m);
         }
 
         @Specialization(guards = "isNullArray(array)")
         public Object compactNull(RubyArray array) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+            return createEmptyArray(getContext().getCoreLibrary().getArrayClass());
         }
 
     }
@@ -2337,7 +2361,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNull(array)")
         public RubyArray mapNull(RubyArray array, RubyProc block) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            return createEmptyArray(getContext().getCoreLibrary().getArrayClass());
         }
 
         @Specialization(guards = "isIntegerFixnum(array)")
@@ -2963,7 +2987,7 @@ public abstract class ArrayNodes {
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
                 }
             }
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+            return createEmptyArray(getContext().getCoreLibrary().getArrayClass());
         }
 
         @Specialization(guards = "isIntegerFixnum(array)", rewriteOn = UnexpectedResultException.class)
@@ -2977,7 +3001,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numPop = getSize(array) < num ? getSize(array) : num;
                 final int[] store = ((int[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop , getSize(array)), numPop);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
                 final int[] filler = new int[numPop];
                 System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
                 setStore(array, store, getSize(array) - numPop);
@@ -2996,7 +3020,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numPop = getSize(array) < num ? getSize(array) : num;
                 final int[] store = ((int[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop , getSize(array)), numPop);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
                 final int[] filler = new int[numPop];
                 System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
                 setStore(array, store, getSize(array) - numPop);
@@ -3015,7 +3039,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numPop = getSize(array) < num ? getSize(array) : num;
                 final long[] store = ((long[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop , getSize(array)), numPop);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
                 final long[] filler = new long[numPop];
                 System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
                 setStore(array, store, getSize(array) - numPop);
@@ -3034,7 +3058,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numPop = getSize(array) < num ? getSize(array) : num;
                 final long[] store = ((long[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop , getSize(array)), numPop);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
                 final long[] filler = new long[numPop];
                 System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
                 setStore(array, store, getSize(array) - numPop);
@@ -3052,7 +3076,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numPop = getSize(array) < num ? getSize(array) : num;
                 final double[] store = ((double[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop , getSize(array)), numPop);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
                 final double[] filler = new double[numPop];
                 System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
                 setStore(array, store, getSize(array) - numPop);
@@ -3070,7 +3094,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numPop = getSize(array) < num ? getSize(array) : num;
                 final double[] store = ((double[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop , getSize(array)), numPop);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
                 final double[] filler = new double[numPop];
                 System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
                 setStore(array, store, getSize(array) - numPop);
@@ -3088,7 +3112,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numPop = getSize(array) < num ? getSize(array) : num;
                 final Object[] store = ((Object[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop , getSize(array)), numPop);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
                 final Object[] filler = new Object[numPop];
                 System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
                 setStore(array, store, getSize(array) - numPop);
@@ -3112,7 +3136,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numPop = getSize(array) < num ? getSize(array) : num;
                 final int[] store = ((int[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop , getSize(array)), numPop);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
                 final int[] filler = new int[numPop];
                 System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
                 setStore(array, store, getSize(array) - numPop);
@@ -3136,7 +3160,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numPop = getSize(array) < num ? getSize(array) : num;
                 final int[] store = ((int[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop , getSize(array)), numPop);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
                 final int[] filler = new int[numPop];
                 System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
                 setStore(array, store, getSize(array) - numPop);
@@ -3160,7 +3184,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numPop = getSize(array) < num ? getSize(array) : num;
                 final long[] store = ((long[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop , getSize(array)), numPop);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
                 final long[] filler = new long[numPop];
                 System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
                 setStore(array, store, getSize(array) - numPop);
@@ -3184,7 +3208,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numPop = getSize(array) < num ? getSize(array) : num;
                 final long[] store = ((long[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop , getSize(array)), numPop);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
                 final long[] filler = new long[numPop];
                 System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
                 setStore(array, store, getSize(array) - numPop);
@@ -3207,7 +3231,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numPop = getSize(array) < num ? getSize(array) : num;
                 final double[] store = ((double[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop , getSize(array)), numPop);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
                 final double[] filler = new double[numPop];
                 System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
                 setStore(array, store, getSize(array) - numPop);
@@ -3230,7 +3254,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numPop = getSize(array) < num ? getSize(array) : num;
                 final double[] store = ((double[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop , getSize(array)), numPop);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
                 final double[] filler = new double[numPop];
                 System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
                 setStore(array, store, getSize(array) - numPop);
@@ -3253,7 +3277,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numPop = getSize(array) < num ? getSize(array) : num;
                 final Object[] store = ((Object[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop , getSize(array)), numPop);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, getSize(array) - numPop, getSize(array)), numPop);
                 final Object[] filler = new Object[numPop];
                 System.arraycopy(filler, 0, store, getSize(array) - numPop, numPop);
                 setStore(array, store, getSize(array) - numPop);
@@ -3516,7 +3540,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNull(array)")
         public Object selectNull(VirtualFrame frame, RubyArray array, RubyProc block) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            return createEmptyArray(getContext().getCoreLibrary().getArrayClass());
         }
 
         @Specialization(guards = "isObject(array)")
@@ -3897,7 +3921,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNull(array)")
         public Object selectNull(VirtualFrame frame, RubyArray array, RubyProc block) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            return createEmptyArray(getContext().getCoreLibrary().getArrayClass());
         }
 
         @Specialization(guards = "isObject(array)")
@@ -4101,7 +4125,7 @@ public abstract class ArrayNodes {
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
                 }
             }
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+            return createEmptyArray(getContext().getCoreLibrary().getArrayClass());
         }
 
         @Specialization(guards = "isIntegerFixnum(array)", rewriteOn = UnexpectedResultException.class)
@@ -4115,7 +4139,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numShift = getSize(array) < num ? getSize(array) : num;
                 final int[] store = ((int[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
                 final int[] filler = new int[numShift];
                 System.arraycopy(store, numShift, store, 0 , getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, getSize(array) - numShift, numShift);
@@ -4135,7 +4159,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numShift = getSize(array) < num ? getSize(array) : num;
                 final int[] store = ((int[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
                 final int[] filler = new int[numShift];
                 System.arraycopy(store, numShift, store, 0 , getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, getSize(array) - numShift, numShift);
@@ -4155,7 +4179,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numShift = getSize(array) < num ? getSize(array) : num;
                 final long[] store = ((long[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
                 final long[] filler = new long[numShift];
                 System.arraycopy(store, numShift, store, 0 , getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, getSize(array) - numShift, numShift);
@@ -4175,7 +4199,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numShift = getSize(array) < num ? getSize(array) : num;
                 final long[] store = ((long[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
                 final long[] filler = new long[numShift];
                 System.arraycopy(store, numShift, store, 0 , getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, getSize(array) - numShift, numShift);
@@ -4195,7 +4219,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numShift = getSize(array) < num ? getSize(array) : num;
                 final double[] store = ((double[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
                 final double[] filler = new double[numShift];
                 System.arraycopy(store, numShift, store, 0, getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, getSize(array) - numShift, numShift);
@@ -4215,7 +4239,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numShift = getSize(array) < num ? getSize(array) : num;
                 final double[] store = ((double[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
                 final double[] filler = new double[numShift];
                 System.arraycopy(store, numShift, store, 0, getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, getSize(array) - numShift, numShift);
@@ -4235,7 +4259,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numShift = getSize(array) < num ? getSize(array) : num;
                 final Object[] store = ((Object[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
                 final Object[] filler = new Object[numShift];
                 System.arraycopy(store, numShift, store, 0, getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, getSize(array) - numShift, numShift);
@@ -4260,7 +4284,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numShift = getSize(array) < num ? getSize(array) : num;
                 final int[] store = ((int[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
                 final int[] filler = new int[numShift];
                 System.arraycopy(store, numShift, store, 0 , getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, getSize(array) - numShift, numShift);
@@ -4285,7 +4309,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numShift = getSize(array) < num ? getSize(array) : num;
                 final int[] store = ((int[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
                 final int[] filler = new int[numShift];
                 System.arraycopy(store, numShift, store, 0 , getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, getSize(array) - numShift, numShift);
@@ -4310,7 +4334,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numShift = getSize(array) < num ? getSize(array) : num;
                 final long[] store = ((long[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
                 final long[] filler = new long[numShift];
                 System.arraycopy(store, numShift, store, 0 , getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, getSize(array) - numShift, numShift);
@@ -4335,7 +4359,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numShift = getSize(array) < num ? getSize(array) : num;
                 final long[] store = ((long[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
                 final long[] filler = new long[numShift];
                 System.arraycopy(store, numShift, store, 0 , getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, getSize(array) - numShift, numShift);
@@ -4359,7 +4383,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numShift = getSize(array) < num ? getSize(array) : num;
                 final double[] store = ((double[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, getSize(array) - numShift), numShift);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, getSize(array) - numShift), numShift);
                 final double[] filler = new double[numShift];
                 System.arraycopy(store, numShift, store, 0, getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, getSize(array) - numShift, numShift);
@@ -4384,7 +4408,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numShift = getSize(array) < num ? getSize(array) : num;
                 final double[] store = ((double[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, getSize(array) - numShift), numShift);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, getSize(array) - numShift), numShift);
                 final double[] filler = new double[numShift];
                 System.arraycopy(store, numShift, store, 0, getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, getSize(array) - numShift, numShift);
@@ -4409,7 +4433,7 @@ public abstract class ArrayNodes {
             } else {
                 final int numShift = getSize(array) < num ? getSize(array) : num;
                 final Object[] store = ((Object[]) getStore(array));
-                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, getSize(array) - numShift), numShift);
+                final RubyArray result = createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, getSize(array) - numShift), numShift);
                 final Object[] filler = new Object[numShift];
                 System.arraycopy(store, numShift, store, 0, getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, getSize(array) - numShift, numShift);
@@ -4447,7 +4471,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNull(array)")
         public RubyArray sortNull(RubyArray array, Object block) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            return createEmptyArray(getContext().getCoreLibrary().getArrayClass());
         }
 
         @ExplodeLoop
@@ -4475,7 +4499,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), newStore, size);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), newStore, size);
         }
 
         @ExplodeLoop
@@ -4503,7 +4527,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), newStore, size);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), newStore, size);
         }
 
         @Specialization(guards = {"isObject(array)", "isSmall(array)"})
@@ -4526,7 +4550,7 @@ public abstract class ArrayNodes {
                 store[j] = x;
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, size);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
         }
 
         @Specialization
@@ -4599,19 +4623,19 @@ public abstract class ArrayNodes {
 
             if (areSameLength) {
                 for (int n = 0; n < zippedLength; n++) {
-                    zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                    zipped[n] = createArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
                 }
             } else {
                 for (int n = 0; n < zippedLength; n++) {
                     if (n < bLength) {
-                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                        zipped[n] = createArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
                     } else {
-                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], nil()}, 2);
+                        zipped[n] = createArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], nil()}, 2);
                     }
                 }
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), zipped, zippedLength);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), zipped, zippedLength);
         }
 
         @Specialization(guards = {"isObject(array)", "isOtherSingleObjectArray(array, others)"})
@@ -4629,20 +4653,20 @@ public abstract class ArrayNodes {
 
             if (areSameLength) {
                 for (int n = 0; n < zippedLength; n++) {
-                    zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                    zipped[n] = createArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
                 }
             } else {
                 for (int n = 0; n < zippedLength; n++) {
                     if (n < bLength) {
-                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                        zipped[n] = createArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
                     } else {
-                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], nil()}, 2);
+                        zipped[n] = createArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], nil()}, 2);
                     }
                 }
             }
 
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), zipped, zippedLength);
+            return createArray(getContext().getCoreLibrary().getArrayClass(), zipped, zippedLength);
         }
 
         @Specialization(guards = {"!isOtherSingleObjectArray(array, others)"})
@@ -4665,7 +4689,7 @@ public abstract class ArrayNodes {
             if (proc == null) {
                 proc = nil();
             }
-            return ruby(frame, "zip_internal(*others, &block)", "others", new RubyArray(getContext().getCoreLibrary().getArrayClass(), others, others.length), "block", proc);
+            return ruby(frame, "zip_internal(*others, &block)", "others", createArray(getContext().getCoreLibrary().getArrayClass(), others, others.length), "block", proc);
         }
 
     }
@@ -4674,7 +4698,7 @@ public abstract class ArrayNodes {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyArray(rubyClass);
+            return createEmptyArray(rubyClass);
         }
 
     }

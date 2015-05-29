@@ -18,6 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -268,7 +269,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                 ret[4] = getContext().makeString(new ByteList(ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP() + ec.lastError.getErrorBytesLength(), ec.lastError.getReadAgainLength()));
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ret, ret.length);
+            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), ret, ret.length);
         }
 
     }

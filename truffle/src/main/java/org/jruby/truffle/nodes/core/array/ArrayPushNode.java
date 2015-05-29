@@ -36,7 +36,7 @@ public class ArrayPushNode extends RubyNode {
 
         final RubyArray originalArray = (RubyArray) arrayObject;
 
-        final RubyArray newArray = new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayNodes.slowToArray(originalArray), ArrayNodes.getSize(originalArray));
+        final RubyArray newArray = ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), ArrayNodes.slowToArray(originalArray), ArrayNodes.getSize(originalArray));
         ArrayNodes.slowPush(newArray, pushed.execute(frame));
         return newArray;
     }

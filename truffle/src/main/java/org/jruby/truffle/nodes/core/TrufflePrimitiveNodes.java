@@ -279,7 +279,7 @@ public abstract class TrufflePrimitiveNodes {
 
             for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
                 final Object[] store = lineCountsStore(source.getValue());
-                final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
+                final RubyArray array = ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
                 keyValues.add(new KeyValue(getContext().makeString(source.getKey().getPath()), array));
             }
 

@@ -39,7 +39,7 @@ public abstract class ArraySliceNode extends RubyNode {
     public RubyArray sliceNull(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+        return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
     }
 
     @Specialization(guards = "isIntegerFixnum(array)")
@@ -48,9 +48,9 @@ public abstract class ArraySliceNode extends RubyNode {
         final int to = ArrayNodes.getSize(array) + this.to;
 
         if (from >= to) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((int[]) ArrayNodes.getStore(array), from, to), to - from);
+            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((int[]) ArrayNodes.getStore(array), from, to), to - from);
         }
     }
 
@@ -60,9 +60,9 @@ public abstract class ArraySliceNode extends RubyNode {
         final int to = ArrayNodes.getSize(array) + this.to;
 
         if (from >= to) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((long[]) ArrayNodes.getStore(array), from, to), to - from);
+            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((long[]) ArrayNodes.getStore(array), from, to), to - from);
         }
     }
 
@@ -72,9 +72,9 @@ public abstract class ArraySliceNode extends RubyNode {
         final int to = ArrayNodes.getSize(array) + this.to;
 
         if (from >= to) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((double[]) ArrayNodes.getStore(array), from, to), to - from);
+            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((double[]) ArrayNodes.getStore(array), from, to), to - from);
         }
     }
 
@@ -84,9 +84,9 @@ public abstract class ArraySliceNode extends RubyNode {
         final int to = ArrayNodes.getSize(array) + this.to;
 
         if (from >= to) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((Object[]) ArrayNodes.getStore(array), from, to), to - from);
+            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((Object[]) ArrayNodes.getStore(array), from, to), to - from);
         }
     }
 

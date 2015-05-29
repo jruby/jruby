@@ -21,6 +21,7 @@ import org.joni.*;
 import org.joni.exception.SyntaxException;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -416,7 +417,7 @@ public class RubyRegexp extends RubyBasicObject {
                 }
 
                 final Object[] captures = ((RubyMatchData) matchData).getCaptures();
-                allMatches.add(new RubyArray(context.getCoreLibrary().getArrayClass(), captures, captures.length));
+                allMatches.add(ArrayNodes.createArray(context.getCoreLibrary().getArrayClass(), captures, captures.length));
 
                 lastGoodMatchData = matchData;
                 end = StringSupport.positionEndForScan(string.getByteList(), matcher, encoding, p, range);

@@ -641,7 +641,7 @@ public abstract class IOPrimitiveNodes {
                 }
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), setObjects, setFdsCount);
+            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), setObjects, setFdsCount);
         }
 
     }

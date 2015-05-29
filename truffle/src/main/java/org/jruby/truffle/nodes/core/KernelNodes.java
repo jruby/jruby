@@ -330,7 +330,7 @@ public abstract class KernelNodes {
                 locations[n] = ThreadBacktraceLocationNodes.createRubyThreadBacktraceLocation(threadBacktraceLocationClass, activation);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), locations, locations.length);
+            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), locations, locations.length);
         }
     }
 
@@ -907,7 +907,7 @@ public abstract class KernelNodes {
 
             Arrays.sort(instanceVariableNames);
 
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (Object name : instanceVariableNames) {
                 if (name instanceof String) {
@@ -1007,7 +1007,7 @@ public abstract class KernelNodes {
         public RubyArray localVariables() {
             CompilerDirectives.transferToInterpreter();
 
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (Object name : Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
                 if (name instanceof String) {
@@ -1540,7 +1540,7 @@ public abstract class KernelNodes {
             RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
 
             if (!metaClass.isSingleton()) {
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+                return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
             }
 
             CompilerDirectives.transferToInterpreter();

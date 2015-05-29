@@ -379,7 +379,7 @@ public class CoreLibrary {
 
         mainObject = new RubyBasicObject(objectClass);
         nilObject = new RubyBasicObject(nilClass);
-        argv = new RubyArray(arrayClass);
+        argv = ArrayNodes.createEmptyArray(arrayClass);
         rubiniusUndefined = new RubyBasicObject(objectClass);
 
         globalVariablesObject = new RubyBasicObject(objectClass);
@@ -461,8 +461,8 @@ public class CoreLibrary {
     private void initializeGlobalVariables() {
         RubyBasicObject globals = globalVariablesObject;
 
-        RubyBasicObject.setInstanceVariable(globals, "$LOAD_PATH", new RubyArray(arrayClass));
-        RubyBasicObject.setInstanceVariable(globals, "$LOADED_FEATURES", new RubyArray(arrayClass));
+        RubyBasicObject.setInstanceVariable(globals, "$LOAD_PATH", ArrayNodes.createEmptyArray(arrayClass));
+        RubyBasicObject.setInstanceVariable(globals, "$LOADED_FEATURES", ArrayNodes.createEmptyArray(arrayClass));
         RubyBasicObject.setInstanceVariable(globals, "$:", globals.getInstanceVariable("$LOAD_PATH"));
         RubyBasicObject.setInstanceVariable(globals, "$\"", globals.getInstanceVariable("$LOADED_FEATURES"));
         RubyBasicObject.setInstanceVariable(globals, "$,", nilObject);
@@ -527,7 +527,7 @@ public class CoreLibrary {
             signals[i++] = ArrayNodes.fromObjects(arrayClass, signalName, signal.getValue());
         }
 
-        signalModule.setConstant(node, "SIGNAL_LIST", new RubyArray(arrayClass, signals, signals.length));
+        signalModule.setConstant(node, "SIGNAL_LIST", ArrayNodes.createArray(arrayClass, signals, signals.length));
     }
 
     private RubyClass defineClass(String name) {

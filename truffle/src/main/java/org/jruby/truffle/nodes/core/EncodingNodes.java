@@ -21,6 +21,7 @@ import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -278,7 +279,7 @@ public abstract class EncodingNodes {
 
             final RubyEncoding[] encodings = RubyEncoding.cloneEncodingList();
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), encodings, encodings.length);
+            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), encodings, encodings.length);
         }
     }
 

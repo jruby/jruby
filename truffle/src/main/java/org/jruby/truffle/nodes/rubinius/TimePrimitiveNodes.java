@@ -18,6 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
@@ -182,7 +183,7 @@ public abstract class TimePrimitiveNodes {
             }
 
             final Object[] decomposed = new Object[]{sec, min, hour, day, month, year, wday, yday, isdst, zone};
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), decomposed, decomposed.length);
+            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), decomposed, decomposed.length);
         }
 
     }

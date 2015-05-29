@@ -675,7 +675,7 @@ public abstract class HashNodes {
                     }
 
                     if (n < size) {
-                        yield(frame, block, new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{PackedArrayStrategy.getKey(store, n), PackedArrayStrategy.getValue(store, n)}, 2));
+                        yield(frame, block, ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{PackedArrayStrategy.getKey(store, n), PackedArrayStrategy.getValue(store, n)}, 2));
                     }
                 }
             } finally {
@@ -692,7 +692,7 @@ public abstract class HashNodes {
             assert HashOperations.verifyStore(hash);
 
             for (KeyValue keyValue : verySlowToKeyValues(hash)) {
-                yield(frame, block, new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{keyValue.getKey(), keyValue.getValue()}, 2));
+                yield(frame, block, ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{keyValue.getKey(), keyValue.getValue()}, 2));
             }
 
             return hash;
@@ -853,7 +853,7 @@ public abstract class HashNodes {
         public RubyArray mapNull(VirtualFrame frame, RubyHash hash, RubyProc block) {
             assert HashOperations.verifyStore(hash);
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+            return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
         }
 
         @ExplodeLoop
@@ -886,7 +886,7 @@ public abstract class HashNodes {
                 }
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), result, size);
+            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), result, size);
         }
 
         @Specialization(guards = "isBucketsStorage(hash)")
@@ -895,7 +895,7 @@ public abstract class HashNodes {
 
             assert HashOperations.verifyStore(hash);
 
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+            final RubyArray array = ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
                 ArrayNodes.slowPush(array, yield(frame, block, keyValue.getKey(), keyValue.getValue()));

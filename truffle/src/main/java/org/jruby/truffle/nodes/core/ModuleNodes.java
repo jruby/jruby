@@ -748,7 +748,7 @@ public abstract class ModuleNodes {
         public RubyArray getClassVariables(RubyModule module) {
             CompilerDirectives.transferToInterpreter();
 
-            final RubyArray array = new RubyArray(module.getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = ArrayNodes.createEmptyArray(module.getContext().getCoreLibrary().getArrayClass());
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
                 ArrayNodes.slowPush(array, RubySymbol.newSymbol(module.getContext(), variable));
