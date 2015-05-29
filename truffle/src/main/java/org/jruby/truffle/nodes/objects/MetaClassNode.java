@@ -30,12 +30,12 @@ public abstract class MetaClassNode extends RubyNode {
 
     public abstract RubyClass executeMetaClass(VirtualFrame frame, Object value);
 
-    @Specialization(guards = "isTrue(value)")
+    @Specialization(guards = "value")
     protected RubyClass singletonClassTrue(boolean value) {
         return getContext().getCoreLibrary().getTrueClass();
     }
 
-    @Specialization(guards = "!isTrue(value)")
+    @Specialization(guards = "!value")
     protected RubyClass singletonClassFalse(boolean value) {
         return getContext().getCoreLibrary().getFalseClass();
     }

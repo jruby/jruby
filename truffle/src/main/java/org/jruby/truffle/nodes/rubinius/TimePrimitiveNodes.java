@@ -81,14 +81,14 @@ public abstract class TimePrimitiveNodes {
             readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
-        @Specialization(guards = { "isTrue(isUTC)", "isNil(offset)" })
+        @Specialization(guards = { "isUTC", "isNil(offset)" })
         public RubyTime timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = getMillis(seconds, nanoseconds);
             return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds), nil());
         }
 
-        @Specialization(guards = { "!isTrue(isUTC)", "isNil(offset)" })
+        @Specialization(guards = { "!isUTC", "isNil(offset)" })
         public RubyTime timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = getMillis(seconds, nanoseconds);

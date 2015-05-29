@@ -22,9 +22,7 @@ import org.jruby.truffle.runtime.core.*;
 
 public abstract class RubyGuards {
 
-    public static boolean isNotProvided(Object value) {
-        return value instanceof NotProvided;
-    }
+    // Basic Java types
 
     public static boolean isBoolean(Object value) {
         return value instanceof Boolean;
@@ -42,12 +40,22 @@ public abstract class RubyGuards {
         return value instanceof Double;
     }
 
+    // Ruby types
+
     public static boolean isRubyBignum(Object value) {
         return value instanceof RubyBignum;
     }
 
+    public static boolean isRubyBigDecimal(RubyBasicObject value) {
+        return value.getDynamicObject().getShape().getObjectType() == BigDecimalNodes.BIG_DECIMAL_TYPE;
+    }
+
     public static boolean isIntegerFixnumRange(Object value) {
         return value instanceof RubyRange.IntegerFixnumRange;
+    }
+
+    public static boolean isRubyRange(Object value) {
+        return value instanceof RubyRange;
     }
 
     public static boolean isRubyArray(Object value) {
@@ -57,7 +65,6 @@ public abstract class RubyGuards {
     public static boolean isRubyArray(RubyBasicObject value) {
         return value.getDynamicObject().getShape().getObjectType() == ArrayNodes.ARRAY_TYPE;
     }
-
     public static boolean isRubyBinding(Object value) {
         return value instanceof RubyBinding;
     }
@@ -76,10 +83,6 @@ public abstract class RubyGuards {
 
     public static boolean isRubyModule(Object value) {
         return value instanceof RubyModule;
-    }
-
-    public static boolean isRubyRange(Object value) {
-        return value instanceof RubyRange;
     }
 
     public static boolean isRubyRegexp(Object value) {
@@ -122,6 +125,8 @@ public abstract class RubyGuards {
         return value instanceof RubyBasicObject;
     }
 
+    // Internal types
+
     public static boolean isThreadLocal(Object value) {
         return value instanceof ThreadLocalObject;
     }
@@ -130,9 +135,13 @@ public abstract class RubyGuards {
         return (object instanceof TruffleObject) && !(object instanceof RubyBasicObject);
     }
 
-    public static boolean isTrue(boolean value) {
-        return value;
+    // Sentinels
+
+    public static boolean isNotProvided(Object value) {
+        return value instanceof NotProvided;
     }
+
+    // Values
 
     public static boolean isNaN(double value) {
         return Double.isNaN(value);
@@ -140,18 +149,6 @@ public abstract class RubyGuards {
 
     public static boolean isInfinity(double value) {
         return Double.isInfinite(value);
-    }
-
-    public static boolean isRubyBigDecimal(RubyBasicObject value) {
-        return value.getDynamicObject().getShape().getObjectType() == BigDecimalNodes.BIG_DECIMAL_TYPE;
-    }
-
-    public static boolean isNegative(int size) {
-        return size < 0;
-    }
-
-    public static boolean isNegative(long size) {
-        return size < 0;
     }
 
 }

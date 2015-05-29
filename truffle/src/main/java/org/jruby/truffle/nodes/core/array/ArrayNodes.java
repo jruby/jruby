@@ -1899,18 +1899,18 @@ public abstract class ArrayNodes {
             return initialize(array, 0, nil(), NotProvided.INSTANCE);
         }
 
-        @Specialization(guards = "!isNegative(size)")
+        @Specialization(guards = "size >= 0")
         public RubyArray initialize(RubyArray array, int size, NotProvided defaultValue, NotProvided block) {
             return initialize(array, size, nil(), block);
         }
 
-        @Specialization(guards = "isNegative(size)")
+        @Specialization(guards = "size < 0")
         public RubyArray initializeNegative(RubyArray array, int size, NotProvided defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
-        @Specialization(guards = "!isNegative(size)")
+        @Specialization(guards = "size >= 0")
         public RubyArray initialize(RubyArray array, long size, NotProvided defaultValue, NotProvided block) {
             if (size > Integer.MAX_VALUE) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("array size too big", this));
@@ -1918,13 +1918,13 @@ public abstract class ArrayNodes {
             return initialize(array, (int) size, nil(), block);
         }
 
-        @Specialization(guards = "isNegative(size)")
+        @Specialization(guards = "size < 0")
         public RubyArray initializeNegative(RubyArray array, long size, NotProvided defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
-        @Specialization(guards = "!isNegative(size)")
+        @Specialization(guards = "size >= 0")
         public RubyArray initialize(RubyArray array, int size, int defaultValue, NotProvided block) {
             final int[] store = new int[size];
             Arrays.fill(store, defaultValue);
@@ -1932,13 +1932,13 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isNegative(size)")
+        @Specialization(guards = "size < 0")
         public RubyArray initializeNegative(RubyArray array, int size, int defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
-        @Specialization(guards = "!isNegative(size)")
+        @Specialization(guards = "size >= 0")
         public RubyArray initialize(RubyArray array, int size, long defaultValue, NotProvided block) {
             final long[] store = new long[size];
             Arrays.fill(store, defaultValue);
@@ -1946,13 +1946,13 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isNegative(size)")
+        @Specialization(guards = "size < 0")
         public RubyArray initializeNegative(RubyArray array, int size, long defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
-        @Specialization(guards = "!isNegative(size)")
+        @Specialization(guards = "size >= 0")
         public RubyArray initialize(RubyArray array, int size, double defaultValue, NotProvided block) {
             final double[] store = new double[size];
             Arrays.fill(store, defaultValue);
@@ -1960,13 +1960,13 @@ public abstract class ArrayNodes {
             return array;
         }
         
-        @Specialization(guards = "isNegative(size)")
+        @Specialization(guards = "size < 0")
         public RubyArray initializeNegative(RubyArray array, int size, double defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
-        @Specialization(guards = { "!isNotProvided(defaultValue)", "!isNegative(size)" })
+        @Specialization(guards = { "!isNotProvided(defaultValue)", "size >= 0" })
         public RubyArray initialize(RubyArray array, int size, Object defaultValue, NotProvided block) {
             final Object[] store = new Object[size];
             Arrays.fill(store, defaultValue);
@@ -1974,7 +1974,7 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = { "!isNotProvided(defaultValue)", "isNegative(size)" })
+        @Specialization(guards = { "!isNotProvided(defaultValue)", "size < 0" })
         public RubyArray initializeNegative(RubyArray array, int size, Object defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
@@ -1995,18 +1995,18 @@ public abstract class ArrayNodes {
 
         }
 
-        @Specialization(guards = { "!isNotProvided(defaultValue)", "!isNegative(size)" })
+        @Specialization(guards = { "!isNotProvided(defaultValue)", "size >= 0" })
         public Object initialize(VirtualFrame frame, RubyArray array, int size, Object defaultValue, RubyProc block) {
             return initialize(frame, array, size, NotProvided.INSTANCE, block);
         }
 
-        @Specialization(guards = { "!isNotProvided(defaultValue)", "isNegative(size)" })
+        @Specialization(guards = { "!isNotProvided(defaultValue)", "size < 0" })
         public Object initializeNegative(VirtualFrame frame, RubyArray array, int size, Object defaultValue, RubyProc block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
-        @Specialization(guards = "!isNegative(size)")
+        @Specialization(guards = "size >= 0")
         public Object initialize(VirtualFrame frame, RubyArray array, int size, NotProvided defaultValue, RubyProc block) {
             Object store = arrayBuilder.start();
 
@@ -2032,7 +2032,7 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isNegative(size)")
+        @Specialization(guards = "size < 0")
         public Object initializeNegative(VirtualFrame frame, RubyArray array, int size, NotProvided defaultValue, RubyProc block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
