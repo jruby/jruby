@@ -59,7 +59,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
 
             Operation operation = instr.getOperation();
             if (debug) {
-                Interpreter.LOG.info("I: {" + ipc + "} ", instr);
+                Interpreter.LOG.info("I: {" + ipc + "} ", instr + "; <#RPCs=" + rescuePCs.size() + ">");
                 Interpreter.interpInstrsCount++;
             } else if (profile) {
                 Profiler.instrTick(operation);
@@ -81,8 +81,16 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         return processReturnOp(context, instr, operation, currDynScope, temp, self, blockType, currScope);
                     case BRANCH_OP:
                         switch (operation) {
-                            case JUMP: ipc = ((JumpInstr)instr).getJumpTarget().getTargetPC(); break;
-                            default: ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc); break;
+                            case JUMP:
+                                JumpInstr jump = ((JumpInstr)instr);
+                                if (jump.exitsExcRegion()) {
+                                    rescuePCs.pop();
+                                }
+                                ipc = jump.getJumpTarget().getTargetPC();
+                                break;
+                            default:
+                                ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
+                                break;
                         }
                         break;
                     case BOOK_KEEPING_OP:
