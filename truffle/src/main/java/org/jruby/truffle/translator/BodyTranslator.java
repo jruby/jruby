@@ -685,6 +685,18 @@ public class BodyTranslator extends Translator {
             arguments.add(argsNode);
         }
 
+        final List<RubyNode> argumentsTranslated = new ArrayList<>();
+
+        for (org.jruby.ast.Node argument : arguments) {
+            argumentsTranslated.add(argument.accept(this));
+        }
+
+        if (extraArgument != null) {
+            argumentsTranslated.add(extraArgument);
+        }
+
+        final RubyNode[] argumentsTranslatedArray = argumentsTranslated.toArray(new RubyNode[argumentsTranslated.size()]);
+
         if (iterNode instanceof org.jruby.ast.BlockPassNode) {
             blockPassNode = ((org.jruby.ast.BlockPassNode) iterNode).getBodyNode();
         }
@@ -704,18 +716,6 @@ public class BodyTranslator extends Translator {
         } else {
             blockTranslated = null;
         }
-
-        final List<RubyNode> argumentsTranslated = new ArrayList<>();
-
-        for (org.jruby.ast.Node argument : arguments) {
-            argumentsTranslated.add(argument.accept(this));
-        }
-
-        if (extraArgument != null) {
-            argumentsTranslated.add(extraArgument);
-        }
-
-        final RubyNode[] argumentsTranslatedArray = argumentsTranslated.toArray(new RubyNode[argumentsTranslated.size()]);
 
         return new ArgumentsAndBlockTranslation(blockTranslated, argumentsTranslatedArray, isSplatted);
     }
