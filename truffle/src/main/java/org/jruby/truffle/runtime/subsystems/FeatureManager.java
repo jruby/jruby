@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
@@ -56,7 +57,7 @@ public class FeatureManager {
             } else {
                 // Try each load path in turn
 
-                for (Object pathObject : context.getCoreLibrary().getLoadPath().slowToArray()) {
+                for (Object pathObject : ArrayNodes.slowToArray(context.getCoreLibrary().getLoadPath())) {
                     String loadPath = pathObject.toString();
                     if (!isAbsolutePath(loadPath)) {
                         loadPath = expandPath(context, loadPath);
@@ -103,7 +104,7 @@ public class FeatureManager {
         if (path.startsWith("uri:classloader:/")) {
             // TODO CS 13-Feb-15 this uri:classloader:/ and core:/ thing is a hack - simplify it
 
-            for (Object loaded : Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray())) {
+            for (Object loaded : Arrays.asList(ArrayNodes.slowToArray(context.getCoreLibrary().getLoadedFeatures()))) {
                 if (loaded.toString().equals(path)) {
                     return true;
                 }
@@ -118,16 +119,16 @@ public class FeatureManager {
             }
 
             if (SHOW_RESOLUTION) {
-                System.err.printf("resolved %s -> %s\n", feature, coreFileName);
+                System.err.printf("resolved %s -> %s%n", feature, coreFileName);
             }
 
             context.getCoreLibrary().loadRubyCore(coreFileName, "uri:classloader:/");
-            context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(path));
+            ArrayNodes.slowPush(context.getCoreLibrary().getLoadedFeatures(), context.makeString(path));
 
             return true;
         }
         else if (path.startsWith("core:/")) {
-            for (Object loaded : Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray())) {
+            for (Object loaded : Arrays.asList(ArrayNodes.slowToArray(context.getCoreLibrary().getLoadedFeatures()))) {
                 if (loaded.toString().equals(path)) {
                     return true;
                 }
@@ -140,11 +141,11 @@ public class FeatureManager {
             }
 
             if (SHOW_RESOLUTION) {
-                System.err.printf("resolved %s -> %s\n", feature, coreFileName);
+                System.err.printf("resolved %s -> %s%n", feature, coreFileName);
             }
 
             context.getCoreLibrary().loadRubyCore(coreFileName, "core:/");
-            context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(path));
+            ArrayNodes.slowPush(context.getCoreLibrary().getLoadedFeatures(), context.makeString(path));
 
             return true;
         } else {
@@ -158,16 +159,16 @@ public class FeatureManager {
 
             final String expandedPath = expandPath(context, path);
 
-            for (Object loaded : Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray())) {
+            for (Object loaded : Arrays.asList(ArrayNodes.slowToArray(context.getCoreLibrary().getLoadedFeatures()))) {
                 if (loaded.toString().equals(expandedPath)) {
                     return true;
                 }
             }
 
-            context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(expandedPath));
+            ArrayNodes.slowPush(context.getCoreLibrary().getLoadedFeatures(), context.makeString(expandedPath));
 
             if (SHOW_RESOLUTION) {
-                System.err.printf("resolved %s -> %s\n", feature, expandedPath);
+                System.err.printf("resolved %s -> %s%n", feature, expandedPath);
             }
 
             // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.

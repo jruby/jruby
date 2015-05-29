@@ -68,7 +68,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     )
     public RubyArray readIntInBounds(RubyArray array, int index, int length) {
         return new RubyArray(array.getLogicalClass(),
-                Arrays.copyOfRange((int[]) array.getStore(), index, index + length), length);
+                Arrays.copyOfRange((int[]) ArrayNodes.getStore(array), index, index + length), length);
     }
 
     @Specialization(
@@ -76,7 +76,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     )
     public RubyArray readLongInBounds(RubyArray array, int index, int length) {
         return new RubyArray(array.getLogicalClass(),
-                Arrays.copyOfRange((long[]) array.getStore(), index, index + length), length);
+                Arrays.copyOfRange((long[]) ArrayNodes.getStore(array), index, index + length), length);
     }
 
     @Specialization(
@@ -84,7 +84,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     )
     public RubyArray readDoubleInBounds(RubyArray array, int index, int length) {
         return new RubyArray(array.getLogicalClass(),
-                Arrays.copyOfRange((double[]) array.getStore(), index, index + length), length);
+                Arrays.copyOfRange((double[]) ArrayNodes.getStore(array), index, index + length), length);
     }
 
     @Specialization(
@@ -92,7 +92,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     )
     public RubyArray readObjectInBounds(RubyArray array, int index, int length) {
         return new RubyArray(array.getLogicalClass(),
-                Arrays.copyOfRange((Object[]) array.getStore(), index, index + length), length);
+                Arrays.copyOfRange((Object[]) ArrayNodes.getStore(array), index, index + length), length);
     }
 
     // Reading beyond upper bounds on an array with actual storage needs clamping
@@ -101,46 +101,46 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
             guards={"indexInBounds(array, index)", "lengthPositive(length)", "!endInBounds(array, index, length)", "isIntArray(array)"}
     )
     public RubyArray readIntOutOfBounds(RubyArray array, int index, int length) {
-        final int clampedLength = Math.min(array.getSize(), index + length) - index;
+        final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
 
         return new RubyArray(array.getLogicalClass(),
-                Arrays.copyOfRange((int[]) array.getStore(), index, index + clampedLength), clampedLength);
+                Arrays.copyOfRange((int[]) ArrayNodes.getStore(array), index, index + clampedLength), clampedLength);
     }
 
     @Specialization(
             guards={"indexInBounds(array, index)", "lengthPositive(length)", "!endInBounds(array, index, length)", "isLongArray(array)"}
     )
     public RubyArray readLongOutOfBounds(RubyArray array, int index, int length) {
-        final int clampedLength = Math.min(array.getSize(), index + length) - index;
+        final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
 
         return new RubyArray(array.getLogicalClass(),
-                Arrays.copyOfRange((long[]) array.getStore(), index, index + clampedLength), clampedLength);
+                Arrays.copyOfRange((long[]) ArrayNodes.getStore(array), index, index + clampedLength), clampedLength);
     }
 
     @Specialization(
             guards={"indexInBounds(array, index)", "lengthPositive(length)", "!endInBounds(array, index, length)", "isDoubleArray(array)"}
     )
     public RubyArray readDoubleOutOfBounds(RubyArray array, int index, int length) {
-        final int clampedLength = Math.min(array.getSize(), index + length) - index;
+        final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
 
         return new RubyArray(array.getLogicalClass(),
-                Arrays.copyOfRange((double[]) array.getStore(), index, index + clampedLength), clampedLength);
+                Arrays.copyOfRange((double[]) ArrayNodes.getStore(array), index, index + clampedLength), clampedLength);
     }
 
     @Specialization(
             guards={"indexInBounds(array, index)", "lengthPositive(length)", "!endInBounds(array, index, length)", "isObjectArray(array)"}
     )
     public RubyArray readObjectOutOfBounds(RubyArray array, int index, int length) {
-        final int clampedLength = Math.min(array.getSize(), index + length) - index;
+        final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
 
         return new RubyArray(array.getLogicalClass(),
-                Arrays.copyOfRange((Object[]) array.getStore(), index, index + clampedLength), clampedLength);
+                Arrays.copyOfRange((Object[]) ArrayNodes.getStore(array), index, index + clampedLength), clampedLength);
     }
 
     // Guards
 
     protected static boolean indexInBounds(RubyArray array, int index) {
-        return index >= 0 && index <= array.getSize();
+        return index >= 0 && index <= ArrayNodes.getSize(array);
     }
 
     protected static boolean lengthPositive(int length) {
@@ -148,7 +148,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     }
 
     protected static boolean endInBounds(RubyArray array, int index, int length) {
-        return index + length < array.getSize();
+        return index + length < ArrayNodes.getSize(array);
     }
 
 }

@@ -20,13 +20,13 @@ import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 public class RubyHash extends RubyBasicObject {
 
-    private RubyProc defaultBlock;
-    private Object defaultValue;
-    private Object store;
-    private int size;
-    private Entry firstInSequence;
-    private Entry lastInSequence;
-    private boolean compareByIdentity;
+    public RubyProc defaultBlock;
+    public Object defaultValue;
+    public Object store;
+    public int size;
+    public Entry firstInSequence;
+    public Entry lastInSequence;
+    public boolean compareByIdentity;
 
     public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence) {
         super(rubyClass);
@@ -38,69 +38,9 @@ public class RubyHash extends RubyBasicObject {
         assert HashOperations.verifyStore(this);
     }
 
-    public RubyProc getDefaultBlock() {
-        return defaultBlock;
-    }
-
-    public void setDefaultBlock(RubyProc defaultBlock) {
-        this.defaultBlock = defaultBlock;
-    }
-
-    public Object getDefaultValue() {
-        return defaultValue;
-    }
-
-    public void setDefaultValue(Object defaultValue) {
-        this.defaultValue = defaultValue;
-    }
-    
-    public boolean isCompareByIdentity() {
-        return compareByIdentity;
-    }
-    
-    public void setCompareByIdentity(boolean compareByIdentity) {
-        this.compareByIdentity = compareByIdentity;
-    }
-
-    public Object getStore() {
-        return store;
-    }
-
-    public void setStore(Object store, int size, Entry firstInSequence, Entry lastInSequence) {
-        assert HashOperations.verifyStore(store, size, firstInSequence, lastInSequence);
-        this.store = store;
-        this.size = size;
-        this.firstInSequence = firstInSequence;
-        this.lastInSequence = lastInSequence;
-    }
-
-    public int getSize() {
-        return size;
-    }
-
-    public void setSize(int storeSize) {
-        this.size = storeSize;
-    }
-
-    public Entry getFirstInSequence() {
-        return firstInSequence;
-    }
-
     @Override
     public ForeignAccessFactory getForeignAccessFactory() {
         return new HashForeignAccessFactory(getContext());
-    }
-
-    public void setFirstInSequence(Entry firstInSequence) {
-        this.firstInSequence = firstInSequence;
-    }
-
-    public Entry getLastInSequence() {
-        return lastInSequence;
-    }
-
-    public void setLastInSequence(Entry lastInSequence) {
-        this.lastInSequence = lastInSequence;
     }
 
     @Override
@@ -114,15 +54,6 @@ public class RubyHash extends RubyBasicObject {
                 ((RubyBasicObject) keyValue.getValue()).visitObjectGraph(visitor);
             }
         }
-    }
-
-    public static class HashAllocator implements Allocator {
-
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyHash(rubyClass, null, null, null, 0, null);
-        }
-
     }
 
 }

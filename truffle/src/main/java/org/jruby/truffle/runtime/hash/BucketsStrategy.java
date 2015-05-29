@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.hash;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 
+import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.core.RubyHash;
 
 import java.util.Arrays;
@@ -38,20 +39,20 @@ public abstract class BucketsStrategy {
     }
 
     public static void addNewEntry(RubyHash hash, int hashed, Object key, Object value) {
-        assert hash.getStore() instanceof Entry[];
+        assert HashNodes.getStore(hash) instanceof Entry[];
 
-        final Entry[] buckets = (Entry[]) hash.getStore();
+        final Entry[] buckets = (Entry[]) HashNodes.getStore(hash);
 
         final Entry entry = new Entry(hashed, key, value);
 
-        if (hash.getFirstInSequence() == null) {
-            hash.setFirstInSequence(entry);
+        if (HashNodes.getFirstInSequence(hash) == null) {
+            HashNodes.setFirstInSequence(hash, entry);
         } else {
-            hash.getLastInSequence().setNextInSequence(entry);
-            entry.setPreviousInSequence(hash.getLastInSequence());
+            HashNodes.getLastInSequence(hash).setNextInSequence(entry);
+            entry.setPreviousInSequence(HashNodes.getLastInSequence(hash));
         }
 
-        hash.setLastInSequence(entry);
+        HashNodes.setLastInSequence(hash, entry);
 
         final int bucketIndex = BucketsStrategy.getBucketIndex(hashed, buckets.length);
 
@@ -67,7 +68,7 @@ public abstract class BucketsStrategy {
             previousInLookup.setNextInLookup(entry);
         }
 
-        hash.setSize(hash.getSize() + 1);
+        HashNodes.setSize(hash, HashNodes.getSize(hash) + 1);
 
         assert HashOperations.verifyStore(hash);
     }
@@ -76,10 +77,10 @@ public abstract class BucketsStrategy {
     public static void resize(RubyHash hash) {
         assert HashOperations.verifyStore(hash);
 
-        final int bucketsCount = capacityGreaterThan(hash.getSize()) * 2;
+        final int bucketsCount = capacityGreaterThan(HashNodes.getSize(hash)) * 2;
         final Entry[] newEntries = new Entry[bucketsCount];
 
-        Entry entry = hash.getFirstInSequence();
+        Entry entry = HashNodes.getFirstInSequence(hash);
 
         while (entry != null) {
             final int bucketIndex = getBucketIndex(entry.getHashed(), bucketsCount);
@@ -99,7 +100,7 @@ public abstract class BucketsStrategy {
             entry = entry.getNextInSequence();
         }
 
-        hash.setStore(newEntries, hash.getSize(), hash.getFirstInSequence(), hash.getLastInSequence());
+        HashNodes.setStore(hash, newEntries, HashNodes.getSize(hash), HashNodes.getFirstInSequence(hash), HashNodes.getLastInSequence(hash));
 
         assert HashOperations.verifyStore(hash);
     }

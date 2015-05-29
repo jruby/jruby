@@ -29,6 +29,7 @@ import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodesFactory;
 import org.jruby.truffle.nodes.core.fixnum.FixnumNodesFactory;
+import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
 import org.jruby.truffle.nodes.ext.DigestNodesFactory;
 import org.jruby.truffle.nodes.ext.ZlibNodesFactory;
@@ -299,14 +300,14 @@ public class CoreLibrary {
 
         // Classes defined in Object
 
-        arrayClass = defineClass("Array", new RubyArray.ArrayAllocator());
+        arrayClass = defineClass("Array", new ArrayNodes.ArrayAllocator());
         bindingClass = defineClass("Binding", new RubyBinding.BindingAllocator());
         dirClass = defineClass("Dir");
         encodingClass = defineClass("Encoding", NO_ALLOCATOR);
         falseClass = defineClass("FalseClass", NO_ALLOCATOR);
         fiberClass = defineClass("Fiber", new RubyFiber.FiberAllocator());
         defineModule("FileTest");
-        hashClass = defineClass("Hash", new RubyHash.HashAllocator());
+        hashClass = defineClass("Hash", new HashNodes.HashAllocator());
         matchDataClass = defineClass("MatchData");
         methodClass = defineClass("Method", NO_ALLOCATOR);
         defineClass("Mutex", new MutexNodes.MutexAllocator());
@@ -315,7 +316,7 @@ public class CoreLibrary {
         processModule = defineModule("Process");
         rangeClass = defineClass("Range", new RubyRange.RangeAllocator());
         regexpClass = defineClass("Regexp", new RubyRegexp.RegexpAllocator());
-        stringClass = defineClass("String", new RubyString.StringAllocator());
+        stringClass = defineClass("String", new StringNodes.StringAllocator());
         symbolClass = defineClass("Symbol", NO_ALLOCATOR);
         threadClass = defineClass("Thread", new RubyThread.ThreadAllocator());
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
@@ -472,7 +473,7 @@ public class CoreLibrary {
         Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
         RubyBasicObject.setInstanceVariable(globals, "$VERBOSE", value);
 
-        final RubyString defaultRecordSeparator = RubyString.fromJavaString(stringClass, CLI_RECORD_SEPARATOR);
+        final RubyString defaultRecordSeparator = StringNodes.fromJavaString(stringClass, CLI_RECORD_SEPARATOR);
         node.freezeNode.executeFreeze(defaultRecordSeparator);
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
@@ -484,13 +485,13 @@ public class CoreLibrary {
     private void initializeConstants() {
         // Set constants
 
-        objectClass.setConstant(node, "RUBY_VERSION", RubyString.fromJavaString(stringClass, Constants.RUBY_VERSION));
-        objectClass.setConstant(node, "JRUBY_VERSION", RubyString.fromJavaString(stringClass, Constants.VERSION));
+        objectClass.setConstant(node, "RUBY_VERSION", StringNodes.fromJavaString(stringClass, Constants.RUBY_VERSION));
+        objectClass.setConstant(node, "JRUBY_VERSION", StringNodes.fromJavaString(stringClass, Constants.VERSION));
         objectClass.setConstant(node, "RUBY_PATCHLEVEL", Constants.RUBY_PATCHLEVEL);
-        objectClass.setConstant(node, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, Constants.ENGINE + "+truffle"));
-        objectClass.setConstant(node, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, Constants.PLATFORM));
-        objectClass.setConstant(node, "RUBY_RELEASE_DATE", RubyString.fromJavaString(stringClass, Constants.COMPILE_DATE));
-        objectClass.setConstant(node, "RUBY_DESCRIPTION", RubyString.fromJavaString(stringClass, OutputStrings.getVersionString()));
+        objectClass.setConstant(node, "RUBY_ENGINE", StringNodes.fromJavaString(stringClass, Constants.ENGINE + "+truffle"));
+        objectClass.setConstant(node, "RUBY_PLATFORM", StringNodes.fromJavaString(stringClass, Constants.PLATFORM));
+        objectClass.setConstant(node, "RUBY_RELEASE_DATE", StringNodes.fromJavaString(stringClass, Constants.COMPILE_DATE));
+        objectClass.setConstant(node, "RUBY_DESCRIPTION", StringNodes.fromJavaString(stringClass, OutputStrings.getVersionString()));
 
         // BasicObject knows itself
         basicObjectClass.setConstant(node, "BasicObject", basicObjectClass);
@@ -523,7 +524,7 @@ public class CoreLibrary {
         int i = 0;
         for (Map.Entry<String, Integer> signal : SignalOperations.SIGNALS_LIST.entrySet()) {
             RubyString signalName = context.makeString(signal.getKey());
-            signals[i++] = RubyArray.fromObjects(arrayClass, signalName, signal.getValue());
+            signals[i++] = ArrayNodes.fromObjects(arrayClass, signalName, signal.getValue());
         }
 
         signalModule.setConstant(node, "SIGNAL_LIST", new RubyArray(arrayClass, signals, signals.length));

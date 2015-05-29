@@ -41,22 +41,22 @@ public abstract class ArrayDupNode extends RubyNode {
 
     @Specialization(guards = "isIntegerFixnum(from)")
     public RubyArray dupIntegerFixnum(RubyArray from) {
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((int[]) from.getStore(), from.getSize()), from.getSize());
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((int[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }
 
     @Specialization(guards = "isLongFixnum(from)")
     public RubyArray dupLongFixnum(RubyArray from) {
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((long[]) from.getStore(), from.getSize()), from.getSize());
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((long[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }
 
     @Specialization(guards = "isFloat(from)")
     public RubyArray dupFloat(RubyArray from) {
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((double[]) from.getStore(), from.getSize()), from.getSize());
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((double[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }
 
     @Specialization(guards = "isObject(from)")
     public RubyArray dupObject(RubyArray from) {
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) from.getStore(), from.getSize()), from.getSize());
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }
 
 }

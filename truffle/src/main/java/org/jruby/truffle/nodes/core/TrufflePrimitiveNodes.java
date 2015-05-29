@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -21,6 +20,7 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.cext.CExtManager;
@@ -375,11 +375,11 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         private String[] toStrings(RubyArray array) {
-            final String[] strings = new String[array.getSize()];
+            final String[] strings = new String[ArrayNodes.getSize(array)];
 
             int n = 0;
 
-            for (Object object : array.slowToArray()) {
+            for (Object object : ArrayNodes.slowToArray(array)) {
                 if (object instanceof RubyString || object instanceof RubySymbol) {
                     strings[n] = object.toString();
                     n++;

@@ -39,6 +39,8 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.core.LoadRequiredLibrariesNode;
 import org.jruby.truffle.nodes.core.SetTopLevelBindingNode;
+import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.exceptions.TopLevelRaiseHandler;
 import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
@@ -190,7 +192,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         for (IRubyObject arg : ((org.jruby.RubyArray) runtime.getObject().getConstant("ARGV")).toJavaArray()) {
             assert arg != null;
 
-            coreLibrary.getArgv().slowPush(makeString(arg.toString()));
+            ArrayNodes.slowPush(coreLibrary.getArgv(), makeString(arg.toString()));
         }
 
         // Set the load path
@@ -208,28 +210,28 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
             if (!excludedLibPaths.contains(path.toString())) {
-                loadPath.slowPush(makeString(new File(path.toString()).getAbsolutePath()));
+                ArrayNodes.slowPush(loadPath, makeString(new File(path.toString()).getAbsolutePath()));
             }
         }
 
         // Load our own stdlib path
 
         // Libraries copied unmodified from MRI
-        loadPath.slowPush(makeString(new File(home, "lib/ruby/truffle/mri").toString()));
+        ArrayNodes.slowPush(loadPath, makeString(new File(home, "lib/ruby/truffle/mri").toString()));
 
         // Our own implementations
-        loadPath.slowPush(makeString(new File(home, "lib/ruby/truffle/truffle").toString()));
+        ArrayNodes.slowPush(loadPath, makeString(new File(home, "lib/ruby/truffle/truffle").toString()));
 
         // Libraries from RubySL
         for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
                 "rubysl-complex", "rubysl-date", "rubysl-pathname",
                 "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom",
                 "rubysl-timeout", "rubysl-webrick")) {
-            loadPath.slowPush(makeString(new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
+            ArrayNodes.slowPush(loadPath, makeString(new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
         }
 
         // Shims
-        loadPath.slowPush(makeString(new File(home, "lib/ruby/truffle/shims").toString()));
+        ArrayNodes.slowPush(loadPath, makeString(new File(home, "lib/ruby/truffle/shims").toString()));
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {
@@ -387,7 +389,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public RubyString makeString(RubyClass stringClass, String string) {
-        return RubyString.fromJavaString(stringClass, string);
+        return StringNodes.fromJavaString(stringClass, string);
     }
 
     public RubyString makeString(String string, Encoding encoding) {
@@ -395,7 +397,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public RubyString makeString(RubyClass stringClass, String string, Encoding encoding) {
-        return RubyString.fromJavaString(stringClass, string, encoding);
+        return StringNodes.fromJavaString(stringClass, string, encoding);
     }
 
     public RubyString makeString(char string) {
@@ -423,7 +425,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public RubyString makeString(RubyClass stringClass, ByteList bytes) {
-        return RubyString.fromByteList(stringClass, bytes);
+        return StringNodes.fromByteList(stringClass, bytes);
     }
 
     public Object makeTuple(VirtualFrame frame, CallDispatchHeadNode newTupleNode, Object... values) {
@@ -467,7 +469,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public org.jruby.RubyArray toJRuby(RubyArray array) {
-        return runtime.newArray(toJRuby(array.slowToArray()));
+        return runtime.newArray(toJRuby(ArrayNodes.slowToArray(array)));
     }
 
     public IRubyObject toJRuby(RubyEncoding encoding) {
@@ -531,7 +533,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             store[n] = toTruffle(array.entry(n));
         }
 
-        return RubyArray.fromObjects(coreLibrary.getArrayClass(), store);
+        return ArrayNodes.fromObjects(coreLibrary.getArrayClass(), store);
     }
 
     public RubyString toTruffle(org.jruby.RubyString jrubyString) {

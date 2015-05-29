@@ -37,17 +37,17 @@ project 'JRuby Integration Tests' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-tests'
 
-  repository( 'http://rubygems-proxy.torquebox.org/releases',
+  repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
               :id => 'tb-rubygems-releases' )
   repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
               :id => 'rubygems-releases' )
 
-  plugin_repository( 'https://oss.sonatype.org/content/repositories/snapshots/',
+  plugin_repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
                      :id => 'sonatype' ) do
     releases 'false'
     snapshots 'true'
   end
-  plugin_repository( 'http://rubygems-proxy.torquebox.org/releases',
+  plugin_repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
                      :id => 'rubygems-releases' )
 
   properties( 'tesla.dump.pom' => 'pom.xml',

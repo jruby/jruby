@@ -39,7 +39,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
             guards={"isNullArray(array)"}
     )
     public RubyArray generalizeNull(RubyArray array, int requiredCapacity) {
-        array.setStore(new Object[requiredCapacity], array.getSize());
+        ArrayNodes.setStore(array, new Object[requiredCapacity], ArrayNodes.getSize(array));
         return array;
     }
 
@@ -47,8 +47,8 @@ public abstract class GeneralizeArrayNode extends RubyNode {
             guards={"isIntArray(array)"}
     )
     public RubyArray generalizeInt(RubyArray array, int requiredCapacity) {
-        final int[] intStore = (int[]) array.getStore();
-        array.setStore(ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), array.getSize());
+        final int[] intStore = (int[]) ArrayNodes.getStore(array);
+        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
         return array;
     }
 
@@ -56,8 +56,8 @@ public abstract class GeneralizeArrayNode extends RubyNode {
             guards={"isLongArray(array)"}
     )
     public RubyArray generalizeLong(RubyArray array, int requiredCapacity) {
-        final long[] intStore = (long[]) array.getStore();
-        array.setStore(ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), array.getSize());
+        final long[] intStore = (long[]) ArrayNodes.getStore(array);
+        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
         return array;
     }
 
@@ -65,8 +65,8 @@ public abstract class GeneralizeArrayNode extends RubyNode {
             guards={"isDoubleArray(array)"}
     )
     public RubyArray generalizeDouble(RubyArray array, int requiredCapacity) {
-        final double[] intStore = (double[]) array.getStore();
-        array.setStore(ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), array.getSize());
+        final double[] intStore = (double[]) ArrayNodes.getStore(array);
+        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
         return array;
     }
 

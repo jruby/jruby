@@ -206,7 +206,7 @@ logger/test_logger.rb
 matrix/test_matrix.rb
 matrix/test_vector.rb
 
-# monitor/test_monitor.rb # Undefined methods start and join
+monitor/test_monitor.rb
 
 # net/ftp/test_ftp.rb
 # net/http/test_buffered_io.rb

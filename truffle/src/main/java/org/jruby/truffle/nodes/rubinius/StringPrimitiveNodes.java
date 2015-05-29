@@ -70,6 +70,7 @@ import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.core.StringGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.StringNodesFactory;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -174,7 +175,7 @@ public abstract class StringPrimitiveNodes {
 
             if (len > 0 && (limit || len > b || lim < 0)) ret.add(makeString(string, b, len - b));
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), ret.toArray());
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), ret.toArray());
         }
 
         private RubyString makeString(RubyString source, int index, int length) {
@@ -221,7 +222,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final int normalizedIndex = string.normalizeIndex(index);
+            final int normalizedIndex = StringNodes.normalizeIndex(string, index);
 
             if (normalizedIndex > bytes.length()) {
                 return nil();
@@ -853,7 +854,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final Encoding encoding = string.checkEncoding(pattern, this);
+            final Encoding encoding = StringNodes.checkEncoding(string, pattern, this);
             int p = string.getByteList().getBegin();
             final int e = p + string.getByteList().getRealSize();
             int pp = pattern.getByteList().getBegin();

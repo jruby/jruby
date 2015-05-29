@@ -23,6 +23,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -189,7 +190,7 @@ public abstract class ProcNodes {
                 return nil();
             } else {
                 RubyString file = getContext().makeString(sourceSection.getSource().getName());
-                return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                         file, sourceSection.getStartLine());
             }
         }

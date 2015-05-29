@@ -48,7 +48,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isNullArray(array)", "isIndex0(array, index)"}
     )
     public boolean writeNull0(RubyArray array, int index, boolean value) {
-        array.setStore(new Object[]{value}, 1);
+        ArrayNodes.setStore(array, new Object[]{value}, 1);
         return value;
     }
 
@@ -56,7 +56,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isNullArray(array)", "isIndex0(array, index)"}
     )
     public int writeNull0(RubyArray array, int index, int value) {
-        array.setStore(new int[]{value}, 1);
+        ArrayNodes.setStore(array, new int[]{value}, 1);
         return value;
     }
 
@@ -64,7 +64,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isNullArray(array)", "isIndex0(array, index)"}
     )
     public long writeNull0(RubyArray array, int index, long value) {
-        array.setStore(new long[]{value}, 1);
+        ArrayNodes.setStore(array, new long[]{value}, 1);
         return value;
     }
 
@@ -72,7 +72,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isNullArray(array)", "isIndex0(array, index)"}
     )
     public double writeNull0(RubyArray array, int index, double value) {
-        array.setStore(new double[]{value}, 1);
+        ArrayNodes.setStore(array, new double[]{value}, 1);
         return value;
     }
 
@@ -80,7 +80,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isNullArray(array)", "isIndex0(array, index)"}
     )
     public RubyBasicObject writeNull0(RubyArray array, int index, RubyBasicObject value) {
-        array.setStore(new Object[]{value}, 1);
+        ArrayNodes.setStore(array, new Object[]{value}, 1);
         return value;
     }
 
@@ -97,7 +97,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         }
 
         store[index] = value;
-        array.setStore(store, store.length);
+        ArrayNodes.setStore(array, store, store.length);
         return value;
     }
 
@@ -107,7 +107,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isObjectArray(array)", "isInBounds(array, index)"}
     )
     public boolean writeWithin(RubyArray array, int index, boolean value) {
-        final Object[] store = (Object[]) array.getStore();
+        final Object[] store = (Object[]) ArrayNodes.getStore(array);
         store[index] = value;
         return value;
     }
@@ -116,7 +116,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isIntArray(array)", "isInBounds(array, index)"}
     )
     public int writeWithin(RubyArray array, int index, int value) {
-        final int[] store = (int[]) array.getStore();
+        final int[] store = (int[]) ArrayNodes.getStore(array);
         store[index] = value;
         return value;
     }
@@ -133,7 +133,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isLongArray(array)", "isInBounds(array, index)"}
     )
     public long writeWithin(RubyArray array, int index, long value) {
-        final long[] store = (long[]) array.getStore();
+        final long[] store = (long[]) ArrayNodes.getStore(array);
         store[index] = value;
         return value;
     }
@@ -142,7 +142,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isDoubleArray(array)", "isInBounds(array, index)"}
     )
     public double writeWithin(RubyArray array, int index, double value) {
-        final double[] store = (double[]) array.getStore();
+        final double[] store = (double[]) ArrayNodes.getStore(array);
         store[index] = value;
         return value;
     }
@@ -151,7 +151,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isObjectArray(array)", "isInBounds(array, index)"}
     )
     public Object writeWithin(RubyArray array, int index, Object value) {
-        final Object[] store = (Object[]) array.getStore();
+        final Object[] store = (Object[]) ArrayNodes.getStore(array);
         store[index] = value;
         return value;
     }
@@ -162,15 +162,15 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isIntArray(array)", "isInBounds(array, index)"}
     )
     public long writeWithinInt(RubyArray array, int index, long value) {
-        final int[] intStore = (int[]) array.getStore();
-        final long[] longStore = new long[array.getSize()];
+        final int[] intStore = (int[]) ArrayNodes.getStore(array);
+        final long[] longStore = new long[ArrayNodes.getSize(array)];
 
-        for (int n = 0; n < array.getSize(); n++) {
+        for (int n = 0; n < ArrayNodes.getSize(array); n++) {
             longStore[n] = intStore[n];
         }
 
         longStore[index] = value;
-        array.setStore(longStore, array.getSize());
+        ArrayNodes.setStore(array, longStore, ArrayNodes.getSize(array));
         return value;
     }
 
@@ -178,9 +178,9 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isIntArray(array)", "isInBounds(array, index)", "!isInteger(value)", "!isLong(value)"}
     )
     public Object writeWithinInt(RubyArray array, int index, Object value) {
-        final Object[] objectStore = ArrayUtils.box((int[]) array.getStore());
+        final Object[] objectStore = ArrayUtils.box((int[]) ArrayNodes.getStore(array));
         objectStore[index] = value;
-        array.setStore(objectStore, array.getSize());
+        ArrayNodes.setStore(array, objectStore, ArrayNodes.getSize(array));
         return value;
     }
 
@@ -188,9 +188,9 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isLongArray(array)", "isInBounds(array, index)", "!isInteger(value)", "!isLong(value)"}
     )
     public Object writeWithinLong(RubyArray array, int index, Object value) {
-        final Object[] objectStore = ArrayUtils.box((long[]) array.getStore());
+        final Object[] objectStore = ArrayUtils.box((long[]) ArrayNodes.getStore(array));
         objectStore[index] = value;
-        array.setStore(objectStore, array.getSize());
+        ArrayNodes.setStore(array, objectStore, ArrayNodes.getSize(array));
         return value;
     }
 
@@ -198,9 +198,9 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isDoubleArray(array)", "isInBounds(array, index)", "!isDouble(value)"}
     )
     public Object writeWithinDouble(RubyArray array, int index, Object value) {
-        final Object[] objectStore = ArrayUtils.box((double[]) array.getStore());
+        final Object[] objectStore = ArrayUtils.box((double[]) ArrayNodes.getStore(array));
         objectStore[index] = value;
-        array.setStore(objectStore, array.getSize());
+        ArrayNodes.setStore(array, objectStore, ArrayNodes.getSize(array));
         return value;
     }
 
@@ -211,8 +211,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     )
     public boolean writeExtendByOne(VirtualFrame frame, RubyArray array, int index, boolean value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
-        ((Object[]) array.getStore())[index] = value;
-        array.setStore(array.getStore(), index + 1);
+        ((Object[]) ArrayNodes.getStore(array))[index] = value;
+        ArrayNodes.setStore(array, ArrayNodes.getStore(array), index + 1);
         return value;
     }
 
@@ -221,8 +221,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     )
     public int writeExtendByOne(VirtualFrame frame, RubyArray array, int index, int value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
-        ((int[]) array.getStore())[index] = value;
-        array.setStore(array.getStore(), index + 1);
+        ((int[]) ArrayNodes.getStore(array))[index] = value;
+        ArrayNodes.setStore(array, ArrayNodes.getStore(array), index + 1);
         return value;
     }
 
@@ -231,8 +231,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     )
     public int writeExtendByOneIntIntoLong(VirtualFrame frame, RubyArray array, int index, int value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
-        ((long[]) array.getStore())[index] = value;
-        array.setStore(array.getStore(), index + 1);
+        ((long[]) ArrayNodes.getStore(array))[index] = value;
+        ArrayNodes.setStore(array, ArrayNodes.getStore(array), index + 1);
         return value;
     }
 
@@ -241,8 +241,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     )
     public long writeExtendByOne(VirtualFrame frame, RubyArray array, int index, long value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
-        ((long[]) array.getStore())[index] = value;
-        array.setStore(array.getStore(), index + 1);
+        ((long[]) ArrayNodes.getStore(array))[index] = value;
+        ArrayNodes.setStore(array, ArrayNodes.getStore(array), index + 1);
         return value;
     }
 
@@ -251,8 +251,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     )
     public double writeExtendByOne(VirtualFrame frame, RubyArray array, int index, double value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
-        ((double[]) array.getStore())[index] = value;
-        array.setStore(array.getStore(), index + 1);
+        ((double[]) ArrayNodes.getStore(array))[index] = value;
+        ArrayNodes.setStore(array, ArrayNodes.getStore(array), index + 1);
         return value;
     }
 
@@ -261,8 +261,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     )
     public RubyBasicObject writeExtendByOne(VirtualFrame frame, RubyArray array, int index, RubyBasicObject value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
-        ((Object[]) array.getStore())[index] = value;
-        array.setStore(array.getStore(), index + 1);
+        ((Object[]) ArrayNodes.getStore(array))[index] = value;
+        ArrayNodes.setStore(array, ArrayNodes.getStore(array), index + 1);
         return value;
     }
 
@@ -271,8 +271,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     )
     public int writeObjectExtendByOne(VirtualFrame frame, RubyArray array, int index, int value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
-        ((Object[]) array.getStore())[index] = value;
-        array.setStore(array.getStore(), index + 1);
+        ((Object[]) ArrayNodes.getStore(array))[index] = value;
+        ArrayNodes.setStore(array, ArrayNodes.getStore(array), index + 1);
         return value;
     }
 
@@ -283,14 +283,14 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     )
     public Object writeBeyondPrimitive(VirtualFrame frame, RubyArray array, int index, Object value) {
         generalizeNode.executeGeneralize(frame, array, index + 1);
-        final Object[] objectStore = ((Object[]) array.getStore());
+        final Object[] objectStore = ((Object[]) ArrayNodes.getStore(array));
 
-        for (int n = array.getSize(); n < index; n++) {
+        for (int n = ArrayNodes.getSize(array); n < index; n++) {
             objectStore[n] = nil();
         }
 
         objectStore[index] = value;
-        array.setStore(array.getStore(), index + 1);
+        ArrayNodes.setStore(array, ArrayNodes.getStore(array), index + 1);
         return value;
     }
 
@@ -299,25 +299,25 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     )
     public Object writeBeyondObject(VirtualFrame frame, RubyArray array, int index, Object value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
-        final Object[] objectStore = ((Object[]) array.getStore());
+        final Object[] objectStore = ((Object[]) ArrayNodes.getStore(array));
 
-        for (int n = array.getSize(); n < index; n++) {
+        for (int n = ArrayNodes.getSize(array); n < index; n++) {
             objectStore[n] = nil();
         }
 
         objectStore[index] = value;
-        array.setStore(array.getStore(), index + 1);
+        ArrayNodes.setStore(array, ArrayNodes.getStore(array), index + 1);
         return value;
     }
 
     // Guards
 
     protected static boolean isInBounds(RubyArray array, int index) {
-        return index >= 0 && index < array.getSize();
+        return index >= 0 && index < ArrayNodes.getSize(array);
     }
 
     protected static boolean isExtendingByOne(RubyArray array, int index) {
-        return index == array.getSize();
+        return index == ArrayNodes.getSize(array);
     }
 
     protected static boolean isIndex0(RubyArray array, int index) {

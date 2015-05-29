@@ -9,9 +9,9 @@
  */
 package org.jruby.truffle.runtime.hash;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 
+import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -39,10 +39,10 @@ public class HashOperations {
         final StringBuilder builder = new StringBuilder();
 
         builder.append("[");
-        builder.append(hash.getSize());
+        builder.append(HashNodes.getSize(hash));
         builder.append("](");
 
-        for (Entry entry : (Entry[]) hash.getStore()) {
+        for (Entry entry : (Entry[]) HashNodes.getStore(hash)) {
             builder.append("(");
 
             while (entry != null) {
@@ -59,7 +59,7 @@ public class HashOperations {
 
         builder.append(")~>(");
 
-        Entry entry = hash.getFirstInSequence();
+        Entry entry = HashNodes.getFirstInSequence(hash);
 
         while (entry != null) {
             builder.append("[");
@@ -72,7 +72,7 @@ public class HashOperations {
 
         builder.append(")<~(");
 
-        entry = hash.getLastInSequence();
+        entry = HashNodes.getLastInSequence(hash);
 
         while (entry != null) {
             builder.append("[");
@@ -92,19 +92,19 @@ public class HashOperations {
     public static List<KeyValue> verySlowToKeyValues(RubyHash hash) {
         final List<KeyValue> keyValues = new ArrayList<>();
 
-        if (hash.getStore() instanceof Entry[]) {
-            Entry entry = hash.getFirstInSequence();
+        if (HashNodes.getStore(hash) instanceof Entry[]) {
+            Entry entry = HashNodes.getFirstInSequence(hash);
 
             while (entry != null) {
                 keyValues.add(new KeyValue(entry.getKey(), entry.getValue()));
                 entry = entry.getNextInSequence();
             }
-        } else if (hash.getStore() instanceof Object[]) {
-            final Object[] store = (Object[]) hash.getStore();
-            for (int n = 0; n < hash.getSize(); n++) {
+        } else if (HashNodes.getStore(hash) instanceof Object[]) {
+            final Object[] store = (Object[]) HashNodes.getStore(hash);
+            for (int n = 0; n < HashNodes.getSize(hash); n++) {
                 keyValues.add(new KeyValue(PackedArrayStrategy.getKey(store, n), PackedArrayStrategy.getValue(store, n)));
             }
-        } else if (hash.getStore() != null) {
+        } else if (HashNodes.getStore(hash) != null) {
             throw new UnsupportedOperationException();
         }
 
@@ -125,7 +125,7 @@ public class HashOperations {
             throw new UnsupportedOperationException();
         }
 
-        final Entry[] entries = (Entry[]) hash.getStore();
+        final Entry[] entries = (Entry[]) HashNodes.getStore(hash);
         final int bucketIndex = (hashed & BucketsStrategy.SIGN_BIT_MASK) % entries.length;
         Entry entry = entries[bucketIndex];
 
@@ -157,7 +157,7 @@ public class HashOperations {
     public static void verySlowSetAtBucket(RubyHash hash, HashLookupResult hashLookupResult, Object key, Object value) {
         assert verifyStore(hash);
 
-        assert hash.getStore() instanceof Entry[];
+        assert HashNodes.getStore(hash) instanceof Entry[];
 
         if (hashLookupResult.getEntry() == null) {
             BucketsStrategy.addNewEntry(hash, hashLookupResult.getHashed(), key, value);
@@ -199,7 +199,7 @@ public class HashOperations {
         assert verifyStore(hash);
 
         final int size = keyValues.size();
-        hash.setStore(new Entry[BucketsStrategy.capacityGreaterThan(size)], 0, null, null);
+        HashNodes.setStore(hash, new Entry[BucketsStrategy.capacityGreaterThan(size)], 0, null, null);
 
         int actualSize = 0;
 
@@ -209,13 +209,13 @@ public class HashOperations {
             }
         }
 
-        hash.setSize(actualSize);
+        HashNodes.setSize(hash, actualSize);
 
         assert verifyStore(hash);
     }
 
     public static boolean verifyStore(RubyHash hash) {
-        return verifyStore(hash.getStore(), hash.getSize(), hash.getFirstInSequence(), hash.getLastInSequence());
+        return verifyStore(HashNodes.getStore(hash), HashNodes.getSize(hash), HashNodes.getFirstInSequence(hash), HashNodes.getLastInSequence(hash));
     }
 
     public static boolean verifyStore(Object store, int size, Entry firstInSequence, Entry lastInSequence) {

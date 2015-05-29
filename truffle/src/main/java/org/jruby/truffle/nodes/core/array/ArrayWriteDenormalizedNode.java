@@ -41,7 +41,7 @@ public abstract class ArrayWriteDenormalizedNode extends RubyNode {
             writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
         }
 
-        final int normalizedIndex = array.normalizeIndex(index);
+        final int normalizedIndex = ArrayNodes.normalizeIndex(array, index);
 
         return writeNode.executeWrite(frame, array, normalizedIndex, value);
     }

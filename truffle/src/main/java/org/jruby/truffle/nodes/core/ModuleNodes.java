@@ -46,6 +46,7 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.KernelNodes.BindingNode;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -335,7 +336,7 @@ public abstract class ModuleNodes {
                 ancestors.add(module);
             }
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), ancestors.toArray(new Object[ancestors.size()]));
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), ancestors.toArray(new Object[ancestors.size()]));
         }
     }
 
@@ -750,7 +751,7 @@ public abstract class ModuleNodes {
             final RubyArray array = new RubyArray(module.getContext().getCoreLibrary().getArrayClass());
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
-                array.slowPush(RubySymbol.newSymbol(module.getContext(), variable));
+                ArrayNodes.slowPush(array, RubySymbol.newSymbol(module.getContext(), variable));
             }
             return array;
         }
@@ -797,7 +798,7 @@ public abstract class ModuleNodes {
                 }
             }
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), constantsArray.toArray(new Object[constantsArray.size()]));
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), constantsArray.toArray(new Object[constantsArray.size()]));
         }
 
         @Specialization(guards = "!isUndefinedPlaceholder(inherit)")
@@ -1014,17 +1015,17 @@ public abstract class ModuleNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubySymbol defineMethod(RubyModule module, String name, RubyMethod method, UndefinedPlaceholder block) {
-            module.addMethod(this, method.getMethod().withName(name));
+        @Specialization(guards = "isRubyMethod(method)")
+        public RubySymbol defineMethod(RubyModule module, String name, RubyBasicObject method, UndefinedPlaceholder block) {
+            module.addMethod(this, MethodNodes.getMethod(method).withName(name));
             return getContext().getSymbolTable().getSymbol(name);
         }
 
-        @Specialization
-        public RubySymbol defineMethod(VirtualFrame frame, RubyModule module, String name, RubyUnboundMethod method, UndefinedPlaceholder block) {
+        @Specialization(guards = "isRubyUnboundMethod(method)")
+        public RubySymbol defineMethod(VirtualFrame frame, RubyModule module, String name, RubyBasicObject method, UndefinedPlaceholder block) {
             CompilerDirectives.transferToInterpreter();
 
-            RubyModule origin = method.getOrigin();
+            RubyModule origin = UnboundMethodNodes.getOrigin(method);
             if (!ModuleOperations.canBindMethodTo(origin, module)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be a subclass of " + origin.getName(), this));
@@ -1032,7 +1033,7 @@ public abstract class ModuleNodes {
 
             // TODO CS 5-Apr-15 TypeError if the method came from a singleton
 
-            return addMethod(module, name, method.getMethod());
+            return addMethod(module, name, UnboundMethodNodes.getMethod(method));
         }
 
         private RubySymbol defineMethod(RubyModule module, String name, RubyProc proc) {
@@ -1179,7 +1180,7 @@ public abstract class ModuleNodes {
                 }
             }
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
         }
     }
 
@@ -1286,7 +1287,7 @@ public abstract class ModuleNodes {
                 lexicalScope = lexicalScope.getParent();
             }
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), modules.toArray(new Object[modules.size()]));
         }
     }
 
@@ -1419,7 +1420,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     module.filterMethods(includeAncestors, MethodFilter.PROTECTED).toArray());
         }
     }
@@ -1466,7 +1467,7 @@ public abstract class ModuleNodes {
         public RubyArray privateInstanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     module.filterMethods(includeAncestors, MethodFilter.PRIVATE).toArray());
         }
     }
@@ -1488,7 +1489,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyUnboundMethod publicInstanceMethod(RubyModule module, String name) {
+        public RubyBasicObject publicInstanceMethod(RubyModule module, String name) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO(CS, 11-Jan-15) cache this lookup
@@ -1502,7 +1503,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateMethod(name, module, this));
             }
 
-            return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), module, method);
+            return UnboundMethodNodes.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), module, method);
         }
 
     }
@@ -1523,7 +1524,7 @@ public abstract class ModuleNodes {
         public RubyArray publicInstanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     module.filterMethods(includeAncestors, MethodFilter.PUBLIC).toArray());
         }
     }
@@ -1570,7 +1571,7 @@ public abstract class ModuleNodes {
         public RubyArray instanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     module.filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
     }
@@ -1592,7 +1593,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyUnboundMethod instanceMethod(RubyModule module, String name) {
+        public RubyBasicObject instanceMethod(RubyModule module, String name) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO(CS, 11-Jan-15) cache this lookup
@@ -1603,7 +1604,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(name, module, this));
             }
 
-            return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), module, method);
+            return UnboundMethodNodes.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), module, method);
         }
 
     }

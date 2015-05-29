@@ -18,6 +18,7 @@ import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
@@ -116,7 +117,11 @@ public class RubyBasicObject implements TruffleObject {
 
     @Override
     public ForeignAccessFactory getForeignAccessFactory() {
-        return new BasicForeignAccessFactory(getContext());
+        if (RubyGuards.isRubyMethod(this)) {
+            return new RubyMethodForeignAccessFactory(getContext());
+        } else {
+            return new BasicForeignAccessFactory(getContext());
+        }
     }
 
     public final void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {

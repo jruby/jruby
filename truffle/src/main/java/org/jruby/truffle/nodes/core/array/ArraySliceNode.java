@@ -45,48 +45,48 @@ public abstract class ArraySliceNode extends RubyNode {
     @Specialization(guards = "isIntegerFixnum(array)")
     public RubyArray sliceIntegerFixnum(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
-        final int to = array.getSize() + this.to;
+        final int to = ArrayNodes.getSize(array) + this.to;
 
         if (from >= to) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((int[]) array.getStore(), from, to), to - from);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((int[]) ArrayNodes.getStore(array), from, to), to - from);
         }
     }
 
     @Specialization(guards = "isLongFixnum(array)")
     public RubyArray sliceLongFixnum(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
-        final int to = array.getSize() + this.to;
+        final int to = ArrayNodes.getSize(array) + this.to;
 
         if (from >= to) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((long[]) array.getStore(), from, to), to - from);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((long[]) ArrayNodes.getStore(array), from, to), to - from);
         }
     }
 
     @Specialization(guards = "isFloat(array)")
     public RubyArray sliceFloat(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
-        final int to = array.getSize() + this.to;
+        final int to = ArrayNodes.getSize(array) + this.to;
 
         if (from >= to) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((double[]) array.getStore(), from, to), to - from);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((double[]) ArrayNodes.getStore(array), from, to), to - from);
         }
     }
 
     @Specialization(guards = "isObject(array)")
     public RubyArray sliceObject(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
-        final int to = array.getSize() + this.to;
+        final int to = ArrayNodes.getSize(array) + this.to;
 
         if (from >= to) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((Object[]) array.getStore(), from, to), to - from);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((Object[]) ArrayNodes.getStore(array), from, to), to - from);
         }
     }
 

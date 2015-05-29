@@ -22,6 +22,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashLiteralNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.methods.MarkerNode;
@@ -196,8 +197,8 @@ public class RubyCallNode extends RubyNode {
         }
 
         final RubyArray array = (RubyArray) argument;
-        final int size = array.getSize();
-        final Object store = array.getStore();
+        final int size = ArrayNodes.getSize(array);
+        final Object store = ArrayNodes.getStore(array);
 
         if (seenNullInUnsplat && store == null) {
             return new Object[]{};

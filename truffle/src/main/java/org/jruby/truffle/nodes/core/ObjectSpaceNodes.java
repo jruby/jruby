@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -134,7 +135,7 @@ public abstract class ObjectSpaceNodes {
         @Specialization
         public RubyArray defineFinalizer(Object object, RubyProc finalizer) {
             getContext().getObjectSpaceManager().defineFinalizer((RubyBasicObject) object, finalizer);
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), 0, finalizer);
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), 0, finalizer);
         }
     }
 

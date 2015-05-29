@@ -35,6 +35,7 @@ import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFactory;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
@@ -910,7 +911,7 @@ public abstract class KernelNodes {
 
             for (Object name : instanceVariableNames) {
                 if (name instanceof String) {
-                    array.slowPush(getContext().getSymbolTable().getSymbol((String) name));
+                    ArrayNodes.slowPush(array, getContext().getSymbolTable().getSymbol((String) name));
                 }
             }
 
@@ -1010,7 +1011,7 @@ public abstract class KernelNodes {
 
             for (Object name : Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
                 if (name instanceof String) {
-                    array.slowPush(getContext().getSymbol((String) name));
+                    ArrayNodes.slowPush(array, getContext().getSymbol((String) name));
                 }
             }
 
@@ -1043,16 +1044,16 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyMethod method(Object object, RubySymbol name) {
+        public RubyBasicObject method(Object object, RubySymbol name) {
             return method(object, name.toString());
         }
 
         @Specialization
-        public RubyMethod method(Object object, RubyString name) {
+        public RubyBasicObject method(Object object, RubyString name) {
             return method(object, name.toString());
         }
 
-        private RubyMethod method(Object object, String name) {
+        private RubyBasicObject method(Object object, String name) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO(CS, 11-Jan-15) cache this lookup
@@ -1065,7 +1066,7 @@ public abstract class KernelNodes {
                         name, getContext().getCoreLibrary().getLogicalClass(object), this));
             }
 
-            return new RubyMethod(getContext().getCoreLibrary().getMethodClass(), object, method);
+            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, method);
         }
 
     }
@@ -1093,7 +1094,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             if (regular) {
-                return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                         metaClass.filterMethodsOnObject(regular, MethodFilter.PUBLIC_PROTECTED).toArray());
             } else {
                 if (singletonMethodsNode == null) {
@@ -1149,7 +1150,7 @@ public abstract class KernelNodes {
             RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     metaClass.filterMethodsOnObject(includeAncestors, MethodFilter.PRIVATE).toArray());
         }
 
@@ -1203,7 +1204,7 @@ public abstract class KernelNodes {
             RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     metaClass.filterMethodsOnObject(includeAncestors, MethodFilter.PROTECTED).toArray());
         }
 
@@ -1239,7 +1240,7 @@ public abstract class KernelNodes {
             RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     metaClass.filterMethodsOnObject(includeAncestors, MethodFilter.PUBLIC).toArray());
         }
 
@@ -1543,7 +1544,7 @@ public abstract class KernelNodes {
             }
 
             CompilerDirectives.transferToInterpreter();
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     metaClass.filterSingletonMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
 
@@ -1733,17 +1734,17 @@ public abstract class KernelNodes {
             final RubyString string = getContext().makeString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
 
             if (format.length() == 0) {
-                string.forceEncoding(USASCIIEncoding.INSTANCE);
+                StringNodes.forceEncoding(string, USASCIIEncoding.INSTANCE);
             } else {
                 switch (result.getEncoding()) {
                     case DEFAULT:
                     case ASCII_8BIT:
                         break;
                     case US_ASCII:
-                        string.forceEncoding(USASCIIEncoding.INSTANCE);
+                        StringNodes.forceEncoding(string, USASCIIEncoding.INSTANCE);
                         break;
                     case UTF_8:
-                        string.forceEncoding(UTF8Encoding.INSTANCE);
+                        StringNodes.forceEncoding(string, UTF8Encoding.INSTANCE);
                         break;
                     default:
                         throw new UnsupportedOperationException();

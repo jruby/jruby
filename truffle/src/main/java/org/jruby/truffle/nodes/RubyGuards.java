@@ -11,6 +11,8 @@ package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.interop.TruffleObject;
 import org.jruby.truffle.nodes.core.BigDecimalNodes;
+import org.jruby.truffle.nodes.core.MethodNodes;
+import org.jruby.truffle.nodes.core.UnboundMethodNodes;
 import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
@@ -86,11 +88,19 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyMethod(Object value) {
-        return value instanceof RubyMethod;
+        return (value instanceof RubyBasicObject) && isRubyMethod((RubyBasicObject) value);
+    }
+
+    public static boolean isRubyMethod(RubyBasicObject value) {
+        return value.getDynamicObject().getShape().getObjectType() == MethodNodes.METHOD_TYPE;
     }
 
     public static boolean isRubyUnboundMethod(Object value) {
-        return value instanceof RubyUnboundMethod;
+        return (value instanceof RubyBasicObject) && isRubyUnboundMethod((RubyBasicObject) value);
+    }
+
+    public static boolean isRubyUnboundMethod(RubyBasicObject value) {
+        return value.getDynamicObject().getShape().getObjectType() == UnboundMethodNodes.UNBOUND_METHOD_TYPE;
     }
 
     public static boolean isRubyBasicObject(Object value) {
