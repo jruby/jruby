@@ -35,14 +35,14 @@ public abstract class ArraySliceNode extends RubyNode {
         this.to = to;
     }
 
-    @Specialization(guards = "isNull(array)")
+    @Specialization(guards = "isNullArray(array)")
     public RubyArray sliceNull(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
         return createEmptyArray();
     }
 
-    @Specialization(guards = "isIntegerFixnum(array)")
+    @Specialization(guards = "isIntArray(array)")
     public RubyArray sliceIntegerFixnum(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
         final int to = ArrayNodes.getSize(array) + this.to;
@@ -54,7 +54,7 @@ public abstract class ArraySliceNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isLongFixnum(array)")
+    @Specialization(guards = "isLongArray(array)")
     public RubyArray sliceLongFixnum(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
         final int to = ArrayNodes.getSize(array) + this.to;
@@ -66,7 +66,7 @@ public abstract class ArraySliceNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isFloat(array)")
+    @Specialization(guards = "isDoubleArray(array)")
     public RubyArray sliceFloat(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
         final int to = ArrayNodes.getSize(array) + this.to;
@@ -78,7 +78,7 @@ public abstract class ArraySliceNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isObject(array)")
+    @Specialization(guards = "isObjectArray(array)")
     public RubyArray sliceObject(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
         final int to = ArrayNodes.getSize(array) + this.to;
