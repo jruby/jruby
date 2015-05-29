@@ -1384,39 +1384,6 @@ public abstract class HashNodes {
 
     }
 
-    public static class HashGuards {
-
-        public static boolean isNullStorage(RubyHash hash) {
-            return getStore(hash) == null;
-        }
-
-        public static boolean isPackedArrayStorage(RubyHash hash) {
-            // Can't do instanceof Object[] due to covariance
-            return !(isNullStorage(hash) || isBucketsStorage(hash));
-        }
-
-        public static boolean isBucketsStorage(RubyHash hash) {
-            return getStore(hash) instanceof Entry[];
-        }
-
-        public static boolean isCompareByIdentity(RubyHash hash) {
-            return HashNodes.isCompareByIdentity(hash);
-        }
-
-        public static boolean isEmpty(RubyHash hash) {
-            return getSize(hash) == 0;
-        }
-
-        public static boolean hasDefaultValue(RubyHash hash) {
-            return getDefaultValue(hash) != null;
-        }
-
-        public static boolean hasDefaultBlock(RubyHash hash) {
-            return getDefaultBlock(hash) != null;
-        }
-
-    }
-
     public static class HashAllocator implements Allocator {
 
         @Override
