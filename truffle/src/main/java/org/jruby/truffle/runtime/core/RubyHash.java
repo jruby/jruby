@@ -9,14 +9,8 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import com.oracle.truffle.api.interop.ForeignAccessFactory;
-import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.nodes.objects.Allocator;
-import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.HashOperations;
-import org.jruby.truffle.runtime.hash.KeyValue;
-import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 public class RubyHash extends RubyBasicObject {
 
@@ -36,24 +30,6 @@ public class RubyHash extends RubyBasicObject {
         this.size = size;
         this.firstInSequence = firstInSequence;
         assert HashOperations.verifyStore(this);
-    }
-
-    @Override
-    public ForeignAccessFactory getForeignAccessFactory() {
-        return new HashForeignAccessFactory(getContext());
-    }
-
-    @Override
-    public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-        for (KeyValue keyValue : HashOperations.verySlowToKeyValues(this)) {
-            if (keyValue.getKey() instanceof RubyBasicObject) {
-                ((RubyBasicObject) keyValue.getKey()).visitObjectGraph(visitor);
-            }
-
-            if (keyValue.getValue() instanceof RubyBasicObject) {
-                ((RubyBasicObject) keyValue.getValue()).visitObjectGraph(visitor);
-            }
-        }
     }
 
 }
