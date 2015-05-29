@@ -18,14 +18,12 @@ import jnr.posix.FileStat;
 
 import org.jruby.Ruby;
 import org.jruby.util.io.ChannelDescriptor;
-import org.jruby.Ruby;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.util.io.ModeFlags;
 
 public class URLResource extends AbstractFileResource {
 
     public static String URI = "uri:";
-    public static String CLASSLOADER = "classloader:/";
+    public static String CLASSLOADER = "classloader:";
     public static String URI_CLASSLOADER = URI + CLASSLOADER;
 
     private final String uri;

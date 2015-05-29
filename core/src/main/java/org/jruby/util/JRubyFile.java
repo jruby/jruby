@@ -114,6 +114,12 @@ public class JRubyFile extends JavaSecuredFile {
         if (pathname == null || pathname.equals("") || Ruby.isSecurityRestricted()) {
             return JRubyNonExistentFile.NOT_EXIST;
         }
+        if(pathname.startsWith("file:")) {
+            pathname = pathname.substring(5);
+        }
+        if(pathname.startsWith("uri:")) {
+            return new JRubyFile(pathname);
+        }
         File internal = new JavaSecuredFile(pathname);
         if(cwd != null && cwd.startsWith("uri:") && !pathname.startsWith("uri:") && !pathname.contains("!/") && !internal.isAbsolute()) {
             return new JRubyFile(cwd + "/" + pathname);

@@ -279,6 +279,15 @@ class TestFile < Test::Unit::TestCase
       FileUtils.rm_rf("test_mkdir_with_file_uri_works_as_expected")
     end
 
+    # GH-2972
+    def test_mkdir_with_file_uri_and_absolute_path_works_as_expected
+      # the extra slashes were the problem
+      FileUtils.mkdir("file://#{Dir.pwd}/test_mkdir_with_file_uri_works_as_expected")
+      assert File.directory?("#{Dir.pwd}/test_mkdir_with_file_uri_works_as_expected")
+    ensure
+      FileUtils.rm_rf("#{Dir.pwd}/test_mkdir_with_file_uri_works_as_expected")
+    end
+
     def test_expand_path_corner_case
       # this would fail on MRI 1.8.6 (MRI returns "/foo").
       assert_equal("//foo", File.expand_path("../foo", "//bar"))
