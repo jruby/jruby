@@ -789,7 +789,7 @@ public abstract class HashNodes {
             return hash;
         }
 
-        @Specialization(guards = "!isNotProvided(defaultValue)")
+        @Specialization(guards = "wasProvided(defaultValue)")
         public RubyHash initialize(RubyHash hash, Object defaultValue, NotProvided block) {
             setStore(hash, null, 0, null, null);
             setDefaultValue(hash, defaultValue);
@@ -797,7 +797,7 @@ public abstract class HashNodes {
             return hash;
         }
 
-        @Specialization(guards = "!isNotProvided(defaultValue)")
+        @Specialization(guards = "wasProvided(defaultValue)")
         public Object initialize(RubyHash hash, Object defaultValue, RubyProc block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("wrong number of arguments (1 for 0)", this));

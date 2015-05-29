@@ -582,12 +582,12 @@ public abstract class StringNodes {
             return getSubstringNode().execute(frame, string, start, length);
         }
 
-        @Specialization(guards = "!isNotProvided(length)")
+        @Specialization(guards = "wasProvided(length)")
         public Object slice(VirtualFrame frame, RubyString string, int start, Object length) {
             return slice(frame, string, start, getToIntNode().doInt(frame, length));
         }
 
-        @Specialization(guards = { "!isRubyRange(start)", "!isRubyRegexp(start)", "!isRubyString(start)", "!isNotProvided(length)" })
+        @Specialization(guards = { "!isRubyRange(start)", "!isRubyRegexp(start)", "!isRubyString(start)", "wasProvided(length)" })
         public Object slice(VirtualFrame frame, RubyString string, Object start, Object length) {
             return slice(frame, string, getToIntNode().doInt(frame, start), getToIntNode().doInt(frame, length));
         }
@@ -597,7 +597,7 @@ public abstract class StringNodes {
             return slice(frame, string, regexp, 0);
         }
 
-        @Specialization(guards = "!isNotProvided(capture)")
+        @Specialization(guards = "wasProvided(capture)")
         public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, Object capture) {
             // Extracted from Rubinius's definition of String#[].
             return ruby(frame, "match, str = subpattern(index, other); Regexp.last_match = match; str", "index", regexp, "other", capture);
@@ -1281,7 +1281,7 @@ public abstract class StringNodes {
             return self;
         }
 
-        @Specialization(guards = { "!isRubyString(from)", "!isNotProvided(from)" })
+        @Specialization(guards = { "!isRubyString(from)", "wasProvided(from)" })
         public RubyString initialize(VirtualFrame frame, RubyString self, Object from) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -2028,7 +2028,7 @@ public abstract class StringNodes {
             return sum(frame, string, 16);
         }
 
-        @Specialization(guards = { "!isInteger(bits)", "!isLong(bits)", "!isNotProvided(bits)" })
+        @Specialization(guards = { "!isInteger(bits)", "!isLong(bits)", "wasProvided(bits)" })
         public Object sum(VirtualFrame frame, RubyString string, Object bits) {
             return ruby(frame, "sum Rubinius::Type.coerce_to(bits, Fixnum, :to_int)", "bits", bits);
         }

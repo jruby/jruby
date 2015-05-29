@@ -137,7 +137,11 @@ public abstract class RubyGuards {
 
     // Sentinels
 
-    public static boolean isNotProvided(Object value) {
+    public static boolean wasProvided(Object value) {
+        return !(wasNotProvided(value));
+    }
+
+    public static boolean wasNotProvided(Object value) {
         return value instanceof NotProvided;
     }
 

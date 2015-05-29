@@ -606,7 +606,7 @@ public abstract class FloatNodes {
             return fixnumOrBignum.fixnumOrBignum(f);
         }
 
-        @Specialization(guards = "!isNotProvided(ndigits)")
+        @Specialization(guards = "wasProvided(ndigits)")
         public Object round(VirtualFrame frame, double n, Object ndigits) {
             return ruby(frame, "round_internal(ndigits)", "ndigits", ndigits);
         }
