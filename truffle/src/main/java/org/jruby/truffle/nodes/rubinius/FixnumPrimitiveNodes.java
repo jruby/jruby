@@ -45,12 +45,12 @@ public abstract class FixnumPrimitiveNodes {
 
         @Specialization
         public RubyArray coerce(int a, int b) {
-            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), new int[]{b, a}, 2);
+            return createArray(new int[]{b, a}, 2);
         }
 
         @Specialization
         public RubyArray coerce(long a, int b) {
-            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), new long[]{b, a}, 2);
+            return createArray(new long[]{b, a}, 2);
         }
 
         @Specialization(guards = "!isInteger(b)")

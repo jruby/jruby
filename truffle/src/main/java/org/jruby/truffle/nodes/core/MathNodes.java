@@ -360,7 +360,7 @@ public abstract class MathNodes {
                 for (; mantissa >= 1.0; mantissa *= 0.5, exponent +=1) { }
             }
 
-            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{sign * mantissa, exponent}, 2);
+            return createArray(new Object[]{sign * mantissa, exponent}, 2);
         }
 
         @Fallback
@@ -589,7 +589,7 @@ public abstract class MathNodes {
 
             final RubyMath.NemesLogGamma l = new RubyMath.NemesLogGamma(a);
 
-            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{l.value, l.sign}, 2);
+            return createArray(new Object[]{l.value, l.sign}, 2);
         }
 
         @Fallback

@@ -269,7 +269,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                 ret[4] = getContext().makeString(new ByteList(ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP() + ec.lastError.getErrorBytesLength(), ec.lastError.getReadAgainLength()));
             }
 
-            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), ret, ret.length);
+            return createArray(ret, ret.length);
         }
 
     }

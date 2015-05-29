@@ -36,27 +36,27 @@ public abstract class ArrayDupNode extends RubyNode {
 
     @Specialization(guards = "isNull(from)")
     public RubyArray dupNull(RubyArray from) {
-        return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
+        return createEmptyArray();
     }
 
     @Specialization(guards = "isIntegerFixnum(from)")
     public RubyArray dupIntegerFixnum(RubyArray from) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((int[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
+        return createArray(Arrays.copyOf((int[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }
 
     @Specialization(guards = "isLongFixnum(from)")
     public RubyArray dupLongFixnum(RubyArray from) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((long[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
+        return createArray(Arrays.copyOf((long[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }
 
     @Specialization(guards = "isFloat(from)")
     public RubyArray dupFloat(RubyArray from) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((double[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
+        return createArray(Arrays.copyOf((double[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }
 
     @Specialization(guards = "isObject(from)")
     public RubyArray dupObject(RubyArray from) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
+        return createArray(Arrays.copyOf((Object[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }
 
 }

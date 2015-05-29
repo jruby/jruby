@@ -243,7 +243,7 @@ public abstract class BindingNodes {
         @TruffleBoundary
         @Specialization
         public RubyArray localVariables(RubyBinding binding) {
-            final RubyArray array = ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = createEmptyArray();
 
             MaterializedFrame frame = binding.getFrame();
 

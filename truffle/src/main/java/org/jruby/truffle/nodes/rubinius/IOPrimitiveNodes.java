@@ -641,7 +641,7 @@ public abstract class IOPrimitiveNodes {
                 }
             }
 
-            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), setObjects, setFdsCount);
+            return createArray(setObjects, setFdsCount);
         }
 
     }

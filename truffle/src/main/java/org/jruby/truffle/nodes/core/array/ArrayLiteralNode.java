@@ -89,7 +89,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @Override
         public RubyArray executeRubyArray(VirtualFrame frame) {
-            return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
+            return createEmptyArray();
         }
 
     }
@@ -113,7 +113,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
+            return createArray(executedValues, values.length);
         }
 
         private RubyArray makeGeneric(VirtualFrame frame,
@@ -148,7 +148,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
+            return createArray(executedValues, values.length);
         }
 
         private RubyArray makeGeneric(VirtualFrame frame,
@@ -183,7 +183,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
+            return createArray(executedValues, values.length);
         }
 
         private RubyArray makeGeneric(VirtualFrame frame,
@@ -214,7 +214,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 executedValues[n] = values[n].execute(frame);
             }
 
-            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
+            return createArray(executedValues, values.length);
         }
 
     }

@@ -70,7 +70,7 @@ public abstract class SymbolNodes {
         @TruffleBoundary
         @Specialization
         public RubyArray allSymbols() {
-            final RubyArray array = ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
+            final RubyArray array = createEmptyArray();
 
             for (RubySymbol s : getContext().getSymbolTable().allSymbols()) {
                 ArrayNodes.slowPush(array, s);

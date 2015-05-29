@@ -279,7 +279,7 @@ public abstract class EncodingNodes {
 
             final RubyEncoding[] encodings = RubyEncoding.cloneEncodingList();
 
-            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), encodings, encodings.length);
+            return createArray(encodings, encodings.length);
         }
     }
 

@@ -50,7 +50,7 @@ public class RubiniusSingleBlockArgNode extends RubyNode {
             } else {
                 Object[] extractedArguments = RubyArguments.extractUserArguments(frame.getArguments());
 
-                return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), extractedArguments, userArgumentCount);
+                return createArray(extractedArguments, userArgumentCount);
             }
         }
     }

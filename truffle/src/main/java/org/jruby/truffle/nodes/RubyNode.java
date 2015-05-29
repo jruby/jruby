@@ -24,6 +24,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -58,7 +59,7 @@ public abstract class RubyNode extends Node {
         return getContext().makeString("expression");
     }
 
-    // Execute without returing the result
+    // Execute without returning the result
 
     public void executeVoid(VirtualFrame frame) {
         execute(frame);
@@ -240,6 +241,26 @@ public abstract class RubyNode extends Node {
 
     protected RubyBasicObject nil() {
         return getContext().getCoreLibrary().getNilObject();
+    }
+
+    protected RubyArray createEmptyArray() {
+        return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
+    }
+
+    protected RubyArray createArray(int[] store, int size) {
+        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
+    }
+
+    protected RubyArray createArray(long[] store, int size) {
+        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
+    }
+
+    protected RubyArray createArray(double[] store, int size) {
+        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
+    }
+
+    protected RubyArray createArray(Object[] store, int size) {
+        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
     }
 
     protected POSIX posix() {

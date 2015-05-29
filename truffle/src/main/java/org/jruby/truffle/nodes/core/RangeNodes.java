@@ -411,7 +411,7 @@ public abstract class RangeNodes {
             final int length = range.getExclusiveEnd() - begin;
 
             if (length < 0) {
-                return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
+                return createEmptyArray();
             } else {
                 final int[] values = new int[length];
 
@@ -419,7 +419,7 @@ public abstract class RangeNodes {
                     values[n] = begin + n;
                 }
 
-                return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), values, length);
+                return createArray(values, length);
             }
         }
 

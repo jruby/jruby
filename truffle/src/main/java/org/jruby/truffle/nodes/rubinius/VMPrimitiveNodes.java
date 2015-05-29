@@ -417,7 +417,7 @@ public abstract class VMPrimitiveNodes {
             final double tutime = 0;
             final double tstime = 0;
 
-            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), new double[]{
+            return createArray(new double[]{
                     utime,
                     stime,
                     cutime,
