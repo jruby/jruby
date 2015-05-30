@@ -52,7 +52,7 @@ class TestLoad < Test::Unit::TestCase
     assert_nothing_raised do
       require 'uri:classloader:/require_relative.rb'
     end
-  end
+  end if RUBY_VERSION >= '1.9'
 
   # JRUBY-3231
   def test_load_with_empty_string_in_loadpath
