@@ -39,7 +39,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int access(RubyString path, int mode) {
-            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
+            final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
             return posix().access(pathString, mode);
         }
 
@@ -261,7 +261,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int readlink(RubyString path, RubyBasicObject pointer, int bufsize) {
-            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
+            final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
 
             final int result = posix().readlink(pathString, PointerPrimitiveNodes.getPointer(pointer), bufsize);
             if (result == -1) {
@@ -283,8 +283,8 @@ public abstract class PosixNodes {
 
         @Specialization
         public int link(RubyString path, RubyString other) {
-            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
-            final String otherString = RubyEncoding.decodeUTF8(other.getByteList().getUnsafeBytes(), other.getByteList().getBegin(), other.getByteList().getRealSize());
+            final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
+            final String otherString = RubyEncoding.decodeUTF8(StringNodes.getByteList(other).getUnsafeBytes(), StringNodes.getByteList(other).getBegin(), StringNodes.getByteList(other).getRealSize());
             return posix().link(pathString, otherString);
         }
 
@@ -299,7 +299,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int unlink(RubyString path) {
-            return posix().unlink(RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize()));
+            return posix().unlink(RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize()));
         }
 
     }
@@ -327,7 +327,7 @@ public abstract class PosixNodes {
 
         @Specialization
         public int utimes(RubyString path, RubyBasicObject pointer) {
-            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
+            final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
 
             final int result = posix().utimes(pathString, PointerPrimitiveNodes.getPointer(pointer));
             if (result == -1) {
@@ -574,8 +574,8 @@ public abstract class PosixNodes {
 
         @Specialization
         public int rename(RubyString path, RubyString other) {
-            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
-            final String otherString = RubyEncoding.decodeUTF8(other.getByteList().getUnsafeBytes(), other.getByteList().getBegin(), other.getByteList().getRealSize());
+            final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
+            final String otherString = RubyEncoding.decodeUTF8(StringNodes.getByteList(other).getUnsafeBytes(), StringNodes.getByteList(other).getBegin(), StringNodes.getByteList(other).getRealSize());
             return posix().rename(pathString, otherString);
         }
 
@@ -607,7 +607,7 @@ public abstract class PosixNodes {
             // We just ignore maxSize - I think this is ok
 
             final String path = getContext().getRuntime().getCurrentDirectory();
-            resultPath.getByteList().replace(path.getBytes(StandardCharsets.UTF_8));
+            StringNodes.getByteList(resultPath).replace(path.getBytes(StandardCharsets.UTF_8));
             return resultPath;
         }
 
@@ -748,8 +748,8 @@ public abstract class PosixNodes {
         @Specialization
         public int getaddrinfo(RubyString hostName, RubyString serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
             return nativeSockets().getaddrinfo(
-                    hostName.getByteList(),
-                    serviceName.getByteList(),
+                    StringNodes.getByteList(hostName),
+                    StringNodes.getByteList(serviceName),
                     PointerPrimitiveNodes.getPointer(hintsPointer),
                     PointerPrimitiveNodes.getPointer(resultsPointer));
         }

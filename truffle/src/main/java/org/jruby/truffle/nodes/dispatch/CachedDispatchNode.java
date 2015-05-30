@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -38,7 +39,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
         if (cachedName instanceof RubySymbol) {
             cachedNameAsSymbol = (RubySymbol) cachedName;
         } else if (cachedName instanceof RubyString) {
-            cachedNameAsSymbol = context.getSymbol(((RubyString) cachedName).getByteList());
+            cachedNameAsSymbol = context.getSymbol(StringNodes.getByteList(((RubyString) cachedName)));
         } else if (cachedName instanceof String) {
             cachedNameAsSymbol = context.getSymbol((String) cachedName);
         } else {
@@ -68,7 +69,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
             // TODO(CS, 11-Jan-15) this just repeats the above guard...
             return cachedName == methodName;
         } else if (cachedName instanceof RubyString) {
-            return (methodName instanceof RubyString) && ((RubyString) cachedName).getByteList().equal(((RubyString) methodName).getByteList());
+            return (methodName instanceof RubyString) && StringNodes.getByteList(((RubyString) cachedName)).equal(StringNodes.getByteList(((RubyString) methodName)));
         } else {
             throw new UnsupportedOperationException();
         }

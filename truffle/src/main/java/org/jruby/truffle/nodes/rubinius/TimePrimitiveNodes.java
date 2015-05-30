@@ -200,7 +200,7 @@ public abstract class TimePrimitiveNodes {
         public RubyString timeStrftime(RubyTime time, RubyString format) {
             final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
             // TODO CS 15-Feb-15 ok to just pass nanoseconds as 0?
-            return createString(rdf.formatToByteList(rdf.compilePattern(format.getByteList(), false), time.getDateTime(), 0, null));
+            return createString(rdf.formatToByteList(rdf.compilePattern(StringNodes.getByteList(format), false), time.getDateTime(), 0, null));
         }
 
     }

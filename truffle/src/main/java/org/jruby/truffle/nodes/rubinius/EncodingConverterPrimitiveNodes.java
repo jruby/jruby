@@ -65,14 +65,14 @@ public abstract class EncodingConverterPrimitiveNodes {
 
             // Taken from org.jruby.RubyConverter#primitive_convert.
 
-            source.modify();
-            source.clearCodeRange();
+            StringNodes.modify(source);
+            StringNodes.clearCodeRange(source);
 
-            target.modify();
-            target.clearCodeRange();
+            StringNodes.modify(target);
+            StringNodes.clearCodeRange(target);
 
-            final ByteList inBytes = source.getByteList();
-            final ByteList outBytes = target.getByteList();
+            final ByteList inBytes = StringNodes.getByteList(source);
+            final ByteList outBytes = StringNodes.getByteList(target);
 
             final Ptr inPtr = new Ptr();
             final Ptr outPtr = new Ptr();
@@ -85,8 +85,8 @@ public abstract class EncodingConverterPrimitiveNodes {
             if (size == -1) {
                 size = 16; // in MRI, this is RSTRING_EMBED_LEN_MAX
 
-                if (size < source.getByteList().getRealSize()) {
-                    size = source.getByteList().getRealSize();
+                if (size < StringNodes.getByteList(source).getRealSize()) {
+                    size = StringNodes.getByteList(source).getRealSize();
                 }
             }
 
@@ -120,8 +120,8 @@ public abstract class EncodingConverterPrimitiveNodes {
 
                 outBytes.setRealSize(outPtr.p - outBytes.begin());
 
-                source.getByteList().setRealSize(inBytes.getRealSize() - (inPtr.p - inBytes.getBegin()));
-                source.getByteList().setBegin(inPtr.p);
+                StringNodes.getByteList(source).setRealSize(inBytes.getRealSize() - (inPtr.p - inBytes.getBegin()));
+                StringNodes.getByteList(source).setBegin(inPtr.p);
 
                 if (growOutputBuffer && res == EConvResult.DestinationBufferFull) {
                     if (Integer.MAX_VALUE / 2 < size) {

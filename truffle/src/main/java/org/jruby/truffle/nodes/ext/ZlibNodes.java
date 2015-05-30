@@ -48,7 +48,7 @@ public abstract class ZlibNodes {
         @TruffleBoundary
         @Specialization
         public long crc32(RubyString message, NotProvided initial) {
-            final ByteList bytes = message.getByteList();
+            final ByteList bytes = StringNodes.getByteList(message);
             final CRC32 crc32 = new CRC32();
             crc32.update(bytes.unsafeBytes(), bytes.begin(), bytes.length());
             return crc32.getValue();
@@ -62,7 +62,7 @@ public abstract class ZlibNodes {
         @TruffleBoundary
         @Specialization
         public long crc32(RubyString message, long initial) {
-            final ByteList bytes = message.getByteList();
+            final ByteList bytes = StringNodes.getByteList(message);
             final CRC32 crc32 = new CRC32();
             crc32.update(bytes.unsafeBytes(), bytes.begin(), bytes.length());
             return JZlib.crc32_combine(initial, crc32.getValue(), bytes.length());
@@ -90,7 +90,7 @@ public abstract class ZlibNodes {
         public RubyString deflate(RubyString message, int level) {
             final Deflater deflater = new Deflater(level);
 
-            final ByteList messageBytes = message.getByteList();
+            final ByteList messageBytes = StringNodes.getByteList(message);
             deflater.setInput(messageBytes.unsafeBytes(), messageBytes.begin(), messageBytes.length());
 
             final ByteList outputBytes = new ByteList(BUFFER_SIZE);
@@ -122,7 +122,7 @@ public abstract class ZlibNodes {
         public RubyString inflate(RubyString message) {
             final Inflater inflater = new Inflater();
 
-            final ByteList messageBytes = message.getByteList();
+            final ByteList messageBytes = StringNodes.getByteList(message);
             inflater.setInput(messageBytes.unsafeBytes(), messageBytes.begin(), messageBytes.length());
 
             final ByteList outputBytes = new ByteList(BUFFER_SIZE);

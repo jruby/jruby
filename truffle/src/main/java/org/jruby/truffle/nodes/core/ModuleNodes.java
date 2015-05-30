@@ -624,7 +624,7 @@ public abstract class ModuleNodes {
 
         private Object classEvalSource(VirtualFrame frame, RubyModule module, RubyString code, String file) {
             RubyBinding binding = getCallerBinding(frame);
-            Encoding encoding = code.getByteList().getEncoding();
+            Encoding encoding = StringNodes.getByteList(code).getEncoding();
 
             CompilerDirectives.transferToInterpreter();
             Source source = Source.fromText(code.toString(), file);

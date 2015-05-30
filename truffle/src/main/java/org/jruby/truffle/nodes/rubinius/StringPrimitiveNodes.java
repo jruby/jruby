@@ -98,7 +98,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public boolean isCharacterAscii(RubyString character) {
-            final ByteList bytes = character.getByteList();
+            final ByteList bytes = StringNodes.getByteList(character);
             final int codepoint = StringSupport.preciseCodePoint(
                     bytes.getEncoding(),
                     bytes.getUnsafeBytes(),
@@ -125,7 +125,7 @@ public abstract class StringPrimitiveNodes {
         @Specialization
         public RubyArray stringAwkSplit(RubyString string, int lim) {
             final List<RubyString> ret = new ArrayList<>();
-            final ByteList value = string.getByteList();
+            final ByteList value = StringNodes.getByteList(string);
             final boolean limit = lim > 0;
             int i = lim > 0 ? 1 : 0;
 
@@ -138,7 +138,7 @@ public abstract class StringPrimitiveNodes {
             boolean skip = true;
 
             int e = 0, b = 0;
-            final boolean singlebyte = StringSupport.isSingleByteOptimizable(string.getCodeRangeable(), enc);
+            final boolean singlebyte = StringSupport.isSingleByteOptimizable(StringNodes.getCodeRangeable(string), enc);
             while (p < end) {
                 final int c;
                 if (singlebyte) {
@@ -179,8 +179,8 @@ public abstract class StringPrimitiveNodes {
         }
 
         private RubyString makeString(RubyString source, int index, int length) {
-            final ByteList bytes = new ByteList(source.getByteList(), index, length);
-            bytes.setEncoding(source.getByteList().getEncoding());
+            final ByteList bytes = new ByteList(StringNodes.getByteList(source), index, length);
+            bytes.setEncoding(StringNodes.getByteList(source).getEncoding());
 
             final RubyString ret = StringNodes.createString(source.getLogicalClass(), bytes);
             taintResultNode.maybeTaint(source, ret);
@@ -207,7 +207,7 @@ public abstract class StringPrimitiveNodes {
                 return subString;
             }
 
-            if (((RubyString) subString).getByteList().length() == 0) {
+            if (StringNodes.getByteList(((RubyString) subString)).length() == 0) {
                 return nil();
             }
 
@@ -216,7 +216,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public Object stringByteSubstring(RubyString string, int index, int length) {
-            final ByteList bytes = string.getByteList();
+            final ByteList bytes = StringNodes.getByteList(string);
 
             if (length < 0) {
                 return nil();
@@ -238,7 +238,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), normalizedIndex, rangeEnd);
-            final RubyString result = StringNodes.createString(string.getLogicalClass(), new ByteList(copiedBytes, string.getByteList().getEncoding()));
+            final RubyString result = StringNodes.createString(string.getLogicalClass(), new ByteList(copiedBytes, StringNodes.getByteList(string).getEncoding()));
 
             return taintResultNode.maybeTaint(string, result);
         }
@@ -309,7 +309,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public boolean stringCheckNullSafe(RubyString string) {
-            for (byte b : string.getByteList().unsafeBytes()) {
+            for (byte b : StringNodes.getByteList(string).unsafeBytes()) {
                 if (nullByteProfile.profile(b == 0)) {
                     return false;
                 }
@@ -334,7 +334,7 @@ public abstract class StringPrimitiveNodes {
         public Object stringChrAt(RubyString string, int byteIndex) {
             // Taken from Rubinius's Character::create_from.
 
-            final ByteList bytes = string.getByteList();
+            final ByteList bytes = StringNodes.getByteList(string);
 
             if (byteIndex < 0 || byteIndex >= bytes.getRealSize()) {
                 return nil();
@@ -421,8 +421,8 @@ public abstract class StringPrimitiveNodes {
                 size = stringLength;
             }
 
-            final ByteList bytes = string.getByteList();
-            final ByteList otherBytes = other.getByteList();
+            final ByteList bytes = StringNodes.getByteList(string);
+            final ByteList otherBytes = StringNodes.getByteList(other);
 
             return ByteList.memcmp(bytes.getUnsafeBytes(), bytes.getBegin(), size,
                     otherBytes.getUnsafeBytes(), otherBytes.getBegin() + start, size);
@@ -441,11 +441,11 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public boolean stringEqual(RubyString string, RubyString other) {
-            final ByteList a = string.getByteList();
-            final ByteList b = other.getByteList();
+            final ByteList a = StringNodes.getByteList(string);
+            final ByteList b = StringNodes.getByteList(other);
 
             if (incompatibleEncodingProfile.profile((a.getEncoding() != b.getEncoding()) &&
-                    (org.jruby.RubyEncoding.areCompatible(string.getCodeRangeable(), other.getCodeRangeable()) == null))) {
+                    (org.jruby.RubyEncoding.areCompatible(StringNodes.getCodeRangeable(string), StringNodes.getCodeRangeable(other)) == null))) {
                 return false;
             }
 
@@ -472,11 +472,11 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            if (offset >= string.getByteList().getRealSize()) {
+            if (offset >= StringNodes.getByteList(string).getRealSize()) {
                 return nil();
             }
 
-            final RubyString ret = StringNodes.createString(string.getLogicalClass(), new ByteList(string.getByteList().unsafeBytes(), offset, 1));
+            final RubyString ret = StringNodes.createString(string.getLogicalClass(), new ByteList(StringNodes.getByteList(string).unsafeBytes(), offset, 1));
 
             return propagate(string, ret);
         }
@@ -489,27 +489,27 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            if (offset >= string.getByteList().getRealSize()) {
+            if (offset >= StringNodes.getByteList(string).getRealSize()) {
                 return nil();
             }
 
-            final ByteList bytes = string.getByteList();
+            final ByteList bytes = StringNodes.getByteList(string);
             final Encoding enc = bytes.getEncoding();
             final int clen = StringSupport.preciseLength(enc, bytes.getUnsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize());
 
             final RubyString ret;
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
-                ret = StringNodes.createString(string.getLogicalClass(), new ByteList(string.getByteList().unsafeBytes(), offset, clen));
+                ret = StringNodes.createString(string.getLogicalClass(), new ByteList(StringNodes.getByteList(string).unsafeBytes(), offset, clen));
             } else {
-                ret = StringNodes.createString(string.getLogicalClass(), new ByteList(string.getByteList().unsafeBytes(), offset, 1));
+                ret = StringNodes.createString(string.getLogicalClass(), new ByteList(StringNodes.getByteList(string).unsafeBytes(), offset, 1));
             }
 
             return propagate(string, ret);
         }
 
         private Object propagate(RubyString string, RubyString ret) {
-            ret.getByteList().setEncoding(string.getByteList().getEncoding());
-            ret.setCodeRange(string.getCodeRange());
+            StringNodes.getByteList(ret).setEncoding(StringNodes.getByteList(string).getEncoding());
+            StringNodes.setCodeRange(ret, StringNodes.getCodeRange(string));
             return maybeTaint(string, ret);
         }
 
@@ -610,9 +610,9 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public Object stringIndex(RubyString string, RubyString pattern, int start) {
-            final int index = StringSupport.index(string.getCodeRangeable(),
-                    pattern.getCodeRangeable(),
-                    start, string.getByteList().getEncoding());
+            final int index = StringSupport.index(StringNodes.getCodeRangeable(string),
+                    StringNodes.getCodeRangeable(pattern),
+                    start, StringNodes.getByteList(string).getEncoding());
 
             if (index == -1) {
                 return nil();
@@ -638,7 +638,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
         public int stringCharacterByteIndexMultiByteEncoding(RubyString string, int index, int start) {
-            final ByteList bytes = string.getByteList();
+            final ByteList bytes = StringNodes.getByteList(string);
 
             return StringSupport.nth(bytes.getEncoding(), bytes.getUnsafeBytes(), bytes.getBegin(),
                     bytes.getBegin() + bytes.getRealSize(), start + index);
@@ -662,7 +662,7 @@ public abstract class StringPrimitiveNodes {
         @Specialization(guards = { "!isSingleByteOptimizableOrAsciiCompatible(string)", "isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
         public int stringByteCharacterIndexFixedWidth(RubyString string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index.
-            return index / string.getByteList().getEncoding().minLength();
+            return index / StringNodes.getByteList(string).getEncoding().minLength();
         }
 
         @Specialization(guards = { "!isSingleByteOptimizableOrAsciiCompatible(string)", "!isFixedWidthEncoding(string)", "isValidUtf8(string)" })
@@ -678,7 +678,7 @@ public abstract class StringPrimitiveNodes {
         public int stringByteCharacterIndex(RubyString string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index and Encoding::find_byte_character_index.
 
-            final ByteList bytes = string.getByteList();
+            final ByteList bytes = StringNodes.getByteList(string);
             final Encoding encoding = bytes.getEncoding();
             int p = bytes.begin() + start;
             final int end = bytes.begin() + bytes.realSize();
@@ -709,18 +709,18 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final int total = string.getByteList().length();
-            int p = string.getByteList().getBegin();
+            final int total = StringNodes.getByteList(string).length();
+            int p = StringNodes.getByteList(string).getBegin();
             final int e = p + total;
-            int pp = pattern.getByteList().getBegin();
-            final int pe = pp + pattern.getByteList().length();
+            int pp = StringNodes.getByteList(pattern).getBegin();
+            final int pe = pp + StringNodes.getByteList(pattern).length();
             int s;
             int ss;
 
-            final byte[] stringBytes = string.getByteList().getUnsafeBytes();
-            final byte[] patternBytes = pattern.getByteList().getUnsafeBytes();
+            final byte[] stringBytes = StringNodes.getByteList(string).getUnsafeBytes();
+            final byte[] patternBytes = StringNodes.getByteList(pattern).getUnsafeBytes();
 
-            if (StringSupport.isSingleByteOptimizable(string.getCodeRangeable(), string.getByteList().getEncoding())) {
+            if (StringSupport.isSingleByteOptimizable(StringNodes.getCodeRangeable(string), StringNodes.getByteList(string).getEncoding())) {
                 for(s = p += offset, ss = pp; p < e; s = ++p) {
                     if (stringBytes[p] != patternBytes[pp]) continue;
 
@@ -740,7 +740,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final Encoding enc = string.getByteList().getEncoding();
+            final Encoding enc = StringNodes.getByteList(string).getEncoding();
             int index = 0;
             int c;
 
@@ -806,7 +806,7 @@ public abstract class StringPrimitiveNodes {
         public Object stringByteIndex(RubyString string, int index, int start) {
             // Taken from Rubinius's String::byte_index.
 
-            final ByteList bytes = string.getByteList();
+            final ByteList bytes = StringNodes.getByteList(string);
 
             final Encoding enc = bytes.getEncoding();
             int p = bytes.getBegin();
@@ -841,7 +841,7 @@ public abstract class StringPrimitiveNodes {
         public Object stringByteIndex(RubyString string, RubyString pattern, int offset) {
             // Taken from Rubinius's String::byte_index.
 
-            final int match_size = pattern.getByteList().length();
+            final int match_size = StringNodes.getByteList(pattern).length();
 
             if (offset < 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -850,20 +850,20 @@ public abstract class StringPrimitiveNodes {
 
             if (match_size == 0) return offset;
 
-            if (string.scanForCodeRange() == StringSupport.CR_BROKEN) {
+            if (StringNodes.scanForCodeRange(string) == StringSupport.CR_BROKEN) {
                 return nil();
             }
 
-            final Encoding encoding = StringNodes.checkEncoding(string, pattern.getCodeRangeable(), this);
-            int p = string.getByteList().getBegin();
-            final int e = p + string.getByteList().getRealSize();
-            int pp = pattern.getByteList().getBegin();
-            final int pe = pp + pattern.getByteList().getRealSize();
+            final Encoding encoding = StringNodes.checkEncoding(string, StringNodes.getCodeRangeable(pattern), this);
+            int p = StringNodes.getByteList(string).getBegin();
+            final int e = p + StringNodes.getByteList(string).getRealSize();
+            int pp = StringNodes.getByteList(pattern).getBegin();
+            final int pe = pp + StringNodes.getByteList(pattern).getRealSize();
             int s;
             int ss;
 
-            final byte[] stringBytes = string.getByteList().getUnsafeBytes();
-            final byte[] patternBytes = pattern.getByteList().getUnsafeBytes();
+            final byte[] stringBytes = StringNodes.getByteList(string).getUnsafeBytes();
+            final byte[] patternBytes = StringNodes.getByteList(pattern).getUnsafeBytes();
 
             for(s = p, ss = pp; p < e; s = ++p) {
                 if (stringBytes[p] != patternBytes[pp]) continue;
@@ -907,7 +907,7 @@ public abstract class StringPrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative index given", this));
             }
 
-            final ByteList bytes = string.getByteList();
+            final ByteList bytes = StringNodes.getByteList(string);
             final int p = bytes.getBegin();
             final int end = p + bytes.getRealSize();
 
@@ -937,7 +937,7 @@ public abstract class StringPrimitiveNodes {
             int dst = dest;
             int cnt = size;
 
-            int osz = other.getByteList().length();
+            int osz = StringNodes.getByteList(other).length();
             if(src >= osz) return string;
             if(cnt < 0) return string;
             if(src < 0) src = 0;
@@ -946,12 +946,12 @@ public abstract class StringPrimitiveNodes {
             // This bounds checks on the total capacity rather than the virtual
             // size() of the String. This allows for string adjustment within
             // the capacity without having to change the virtual size first.
-            int sz = string.getByteList().getUnsafeBytes().length;
+            int sz = StringNodes.getByteList(string).getUnsafeBytes().length;
             if(dst >= sz) return string;
             if(dst < 0) dst = 0;
             if(cnt > sz - dst) cnt = sz - dst;
 
-            System.arraycopy(other.getByteList().unsafeBytes(), src, string.getByteList().getUnsafeBytes(), dest, cnt);
+            System.arraycopy(StringNodes.getByteList(other).unsafeBytes(), src, StringNodes.getByteList(string).getUnsafeBytes(), dest, cnt);
 
             return string;
         }
@@ -967,7 +967,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public RubyString stringResizeCapacity(RubyString string, int capacity) {
-            string.getByteList().ensure(capacity);
+            StringNodes.getByteList(string).ensure(capacity);
             return string;
         }
 
@@ -991,9 +991,9 @@ public abstract class StringPrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative start given", this));
             }
 
-            final ByteList buf = string.getByteList();
+            final ByteList buf = StringNodes.getByteList(string);
             final int total = buf.getRealSize();
-            final int matchSize = pattern.getByteList().getRealSize();
+            final int matchSize = StringNodes.getByteList(pattern).getRealSize();
 
             if (pos >= total) {
                 pos = total - 1;
@@ -1005,7 +1005,7 @@ public abstract class StringPrimitiveNodes {
                 }
 
                 case 1: {
-                    final int matcher = pattern.getByteList().get(0);
+                    final int matcher = StringNodes.getByteList(pattern).get(0);
 
                     while (pos >= 0) {
                         if (buf.get(pos) == matcher) {
@@ -1026,7 +1026,7 @@ public abstract class StringPrimitiveNodes {
                     int cur = pos;
 
                     while (cur >= 0) {
-                        if (ByteList.memcmp(string.getByteList().getUnsafeBytes(), cur, pattern.getByteList().getUnsafeBytes(), 0, matchSize) == 0) {
+                        if (ByteList.memcmp(StringNodes.getByteList(string).getUnsafeBytes(), cur, StringNodes.getByteList(pattern).getUnsafeBytes(), 0, matchSize) == 0) {
                             return cur;
                         }
 
@@ -1063,11 +1063,11 @@ public abstract class StringPrimitiveNodes {
         @Specialization
         public RubyString stringPattern(RubyClass stringClass, int size, RubyString string) {
             final byte[] bytes = new byte[size];
-            final byte[] stringBytes = string.getByteList().unsafeBytes();
+            final byte[] stringBytes = StringNodes.getByteList(string).unsafeBytes();
 
-            if (string.getByteList().length() > 0) {
-                for (int n = 0; n < size; n += string.getByteList().length()) {
-                    System.arraycopy(stringBytes, 0, bytes, n, Math.min(string.getByteList().length(), size - n));
+            if (StringNodes.getByteList(string).length() > 0) {
+                for (int n = 0; n < size; n += StringNodes.getByteList(string).length()) {
+                    System.arraycopy(stringBytes, 0, bytes, n, Math.min(StringNodes.getByteList(string).length(), size - n));
                 }
             }
             
@@ -1088,7 +1088,7 @@ public abstract class StringPrimitiveNodes {
         public Object stringToInum(RubyString string, int fixBase, boolean strict) {
             try {
                 final org.jruby.RubyInteger result = ConvertBytes.byteListToInum19(getContext().getRuntime(),
-                        string.getByteList(),
+                        StringNodes.getByteList(string),
                         fixBase,
                         strict);
 
@@ -1109,7 +1109,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public RubyString stringByteAppend(RubyString string, RubyString other) {
-            string.getByteList().append(other.getByteList());
+            StringNodes.getByteList(string).append(StringNodes.getByteList(other));
             return string;
         }
 
@@ -1135,7 +1135,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final int length = string.getByteList().getRealSize();
+            final int length = StringNodes.getByteList(string).getRealSize();
             if (length == 0) {
                 len = 0;
             }
@@ -1172,7 +1172,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final int length = string.getByteList().getRealSize();
+            final int length = StringNodes.getByteList(string).getRealSize();
             if (length == 0) {
                 len = 0;
             }
@@ -1181,7 +1181,7 @@ public abstract class StringPrimitiveNodes {
                 len = length - beg;
             }
 
-            final ByteList value = string.getByteList();
+            final ByteList value = StringNodes.getByteList(string);
             final Encoding enc = value.getEncoding();
             int p;
             int s = value.getBegin();
@@ -1204,17 +1204,17 @@ public abstract class StringPrimitiveNodes {
                     }
                     return makeSubstring(string, p - s, e - p);
                 } else {
-                    beg += StringSupport.strLengthFromRubyString(string.getCodeRangeable(), enc);
+                    beg += StringSupport.strLengthFromRubyString(StringNodes.getCodeRangeable(string), enc);
                     if (beg < 0) {
                         return nil();
                     }
                 }
-            } else if (beg > 0 && beg > StringSupport.strLengthFromRubyString(string.getCodeRangeable(), enc)) {
+            } else if (beg > 0 && beg > StringSupport.strLengthFromRubyString(StringNodes.getCodeRangeable(string), enc)) {
                 return nil();
             }
             if (len == 0) {
                 p = 0;
-            } else if (string.isCodeRangeValid() && enc instanceof UTF8Encoding) {
+            } else if (StringNodes.isCodeRangeValid(string) && enc instanceof UTF8Encoding) {
                 p = StringSupport.utf8Nth(bytes, s, end, beg);
                 len = StringSupport.utf8Offset(bytes, p, end, len);
             } else if (enc.isFixedWidth()) {
@@ -1242,8 +1242,8 @@ public abstract class StringPrimitiveNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            final RubyString ret = StringNodes.createString(string.getLogicalClass(), new ByteList(string.getByteList(), beg, len));
-            ret.getByteList().setEncoding(string.getByteList().getEncoding());
+            final RubyString ret = StringNodes.createString(string.getLogicalClass(), new ByteList(StringNodes.getByteList(string), beg, len));
+            StringNodes.getByteList(ret).setEncoding(StringNodes.getByteList(string).getEncoding());
             taintResultNode.maybeTaint(string, ret);
 
             return ret;

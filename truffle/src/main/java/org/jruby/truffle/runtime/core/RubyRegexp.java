@@ -102,7 +102,7 @@ public class RubyRegexp extends RubyBasicObject {
 
     @TruffleBoundary
     public Object matchCommon(RubyString source, boolean operator, boolean setNamedCaptures, int startPos) {
-        final byte[] stringBytes = source.getByteList().bytes();
+        final byte[] stringBytes = StringNodes.getByteList(source).bytes();
         final Matcher matcher = regex.matcher(stringBytes);
         int range = stringBytes.length;
 
@@ -111,7 +111,7 @@ public class RubyRegexp extends RubyBasicObject {
 
     @TruffleBoundary
     public Object matchCommon(RubyString source, boolean operator, boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
-        final ByteList bytes = source.getByteList();
+        final ByteList bytes = StringNodes.getByteList(source);
         final RubyContext context = getContext();
 
         final Frame frame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
@@ -212,10 +212,10 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     private RubyString makeString(RubyString source, int start, int length) {
-        final ByteList bytes = new ByteList(source.getByteList(), start, length);
+        final ByteList bytes = new ByteList(StringNodes.getByteList(source), start, length);
         final RubyString ret = StringNodes.createString(source.getLogicalClass(), bytes);
 
-        ret.setCodeRange(source.getCodeRange());
+        StringNodes.setCodeRange(ret, StringNodes.getCodeRange(source));
 
         return ret;
     }
@@ -245,14 +245,14 @@ public class RubyRegexp extends RubyBasicObject {
     public RubyString gsub(RubyString string, String replacement) {
         final RubyContext context = getContext();
 
-        final byte[] stringBytes = string.getByteList().bytes();
+        final byte[] stringBytes = StringNodes.getByteList(string).bytes();
 
-        final Encoding encoding = string.getByteList().getEncoding();
+        final Encoding encoding = StringNodes.getByteList(string).getEncoding();
         final Matcher matcher = regex.matcher(stringBytes);
 
-        int p = string.getByteList().getBegin();
+        int p = StringNodes.getByteList(string).getBegin();
         int end = 0;
-        int range = p + string.getByteList().getRealSize();
+        int range = p + StringNodes.getByteList(string).getRealSize();
         int lastMatchEnd = 0;
 
         // We only ever care about the entire matched string, not each of the matched parts, so we can hard-code the index.
@@ -278,7 +278,7 @@ public class RubyRegexp extends RubyBasicObject {
             builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(replacement.getBytes(StandardCharsets.UTF_8))));
 
             lastMatchEnd = regionEnd;
-            end = StringSupport.positionEndForScan(string.getByteList(), matcher, encoding, p, range);
+            end = StringSupport.positionEndForScan(StringNodes.getByteList(string), matcher, encoding, p, range);
         }
 
         return StringNodes.createString(context.getCoreLibrary().getStringClass(), builder.toString());
@@ -308,12 +308,12 @@ public class RubyRegexp extends RubyBasicObject {
     public RubyString[] split(final RubyString string, final boolean useLimit, final int limit) {
         final RubyContext context = getContext();
 
-        final ByteList bytes = string.getByteList();
+        final ByteList bytes = StringNodes.getByteList(string);
         final byte[] byteArray = bytes.bytes();
         final int begin = bytes.getBegin();
         final int len = bytes.getRealSize();
         final int range = begin + len;
-        final Encoding encoding = string.getByteList().getEncoding();
+        final Encoding encoding = StringNodes.getByteList(string).getEncoding();
         final Matcher matcher = regex.matcher(byteArray);
 
         final ArrayList<RubyString> strings = new ArrayList<>();
@@ -373,13 +373,13 @@ public class RubyRegexp extends RubyBasicObject {
     public Object scan(RubyString string) {
         final RubyContext context = getContext();
 
-        final byte[] stringBytes = string.getByteList().bytes();
-        final Encoding encoding = string.getByteList().getEncoding();
+        final byte[] stringBytes = StringNodes.getByteList(string).bytes();
+        final Encoding encoding = StringNodes.getByteList(string).getEncoding();
         final Matcher matcher = regex.matcher(stringBytes);
 
-        int p = string.getByteList().getBegin();
+        int p = StringNodes.getByteList(string).getBegin();
         int end = 0;
-        int range = p + string.getByteList().getRealSize();
+        int range = p + StringNodes.getByteList(string).getRealSize();
 
         Object lastGoodMatchData = getContext().getCoreLibrary().getNilObject();
 
@@ -401,7 +401,7 @@ public class RubyRegexp extends RubyBasicObject {
                 strings.add((RubyString) values[0]);
 
                 lastGoodMatchData = matchData;
-                end = StringSupport.positionEndForScan(string.getByteList(), matcher, encoding, p, range);
+                end = StringSupport.positionEndForScan(StringNodes.getByteList(string), matcher, encoding, p, range);
             }
 
             setThread("$~", lastGoodMatchData);
@@ -420,7 +420,7 @@ public class RubyRegexp extends RubyBasicObject {
                 allMatches.add(ArrayNodes.createArray(context.getCoreLibrary().getArrayClass(), captures, captures.length));
 
                 lastGoodMatchData = matchData;
-                end = StringSupport.positionEndForScan(string.getByteList(), matcher, encoding, p, range);
+                end = StringSupport.positionEndForScan(StringNodes.getByteList(string), matcher, encoding, p, range);
             }
 
             setThread("$~", lastGoodMatchData);

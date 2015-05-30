@@ -18,11 +18,11 @@ import org.jruby.util.StringSupport;
 public class StringGuards {
 
     public static boolean isSingleByteOptimizable(RubyString string) {
-        return StringSupport.isSingleByteOptimizable(string.getCodeRangeable(), string.getByteList().getEncoding());
+        return StringSupport.isSingleByteOptimizable(StringNodes.getCodeRangeable(string), StringNodes.getByteList(string).getEncoding());
     }
 
     public static boolean isAsciiCompatible(RubyString string) {
-        return string.getByteList().getEncoding().isAsciiCompatible();
+        return StringNodes.getByteList(string).getEncoding().isAsciiCompatible();
     }
 
     public static boolean isSingleByteOptimizableOrAsciiCompatible(RubyString string) {
@@ -30,18 +30,18 @@ public class StringGuards {
     }
 
     public static boolean isSingleByte(RubyString string) {
-        return string.getByteList().getEncoding().isSingleByte();
+        return StringNodes.getByteList(string).getEncoding().isSingleByte();
     }
 
     public static boolean isValidOr7BitEncoding(RubyString string) {
-        return string.isCodeRangeValid() || CodeRangeSupport.isCodeRangeAsciiOnly(string.getCodeRangeable());
+        return StringNodes.isCodeRangeValid(string) || CodeRangeSupport.isCodeRangeAsciiOnly(StringNodes.getCodeRangeable(string));
     }
 
     public static boolean isFixedWidthEncoding(RubyString string) {
-        return string.getByteList().getEncoding().isFixedWidth();
+        return StringNodes.getByteList(string).getEncoding().isFixedWidth();
     }
 
     public static boolean isValidUtf8(RubyString string) {
-        return string.isCodeRangeValid() && string.getByteList().getEncoding() instanceof UTF8Encoding;
+        return StringNodes.isCodeRangeValid(string) && StringNodes.getByteList(string).getEncoding() instanceof UTF8Encoding;
     }
 }

@@ -150,7 +150,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization
         public RubyString escape(RubyString pattern) {
-            return createString(org.jruby.RubyRegexp.quote19(new ByteList(pattern.getByteList()), true).toString());
+            return createString(org.jruby.RubyRegexp.quote19(new ByteList(StringNodes.getByteList(pattern)), true).toString());
         }
 
     }
@@ -257,8 +257,8 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization
         public RubyString quote(RubyString raw) {
-            boolean isAsciiOnly = raw.getByteList().getEncoding().isAsciiCompatible() && raw.scanForCodeRange() == CR_7BIT;
-            return createString(org.jruby.RubyRegexp.quote19(raw.getByteList(), isAsciiOnly));
+            boolean isAsciiOnly = StringNodes.getByteList(raw).getEncoding().isAsciiCompatible() && StringNodes.scanForCodeRange(raw) == CR_7BIT;
+            return createString(org.jruby.RubyRegexp.quote19(StringNodes.getByteList(raw), isAsciiOnly));
         }
 
         @Specialization

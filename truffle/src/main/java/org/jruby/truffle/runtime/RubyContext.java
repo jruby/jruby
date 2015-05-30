@@ -63,7 +63,6 @@ import org.jruby.util.cli.Options;
 import java.io.File;
 import java.io.PrintStream;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -434,7 +433,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public org.jruby.RubyString toJRuby(RubyString string) {
-        final org.jruby.RubyString jrubyString = runtime.newString(string.getByteList().dup());
+        final org.jruby.RubyString jrubyString = runtime.newString(StringNodes.getByteList(string).dup());
 
         final Object tainted = RubyBasicObject.getInstanceVariable(string, RubyBasicObject.TAINTED_IDENTIFIER);
 

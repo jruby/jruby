@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -36,7 +37,7 @@ public abstract class ToSymbolNode extends RubyNode {
 
     @Specialization
     protected RubySymbol toSymbol(RubyString string) {
-        return getContext().getSymbol(string.getByteList());
+        return getContext().getSymbol(StringNodes.getByteList(string));
     }
 
     @Specialization

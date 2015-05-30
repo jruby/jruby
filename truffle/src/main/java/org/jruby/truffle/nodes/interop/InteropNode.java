@@ -18,6 +18,7 @@ import com.oracle.truffle.interop.messages.Execute;
 import com.oracle.truffle.interop.messages.Read;
 import com.oracle.truffle.interop.messages.Write;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
@@ -165,7 +166,7 @@ public abstract class InteropNode extends RubyNode {
         @Override
         public Object execute(VirtualFrame frame) {
             Object o = ForeignAccessArguments.getReceiver(frame.getArguments());
-            return o instanceof RubyString && ((RubyString) o).getByteList().length() == 1;
+            return o instanceof RubyString && StringNodes.getByteList(((RubyString) o)).length() == 1;
         }
     }
 
@@ -178,7 +179,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return ((RubyString) ForeignAccessArguments.getReceiver(frame.getArguments())).getByteList().get(0);
+            return StringNodes.getByteList(((RubyString) ForeignAccessArguments.getReceiver(frame.getArguments()))).get(0);
         }
     }
 
@@ -273,10 +274,10 @@ public abstract class InteropNode extends RubyNode {
             if (ForeignAccessArguments.getReceiver(frame.getArguments()) instanceof RubyString) {
                 final RubyString string = (RubyString) ForeignAccessArguments.getReceiver(frame.getArguments());
                 final int index = (int) ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex);
-                if (index >= string.getByteList().length()) {
+                if (index >= StringNodes.getByteList(string).length()) {
                     return 0;
                 } else {
-                    return (byte) string.getByteList().get(index);
+                    return (byte) StringNodes.getByteList(string).get(index);
                 }
             } else {
                 CompilerDirectives.transferToInterpreter();
