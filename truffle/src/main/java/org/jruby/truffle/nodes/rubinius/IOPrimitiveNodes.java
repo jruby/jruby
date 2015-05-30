@@ -219,7 +219,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public int open(RubyString path, int mode, int permission) {
-            return posix().open(path.getByteList(), mode, permission);
+            return posix().open(StringNodes.getByteList(path), mode, permission);
         }
 
     }
@@ -239,7 +239,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public int truncate(RubyString path, long length) {
-            final String pathString = RubyEncoding.decodeUTF8(path.getByteList().getUnsafeBytes(), path.getByteList().getBegin(), path.getByteList().getRealSize());
+            final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
             final int result = posix().truncate(pathString, length);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
@@ -280,12 +280,12 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public boolean fnmatch(RubyString pattern, RubyString path, int flags) {
-            return Dir.fnmatch(pattern.getByteList().getUnsafeBytes(),
-                    pattern.getByteList().getBegin(),
-                    pattern.getByteList().getBegin() + pattern.getByteList().getRealSize(),
-                    path.getByteList().getUnsafeBytes(),
-                    path.getByteList().getBegin(),
-                    path.getByteList().getBegin() + path.getByteList().getRealSize(),
+            return Dir.fnmatch(StringNodes.getByteList(pattern).getUnsafeBytes(),
+                    StringNodes.getByteList(pattern).getBegin(),
+                    StringNodes.getByteList(pattern).getBegin() + StringNodes.getByteList(pattern).getRealSize(),
+                    StringNodes.getByteList(path).getUnsafeBytes(),
+                    StringNodes.getByteList(path).getBegin(),
+                    StringNodes.getByteList(path).getBegin() + StringNodes.getByteList(path).getRealSize(),
                     flags) != Dir.FNM_NOMATCH;
         }
 
@@ -415,13 +415,13 @@ public abstract class IOPrimitiveNodes {
             final int fd = getDescriptor(file);
 
             if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
-                getContext().getDebugStandardOut().write(string.getByteList().unsafeBytes(), string.getByteList().begin(), string.getByteList().length());
-                return string.getByteList().length();
+                getContext().getDebugStandardOut().write(StringNodes.getByteList(string).unsafeBytes(), StringNodes.getByteList(string).begin(), StringNodes.getByteList(string).length());
+                return StringNodes.getByteList(string).length();
             }
 
             // We have to copy here as write starts at byte[0], and the ByteList may not
 
-            final ByteList byteList = string.getByteList();
+            final ByteList byteList = StringNodes.getByteList(string);
 
             // TODO (eregon, 11 May 2015): review consistency under concurrent modification
             final ByteBuffer buffer = ByteBuffer.wrap(byteList.unsafeBytes(), byteList.begin(), byteList.length());

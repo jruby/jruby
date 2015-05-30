@@ -9,12 +9,12 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.joni.Matcher;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -36,7 +36,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization
         public RubyRegexp initialize(RubyRegexp regexp, RubyString pattern, int options) {
-            regexp.initialize(this, pattern.getByteList(), options);
+            regexp.initialize(this, StringNodes.getByteList(pattern), options);
             return regexp;
         }
 
@@ -56,12 +56,12 @@ public abstract class RegexpPrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
             }
 
-            if (string.scanForCodeRange() == StringSupport.CR_BROKEN) {
+            if (StringNodes.scanForCodeRange(string) == StringSupport.CR_BROKEN) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(
-                        String.format("invalid byte sequence in %s", string.getByteList().getEncoding()), this));
+                        String.format("invalid byte sequence in %s", StringNodes.getByteList(string).getEncoding()), this));
             }
 
-            final Matcher matcher = regexp.getRegex().matcher(string.getByteList().bytes());
+            final Matcher matcher = regexp.getRegex().matcher(StringNodes.getByteList(string).bytes());
 
             return regexp.matchCommon(string, false, false, matcher, start, end);
         }

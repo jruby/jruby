@@ -471,7 +471,7 @@ public abstract class KernelNodes {
         public Object eval(VirtualFrame frame, RubyString source, NotProvided binding, NotProvided filename, NotProvided lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
-            return getContext().eval(source.getByteList(), getCallerBinding(frame), true, this);
+            return getContext().eval(StringNodes.getByteList(source), getCallerBinding(frame), true, this);
         }
 
         @Specialization(guards = "isNil(noBinding)")
@@ -486,21 +486,21 @@ public abstract class KernelNodes {
         public Object eval(RubyString source, RubyBinding binding, NotProvided filename, NotProvided lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
-            return getContext().eval(source.getByteList(), binding, false, this);
+            return getContext().eval(StringNodes.getByteList(source), binding, false, this);
         }
 
         @Specialization
         public Object eval(RubyString source, RubyBinding binding, RubyString filename, NotProvided lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
-            return getContext().eval(source.getByteList(), binding, false, filename.toString(), this);
+            return getContext().eval(StringNodes.getByteList(source), binding, false, filename.toString(), this);
         }
 
         @Specialization
         public Object eval(RubyString source, RubyBinding binding, RubyString filename, int lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
-            return getContext().eval(source.getByteList(), binding, false, filename.toString(), this);
+            return getContext().eval(StringNodes.getByteList(source), binding, false, filename.toString(), this);
         }
 
         @Specialization(guards = "!isRubyBinding(badBinding)")
@@ -1709,7 +1709,7 @@ public abstract class KernelNodes {
                 throw handleException(e);
             }
 
-            return finishFormat(format.getByteList(), result);
+            return finishFormat(StringNodes.getByteList(format), result);
         }
 
         private RuntimeException handleException(PackException exception) {
@@ -1764,16 +1764,16 @@ public abstract class KernelNodes {
         }
 
         protected ByteList privatizeByteList(RubyString string) {
-            return string.getByteList().dup();
+            return StringNodes.getByteList(string).dup();
         }
 
         protected boolean byteListsEqual(RubyString string, ByteList byteList) {
-            return string.getByteList().equal(byteList);
+            return StringNodes.getByteList(string).equal(byteList);
         }
 
         protected CallTarget compileFormat(RubyString format) {
             try {
-                return new FormatParser(getContext()).parse(format.getByteList());
+                return new FormatParser(getContext()).parse(StringNodes.getByteList(format));
             } catch (FormatException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));

@@ -180,7 +180,7 @@ public abstract class BasicObjectNodes {
         public Object instanceEval(VirtualFrame frame, Object receiver, RubyString string, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
-            return getContext().instanceEval(string.getByteList(), receiver, this);
+            return getContext().instanceEval(StringNodes.getByteList(string), receiver, this);
         }
 
         @Specialization

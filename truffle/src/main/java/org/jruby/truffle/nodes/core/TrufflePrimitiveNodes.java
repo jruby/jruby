@@ -192,7 +192,7 @@ public abstract class TrufflePrimitiveNodes {
         public RubyString dumpString(RubyString string) {
             final StringBuilder builder = new StringBuilder();
 
-            for (byte b : string.getByteList().unsafeBytes()) {
+            for (byte b : StringNodes.getByteList(string).unsafeBytes()) {
                 builder.append(String.format("\\x%02x", b));
             }
 

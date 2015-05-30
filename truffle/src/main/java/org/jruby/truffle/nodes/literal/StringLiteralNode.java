@@ -32,7 +32,7 @@ public class StringLiteralNode extends RubyNode {
     @Override
     public RubyString execute(VirtualFrame frame) {
         final RubyString string = createString(bytes.dup());
-        string.setCodeRange(codeRange);
+        StringNodes.setCodeRange(string, codeRange);
 
         return string;
     }

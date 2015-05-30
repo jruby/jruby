@@ -217,6 +217,18 @@ public abstract class PointerPrimitiveNodes {
             return value;
         }
 
+        @Specialization(guards = "type == TYPE_ULONG")
+        public long setAtOffsetULong(RubyBasicObject pointer, int offset, int type, long value) {
+            getPointer(pointer).putLong(offset, value);
+            return value;
+        }
+
+        @Specialization(guards = "type == TYPE_ULL")
+        public long setAtOffsetULL(RubyBasicObject pointer, int offset, int type, long value) {
+            getPointer(pointer).putLongLong(offset, value);
+            return value;
+        }
+
     }
 
     @RubiniusPrimitive(name = "pointer_read_pointer")
@@ -255,6 +267,11 @@ public abstract class PointerPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @Specialization(guards = "type == TYPE_CHAR")
+        public int getAtOffsetChar(RubyBasicObject pointer, int offset, int type) {
+            return getPointer(pointer).getByte(offset);
+        }
+
         @Specialization(guards = "type == TYPE_UCHAR")
         public int getAtOffsetUChar(RubyBasicObject pointer, int offset, int type) {
             return getPointer(pointer).getByte(offset);
@@ -278,6 +295,16 @@ public abstract class PointerPrimitiveNodes {
         @Specialization(guards = "type == TYPE_LONG")
         public long getAtOffsetLong(RubyBasicObject pointer, int offset, int type) {
             return getPointer(pointer).getLong(offset);
+        }
+
+        @Specialization(guards = "type == TYPE_ULONG")
+        public long getAtOffsetULong(RubyBasicObject pointer, int offset, int type) {
+            return getPointer(pointer).getLong(offset);
+        }
+
+        @Specialization(guards = "type == TYPE_ULL")
+        public long getAtOffsetULL(RubyBasicObject pointer, int offset, int type) {
+            return getPointer(pointer).getLongLong(offset);
         }
 
         @Specialization(guards = "type == TYPE_STRING")
@@ -307,7 +334,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject address(RubyBasicObject pointer, RubyString string, int maxLength) {
-            final ByteList bytes = string.getByteList();
+            final ByteList bytes = StringNodes.getByteList(string);
             final int length = Math.min(bytes.length(), maxLength);
             getPointer(pointer).put(0, bytes.unsafeBytes(), bytes.begin(), length);
             return pointer;

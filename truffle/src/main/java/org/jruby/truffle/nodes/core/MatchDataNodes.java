@@ -85,7 +85,7 @@ public abstract class MatchDataNodes {
             CompilerDirectives.transferToInterpreter();
 
             try {
-                final int i = matchData.getBackrefNumber(index.getByteList());
+                final int i = matchData.getBackrefNumber(StringNodes.getByteList(index));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             }
@@ -257,7 +257,7 @@ public abstract class MatchDataNodes {
         public RubyString toS(RubyMatchData matchData) {
             CompilerDirectives.transferToInterpreter();
 
-            final ByteList bytes = matchData.getGlobal().getByteList().dup();
+            final ByteList bytes = StringNodes.getByteList(matchData.getGlobal()).dup();
             return createString(bytes);
         }
     }

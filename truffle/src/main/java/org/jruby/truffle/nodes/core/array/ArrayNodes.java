@@ -2860,7 +2860,7 @@ public abstract class ArrayNodes {
                 throw handleException(e);
             }
 
-            return finishPack(format.getByteList(), result);
+            return finishPack(StringNodes.getByteList(format), result);
         }
 
         private RuntimeException handleException(PackException exception) {
@@ -2940,11 +2940,11 @@ public abstract class ArrayNodes {
         }
 
         protected ByteList privatizeByteList(RubyString string) {
-            return string.getByteList().dup();
+            return StringNodes.getByteList(string).dup();
         }
 
         protected boolean byteListsEqual(RubyString string, ByteList byteList) {
-            return string.getByteList().equal(byteList);
+            return StringNodes.getByteList(string).equal(byteList);
         }
 
         protected CallTarget compileFormat(RubyString format) {

@@ -43,6 +43,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -159,7 +160,7 @@ public abstract class IOBufferPrimitiveNodes {
         public int unshift(VirtualFrame frame, RubyBasicObject ioBuffer, RubyString string, int startPosition) {
             setWriteSynced(ioBuffer, false);
 
-            int stringSize = string.getByteList().realSize() - startPosition;
+            int stringSize = StringNodes.getByteList(string).realSize() - startPosition;
             final int usedSpace = getUsed(ioBuffer);
             final int availableSpace = IOBUFFER_SIZE - usedSpace;
 
@@ -170,7 +171,7 @@ public abstract class IOBufferPrimitiveNodes {
             ByteList storage = getStorage(ioBuffer).getBytes();
 
             // Data is copied here - can we do something COW?
-            System.arraycopy(string.getByteList().unsafeBytes(), startPosition, storage.getUnsafeBytes(), usedSpace, stringSize);
+            System.arraycopy(StringNodes.getByteList(string).unsafeBytes(), startPosition, storage.getUnsafeBytes(), usedSpace, stringSize);
 
             setUsed(ioBuffer, usedSpace + stringSize);
 
