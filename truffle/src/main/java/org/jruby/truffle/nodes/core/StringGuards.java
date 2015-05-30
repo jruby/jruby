@@ -18,7 +18,7 @@ import org.jruby.util.StringSupport;
 public class StringGuards {
 
     public static boolean isSingleByteOptimizable(RubyString string) {
-        return StringSupport.isSingleByteOptimizable(string, string.getByteList().getEncoding());
+        return StringSupport.isSingleByteOptimizable(string.getCodeRangeable(), string.getByteList().getEncoding());
     }
 
     public static boolean isAsciiCompatible(RubyString string) {
@@ -34,7 +34,7 @@ public class StringGuards {
     }
 
     public static boolean isValidOr7BitEncoding(RubyString string) {
-        return string.isCodeRangeValid() || CodeRangeSupport.isCodeRangeAsciiOnly(string);
+        return string.isCodeRangeValid() || CodeRangeSupport.isCodeRangeAsciiOnly(string.getCodeRangeable());
     }
 
     public static boolean isFixedWidthEncoding(RubyString string) {

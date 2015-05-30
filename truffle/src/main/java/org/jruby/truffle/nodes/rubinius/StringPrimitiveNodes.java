@@ -138,7 +138,7 @@ public abstract class StringPrimitiveNodes {
             boolean skip = true;
 
             int e = 0, b = 0;
-            final boolean singlebyte = StringSupport.isSingleByteOptimizable(string, enc);
+            final boolean singlebyte = StringSupport.isSingleByteOptimizable(string.getCodeRangeable(), enc);
             while (p < end) {
                 final int c;
                 if (singlebyte) {
@@ -445,7 +445,7 @@ public abstract class StringPrimitiveNodes {
             final ByteList b = other.getByteList();
 
             if (incompatibleEncodingProfile.profile((a.getEncoding() != b.getEncoding()) &&
-                    (org.jruby.RubyEncoding.areCompatible(string, other) == null))) {
+                    (org.jruby.RubyEncoding.areCompatible(string.getCodeRangeable(), other.getCodeRangeable()) == null))) {
                 return false;
             }
 
@@ -610,8 +610,8 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public Object stringIndex(RubyString string, RubyString pattern, int start) {
-            final int index = StringSupport.index(string,
-                    pattern,
+            final int index = StringSupport.index(string.getCodeRangeable(),
+                    pattern.getCodeRangeable(),
                     start, string.getByteList().getEncoding());
 
             if (index == -1) {
@@ -720,7 +720,7 @@ public abstract class StringPrimitiveNodes {
             final byte[] stringBytes = string.getByteList().getUnsafeBytes();
             final byte[] patternBytes = pattern.getByteList().getUnsafeBytes();
 
-            if (StringSupport.isSingleByteOptimizable(string, string.getByteList().getEncoding())) {
+            if (StringSupport.isSingleByteOptimizable(string.getCodeRangeable(), string.getByteList().getEncoding())) {
                 for(s = p += offset, ss = pp; p < e; s = ++p) {
                     if (stringBytes[p] != patternBytes[pp]) continue;
 
@@ -854,7 +854,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final Encoding encoding = StringNodes.checkEncoding(string, pattern, this);
+            final Encoding encoding = StringNodes.checkEncoding(string, pattern.getCodeRangeable(), this);
             int p = string.getByteList().getBegin();
             final int e = p + string.getByteList().getRealSize();
             int pp = pattern.getByteList().getBegin();
@@ -1204,12 +1204,12 @@ public abstract class StringPrimitiveNodes {
                     }
                     return makeSubstring(string, p - s, e - p);
                 } else {
-                    beg += StringSupport.strLengthFromRubyString(string, enc);
+                    beg += StringSupport.strLengthFromRubyString(string.getCodeRangeable(), enc);
                     if (beg < 0) {
                         return nil();
                     }
                 }
-            } else if (beg > 0 && beg > StringSupport.strLengthFromRubyString(string, enc)) {
+            } else if (beg > 0 && beg > StringSupport.strLengthFromRubyString(string.getCodeRangeable(), enc)) {
                 return nil();
             }
             if (len == 0) {

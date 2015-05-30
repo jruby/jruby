@@ -55,7 +55,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization
         public Object isCompatible(RubyString first, RubyString second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getCodeRangeable(), second.getCodeRangeable());
 
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
@@ -139,7 +139,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization
         public Object isCompatible(RubyString first, RubySymbol second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getCodeRangeable(), second);
 
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);

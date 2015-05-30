@@ -29,6 +29,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
@@ -42,6 +43,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.jruby.Ruby;
+import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.CmpIntNode;
 import org.jruby.truffle.nodes.cast.CmpIntNodeGen;
@@ -97,19 +99,19 @@ public abstract class StringNodes {
     public static void forceEncoding(RubyString string, Encoding encoding) {
         string.modify();
         string.clearCodeRange();
-        StringSupport.associateEncoding(string, encoding);
+        StringSupport.associateEncoding(string.getCodeRangeable(), encoding);
         string.clearCodeRange();
     }
 
     public static int length(RubyString string) {
         if (CompilerDirectives.injectBranchProbability(
                 CompilerDirectives.FASTPATH_PROBABILITY,
-                StringSupport.isSingleByteOptimizable(string, string.getByteList().getEncoding()))) {
+                StringSupport.isSingleByteOptimizable(string.getCodeRangeable(), string.getByteList().getEncoding()))) {
 
             return string.getByteList().getRealSize();
 
         } else {
-            return StringSupport.strLengthFromRubyString(string);
+            return StringSupport.strLengthFromRubyString(string.getCodeRangeable());
         }
     }
 
@@ -127,7 +129,7 @@ public abstract class StringNodes {
 
     @TruffleBoundary
     public static Encoding checkEncoding(RubyString string, CodeRangeable other, Node node) {
-        final Encoding encoding = StringSupport.areCompatible(string, other);
+        final Encoding encoding = StringSupport.areCompatible(string.getCodeRangeable(), other);
 
         if (encoding == null) {
             throw new RaiseException(
@@ -142,7 +144,7 @@ public abstract class StringNodes {
     }
 
     public static boolean singleByteOptimizable(RubyString string) {
-        return StringSupport.isSingleByteOptimizable(string, EncodingUtils.STR_ENC_GET(string));
+        return StringSupport.isSingleByteOptimizable(string.getCodeRangeable(), EncodingUtils.STR_ENC_GET(string.getCodeRangeable()));
     }
 
     public static RubyString createEmptyString(RubyClass stringClass) {
@@ -188,7 +190,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString add(RubyString string, RubyString other) {
-            final Encoding enc = checkEncoding(string, other, this);
+            final Encoding enc = checkEncoding(string, other.getCodeRangeable(), this);
             final RubyString ret = createString(StringSupport.addByteLists(string.getByteList(), other.getByteList()));
 
             if (taintResultNode == null) {
@@ -311,7 +313,7 @@ public abstract class StringNodes {
 
             final int ret = a.getByteList().cmp(b.getByteList());
 
-            if ((ret == 0) && !StringSupport.areComparable(a, b)) {
+            if ((ret == 0) && !StringSupport.areComparable(a.getCodeRangeable(), b.getCodeRangeable())) {
                 return a.getByteList().getEncoding().getIndex() > b.getByteList().getEncoding().getIndex() ? 1 : -1;
             }
 
@@ -427,7 +429,7 @@ public abstract class StringNodes {
             final int[] ptr_cr_ret = { codeRange };
 
             try {
-                EncodingUtils.encCrStrBufCat(getContext().getRuntime(), string, other.getByteList(), other.getByteList().getEncoding(), codeRange, ptr_cr_ret);
+                EncodingUtils.encCrStrBufCat(getContext().getRuntime(), string.getCodeRangeable(), other.getByteList(), other.getByteList().getEncoding(), codeRange, ptr_cr_ret);
             } catch (org.jruby.exceptions.RaiseException e) {
                 if (e.getException().getMetaClass() == getContext().getRuntime().getEncodingCompatibilityError()) {
                     CompilerDirectives.transferToInterpreter();
@@ -753,7 +755,7 @@ public abstract class StringNodes {
         public Object caseCmpSingleByte(RubyString string, RubyString other) {
             // Taken from org.jruby.RubyString#casecmp19.
 
-            if (StringSupport.areCompatible(string, other) == null) {
+            if (StringSupport.areCompatible(string.getCodeRangeable(), other.getCodeRangeable()) == null) {
                 return nil();
             }
 
@@ -764,7 +766,7 @@ public abstract class StringNodes {
         public Object caseCmp(RubyString string, RubyString other) {
             // Taken from org.jruby.RubyString#casecmp19 and
 
-            final Encoding encoding = StringSupport.areCompatible(string, other);
+            final Encoding encoding = StringSupport.areCompatible(string.getCodeRangeable(), other.getCodeRangeable());
 
             if (encoding == null) {
                 return nil();
@@ -779,8 +781,8 @@ public abstract class StringNodes {
         }
 
         public static boolean bothSingleByteOptimizable(RubyString string, RubyString other) {
-            final boolean stringSingleByteOptimizable = StringSupport.isSingleByteOptimizable(string, string.getByteList().getEncoding());
-            final boolean otherSingleByteOptimizable = StringSupport.isSingleByteOptimizable(other, other.getByteList().getEncoding());
+            final boolean stringSingleByteOptimizable = StringSupport.isSingleByteOptimizable(string.getCodeRangeable(), string.getByteList().getEncoding());
+            final boolean otherSingleByteOptimizable = StringSupport.isSingleByteOptimizable(other.getCodeRangeable(), other.getByteList().getEncoding());
 
             return stringSingleByteOptimizable && otherSingleByteOptimizable;
         }
@@ -815,7 +817,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         private int choppedLength(RubyString string) {
-            return StringSupport.choppedLength19(string, getContext().getRuntime());
+            return StringSupport.choppedLength19(string.getCodeRangeable(), getContext().getRuntime());
         }
     }
 
@@ -859,7 +861,7 @@ public abstract class StringNodes {
             for (int i = 1; i < otherStrings.length; i++) {
                 otherStr = otherStrings[i];
 
-                enc = checkEncoding(string, otherStr, this);
+                enc = checkEncoding(string, otherStr.getCodeRangeable(), this);
                 tables = StringSupport.trSetupTable(otherStr.getByteList(), getContext().getRuntime(), table, tables, false, enc);
             }
 
@@ -893,7 +895,7 @@ public abstract class StringNodes {
             final RubyString otherStr = StringNodes.createString(getContext().getCoreLibrary().getStringClass(), otherBL);
 
             otherStr.modify();
-            StringSupport.associateEncoding(otherStr, ascii8bit);
+            StringSupport.associateEncoding(otherStr.getCodeRangeable(), ascii8bit);
 
             if (otherBL.length() < 2) {
                 CompilerDirectives.transferToInterpreter();
@@ -919,7 +921,7 @@ public abstract class StringNodes {
             }
 
             final RubyString result = StringNodes.createString(getContext().getCoreLibrary().getStringClass(), new ByteList(cryptedString, 0, cryptedString.length - 1));
-            StringSupport.associateEncoding(result, ascii8bit);
+            StringSupport.associateEncoding(result.getCodeRangeable(), ascii8bit);
 
             return result;
         }
@@ -973,7 +975,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         private Object deleteBangSlow(RubyString string, RubyString... otherStrings) {
             RubyString otherString = otherStrings[0];
-            Encoding enc = checkEncoding(string, otherString, this);
+            Encoding enc = checkEncoding(string, otherString.getCodeRangeable(), this);
 
             boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
             StringSupport.TrTables tables = StringSupport.trSetupTable(otherString.getByteList(),
@@ -981,11 +983,11 @@ public abstract class StringNodes {
                     squeeze, null, true, enc);
 
             for (int i = 1; i < otherStrings.length; i++) {
-                enc = checkEncoding(string, otherStrings[i], this);
+                enc = checkEncoding(string, otherStrings[i].getCodeRangeable(), this);
                 tables = StringSupport.trSetupTable(otherStrings[i].getByteList(), getContext().getRuntime(), squeeze, tables, false, enc);
             }
 
-            if (StringSupport.delete_bangCommon19(string, getContext().getRuntime(), squeeze, tables, enc) == null) {
+            if (StringSupport.delete_bangCommon19(string.getCodeRangeable(), getContext().getRuntime(), squeeze, tables, enc) == null) {
                 return nil();
             }
 
@@ -1396,7 +1398,7 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            final Encoding enc = EncodingUtils.STR_ENC_GET(string);
+            final Encoding enc = EncodingUtils.STR_ENC_GET(string.getCodeRangeable());
             final int s = string.getByteList().getBegin();
             final int end = s + string.getByteList().getRealSize();
             final byte[]bytes = string.getByteList().getUnsafeBytes();
@@ -1557,7 +1559,7 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            final Encoding enc = EncodingUtils.STR_ENC_GET(string);
+            final Encoding enc = EncodingUtils.STR_ENC_GET(string.getCodeRangeable());
             final byte[] bytes = string.getByteList().getUnsafeBytes();
             final int start = string.getByteList().getBegin();
             final int end = start + string.getByteList().getRealSize();
@@ -1621,7 +1623,7 @@ public abstract class StringNodes {
             final int end = s + value.getRealSize();
             final byte[]bytes = value.getUnsafeBytes();
 
-            if (singleByteOptimizableProfile.profile(StringSupport.isSingleByteOptimizable(string, enc))) {
+            if (singleByteOptimizableProfile.profile(StringSupport.isSingleByteOptimizable(string.getCodeRangeable(), enc))) {
                 if (StringSupport.singleByteSwapcase(bytes, s, end)) {
                     return string;
                 }
@@ -1835,7 +1837,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
         public int size(RubyString string) {
-            return StringSupport.strLengthFromRubyString(string);
+            return StringSupport.strLengthFromRubyString(string.getCodeRangeable());
         }
     }
 
@@ -1896,7 +1898,7 @@ public abstract class StringNodes {
             }
 
             RubyString otherStr = otherStrings[0];
-            Encoding enc = checkEncoding(string, otherStr, this);
+            Encoding enc = checkEncoding(string, otherStr.getCodeRangeable(), this);
             final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
             StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.getByteList(), getContext().getRuntime(), squeeze, null, true, enc);
 
@@ -1904,7 +1906,7 @@ public abstract class StringNodes {
 
             for (int i = 1; i < otherStrings.length; i++) {
                 otherStr = otherStrings[i];
-                enc = string.checkEncoding(otherStr);
+                enc = string.checkEncoding(otherStr.getCodeRangeable());
                 singlebyte = singlebyte && singleByteOptimizable(otherStr);
                 tables = StringSupport.trSetupTable(otherStr.getByteList(), getContext().getRuntime(), squeeze, tables, false, enc);
             }
@@ -2470,18 +2472,18 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         public static void replaceInternal(RubyString string, int start, int length, RubyString replacement) {
-            StringSupport.replaceInternal19(start, length, string, replacement);
+            StringSupport.replaceInternal19(start, length, string.getCodeRangeable(), replacement.getCodeRangeable());
         }
 
         @TruffleBoundary
         private static Object trTransHelper(RubyContext context, RubyString self, RubyString fromStr, RubyString toStr, boolean sFlag) {
-            final CodeRangeable ret = StringSupport.trTransHelper(context.getRuntime(), self, fromStr, toStr, sFlag);
+            final CodeRangeable ret = StringSupport.trTransHelper(context.getRuntime(), self.getCodeRangeable(), fromStr.getCodeRangeable(), toStr.getCodeRangeable(), sFlag);
 
             if (ret == null) {
                 return context.getCoreLibrary().getNilObject();
             }
 
-            return ret;
+            return self;
         }
     }
 
