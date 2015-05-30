@@ -217,6 +217,12 @@ public abstract class PointerPrimitiveNodes {
             return value;
         }
 
+        @Specialization(guards = "type == TYPE_ULONG")
+        public long setAtOffsetULong(RubyBasicObject pointer, int offset, int type, long value) {
+            getPointer(pointer).putLong(offset, value);
+            return value;
+        }
+
     }
 
     @RubiniusPrimitive(name = "pointer_read_pointer")

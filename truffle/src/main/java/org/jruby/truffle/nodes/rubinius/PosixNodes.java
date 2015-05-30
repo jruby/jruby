@@ -460,6 +460,27 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "setrlimit", isModuleFunction = true, required = 2)
+    public abstract static class SetRLimitNode extends CoreMethodArrayArgumentsNode {
+
+        public SetRLimitNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int setrlimit(int resource, RubyBasicObject pointer) {
+            final int result = posix().setrlimit(resource, PointerPrimitiveNodes.getPointer(pointer));
+
+            if (result == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+
+            return result;
+        }
+
+    }
+
     @CoreMethod(names = "setruid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0)
     public abstract static class SetRuidNode extends CoreMethodArrayArgumentsNode {
 

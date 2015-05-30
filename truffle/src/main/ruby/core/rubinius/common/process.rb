@@ -68,6 +68,24 @@ module Process
     config "rbx.platform.rlimit", :rlim_cur, :rlim_max
   end
 
+  def self.setrlimit(resource, cur_limit, max_limit=undefined)
+    resource =  coerce_rlimit_resource(resource)
+    cur_limit = Rubinius::Type.coerce_to cur_limit, Integer, :to_int
+
+    unless undefined.equal? max_limit
+      max_limit = Rubinius::Type.coerce_to max_limit, Integer, :to_int
+    end
+
+    rlimit = Rlimit.new
+    rlimit[:rlim_cur] = cur_limit
+    rlimit[:rlim_max] = undefined.equal?(max_limit) ? cur_limit : max_limit
+
+    ret = FFI::Platform::POSIX.setrlimit(resource, rlimit.pointer)
+    Errno.handle if ret == -1
+    nil
+  end
+
+
   def self.getrlimit(resource)
     resource = coerce_rlimit_resource(resource)
 
