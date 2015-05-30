@@ -971,13 +971,7 @@ public class LoadService {
             // findBySearchState should fill the state already
             return state.library;
         }
-
-        // TODO(ratnikov): Remove the special classpath case by introducing a classpath file resource
-        Library library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
-        if (library != null) {
-            state.library = library;
-        }
-        return library;
+        return null;
     }
 
     @Deprecated

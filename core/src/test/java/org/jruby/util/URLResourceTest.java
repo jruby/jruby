@@ -73,10 +73,11 @@ public class URLResourceTest extends TestCase {
                 "uri:classloader:/somedir/dir_without_listing", false);
 
         assertNotNull( resource );
-        assertTrue( resource.isFile() );
+        assertFalse( resource.isFile() );
         assertTrue( resource.exists() );
-        assertFalse( resource.isDirectory() );
-        assertNull( resource.list() );
+        assertTrue( resource.isDirectory() );
+        assertEquals( Arrays.asList( resource.list() ),
+                      Arrays.asList( new String[] { ".", "..", ".empty" } ) );
     }
 
     public void testFileClassloader()
