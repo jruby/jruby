@@ -46,6 +46,14 @@ class TestLoad < Test::Unit::TestCase
     assert $loaded_foo_bar
   end
 
+  # GH-2972
+  def test_require_relative_via_uri_classloader_protocol
+    $CLASSPATH << './test'
+    assert_nothing_raised do
+      require 'uri:classloader:/require_relative.rb'
+    end
+  end
+
   # JRUBY-3231
   def test_load_with_empty_string_in_loadpath
     begin

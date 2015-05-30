@@ -163,7 +163,7 @@ public class URLResource extends AbstractFileResource {
         }
         URL url = cl.getResource(pathname);
         String[] files = listClassLoaderFiles(cl, pathname);
-        return new URLResource(URI_CLASSLOADER + pathname,
+        return new URLResource(URI_CLASSLOADER + "/" + pathname,
                                cl,
                                url == null ? null : pathname,
                                files);
