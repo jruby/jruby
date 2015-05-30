@@ -1,2 +1,0 @@
-fails:Process.getrlimit when passed a Symbol coerces :SBSIZE into RLIMIT_SBSIZE
-fails:Process.getrlimit when passed a String coerces 'SBSIZE' into RLIMIT_SBSIZE
