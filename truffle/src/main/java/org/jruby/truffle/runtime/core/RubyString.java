@@ -29,12 +29,6 @@ public class RubyString extends RubyBasicObject {
         this.bytes = bytes;
     }
 
-    @Override
-    @TruffleBoundary
-    public String toString() {
-        return Helpers.decodeByteList(getContext().getRuntime(), bytes);
-    }
-
     public int getCodeRange() {
         return codeRange;
     }
