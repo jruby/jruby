@@ -64,6 +64,21 @@ module Process
 
   FFI = Rubinius::FFI
 
+  class Rlimit < FFI::Struct
+    config "rbx.platform.rlimit", :rlim_cur, :rlim_max
+  end
+
+  def self.getrlimit(resource)
+    resource = coerce_rlimit_resource(resource)
+
+    lim_max = []
+    rlimit = Rlimit.new
+    ret = FFI::Platform::POSIX.getrlimit(resource, rlimit.pointer)
+    Errno.handle if ret == -1
+
+    [rlimit[:rlim_cur], rlimit[:rlim_max]]
+  end
+
   def self.setsid
     pgid = FFI::Platform::POSIX.setsid
     Errno.handle if pgid == -1
@@ -293,7 +308,29 @@ module Process
 
     [pid, status]
   end
-  
+
+  def self.coerce_rlimit_resource(resource)
+    case resource
+      when Integer
+        return resource
+      when Symbol, String
+        # do nothing
+      else
+        unless r = Rubinius::Type.check_convert_type(resource, String, :to_str)
+          return Rubinius::Type.coerce_to resource, Integer, :to_int
+        end
+
+        resource = r
+    end
+
+    constant = "RLIMIT_#{resource}"
+    unless const_defined? constant
+      raise ArgumentError, "invalid resource name: #{constant}"
+    end
+    const_get constant
+  end
+  private_class_method :coerce_rlimit_resource
+
   #--
   # TODO: Most of the fields aren't implemented yet.
   # TODO: Also, these objects should only need to be constructed by

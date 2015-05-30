@@ -197,6 +197,27 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "getrlimit", isModuleFunction = true, required = 2)
+    public abstract static class GetRLimitNode extends CoreMethodArrayArgumentsNode {
+
+        public GetRLimitNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int getrlimit(int resource, RubyBasicObject pointer) {
+            final int result = posix().getrlimit(resource, PointerPrimitiveNodes.getPointer(pointer));
+
+            if (result == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            }
+
+            return result;
+        }
+
+    }
+
     @CoreMethod(names = "getuid", isModuleFunction = true)
     public abstract static class GetUIDNode extends CoreMethodArrayArgumentsNode {
 

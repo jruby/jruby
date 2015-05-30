@@ -280,6 +280,11 @@ public abstract class PointerPrimitiveNodes {
             return getPointer(pointer).getLong(offset);
         }
 
+        @Specialization(guards = "type == TYPE_ULONG")
+        public long getAtOffsetULong(RubyBasicObject pointer, int offset, int type) {
+            return getPointer(pointer).getLong(offset);
+        }
+
         @Specialization(guards = "type == TYPE_STRING")
         public RubyString getAtOffsetString(RubyBasicObject pointer, int offset, int type) {
             return createString(getPointer(pointer).getString(offset));
