@@ -11,8 +11,10 @@
 puts "        // Generated from tool/truffle/translate_rubinius_config.rb < ../rubinius/runtime/platform.conf"
 
 ARGF.each do |line|
-  next unless /^(?<var>rbx(\.\w+)*) = (?<value>.+)$/ =~ line
+  next unless /^(?<var>rbx(\.\w+)*) = (?<value>.*)$/ =~ line
   code = case value
+  when ""
+    0
   when /^-?\d+$/
     case Integer(value)
     when (-2**31...2**31)
@@ -25,7 +27,7 @@ ARGF.each do |line|
   when "true"
     value
   else
-    "context.makeString(\"#{value}\")"
+    "string(context, \"#{value}\")"
   end
   puts "        configuration.config(\"#{var}\", #{code});"
 end
