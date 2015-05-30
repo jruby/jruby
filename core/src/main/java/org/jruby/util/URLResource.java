@@ -296,8 +296,8 @@ public class URLResource extends AbstractFileResource {
 
     public static URL getResourceURL(Ruby runtime, String location)
     {
-        if (location.startsWith(URI + CLASSLOADER)){
-            return runtime.getJRubyClassLoader().getResource(location.substring(URI_CLASSLOADER.length()));
+        if (location.startsWith(URI_CLASSLOADER)){
+            return runtime.getJRubyClassLoader().getResource(location.substring(URI_CLASSLOADER.length() + 1));
         }
         try
         {
