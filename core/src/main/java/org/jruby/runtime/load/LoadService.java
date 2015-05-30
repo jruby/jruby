@@ -966,7 +966,7 @@ public class LoadService {
         }
     }
 
-    private Library findLibraryBySearchState(SearchState state) {
+    protected Library findLibraryBySearchState(SearchState state) {
         if (librarySearcher.findBySearchState(state) != null) {
             // findBySearchState should fill the state already
             return state.library;
