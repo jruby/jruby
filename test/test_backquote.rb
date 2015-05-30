@@ -28,9 +28,16 @@ class TestBackquote < Test::Unit::TestCase
   #JRUBY-2251
   def test_empty_backquotes
     if (!WINDOWS)
-      assert_equal("", ``)    # empty
-      assert_equal("", `   `) # spaces
-      assert_equal("", `\n`)
+      if RUBY_VERSION > '1.9' && ENV_JAVA['java.specification.version'] > '1.6'
+        # works as expected on Java 7+ (using process launching API)
+        assert_raise(Errno::ENOENT) {``}
+        assert_raise(Errno::ENOENT) {`   `}
+        assert_raise(Errno::ENOENT) {`\n`}
+      else
+        assert_equal("", ``)    # empty
+        assert_equal("", `   `) # spaces
+        assert_equal("", `\n`)
+      end
     else # we just check that empty backquotes won't blow up JRuby
       ``    rescue nil
       `   ` rescue nil
@@ -49,7 +56,7 @@ class TestBackquote < Test::Unit::TestCase
 
       assert_equal "arguments: one two\n", `./arguments one two 2> /dev/null`
       assert_equal "", `./arguments three four > /dev/null`
-      ruby = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name'])
+      # ruby = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name'])
       assert_equal "arguments: five six\n", jruby(%{-e 'puts "arguments: five six"' 2> /dev/null})
     end
   ensure
