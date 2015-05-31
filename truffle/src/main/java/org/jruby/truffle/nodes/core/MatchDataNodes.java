@@ -157,7 +157,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyArray toA(RubyMatchData matchData) {
+        public RubyBasicObject toA(RubyMatchData matchData) {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getCaptures());
@@ -239,7 +239,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyArray toA(RubyMatchData matchData) {
+        public RubyBasicObject toA(RubyMatchData matchData) {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getValues());
@@ -270,7 +270,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyArray valuesAt(RubyMatchData matchData, Object[] args) {
+        public RubyBasicObject valuesAt(RubyMatchData matchData, Object[] args) {
             CompilerDirectives.transferToInterpreter();
 
             final int[] indicies = new int[args.length];

@@ -1791,7 +1791,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyArray scan(RubyString string, RubyString regexpString, NotProvided block) {
+        public RubyBasicObject scan(RubyString string, RubyString regexpString, NotProvided block) {
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), getByteList(regexpString), Option.DEFAULT);
             return scan(string, regexp, block);
         }
@@ -1803,7 +1803,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyArray scan(RubyString string, RubyRegexp regexp, NotProvided block) {
+        public RubyBasicObject scan(RubyString string, RubyRegexp regexp, NotProvided block) {
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) regexp.scan(string));
         }
 
@@ -2339,7 +2339,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyArray unpack(RubyString string, RubyString format) {
+        public RubyBasicObject unpack(RubyString string, RubyString format) {
             final org.jruby.RubyArray jrubyArray = Pack.unpack(getContext().getRuntime(), getByteList(string), getByteList(format));
             return getContext().toTruffle(jrubyArray);
         }

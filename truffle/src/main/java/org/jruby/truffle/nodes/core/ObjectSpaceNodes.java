@@ -135,7 +135,7 @@ public abstract class ObjectSpaceNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyArray defineFinalizer(Object object, RubyProc finalizer) {
+        public RubyBasicObject defineFinalizer(Object object, RubyProc finalizer) {
             getContext().getObjectSpaceManager().defineFinalizer((RubyBasicObject) object, finalizer);
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), 0, finalizer);
         }

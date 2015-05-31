@@ -486,7 +486,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         }
     }
 
-    public RubyArray toTruffle(org.jruby.RubyArray array) {
+    public RubyBasicObject toTruffle(org.jruby.RubyArray array) {
         final Object[] store = new Object[array.size()];
 
         for (int n = 0; n < store.length; n++) {

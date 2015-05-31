@@ -162,7 +162,7 @@ public abstract class RubyNode extends Node {
     public RubyArray executeRubyArray(VirtualFrame frame) throws UnexpectedResultException {
         final Object value = execute(frame);
 
-        if (value instanceof RubyArray) {
+        if (RubyGuards.isRubyArray(value)) {
             return (RubyArray) value;
         } else {
             throw new UnexpectedResultException(value);

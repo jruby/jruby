@@ -23,6 +23,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
@@ -76,11 +77,40 @@ public abstract class ArrayNodes {
         ARRAY_FACTORY = shape.createFactory();
     }
 
+    public static Object getStore(RubyBasicObject array) {
+        assert RubyGuards.isRubyArray(array);
+        return ((RubyArray) array).store;
+    }
+
+    public static void setStore(RubyBasicObject array, Object store, int size) {
+        assert RubyGuards.isRubyArray(array);
+        assert verifyStore(store, size);
+
+        if (RANDOMIZE_STORAGE_ARRAY) {
+            store = randomizeStorageStrategy(array.getContext(), store, size);
+            assert verifyStore(store, size);
+        }
+
+        ((RubyArray) array).store = store;
+        ((RubyArray) array).size = size;
+    }
+
+    public static void setSize(RubyBasicObject array, int size) {
+        assert RubyGuards.isRubyArray(array);
+        assert verifyStore(((RubyArray) array).store, size);
+        ((RubyArray) array).size = size;
+    }
+
+    public static int getSize(RubyBasicObject array) {
+        assert RubyGuards.isRubyArray(array);
+        return ((RubyArray) array).size;
+    }
+
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
     public static final boolean RANDOMIZE_STORAGE_ARRAY = Options.TRUFFLE_RANDOMIZE_STORAGE_ARRAY.load();
     private static final Random random = new Random(Options.TRUFFLE_RANDOMIZE_SEED.load());
 
-    public static RubyArray fromObject(RubyClass arrayClass, Object object) {
+    public static RubyBasicObject fromObject(RubyClass arrayClass, Object object) {
         final Object store;
 
         if (object instanceof Integer) {
@@ -96,7 +126,7 @@ public abstract class ArrayNodes {
         return createGeneralArray(arrayClass, store, 1);
     }
 
-    public static RubyArray fromObjects(RubyClass arrayClass, Object... objects) {
+    public static RubyBasicObject fromObjects(RubyClass arrayClass, Object... objects) {
         return createGeneralArray(arrayClass, storeFromObjects(arrayClass.getContext(), objects), objects.length);
     }
 
@@ -244,54 +274,34 @@ public abstract class ArrayNodes {
         }
     }
 
-    public static Object[] slowToArray(RubyArray array) {
-        return ArrayUtils.boxUntil(array.store, array.size);
+    public static Object[] slowToArray(RubyBasicObject array) {
+        assert RubyGuards.isRubyArray(array);
+        return ArrayUtils.boxUntil(((RubyArray) array).store, ((RubyArray) array).size);
     }
 
-    public static void slowUnshift(RubyArray array, Object... values) {
-        final Object[] newStore = new Object[array.size + values.length];
+    public static void slowUnshift(RubyBasicObject array, Object... values) {
+        assert RubyGuards.isRubyArray(array);
+        final Object[] newStore = new Object[((RubyArray) array).size + values.length];
         System.arraycopy(values, 0, newStore, 0, values.length);
-        ArrayUtils.copy(array.store, newStore, values.length, array.size);
+        ArrayUtils.copy(((RubyArray) array).store, newStore, values.length, ((RubyArray) array).size);
         setStore(array, newStore, newStore.length);
     }
 
-    public static void slowPush(RubyArray array, Object value) {
-        array.store = Arrays.copyOf(ArrayUtils.box(array.store), array.size + 1);
-        ((Object[]) array.store)[array.size] = value;
-        array.size++;
+    public static void slowPush(RubyBasicObject array, Object value) {
+        assert RubyGuards.isRubyArray(array);
+        ((RubyArray) array).store = Arrays.copyOf(ArrayUtils.box(((RubyArray) array).store), ((RubyArray) array).size + 1);
+        ((Object[]) ((RubyArray) array).store)[((RubyArray) array).size] = value;
+        ((RubyArray) array).size++;
     }
 
-    public static int normalizeIndex(RubyArray array, int index) {
-        return normalizeIndex(array.size, index);
+    public static int normalizeIndex(RubyBasicObject array, int index) {
+        assert RubyGuards.isRubyArray(array);
+        return normalizeIndex(getSize(array), index);
     }
 
-    public static int clampExclusiveIndex(RubyArray array, int index) {
-        return clampExclusiveIndex(array.size, index);
-    }
-
-    public static Object getStore(RubyArray array) {
-        return array.store;
-    }
-
-    public static void setStore(RubyArray array, Object store, int size) {
-        assert verifyStore(store, size);
-
-        if (RANDOMIZE_STORAGE_ARRAY) {
-            store = randomizeStorageStrategy(array.getContext(), store, size);
-            assert verifyStore(store, size);
-        }
-
-        array.store = store;
-        array.size = size;
-    }
-
-    public static void setSize(RubyArray array, int size) {
-        assert verifyStore(array.store, size);
-        array.size = size;
-    }
-
-    public static int getSize(RubyArray array) {
-        return array.size;
+    public static int clampExclusiveIndex(RubyBasicObject array, int index) {
+        assert RubyGuards.isRubyArray(array);
+        return clampExclusiveIndex(getSize(array), index);
     }
 
     private static boolean verifyStore(Object store, int size) {
@@ -657,7 +667,7 @@ public abstract class ArrayNodes {
             return fallback(frame, array, fromObjects(getContext().getCoreLibrary().getArrayClass(), a, b));
         }
 
-        public Object fallback(VirtualFrame frame, RubyArray array, RubyArray args) {
+        public Object fallback(VirtualFrame frame, RubyBasicObject array, RubyBasicObject args) {
             if (fallbackNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));

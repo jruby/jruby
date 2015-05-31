@@ -490,8 +490,8 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyArray getSection(RubyString section) {
-            final List<RubyArray> sectionKeyValues = new ArrayList<>();
+        public RubyBasicObject getSection(RubyString section) {
+            final List<RubyBasicObject> sectionKeyValues = new ArrayList<>();
 
             for (String key : getContext().getRubiniusConfiguration().getSection(section.toString())) {
                 Object value = getContext().getRubiniusConfiguration().get(key);

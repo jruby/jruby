@@ -1187,7 +1187,7 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = {"!isEmptyHash(hash)", "isPackedHash(hash)"})
-        public RubyArray shiftPackedArray(RubyBasicObject hash) {
+        public RubyBasicObject shiftPackedArray(RubyBasicObject hash) {
             assert HashOperations.verifyStore(hash);
             
             final Object[] store = (Object[]) getStore(hash);
@@ -1205,7 +1205,7 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = {"!isEmptyHash(hash)", "isBucketHash(hash)"})
-        public RubyArray shiftBuckets(RubyBasicObject hash) {
+        public RubyBasicObject shiftBuckets(RubyBasicObject hash) {
             assert HashOperations.verifyStore(hash);
 
             final Entry first = getFirstInSequence(hash);

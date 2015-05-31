@@ -122,7 +122,7 @@ public abstract class StringPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyArray stringAwkSplit(RubyString string, int lim) {
+        public RubyBasicObject stringAwkSplit(RubyString string, int lim) {
             final List<RubyString> ret = new ArrayList<>();
             final ByteList value = StringNodes.getByteList(string);
             final boolean limit = lim > 0;

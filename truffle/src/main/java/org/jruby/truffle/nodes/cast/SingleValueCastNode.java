@@ -41,7 +41,7 @@ public abstract class SingleValueCastNode extends RubyNode {
 
     @TruffleBoundary
     @Specialization(guards = { "!noArguments(args)", "!singleArgument(args)" })
-    protected RubyArray castMany(Object[] args) {
+    protected RubyBasicObject castMany(Object[] args) {
         return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
     }
 

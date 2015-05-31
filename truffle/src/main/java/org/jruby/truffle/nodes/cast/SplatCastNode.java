@@ -26,6 +26,7 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.
@@ -61,7 +62,7 @@ public abstract class SplatCastNode extends RubyNode {
     protected abstract RubyNode getChild();
 
     @Specialization(guards = "isNil(nil)")
-    public RubyArray splat(Object nil) {
+    public RubyBasicObject splat(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
                 return createEmptyArray();
@@ -84,7 +85,7 @@ public abstract class SplatCastNode extends RubyNode {
     }
 
     @Specialization(guards = {"!isNil(object)", "!isRubyArray(object)"})
-    public RubyArray splat(VirtualFrame frame, Object object) {
+    public RubyBasicObject splat(VirtualFrame frame, Object object) {
         final String method;
 
         if (useToAry) {

@@ -1085,12 +1085,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray methods(VirtualFrame frame, Object self, NotProvided regular) {
+        public RubyBasicObject methods(VirtualFrame frame, Object self, NotProvided regular) {
             return methods(frame, self, true);
         }
 
         @Specialization
-        public RubyArray methods(VirtualFrame frame, Object self, boolean regular) {
+        public RubyBasicObject methods(VirtualFrame frame, Object self, boolean regular) {
             RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
@@ -1107,7 +1107,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray methods(VirtualFrame frame, RubyBasicObject self, Object regular) {
+        public RubyBasicObject methods(VirtualFrame frame, RubyBasicObject self, Object regular) {
             if (booleanCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
@@ -1142,12 +1142,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray privateMethods(VirtualFrame frame, Object self, NotProvided includeAncestors) {
+        public RubyBasicObject privateMethods(VirtualFrame frame, Object self, NotProvided includeAncestors) {
             return privateMethods(frame, self, true);
         }
 
         @Specialization
-        public RubyArray privateMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
+        public RubyBasicObject privateMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
             RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
@@ -1156,7 +1156,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray privateMethods(VirtualFrame frame, RubyBasicObject self, Object includeAncestors) {
+        public RubyBasicObject privateMethods(VirtualFrame frame, RubyBasicObject self, Object includeAncestors) {
             if (booleanCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
@@ -1196,12 +1196,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray protectedMethods(VirtualFrame frame, Object self, NotProvided includeAncestors) {
+        public RubyBasicObject protectedMethods(VirtualFrame frame, Object self, NotProvided includeAncestors) {
             return protectedMethods(frame, self, true);
         }
 
         @Specialization
-        public RubyArray protectedMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
+        public RubyBasicObject protectedMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
             RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
@@ -1210,7 +1210,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray protectedMethods(VirtualFrame frame, RubyBasicObject self, Object includeAncestors) {
+        public RubyBasicObject protectedMethods(VirtualFrame frame, RubyBasicObject self, Object includeAncestors) {
             if (booleanCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
@@ -1232,12 +1232,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray publicMethods(VirtualFrame frame, Object self, NotProvided includeAncestors) {
+        public RubyBasicObject publicMethods(VirtualFrame frame, Object self, NotProvided includeAncestors) {
             return publicMethods(frame, self, true);
         }
 
         @Specialization
-        public RubyArray publicMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
+        public RubyBasicObject publicMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
             RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
@@ -1246,7 +1246,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray publicMethods(VirtualFrame frame, RubyBasicObject self, Object includeAncestors) {
+        public RubyBasicObject publicMethods(VirtualFrame frame, RubyBasicObject self, Object includeAncestors) {
             if (booleanCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
@@ -1529,15 +1529,15 @@ public abstract class KernelNodes {
             this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
         }
 
-        public abstract RubyArray executeSingletonMethods(VirtualFrame frame, Object self, boolean includeAncestors);
+        public abstract RubyBasicObject executeSingletonMethods(VirtualFrame frame, Object self, boolean includeAncestors);
 
         @Specialization
-        public RubyArray singletonMethods(VirtualFrame frame, Object self, NotProvided includeAncestors) {
+        public RubyBasicObject singletonMethods(VirtualFrame frame, Object self, NotProvided includeAncestors) {
             return singletonMethods(frame, self, true);
         }
 
         @Specialization
-        public RubyArray singletonMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
+        public RubyBasicObject singletonMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
             RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
 
             if (!metaClass.isSingleton()) {
@@ -1550,7 +1550,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray singletonMethods(VirtualFrame frame, Object self, Object includeAncestors) {
+        public RubyBasicObject singletonMethods(VirtualFrame frame, Object self, Object includeAncestors) {
             if (booleanCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));

@@ -322,7 +322,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray ancestors(RubyModule self) {
+        public RubyBasicObject ancestors(RubyModule self) {
             CompilerDirectives.transferToInterpreter();
 
             final List<RubyModule> ancestors = new ArrayList<>();
@@ -769,12 +769,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray constants(RubyModule module, NotProvided inherit) {
+        public RubyBasicObject constants(RubyModule module, NotProvided inherit) {
             return constants(module, true);
         }
 
         @Specialization
-        public RubyArray constants(RubyModule module, boolean inherit) {
+        public RubyBasicObject constants(RubyModule module, boolean inherit) {
             CompilerDirectives.transferToInterpreter();
 
             final List<RubySymbol> constantsArray = new ArrayList<>();
@@ -796,7 +796,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "wasProvided(inherit)")
-        public RubyArray constants(VirtualFrame frame, RubyModule module, Object inherit) {
+        public RubyBasicObject constants(VirtualFrame frame, RubyModule module, Object inherit) {
             return constants(module, booleanCast(frame, inherit));
         }
 
@@ -1163,7 +1163,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        RubyArray includedModules(RubyModule module) {
+        public RubyBasicObject includedModules(RubyModule module) {
             CompilerDirectives.transferToInterpreter();
 
             final List<RubyModule> modules = new ArrayList<>();
@@ -1264,7 +1264,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray nesting(VirtualFrame frame) {
+        public RubyBasicObject nesting(VirtualFrame frame) {
             CompilerDirectives.transferToInterpreter();
 
             final List<RubyModule> modules = new ArrayList<>();
@@ -1405,12 +1405,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray protectedInstanceMethods(RubyModule module, NotProvided includeAncestors) {
+        public RubyBasicObject protectedInstanceMethods(RubyModule module, NotProvided includeAncestors) {
             return protectedInstanceMethods(module, true);
         }
 
         @Specialization
-        public RubyArray protectedInstanceMethods(RubyModule module, boolean includeAncestors) {
+        public RubyBasicObject protectedInstanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
 
@@ -1453,12 +1453,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray privateInstanceMethods(RubyModule module, NotProvided includeAncestors) {
+        public RubyBasicObject privateInstanceMethods(RubyModule module, NotProvided includeAncestors) {
             return privateInstanceMethods(module, true);
         }
 
         @Specialization
-        public RubyArray privateInstanceMethods(RubyModule module, boolean includeAncestors) {
+        public RubyBasicObject privateInstanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
@@ -1510,12 +1510,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray publicInstanceMethods(RubyModule module, NotProvided includeAncestors) {
+        public RubyBasicObject publicInstanceMethods(RubyModule module, NotProvided includeAncestors) {
             return publicInstanceMethods(module, true);
         }
 
         @Specialization
-        public RubyArray publicInstanceMethods(RubyModule module, boolean includeAncestors) {
+        public RubyBasicObject publicInstanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
@@ -1557,12 +1557,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray instanceMethods(RubyModule module, NotProvided argument) {
+        public RubyBasicObject instanceMethods(RubyModule module, NotProvided argument) {
             return instanceMethods(module, true);
         }
 
         @Specialization
-        public RubyArray instanceMethods(RubyModule module, boolean includeAncestors) {
+        public RubyBasicObject instanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
