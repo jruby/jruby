@@ -583,7 +583,7 @@ public abstract class ModuleNodes {
             return bindingNode.executeRubyBinding(frame);
         }
 
-        protected RubyString toStr(VirtualFrame frame, Object object) {
+        protected RubyBasicObject toStr(VirtualFrame frame, Object object) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
@@ -608,7 +608,7 @@ public abstract class ModuleNodes {
 
         @Specialization(guards = "wasProvided(code)")
         public Object classEval(VirtualFrame frame, RubyModule module, Object code, NotProvided file, NotProvided line, NotProvided block) {
-            return classEvalSource(frame, module, toStr(frame, code), file.toString());
+            return classEvalSource(frame, module, (RubyString) toStr(frame, code), file.toString());
         }
 
         @Specialization(guards = "wasProvided(file)")

@@ -603,7 +603,7 @@ public abstract class PosixNodes {
         }
 
         @Specialization
-        public RubyString getcwd(RubyString resultPath, int maxSize) {
+        public RubyBasicObject getcwd(RubyString resultPath, int maxSize) {
             // We just ignore maxSize - I think this is ok
 
             final String path = getContext().getRuntime().getCurrentDirectory();

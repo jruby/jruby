@@ -249,7 +249,7 @@ public abstract class EncodingNodes {
         }
 
         @Specialization(guards = { "!isRubyEncoding(encoding)", "!isNil(encoding)" })
-        public RubyString defaultInternal(VirtualFrame frame, Object encoding) {
+        public RubyBasicObject defaultInternal(VirtualFrame frame, Object encoding) {
             CompilerDirectives.transferToInterpreter();
 
             if (toStrNode == null) {

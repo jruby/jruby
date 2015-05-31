@@ -1571,7 +1571,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyString string(RubyString value) {
+        public RubyBasicObject string(RubyString value) {
             return value;
         }
 
@@ -1904,7 +1904,7 @@ public abstract class KernelNodes {
             toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(context, sourceSection, new RubyNode[]{null});
         }
 
-        public abstract RubyString executeToS(VirtualFrame frame, Object self);
+        public abstract RubyBasicObject executeToS(VirtualFrame frame, Object self);
 
         @Specialization
         public RubyBasicObject toS(VirtualFrame frame, Object self) {

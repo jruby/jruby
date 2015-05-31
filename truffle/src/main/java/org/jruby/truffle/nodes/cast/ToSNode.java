@@ -21,6 +21,7 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 
 @NodeChild(type = RubyNode.class)
@@ -34,7 +35,7 @@ public abstract class ToSNode extends RubyNode {
         callToSNode = DispatchHeadNodeFactory.createMethodCall(context, true);
     }
 
-    protected RubyString kernelToS(VirtualFrame frame, Object object) {
+    protected RubyBasicObject kernelToS(VirtualFrame frame, Object object) {
         if (kernelToSNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             kernelToSNode = insert(KernelNodesFactory.ToSNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {null}));
@@ -46,12 +47,12 @@ public abstract class ToSNode extends RubyNode {
     public abstract RubyString executeRubyString(VirtualFrame frame);
 
     @Specialization
-    public RubyString toS(RubyString string) {
+    public RubyBasicObject toS(RubyString string) {
         return string;
     }
 
     @Specialization(guards = "!isRubyString(object)", rewriteOn = UnexpectedResultException.class)
-    public RubyString toS(VirtualFrame frame, Object object) throws UnexpectedResultException {
+    public RubyBasicObject toS(VirtualFrame frame, Object object) throws UnexpectedResultException {
         final Object value = callToSNode.call(frame, object, "to_s", null);
 
         if (value instanceof RubyString) {
@@ -62,7 +63,7 @@ public abstract class ToSNode extends RubyNode {
     }
 
     @Specialization(guards = "!isRubyString(object)")
-    public RubyString toSFallback(VirtualFrame frame, Object object) {
+    public RubyBasicObject toSFallback(VirtualFrame frame, Object object) {
         final Object value = callToSNode.call(frame, object, "to_s", null);
 
         if (value instanceof RubyString) {

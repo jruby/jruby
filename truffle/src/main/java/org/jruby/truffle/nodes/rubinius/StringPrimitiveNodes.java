@@ -929,7 +929,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public RubyString stringCopyFrom(RubyString string, RubyString other, int start, int size, int dest) {
+        public RubyBasicObject stringCopyFrom(RubyString string, RubyString other, int start, int size, int dest) {
             // Taken from Rubinius's String::copy_from.
 
             int src = start;
@@ -965,7 +965,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public RubyString stringResizeCapacity(RubyString string, int capacity) {
+        public RubyBasicObject stringResizeCapacity(RubyString string, int capacity) {
             StringNodes.getByteList(string).ensure(capacity);
             return string;
         }
@@ -1107,7 +1107,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public RubyString stringByteAppend(RubyString string, RubyString other) {
+        public RubyBasicObject stringByteAppend(RubyString string, RubyString other) {
             StringNodes.getByteList(string).append(StringNodes.getByteList(other));
             return string;
         }
