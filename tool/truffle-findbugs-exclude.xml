@@ -167,4 +167,16 @@
     <Bug pattern="BC_UNCONFIRMED_CAST" />
   </Match>
 
+  <!-- Temporary while we remove RubyBasicObject -->
+
+  <Match>
+    <Class name="~org\.jruby\.truffle\..*" />
+    <Bug pattern="BC_UNCONFIRMED_CAST" />
+  </Match>
+
+  <Match>
+    <Class name="~org\.jruby\.truffle\..*" />
+    <Bug pattern="BC_UNCONFIRMED_CAST_OF_RETURN_VALUE" />
+  </Match>
+
 </FindBugsFilter>
