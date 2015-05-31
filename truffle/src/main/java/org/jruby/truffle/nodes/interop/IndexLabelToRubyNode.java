@@ -13,9 +13,8 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 
 public abstract class IndexLabelToRubyNode extends TargetableRubyNode {
@@ -35,7 +34,7 @@ public abstract class IndexLabelToRubyNode extends TargetableRubyNode {
     }
 
     @TruffleBoundary
-    private RubyString toString(String index) {
+    private RubyBasicObject toString(String index) {
         return createString(index);
     }
 }

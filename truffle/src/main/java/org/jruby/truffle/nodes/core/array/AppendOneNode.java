@@ -15,8 +15,9 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeChildren({
         @NodeChild("array"),
@@ -36,25 +37,25 @@ public abstract class AppendOneNode extends RubyNode {
     // TODO CS 12-May-15 differentiate between null and empty but possibly having enough space
 
     @Specialization(guards = "isEmptyArray(array)")
-    public RubyArray appendOneEmpty(RubyArray array, int value) {
+    public RubyBasicObject appendOneEmpty(RubyArray array, int value) {
         ArrayNodes.setStore(array, new int[]{value}, 1);
         return array;
     }
 
     @Specialization(guards = "isEmptyArray(array)")
-    public RubyArray appendOneEmpty(RubyArray array, long value) {
+    public RubyBasicObject appendOneEmpty(RubyArray array, long value) {
         ArrayNodes.setStore(array, new long[]{value}, 1);
         return array;
     }
 
     @Specialization(guards = "isEmptyArray(array)")
-    public RubyArray appendOneEmpty(RubyArray array, double value) {
+    public RubyBasicObject appendOneEmpty(RubyArray array, double value) {
         ArrayNodes.setStore(array, new double[]{value}, 1);
         return array;
     }
 
     @Specialization(guards = "isEmptyArray(array)")
-    public RubyArray appendOneEmpty(RubyArray array, Object value) {
+    public RubyBasicObject appendOneEmpty(RubyArray array, Object value) {
         ArrayNodes.setStore(array, new Object[]{value}, 1);
         return array;
     }
@@ -62,28 +63,28 @@ public abstract class AppendOneNode extends RubyNode {
     // Append of the correct type
 
     @Specialization(guards = "isIntArray(array)")
-    public RubyArray appendOneSameType(RubyArray array, int value,
+    public RubyBasicObject appendOneSameType(RubyArray array, int value,
                                    @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendOneSameTypeGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)), value, extendProfile);
         return array;
     }
 
     @Specialization(guards = "isLongArray(array)")
-    public RubyArray appendOneSameType(RubyArray array, long value,
+    public RubyBasicObject appendOneSameType(RubyArray array, long value,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendOneSameTypeGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)), value, extendProfile);
         return array;
     }
 
     @Specialization(guards = "isDoubleArray(array)")
-    public RubyArray appendOneSameType(RubyArray array, double value,
+    public RubyBasicObject appendOneSameType(RubyArray array, double value,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendOneSameTypeGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)), value, extendProfile);
         return array;
     }
 
     @Specialization(guards = "isObjectArray(array)")
-    public RubyArray appendOneSameType(RubyArray array, Object value,
+    public RubyBasicObject appendOneSameType(RubyArray array, Object value,
                                   @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendOneSameTypeGeneric(array, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)), value, extendProfile);
         return array;
@@ -108,7 +109,7 @@ public abstract class AppendOneNode extends RubyNode {
     // Append forcing a generalization from int[] to long[]
 
     @Specialization(guards = "isIntArray(array)")
-    public RubyArray appendOneLongIntoInteger(RubyArray array, long value) {
+    public RubyBasicObject appendOneLongIntoInteger(RubyArray array, long value) {
         final int oldSize = ArrayNodes.getSize(array);
         final int newSize = oldSize + 1;
 
@@ -123,19 +124,19 @@ public abstract class AppendOneNode extends RubyNode {
     // Append forcing a generalization to Object[]
 
     @Specialization(guards = {"isIntArray(array)", "!isInteger(value)", "!isLong(value)"})
-    public RubyArray appendOneGeneralizeInteger(RubyArray array, Object value) {
+    public RubyBasicObject appendOneGeneralizeInteger(RubyArray array, Object value) {
         appendOneGeneralizeGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)), value);
         return array;
     }
 
     @Specialization(guards = {"isLongArray(array)", "!isInteger(value)", "!isLong(value)"})
-    public RubyArray appendOneGeneralizeLong(RubyArray array, Object value) {
+    public RubyBasicObject appendOneGeneralizeLong(RubyArray array, Object value) {
         appendOneGeneralizeGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)), value);
         return array;
     }
 
     @Specialization(guards = {"isDoubleArray(array)", "!isDouble(value)"})
-    public RubyArray appendOneGeneralizeDouble(RubyArray array, Object value) {
+    public RubyBasicObject appendOneGeneralizeDouble(RubyArray array, Object value) {
         appendOneGeneralizeGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)), value);
         return array;
     }

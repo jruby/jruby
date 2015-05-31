@@ -17,7 +17,6 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -86,7 +85,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization
-        public RubyString sourceOfCaller() {
+        public RubyBasicObject sourceOfCaller() {
             final Memo<Integer> frameCount = new Memo<>(0);
 
             final String source = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<String>() {
@@ -174,7 +173,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization
-        public RubyString javaClassOf(Object value) {
+        public RubyBasicObject javaClassOf(Object value) {
             return createString(value.getClass().getSimpleName());
         }
 
@@ -189,7 +188,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString dumpString(RubyString string) {
+        public RubyBasicObject dumpString(RubyString string) {
             final StringBuilder builder = new StringBuilder();
 
             for (byte b : StringNodes.getByteList(string).unsafeBytes()) {
@@ -239,7 +238,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString graalVersion() {
+        public RubyBasicObject graalVersion() {
             return createString(System.getProperty("graal.version", "unknown"));
         }
 
@@ -270,7 +269,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyHash coverageResult() {
+        public RubyBasicObject coverageResult() {
             if (getContext().getCoverageTracker() == null) {
                 throw new UnsupportedOperationException("coverage is disabled");
             }
@@ -279,7 +278,7 @@ public abstract class TrufflePrimitiveNodes {
 
             for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
                 final Object[] store = lineCountsStore(source.getValue());
-                final RubyArray array = createArray(store, store.length);
+                final RubyBasicObject array = createArray(store, store.length);
                 keyValues.add(new KeyValue(createString(source.getKey().getPath()), array));
             }
 
@@ -436,7 +435,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString homeDirectory() {
+        public RubyBasicObject homeDirectory() {
             return createString(getContext().getRuntime().getJRubyHome());
         }
 
@@ -450,7 +449,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization
-        public RubyString hostOS() {
+        public RubyBasicObject hostOS() {
             return createString(RbConfigLibrary.getOSName());
         }
 

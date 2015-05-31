@@ -9,41 +9,49 @@
  */
 package org.jruby.truffle.nodes.core.hash;
 
-import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.hash.Entry;
 
 public abstract class HashGuards {
 
     // Storage strategies
 
-    public static boolean isNullHash(RubyHash hash) {
+    public static boolean isNullHash(RubyBasicObject hash) {
+        assert RubyGuards.isRubyHash(hash);
         return HashNodes.getStore(hash) == null;
     }
 
-    public static boolean isPackedHash(RubyHash hash) {
+    public static boolean isPackedHash(RubyBasicObject hash) {
+        assert RubyGuards.isRubyHash(hash);
         // Can't do instanceof Object[] due to covariance
         return !(isNullHash(hash) || isBucketHash(hash));
     }
 
-    public static boolean isBucketHash(RubyHash hash) {
+    public static boolean isBucketHash(RubyBasicObject hash) {
+        assert RubyGuards.isRubyHash(hash);
         return HashNodes.getStore(hash) instanceof Entry[];
     }
 
     // Higher level properties
 
-    public static boolean isEmptyHash(RubyHash hash) {
+    public static boolean isEmptyHash(RubyBasicObject hash) {
+        assert RubyGuards.isRubyHash(hash);
         return HashNodes.getSize(hash) == 0;
     }
 
-    public static boolean isCompareByIdentity(RubyHash hash) {
+    public static boolean isCompareByIdentity(RubyBasicObject hash) {
+        assert RubyGuards.isRubyHash(hash);
         return HashNodes.isCompareByIdentity(hash);
     }
 
-    public static boolean hasDefaultValue(RubyHash hash) {
+    public static boolean hasDefaultValue(RubyBasicObject hash) {
+        assert RubyGuards.isRubyHash(hash);
         return HashNodes.getDefaultValue(hash) != null;
     }
 
-    public static boolean hasDefaultBlock(RubyHash hash) {
+    public static boolean hasDefaultBlock(RubyBasicObject hash) {
+        assert RubyGuards.isRubyHash(hash);
         return HashNodes.getDefaultBlock(hash) != null;
     }
 

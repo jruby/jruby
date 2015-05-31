@@ -12,11 +12,12 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.methods.MarkerNode;
-import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.array.ArrayUtils;
 
 /**
  * Pack and unpack Ruby method arguments to and from an array of objects.
@@ -94,7 +95,7 @@ public final class RubyArguments {
         internalArguments[RUNTIME_ARGUMENT_COUNT + index] = value;
     }
 
-    public static RubyHash getUserKeywordsHash(Object[] internalArguments, int minArgumentCount) {
+    public static RubyBasicObject getUserKeywordsHash(Object[] internalArguments, int minArgumentCount) {
         final int argumentCount = getUserArgumentsCount(internalArguments);
 
         if (argumentCount <= minArgumentCount) {
@@ -103,8 +104,8 @@ public final class RubyArguments {
 
         final Object lastArgument = getUserArgument(internalArguments, argumentCount - 1);
 
-        if (lastArgument instanceof RubyHash) {
-            return (RubyHash) lastArgument;
+        if (RubyGuards.isRubyHash(lastArgument)) {
+            return (RubyBasicObject) lastArgument;
         }
 
         return null;

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -22,8 +23,6 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyHash;
 
 // TODO(CS): copy and paste of ArrayCastNode
 
@@ -59,22 +58,22 @@ public abstract class HashCastNode extends RubyNode {
         return nil();
     }
 
-    @Specialization(guards = "isRubyBignum(value)")
-    public RubyBasicObject cast(RubyBasicObject value) {
+    @Specialization(guards = "isNil(nil)")
+    public RubyBasicObject castNil(RubyBasicObject nil) {
         return nil();
     }
 
-    @Specialization
-    public RubyHash cast(RubyHash hash) {
+    @Specialization(guards = "isRubyBignum(value)")
+    public RubyBasicObject castBignum(RubyBasicObject value) {
+        return nil();
+    }
+
+    @Specialization(guards = "isRubyHash(hash)")
+    public RubyBasicObject castHash(RubyBasicObject hash) {
         return hash;
     }
 
-    @Specialization(guards = "isNil(nil)")
-    public RubyBasicObject cast(Object nil) {
-        return nil();
-    }
-
-    @Specialization(guards = {"!isNil(object)", "!isRubyHash(object)"})
+    @Specialization(guards = {"!isNil(object)", "!isRubyBignum(object)", "!isRubyHash(object)"})
     public Object cast(VirtualFrame frame, RubyBasicObject object) {
         final Object result = toHashNode.call(frame, object, "to_hash", null, new Object[]{});
 
@@ -82,7 +81,7 @@ public abstract class HashCastNode extends RubyNode {
             return nil();
         }
 
-        if (!(result instanceof RubyHash)) {
+        if (!RubyGuards.isRubyHash(result)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorShouldReturn(object.toString(), "to_hash", "HAsh", this));
         }

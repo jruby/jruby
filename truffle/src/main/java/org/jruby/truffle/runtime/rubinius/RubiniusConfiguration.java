@@ -38,9 +38,7 @@
 package org.jruby.truffle.runtime.rubinius;
 
 import org.jruby.ext.ffi.Platform;
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyString;
 
 import java.util.ArrayList;
 import java.util.Collection;

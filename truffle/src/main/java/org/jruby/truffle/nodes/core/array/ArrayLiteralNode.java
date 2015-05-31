@@ -18,6 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.Arrays;
 
@@ -45,7 +46,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
             }
         }
 
-        return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
+        return (RubyArray) ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
     }
 
     @Override
@@ -89,7 +90,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @Override
         public RubyArray executeRubyArray(VirtualFrame frame) {
-            return createEmptyArray();
+            return (RubyArray) createEmptyArray();
         }
 
     }
@@ -113,7 +114,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return createArray(executedValues, values.length);
+            return (RubyArray) createArray(executedValues, values.length);
         }
 
         private RubyArray makeGeneric(VirtualFrame frame,
@@ -148,7 +149,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return createArray(executedValues, values.length);
+            return (RubyArray) createArray(executedValues, values.length);
         }
 
         private RubyArray makeGeneric(VirtualFrame frame,
@@ -183,7 +184,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return createArray(executedValues, values.length);
+            return (RubyArray) createArray(executedValues, values.length);
         }
 
         private RubyArray makeGeneric(VirtualFrame frame,
@@ -214,7 +215,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 executedValues[n] = values[n].execute(frame);
             }
 
-            return createArray(executedValues, values.length);
+            return (RubyArray) createArray(executedValues, values.length);
         }
 
     }
@@ -236,7 +237,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 executedValues[n] = values[n].execute(frame);
             }
 
-            final RubyArray array = ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
+            final RubyBasicObject array = ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
             final Object store = ArrayNodes.getStore(array);
 
             if (store == null) {
@@ -251,7 +252,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 replace(new ObjectArrayLiteralNode(getContext(), getSourceSection(), values));
             }
 
-            return array;
+            return (RubyArray) array;
         }
 
     }

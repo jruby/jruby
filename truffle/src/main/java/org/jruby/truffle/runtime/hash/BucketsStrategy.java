@@ -10,9 +10,8 @@
 package org.jruby.truffle.runtime.hash;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-
 import org.jruby.truffle.nodes.core.hash.HashNodes;
-import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.Arrays;
 
@@ -38,7 +37,7 @@ public abstract class BucketsStrategy {
         return (hashed & SIGN_BIT_MASK) % bucketsCount;
     }
 
-    public static void addNewEntry(RubyHash hash, int hashed, Object key, Object value) {
+    public static void addNewEntry(RubyBasicObject hash, int hashed, Object key, Object value) {
         assert HashNodes.getStore(hash) instanceof Entry[];
 
         final Entry[] buckets = (Entry[]) HashNodes.getStore(hash);
@@ -74,7 +73,7 @@ public abstract class BucketsStrategy {
     }
 
     @TruffleBoundary
-    public static void resize(RubyHash hash) {
+    public static void resize(RubyBasicObject hash) {
         assert HashOperations.verifyStore(hash);
 
         final int bucketsCount = capacityGreaterThan(HashNodes.getSize(hash)) * 2;

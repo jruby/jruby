@@ -40,7 +40,6 @@ package org.jruby.truffle.runtime.rubinius;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
-
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
@@ -166,7 +165,7 @@ public abstract class DefaultRubiniusConfiguration {
         return BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), new BigInteger(value));
     }
 
-    protected static RubyString string(RubyContext context, String value) {
+    protected static RubyBasicObject string(RubyContext context, String value) {
         return StringNodes.createString(context.getCoreLibrary().getStringClass(), value);
     }
 

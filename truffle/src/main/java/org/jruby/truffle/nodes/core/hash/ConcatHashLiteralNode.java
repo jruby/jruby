@@ -15,7 +15,6 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 
@@ -32,7 +31,7 @@ public class ConcatHashLiteralNode extends RubyNode {
     }
 
     @Override
-    public RubyHash executeRubyHash(VirtualFrame frame) {
+    public Object execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
         final List<KeyValue> keyValues = new ArrayList<>();
@@ -41,16 +40,11 @@ public class ConcatHashLiteralNode extends RubyNode {
             try {
                 keyValues.addAll(HashOperations.verySlowToKeyValues(child.executeRubyHash(frame)));
             } catch (UnexpectedResultException e) {
-                throw new UnsupportedOperationException();
+                throw new UnsupportedOperationException(child.getClass() + " " + e.getResult().getClass());
             }
         }
 
         return HashOperations.verySlowFromEntries(getContext(), keyValues, false);
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        return executeRubyHash(frame);
     }
 
 }

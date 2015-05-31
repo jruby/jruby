@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.ext.digest.BubbleBabble;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
@@ -193,7 +192,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString digest(RubyBasicObject digestObject) {
+        public RubyBasicObject digest(RubyBasicObject digestObject) {
             final MessageDigest digest = getDigest(digestObject);
 
             // TODO CS 18-May-15 this cloning isn't ideal for the key operation
@@ -235,7 +234,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString bubblebabble(RubyString message) {
+        public RubyBasicObject bubblebabble(RubyString message) {
             final ByteList byteList = StringNodes.getByteList(message);
             return createString(BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
         }

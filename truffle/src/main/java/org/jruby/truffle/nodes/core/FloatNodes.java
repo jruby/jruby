@@ -16,13 +16,13 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyString;
 
 @CoreClass(name = "Float")
 public abstract class FloatNodes {
@@ -257,17 +257,17 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public RubyArray divMod(double a, long b) {
+        public RubyBasicObject divMod(double a, long b) {
             return divModNode.execute(a, b);
         }
 
         @Specialization
-        public RubyArray divMod(double a, double b) {
+        public RubyBasicObject divMod(double a, double b) {
             return divModNode.execute(a, b);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public RubyArray divMod(double a, RubyBasicObject b) {
+        public RubyBasicObject divMod(double a, RubyBasicObject b) {
             return divModNode.execute(a, BignumNodes.getBigIntegerValue(b));
         }
 
@@ -665,7 +665,7 @@ public abstract class FloatNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(double value) {
+        public RubyBasicObject toS(double value) {
             return createString(Double.toString(value));
         }
 

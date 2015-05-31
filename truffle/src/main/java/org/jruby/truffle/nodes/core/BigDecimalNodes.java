@@ -15,10 +15,12 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBignum;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 
 import java.math.BigDecimal;
@@ -473,7 +475,7 @@ public abstract class BigDecimalNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(RubyBasicObject value) {
+        public RubyBasicObject toS(RubyBasicObject value) {
             final BigDecimal bigDecimal = getBigDecimalValue(value);
             final boolean negative = bigDecimal.signum() == -1;
 

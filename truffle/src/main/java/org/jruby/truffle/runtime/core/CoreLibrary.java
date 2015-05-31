@@ -15,9 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.constants.platform.Errno;
-
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConvFlags;
@@ -33,11 +31,7 @@ import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
 import org.jruby.truffle.nodes.ext.DigestNodesFactory;
 import org.jruby.truffle.nodes.ext.ZlibNodesFactory;
-import org.jruby.truffle.nodes.objects.Allocator;
-import org.jruby.truffle.nodes.objects.FreezeNode;
-import org.jruby.truffle.nodes.objects.FreezeNodeGen;
-import org.jruby.truffle.nodes.objects.SingletonClassNode;
-import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
+import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.rubinius.*;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -139,7 +133,7 @@ public class CoreLibrary {
     private final RubyClass threadErrorClass;
     private final RubyClass ioBufferClass;
 
-    private final RubyArray argv;
+    private final RubyBasicObject argv;
     private final RubyBasicObject globalVariablesObject;
     private final RubyBasicObject mainObject;
     private final RubyBasicObject nilObject;
@@ -152,7 +146,7 @@ public class CoreLibrary {
     private final Map<Errno, RubyClass> errnoClasses = new HashMap<>();
 
     @CompilerDirectives.CompilationFinal private RubySymbol eachSymbol;
-    @CompilerDirectives.CompilationFinal private RubyHash envHash;
+    @CompilerDirectives.CompilationFinal private RubyBasicObject envHash;
 
     private enum State {
         INITIALIZING,
@@ -473,7 +467,7 @@ public class CoreLibrary {
         Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
         RubyBasicObject.setInstanceVariable(globals, "$VERBOSE", value);
 
-        final RubyString defaultRecordSeparator = StringNodes.createString(stringClass, CLI_RECORD_SEPARATOR);
+        final RubyBasicObject defaultRecordSeparator = StringNodes.createString(stringClass, CLI_RECORD_SEPARATOR);
         node.freezeNode.executeFreeze(defaultRecordSeparator);
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
@@ -523,7 +517,7 @@ public class CoreLibrary {
 
         int i = 0;
         for (Map.Entry<String, Integer> signal : SignalOperations.SIGNALS_LIST.entrySet()) {
-            RubyString signalName = StringNodes.createString(context.getCoreLibrary().getStringClass(), signal.getKey());
+            RubyBasicObject signalName = StringNodes.createString(context.getCoreLibrary().getStringClass(), signal.getKey());
             signals[i++] = ArrayNodes.fromObjects(arrayClass, signalName, signal.getValue());
         }
 
@@ -1285,7 +1279,7 @@ public class CoreLibrary {
         return kernelModule;
     }
 
-    public RubyArray getArgv() {
+    public RubyBasicObject getArgv() {
         return argv;
     }
 
@@ -1293,12 +1287,12 @@ public class CoreLibrary {
         return globalVariablesObject;
     }
 
-    public RubyArray getLoadPath() {
-        return (RubyArray) globalVariablesObject.getInstanceVariable("$LOAD_PATH");
+    public RubyBasicObject getLoadPath() {
+        return (RubyBasicObject) globalVariablesObject.getInstanceVariable("$LOAD_PATH");
     }
 
-    public RubyArray getLoadedFeatures() {
-        return (RubyArray) globalVariablesObject.getInstanceVariable("$LOADED_FEATURES");
+    public RubyBasicObject getLoadedFeatures() {
+        return (RubyBasicObject) globalVariablesObject.getInstanceVariable("$LOADED_FEATURES");
     }
 
     public RubyBasicObject getMainObject() {
@@ -1309,11 +1303,11 @@ public class CoreLibrary {
         return nilObject;
     }
 
-    public RubyHash getENV() {
+    public RubyBasicObject getENV() {
         return envHash;
     }
 
-    private RubyHash getSystemEnv() {
+    private RubyBasicObject getSystemEnv() {
         final List<KeyValue> entries = new ArrayList<>();
 
         for (Map.Entry<String, String> variable : System.getenv().entrySet()) {

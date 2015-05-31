@@ -13,7 +13,6 @@ import com.oracle.truffle.api.ExactMath;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
 
 import java.math.BigInteger;
 

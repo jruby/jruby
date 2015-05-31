@@ -17,8 +17,9 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
 @ImportStatic(ArrayGuards.class)
@@ -32,14 +33,14 @@ public abstract class ArrayDropTailNode extends RubyNode {
     }
 
     @Specialization(guards = "isNullArray(array)")
-    public RubyArray getHeadNull(RubyArray array) {
+    public RubyBasicObject getHeadNull(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
         return createEmptyArray();
     }
 
     @Specialization(guards = "isIntArray(array)")
-    public RubyArray getHeadIntegerFixnum(RubyArray array) {
+    public RubyBasicObject getHeadIntegerFixnum(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {
@@ -50,7 +51,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
     }
 
     @Specialization(guards = "isLongArray(array)")
-    public RubyArray geHeadLongFixnum(RubyArray array) {
+    public RubyBasicObject geHeadLongFixnum(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {
@@ -62,7 +63,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
     }
 
     @Specialization(guards = "isDoubleArray(array)")
-    public RubyArray getHeadFloat(RubyArray array) {
+    public RubyBasicObject getHeadFloat(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {
@@ -74,7 +75,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
     }
 
     @Specialization(guards = "isObjectArray(array)")
-    public RubyArray getHeadObject(RubyArray array) {
+    public RubyBasicObject getHeadObject(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {

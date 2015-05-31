@@ -20,8 +20,8 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
-import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
@@ -157,7 +157,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyArray toA(RubyMatchData matchData) {
+        public RubyBasicObject toA(RubyMatchData matchData) {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getCaptures());
@@ -211,7 +211,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyString preMatch(RubyMatchData matchData) {
+        public RubyBasicObject preMatch(RubyMatchData matchData) {
             return matchData.getPre();
         }
 
@@ -225,7 +225,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyString postMatch(RubyMatchData matchData) {
+        public RubyBasicObject postMatch(RubyMatchData matchData) {
             return matchData.getPost();
         }
 
@@ -239,7 +239,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyArray toA(RubyMatchData matchData) {
+        public RubyBasicObject toA(RubyMatchData matchData) {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getValues());
@@ -254,7 +254,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyString toS(RubyMatchData matchData) {
+        public RubyBasicObject toS(RubyMatchData matchData) {
             CompilerDirectives.transferToInterpreter();
 
             final ByteList bytes = StringNodes.getByteList(matchData.getGlobal()).dup();
@@ -270,7 +270,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyArray valuesAt(RubyMatchData matchData, Object[] args) {
+        public RubyBasicObject valuesAt(RubyMatchData matchData, Object[] args) {
             CompilerDirectives.transferToInterpreter();
 
             final int[] indicies = new int[args.length];
@@ -293,7 +293,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyString rubiniusSource(RubyMatchData matchData) {
+        public RubyBasicObject rubiniusSource(RubyMatchData matchData) {
             return matchData.getSource();
         }
     }

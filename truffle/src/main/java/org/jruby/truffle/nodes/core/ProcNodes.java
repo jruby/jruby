@@ -19,15 +19,14 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.Memo;
@@ -163,7 +162,7 @@ public abstract class ProcNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyArray parameters(RubyProc proc) {
+        public RubyBasicObject parameters(RubyProc proc) {
             final ArgsNode argsNode = proc.getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
 
             final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
@@ -189,7 +188,7 @@ public abstract class ProcNodes {
             if (sourceSection instanceof NullSourceSection) {
                 return nil();
             } else {
-                RubyString file = createString(sourceSection.getSource().getName());
+                RubyBasicObject file = createString(sourceSection.getSource().getName());
                 return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                         file, sourceSection.getStartLine());
             }

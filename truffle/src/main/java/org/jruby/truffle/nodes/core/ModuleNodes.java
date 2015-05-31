@@ -11,8 +11,8 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -22,9 +22,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import jnr.posix.Passwd;
-
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -34,11 +32,7 @@ import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
-import org.jruby.truffle.nodes.coerce.NameToJavaStringNode;
-import org.jruby.truffle.nodes.coerce.NameToSymbolOrStringNodeGen;
-import org.jruby.truffle.nodes.coerce.ToStrNode;
-import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
-import org.jruby.truffle.nodes.coerce.NameToJavaStringNodeGen;
+import org.jruby.truffle.nodes.coerce.*;
 import org.jruby.truffle.nodes.constants.GetConstantNode;
 import org.jruby.truffle.nodes.constants.GetConstantNodeGen;
 import org.jruby.truffle.nodes.constants.LookupConstantNodeGen;
@@ -328,7 +322,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray ancestors(RubyModule self) {
+        public RubyBasicObject ancestors(RubyModule self) {
             CompilerDirectives.transferToInterpreter();
 
             final List<RubyModule> ancestors = new ArrayList<>();
@@ -589,7 +583,7 @@ public abstract class ModuleNodes {
             return bindingNode.executeRubyBinding(frame);
         }
 
-        protected RubyString toStr(VirtualFrame frame, Object object) {
+        protected RubyBasicObject toStr(VirtualFrame frame, Object object) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
@@ -614,7 +608,7 @@ public abstract class ModuleNodes {
 
         @Specialization(guards = "wasProvided(code)")
         public Object classEval(VirtualFrame frame, RubyModule module, Object code, NotProvided file, NotProvided line, NotProvided block) {
-            return classEvalSource(frame, module, toStr(frame, code), file.toString());
+            return classEvalSource(frame, module, (RubyString) toStr(frame, code), file.toString());
         }
 
         @Specialization(guards = "wasProvided(file)")
@@ -745,10 +739,10 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray getClassVariables(RubyModule module) {
+        public RubyBasicObject getClassVariables(RubyModule module) {
             CompilerDirectives.transferToInterpreter();
 
-            final RubyArray array = ArrayNodes.createEmptyArray(module.getContext().getCoreLibrary().getArrayClass());
+            final RubyBasicObject array = ArrayNodes.createEmptyArray(module.getContext().getCoreLibrary().getArrayClass());
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
                 ArrayNodes.slowPush(array, RubySymbol.newSymbol(module.getContext(), variable));
@@ -775,12 +769,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray constants(RubyModule module, NotProvided inherit) {
+        public RubyBasicObject constants(RubyModule module, NotProvided inherit) {
             return constants(module, true);
         }
 
         @Specialization
-        public RubyArray constants(RubyModule module, boolean inherit) {
+        public RubyBasicObject constants(RubyModule module, boolean inherit) {
             CompilerDirectives.transferToInterpreter();
 
             final List<RubySymbol> constantsArray = new ArrayList<>();
@@ -802,7 +796,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "wasProvided(inherit)")
-        public RubyArray constants(VirtualFrame frame, RubyModule module, Object inherit) {
+        public RubyBasicObject constants(VirtualFrame frame, RubyModule module, Object inherit) {
             return constants(module, booleanCast(frame, inherit));
         }
 
@@ -1169,7 +1163,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        RubyArray includedModules(RubyModule module) {
+        public RubyBasicObject includedModules(RubyModule module) {
             CompilerDirectives.transferToInterpreter();
 
             final List<RubyModule> modules = new ArrayList<>();
@@ -1270,7 +1264,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray nesting(VirtualFrame frame) {
+        public RubyBasicObject nesting(VirtualFrame frame) {
             CompilerDirectives.transferToInterpreter();
 
             final List<RubyModule> modules = new ArrayList<>();
@@ -1411,12 +1405,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray protectedInstanceMethods(RubyModule module, NotProvided includeAncestors) {
+        public RubyBasicObject protectedInstanceMethods(RubyModule module, NotProvided includeAncestors) {
             return protectedInstanceMethods(module, true);
         }
 
         @Specialization
-        public RubyArray protectedInstanceMethods(RubyModule module, boolean includeAncestors) {
+        public RubyBasicObject protectedInstanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
 
@@ -1459,12 +1453,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray privateInstanceMethods(RubyModule module, NotProvided includeAncestors) {
+        public RubyBasicObject privateInstanceMethods(RubyModule module, NotProvided includeAncestors) {
             return privateInstanceMethods(module, true);
         }
 
         @Specialization
-        public RubyArray privateInstanceMethods(RubyModule module, boolean includeAncestors) {
+        public RubyBasicObject privateInstanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
@@ -1516,12 +1510,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray publicInstanceMethods(RubyModule module, NotProvided includeAncestors) {
+        public RubyBasicObject publicInstanceMethods(RubyModule module, NotProvided includeAncestors) {
             return publicInstanceMethods(module, true);
         }
 
         @Specialization
-        public RubyArray publicInstanceMethods(RubyModule module, boolean includeAncestors) {
+        public RubyBasicObject publicInstanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
@@ -1563,12 +1557,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray instanceMethods(RubyModule module, NotProvided argument) {
+        public RubyBasicObject instanceMethods(RubyModule module, NotProvided argument) {
             return instanceMethods(module, true);
         }
 
         @Specialization
-        public RubyArray instanceMethods(RubyModule module, boolean includeAncestors) {
+        public RubyBasicObject instanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
@@ -1762,7 +1756,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyString toS(RubyModule module) {
+        public RubyBasicObject toS(RubyModule module) {
             CompilerDirectives.transferToInterpreter();
 
             return createString(module.getName());
@@ -1808,7 +1802,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyString userHome(RubyString uname) {
+        public RubyBasicObject userHome(RubyString uname) {
             CompilerDirectives.transferToInterpreter();
             // TODO BJF 30-APR-2015 Review the more robust getHomeDirectoryPath implementation
             final Passwd passwd = getContext().getPosix().getpwnam(uname.toString());

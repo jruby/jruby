@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 
 @NodeChild(value = "child", type = RubyNode.class)
@@ -35,12 +36,12 @@ public abstract class ToStrNode extends RubyNode {
     public abstract RubyString executeRubyString(VirtualFrame frame, Object object);
 
     @Specialization
-    public RubyString coerceRubyString(RubyString string) {
+    public RubyBasicObject coerceRubyString(RubyString string) {
         return string;
     }
 
     @Specialization(guards = "!isRubyString(object)")
-    public RubyString coerceObject(VirtualFrame frame, Object object) {
+    public RubyBasicObject coerceObject(VirtualFrame frame, Object object) {
         final Object coerced;
 
         try {

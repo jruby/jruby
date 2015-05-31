@@ -37,7 +37,6 @@
  */
 package org.jruby.truffle.runtime.rubinius;
 
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 
 public class DarwinRubiniusConfiguration extends DefaultRubiniusConfiguration {

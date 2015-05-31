@@ -14,7 +14,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -55,7 +54,7 @@ public class ThreadBacktraceLocationNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString absolutePath(RubyBasicObject threadBacktraceLocation) {
+        public RubyBasicObject absolutePath(RubyBasicObject threadBacktraceLocation) {
             final Activation activation = getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
@@ -99,7 +98,7 @@ public class ThreadBacktraceLocationNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(RubyBasicObject threadBacktraceLocation) {
+        public RubyBasicObject toS(RubyBasicObject threadBacktraceLocation) {
             final Activation activation = getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();

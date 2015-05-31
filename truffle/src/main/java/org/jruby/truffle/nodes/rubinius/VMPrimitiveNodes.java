@@ -42,10 +42,8 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.constants.platform.Sysconf;
 import jnr.posix.Times;
-
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
@@ -64,7 +62,6 @@ import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.util.io.PosixShim;
-
 import sun.misc.Signal;
 
 import java.lang.management.ManagementFactory;
@@ -162,7 +159,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyString vmGetModuleName(RubyModule module) {
+        public RubyBasicObject vmGetModuleName(RubyModule module) {
             return createString(module.getName());
         }
 
@@ -381,7 +378,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyArray times() {
+        public RubyBasicObject times() {
             // Copied from org/jruby/RubyProcess.java - see copyright and license information there
 
             Times tms = posix().times();
@@ -493,8 +490,8 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyArray getSection(RubyString section) {
-            final List<RubyArray> sectionKeyValues = new ArrayList<>();
+        public RubyBasicObject getSection(RubyString section) {
+            final List<RubyBasicObject> sectionKeyValues = new ArrayList<>();
 
             for (String key : getContext().getRubiniusConfiguration().getSection(section.toString())) {
                 Object value = getContext().getRubiniusConfiguration().get(key);

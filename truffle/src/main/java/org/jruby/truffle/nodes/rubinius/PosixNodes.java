@@ -603,7 +603,7 @@ public abstract class PosixNodes {
         }
 
         @Specialization
-        public RubyString getcwd(RubyString resultPath, int maxSize) {
+        public RubyBasicObject getcwd(RubyString resultPath, int maxSize) {
             // We just ignore maxSize - I think this is ok
 
             final String path = getContext().getRuntime().getCurrentDirectory();
@@ -742,7 +742,7 @@ public abstract class PosixNodes {
 
         @Specialization(guards = "isNil(hostName)")
         public int getaddrinfo(RubyBasicObject hostName, RubyString serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
-            return getaddrinfo(createString("0.0.0.0"), serviceName, hintsPointer, resultsPointer);
+            return getaddrinfo((RubyString) createString("0.0.0.0"), serviceName, hintsPointer, resultsPointer);
         }
 
         @Specialization

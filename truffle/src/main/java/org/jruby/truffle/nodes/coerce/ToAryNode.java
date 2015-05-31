@@ -14,12 +14,13 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 
 @NodeChild(value = "child", type = RubyNode.class)
@@ -31,13 +32,13 @@ public abstract class ToAryNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    @Specialization
-    public RubyArray coerceRubyArray(RubyArray rubyArray) {
-        return rubyArray;
+    @Specialization(guards = "isRubyArray(array)")
+    public RubyBasicObject coerceRubyArray(RubyBasicObject array) {
+        return array;
     }
 
     @Specialization(guards = "!isRubyArray(object)")
-    public RubyArray coerceObject(VirtualFrame frame, Object object) {
+    public RubyBasicObject coerceObject(VirtualFrame frame, Object object) {
         if (toAryNode == null) {
             CompilerDirectives.transferToInterpreter();
             toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -57,8 +58,8 @@ public abstract class ToAryNode extends RubyNode {
                 throw e;
             }
         }
-        if (coerced instanceof RubyArray) {
-            return (RubyArray) coerced;
+        if (RubyGuards.isRubyArray(coerced)) {
+            return (RubyBasicObject) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
 

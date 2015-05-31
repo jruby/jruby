@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayDupNode;
 import org.jruby.truffle.nodes.core.array.ArrayDupNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -27,6 +26,7 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.
@@ -62,7 +62,7 @@ public abstract class SplatCastNode extends RubyNode {
     protected abstract RubyNode getChild();
 
     @Specialization(guards = "isNil(nil)")
-    public RubyArray splat(Object nil) {
+    public RubyBasicObject splat(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
                 return createEmptyArray();
@@ -77,15 +77,15 @@ public abstract class SplatCastNode extends RubyNode {
         }
     }
 
-    @Specialization
-    public RubyArray splat(VirtualFrame frame, RubyArray array) {
+    @Specialization(guards = "isRubyArray(array)")
+    public RubyBasicObject splat(VirtualFrame frame, RubyBasicObject array) {
         // TODO(cs): is it necessary to dup here in all cases?
         // It is needed at least for [*ary] (parsed as just a SplatNode) and b = *ary.
         return dup.executeDup(frame, array);
     }
 
     @Specialization(guards = {"!isNil(object)", "!isRubyArray(object)"})
-    public RubyArray splat(VirtualFrame frame, Object object) {
+    public RubyBasicObject splat(VirtualFrame frame, Object object) {
         final String method;
 
         if (useToAry) {

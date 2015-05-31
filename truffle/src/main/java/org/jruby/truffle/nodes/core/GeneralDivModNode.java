@@ -13,12 +13,9 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
-
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.math.BigInteger;
@@ -41,35 +38,35 @@ public class GeneralDivModNode extends RubyNode {
         fixnumOrBignumRemainder = new FixnumOrBignumNode(context, sourceSection);
     }
 
-    public RubyArray execute(long a, long b) {
+    public RubyBasicObject execute(long a, long b) {
         return divMod(a, b);
     }
 
-    public RubyArray execute(long a, BigInteger b) {
+    public RubyBasicObject execute(long a, BigInteger b) {
         return divMod(BigInteger.valueOf(a), b);
     }
 
-    public RubyArray execute(long a, double b) {
+    public RubyBasicObject execute(long a, double b) {
         return divMod(a, b);
     }
 
-    public RubyArray execute(BigInteger a, long b) {
+    public RubyBasicObject execute(BigInteger a, long b) {
         return divMod(a, BigInteger.valueOf(b));
     }
 
-    public RubyArray execute(BigInteger a, BigInteger b) {
+    public RubyBasicObject execute(BigInteger a, BigInteger b) {
         return divMod(a, b);
     }
 
-    public RubyArray execute(double a, long b) {
+    public RubyBasicObject execute(double a, long b) {
         return divMod(a, b);
     }
 
-    public RubyArray execute(double a, BigInteger b) {
+    public RubyBasicObject execute(double a, BigInteger b) {
         return divMod(a, b.doubleValue());
     }
 
-    public RubyArray execute(double a, double b) {
+    public RubyBasicObject execute(double a, double b) {
         return divMod(a, b);
     }
 
@@ -79,7 +76,7 @@ public class GeneralDivModNode extends RubyNode {
      */
 
     @TruffleBoundary
-    private RubyArray divMod(long a, long b) {
+    private RubyBasicObject divMod(long a, long b) {
         if (b == 0) {
             bZeroProfile.enter();
             throw new ArithmeticException("divide by zero");
@@ -122,7 +119,7 @@ public class GeneralDivModNode extends RubyNode {
     }
 
     @TruffleBoundary
-    private RubyArray divMod(double a, double b) {
+    private RubyBasicObject divMod(double a, double b) {
         if (b == 0) {
             bZeroProfile.enter();
             throw new ArithmeticException("divide by zero");
@@ -147,7 +144,7 @@ public class GeneralDivModNode extends RubyNode {
     }
 
     @TruffleBoundary
-    private RubyArray divMod(BigInteger a, BigInteger b) {
+    private RubyBasicObject divMod(BigInteger a, BigInteger b) {
         if (b.signum() == 0) {
             bZeroProfile.enter();
             throw new ArithmeticException("divide by zero");

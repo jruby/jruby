@@ -17,15 +17,17 @@ import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBignum;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyString;
 
 import java.math.BigInteger;
 import java.util.EnumSet;
@@ -529,7 +531,7 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public RubyArray coerce(RubyBasicObject a, int b) {
+        public RubyBasicObject coerce(RubyBasicObject a, int b) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
@@ -539,7 +541,7 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public RubyArray coerce(RubyBasicObject a, long b) {
+        public RubyBasicObject coerce(RubyBasicObject a, long b) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
@@ -549,7 +551,7 @@ public abstract class BignumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public RubyArray coerce(RubyBasicObject a, RubyBasicObject b) {
+        public RubyBasicObject coerce(RubyBasicObject a, RubyBasicObject b) {
             CompilerDirectives.transferToInterpreter();
 
             Object[] store = new Object[] { b, a };
@@ -569,12 +571,12 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public RubyArray divMod(RubyBasicObject a, long b) {
+        public RubyBasicObject divMod(RubyBasicObject a, long b) {
             return divModNode.execute(getBigIntegerValue(a), b);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public RubyArray divMod(RubyBasicObject a, RubyBasicObject b) {
+        public RubyBasicObject divMod(RubyBasicObject a, RubyBasicObject b) {
             return divModNode.execute(getBigIntegerValue(a), getBigIntegerValue(b));
         }
 
@@ -661,13 +663,13 @@ public abstract class BignumNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(RubyBasicObject value, NotProvided base) {
+        public RubyBasicObject toS(RubyBasicObject value, NotProvided base) {
             return createString(getBigIntegerValue(value).toString());
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(RubyBasicObject value, int base) {
+        public RubyBasicObject toS(RubyBasicObject value, int base) {
             if (base < 2 || base > 36) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));

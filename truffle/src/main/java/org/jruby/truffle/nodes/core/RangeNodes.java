@@ -16,18 +16,16 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.core.array.ArrayBuilderNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
-import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RedoException;
-import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyRange;
 
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
-
-
 
     @CoreMethod(names = {"collect", "map"}, needsBlock = true, lowerFixnumSelf = true)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
@@ -40,7 +38,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public RubyArray collect(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyProc block) {
+        public RubyBasicObject collect(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyProc block) {
             final int begin = range.getBegin();
             final int exclusiveEnd = range.getExclusiveEnd();
             final int length = exclusiveEnd - begin;
@@ -406,7 +404,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public RubyArray toA(RubyRange.IntegerFixnumRange range) {
+        public RubyBasicObject toA(RubyRange.IntegerFixnumRange range) {
             final int begin = range.getBegin();
             final int length = range.getExclusiveEnd() - begin;
 

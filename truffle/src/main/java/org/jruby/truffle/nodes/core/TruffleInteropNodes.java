@@ -28,7 +28,6 @@ import com.oracle.truffle.interop.messages.Receiver;
 import com.oracle.truffle.interop.messages.Unbox;
 import com.oracle.truffle.interop.messages.Write;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
-
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;

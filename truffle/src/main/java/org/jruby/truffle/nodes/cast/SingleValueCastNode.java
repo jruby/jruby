@@ -14,11 +14,9 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeChild(value = "child", type = RubyNode.class)
@@ -42,7 +40,7 @@ public abstract class SingleValueCastNode extends RubyNode {
 
     @TruffleBoundary
     @Specialization(guards = { "!noArguments(args)", "!singleArgument(args)" })
-    protected RubyArray castMany(Object[] args) {
+    protected RubyBasicObject castMany(Object[] args) {
         return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
     }
 

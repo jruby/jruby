@@ -44,11 +44,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.byref.IntByReference;
-
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -540,7 +538,7 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public RubyString sysread(VirtualFrame frame, RubyBasicObject file, int length) {
+        public RubyBasicObject sysread(VirtualFrame frame, RubyBasicObject file, int length) {
             final int fd = getDescriptor(file);
 
             final ByteBuffer buffer = ByteBuffer.allocate(length);
@@ -631,7 +629,7 @@ public abstract class IOPrimitiveNodes {
             return max;
         }
 
-        private RubyArray getSetObjects(Object[] objects, int[] fds, FDSet set) {
+        private RubyBasicObject getSetObjects(Object[] objects, int[] fds, FDSet set) {
             final Object[] setObjects = new Object[objects.length];
             int setFdsCount = 0;
 

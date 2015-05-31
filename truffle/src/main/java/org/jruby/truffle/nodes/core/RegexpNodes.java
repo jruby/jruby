@@ -15,7 +15,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
@@ -71,7 +70,7 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
-        protected RubyString escape(VirtualFrame frame, RubyString string) {
+        protected RubyBasicObject escape(VirtualFrame frame, RubyString string) {
             if (escapeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 escapeNode = insert(RegexpNodesFactory.EscapeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
@@ -87,7 +86,7 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
-        protected RubyString escape(VirtualFrame frame, RubyString string) {
+        protected RubyBasicObject escape(VirtualFrame frame, RubyString string) {
             if (escapeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 escapeNode = insert(RegexpNodesFactory.EscapeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
@@ -145,11 +144,11 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
-        public abstract RubyString executeEscape(VirtualFrame frame, RubyString pattern);
+        public abstract RubyBasicObject executeEscape(VirtualFrame frame, RubyString pattern);
 
         @TruffleBoundary
         @Specialization
-        public RubyString escape(RubyString pattern) {
+        public RubyBasicObject escape(RubyString pattern) {
             return createString(org.jruby.RubyRegexp.quote19(new ByteList(StringNodes.getByteList(pattern)), true).toString());
         }
 
@@ -178,7 +177,7 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public RubyString match(RubyRegexp regexp) {
+        public RubyBasicObject match(RubyRegexp regexp) {
             return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), regexp.getSource(), regexp.getRegex().getOptions()).inspect19()).getByteList());
         }
 
@@ -255,14 +254,14 @@ public abstract class RegexpNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyString quote(RubyString raw) {
+        @Specialization(guards = "isRubyString(raw)")
+        public RubyBasicObject quote(RubyBasicObject raw) {
             boolean isAsciiOnly = StringNodes.getByteList(raw).getEncoding().isAsciiCompatible() && StringNodes.scanForCodeRange(raw) == CR_7BIT;
             return createString(org.jruby.RubyRegexp.quote19(StringNodes.getByteList(raw), isAsciiOnly));
         }
 
         @Specialization
-        public RubyString quote(RubySymbol raw) {
+        public RubyBasicObject quote(RubySymbol raw) {
             return quote(raw.toRubyString());
         }
 
@@ -290,7 +289,7 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public RubyString source(RubyRegexp regexp) {
+        public RubyBasicObject source(RubyRegexp regexp) {
             return createString(regexp.getSource().dup());
         }
 
@@ -304,7 +303,7 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public RubyString to_s(RubyRegexp regexp) {
+        public RubyBasicObject toS(RubyRegexp regexp) {
             return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), regexp.getSource(), regexp.getRegex().getOptions()).to_s()).getByteList());
         }
 

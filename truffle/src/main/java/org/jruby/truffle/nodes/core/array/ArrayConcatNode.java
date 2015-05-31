@@ -16,6 +16,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * Concatenate arrays.
@@ -36,7 +37,7 @@ public final class ArrayConcatNode extends RubyNode {
     }
 
     @Override
-    public RubyArray execute(VirtualFrame frame) {
+    public RubyBasicObject execute(VirtualFrame frame) {
         Object store = arrayBuilderNode.start();
         int length = 0;
         if (children.length == 1) {

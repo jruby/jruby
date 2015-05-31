@@ -16,7 +16,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
@@ -199,7 +198,7 @@ public abstract class UnboundMethodNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyArray parameters(RubyBasicObject method) {
+        public RubyBasicObject parameters(RubyBasicObject method) {
             final ArgsNode argsNode = getMethod(method).getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
 
             final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
@@ -225,7 +224,7 @@ public abstract class UnboundMethodNodes {
             if (sourceSection instanceof NullSourceSection) {
                 return nil();
             } else {
-                RubyString file = createString(sourceSection.getSource().getName());
+                RubyBasicObject file = createString(sourceSection.getSource().getName());
                 return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                         file, sourceSection.getStartLine());
             }

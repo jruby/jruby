@@ -22,10 +22,9 @@ import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
-import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 
@@ -455,17 +454,17 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public RubyArray divMod(long a, long b) {
+        public RubyBasicObject divMod(long a, long b) {
             return divModNode.execute(a, b);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public RubyArray divMod(long a, RubyBasicObject b) {
+        public RubyBasicObject divMod(long a, RubyBasicObject b) {
             return divModNode.execute(a, BignumNodes.getBigIntegerValue(b));
         }
 
         @Specialization
-        public RubyArray divMod(long a, double b) {
+        public RubyBasicObject divMod(long a, double b) {
             return divModNode.execute(a, b);
         }
 
@@ -1086,13 +1085,13 @@ public abstract class FixnumNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString inspect(int n) {
+        public RubyBasicObject inspect(int n) {
             return createString(Integer.toString(n));
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyString inspect(long n) {
+        public RubyBasicObject inspect(long n) {
             return createString(Long.toString(n));
         }
 
@@ -1140,19 +1139,19 @@ public abstract class FixnumNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(int n, NotProvided base) {
+        public RubyBasicObject toS(int n, NotProvided base) {
             return createString(Integer.toString(n));
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(long n, NotProvided base) {
+        public RubyBasicObject toS(long n, NotProvided base) {
             return createString(Long.toString(n));
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(long n, int base) {
+        public RubyBasicObject toS(long n, int base) {
             if (base < 2 || base > 36) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));

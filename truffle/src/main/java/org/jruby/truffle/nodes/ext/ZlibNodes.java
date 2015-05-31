@@ -13,13 +13,12 @@ import com.jcraft.jzlib.JZlib;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -87,7 +86,7 @@ public abstract class ZlibNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString deflate(RubyString message, int level) {
+        public RubyBasicObject deflate(RubyString message, int level) {
             final Deflater deflater = new Deflater(level);
 
             final ByteList messageBytes = StringNodes.getByteList(message);
@@ -119,7 +118,7 @@ public abstract class ZlibNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString inflate(RubyString message) {
+        public RubyBasicObject inflate(RubyString message) {
             final Inflater inflater = new Inflater();
 
             final ByteList messageBytes = StringNodes.getByteList(message);

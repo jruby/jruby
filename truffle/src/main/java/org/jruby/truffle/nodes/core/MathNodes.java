@@ -16,15 +16,13 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyMath;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.dispatch.UseMethodMissingException;
-import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @CoreClass(name = "Math")
@@ -324,22 +322,22 @@ public abstract class MathNodes {
         }
 
         @Specialization
-        public RubyArray frexp(int a) {
+        public RubyBasicObject frexp(int a) {
             return frexp((double) a);
         }
 
         @Specialization
-        public RubyArray frexp(long a) {
+        public RubyBasicObject frexp(long a) {
             return frexp((double) a);
         }
 
         @Specialization(guards = "isRubyBignum(a)")
-        public RubyArray frexp(RubyBasicObject a) {
+        public RubyBasicObject frexp(RubyBasicObject a) {
             return frexp(BignumNodes.getBigIntegerValue(a).doubleValue());
         }
 
         @Specialization
-        public RubyArray frexp(double a) {
+        public RubyBasicObject frexp(double a) {
             // Copied from RubyMath - see copyright notices there
 
             double mantissa = a;
@@ -364,7 +362,7 @@ public abstract class MathNodes {
         }
 
         @Fallback
-        public RubyArray frexp(VirtualFrame frame, Object a) {
+        public RubyBasicObject frexp(VirtualFrame frame, Object a) {
             if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return frexp(floatNode.callFloat(frame, a, "to_f", null));
@@ -564,22 +562,22 @@ public abstract class MathNodes {
         }
 
         @Specialization
-        public RubyArray lgamma(int a) {
+        public RubyBasicObject lgamma(int a) {
             return lgamma((double) a);
         }
 
         @Specialization
-        public RubyArray lgamma(long a) {
+        public RubyBasicObject lgamma(long a) {
             return lgamma((double) a);
         }
 
         @Specialization(guards = "isRubyBignum(a)")
-        public RubyArray lgamma(RubyBasicObject a) {
+        public RubyBasicObject lgamma(RubyBasicObject a) {
             return lgamma(BignumNodes.getBigIntegerValue(a).doubleValue());
         }
 
         @Specialization
-        public RubyArray lgamma(double a) {
+        public RubyBasicObject lgamma(double a) {
             // Copied from RubyMath - see copyright notices there
 
             if (a < 0 && Double.isInfinite(a)) {
@@ -593,7 +591,7 @@ public abstract class MathNodes {
         }
 
         @Fallback
-        public RubyArray lgamma(VirtualFrame frame, Object a) {
+        public RubyBasicObject lgamma(VirtualFrame frame, Object a) {
             if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
                 try {
                     return lgamma(floatNode.callFloat(frame, a, "to_f", null));

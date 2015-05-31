@@ -9,15 +9,6 @@
  */
 package org.jruby.truffle.nodes.constants;
 
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.DispatchNode;
-import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.RubyConstant;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyModule;
-
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
@@ -27,6 +18,14 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.dispatch.DispatchNode;
+import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.runtime.RubyConstant;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyModule;
 
 @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
 public abstract class LookupConstantNode extends RubyNode {
