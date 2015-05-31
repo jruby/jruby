@@ -72,7 +72,6 @@ public abstract class ArrayNodes {
     private static final DynamicObjectFactory ARRAY_FACTORY;
 
     static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
         final Shape shape = RubyBasicObject.LAYOUT.createShape(ARRAY_TYPE);
         ARRAY_FACTORY = shape.createFactory();
     }

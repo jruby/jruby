@@ -51,7 +51,6 @@ public abstract class HashNodes {
     private static final DynamicObjectFactory HASH_FACTORY;
 
     static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
         final Shape shape = RubyBasicObject.LAYOUT.createShape(HASH_TYPE);
         HASH_FACTORY = shape.createFactory();
     }

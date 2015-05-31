@@ -76,6 +76,19 @@ import java.util.Arrays;
 @CoreClass(name = "String")
 public abstract class StringNodes {
 
+    public static class StringType extends BasicObjectType {
+
+    }
+
+    public static final StringType STRING_TYPE = new StringType();
+
+    private static final DynamicObjectFactory STRING_FACTORY;
+
+    static {
+        final Shape shape = RubyBasicObject.LAYOUT.createShape(STRING_TYPE);
+        STRING_FACTORY = shape.createFactory();
+    }
+
     public static int getCodeRange(RubyString string) {
         return string.codeRange;
     }
@@ -156,20 +169,6 @@ public abstract class StringNodes {
         }
 
         return string.codeRangeableWrapper;
-    }
-
-    public static class StringType extends BasicObjectType {
-
-    }
-
-    public static final StringType STRING_TYPE = new StringType();
-
-    private static final DynamicObjectFactory STRING_FACTORY;
-
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        final Shape shape = RubyBasicObject.LAYOUT.createShape(STRING_TYPE);
-        STRING_FACTORY = shape.createFactory();
     }
 
     public static void set(RubyString string, ByteList bytes) {

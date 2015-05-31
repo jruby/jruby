@@ -112,8 +112,6 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             }
         }
 
-        final RubyContext context = getContext();
-
         final Object receiverObject = receiver.execute(frame);
 
         if (receiverObject instanceof RubyBasicObject) {
