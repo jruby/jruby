@@ -95,7 +95,8 @@ public abstract class ArrayNodes {
         assert RubyGuards.isRubyArray(array);
         assert array.getDynamicObject().getShape().hasProperty(STORE_IDENTIFIER);
 
-        return STORE_PROPERTY.get(array.getDynamicObject(), true);
+        //return STORE_PROPERTY.get(array.getDynamicObject(), true);
+        return ((RubyArray) array).store;
     }
 
     public static void setStore(RubyBasicObject array, Object store, int size) {
@@ -110,7 +111,7 @@ public abstract class ArrayNodes {
             assert verifyStore(store, size);
         }
 
-        try {
+        /*try {
             STORE_PROPERTY.set(array.getDynamicObject(), store, array.getDynamicObject().getShape());
         } catch (IncompatibleLocationException | FinalLocationException e) {
             throw new UnsupportedOperationException(e);
@@ -120,25 +121,31 @@ public abstract class ArrayNodes {
             SIZE_PROPERTY.set(array.getDynamicObject(), size, array.getDynamicObject().getShape());
         } catch (IncompatibleLocationException | FinalLocationException e) {
             throw new UnsupportedOperationException(e);
-        }
+        }*/
+
+        ((RubyArray) array).store = store;
+        ((RubyArray) array).size = size;
     }
 
     public static void setSize(RubyBasicObject array, int size) {
         assert RubyGuards.isRubyArray(array);
         assert array.getDynamicObject().getShape().hasProperty(SIZE_IDENTIFIER);
 
-        try {
+        /*try {
             SIZE_PROPERTY.set(array.getDynamicObject(), size, array.getDynamicObject().getShape());
         } catch (IncompatibleLocationException | FinalLocationException e) {
             throw new UnsupportedOperationException(e);
-        }
+        }*/
+
+        ((RubyArray) array).size = size;
     }
 
     public static int getSize(RubyBasicObject array) {
         assert RubyGuards.isRubyArray(array);
         assert array.getDynamicObject().getShape().hasProperty(SIZE_IDENTIFIER);
 
-        return (int) SIZE_PROPERTY.get(array.getDynamicObject(), true);
+        //return (int) SIZE_PROPERTY.get(array.getDynamicObject(), true);
+        return ((RubyArray) array).size;
     }
 
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
@@ -383,7 +390,7 @@ public abstract class ArrayNodes {
     }
 
     public static RubyArray createGeneralArray(RubyClass arrayClass, Object store, int size) {
-        return new RubyArray(arrayClass, ARRAY_FACTORY.newInstance(store, size));
+        return new RubyArray(arrayClass, store, size, ARRAY_FACTORY.newInstance(store, size));
     }
 
     @CoreMethod(names = "+", required = 1)
