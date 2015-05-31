@@ -72,7 +72,6 @@ import org.jruby.runtime.profile.builtin.ProfileOutput;
 import org.jruby.util.KCode;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.cli.Options;
-import org.osgi.framework.Bundle;
 
 /**
  * ScriptingContainer provides various methods and resources that are useful
@@ -1900,35 +1899,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         addLoadPath(createUri(classloader, "/.jrubydir"));
     }
 
-    /**
-     * add the classloader from the given bundle to the LOAD_PATH
-     * @param bundle
-     */
-    public void addBundleToLoadPath(Bundle bundle) {
-        addLoadPath(createUriFromBundle(bundle, "/.jrubydir"));
-    }
-
-    private String createUriFromBundle(Bundle cl, String ref) {
-        URL url = cl.getResource( ref );
-        if ( url == null && ref.startsWith( "/" ) ) {
-            url = cl.getResource( ref.substring( 1 ) );
-        }
-        if ( url == null ) {
-            throw new RuntimeException( "reference " + ref + " not found on bundle " + cl );
-        }
-        return "uri:" + url.toString().replaceFirst( ref + "$", "" );
-    }
-
-    private void addLoadPath(String uri) {
+    protected void addLoadPath(String uri) {
         runScriptlet( "$LOAD_PATH << '" + uri + "' unless $LOAD_PATH.member?( '" + uri + "' )" );
-    }
-
-    /**
-     * add the classloader from the given bundle to the GEM_PATH
-     * @param bundle
-     */
-    public void addBundleToGemPath(Bundle bundle) {
-        addGemPath(createUriFromBundle(bundle, "/specifications/.jrubydir"));
     }
 
     /**
@@ -1950,7 +1922,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         return "uri:" + url.toString().replaceFirst( ref + "$", "" );
     }
 
-    private void addGemPath(String uri) {
+    protected void addGemPath(String uri) {
         runScriptlet( "require 'rubygems/defaults/jruby';Gem::Specification.add_dir '" + uri + "' unless Gem::Specification.dirs.member?( '" + uri + "' )" );
     }
 }
