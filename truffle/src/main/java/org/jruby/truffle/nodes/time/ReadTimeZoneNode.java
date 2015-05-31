@@ -15,13 +15,14 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 
 public class ReadTimeZoneNode extends RubyNode {
     
     @Child private CallDispatchHeadNode hashNode;
     
-    private final RubyString TZ;
+    private final RubyBasicObject TZ;
     
     public ReadTimeZoneNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -36,7 +37,7 @@ public class ReadTimeZoneNode extends RubyNode {
         // TODO CS 4-May-15 not sure how TZ ends up being nil
 
         if (tz == nil()) {
-            return createString("UTC");
+            return (RubyString) createString("UTC");
         } else if (tz instanceof RubyString) {
             return (RubyString) tz;
         } else {

@@ -188,7 +188,7 @@ public abstract class ProcNodes {
             if (sourceSection instanceof NullSourceSection) {
                 return nil();
             } else {
-                RubyString file = createString(sourceSection.getSource().getName());
+                RubyBasicObject file = createString(sourceSection.getSource().getName());
                 return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                         file, sourceSection.getStartLine());
             }

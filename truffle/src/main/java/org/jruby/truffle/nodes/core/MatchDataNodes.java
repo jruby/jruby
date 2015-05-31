@@ -211,7 +211,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyString preMatch(RubyMatchData matchData) {
+        public RubyBasicObject preMatch(RubyMatchData matchData) {
             return matchData.getPre();
         }
 
@@ -225,7 +225,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyString postMatch(RubyMatchData matchData) {
+        public RubyBasicObject postMatch(RubyMatchData matchData) {
             return matchData.getPost();
         }
 
@@ -254,7 +254,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyString toS(RubyMatchData matchData) {
+        public RubyBasicObject toS(RubyMatchData matchData) {
             CompilerDirectives.transferToInterpreter();
 
             final ByteList bytes = StringNodes.getByteList(matchData.getGlobal()).dup();
@@ -293,7 +293,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyString rubiniusSource(RubyMatchData matchData) {
+        public RubyBasicObject rubiniusSource(RubyMatchData matchData) {
             return matchData.getSource();
         }
     }

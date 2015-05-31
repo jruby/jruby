@@ -1756,7 +1756,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyString toS(RubyModule module) {
+        public RubyBasicObject toS(RubyModule module) {
             CompilerDirectives.transferToInterpreter();
 
             return createString(module.getName());
@@ -1802,7 +1802,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyString userHome(RubyString uname) {
+        public RubyBasicObject userHome(RubyString uname) {
             CompilerDirectives.transferToInterpreter();
             // TODO BJF 30-APR-2015 Review the more robust getHomeDirectoryPath implementation
             final Passwd passwd = getContext().getPosix().getpwnam(uname.toString());

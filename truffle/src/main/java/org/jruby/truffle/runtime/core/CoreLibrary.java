@@ -467,7 +467,7 @@ public class CoreLibrary {
         Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
         RubyBasicObject.setInstanceVariable(globals, "$VERBOSE", value);
 
-        final RubyString defaultRecordSeparator = StringNodes.createString(stringClass, CLI_RECORD_SEPARATOR);
+        final RubyBasicObject defaultRecordSeparator = StringNodes.createString(stringClass, CLI_RECORD_SEPARATOR);
         node.freezeNode.executeFreeze(defaultRecordSeparator);
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
@@ -517,7 +517,7 @@ public class CoreLibrary {
 
         int i = 0;
         for (Map.Entry<String, Integer> signal : SignalOperations.SIGNALS_LIST.entrySet()) {
-            RubyString signalName = StringNodes.createString(context.getCoreLibrary().getStringClass(), signal.getKey());
+            RubyBasicObject signalName = StringNodes.createString(context.getCoreLibrary().getStringClass(), signal.getKey());
             signals[i++] = ArrayNodes.fromObjects(arrayClass, signalName, signal.getValue());
         }
 

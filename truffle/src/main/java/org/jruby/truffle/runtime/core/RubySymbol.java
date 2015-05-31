@@ -78,7 +78,7 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
         return symbol;
     }
 
-    public RubyString toRubyString() {
+    public RubyBasicObject toRubyString() {
         return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), toString());
     }
 

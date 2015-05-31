@@ -663,13 +663,13 @@ public abstract class BignumNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(RubyBasicObject value, NotProvided base) {
+        public RubyBasicObject toS(RubyBasicObject value, NotProvided base) {
             return createString(getBigIntegerValue(value).toString());
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(RubyBasicObject value, int base) {
+        public RubyBasicObject toS(RubyBasicObject value, int base) {
             if (base < 2 || base > 36) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));

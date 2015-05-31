@@ -172,7 +172,7 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization
-        public RubyString readString(RubyBasicObject pointer, int length) {
+        public RubyBasicObject readString(RubyBasicObject pointer, int length) {
             final byte[] bytes = new byte[length];
             getPointer(pointer).get(0, bytes, 0, length);
             return createString(bytes);
@@ -306,7 +306,7 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization(guards = "type == TYPE_STRING")
-        public RubyString getAtOffsetString(RubyBasicObject pointer, int offset, int type) {
+        public RubyBasicObject getAtOffsetString(RubyBasicObject pointer, int offset, int type) {
             return createString(getPointer(pointer).getString(offset));
         }
 
@@ -348,7 +348,7 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization
-        public RubyString readStringToNull(RubyBasicObject pointer) {
+        public RubyBasicObject readStringToNull(RubyBasicObject pointer) {
             return createString(MemoryIO.getInstance().getZeroTerminatedByteArray(getPointer(pointer).address()));
         }
 

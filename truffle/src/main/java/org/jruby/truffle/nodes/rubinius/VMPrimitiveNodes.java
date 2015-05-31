@@ -159,7 +159,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyString vmGetModuleName(RubyModule module) {
+        public RubyBasicObject vmGetModuleName(RubyModule module) {
             return createString(module.getName());
         }
 

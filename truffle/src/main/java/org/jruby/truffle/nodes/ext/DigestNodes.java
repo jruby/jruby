@@ -192,7 +192,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString digest(RubyBasicObject digestObject) {
+        public RubyBasicObject digest(RubyBasicObject digestObject) {
             final MessageDigest digest = getDigest(digestObject);
 
             // TODO CS 18-May-15 this cloning isn't ideal for the key operation
@@ -234,7 +234,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString bubblebabble(RubyString message) {
+        public RubyBasicObject bubblebabble(RubyString message) {
             final ByteList byteList = StringNodes.getByteList(message);
             return createString(BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
         }

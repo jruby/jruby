@@ -291,7 +291,7 @@ public abstract class EncodingNodes {
         }
 
         @Specialization
-        public RubyString localeCharacterMap() {
+        public RubyBasicObject localeCharacterMap() {
             CompilerDirectives.transferToInterpreter();
             final ByteList name = new ByteList(getContext().getRuntime().getEncodingService().getLocaleEncoding().getName());
             return createString(name);
@@ -352,7 +352,7 @@ public abstract class EncodingNodes {
 
                 final Object upcased = upcaseNode.call(frame, createString(new ByteList(e.bytes, e.p, e.end - e.p)), "upcase", null);
                 final Object key = toSymNode.call(frame, upcased, "to_sym", null);
-                final RubyString alias = createString(new ByteList(e.bytes, e.p, e.end - e.p));
+                final RubyBasicObject alias = createString(new ByteList(e.bytes, e.p, e.end - e.p));
                 final int index = e.value.getIndex();
 
 
@@ -405,7 +405,7 @@ public abstract class EncodingNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(RubyEncoding encoding) {
+        public RubyBasicObject toS(RubyEncoding encoding) {
             final ByteList name = encoding.getName().dup();
             name.setEncoding(ASCIIEncoding.INSTANCE);
             return createString(name);

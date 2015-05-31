@@ -22,15 +22,15 @@ import java.util.Arrays;
  */
 public class RubyMatchData extends RubyBasicObject {
 
-    private final RubyString source;
+    private final RubyBasicObject source;
     private final Regex regex;
     private final Region region;
     private final Object[] values;
-    private final RubyString pre;
-    private final RubyString post;
-    private final RubyString global;
+    private final RubyBasicObject pre;
+    private final RubyBasicObject post;
+    private final RubyBasicObject global;
 
-    public RubyMatchData(RubyClass rubyClass, RubyString source, Regex regex, Region region, Object[] values, RubyString pre, RubyString post, RubyString global) {
+    public RubyMatchData(RubyClass rubyClass, RubyBasicObject source, Regex regex, Region region, Object[] values, RubyBasicObject pre, RubyBasicObject post, RubyBasicObject global) {
         super(rubyClass);
         this.source = source;
         this.regex = regex;
@@ -106,15 +106,15 @@ public class RubyMatchData extends RubyBasicObject {
         }
     }
 
-    public RubyString getPre() {
+    public RubyBasicObject getPre() {
         return pre;
     }
 
-    public RubyString getPost() {
+    public RubyBasicObject getPost() {
         return post;
     }
 
-    public RubyString getGlobal() {
+    public RubyBasicObject getGlobal() {
         return global;
     }
 
@@ -122,7 +122,7 @@ public class RubyMatchData extends RubyBasicObject {
         return region;
     }
 
-    public RubyString getSource() {
+    public RubyBasicObject getSource() {
         return source;
     }
 

@@ -567,7 +567,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null, null}));
             }
-            if (respondToToStrNode.doesRespondTo(frame, object, createString("to_str"), false)) {
+            if (respondToToStrNode.doesRespondTo(frame, object, (RubyString) createString("to_str"), false)) {
                 return ruby(frame, "join(sep.to_str)", "sep", object);
             } else {
                 if (toIntNode == null) {
@@ -1867,7 +1867,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null, null}));
             }
-            if (respondToToAryNode.doesRespondTo(frame, object, createString("to_ary"), true)) {
+            if (respondToToAryNode.doesRespondTo(frame, object, (RubyString) createString("to_ary"), true)) {
                 if (toAryNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
@@ -2836,7 +2836,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "byteListsEqual(format, cachedFormat)")
-        public RubyString packCached(
+        public RubyBasicObject packCached(
                 VirtualFrame frame,
                 RubyArray array,
                 RubyString format,
@@ -2855,7 +2855,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(contains = "packCached")
-        public RubyString packUncached(
+        public RubyBasicObject packUncached(
                 VirtualFrame frame,
                 RubyArray array,
                 RubyString format,
@@ -2890,8 +2890,8 @@ public abstract class ArrayNodes {
             }
         }
 
-        private RubyString finishPack(ByteList format, PackResult result) {
-            final RubyString string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
+        private RubyBasicObject finishPack(ByteList format, PackResult result) {
+            final RubyBasicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
 
             if (format.length() == 0) {
                 StringNodes.forceEncoding(string, USASCIIEncoding.INSTANCE);

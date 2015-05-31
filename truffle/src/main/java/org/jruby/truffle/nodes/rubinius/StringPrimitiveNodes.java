@@ -123,7 +123,7 @@ public abstract class StringPrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public RubyBasicObject stringAwkSplit(RubyString string, int lim) {
-            final List<RubyString> ret = new ArrayList<>();
+            final List<RubyBasicObject> ret = new ArrayList<>();
             final ByteList value = StringNodes.getByteList(string);
             final boolean limit = lim > 0;
             int i = lim > 0 ? 1 : 0;
@@ -177,11 +177,11 @@ public abstract class StringPrimitiveNodes {
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), ret.toArray());
         }
 
-        private RubyString makeString(RubyString source, int index, int length) {
+        private RubyBasicObject makeString(RubyString source, int index, int length) {
             final ByteList bytes = new ByteList(StringNodes.getByteList(source), index, length);
             bytes.setEncoding(StringNodes.getByteList(source).getEncoding());
 
-            final RubyString ret = StringNodes.createString(source.getLogicalClass(), bytes);
+            final RubyBasicObject ret = StringNodes.createString(source.getLogicalClass(), bytes);
             taintResultNode.maybeTaint(source, ret);
 
             return ret;
@@ -237,7 +237,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), normalizedIndex, rangeEnd);
-            final RubyString result = StringNodes.createString(string.getLogicalClass(), new ByteList(copiedBytes, StringNodes.getByteList(string).getEncoding()));
+            final RubyBasicObject result = StringNodes.createString(string.getLogicalClass(), new ByteList(copiedBytes, StringNodes.getByteList(string).getEncoding()));
 
             return taintResultNode.maybeTaint(string, result);
         }
@@ -475,7 +475,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final RubyString ret = StringNodes.createString(string.getLogicalClass(), new ByteList(StringNodes.getByteList(string).unsafeBytes(), offset, 1));
+            final RubyBasicObject ret = StringNodes.createString(string.getLogicalClass(), new ByteList(StringNodes.getByteList(string).unsafeBytes(), offset, 1));
 
             return propagate(string, ret);
         }
@@ -496,7 +496,7 @@ public abstract class StringPrimitiveNodes {
             final Encoding enc = bytes.getEncoding();
             final int clen = StringSupport.preciseLength(enc, bytes.getUnsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize());
 
-            final RubyString ret;
+            final RubyBasicObject ret;
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
                 ret = StringNodes.createString(string.getLogicalClass(), new ByteList(StringNodes.getByteList(string).unsafeBytes(), offset, clen));
             } else {
@@ -506,13 +506,13 @@ public abstract class StringPrimitiveNodes {
             return propagate(string, ret);
         }
 
-        private Object propagate(RubyString string, RubyString ret) {
+        private Object propagate(RubyBasicObject string, RubyBasicObject ret) {
             StringNodes.getByteList(ret).setEncoding(StringNodes.getByteList(string).getEncoding());
             StringNodes.setCodeRange(ret, StringNodes.getCodeRange(string));
             return maybeTaint(string, ret);
         }
 
-        private Object maybeTaint(RubyString source, RubyString value) {
+        private Object maybeTaint(RubyBasicObject source, RubyBasicObject value) {
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
@@ -530,7 +530,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = "isSimple(code, encoding)")
-        public RubyString stringFromCodepointSimple(int code, RubyEncoding encoding) {
+        public RubyBasicObject stringFromCodepointSimple(int code, RubyEncoding encoding) {
             return StringNodes.createString(
                     getContext().getCoreLibrary().getStringClass(),
                     new ByteList(new byte[]{(byte) code}, encoding.getEncoding()));
@@ -538,7 +538,7 @@ public abstract class StringPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = "!isSimple(code, encoding)")
-        public RubyString stringFromCodepoint(int code, RubyEncoding encoding) {
+        public RubyBasicObject stringFromCodepoint(int code, RubyEncoding encoding) {
             final int length;
 
             try {
@@ -566,7 +566,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public RubyString stringFromCodepointSimple(long code, RubyEncoding encoding) {
+        public RubyBasicObject stringFromCodepointSimple(long code, RubyEncoding encoding) {
             if (code < Integer.MIN_VALUE || code > Integer.MAX_VALUE) {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException();
@@ -1048,19 +1048,19 @@ public abstract class StringPrimitiveNodes {
 
 
         @Specialization(guards = "value == 0")
-        public RubyString stringPatternZero(RubyClass stringClass, int size, int value) {
+        public RubyBasicObject stringPatternZero(RubyClass stringClass, int size, int value) {
             return StringNodes.createString(stringClass, new ByteList(new byte[size]));
         }
 
         @Specialization(guards = "value != 0")
-        public RubyString stringPattern(RubyClass stringClass, int size, int value) {
+        public RubyBasicObject stringPattern(RubyClass stringClass, int size, int value) {
             final byte[] bytes = new byte[size];
             Arrays.fill(bytes, (byte) value);
             return StringNodes.createString(stringClass, new ByteList(bytes));
         }
 
         @Specialization
-        public RubyString stringPattern(RubyClass stringClass, int size, RubyString string) {
+        public RubyBasicObject stringPattern(RubyClass stringClass, int size, RubyString string) {
             final byte[] bytes = new byte[size];
             final byte[] stringBytes = StringNodes.getByteList(string).unsafeBytes();
 
@@ -1235,13 +1235,13 @@ public abstract class StringPrimitiveNodes {
             return makeSubstring(string, p - s, len);
         }
 
-        private RubyString makeSubstring(RubyString string, int beg, int len) {
+        private RubyBasicObject makeSubstring(RubyString string, int beg, int len) {
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            final RubyString ret = StringNodes.createString(string.getLogicalClass(), new ByteList(StringNodes.getByteList(string), beg, len));
+            final RubyBasicObject ret = StringNodes.createString(string.getLogicalClass(), new ByteList(StringNodes.getByteList(string), beg, len));
             StringNodes.getByteList(ret).setEncoding(StringNodes.getByteList(string).getEncoding());
             taintResultNode.maybeTaint(string, ret);
 
@@ -1258,7 +1258,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public RubyString stringFromByteArray(RubiniusByteArray bytes, int start, int count) {
+        public RubyBasicObject stringFromByteArray(RubiniusByteArray bytes, int start, int count) {
             // Data is copied here - can we do something COW?
             return createString(Arrays.copyOfRange(bytes.getBytes().unsafeBytes(), bytes.getBytes().begin() + start, bytes.getBytes().begin() + start + count));
         }

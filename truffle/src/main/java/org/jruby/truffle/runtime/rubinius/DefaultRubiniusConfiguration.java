@@ -165,7 +165,7 @@ public abstract class DefaultRubiniusConfiguration {
         return BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), new BigInteger(value));
     }
 
-    protected static RubyString string(RubyContext context, String value) {
+    protected static RubyBasicObject string(RubyContext context, String value) {
         return StringNodes.createString(context.getCoreLibrary().getStringClass(), value);
     }
 

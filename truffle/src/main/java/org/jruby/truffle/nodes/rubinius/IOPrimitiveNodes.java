@@ -538,7 +538,7 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public RubyString sysread(VirtualFrame frame, RubyBasicObject file, int length) {
+        public RubyBasicObject sysread(VirtualFrame frame, RubyBasicObject file, int length) {
             final int fd = getDescriptor(file);
 
             final ByteBuffer buffer = ByteBuffer.allocate(length);

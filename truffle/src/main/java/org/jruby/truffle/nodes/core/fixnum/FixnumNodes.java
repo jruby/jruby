@@ -1085,13 +1085,13 @@ public abstract class FixnumNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString inspect(int n) {
+        public RubyBasicObject inspect(int n) {
             return createString(Integer.toString(n));
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyString inspect(long n) {
+        public RubyBasicObject inspect(long n) {
             return createString(Long.toString(n));
         }
 
@@ -1139,19 +1139,19 @@ public abstract class FixnumNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(int n, NotProvided base) {
+        public RubyBasicObject toS(int n, NotProvided base) {
             return createString(Integer.toString(n));
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(long n, NotProvided base) {
+        public RubyBasicObject toS(long n, NotProvided base) {
             return createString(Long.toString(n));
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(long n, int base) {
+        public RubyBasicObject toS(long n, int base) {
             if (base < 2 || base > 36) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));

@@ -249,27 +249,27 @@ public abstract class RubyNode extends Node {
         return getContext().getCoreLibrary().getNilObject();
     }
 
-    protected RubyString createEmptyString() {
+    protected RubyBasicObject createEmptyString() {
         return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
     }
 
-    protected RubyString createString(String string) {
+    protected RubyBasicObject createString(String string) {
         return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), string);
     }
 
-    protected RubyString createString(String string, Encoding encoding) {
+    protected RubyBasicObject createString(String string, Encoding encoding) {
         return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), string, encoding);
     }
 
-    protected RubyString createString(byte[] bytes) {
+    protected RubyBasicObject createString(byte[] bytes) {
         return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
     }
 
-    protected RubyString createString(ByteBuffer bytes) {
+    protected RubyBasicObject createString(ByteBuffer bytes) {
         return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
     }
 
-    protected RubyString createString(ByteList bytes) {
+    protected RubyBasicObject createString(ByteList bytes) {
         return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
     }
 

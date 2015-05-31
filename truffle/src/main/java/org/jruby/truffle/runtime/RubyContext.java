@@ -496,8 +496,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return ArrayNodes.fromObjects(coreLibrary.getArrayClass(), store);
     }
 
-    public RubyString toTruffle(org.jruby.RubyString jrubyString) {
-        final RubyString truffleString = StringNodes.createString(getCoreLibrary().getStringClass(), jrubyString.getByteList().dup());
+    public RubyBasicObject toTruffle(org.jruby.RubyString jrubyString) {
+        final RubyBasicObject truffleString = StringNodes.createString(getCoreLibrary().getStringClass(), jrubyString.getByteList().dup());
 
         if (jrubyString.isTaint()) {
             RubyBasicObject.setInstanceVariable(truffleString, RubyBasicObject.TAINTED_IDENTIFIER, true);

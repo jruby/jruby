@@ -475,7 +475,7 @@ public abstract class BigDecimalNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(RubyBasicObject value) {
+        public RubyBasicObject toS(RubyBasicObject value) {
             final BigDecimal bigDecimal = getBigDecimalValue(value);
             final boolean negative = bigDecimal.signum() == -1;
 

@@ -77,7 +77,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyString backtick(RubyString command) {
+        public RubyBasicObject backtick(RubyString command) {
             // Command is lexically a string interoplation, so variables will already have been expanded
 
             CompilerDirectives.transferToInterpreter();
@@ -683,7 +683,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyString gets(VirtualFrame frame) {
+        public RubyBasicObject gets(VirtualFrame frame) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO(CS): having some trouble interacting with JRuby stdin - so using this hack
@@ -700,7 +700,7 @@ public abstract class KernelNodes {
                 }
             });
 
-            final RubyString rubyLine = createString(line);
+            final RubyBasicObject rubyLine = createString(line);
 
             // Set the local variable $_ in the caller
 
@@ -1674,7 +1674,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization(guards = {"isRubyString(firstArgument(arguments))", "byteListsEqual(asRubyString(firstArgument(arguments)), cachedFormat)"})
-        public RubyString formatCached(
+        public RubyBasicObject formatCached(
                 VirtualFrame frame,
                 Object[] arguments,
                 @Cached("privatizeByteList(asRubyString(firstArgument(arguments)))") ByteList cachedFormat,
@@ -1694,7 +1694,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization(guards = "isRubyString(firstArgument(arguments))", contains = "formatCached")
-        public RubyString formatUncached(
+        public RubyBasicObject formatUncached(
                 VirtualFrame frame,
                 Object[] arguments,
                 @Cached("create()") IndirectCallNode callPackNode) {
@@ -1731,8 +1731,8 @@ public abstract class KernelNodes {
             }
         }
 
-        private RubyString finishFormat(ByteList format, PackResult result) {
-            final RubyString string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
+        private RubyBasicObject finishFormat(ByteList format, PackResult result) {
+            final RubyBasicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
 
             if (format.length() == 0) {
                 StringNodes.forceEncoding(string, USASCIIEncoding.INSTANCE);
@@ -1907,7 +1907,7 @@ public abstract class KernelNodes {
         public abstract RubyString executeToS(VirtualFrame frame, Object self);
 
         @Specialization
-        public RubyString toS(VirtualFrame frame, Object self) {
+        public RubyBasicObject toS(VirtualFrame frame, Object self) {
             CompilerDirectives.transferToInterpreter();
 
             String className = classNode.executeGetClass(frame, self).getName();
