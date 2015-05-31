@@ -19,6 +19,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeChildren({
         @NodeChild(value="array", type=RubyNode.class),
@@ -38,7 +39,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     @Specialization(
             guards={"isNullArray(array)"}
     )
-    public RubyArray generalizeNull(RubyArray array, int requiredCapacity) {
+    public RubyBasicObject generalizeNull(RubyArray array, int requiredCapacity) {
         ArrayNodes.setStore(array, new Object[requiredCapacity], ArrayNodes.getSize(array));
         return array;
     }
@@ -46,7 +47,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     @Specialization(
             guards={"isIntArray(array)"}
     )
-    public RubyArray generalizeInt(RubyArray array, int requiredCapacity) {
+    public RubyBasicObject generalizeInt(RubyArray array, int requiredCapacity) {
         final int[] intStore = (int[]) ArrayNodes.getStore(array);
         ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
         return array;
@@ -55,7 +56,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     @Specialization(
             guards={"isLongArray(array)"}
     )
-    public RubyArray generalizeLong(RubyArray array, int requiredCapacity) {
+    public RubyBasicObject generalizeLong(RubyArray array, int requiredCapacity) {
         final long[] intStore = (long[]) ArrayNodes.getStore(array);
         ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
         return array;
@@ -64,7 +65,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     @Specialization(
             guards={"isDoubleArray(array)"}
     )
-    public RubyArray generalizeDouble(RubyArray array, int requiredCapacity) {
+    public RubyBasicObject generalizeDouble(RubyArray array, int requiredCapacity) {
         final double[] intStore = (double[]) ArrayNodes.getStore(array);
         ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
         return array;

@@ -895,7 +895,7 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "isNullHash(hash)")
-        public RubyArray mapNull(VirtualFrame frame, RubyBasicObject hash, RubyProc block) {
+        public RubyBasicObject mapNull(VirtualFrame frame, RubyBasicObject hash, RubyProc block) {
             assert HashOperations.verifyStore(hash);
 
             return createEmptyArray();
@@ -903,7 +903,7 @@ public abstract class HashNodes {
 
         @ExplodeLoop
         @Specialization(guards = "isPackedHash(hash)")
-        public RubyArray mapPackedArray(VirtualFrame frame, RubyBasicObject hash, RubyProc block) {
+        public RubyBasicObject mapPackedArray(VirtualFrame frame, RubyBasicObject hash, RubyProc block) {
             assert HashOperations.verifyStore(hash);
 
             final Object[] store = (Object[]) getStore(hash);
@@ -935,12 +935,12 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "isBucketHash(hash)")
-        public RubyArray mapBuckets(VirtualFrame frame, RubyBasicObject hash, RubyProc block) {
+        public RubyBasicObject mapBuckets(VirtualFrame frame, RubyBasicObject hash, RubyProc block) {
             CompilerDirectives.transferToInterpreter();
 
             assert HashOperations.verifyStore(hash);
 
-            final RubyArray array = createEmptyArray();
+            final RubyBasicObject array = createEmptyArray();
 
             for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
                 ArrayNodes.slowPush(array, yield(frame, block, keyValue.getKey(), keyValue.getValue()));

@@ -69,12 +69,12 @@ public abstract class ArrayCastNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubyBignum(value)")
-    public RubyBasicObject cast(RubyBasicObject value) {
+    public RubyBasicObject castBignum(RubyBasicObject value) {
         return nil();
     }
 
-    @Specialization
-    public RubyArray cast(RubyArray array) {
+    @Specialization(guards = "isRubyArray(array)")
+    public RubyBasicObject castArray(RubyBasicObject array) {
         return array;
     }
 
@@ -97,7 +97,7 @@ public abstract class ArrayCastNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = {"!isNil(object)", "!isRubyArray(object)"})
+    @Specialization(guards = {"!isNil(object)", "!isRubyBignum(object)", "!isRubyArray(object)"})
     public Object cast(VirtualFrame frame, RubyBasicObject object) {
         final Object result = toArrayNode.call(frame, object, "to_ary", null, new Object[]{});
 

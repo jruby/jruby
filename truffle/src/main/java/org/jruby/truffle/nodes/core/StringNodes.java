@@ -787,7 +787,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyArray bytes(RubyString string) {
+        public RubyBasicObject bytes(RubyString string) {
             final byte[] bytes = getByteList(string).bytes();
 
             final int[] store = new int[bytes.length];

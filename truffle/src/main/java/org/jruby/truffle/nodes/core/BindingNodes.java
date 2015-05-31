@@ -27,7 +27,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -241,8 +241,8 @@ public abstract class BindingNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyArray localVariables(RubyBinding binding) {
-            final RubyArray array = createEmptyArray();
+        public RubyBasicObject localVariables(RubyBinding binding) {
+            final RubyBasicObject array = createEmptyArray();
 
             MaterializedFrame frame = binding.getFrame();
 

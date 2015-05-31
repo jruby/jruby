@@ -378,7 +378,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyArray times() {
+        public RubyBasicObject times() {
             // Copied from org/jruby/RubyProcess.java - see copyright and license information there
 
             Times tms = posix().times();

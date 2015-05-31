@@ -629,7 +629,7 @@ public abstract class IOPrimitiveNodes {
             return max;
         }
 
-        private RubyArray getSetObjects(Object[] objects, int[] fds, FDSet set) {
+        private RubyBasicObject getSetObjects(Object[] objects, int[] fds, FDSet set) {
             final Object[] setObjects = new Object[objects.length];
             int setFdsCount = 0;
 

@@ -133,7 +133,7 @@ public class CoreLibrary {
     private final RubyClass threadErrorClass;
     private final RubyClass ioBufferClass;
 
-    private final RubyArray argv;
+    private final RubyBasicObject argv;
     private final RubyBasicObject globalVariablesObject;
     private final RubyBasicObject mainObject;
     private final RubyBasicObject nilObject;
@@ -1279,7 +1279,7 @@ public class CoreLibrary {
         return kernelModule;
     }
 
-    public RubyArray getArgv() {
+    public RubyBasicObject getArgv() {
         return argv;
     }
 
@@ -1287,12 +1287,12 @@ public class CoreLibrary {
         return globalVariablesObject;
     }
 
-    public RubyArray getLoadPath() {
-        return (RubyArray) globalVariablesObject.getInstanceVariable("$LOAD_PATH");
+    public RubyBasicObject getLoadPath() {
+        return (RubyBasicObject) globalVariablesObject.getInstanceVariable("$LOAD_PATH");
     }
 
-    public RubyArray getLoadedFeatures() {
-        return (RubyArray) globalVariablesObject.getInstanceVariable("$LOADED_FEATURES");
+    public RubyBasicObject getLoadedFeatures() {
+        return (RubyBasicObject) globalVariablesObject.getInstanceVariable("$LOADED_FEATURES");
     }
 
     public RubyBasicObject getMainObject() {

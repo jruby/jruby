@@ -22,7 +22,10 @@ import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubyTime;
 import org.jruby.util.RubyDateFormatter;
 
 /**
@@ -153,7 +156,7 @@ public abstract class TimePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyArray timeDecompose(RubyTime time) {
+        public RubyBasicObject timeDecompose(RubyTime time) {
             final DateTime dateTime = time.getDateTime();
             final int sec = dateTime.getSecondOfMinute();
             final int min = dateTime.getMinuteOfHour();

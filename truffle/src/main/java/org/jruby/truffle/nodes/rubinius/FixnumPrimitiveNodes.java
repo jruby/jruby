@@ -19,7 +19,6 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.math.BigInteger;
@@ -42,17 +41,17 @@ public abstract class FixnumPrimitiveNodes {
         }
 
         @Specialization
-        public RubyArray coerce(int a, int b) {
+        public RubyBasicObject coerce(int a, int b) {
             return createArray(new int[]{b, a}, 2);
         }
 
         @Specialization
-        public RubyArray coerce(long a, int b) {
+        public RubyBasicObject coerce(long a, int b) {
             return createArray(new long[]{b, a}, 2);
         }
 
         @Specialization(guards = "!isInteger(b)")
-        public RubyArray coerce(int a, Object b) {
+        public RubyBasicObject coerce(int a, Object b) {
             return null; // Primitive failure
         }
 

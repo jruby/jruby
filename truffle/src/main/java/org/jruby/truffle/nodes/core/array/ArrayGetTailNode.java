@@ -19,6 +19,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
 @ImportStatic(ArrayGuards.class)
@@ -32,14 +33,14 @@ public abstract class ArrayGetTailNode extends RubyNode {
     }
 
     @Specialization(guards = "isNullArray(array)")
-    public RubyArray getTailNull(RubyArray array) {
+    public RubyBasicObject getTailNull(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
         return createEmptyArray();
     }
 
     @Specialization(guards = "isIntArray(array)")
-    public RubyArray getTailIntegerFixnum(RubyArray array) {
+    public RubyBasicObject getTailIntegerFixnum(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {
@@ -50,7 +51,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
     }
 
     @Specialization(guards = "isLongArray(array)")
-    public RubyArray getTailLongFixnum(RubyArray array) {
+    public RubyBasicObject getTailLongFixnum(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {
@@ -61,7 +62,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
     }
 
     @Specialization(guards = "isDoubleArray(array)")
-    public RubyArray getTailFloat(RubyArray array) {
+    public RubyBasicObject getTailFloat(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {
@@ -72,7 +73,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
     }
 
     @Specialization(guards = "isObjectArray(array)")
-    public RubyArray getTailObject(RubyArray array) {
+    public RubyBasicObject getTailObject(RubyArray array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {

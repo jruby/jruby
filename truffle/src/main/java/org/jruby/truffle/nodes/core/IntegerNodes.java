@@ -19,7 +19,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RedoException;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 
@@ -135,7 +134,7 @@ public abstract class IntegerNodes {
         }
 
         @Specialization
-        public RubyArray times(VirtualFrame frame, int n, NotProvided block) {
+        public RubyBasicObject times(VirtualFrame frame, int n, NotProvided block) {
             final int[] array = new int[n];
 
             for (int i = 0; i < n; i++) {

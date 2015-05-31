@@ -192,7 +192,7 @@ public abstract class MethodNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyArray parameters(RubyBasicObject method) {
+        public RubyBasicObject parameters(RubyBasicObject method) {
             final ArgsNode argsNode = getMethod(method).getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
 
             final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);

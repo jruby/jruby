@@ -159,6 +159,8 @@ public abstract class RubyNode extends Node {
         }
     }
 
+    // If you try to make this RubyBasicObject things break in the DSL
+
     public RubyArray executeRubyArray(VirtualFrame frame) throws UnexpectedResultException {
         final Object value = execute(frame);
 
@@ -271,23 +273,23 @@ public abstract class RubyNode extends Node {
         return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
     }
 
-    protected RubyArray createEmptyArray() {
+    protected RubyBasicObject createEmptyArray() {
         return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
     }
 
-    protected RubyArray createArray(int[] store, int size) {
+    protected RubyBasicObject createArray(int[] store, int size) {
         return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
     }
 
-    protected RubyArray createArray(long[] store, int size) {
+    protected RubyBasicObject createArray(long[] store, int size) {
         return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
     }
 
-    protected RubyArray createArray(double[] store, int size) {
+    protected RubyBasicObject createArray(double[] store, int size) {
         return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
     }
 
-    protected RubyArray createArray(Object[] store, int size) {
+    protected RubyBasicObject createArray(Object[] store, int size) {
         return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
     }
 

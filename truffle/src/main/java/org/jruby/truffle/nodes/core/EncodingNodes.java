@@ -273,7 +273,7 @@ public abstract class EncodingNodes {
         }
 
         @Specialization
-        public RubyArray list() {
+        public RubyBasicObject list() {
             CompilerDirectives.transferToInterpreter();
 
             final RubyEncoding[] encodings = RubyEncoding.cloneEncodingList();

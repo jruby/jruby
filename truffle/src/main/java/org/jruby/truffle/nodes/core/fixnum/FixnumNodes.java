@@ -25,7 +25,6 @@ import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 
@@ -455,17 +454,17 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public RubyArray divMod(long a, long b) {
+        public RubyBasicObject divMod(long a, long b) {
             return divModNode.execute(a, b);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public RubyArray divMod(long a, RubyBasicObject b) {
+        public RubyBasicObject divMod(long a, RubyBasicObject b) {
             return divModNode.execute(a, BignumNodes.getBigIntegerValue(b));
         }
 
         @Specialization
-        public RubyArray divMod(long a, double b) {
+        public RubyBasicObject divMod(long a, double b) {
             return divModNode.execute(a, b);
         }
 

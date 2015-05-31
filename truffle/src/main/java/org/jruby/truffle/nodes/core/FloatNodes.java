@@ -21,7 +21,6 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 
@@ -258,17 +257,17 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public RubyArray divMod(double a, long b) {
+        public RubyBasicObject divMod(double a, long b) {
             return divModNode.execute(a, b);
         }
 
         @Specialization
-        public RubyArray divMod(double a, double b) {
+        public RubyBasicObject divMod(double a, double b) {
             return divModNode.execute(a, b);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public RubyArray divMod(double a, RubyBasicObject b) {
+        public RubyBasicObject divMod(double a, RubyBasicObject b) {
             return divModNode.execute(a, BignumNodes.getBigIntegerValue(b));
         }
 

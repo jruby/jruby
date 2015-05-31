@@ -302,18 +302,18 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray callerLocations(NotProvided omit, NotProvided length) {
+        public RubyBasicObject callerLocations(NotProvided omit, NotProvided length) {
             return callerLocations(1, -1);
         }
 
         @Specialization
-        public RubyArray callerLocations(int omit, NotProvided length) {
+        public RubyBasicObject callerLocations(int omit, NotProvided length) {
             return callerLocations(omit, -1);
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyArray callerLocations(int omit, int length) {
+        public RubyBasicObject callerLocations(int omit, int length) {
             final RubyClass threadBacktraceLocationClass = getContext().getCoreLibrary().getThreadBacktraceLocationClass();
 
             final Backtrace backtrace = RubyCallStack.getBacktrace(this, 1 + omit, true);
@@ -901,14 +901,14 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray instanceVariables(RubyBasicObject self) {
+        public RubyBasicObject instanceVariables(RubyBasicObject self) {
             CompilerDirectives.transferToInterpreter();
 
             final Object[] instanceVariableNames = RubyBasicObject.getFieldNames(self);
 
             Arrays.sort(instanceVariableNames);
 
-            final RubyArray array = createEmptyArray();
+            final RubyBasicObject array = createEmptyArray();
 
             for (Object name : instanceVariableNames) {
                 if (name instanceof String) {
@@ -1005,10 +1005,10 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyArray localVariables() {
+        public RubyBasicObject localVariables() {
             CompilerDirectives.transferToInterpreter();
 
-            final RubyArray array = createEmptyArray();
+            final RubyBasicObject array = createEmptyArray();
 
             for (Object name : Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
                 if (name instanceof String) {

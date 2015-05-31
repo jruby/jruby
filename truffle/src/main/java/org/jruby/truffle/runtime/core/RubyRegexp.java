@@ -45,11 +45,9 @@ public class RubyRegexp extends RubyBasicObject {
     @CompilationFinal private ByteList source;
     @CompilationFinal private RegexpOptions options;
 
-
     public RubyRegexp(RubyClass regexpClass) {
         super(regexpClass);
     }
-
 
     public RubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, RegexpOptions options) {
         this(regexpClass);
@@ -407,7 +405,7 @@ public class RubyRegexp extends RubyBasicObject {
             setThread("$~", lastGoodMatchData);
             return strings.toArray(new RubyString[strings.size()]);
         } else {
-            final List<RubyArray> allMatches = new ArrayList<>();
+            final List<RubyBasicObject> allMatches = new ArrayList<>();
 
             while (true) {
                 Object matchData = matchCommon(string, false, true, matcher, p + end, stringBytes.length);
