@@ -20,8 +20,6 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
-import java.math.BigInteger;
-
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
 })

@@ -12,13 +12,13 @@ package org.jruby.truffle.nodes.arguments;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.core.RubyClass;
 
 /**
  * Read the rest of arguments after a certain point into an array.
@@ -50,7 +50,7 @@ public class ReadRestArgumentNode extends RubyNode {
         if (keywordArguments) {
             final Object lastArgument = RubyArguments.getUserArgument(frame.getArguments(), RubyArguments.getUserArgumentsCount(frame.getArguments()) - 1);
 
-            if (lastArgument instanceof RubyHash) {
+            if (RubyGuards.isRubyHash(lastArgument)) {
                 endIndex -= 1;
             }
         }

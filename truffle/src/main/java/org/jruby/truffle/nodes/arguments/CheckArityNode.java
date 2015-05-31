@@ -16,7 +16,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.methods.Arity;
@@ -45,7 +45,7 @@ public class CheckArityNode extends RubyNode {
     public void executeVoid(VirtualFrame frame) {
         final Object[] frameArguments = frame.getArguments();
         final int given;
-        final RubyHash keywordArguments;
+        final RubyBasicObject keywordArguments;
         
         //TODO (MS): Check merge 
         if (RubyArguments.isKwOptimized(frame.getArguments())) {
@@ -76,7 +76,7 @@ public class CheckArityNode extends RubyNode {
         }
     }
 
-    private boolean checkArity(VirtualFrame frame, int given, RubyHash keywordArguments) {
+    private boolean checkArity(VirtualFrame frame, int given, RubyBasicObject keywordArguments) {
         if (keywordArguments != null) {
             given -= 1;
         }

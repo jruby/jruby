@@ -16,8 +16,8 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.UnboundMethodNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
-import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.core.*;
 
 public abstract class RubyGuards {

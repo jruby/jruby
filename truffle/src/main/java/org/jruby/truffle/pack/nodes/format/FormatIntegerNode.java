@@ -9,12 +9,10 @@
  */
 package org.jruby.truffle.pack.nodes.format;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.parser.FormatDirective;

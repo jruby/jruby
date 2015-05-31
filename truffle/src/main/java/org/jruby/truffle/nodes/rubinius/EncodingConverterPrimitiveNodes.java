@@ -21,8 +21,8 @@ import org.jcodings.transcode.EConvResult;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
@@ -53,9 +53,9 @@ public abstract class EncodingConverterPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyHash(options)")
         public Object encodingConverterPrimitiveConvert(RubyEncodingConverter encodingConverter, RubyString source,
-                                                        RubyString target, int offset, int size, RubyHash options) {
+                                                        RubyString target, int offset, int size, RubyBasicObject options) {
             throw new UnsupportedOperationException("not implemented");
         }
 

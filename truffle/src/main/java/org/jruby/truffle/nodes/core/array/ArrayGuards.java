@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.core.array;
 
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyRange;
 
 public class ArrayGuards {
 

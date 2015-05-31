@@ -16,8 +16,8 @@ import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
-
 import org.jruby.runtime.Helpers;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -120,11 +120,11 @@ public class RubyBasicObject implements TruffleObject {
 
     @Override
     public ForeignAccessFactory getForeignAccessFactory() {
-        if (this instanceof RubyArray) {
+        if (RubyGuards.isRubyArray(this)) {
             return new ArrayForeignAccessFactory(getContext());
-        } else if (this instanceof RubyHash) {
+        } else if (RubyGuards.isRubyHash(this)) {
             return new HashForeignAccessFactory(getContext());
-        } else if (this instanceof RubyString) {
+        } else if (RubyGuards.isRubyString(this)) {
             return new StringForeignAccessFactory(getContext());
         } else {
             return new BasicForeignAccessFactory(getContext());
@@ -146,14 +146,14 @@ public class RubyBasicObject implements TruffleObject {
     }
 
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-        if (this instanceof RubyArray) {
+        if (RubyGuards.isRubyArray(this)) {
             for (Object object : ArrayNodes.slowToArray((RubyArray) this)) {
                 if (object instanceof RubyBasicObject) {
                     ((RubyBasicObject) object).visitObjectGraph(visitor);
                 }
             }
-        } else if (this instanceof RubyHash) {
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues((RubyHash) this)) {
+        } else if (RubyGuards.isRubyHash(this)) {
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(this)) {
                 if (keyValue.getKey() instanceof RubyBasicObject) {
                     ((RubyBasicObject) keyValue.getKey()).visitObjectGraph(visitor);
                 }

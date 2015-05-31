@@ -10,12 +10,12 @@
 package org.jruby.truffle.runtime.hash;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyString;
 
 import java.util.ArrayList;
@@ -23,19 +23,21 @@ import java.util.List;
 
 public class HashOperations {
 
-    public static RubyHash verySlowFromEntries(RubyContext context, List<KeyValue> entries, boolean byIdentity) {
+    public static RubyBasicObject verySlowFromEntries(RubyContext context, List<KeyValue> entries, boolean byIdentity) {
         return verySlowFromEntries(context.getCoreLibrary().getHashClass(), entries, byIdentity);
     }
 
     @TruffleBoundary
-    public static RubyHash verySlowFromEntries(RubyClass hashClass, List<KeyValue> entries, boolean byIdentity) {
-        final RubyHash hash = HashNodes.createEmptyHash(hashClass);
+    public static RubyBasicObject verySlowFromEntries(RubyClass hashClass, List<KeyValue> entries, boolean byIdentity) {
+        final RubyBasicObject hash = HashNodes.createEmptyHash(hashClass);
         verySlowSetKeyValues(hash, entries, byIdentity);
         assert HashOperations.verifyStore(hash);
         return hash;
     }
 
-    public static void dump(RubyHash hash) {
+    public static void dump(RubyBasicObject hash) {
+        assert RubyGuards.isRubyHash(hash);
+
         final StringBuilder builder = new StringBuilder();
 
         builder.append("[");
@@ -89,7 +91,7 @@ public class HashOperations {
     }
 
     @TruffleBoundary
-    public static List<KeyValue> verySlowToKeyValues(RubyHash hash) {
+    public static List<KeyValue> verySlowToKeyValues(RubyBasicObject hash) {
         final List<KeyValue> keyValues = new ArrayList<>();
 
         if (HashNodes.getStore(hash) instanceof Entry[]) {
@@ -112,7 +114,7 @@ public class HashOperations {
     }
 
     @TruffleBoundary
-    public static HashLookupResult verySlowFindBucket(RubyHash hash, Object key, boolean byIdentity) {
+    public static HashLookupResult verySlowFindBucket(RubyBasicObject hash, Object key, boolean byIdentity) {
         final Object hashValue = DebugOperations.send(hash.getContext(), key, "hash", null);
 
         final int hashed;
@@ -154,7 +156,7 @@ public class HashOperations {
     }
 
     @TruffleBoundary
-    public static void verySlowSetAtBucket(RubyHash hash, HashLookupResult hashLookupResult, Object key, Object value) {
+    public static void verySlowSetAtBucket(RubyBasicObject hash, HashLookupResult hashLookupResult, Object key, Object value) {
         assert verifyStore(hash);
 
         assert HashNodes.getStore(hash) instanceof Entry[];
@@ -179,7 +181,7 @@ public class HashOperations {
     }
 
     @TruffleBoundary
-    public static boolean verySlowSetInBuckets(RubyHash hash, Object key, Object value, boolean byIdentity) {
+    public static boolean verySlowSetInBuckets(RubyBasicObject hash, Object key, Object value, boolean byIdentity) {
         assert verifyStore(hash);
 
         if (!byIdentity && key instanceof RubyString) {
@@ -195,7 +197,7 @@ public class HashOperations {
     }
 
     @TruffleBoundary
-    public static void verySlowSetKeyValues(RubyHash hash, List<KeyValue> keyValues, boolean byIdentity) {
+    public static void verySlowSetKeyValues(RubyBasicObject hash, List<KeyValue> keyValues, boolean byIdentity) {
         assert verifyStore(hash);
 
         final int size = keyValues.size();
@@ -214,7 +216,7 @@ public class HashOperations {
         assert verifyStore(hash);
     }
 
-    public static boolean verifyStore(RubyHash hash) {
+    public static boolean verifyStore(RubyBasicObject hash) {
         return verifyStore(HashNodes.getStore(hash), HashNodes.getSize(hash), HashNodes.getFirstInSequence(hash), HashNodes.getLastInSequence(hash));
     }
 

@@ -19,18 +19,15 @@ import com.oracle.truffle.api.instrument.ProbeNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
-
 import org.jcodings.Encoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.util.ByteList;
@@ -172,16 +169,6 @@ public abstract class RubyNode extends Node {
         }
     }
 
-    public RubyHash executeRubyHash(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (value instanceof RubyHash) {
-            return (RubyHash) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
     public RubyRegexp executeRubyRegexp(VirtualFrame frame) throws UnexpectedResultException {
         final Object value = execute(frame);
 
@@ -207,6 +194,18 @@ public abstract class RubyNode extends Node {
 
         if (value instanceof RubyProc) {
             return (RubyProc) value;
+        } else {
+            throw new UnexpectedResultException(value);
+        }
+    }
+
+    // If you try to make this RubyBasicObject things break in the DSL
+
+    public RubyHash executeRubyHash(VirtualFrame frame) throws UnexpectedResultException {
+        final Object value = execute(frame);
+
+        if (RubyGuards.isRubyHash(value)) {
+            return (RubyHash) value;
         } else {
             throw new UnexpectedResultException(value);
         }

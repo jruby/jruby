@@ -20,7 +20,6 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -45,6 +44,7 @@ import org.jruby.truffle.pack.parser.FormatParser;
 import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.pack.runtime.exceptions.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -55,7 +55,6 @@ import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.FeatureManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
-import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.util.ByteList;
 
 import java.io.BufferedReader;
@@ -63,7 +62,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
@@ -83,7 +84,7 @@ public abstract class KernelNodes {
 
             final RubyContext context = getContext();
 
-            final RubyHash env = context.getCoreLibrary().getENV();
+            final RubyBasicObject env = context.getCoreLibrary().getENV();
 
             final List<String> envp = new ArrayList<>();
 
@@ -536,7 +537,7 @@ public abstract class KernelNodes {
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
 
-            final RubyHash env = context.getCoreLibrary().getENV();
+            final RubyBasicObject env = context.getCoreLibrary().getENV();
 
             for (KeyValue keyValue : HashOperations.verySlowToKeyValues(env)) {
                 builder.environment().put(keyValue.getKey().toString(), keyValue.getValue().toString());
@@ -1803,7 +1804,7 @@ public abstract class KernelNodes {
 
             // TODO(CS 5-JAN-15): very simplistic implementation
 
-            final RubyHash env = getContext().getCoreLibrary().getENV();
+            final RubyBasicObject env = getContext().getCoreLibrary().getENV();
 
             final List<String> envp = new ArrayList<>();
 

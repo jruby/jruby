@@ -15,9 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.constants.platform.Errno;
-
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConvFlags;
@@ -33,11 +31,7 @@ import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
 import org.jruby.truffle.nodes.ext.DigestNodesFactory;
 import org.jruby.truffle.nodes.ext.ZlibNodesFactory;
-import org.jruby.truffle.nodes.objects.Allocator;
-import org.jruby.truffle.nodes.objects.FreezeNode;
-import org.jruby.truffle.nodes.objects.FreezeNodeGen;
-import org.jruby.truffle.nodes.objects.SingletonClassNode;
-import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
+import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.rubinius.*;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -152,7 +146,7 @@ public class CoreLibrary {
     private final Map<Errno, RubyClass> errnoClasses = new HashMap<>();
 
     @CompilerDirectives.CompilationFinal private RubySymbol eachSymbol;
-    @CompilerDirectives.CompilationFinal private RubyHash envHash;
+    @CompilerDirectives.CompilationFinal private RubyBasicObject envHash;
 
     private enum State {
         INITIALIZING,
@@ -1309,11 +1303,11 @@ public class CoreLibrary {
         return nilObject;
     }
 
-    public RubyHash getENV() {
+    public RubyBasicObject getENV() {
         return envHash;
     }
 
-    private RubyHash getSystemEnv() {
+    private RubyBasicObject getSystemEnv() {
         final List<KeyValue> entries = new ArrayList<>();
 
         for (Map.Entry<String, String> variable : System.getenv().entrySet()) {
