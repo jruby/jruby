@@ -14,12 +14,8 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 
 public final class RubyArray extends RubyBasicObject {
 
-    public Object store;
-    public int size;
-
-    public RubyArray(RubyClass arrayClass, Object store, int size, DynamicObject dynamicObject) {
+    public RubyArray(RubyClass arrayClass, DynamicObject dynamicObject) {
         super(arrayClass, dynamicObject);
-        ArrayNodes.setStore(this, store, size);
     }
 
 }

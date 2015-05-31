@@ -17,8 +17,7 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.*;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
-import com.oracle.truffle.api.object.Shape;
+import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jcodings.specific.USASCIIEncoding;
@@ -59,6 +58,7 @@ import org.jruby.util.Memo;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Random;
 
 @CoreClass(name = "Array")
@@ -70,20 +70,39 @@ public abstract class ArrayNodes {
 
     public static final ArrayType ARRAY_TYPE = new ArrayType();
 
+    private static final HiddenKey STORE_IDENTIFIER = new HiddenKey("store");
+    private static final Property STORE_PROPERTY;
+
+    private static final HiddenKey SIZE_IDENTIFIER = new HiddenKey("size");
+    private static final Property SIZE_PROPERTY;
+
     private static final DynamicObjectFactory ARRAY_FACTORY;
 
     static {
-        final Shape shape = RubyBasicObject.LAYOUT.createShape(ARRAY_TYPE);
+        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+
+        STORE_PROPERTY = Property.create(STORE_IDENTIFIER, allocator.locationForType(Object.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        SIZE_PROPERTY = Property.create(SIZE_IDENTIFIER, allocator.locationForType(int.class, EnumSet.of(LocationModifier.NonNull)), 0);
+
+        final Shape shape = RubyBasicObject.LAYOUT.createShape(ARRAY_TYPE)
+                .addProperty(STORE_PROPERTY)
+                .addProperty(SIZE_PROPERTY);
+
         ARRAY_FACTORY = shape.createFactory();
     }
 
     public static Object getStore(RubyBasicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ((RubyArray) array).store;
+        assert array.getDynamicObject().getShape().hasProperty(STORE_IDENTIFIER);
+
+        return STORE_PROPERTY.get(array.getDynamicObject(), true);
     }
 
     public static void setStore(RubyBasicObject array, Object store, int size) {
         assert RubyGuards.isRubyArray(array);
+        assert array.getDynamicObject().getShape().hasProperty(STORE_IDENTIFIER);
+        assert array.getDynamicObject().getShape().hasProperty(SIZE_IDENTIFIER);
+
         assert verifyStore(store, size);
 
         if (RANDOMIZE_STORAGE_ARRAY) {
@@ -91,19 +110,35 @@ public abstract class ArrayNodes {
             assert verifyStore(store, size);
         }
 
-        ((RubyArray) array).store = store;
-        ((RubyArray) array).size = size;
+        try {
+            STORE_PROPERTY.set(array.getDynamicObject(), store, array.getDynamicObject().getShape());
+        } catch (IncompatibleLocationException | FinalLocationException e) {
+            throw new UnsupportedOperationException(e);
+        }
+
+        try {
+            SIZE_PROPERTY.set(array.getDynamicObject(), size, array.getDynamicObject().getShape());
+        } catch (IncompatibleLocationException | FinalLocationException e) {
+            throw new UnsupportedOperationException(e);
+        }
     }
 
     public static void setSize(RubyBasicObject array, int size) {
         assert RubyGuards.isRubyArray(array);
-        assert verifyStore(((RubyArray) array).store, size);
-        ((RubyArray) array).size = size;
+        assert array.getDynamicObject().getShape().hasProperty(SIZE_IDENTIFIER);
+
+        try {
+            SIZE_PROPERTY.set(array.getDynamicObject(), size, array.getDynamicObject().getShape());
+        } catch (IncompatibleLocationException | FinalLocationException e) {
+            throw new UnsupportedOperationException(e);
+        }
     }
 
     public static int getSize(RubyBasicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ((RubyArray) array).size;
+        assert array.getDynamicObject().getShape().hasProperty(SIZE_IDENTIFIER);
+
+        return (int) SIZE_PROPERTY.get(array.getDynamicObject(), true);
     }
 
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
@@ -276,22 +311,22 @@ public abstract class ArrayNodes {
 
     public static Object[] slowToArray(RubyBasicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayUtils.boxUntil(((RubyArray) array).store, ((RubyArray) array).size);
+        return ArrayUtils.boxUntil(getStore(array), getSize(array));
     }
 
     public static void slowUnshift(RubyBasicObject array, Object... values) {
         assert RubyGuards.isRubyArray(array);
-        final Object[] newStore = new Object[((RubyArray) array).size + values.length];
+        final Object[] newStore = new Object[getSize(array) + values.length];
         System.arraycopy(values, 0, newStore, 0, values.length);
-        ArrayUtils.copy(((RubyArray) array).store, newStore, values.length, ((RubyArray) array).size);
+        ArrayUtils.copy(getStore(array), newStore, values.length, getSize(array));
         setStore(array, newStore, newStore.length);
     }
 
     public static void slowPush(RubyBasicObject array, Object value) {
         assert RubyGuards.isRubyArray(array);
-        ((RubyArray) array).store = Arrays.copyOf(ArrayUtils.box(((RubyArray) array).store), ((RubyArray) array).size + 1);
-        ((Object[]) ((RubyArray) array).store)[((RubyArray) array).size] = value;
-        ((RubyArray) array).size++;
+        setStore(array, Arrays.copyOf(ArrayUtils.box(getStore(array)), getSize(array) + 1), getSize(array));
+        ((Object[]) getStore(array))[getSize(array)] = value;
+        setSize(array, getSize(array) + 1);
     }
 
     public static int normalizeIndex(RubyBasicObject array, int index) {
@@ -348,7 +383,7 @@ public abstract class ArrayNodes {
     }
 
     public static RubyArray createGeneralArray(RubyClass arrayClass, Object store, int size) {
-        return new RubyArray(arrayClass, store, size, ARRAY_FACTORY.newInstance());
+        return new RubyArray(arrayClass, ARRAY_FACTORY.newInstance(store, size));
     }
 
     @CoreMethod(names = "+", required = 1)
