@@ -149,6 +149,7 @@ class TestDir < Test::Unit::TestCase
   end
 
   def test_glob_inside_jar_file
+    # the respective files get found via the classloader
     jar_file = jar_file_with_spaces.sub(/.*!/, 'uri:classloader:')
 
     ["#{jar_file}/abc", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].each do |f|
