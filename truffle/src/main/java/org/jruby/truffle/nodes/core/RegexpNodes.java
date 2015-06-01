@@ -29,7 +29,6 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 
 import static org.jruby.util.StringSupport.CR_7BIT;
