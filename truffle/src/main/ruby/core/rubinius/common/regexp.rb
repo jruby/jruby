@@ -122,12 +122,12 @@ class Regexp
 
     str = "".encode(enc)
     sep = "|".encode(enc)
-    patterns.each_with_index do |pat, idx|
+    patterns.each_with_index do |pattern, idx|
       str << sep if idx != 0
-      if pat.kind_of? Regexp
-        str << pat.to_s
+      if pattern.kind_of? Regexp
+        str << pattern.to_s
       else
-        str << Regexp.quote(StringValue(pat))
+        str << Regexp.quote(StringValue(pattern))
       end
     end
 
