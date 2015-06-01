@@ -45,6 +45,8 @@ public class RubyRegexp extends RubyBasicObject {
     @CompilationFinal private ByteList source;
     @CompilationFinal private RegexpOptions options;
 
+    private Object cachedNames;
+
     public RubyRegexp(RubyClass regexpClass) {
         super(regexpClass);
     }
@@ -439,6 +441,14 @@ public class RubyRegexp extends RubyBasicObject {
         } catch (SyntaxException e) {
             throw new org.jruby.truffle.runtime.control.RaiseException(context.getCoreLibrary().regexpError(e.getMessage(), currentNode));
         }
+    }
+
+    public Object getCachedNames() {
+        return cachedNames;
+    }
+
+    public void setCachedNames(Object cachedNames) {
+        this.cachedNames = cachedNames;
     }
 
     public static class RegexpAllocator implements Allocator {

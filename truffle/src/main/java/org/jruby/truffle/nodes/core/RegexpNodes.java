@@ -11,13 +11,16 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.joni.NameEntry;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -25,6 +28,9 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import static org.jruby.util.StringSupport.CR_7BIT;
 
@@ -307,6 +313,60 @@ public abstract class RegexpNodes {
             return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), regexp.getSource(), regexp.getRegex().getOptions()).to_s()).getByteList());
         }
 
+    }
+
+    @RubiniusOnly
+    @NodeChild(value = "self")
+    public abstract static class RubiniusNamesNode extends RubyNode {
+
+        @Child private CallDispatchHeadNode newLookupTableNode;
+        @Child private CallDispatchHeadNode lookupTableWriteNode;
+
+        public RubiniusNamesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "!anyNames(regexp)")
+        public RubyBasicObject rubiniusNamesNoCaptures(RubyRegexp regexp) {
+            return nil();
+        }
+
+        @Specialization(guards = "anyNames(regexp)")
+        public Object rubiniusNames(VirtualFrame frame, RubyRegexp regexp) {
+            if (regexp.getCachedNames() != null) {
+                return regexp.getCachedNames();
+            }
+
+            if (newLookupTableNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                newLookupTableNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            if (lookupTableWriteNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                lookupTableWriteNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            final Object namesLookupTable = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
+
+            for (final Iterator<NameEntry> i = regexp.getRegex().namedBackrefIterator(); i.hasNext();) {
+                final NameEntry e = i.next();
+                final RubySymbol name = getContext().getSymbol(new ByteList(e.name, e.nameP, e.nameEnd - e.nameP, false));
+
+                final int[] backrefs = e.getBackRefs();
+                final RubyBasicObject backrefsRubyArray = ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), backrefs, backrefs.length);
+
+                lookupTableWriteNode.call(frame, namesLookupTable, "[]=", null, name, backrefsRubyArray);
+            }
+
+            regexp.setCachedNames(namesLookupTable);
+
+            return namesLookupTable;
+        }
+
+        public static boolean anyNames(RubyRegexp regexp) {
+            return regexp.getRegex().numberOfNames() > 0;
+        }
     }
 
 }
