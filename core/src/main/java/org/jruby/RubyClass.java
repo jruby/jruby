@@ -657,16 +657,14 @@ public class RubyClass extends RubyModule {
      */
     private static boolean checkFuncallRespondTo(ThreadContext context, RubyClass klass, IRubyObject recv, String mid) {
         Ruby runtime = context.runtime;
-        RubyClass defined_class;
         DynamicMethod me = klass.searchMethod("respond_to?");
 
         // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
         //       respond_to_missing? Same effect, I believe.
         if (me != null && !me.isUndefined() && !me.isBuiltin()) {
-            Arity arity = me.getArity();
+            int arityValue = me.getArity().getValue();
 
-            if (arity.getValue() > 2)
-                throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + arity + ")");
+            if (arityValue > 2) throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + arityValue + ")");
 
             IRubyObject result = me.call(context, recv, klass, "respond_to?", runtime.newSymbol(mid), runtime.getTrue());
             if (!result.isTrue()) {
