@@ -36,7 +36,7 @@ public class RubyProc extends RubyBasicObject {
     /** Call target for actual Proc arguments, which handle break differently */
     @CompilationFinal private CallTarget callTargetForProcs;
     /** Call target for lambdas and methods, which have strict arguments destructuring */
-    @CompilationFinal private CallTarget callTargetForMethods;
+    @CompilationFinal private CallTarget callTargetForLambdas;
     @CompilationFinal private MaterializedFrame declarationFrame;
     /** The method which defined the block, that is the lexically enclosing method.
      * Notably used by super to figure out in which method we were. */
@@ -50,20 +50,20 @@ public class RubyProc extends RubyBasicObject {
     }
 
     public RubyProc(RubyClass procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks,
-                    CallTarget callTargetForProcs, CallTarget callTargetForMethods, MaterializedFrame declarationFrame,
+                    CallTarget callTargetForProcs, CallTarget callTargetForLambdas, MaterializedFrame declarationFrame,
                     InternalMethod method, Object self, RubyProc block) {
         this(procClass, type);
-        initialize(sharedMethodInfo, callTargetForBlocks, callTargetForProcs, callTargetForMethods, declarationFrame,
+        initialize(sharedMethodInfo, callTargetForBlocks, callTargetForProcs, callTargetForLambdas, declarationFrame,
                 method, self, block);
     }
 
     public void initialize(SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks, CallTarget callTargetForProcs,
-                           CallTarget callTargetForMethods, MaterializedFrame declarationFrame, InternalMethod method,
+                           CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
                            Object self, RubyProc block) {
         this.sharedMethodInfo = sharedMethodInfo;
         this.callTargetForBlocks = callTargetForBlocks;
         this.callTargetForProcs = callTargetForProcs;
-        this.callTargetForMethods = callTargetForMethods;
+        this.callTargetForLambdas = callTargetForLambdas;
         this.declarationFrame = declarationFrame;
         this.method = method;
         this.self = self;
@@ -77,7 +77,7 @@ public class RubyProc extends RubyBasicObject {
             case PROC:
                 return callTargetForProcs;
             case LAMBDA:
-                return callTargetForMethods;
+                return callTargetForLambdas;
         }
 
         throw new UnsupportedOperationException(type.toString());
@@ -105,8 +105,8 @@ public class RubyProc extends RubyBasicObject {
         return callTargetForProcs;
     }
 
-    public CallTarget getCallTargetForMethods() {
-        return callTargetForMethods;
+    public CallTarget getCallTargetForLambdas() {
+        return callTargetForLambdas;
     }
 
     public MaterializedFrame getDeclarationFrame() {

@@ -220,29 +220,29 @@ class MethodTranslator extends BodyTranslator {
 
             final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
 
-            // Methods
-            final RubyRootNode newRootNodeForMethods = rootNode.cloneRubyRootNode();
+            // Lambdas
+            final RubyRootNode newRootNodeForLambdas = rootNode.cloneRubyRootNode();
 
-            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForMethods, BehaveAsBlockNode.class)) {
+            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForLambdas, BehaveAsBlockNode.class)) {
                 behaveAsBlockNode.replace(behaveAsBlockNode.getNotAsBlock());
             }
 
-            for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newRootNodeForMethods, BehaveAsProcNode.class)) {
+            for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newRootNodeForLambdas, BehaveAsProcNode.class)) {
                 behaveAsProcNode.replace(behaveAsProcNode.getNotAsProc());
             }
 
             final RubyRootNode newRootNodeWithCatchReturn = new RubyRootNode(
                     context,
-                    newRootNodeForMethods.getSourceSection(),
-                    newRootNodeForMethods.getFrameDescriptor(), newRootNodeForMethods.getSharedMethodInfo(),
+                    newRootNodeForLambdas.getSourceSection(),
+                    newRootNodeForLambdas.getFrameDescriptor(), newRootNodeForLambdas.getSharedMethodInfo(),
                     new CatchBreakAsReturnNode(context, sourceSection,
-                        new CatchReturnNode(context, newRootNodeForMethods.getSourceSection(),
-                            newRootNodeForMethods.getBody(), getEnvironment().getReturnID())));
+                        new CatchReturnNode(context, newRootNodeForLambdas.getSourceSection(),
+                            newRootNodeForLambdas.getBody(), getEnvironment().getReturnID())));
 
-            final CallTarget callTargetAsMethod = Truffle.getRuntime().createCallTarget(newRootNodeWithCatchReturn);
+            final CallTarget callTargetAsLambda = Truffle.getRuntime().createCallTarget(newRootNodeWithCatchReturn);
 
             return new BlockDefinitionNode(context, sourceSection, environment.getSharedMethodInfo(),
-                    environment.needsDeclarationFrame(), callTargetAsBlock, callTargetAsProc, callTargetAsMethod, environment.getBreakID());
+                    environment.needsDeclarationFrame(), callTargetAsBlock, callTargetAsProc, callTargetAsLambda, environment.getBreakID());
         } else {
             return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(),
                     environment.needsDeclarationFrame(), Truffle.getRuntime().createCallTarget(rootNode));

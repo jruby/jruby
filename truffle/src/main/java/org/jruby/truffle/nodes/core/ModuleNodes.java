@@ -1033,7 +1033,7 @@ public abstract class ModuleNodes {
         private RubySymbol defineMethod(RubyModule module, String name, RubyProc proc) {
             CompilerDirectives.transferToInterpreter();
 
-            final CallTarget modifiedCallTarget = proc.getCallTargetForMethods();
+            final CallTarget modifiedCallTarget = proc.getCallTargetForLambdas();
             final SharedMethodInfo info = proc.getSharedMethodInfo().withName(name);
             final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
 

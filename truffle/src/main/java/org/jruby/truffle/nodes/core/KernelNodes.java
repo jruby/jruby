@@ -955,8 +955,8 @@ public abstract class KernelNodes {
         @Specialization
         public RubyProc proc(RubyProc block) {
             return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA,
-                    block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
-                    block.getCallTargetForMethods(), block.getDeclarationFrame(), block.getMethod(),
+                    block.getSharedMethodInfo(), block.getCallTargetForLambdas(), block.getCallTargetForLambdas(),
+                    block.getCallTargetForLambdas(), block.getDeclarationFrame(), block.getMethod(),
                     block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }
@@ -1179,7 +1179,7 @@ public abstract class KernelNodes {
 
             return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
                     block.getSharedMethodInfo(), block.getCallTargetForProcs(), block.getCallTargetForProcs(),
-                    block.getCallTargetForMethods(), block.getDeclarationFrame(), block.getMethod(),
+                    block.getCallTargetForLambdas(), block.getDeclarationFrame(), block.getMethod(),
                     block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }
