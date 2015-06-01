@@ -3,4 +3,3 @@ exclude :test_type_error_message,                             "needs investigati
 
 exclude :test_redefine_method_under_verbose,                  "needs warning message"
 exclude :test_redefine_method_which_may_case_serious_problem, "needs warning message"
-exclude :test_implicit_respond_to_arity_1, "needs investigation"

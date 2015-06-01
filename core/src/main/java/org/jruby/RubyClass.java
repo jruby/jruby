@@ -666,10 +666,14 @@ public class RubyClass extends RubyModule {
 
             if (arityValue > 2) throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + arityValue + ")");
 
-            IRubyObject result = me.call(context, recv, klass, "respond_to?", runtime.newSymbol(mid), runtime.getTrue());
-            if (!result.isTrue()) {
-                return false;
+            IRubyObject result;
+            if (arityValue == 1) {
+                result = me.call(context, recv, klass, "respond_to?", runtime.newSymbol(mid));
+            } else {
+                result = me.call(context, recv, klass, "respond_to?", runtime.newSymbol(mid), runtime.getTrue());
             }
+
+            if (!result.isTrue()) return false;
         }
         return true;
     }
