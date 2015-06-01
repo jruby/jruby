@@ -79,10 +79,6 @@ public abstract class BigDecimalNodes {
 
     }
 
-    public static BigDecimal getBigDecimalValue(int v) {
-        return BigDecimal.valueOf(v);
-    }
-
     public static BigDecimal getBigDecimalValue(long v) {
         return BigDecimal.valueOf(v);
     }
@@ -173,12 +169,6 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization
-        public RubyBasicObject initialize(RubyBasicObject self, int value, NotProvided digits) {
-            setBigDecimalValue(self, getBigDecimalValue(value));
-            return self;
-        }
-
-        @Specialization
         public RubyBasicObject initialize(RubyBasicObject self, long value, NotProvided digits) {
             setBigDecimalValue(self, getBigDecimalValue(value));
             return self;
@@ -266,11 +256,6 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization(guards = "isNormal(a)")
-        public Object add(RubyBasicObject a, int b) {
-            return addBigDecimal(a, getBigDecimalValue(b));
-        }
-
-        @Specialization(guards = "isNormal(a)")
         public Object add(RubyBasicObject a, long b) {
             return addBigDecimal(a, getBigDecimalValue(b));
         }
@@ -291,11 +276,6 @@ public abstract class BigDecimalNodes {
                 "isNormal(b)"})
         public Object add(RubyBasicObject a, RubyBasicObject b) {
             return addBigDecimal(a, getBigDecimalValue(b));
-        }
-
-        @Specialization(guards = "!isNormal(a)")
-        public Object addSpecial(RubyBasicObject a, int b) {
-            return addSpecial(a, createRubyBigDecimal(getBigDecimalValue(b)));
         }
 
         @Specialization(guards = "!isNormal(a)")
@@ -354,11 +334,6 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization
-        public Object add(RubyBasicObject a, int b, int precision) {
-            return addBigDecimal(a, getBigDecimalValue(b), precision);
-        }
-
-        @Specialization
         public Object add(RubyBasicObject a, long b, int precision) {
             return addBigDecimal(a, getBigDecimalValue(b), precision);
         }
@@ -393,11 +368,6 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization(guards = "isNormal(a)")
-        public Object sub(RubyBasicObject a, int b) {
-            return subBigDecimal(a, getBigDecimalValue(b));
-        }
-
-        @Specialization(guards = "isNormal(a)")
         public Object sub(RubyBasicObject a, long b) {
             return subBigDecimal(a, getBigDecimalValue(b));
         }
@@ -418,11 +388,6 @@ public abstract class BigDecimalNodes {
                 "isNormal(b)"})
         public Object subNormal(RubyBasicObject a, RubyBasicObject b) {
             return subBigDecimal(a, getBigDecimalValue(b));
-        }
-
-        @Specialization(guards = "!isNormal(a)")
-        public Object subSpecial(RubyBasicObject a, int b) {
-            return subSpecial(a, createRubyBigDecimal(getBigDecimalValue(b)));
         }
 
         @Specialization(guards = "!isNormal(a)")
@@ -520,11 +485,6 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization
-        public Object sub(RubyBasicObject a, int b, int precision) {
-            return subBigDecimal(a, getBigDecimalValue(b), precision);
-        }
-
-        @Specialization
         public Object sub(RubyBasicObject a, long b, int precision) {
             return subBigDecimal(a, getBigDecimalValue(b), precision);
         }
@@ -562,11 +522,6 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization(guards = "isNormal(a)")
-        public Object mult(RubyBasicObject a, int b) {
-            return multBigDecimal(a, getBigDecimalValue(b));
-        }
-
-        @Specialization(guards = "isNormal(a)")
         public Object mult(RubyBasicObject a, long b) {
             return multBigDecimal(a, getBigDecimalValue(b));
         }
@@ -595,11 +550,6 @@ public abstract class BigDecimalNodes {
                 "!isNormal(b)"})
         public Object multNormalSpecial(RubyBasicObject a, RubyBasicObject b) {
             return multSpecialNormal(b, a);
-        }
-
-        @Specialization(guards = "!isNormal(a)")
-        public Object multSpecialNormal(RubyBasicObject a, int b) {
-            return multSpecialNormal(a, createRubyBigDecimal(getBigDecimalValue(b)));
         }
 
         @Specialization(guards = "!isNormal(a)")
@@ -695,11 +645,6 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization
-        public Object mult(RubyBasicObject a, int b, int precision) {
-            return mulBigDecimal(a, getBigDecimalValue(b), precision);
-        }
-
-        @Specialization
         public Object mult(RubyBasicObject a, long b, int precision) {
             return mulBigDecimal(a, getBigDecimalValue(b), precision);
         }
@@ -739,11 +684,6 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization
-        public Object div(RubyBasicObject a, int b) {
-            return divBigDecimal(a, getBigDecimalValue(b));
-        }
-
-        @Specialization
         public Object div(RubyBasicObject a, long b) {
             return divBigDecimal(a, getBigDecimalValue(b));
         }
@@ -778,11 +718,6 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization(guards = "isNormal(a)")
-        public int compare(RubyBasicObject a, int b) {
-            return compareBigDecimal(a, getBigDecimalValue(b));
-        }
-
-        @Specialization(guards = "isNormal(a)")
         public int compare(RubyBasicObject a, long b) {
             return compareBigDecimal(a, getBigDecimalValue(b));
         }
@@ -803,11 +738,6 @@ public abstract class BigDecimalNodes {
                 "isNormal(b)"})
         public int compareNormal(RubyBasicObject a, RubyBasicObject b) {
             return compareBigDecimal(a, getBigDecimalValue(b));
-        }
-
-        @Specialization(guards = "!isNormal(a)")
-        public Object compareSpecial(RubyBasicObject a, int b) {
-            return compareSpecial(a, createRubyBigDecimal(getBigDecimalValue(b)));
         }
 
         @Specialization(guards = "!isNormal(a)")
