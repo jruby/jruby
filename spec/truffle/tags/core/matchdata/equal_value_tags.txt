@@ -1,1 +1,2 @@
 fails:MatchData#== returns true if both operands have equal target strings, patterns, and match positions
+fails:MatchData#== returns false if the operands have different patterns
