@@ -70,30 +70,30 @@ public abstract class ArrayNodes {
 
     public static final ArrayType ARRAY_TYPE = new ArrayType();
 
-    private static final HiddenKey STORE_IDENTIFIER = new HiddenKey("store");
-    private static final Property STORE_PROPERTY;
+    //private static final HiddenKey STORE_IDENTIFIER = new HiddenKey("store");
+    //private static final Property STORE_PROPERTY;
 
-    private static final HiddenKey SIZE_IDENTIFIER = new HiddenKey("size");
-    private static final Property SIZE_PROPERTY;
+    //private static final HiddenKey SIZE_IDENTIFIER = new HiddenKey("size");
+    //private static final Property SIZE_PROPERTY;
 
     private static final DynamicObjectFactory ARRAY_FACTORY;
 
     static {
         final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
 
-        STORE_PROPERTY = Property.create(STORE_IDENTIFIER, allocator.locationForType(Object.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        SIZE_PROPERTY = Property.create(SIZE_IDENTIFIER, allocator.locationForType(int.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        //STORE_PROPERTY = Property.create(STORE_IDENTIFIER, allocator.locationForType(Object.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        //SIZE_PROPERTY = Property.create(SIZE_IDENTIFIER, allocator.locationForType(int.class, EnumSet.of(LocationModifier.NonNull)), 0);
 
-        final Shape shape = RubyBasicObject.LAYOUT.createShape(ARRAY_TYPE)
-                .addProperty(STORE_PROPERTY)
-                .addProperty(SIZE_PROPERTY);
+        final Shape shape = RubyBasicObject.LAYOUT.createShape(ARRAY_TYPE);
+                //.addProperty(STORE_PROPERTY)
+                //.addProperty(SIZE_PROPERTY);
 
         ARRAY_FACTORY = shape.createFactory();
     }
 
     public static Object getStore(RubyBasicObject array) {
         assert RubyGuards.isRubyArray(array);
-        assert array.getDynamicObject().getShape().hasProperty(STORE_IDENTIFIER);
+        //assert array.getDynamicObject().getShape().hasProperty(STORE_IDENTIFIER);
 
         //return STORE_PROPERTY.get(array.getDynamicObject(), true);
         return ((RubyArray) array).store;
@@ -101,8 +101,8 @@ public abstract class ArrayNodes {
 
     public static void setStore(RubyBasicObject array, Object store, int size) {
         assert RubyGuards.isRubyArray(array);
-        assert array.getDynamicObject().getShape().hasProperty(STORE_IDENTIFIER);
-        assert array.getDynamicObject().getShape().hasProperty(SIZE_IDENTIFIER);
+        //assert array.getDynamicObject().getShape().hasProperty(STORE_IDENTIFIER);
+        //assert array.getDynamicObject().getShape().hasProperty(SIZE_IDENTIFIER);
 
         assert verifyStore(store, size);
 
@@ -129,7 +129,7 @@ public abstract class ArrayNodes {
 
     public static void setSize(RubyBasicObject array, int size) {
         assert RubyGuards.isRubyArray(array);
-        assert array.getDynamicObject().getShape().hasProperty(SIZE_IDENTIFIER);
+        //assert array.getDynamicObject().getShape().hasProperty(SIZE_IDENTIFIER);
 
         /*try {
             SIZE_PROPERTY.set(array.getDynamicObject(), size, array.getDynamicObject().getShape());
@@ -142,7 +142,7 @@ public abstract class ArrayNodes {
 
     public static int getSize(RubyBasicObject array) {
         assert RubyGuards.isRubyArray(array);
-        assert array.getDynamicObject().getShape().hasProperty(SIZE_IDENTIFIER);
+        //assert array.getDynamicObject().getShape().hasProperty(SIZE_IDENTIFIER);
 
         //return (int) SIZE_PROPERTY.get(array.getDynamicObject(), true);
         return ((RubyArray) array).size;
