@@ -17,6 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -220,13 +221,16 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "post_match")
     public abstract static class PostMatchNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private TaintResultNode taintResultNode;
+
         public PostMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
         @Specialization
-        public RubyBasicObject postMatch(RubyMatchData matchData) {
-            return matchData.getPost();
+        public Object postMatch(RubyMatchData matchData) {
+            return taintResultNode.maybeTaint(matchData.getSource(), matchData.getPost());
         }
 
     }
