@@ -1,2 +1,1 @@
 fails:BigDecimal.new doesn't segfault when using a very large string to build the number
-fails:BigDecimal.new Number of significant digits >= given precision

@@ -21,6 +21,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 
 import java.math.BigDecimal;
@@ -153,8 +154,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    // TODO (pitr 21-May-2015) cache special BigDecimal instances
-
+    // TODO (pitr 30-may-2015): handle digits argument also for other types than just String
     @CoreMethod(names = "initialize", required = 1, optional = 1)
     public abstract static class InitializeNode extends BigDecimalCoreMethodNode {
 
@@ -172,41 +172,46 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization
-        public RubyBasicObject initialize(RubyBasicObject self, int value) {
+        public RubyBasicObject initialize(RubyBasicObject self, int value, NotProvided digits) {
             setBigDecimalValue(self, getBigDecimalValue(value));
             return self;
         }
 
         @Specialization
-        public RubyBasicObject initialize(RubyBasicObject self, long value) {
+        public RubyBasicObject initialize(RubyBasicObject self, long value, NotProvided digits) {
             setBigDecimalValue(self, getBigDecimalValue(value));
             return self;
         }
 
         @Specialization
-        public RubyBasicObject initialize(RubyBasicObject self, double value) {
+        public RubyBasicObject initialize(RubyBasicObject self, double value, NotProvided digits) {
             setBigDecimalValue(self, getBigDecimalValue(value));
             return self;
         }
 
         @Specialization()
-        public RubyBasicObject initialize(RubyBasicObject self, RubyBignum value) {
+        public RubyBasicObject initialize(RubyBasicObject self, RubyBignum value, NotProvided digits) {
             setBigDecimalValue(self, getBigDecimalValue(value));
             return self;
         }
 
         @Specialization(guards = "isRubyBigDecimal(value)")
-        public RubyBasicObject initialize(RubyBasicObject self, RubyBasicObject value) {
+        public RubyBasicObject initialize(RubyBasicObject self, RubyBasicObject value, NotProvided digits) {
             setBigDecimalValue(self, getBigDecimalValue(value));
             return self;
         }
 
+        public RubyBasicObject initializeFromString(RubyBasicObject self, RubyBasicObject v, NotProvided digits) {
+            return initializeFromString(self, v, 0);
+        }
+
         @TruffleBoundary
         @Specialization(guards = "isRubyString(v)")
-        public RubyBasicObject initializeFromStringWithException(RubyBasicObject self, RubyBasicObject v) {
+        public RubyBasicObject initializeFromString(RubyBasicObject self, RubyBasicObject v, int digits) {
             String strValue = v.toString().trim();
 
-            // TODO (pitr 26-May-2015): create specialization without trims and other cleanups, use rewriteOn, special value specializations
+            // TODO (pitr 26-May-2015): create specialization without trims and other cleanups, use rewriteOn,
+            // string value specializations (try @Cache)
 
             switch (strValue) {
                 case "NaN":
@@ -230,7 +235,7 @@ public abstract class BigDecimalNodes {
             strValue = NUMBER_PATTERN.matcher(strValue).replaceFirst("$1"); // 3. MRI ignores the trailing junk
 
             try {
-                final BigDecimal value = new BigDecimal(strValue);
+                final BigDecimal value = new BigDecimal(strValue, new MathContext(digits));
                 setBigDecimalValue(self, value);
                 if (value.compareTo(BigDecimal.ZERO) == 0 && strValue.startsWith("-"))
                     setBigDecimalValue(self, Type.NEGATIVE_ZERO);
@@ -604,8 +609,6 @@ public abstract class BigDecimalNodes {
             return getBigDecimalValue(a).compareTo(b);
         }
 
-        // TODO (pitr 25-May-2015): how to reduce the number of specializations? or is this usual?
-
         @Specialization(guards = "isNormal(a)")
         public int compare(RubyBasicObject a, int b) {
             return compareBigDecimal(a, getBigDecimalValue(b));
@@ -854,7 +857,7 @@ public abstract class BigDecimalNodes {
             return createArray(
                     new int[]{
                             bigDecimalValue.stripTrailingZeros().unscaledValue().toString().length(),
-                            bigDecimalValue.unscaledValue().toString().length()},
+                            ((bigDecimalValue.unscaledValue().toString().length() / 4) + 1) * 4},
                     2);
         }
 
