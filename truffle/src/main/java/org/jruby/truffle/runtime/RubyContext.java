@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.CompilerOptions;
 import com.oracle.truffle.api.ExecutionContext;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.Probe;
@@ -22,10 +23,12 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.tools.CoverageTracker;
+import com.oracle.truffle.tools.CoverageTracker;
+
 import jnr.ffi.LibraryLoader;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -66,7 +69,9 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
