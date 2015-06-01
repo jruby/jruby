@@ -40,16 +40,6 @@ public class RubyMatchData extends RubyBasicObject {
         this.global = global;
     }
 
-    public Object[] valuesAt(int... indices) {
-        final Object[] result = new Object[indices.length];
-
-        for (int n = 0; n < indices.length; n++) {
-            result[n] = values[indices[n]];
-        }
-
-        return result;
-    }
-
     public Object[] getValues() {
         return Arrays.copyOf(values, values.length);
     }
