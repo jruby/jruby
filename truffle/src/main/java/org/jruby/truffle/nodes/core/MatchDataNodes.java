@@ -262,28 +262,6 @@ public abstract class MatchDataNodes {
         }
     }
 
-    @CoreMethod(names = "values_at", argumentsAsArray = true)
-    public abstract static class ValuesAtNode extends CoreMethodArrayArgumentsNode {
-
-        public ValuesAtNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyBasicObject valuesAt(RubyMatchData matchData, Object[] args) {
-            CompilerDirectives.transferToInterpreter();
-
-            final int[] indicies = new int[args.length];
-
-            for (int n = 0; n < args.length; n++) {
-                indicies[n] = (int) args[n];
-            }
-
-            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.valuesAt(indicies));
-        }
-
-    }
-
     @CoreMethod(names = "regexp")
     public abstract static class RegexpNode extends CoreMethodArrayArgumentsNode {
 
