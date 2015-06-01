@@ -284,20 +284,6 @@ public abstract class MatchDataNodes {
 
     }
 
-    // Not a core method, used to simulate Rubinius @source.
-    @NodeChild(value = "self")
-    public abstract static class RubiniusSourceNode extends RubyNode {
-
-        public RubiniusSourceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyBasicObject rubiniusSource(RubyMatchData matchData) {
-            return matchData.getSource();
-        }
-    }
-
     @CoreMethod(names = "regexp")
     public abstract static class RegexpNode extends CoreMethodArrayArgumentsNode {
 
@@ -308,6 +294,20 @@ public abstract class MatchDataNodes {
         @Specialization
         public RubyBasicObject regexp(RubyMatchData matchData) {
             return matchData.getRegexp();
+        }
+    }
+
+    @RubiniusOnly
+    @NodeChild(value = "self")
+    public abstract static class RubiniusSourceNode extends RubyNode {
+
+        public RubiniusSourceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject rubiniusSource(RubyMatchData matchData) {
+            return matchData.getSource();
         }
     }
 
