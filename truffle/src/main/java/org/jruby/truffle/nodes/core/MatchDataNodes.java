@@ -298,4 +298,17 @@ public abstract class MatchDataNodes {
         }
     }
 
+    @CoreMethod(names = "regexp")
+    public abstract static class RegexpNode extends CoreMethodArrayArgumentsNode {
+
+        public RegexpNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject regexp(RubyMatchData matchData) {
+            return matchData.getRegexp();
+        }
+    }
+
 }
