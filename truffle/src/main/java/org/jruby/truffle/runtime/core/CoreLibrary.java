@@ -15,7 +15,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
+
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConvFlags;
@@ -920,7 +922,13 @@ public class CoreLibrary {
 
     public RubyException nameErrorUninitializedConstant(RubyModule module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("uninitialized constant %s::%s", module.getName(), name), name, currentNode);
+        final String message;
+        if (module == objectClass) {
+            message = String.format("uninitialized constant %s", name);
+        } else {
+            message = String.format("uninitialized constant %s::%s", module.getName(), name);
+        }
+        return nameError(message, name, currentNode);
     }
 
     public RubyException nameErrorUninitializedClassVariable(RubyModule module, String name, Node currentNode) {

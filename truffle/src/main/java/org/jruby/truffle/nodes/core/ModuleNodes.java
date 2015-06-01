@@ -928,15 +928,24 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "const_missing", required = 1)
-    public abstract static class ConstMissingNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class ConstMissingNode extends CoreMethodNode {
 
         public ConstMissingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+        }
+
         @Specialization
-        public Object methodMissing(RubyModule module, RubySymbol name) {
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(module, name.toString(), this));
+        public Object methodMissing(RubyModule module, String name) {
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(module, name, this));
         }
 
     }
