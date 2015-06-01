@@ -19,7 +19,6 @@ class Truffle::BigDecimal < Numeric
 
   def coerce(other)
     [BigDecimal(other), self]
-    # TODO (pitr 28-may-2015): detect what cannot be coerced and raise?
   end
 
   # TODO (pitr 28-may-2015): compare with pure Java versions
