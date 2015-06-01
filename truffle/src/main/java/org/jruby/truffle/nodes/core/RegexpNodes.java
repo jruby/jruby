@@ -36,37 +36,6 @@ import static org.jruby.util.StringSupport.CR_7BIT;
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
 
-    @CoreMethod(names = "==", required = 1)
-    public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public boolean equal(RubyRegexp a, RubyRegexp b) {
-            if (a == b) {
-                return true;
-            }
-
-            if (a.getRegex().getOptions() != b.getRegex().getOptions()) {
-                return false;
-            }
-
-            if (a.getSource().getEncoding() != b.getSource().getEncoding()) {
-                return false;
-            }
-
-            return a.getSource().equal(b.getSource());
-        }
-
-        @Specialization(guards = "!isRubyRegexp(b)")
-        public boolean equal(RubyRegexp a, Object b) {
-            return false;
-        }
-
-    }
-
     public abstract static class EscapingNode extends CoreMethodArrayArgumentsNode {
 
         @Child private EscapeNode escapeNode;
