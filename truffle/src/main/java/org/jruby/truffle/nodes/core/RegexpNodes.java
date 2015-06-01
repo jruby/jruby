@@ -175,20 +175,6 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "inspect")
-    public abstract static class InspectNode extends CoreMethodArrayArgumentsNode {
-
-        public InspectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyBasicObject match(RubyRegexp regexp) {
-            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), regexp.getSource(), regexp.getRegex().getOptions()).inspect19()).getByteList());
-        }
-
-    }
-
     @CoreMethod(names = "match", required = 1, taintFromSelf = true)
     public abstract static class MatchNode extends CoreMethodArrayArgumentsNode {
 
