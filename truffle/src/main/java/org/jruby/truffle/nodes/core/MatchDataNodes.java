@@ -207,13 +207,16 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "pre_match")
     public abstract static class PreMatchNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private TaintResultNode taintResultNode;
+
         public PreMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
         @Specialization
-        public RubyBasicObject preMatch(RubyMatchData matchData) {
-            return matchData.getPre();
+        public Object preMatch(RubyMatchData matchData) {
+            return taintResultNode.maybeTaint(matchData.getSource(), matchData.getPre());
         }
 
     }
