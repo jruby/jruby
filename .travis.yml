@@ -36,6 +36,8 @@ matrix:
     - jdk: openjdk7
       env: TARGET='spec:ruby19:fast'
     - jdk: oraclejdk8
+      env: TARGET='test-extended'
+    - jdk: oraclejdk8
       env: TARGET='spec:ruby19:fast'
   fast_finish: true
 
