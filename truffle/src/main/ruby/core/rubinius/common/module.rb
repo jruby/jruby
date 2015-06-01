@@ -60,4 +60,12 @@ class Module
   end
   private :method_added
 
+  def method_removed(name)
+  end
+  private :method_removed
+
+  def method_undefined(name)
+  end
+  private :method_undefined
+
 end

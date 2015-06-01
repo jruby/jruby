@@ -22,7 +22,9 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import jnr.posix.Passwd;
+
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -41,6 +43,8 @@ import org.jruby.truffle.nodes.core.KernelNodes.BindingNode;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -1732,27 +1736,34 @@ public abstract class ModuleNodes {
 
         @Child NameToJavaStringNode nameToJavaStringNode;
         @Child RaiseIfFrozenNode raiseIfFrozenNode;
+        @Child CallDispatchHeadNode methodRemovedNode;
 
         public RemoveMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
             this.raiseIfFrozenNode = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
+            this.methodRemovedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
         @Specialization
-        public RubyModule removeMethod(VirtualFrame frame, RubyModule module, Object[] args) {
-            for (Object arg : args) {
-                final String name = nameToJavaStringNode.executeToJavaString(frame, arg);
-                raiseIfFrozenNode.execute(frame);
-
-                if (module.getMethods().containsKey(name)) {
-                    module.removeMethod(name);
-                } else {
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().nameErrorMethodNotDefinedIn(module, name, this));
-                }
+        public RubyModule removeMethods(VirtualFrame frame, RubyModule module, Object[] names) {
+            for (Object name : names) {
+                removeMethod(frame, module, nameToJavaStringNode.executeToJavaString(frame, name));
             }
             return module;
+        }
+
+        private void removeMethod(VirtualFrame frame, RubyModule module, String name) {
+            raiseIfFrozenNode.execute(frame);
+
+            CompilerDirectives.transferToInterpreter();
+            if (module.getMethods().containsKey(name)) {
+                module.removeMethod(name);
+                methodRemovedNode.call(frame, module, "method_removed", null, getContext().getSymbol(name));
+            } else {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorMethodNotDefinedIn(module, name, this));
+            }
         }
 
     }
@@ -1773,32 +1784,40 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "undef_method", required = 1)
+    @CoreMethod(names = "undef_method", argumentsAsArray = true, visibility = Visibility.PRIVATE)
     public abstract static class UndefMethodNode extends CoreMethodArrayArgumentsNode {
+
+        @Child NameToJavaStringNode nameToJavaStringNode;
+        @Child RaiseIfFrozenNode raiseIfFrozenNode;
+        @Child CallDispatchHeadNode methodUndefinedNode;
 
         public UndefMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
+            this.raiseIfFrozenNode = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
+            this.methodUndefinedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
         @Specialization
-        public RubyModule undefMethod(RubyModule module, RubyString name) {
-            return undefMethod(module, name.toString());
+        public RubyModule undefMethods(VirtualFrame frame, RubyModule module, Object[] names) {
+            for (Object name : names) {
+                undefMethod(frame, module, nameToJavaStringNode.executeToJavaString(frame, name));
+            }
+            return module;
         }
 
-        @Specialization
-        public RubyModule undefMethod(RubyModule module, RubySymbol name) {
-            return undefMethod(module, name.toString());
-        }
-
-        private RubyModule undefMethod(RubyModule module, String name) {
-            CompilerDirectives.transferToInterpreter();
+        private void undefMethod(VirtualFrame frame, RubyModule module, String name) {
+            raiseIfFrozenNode.execute(frame);
 
             final InternalMethod method = ModuleOperations.lookupMethod(module, name);
-            if (method == null) {
+
+            if (method != null) {
+                module.undefMethod(this, method);
+                methodUndefinedNode.call(frame, module, "method_undefined", null, getContext().getSymbol(name));
+            } else {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnModule(name, module, this));
             }
-            module.undefMethod(this, method);
-            return module;
         }
 
     }
