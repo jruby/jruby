@@ -124,6 +124,10 @@ public abstract class BigDecimalNodes {
         return new RubyBasicObject(rubyClass, BIG_DECIMAL_FACTORY.newInstance(Type.NORMAL, value));
     }
 
+    private static int nearestBiggerMultipleOf4(int value) {
+        return ((value / 4) + 1) * 4;
+    }
+
     public abstract static class BigDecimalCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
         public BigDecimalCoreMethodNode(RubyContext context, SourceSection sourceSection) {
@@ -700,11 +704,8 @@ public abstract class BigDecimalNodes {
                         throw new RuntimeException();
                 }
             } else {
-                // precision based on https://github.com/pitr-ch/jruby/blob/bigdecimal/core/src/main/java/org/jruby/ext/bigdecimal/RubyBigDecimal.java#L892-903
-                final int len = getBigDecimalValue(a).precision() + b.precision();
-                final int pow = len / 4;
-                final int precision = (pow + 1) * 4 * 2;
-
+                final int sumOfPrecisions = getBigDecimalValue(a).precision() + b.precision();
+                final int precision = nearestBiggerMultipleOf4(sumOfPrecisions) * 2;
                 return createRubyBigDecimal(getBigDecimalValue(a).divide(b, new MathContext(precision)));
             }
         }
@@ -1159,7 +1160,7 @@ public abstract class BigDecimalNodes {
             return createArray(
                     new int[]{
                             bigDecimalValue.stripTrailingZeros().unscaledValue().toString().length(),
-                            ((bigDecimalValue.unscaledValue().toString().length() / 4) + 1) * 4},
+                            nearestBiggerMultipleOf4(bigDecimalValue.unscaledValue().toString().length())},
                     2);
         }
 
