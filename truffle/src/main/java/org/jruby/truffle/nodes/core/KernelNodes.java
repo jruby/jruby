@@ -224,7 +224,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "abort", isModuleFunction = true)
+    @CoreMethod(names = "abort", isModuleFunction = true, optional = 1)
     public abstract static class AbortNode extends CoreMethodArrayArgumentsNode {
 
         public AbortNode(RubyContext context, SourceSection sourceSection) {
@@ -232,8 +232,19 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
+        @Specialization(guards = "isRubyString(message)")
+        public RubyBasicObject abort(RubyBasicObject message) {
+            System.err.println(message.toString());
+            return abort();
+        }
+
         @Specialization
-        public RubyBasicObject abort() {
+        public RubyBasicObject abort(NotProvided message) {
+            return abort();
+        }
+
+        @TruffleBoundary
+        private RubyBasicObject abort() {
             getContext().innerShutdown(false);
             throw new MainExitException(1, true);
         }
