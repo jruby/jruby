@@ -89,7 +89,6 @@ public class CompiledIRMethod extends DynamicMethod implements IRMethodArgs, Pos
     protected void pre(ThreadContext context, StaticScope staticScope, RubyModule implementationClass, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, scope, etc.)
         context.preMethodFrameAndScope(implementationClass, name, self, block, staticScope);
-        context.setCurrentVisibility(Visibility.PUBLIC);
     }
 
     @Override

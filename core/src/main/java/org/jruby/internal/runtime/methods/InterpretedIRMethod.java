@@ -84,7 +84,6 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (ic.pushNewDynScope()) {
             context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
         }
-        context.setCurrentVisibility(getVisibility());
     }
 
     // FIXME: for subclasses we should override this method since it can be simple get
