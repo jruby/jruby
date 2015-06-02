@@ -1038,6 +1038,7 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization(guards = {
                 "isNormal(value)",
                 "!isNormalZero(value)"})
@@ -1067,6 +1068,7 @@ public abstract class BigDecimalNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isNormal(value)")
         public RubyBasicObject abs(RubyBasicObject value) {
             return createRubyBigDecimal(getBigDecimalValue(value).abs());
