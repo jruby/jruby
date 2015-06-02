@@ -48,7 +48,6 @@ import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
 import org.joni.Syntax;
-import org.joni.exception.ErrorMessages;
 import org.joni.exception.JOniException;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -300,7 +299,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         this(runtime);
         str.getClass();
         this.str = str;
-        this.pattern = getRegexpFromCache(runtime, str, getEncoding(runtime, str), RegexpOptions.NULL_OPTIONS);
+        this.pattern = getRegexpFromCache(runtime, str, str.getEncoding(), RegexpOptions.NULL_OPTIONS);
     }
 
     private RubyRegexp(Ruby runtime, ByteList str, RegexpOptions options) {
@@ -308,10 +307,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         str.getClass();
 
         initializeCommon19(str, str.getEncoding(), options);
-    }
-
-    private Encoding getEncoding(Ruby runtime, ByteList str) {
-        return str.getEncoding();
     }
 
     // used only by the compiler/interpreter (will set the literal flag)
@@ -1755,7 +1750,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
                 if (bytes[p] == ':' && bytes[p + len - 1] == ')') {
                     try {
-                        new Regex(bytes, ++p, p + (len -= 2), Option.DEFAULT, getEncoding(runtime, str), Syntax.DEFAULT);
+                        new Regex(bytes, ++p, p + (len -= 2), Option.DEFAULT, str.getEncoding(), Syntax.DEFAULT);
                         err = false;
                     } catch (JOniException e) {
                         err = true;
@@ -1778,7 +1773,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 if (!newOptions.isExtended()) result.append((byte)'x');
             }
             result.append((byte)':');
-            appendRegexpString19(runtime, result, bytes, p, len, getEncoding(runtime, str), null);
+            appendRegexpString19(runtime, result, bytes, p, len, str.getEncoding(), null);
             
             result.append((byte)')');
             return RubyString.newString(getRuntime(), result, getEncoding()).infectBy(this);
