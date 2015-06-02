@@ -228,4 +228,24 @@ describe "Module#prepend" do
       c.get.should == :m2
     end
   end
+
+  it "supports super when the module is prepended into a singleton class" do
+    module ModuleSpecs::PrependSuperInSingleton
+      def included(base)
+        super
+      end
+    end
+
+    module ModuleSpecs::PrependSuperInSingletonModule
+      class << self
+        prepend ModuleSpecs::PrependSuperInSingleton
+      end
+    end
+
+    lambda do
+      class ModuleSpecs::PrependSuperInSingletonClass
+        include ModuleSpecs::PrependSuperInSingletonModule
+      end
+    end.should_not raise_error
+  end
 end
