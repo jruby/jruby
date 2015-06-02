@@ -2944,29 +2944,41 @@ public class RubyModule extends RubyObject {
         return remove_class_variable(context, name);
     }
 
-    /** rb_mod_class_variables
-     *
-     */
-    public RubyArray class_variables(ThreadContext context) {
-        return class_variables19(context);
+    @Deprecated
+    public RubyArray class_variables19(ThreadContext context) {
+        return class_variables(context);
     }
 
     @JRubyMethod(name = "class_variables")
-    public RubyArray class_variables19(ThreadContext context) {
+    public RubyArray class_variables(ThreadContext context) {
         Ruby runtime = context.runtime;
         RubyArray ary = runtime.newArray();
 
-        Collection<String> names = classVariablesCommon();
+        Collection<String> names = classVariablesCommon(true);
         for (String name : names) {
             ary.add(runtime.newSymbol(name));
         }
         return ary;
     }
 
-    private Collection<String> classVariablesCommon() {
+    @JRubyMethod(name = "class_variables")
+    public RubyArray class_variables(ThreadContext context, IRubyObject inherit) {
+        Ruby runtime = context.runtime;
+        RubyArray ary = runtime.newArray();
+
+        Collection<String> names = classVariablesCommon(inherit.isTrue());
+        for (String name : names) {
+            ary.add(runtime.newSymbol(name));
+        }
+        return ary;
+    }
+
+
+    private Collection<String> classVariablesCommon(boolean inherit) {
         Set<String> names = new HashSet<String>();
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
             names.addAll(p.getClassVariableNameList());
+            if (!inherit) break;
         }
         return names;
     }
