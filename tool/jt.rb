@@ -154,7 +154,7 @@ module Commands
     puts '    --igv          make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
     puts '    --jdebug       run a JDWP debug server on 8000'
     puts 'jt e 14 + 2                                    evaluate an expression'
-    puts 'jt print 14 + 2                                evaluate and print an expression'
+    puts 'jt puts 14 + 2                                 evaluate and print an expression'
     puts 'jt test                                        run all mri tests and specs'
     puts 'jt test mri                                    run mri tests'
     puts 'jt test specs                                  run all specs'
@@ -253,7 +253,6 @@ module Commands
   def command_puts(*args)
     e 'puts begin', *args, 'end'
   end
-  alias_method :command_print, :command_puts
 
   def command_p(*args)
     e 'p begin', *args, 'end'
@@ -432,7 +431,7 @@ class JT
     commands = Commands.public_instance_methods(false).map(&:to_s)
 
     command, *rest = args
-    command = "command_#{command}" if %w[p puts print].include? command
+    command = "command_#{command}" if %w[p puts].include? command
 
     abort "no command matched #{command.inspect}" unless commands.include?(command)
 
