@@ -451,22 +451,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return getPreprocessedRegexpFromCache(getRuntime(), this.str, enc, options, ErrorMode.PREPROCESS);
     }
 
-    static Regex preparePattern(Ruby runtime, Regex pattern, RubyString str) {
-        if (str.scanForCodeRange() == StringSupport.CR_BROKEN) {
-            throw runtime.newArgumentError("invalid byte sequence in " + str.getEncoding());
-        }
-        Encoding enc = str.getEncoding();
-        if (!enc.isAsciiCompatible()) {
-            if (enc != pattern.getEncoding()) encodingMatchError(runtime, pattern, enc);
-        }
-        // TODO: check for isKCodeDefault() somehow
-//        if (warn && isEncodingNone() && enc != ASCIIEncoding.INSTANCE && str.scanForCodeRange() != StringSupport.CR_7BIT) {
-//            getRuntime().getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "regexp match /.../n against to " + enc + " string");
-//        }
-        if (enc == pattern.getEncoding()) return pattern;
-        return getPreprocessedRegexpFromCache(runtime, (ByteList)pattern.getUserObject(), enc, RegexpOptions.fromJoniOptions(pattern.getOptions()), ErrorMode.PREPROCESS);
-    }
-
     private static enum ErrorMode {RAISE, PREPROCESS, DESC} 
 
     private static int raisePreprocessError(Ruby runtime, ByteList str, String err, ErrorMode mode) {
