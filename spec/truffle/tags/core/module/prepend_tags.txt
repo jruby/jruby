@@ -20,3 +20,4 @@ fails:Module#prepend includes prepended modules in ancestors
 fails:Module#prepend does not import constants
 fails:Module#prepend does not import methods to modules and classes
 fails:Module#prepend accepts no-arguments
+fails:Module#prepend supports super when the module is prepended into a singleton class
