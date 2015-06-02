@@ -3011,6 +3011,11 @@ public class IRBuilder {
     }
 
     public Operand buildRedo() {
+        // If we have ensure blocks, have to run those first!
+        if (!activeEnsureBlockStack.empty()) {
+            emitEnsureBlocks(getCurrentLoop());
+        }
+
         // If in a loop, a redo is a jump to the beginning of the loop.
         // If not, for closures, a redo is a jump to the beginning of the closure.
         // If not in a loop or a closure, it is a local jump error
