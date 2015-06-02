@@ -451,7 +451,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return getPreprocessedRegexpFromCache(getRuntime(), this.str, enc, options, ErrorMode.PREPROCESS);
     }
 
-    private static enum ErrorMode {RAISE, PREPROCESS, DESC} 
+    private enum ErrorMode {RAISE, PREPROCESS, DESC}
 
     private static int raisePreprocessError(Ruby runtime, ByteList str, String err, ErrorMode mode) {
         switch (mode) {
