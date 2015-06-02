@@ -1,1 +1,1 @@
-fails:Complex#hash is static
+fails:Complex#hash is different for different instances
