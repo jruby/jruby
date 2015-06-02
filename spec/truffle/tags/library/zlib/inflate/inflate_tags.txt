@@ -5,3 +5,7 @@ fails:Zlib::Inflate::inflate properly handles data in chunks
 fails:Zlib::Inflate::inflate properly handles incomplete data
 fails:Zlib::Inflate::inflate properly handles excessive data, byte-by-byte
 fails:Zlib::Inflate::inflate properly handles excessive data, in one go
+fails:Zlib::Inflate.inflate properly handles data in chunks
+fails:Zlib::Inflate.inflate properly handles incomplete data
+fails:Zlib::Inflate.inflate properly handles excessive data, byte-by-byte
+fails:Zlib::Inflate.inflate properly handles excessive data, in one go

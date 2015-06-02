@@ -2,3 +2,7 @@ fails:Thread::list includes the current and main thread
 fails:Thread::list includes threads of non-default thread groups
 fails:Thread::list does not include deceased threads
 fails:Thread::list includes waiting threads
+fails:Thread.list includes the current and main thread
+fails:Thread.list includes threads of non-default thread groups
+fails:Thread.list does not include deceased threads
+fails:Thread.list includes waiting threads

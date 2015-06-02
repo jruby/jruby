@@ -23,3 +23,9 @@ fails:Process.daemon when the second argument is non-false does not redirect std
 fails:Process.daemon when the second argument is non-false does not redirect stdin to /dev/null
 fails:Process.daemon when the second argument is non-false does not close open files
 fails(windows):Process.daemon raises a NotImplementedError when called
+fails:Process.daemon when the second argument is not given redirects stdout to /dev/null
+fails:Process.daemon when the second argument is not given redirects stderr to /dev/null
+fails:Process.daemon when the second argument is false redirects stdout to /dev/null
+fails:Process.daemon when the second argument is false redirects stderr to /dev/null
+fails:Process.daemon when the second argument is nil redirects stdout to /dev/null
+fails:Process.daemon when the second argument is nil redirects stderr to /dev/null
