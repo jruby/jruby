@@ -25,7 +25,6 @@ public class URLResourceTest extends TestCase {
         FileResource resource = URLResource.create((Ruby) null, "uri:" + uri, false);
 
         assertNotNull(resource );
-        // you can open streams on file-system directories
         assertTrue(resource.isFile());
         assertTrue(resource.exists());
         assertFalse(resource.isDirectory());
@@ -37,7 +36,6 @@ public class URLResourceTest extends TestCase {
         FileResource resource = URLResource.create((Ruby) null, "uri:" + uri, false);
 
         assertNotNull(resource );
-        // you can open streams on file-system directories
         assertTrue(resource.isFile());
         assertTrue(resource.exists());
         assertFalse(resource.isDirectory());
@@ -75,7 +73,6 @@ public class URLResourceTest extends TestCase {
                 "uri:classloader:/somedir/dir_without_listing", false);
 
         assertNotNull( resource );
-        // you can open streams on file-system directories
         assertTrue( resource.isFile() );
         assertTrue( resource.exists() );
         assertFalse( resource.isDirectory() );
@@ -88,7 +85,6 @@ public class URLResourceTest extends TestCase {
                 "uri:classloader:/somedir/.jrubydir", false );
 
         assertNotNull( resource );
-        // you can open streams on file-system directories
         assertTrue( resource.isFile() );
         assertTrue( resource.exists() );
         assertFalse( resource.isDirectory() );

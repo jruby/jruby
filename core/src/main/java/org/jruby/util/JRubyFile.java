@@ -110,7 +110,7 @@ public class JRubyFile extends JavaSecuredFile {
         }
 
         // If any other special resource types fail, count it as a filesystem backed resource.
-        return new RegularFileResource(runtime.getPosix(), f);
+        return new RegularFileResource(runtime == null ? null : runtime.getPosix(), f);
     }
 
     public static String normalizeSeps(String path) {
