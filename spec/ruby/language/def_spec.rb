@@ -463,6 +463,20 @@ describe "A nested method definition" do
     other = DefSpecNested.new
     lambda { other.a_singleton_method }.should raise_error(NoMethodError)
   end
+
+  it "defines methods as public by default" do
+    cls = Class.new do
+      def do_def
+        def new_def
+          1
+        end
+      end
+    end
+
+    obj = cls.new
+    obj.do_def
+    obj.new_def.should == 1
+  end
 end
 
 describe "A method definition inside an instance_eval" do
