@@ -1060,6 +1060,35 @@ public abstract class BigDecimalNodes {
 
     }
 
+    @CoreMethod(names = "abs")
+    public abstract static class AbsNode extends BigDecimalCoreMethodNode {
+
+        public AbsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isNormal(value)")
+        public RubyBasicObject abs(RubyBasicObject value) {
+            return createRubyBigDecimal(getBigDecimalValue(value).abs());
+        }
+
+        @Specialization(guards = "!isNormal(value)")
+        public RubyBasicObject absSpecial(RubyBasicObject value) {
+            switch (getBigDecimalType(value)) {
+                case NEGATIVE_INFINITY:
+                    return createRubyBigDecimal(Type.POSITIVE_INFINITY);
+                case NEGATIVE_ZERO:
+                    return createRubyBigDecimal(BigDecimal.ZERO);
+                case POSITIVE_INFINITY:
+                case NAN:
+                    return value;
+                default:
+                    throw new RuntimeException();
+            }
+        }
+
+    }
+
     @CoreMethod(names = "finite?")
     public abstract static class FiniteNode extends BigDecimalCoreMethodNode {
 
