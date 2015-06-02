@@ -34,6 +34,7 @@ import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
+import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.coerce.*;
 import org.jruby.truffle.nodes.constants.GetConstantNode;
 import org.jruby.truffle.nodes.constants.GetConstantNodeGen;
@@ -341,15 +342,21 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "append_features", required = 1, visibility = Visibility.PRIVATE)
     public abstract static class AppendFeaturesNode extends CoreMethodArrayArgumentsNode {
 
+        @Child TaintResultNode taintResultNode;
+
         public AppendFeaturesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
         @Specialization
         public RubyBasicObject appendFeatures(RubyModule module, RubyModule other) {
-            CompilerDirectives.transferToInterpreter();
-
+            if (module instanceof RubyClass) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError("append_features must be called only on modules", this));
+            }
             module.appendFeatures(this, other);
+            taintResultNode.maybeTaint(module, other);
             return nil();
         }
     }

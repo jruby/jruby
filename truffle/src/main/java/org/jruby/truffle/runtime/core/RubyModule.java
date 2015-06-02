@@ -349,7 +349,9 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void appendFeatures(Node currentNode, RubyModule other) {
-        // TODO(CS): check only run once
+        if (ModuleOperations.includesModule(this, other)) {
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("cyclic include detected", currentNode));
+        }
         other.include(currentNode, this);
     }
 
