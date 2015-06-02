@@ -922,7 +922,7 @@ public class IRRuntimeHelpers {
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
 
         IRubyObject rVal = null;
-        if (method.isUndefined()|| (superClass.isPrepended() && (method.isImplementedBy(self.getType())))) {
+        if (method.isUndefined()) {
             rVal = Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block);
         } else {
             rVal = method.call(context, self, superClass, methodName, args, block);
