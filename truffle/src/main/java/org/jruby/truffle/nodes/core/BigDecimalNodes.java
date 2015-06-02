@@ -676,36 +676,51 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(names = "/", required = 1)
+    @CoreMethod(names = {"/", "quo"}, required = 1)
     public abstract static class DivOpNode extends BigDecimalCoreMethodNode {
 
         public DivOpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
-        private Object divBigDecimal(RubyBasicObject a, BigDecimal b) {
-            // precision based on https://github.com/pitr-ch/jruby/blob/bigdecimal/core/src/main/java/org/jruby/ext/bigdecimal/RubyBigDecimal.java#L892-903
-            final int len = getBigDecimalValue(a).precision() + b.precision();
-            final int pow = len / 4;
-            final int precision = (pow + 1) * 4 * 2;
+        final ConditionProfile normalZero = ConditionProfile.createBinaryProfile();
 
-            return createRubyBigDecimal(getBigDecimalValue(a).divide(b, new MathContext(precision)));
+        @TruffleBoundary
+        private Object div(RubyBasicObject a, BigDecimal b) {
+            if (normalZero.profile(b.signum() == 0)) {
+                switch (getBigDecimalValue(a).signum()) {
+                    case 1:
+                        return createRubyBigDecimal(Type.POSITIVE_INFINITY);
+                    case 0:
+                        return createRubyBigDecimal(Type.NAN);
+                    case -1:
+                        return createRubyBigDecimal(Type.NEGATIVE_INFINITY);
+                    default:
+                        throw new RuntimeException();
+                }
+            } else {
+                // precision based on https://github.com/pitr-ch/jruby/blob/bigdecimal/core/src/main/java/org/jruby/ext/bigdecimal/RubyBigDecimal.java#L892-903
+                final int len = getBigDecimalValue(a).precision() + b.precision();
+                final int pow = len / 4;
+                final int precision = (pow + 1) * 4 * 2;
+
+                return createRubyBigDecimal(getBigDecimalValue(a).divide(b, new MathContext(precision)));
+            }
         }
 
         @Specialization(guards = "isNormal(a)")
         public Object div(RubyBasicObject a, long b) {
-            return divBigDecimal(a, getBigDecimalValue(b));
+            return div(a, getBigDecimalValue(b));
         }
 
         @Specialization(guards = "isNormal(a)")
         public Object div(RubyBasicObject a, double b) {
-            return divBigDecimal(a, getBigDecimalValue(b));
+            return div(a, getBigDecimalValue(b));
         }
 
         @Specialization(guards = "isNormal(a)")
         public Object div(RubyBasicObject a, RubyBignum b) {
-            return divBigDecimal(a, getBigDecimalValue(b));
+            return div(a, getBigDecimalValue(b));
         }
 
         @Specialization(guards = {
@@ -713,9 +728,124 @@ public abstract class BigDecimalNodes {
                 "isRubyBigDecimal(b)",
                 "isNormal(b)"})
         public Object div(RubyBasicObject a, RubyBasicObject b) {
-            return divBigDecimal(a, getBigDecimalValue(b));
+            return div(a, getBigDecimalValue(b));
         }
 
+        @Specialization(guards = {
+                "isNormal(a)",
+                "isRubyBigDecimal(b)",
+                "!isNormal(b)"})
+        public Object divNormalSpecial(RubyBasicObject a, RubyBasicObject b) {
+            switch (getBigDecimalType(b)) {
+                case NAN:
+                    return b;
+                case NEGATIVE_ZERO:
+                    switch (getBigDecimalValue(a).signum()) {
+                        case 1:
+                            return createRubyBigDecimal(Type.NEGATIVE_INFINITY);
+                        case 0:
+                            return createRubyBigDecimal(Type.NAN);
+                        case -1:
+                            return createRubyBigDecimal(Type.POSITIVE_INFINITY);
+                    }
+                case POSITIVE_INFINITY:
+                    switch (getBigDecimalValue(a).signum()) {
+                        case 1:
+                        case 0:
+                            return createRubyBigDecimal(BigDecimal.ZERO);
+                        case -1:
+                            return createRubyBigDecimal(Type.NEGATIVE_ZERO);
+                    }
+                case NEGATIVE_INFINITY:
+                    switch (getBigDecimalValue(b).signum()) {
+                        case 1:
+                            return createRubyBigDecimal(Type.NEGATIVE_ZERO);
+                        case 0:
+                        case -1:
+                            return createRubyBigDecimal(BigDecimal.ZERO);
+                    }
+            }
+            throw new RuntimeException();
+        }
+
+
+        @Specialization(guards = "!isNormal(a)")
+        public Object divSpecialNormal(RubyBasicObject a, long b) {
+            return divSpecialNormal(a, createRubyBigDecimal(getBigDecimalValue(b)));
+        }
+
+        @Specialization(guards = "!isNormal(a)")
+        public Object divSpecialNormal(RubyBasicObject a, double b) {
+            return divSpecialNormal(a, createRubyBigDecimal(getBigDecimalValue(b)));
+        }
+
+        @Specialization(guards = "!isNormal(a)")
+        public Object divSpecialNormal(RubyBasicObject a, RubyBignum b) {
+            return divSpecialNormal(a, createRubyBigDecimal(getBigDecimalValue(b)));
+        }
+
+        @Specialization(guards = {
+                "!isNormal(a)",
+                "isRubyBigDecimal(b)",
+                "isNormal(b)"})
+        public Object divSpecialNormal(RubyBasicObject a, RubyBasicObject b) {
+            switch (getBigDecimalType(a)) {
+                case NAN:
+                    return a;
+                case NEGATIVE_ZERO:
+                    switch (getBigDecimalValue(b).signum()) {
+                        case 1:
+                            return a;
+                        case 0:
+                            return createRubyBigDecimal(Type.NAN);
+                        case -1:
+                            return createRubyBigDecimal(BigDecimal.ZERO);
+                    }
+                case POSITIVE_INFINITY:
+                    switch (getBigDecimalValue(b).signum()) {
+                        case 1:
+                            return a;
+                        case 0:
+                            return a;
+                        case -1:
+                            return createRubyBigDecimal(Type.NEGATIVE_INFINITY);
+                    }
+                case NEGATIVE_INFINITY:
+                    switch (getBigDecimalValue(b).signum()) {
+                        case 1:
+                            return a;
+                        case 0:
+                            return a;
+                        case -1:
+                            return createRubyBigDecimal(Type.POSITIVE_INFINITY);
+                    }
+            }
+            throw new RuntimeException();
+        }
+
+        @Specialization(guards = {
+                "!isNormal(a)",
+                "isRubyBigDecimal(b)",
+                "!isNormal(b)"})
+        public Object divSpecialSpecia(RubyBasicObject a, RubyBasicObject b) {
+            final Type aType = getBigDecimalType(a);
+            final Type bType = getBigDecimalType(b);
+
+            if (aType == Type.NAN || bType == Type.NAN ||
+                    (aType == Type.NEGATIVE_ZERO && bType == Type.NEGATIVE_ZERO))
+                return createRubyBigDecimal(Type.NAN);
+
+            if (aType == Type.NEGATIVE_ZERO)
+                if (bType == Type.POSITIVE_INFINITY) return a;
+                else return createRubyBigDecimal(Type.POSITIVE_INFINITY);
+
+            if (bType == Type.NEGATIVE_ZERO)
+                if (aType == Type.POSITIVE_INFINITY) return createRubyBigDecimal(Type.NEGATIVE_INFINITY);
+                else return createRubyBigDecimal(Type.POSITIVE_INFINITY);
+
+            // a and b are only +-Infinity
+            return createRubyBigDecimal(Type.NAN);
+        }
     }
 
     @CoreMethod(names = {"<=>"}, required = 1)
@@ -993,10 +1123,9 @@ public abstract class BigDecimalNodes {
             final BigDecimal bigDecimal = getBigDecimalValue(value);
             final boolean negative = bigDecimal.signum() == -1;
 
-            return createString(
-                    (negative ? "-" : "") + "0." +
-                            (negative ? bigDecimal.unscaledValue().toString().substring(1) : bigDecimal.unscaledValue()) +
-                            "E" + (bigDecimal.precision() - bigDecimal.scale()));
+            return createString((negative ? "-" : "") + "0." +
+                    (negative ? bigDecimal.unscaledValue().toString().substring(1) : bigDecimal.unscaledValue()) +
+                    "E" + (bigDecimal.precision() - bigDecimal.scale()));
         }
 
         @TruffleBoundary
