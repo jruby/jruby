@@ -609,7 +609,7 @@ module Net   #:nodoc:
     # 'http.proxyHost' and 'http.proxyPort' Java system properties, if they
     # are set and no alternative proxy has been provided.
     #
-    def HTTP.new(address, port = nil, p_addr = ENV_JAVA['http.proxyHost'], p_port = ENV_JAVA['http.proxyPort'], p_user = nil, p_pass = nil)
+    def HTTP.new(address, port = nil, p_addr = :ENV, p_port = nil, p_user = nil, p_pass = nil)
       http = super address, port
 
       if proxy_class? then # from Net::HTTP::Proxy()
