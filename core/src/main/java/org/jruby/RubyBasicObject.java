@@ -225,7 +225,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     static void recacheBuiltinMethods(Ruby runtime) {
         RubyModule objectClass = runtime.getBasicObject();
 
-        runtime.setDefaultMethodMissing(objectClass.searchMethod("method_missing"));
+        // Since method_missing is marked module we actually define two builtin versions
+        runtime.setDefaultMethodMissing(objectClass.searchMethod("method_missing"),
+                objectClass.getMetaClass().searchMethod("method_missing"));
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)

@@ -1608,10 +1608,7 @@ public class Helpers {
         IRubyObject tmp = value.checkArrayType();
 
         if (tmp.isNil()) {
-            // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can
-            // remove this hack too.
-
-            if (value.respondsTo("to_a") && value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime.getKernel()) {
+            if (value.respondsTo("to_a")) {
                 IRubyObject avalue = value.callMethod(context, "to_a");
                 if (!(avalue instanceof RubyArray)) {
                     if (avalue.isNil()) {
@@ -1623,7 +1620,7 @@ public class Helpers {
                 return (RubyArray)avalue;
             } else {
                 DynamicMethod methodMissing = value.getMetaClass().searchMethod("method_missing");
-                if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
+                if (methodMissing.isUndefined() || runtime.isDefaultMethodMissing(methodMissing)) {
                     return runtime.newArray(value);
                 } else {
                     IRubyObject avalue = methodMissing.call(context, value, value.getMetaClass(), "to_a", new IRubyObject[] {runtime.newSymbol("to_a")}, Block.NULL_BLOCK);
@@ -1648,10 +1645,7 @@ public class Helpers {
         IRubyObject tmp = value.checkArrayType();
 
         if (tmp.isNil()) {
-            // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can
-            // remove this hack too.
-
-            if (value.respondsTo("to_a") && value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime.getKernel()) {
+            if (value.respondsTo("to_a")) {
                 IRubyObject avalue = value.callMethod(context, "to_a");
                 if (!(avalue instanceof RubyArray)) {
                     if (avalue.isNil()) {

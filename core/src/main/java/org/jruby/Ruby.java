@@ -1944,8 +1944,14 @@ public final class Ruby implements Constantizable {
         return defaultMethodMissing;
     }
 
-    public void setDefaultMethodMissing(DynamicMethod method) {
+    public boolean isDefaultMethodMissing(DynamicMethod method) {
+        return defaultMethodMissing == method || defaultModuleMethodMissing == method;
+
+    }
+
+    public void setDefaultMethodMissing(DynamicMethod method, DynamicMethod moduleMethod) {
         defaultMethodMissing = method;
+        defaultModuleMethodMissing = moduleMethod;
     }
 
     public DynamicMethod getRespondToMethod() {
@@ -4901,7 +4907,8 @@ public final class Ruby implements Constantizable {
             procSysModule, precisionModule, errnoModule;
 
     private DynamicMethod privateMethodMissing, protectedMethodMissing, variableMethodMissing,
-            superMethodMissing, normalMethodMissing, defaultMethodMissing, respondTo, respondToMissing;
+            superMethodMissing, normalMethodMissing, defaultMethodMissing, defaultModuleMethodMissing,
+            respondTo, respondToMissing;
 
     // record separator var, to speed up io ops that use it
     private GlobalVariable recordSeparatorVar;
