@@ -1031,6 +1031,35 @@ public abstract class BigDecimalNodes {
 
     }
 
+    @CoreMethod(names = "exponent")
+    public abstract static class ExponentNode extends BigDecimalCoreMethodNode {
+
+        public ExponentNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = {
+                "isNormal(value)",
+                "!isNormalZero(value)"})
+        public int exponent(RubyBasicObject value) {
+            final BigDecimal val = getBigDecimalValue(value).abs().stripTrailingZeros();
+            return val.precision() - val.scale();
+        }
+
+        @Specialization(guards = {
+                "isNormal(value)",
+                "isNormalZero(value)"})
+        public int exponentZero(RubyBasicObject value) {
+            return 0;
+        }
+
+        @Specialization(guards = "!isNormal(value)")
+        public int exponentSpecial(RubyBasicObject value) {
+            return 0;
+        }
+
+    }
+
     @CoreMethod(names = "finite?")
     public abstract static class FiniteNode extends BigDecimalCoreMethodNode {
 
