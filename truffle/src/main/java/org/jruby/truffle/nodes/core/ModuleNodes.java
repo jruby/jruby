@@ -1822,27 +1822,6 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "get_user_home", needsSelf = false, required = 1)
-    public abstract static class GetUserHomeNode extends CoreMethodArrayArgumentsNode {
-
-        public GetUserHomeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyBasicObject userHome(RubyString uname) {
-            CompilerDirectives.transferToInterpreter();
-            // TODO BJF 30-APR-2015 Review the more robust getHomeDirectoryPath implementation
-            final Passwd passwd = getContext().getPosix().getpwnam(uname.toString());
-            if (passwd == null) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("user " + uname.toString() + " does not exist", this));
-            }
-            return createString(passwd.getHome());
-        }
-
-    }
-
     @NodeChildren({ @NodeChild(value = "module"), @NodeChild(value = "names") })
     public abstract static class SetVisibilityNode extends RubyNode {
 
