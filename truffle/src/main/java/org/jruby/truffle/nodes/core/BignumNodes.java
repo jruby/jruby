@@ -247,9 +247,13 @@ public abstract class BignumNodes {
             return getBigIntegerValue(a).compareTo(getBigIntegerValue(b)) < 0;
         }
 
-        @Specialization(guards = "!isRubyBignum(b)")
-        public Object lessCoerced(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
-            return ruby(frame, "redo_coerced :<, b", "b", b);
+        @Specialization(guards = {
+                "!isRubyBignum(b)",
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)"})
+        public Object lessCoerced(VirtualFrame frame, RubyBasicObject a, Object b) {
+            return ruby(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
         }
 
     }
@@ -274,6 +278,15 @@ public abstract class BignumNodes {
         @Specialization(guards = "isRubyBignum(b)")
         public boolean lessEqual(RubyBasicObject a, RubyBasicObject b) {
             return getBigIntegerValue(a).compareTo(getBigIntegerValue(b)) <= 0;
+        }
+
+        @Specialization(guards = {
+                "!isRubyBignum(b)",
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)"})
+        public Object lessEqualCoerced(VirtualFrame frame, RubyBasicObject a, Object b) {
+            return ruby(frame, "b, a = math_coerce other, :compare_error; a <= b", "other", b);
         }
     }
 
@@ -375,6 +388,15 @@ public abstract class BignumNodes {
         public boolean greaterEqual(RubyBasicObject a, RubyBasicObject b) {
             return getBigIntegerValue(a).compareTo(getBigIntegerValue(b)) >= 0;
         }
+
+        @Specialization(guards = {
+                "!isRubyBignum(b)",
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)"})
+        public Object greaterEqualCoerced(VirtualFrame frame, RubyBasicObject a, Object b) {
+            return ruby(frame, "b, a = math_coerce other, :compare_error; a >= b", "other", b);
+        }
     }
 
     @CoreMethod(names = ">", required = 1)
@@ -400,12 +422,12 @@ public abstract class BignumNodes {
         }
 
         @Specialization(guards = {
+                "!isRubyBignum(b)",
                 "!isInteger(b)",
                 "!isLong(b)",
-                "!isDouble(b)",
-                "!isRubyBignum(b)"})
-        public Object compare(VirtualFrame frame, Object a, Object b) {
-            return ruby(frame, "b, a = math_coerce(other, :compare_error); a > b", "other", b);
+                "!isDouble(b)"})
+        public Object greaterCoerced(VirtualFrame frame, RubyBasicObject a, Object b) {
+            return ruby(frame, "b, a = math_coerce other, :compare_error; a > b", "other", b);
         }
     }
 

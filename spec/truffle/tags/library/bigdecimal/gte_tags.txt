@@ -1,3 +1,0 @@
-fails:BigDecimal#>= properly handles infinity values
-fails:BigDecimal#>= properly handles NaN values
-fails:BigDecimal#>= returns nil if the argument is nil
