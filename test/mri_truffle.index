@@ -143,7 +143,7 @@ cgi/test_cgi_core.rb
 cgi/test_cgi_header.rb
 cgi/test_cgi_modruby.rb
 cgi/test_cgi_multipart.rb
-# cgi/test_cgi_session.rb # cannot load such file -- pstore
+cgi/test_cgi_session.rb
 cgi/test_cgi_tag_helper.rb
 cgi/test_cgi_util.rb
 
