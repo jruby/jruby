@@ -3,7 +3,7 @@ require 'matrix'
 
 describe "Matrix.scalar" do
 
-  before(:each) do
+  before :each do
     @side = 3
     @value = 8
     @a = Matrix.scalar(@side, @value)
@@ -34,7 +34,7 @@ describe "Matrix.scalar" do
     end
   end
 
-  before(:each) do
+  before :each do
     @side = 3
     @value = 8
     @a = Matrix.scalar(@side, @value)

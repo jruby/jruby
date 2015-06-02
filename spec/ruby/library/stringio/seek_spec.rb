@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "StringIO#seek" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("12345678")
   end
 
@@ -56,7 +56,7 @@ describe "StringIO#seek" do
 end
 
 describe "StringIO#seek when self is closed" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example")
     @io.close
   end

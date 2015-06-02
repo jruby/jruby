@@ -3,7 +3,7 @@
 require File.expand_path('../../../../../spec_helper', __FILE__)
 
 describe :enumerator_lazy_to_enum, :shared => true do
-  before(:each) do
+  before :each do
     @infinite = (0..Float::INFINITY).lazy
   end
 

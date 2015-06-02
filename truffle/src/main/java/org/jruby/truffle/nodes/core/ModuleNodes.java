@@ -22,7 +22,9 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import jnr.posix.Passwd;
+
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -32,6 +34,7 @@ import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
+import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.coerce.*;
 import org.jruby.truffle.nodes.constants.GetConstantNode;
 import org.jruby.truffle.nodes.constants.GetConstantNodeGen;
@@ -41,6 +44,8 @@ import org.jruby.truffle.nodes.core.KernelNodes.BindingNode;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -282,7 +287,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "alias_method", required = 2)
+    @CoreMethod(names = "alias_method", required = 2, visibility = Visibility.PRIVATE)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "module"),
             @NodeChild(type = RubyNode.class, value = "newName"),
@@ -337,15 +342,21 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "append_features", required = 1, visibility = Visibility.PRIVATE)
     public abstract static class AppendFeaturesNode extends CoreMethodArrayArgumentsNode {
 
+        @Child TaintResultNode taintResultNode;
+
         public AppendFeaturesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
         @Specialization
         public RubyBasicObject appendFeatures(RubyModule module, RubyModule other) {
-            CompilerDirectives.transferToInterpreter();
-
+            if (module instanceof RubyClass) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError("append_features must be called only on modules", this));
+            }
             module.appendFeatures(this, other);
+            taintResultNode.maybeTaint(module, other);
             return nil();
         }
     }
@@ -928,15 +939,24 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "const_missing", required = 1)
-    public abstract static class ConstMissingNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class ConstMissingNode extends CoreMethodNode {
 
         public ConstMissingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+        }
+
         @Specialization
-        public Object methodMissing(RubyModule module, RubySymbol name) {
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(module, name.toString(), this));
+        public Object methodMissing(RubyModule module, String name) {
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(module, name, this));
         }
 
     }
@@ -1033,7 +1053,7 @@ public abstract class ModuleNodes {
         private RubySymbol defineMethod(RubyModule module, String name, RubyProc proc) {
             CompilerDirectives.transferToInterpreter();
 
-            final CallTarget modifiedCallTarget = proc.getCallTargetForMethods();
+            final CallTarget modifiedCallTarget = proc.getCallTargetForLambdas();
             final SharedMethodInfo info = proc.getSharedMethodInfo().withName(name);
             final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
 
@@ -1723,27 +1743,34 @@ public abstract class ModuleNodes {
 
         @Child NameToJavaStringNode nameToJavaStringNode;
         @Child RaiseIfFrozenNode raiseIfFrozenNode;
+        @Child CallDispatchHeadNode methodRemovedNode;
 
         public RemoveMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
             this.raiseIfFrozenNode = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
+            this.methodRemovedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
         @Specialization
-        public RubyModule removeMethod(VirtualFrame frame, RubyModule module, Object[] args) {
-            for (Object arg : args) {
-                final String name = nameToJavaStringNode.executeToJavaString(frame, arg);
-                raiseIfFrozenNode.execute(frame);
-
-                if (module.getMethods().containsKey(name)) {
-                    module.removeMethod(name);
-                } else {
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().nameErrorMethodNotDefinedIn(module, name, this));
-                }
+        public RubyModule removeMethods(VirtualFrame frame, RubyModule module, Object[] names) {
+            for (Object name : names) {
+                removeMethod(frame, module, nameToJavaStringNode.executeToJavaString(frame, name));
             }
             return module;
+        }
+
+        private void removeMethod(VirtualFrame frame, RubyModule module, String name) {
+            raiseIfFrozenNode.execute(frame);
+
+            CompilerDirectives.transferToInterpreter();
+            if (module.getMethods().containsKey(name)) {
+                module.removeMethod(name);
+                methodRemovedNode.call(frame, module, "method_removed", null, getContext().getSymbol(name));
+            } else {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorMethodNotDefinedIn(module, name, this));
+            }
         }
 
     }
@@ -1764,53 +1791,40 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "undef_method", required = 1)
+    @CoreMethod(names = "undef_method", argumentsAsArray = true, visibility = Visibility.PRIVATE)
     public abstract static class UndefMethodNode extends CoreMethodArrayArgumentsNode {
+
+        @Child NameToJavaStringNode nameToJavaStringNode;
+        @Child RaiseIfFrozenNode raiseIfFrozenNode;
+        @Child CallDispatchHeadNode methodUndefinedNode;
 
         public UndefMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
+            this.raiseIfFrozenNode = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
+            this.methodUndefinedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
         @Specialization
-        public RubyModule undefMethod(RubyModule module, RubyString name) {
-            return undefMethod(module, name.toString());
-        }
-
-        @Specialization
-        public RubyModule undefMethod(RubyModule module, RubySymbol name) {
-            return undefMethod(module, name.toString());
-        }
-
-        private RubyModule undefMethod(RubyModule module, String name) {
-            CompilerDirectives.transferToInterpreter();
-
-            final InternalMethod method = ModuleOperations.lookupMethod(module, name);
-            if (method == null) {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnModule(name, module, this));
+        public RubyModule undefMethods(VirtualFrame frame, RubyModule module, Object[] names) {
+            for (Object name : names) {
+                undefMethod(frame, module, nameToJavaStringNode.executeToJavaString(frame, name));
             }
-            module.undefMethod(this, method);
             return module;
         }
 
-    }
+        private void undefMethod(VirtualFrame frame, RubyModule module, String name) {
+            raiseIfFrozenNode.execute(frame);
 
-    @CoreMethod(names = "get_user_home", needsSelf = false, required = 1)
-    public abstract static class GetUserHomeNode extends CoreMethodArrayArgumentsNode {
+            final InternalMethod method = ModuleOperations.lookupMethod(module, name);
 
-        public GetUserHomeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyBasicObject userHome(RubyString uname) {
-            CompilerDirectives.transferToInterpreter();
-            // TODO BJF 30-APR-2015 Review the more robust getHomeDirectoryPath implementation
-            final Passwd passwd = getContext().getPosix().getpwnam(uname.toString());
-            if (passwd == null) {
+            if (method != null) {
+                module.undefMethod(this, method);
+                methodUndefinedNode.call(frame, module, "method_undefined", null, getContext().getSymbol(name));
+            } else {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("user " + uname.toString() + " does not exist", this));
+                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnModule(name, module, this));
             }
-            return createString(passwd.getHome());
         }
 
     }

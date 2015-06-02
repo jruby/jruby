@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Hash#assoc" do
-  before(:each) do
+  before :each do
     @h = {:apple => :green, :orange => :orange, :grape => :green, :banana => :yellow}
   end
 

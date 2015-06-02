@@ -1,12 +1,21 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-
-# force reload for Prime::method_added and Prime::instance
-Object.send(:remove_const, :Prime) if defined?(Prime)
-load 'prime.rb'
+require 'prime'
 
 describe :prime_each, :shared => true do
   before :each do
     ScratchPad.record []
+  end
+
+  it "enumerates primes" do
+    primes = Prime.instance
+    result = []
+
+    primes.each { |p|
+      result << p
+      break if p > 10
+    }
+
+    result.should == [2, 3, 5, 7, 11]
   end
 
   it "yields ascending primes to the block" do
@@ -144,15 +153,15 @@ describe "Prime#each with Prime.instance" do
   it_behaves_like :prime_each_with_arguments, :each, Prime.instance
 end
 
-describe "Prime#each with Prime.new" do
+describe "Prime#each with Prime.instance" do
   before :each do
-    @object = Prime.new
+    @object = Prime.instance
   end
 
   it_behaves_like :prime_each, :each
 
-  it "does not rewind the enumerator with each call" do
+  it "resets the enumerator with each call" do
     @object.each { |prime| break if prime > 10 }
-    @object.each { |prime| break prime }.should == 13
+    @object.each { |prime| break prime }.should == 2
   end
 end

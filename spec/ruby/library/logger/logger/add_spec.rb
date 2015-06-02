@@ -18,7 +18,7 @@ describe "Logger#add" do
     @logger.add(Logger::WARN, "Test")
     @log_file.rewind
     message = @log_file.readlines.last
-    LoggerSpecs::strip_date(message).should == "WARN -- : Test\n"
+    LoggerSpecs.strip_date(message).should == "WARN -- : Test\n"
   end
 
   it "receives a severity" do
@@ -32,23 +32,23 @@ describe "Logger#add" do
 
     info, debug, warn, error, fatal = @log_file.readlines
 
-    LoggerSpecs::strip_date(info).should == "INFO -- : Info message\n"
-    LoggerSpecs::strip_date(debug).should == "DEBUG -- : Debug message\n"
-    LoggerSpecs::strip_date(warn).should == "WARN -- : Warn message\n"
-    LoggerSpecs::strip_date(error).should == "ERROR -- : Error message\n"
-    LoggerSpecs::strip_date(fatal).should == "FATAL -- : Fatal message\n"
+    LoggerSpecs.strip_date(info).should == "INFO -- : Info message\n"
+    LoggerSpecs.strip_date(debug).should == "DEBUG -- : Debug message\n"
+    LoggerSpecs.strip_date(warn).should == "WARN -- : Warn message\n"
+    LoggerSpecs.strip_date(error).should == "ERROR -- : Error message\n"
+    LoggerSpecs.strip_date(fatal).should == "FATAL -- : Fatal message\n"
   end
 
   it "receives a message" do
     @logger.log(nil, "test")
     @log_file.rewind
-    LoggerSpecs::strip_date(@log_file.readline).should == "ANY -- : test\n"
+    LoggerSpecs.strip_date(@log_file.readline).should == "ANY -- : test\n"
   end
 
   it "receives a program name" do
     @logger.log(nil, "test", "TestApp")
     @log_file.rewind
-    LoggerSpecs::strip_date(@log_file.readline).should == "ANY -- TestApp: test\n"
+    LoggerSpecs.strip_date(@log_file.readline).should == "ANY -- TestApp: test\n"
   end
 
   it "receives a block" do

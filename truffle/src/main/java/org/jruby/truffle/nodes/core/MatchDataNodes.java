@@ -17,6 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -206,13 +207,16 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "pre_match")
     public abstract static class PreMatchNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private TaintResultNode taintResultNode;
+
         public PreMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
         @Specialization
-        public RubyBasicObject preMatch(RubyMatchData matchData) {
-            return matchData.getPre();
+        public Object preMatch(RubyMatchData matchData) {
+            return taintResultNode.maybeTaint(matchData.getSource(), matchData.getPre());
         }
 
     }
@@ -220,13 +224,16 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "post_match")
     public abstract static class PostMatchNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private TaintResultNode taintResultNode;
+
         public PostMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
         @Specialization
-        public RubyBasicObject postMatch(RubyMatchData matchData) {
-            return matchData.getPost();
+        public Object postMatch(RubyMatchData matchData) {
+            return taintResultNode.maybeTaint(matchData.getSource(), matchData.getPost());
         }
 
     }
@@ -262,29 +269,20 @@ public abstract class MatchDataNodes {
         }
     }
 
-    @CoreMethod(names = "values_at", argumentsAsArray = true)
-    public abstract static class ValuesAtNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "regexp")
+    public abstract static class RegexpNode extends CoreMethodArrayArgumentsNode {
 
-        public ValuesAtNode(RubyContext context, SourceSection sourceSection) {
+        public RegexpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
-        public RubyBasicObject valuesAt(RubyMatchData matchData, Object[] args) {
-            CompilerDirectives.transferToInterpreter();
-
-            final int[] indicies = new int[args.length];
-
-            for (int n = 0; n < args.length; n++) {
-                indicies[n] = (int) args[n];
-            }
-
-            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.valuesAt(indicies));
+        public RubyBasicObject regexp(RubyMatchData matchData) {
+            return matchData.getRegexp();
         }
-
     }
 
-    // Not a core method, used to simulate Rubinius @source.
+    @RubiniusOnly
     @NodeChild(value = "self")
     public abstract static class RubiniusSourceNode extends RubyNode {
 

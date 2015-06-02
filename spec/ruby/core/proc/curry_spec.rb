@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Proc#curry" do
-  before(:each) do
+  before :each do
     @proc_add = Proc.new {|x,y,z| (x||0) + (y||0) + (z||0) }
     @lambda_add = lambda {|x,y,z| (x||0) + (y||0) + (z||0) }
   end
@@ -82,7 +82,7 @@ describe "Proc#curry" do
 end
 
 describe "Proc#curry with arity argument" do
-  before(:each) do
+  before :each do
     @proc_add = proc {|x,y,z| (x||0) + (y||0) + (z||0) }
     @lambda_add = lambda {|x,y,z| (x||0) + (y||0) + (z||0) }
   end

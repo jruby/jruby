@@ -9,7 +9,7 @@ describe "StringIO#string" do
 end
 
 describe "StringIO#string=" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example\nstring")
   end
 

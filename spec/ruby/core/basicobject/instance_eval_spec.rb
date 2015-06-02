@@ -99,8 +99,6 @@ describe "BasicObject#instance_eval" do
     prc.call(false, prc).should == 1
   end
 
-  # On 1.9 class variables aren't inherited so we have to modify the test
-  # from 1.8
   it "sets class variables in the receiver" do
     BasicObjectSpecs::InstEvalCVar.class_variables.should include(:@@count)
     BasicObjectSpecs::InstEvalCVar.send(:class_variable_get, :@@count).should == 2

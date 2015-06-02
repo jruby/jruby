@@ -2,12 +2,12 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe :file_world_writable, :shared => true do
 
-  before(:each) do
+  before :each do
     @file = tmp('world-writable')
     touch @file
   end
 
-  after(:each) do
+  after :each do
     rm_r @file
   end
 

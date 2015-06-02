@@ -3,12 +3,10 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Date constants" do
 
-  # Fixes in 1.8.7
   it "defines JULIAN" do
     (Date::JULIAN <=> Date::Infinity.new).should == 0
   end
 
-  # Fixed in 1.8.7
   it "defines GREGORIAN" do
     (Date::GREGORIAN <=> -Date::Infinity.new).should == 0
   end

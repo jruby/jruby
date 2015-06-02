@@ -1,5 +1,5 @@
 describe :stringio_getc, :shared => true do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example")
   end
 

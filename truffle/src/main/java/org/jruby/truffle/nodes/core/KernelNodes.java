@@ -15,11 +15,13 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -224,7 +226,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "abort", isModuleFunction = true)
+    @CoreMethod(names = "abort", isModuleFunction = true, optional = 1)
     public abstract static class AbortNode extends CoreMethodArrayArgumentsNode {
 
         public AbortNode(RubyContext context, SourceSection sourceSection) {
@@ -232,8 +234,19 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
+        @Specialization(guards = "isRubyString(message)")
+        public RubyBasicObject abort(RubyBasicObject message) {
+            System.err.println(message.toString());
+            return abort();
+        }
+
         @Specialization
-        public RubyBasicObject abort() {
+        public RubyBasicObject abort(NotProvided message) {
+            return abort();
+        }
+
+        @TruffleBoundary
+        private RubyBasicObject abort() {
             getContext().innerShutdown(false);
             throw new MainExitException(1, true);
         }
@@ -952,11 +965,24 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
+        @Specialization
+        public RubyProc proc(NotProvided block) {
+            final Frame parentFrame = Truffle.getRuntime().getCallerFrame().getFrame(FrameAccess.READ_ONLY, true);
+            final RubyProc parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
+
+            if (parentBlock == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("tried to create Proc object without a block", this));
+            }
+            return proc(parentBlock);
+        }
+
         @Specialization
         public RubyProc proc(RubyProc block) {
             return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA,
-                    block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
-                    block.getCallTargetForMethods(), block.getDeclarationFrame(), block.getMethod(),
+                    block.getSharedMethodInfo(), block.getCallTargetForLambdas(), block.getCallTargetForLambdas(),
+                    block.getCallTargetForLambdas(), block.getDeclarationFrame(), block.getMethod(),
                     block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }
@@ -1179,7 +1205,7 @@ public abstract class KernelNodes {
 
             return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
                     block.getSharedMethodInfo(), block.getCallTargetForProcs(), block.getCallTargetForProcs(),
-                    block.getCallTargetForMethods(), block.getDeclarationFrame(), block.getMethod(),
+                    block.getCallTargetForLambdas(), block.getDeclarationFrame(), block.getMethod(),
                     block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }

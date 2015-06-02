@@ -15,7 +15,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
+
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConvFlags;
@@ -482,10 +484,12 @@ public class CoreLibrary {
         objectClass.setConstant(node, "RUBY_VERSION", StringNodes.createString(stringClass, Constants.RUBY_VERSION));
         objectClass.setConstant(node, "JRUBY_VERSION", StringNodes.createString(stringClass, Constants.VERSION));
         objectClass.setConstant(node, "RUBY_PATCHLEVEL", Constants.RUBY_PATCHLEVEL);
+        objectClass.setConstant(node, "RUBY_REVISION", Constants.RUBY_REVISION);
         objectClass.setConstant(node, "RUBY_ENGINE", StringNodes.createString(stringClass, Constants.ENGINE + "+truffle"));
         objectClass.setConstant(node, "RUBY_PLATFORM", StringNodes.createString(stringClass, Constants.PLATFORM));
         objectClass.setConstant(node, "RUBY_RELEASE_DATE", StringNodes.createString(stringClass, Constants.COMPILE_DATE));
         objectClass.setConstant(node, "RUBY_DESCRIPTION", StringNodes.createString(stringClass, OutputStrings.getVersionString()));
+        objectClass.setConstant(node, "RUBY_COPYRIGHT", StringNodes.createString(stringClass, OutputStrings.getCopyrightString()));
 
         // BasicObject knows itself
         basicObjectClass.setConstant(node, "BasicObject", basicObjectClass);
@@ -920,7 +924,13 @@ public class CoreLibrary {
 
     public RubyException nameErrorUninitializedConstant(RubyModule module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("uninitialized constant %s::%s", module.getName(), name), name, currentNode);
+        final String message;
+        if (module == objectClass) {
+            message = String.format("uninitialized constant %s", name);
+        } else {
+            message = String.format("uninitialized constant %s::%s", module.getName(), name);
+        }
+        return nameError(message, name, currentNode);
     }
 
     public RubyException nameErrorUninitializedClassVariable(RubyModule module, String name, Node currentNode) {

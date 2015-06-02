@@ -1637,6 +1637,10 @@ public class BodyTranslator extends Translator {
             } else if (name.equals("@full")) {
                 // Delegate to MatchDatat#full, in shims.
                 return new RubyCallNode(context, sourceSection, "full", self, null, false);
+            } else if (name.equals("@regexp")) {
+                return MatchDataNodesFactory.RegexpNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+            } else if (name.equals("@names")) {
+                return RegexpNodesFactory.RubiniusNamesNodeGen.create(context, sourceSection, self);
             }
         }
 

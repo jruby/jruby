@@ -4,7 +4,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Array#permutation" do
 
-  before(:each) do
+  before :each do
     @numbers = (1..3).to_a
     @yielded = []
   end

@@ -2,9 +2,6 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 require File.expand_path('../fixtures/__method__', __FILE__)
 
-# Can not, must not use a shared spec because #send influences
-# __method__ on 1.8.7
-
 describe "Kernel.__method__" do
   it "returns the current method, even when aliased" do
     KernelSpecs::MethodTest.new.f.should == :f
@@ -34,7 +31,6 @@ describe "Kernel.__method__" do
     KernelSpecs::MethodTest.new.from_class_body.should == nil
   end
 
-  # crashes hard on 1.8.7-p174
   it "returns nil when not called from a method" do
     __method__.should == nil
   end

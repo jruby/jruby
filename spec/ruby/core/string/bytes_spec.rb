@@ -1,47 +1,44 @@
 # -*- encoding: utf-8 -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 
-with_feature :encoding_transition do
-  describe "String#bytes" do
-    before(:each) do
-      @utf8 = "東京"
-      @ascii = 'Tokyo'
-      @utf8_ascii = @utf8 + @ascii
-    end
+describe "String#bytes" do
+  before :each do
+    @utf8 = "東京"
+    @ascii = 'Tokyo'
+    @utf8_ascii = @utf8 + @ascii
+  end
 
-    it "returns an Array when no block is given" do
-      @utf8.bytes.should be_an_instance_of(Array)
-    end
+  it "returns an Array when no block is given" do
+    @utf8.bytes.should be_an_instance_of(Array)
+  end
 
-    it "yields each byte to a block if one is given, returning self" do
-      bytes = []
-      @utf8.bytes {|b| bytes << b}.should == @utf8
-      bytes.should == @utf8.bytes.to_a
-    end
+  it "yields each byte to a block if one is given, returning self" do
+    bytes = []
+    @utf8.bytes {|b| bytes << b}.should == @utf8
+    bytes.should == @utf8.bytes.to_a
+  end
 
-    it "returns #bytesize bytes" do
-      @utf8_ascii.bytes.to_a.size.should == @utf8_ascii.bytesize
-    end
+  it "returns #bytesize bytes" do
+    @utf8_ascii.bytes.to_a.size.should == @utf8_ascii.bytesize
+  end
 
-    it "returns bytes as Fixnums" do
-      @ascii.bytes.to_a.each {|b| b.should be_an_instance_of(Fixnum)}
-      @utf8_ascii.bytes { |b| b.should be_an_instance_of(Fixnum) }
-    end
+  it "returns bytes as Fixnums" do
+    @ascii.bytes.to_a.each {|b| b.should be_an_instance_of(Fixnum)}
+    @utf8_ascii.bytes { |b| b.should be_an_instance_of(Fixnum) }
+  end
 
-    it "agrees with #unpack('C*')" do
-      @utf8_ascii.bytes.to_a.should == @utf8_ascii.unpack("C*")
-    end
+  it "agrees with #unpack('C*')" do
+    @utf8_ascii.bytes.to_a.should == @utf8_ascii.unpack("C*")
+  end
 
-    it "yields/returns no bytes for the empty string" do
-      ''.bytes.to_a.should == []
-    end
-
+  it "yields/returns no bytes for the empty string" do
+    ''.bytes.to_a.should == []
   end
 end
 
 with_feature :encoding do
   describe "String#bytes" do
-    before(:each) do
+    before :each do
       @utf8 = "東京"
       @ascii = 'Tokyo'
       @utf8_ascii = @utf8 + @ascii

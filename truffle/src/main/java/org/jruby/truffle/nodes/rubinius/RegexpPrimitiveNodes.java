@@ -29,6 +29,20 @@ import org.jruby.util.StringSupport;
  */
 public abstract class RegexpPrimitiveNodes {
 
+    @RubiniusPrimitive(name = "regexp_fixed_encoding_p")
+    public static abstract class RegexpFixedEncodingPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public RegexpFixedEncodingPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean fixedEncoding(RubyRegexp regexp) {
+            return regexp.getOptions().isFixed();
+        }
+
+    }
+
     @RubiniusPrimitive(name = "regexp_initialize")
     public static abstract class RegexpInitializePrimitiveNode extends RubiniusPrimitiveNode {
 

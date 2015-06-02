@@ -1,7 +1,7 @@
 # -*- encoding: us-ascii -*-
 
 describe :enum_each, :shared => true do
-  before(:each) do
+  before :each do
     object_each_with_arguments = Object.new
     def object_each_with_arguments.each_with_arguments(arg, *args)
       yield arg, *args

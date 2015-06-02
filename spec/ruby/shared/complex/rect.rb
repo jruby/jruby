@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe :complex_rect, :shared => true do
-  before(:each) do
+  before :each do
     @numbers = [
       Complex(1),
       Complex(0, 20),

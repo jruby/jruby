@@ -1,0 +1,1 @@
+fails:String#bytes yields each byte to a block if one is given, returning self

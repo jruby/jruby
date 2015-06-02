@@ -2,11 +2,11 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "IO#read_nonblock" do
-  before(:each) do
+  before :each do
     @read, @write = IO.pipe
   end
 
-  after(:each) do
+  after :each do
     @read.close rescue nil
     @write.close rescue nil
   end
@@ -37,14 +37,6 @@ describe "IO#read_nonblock" do
     @write.write "1"
     @read.read_nonblock(0).should == ""
     @read.read_nonblock(1).should == "1"
-  end
-
-  not_compliant_on :rubinius, :jruby do
-    # TODO: Fix this.
-    #
-    # This feature was changed in 1.9
-    # see also: [ruby-dev:25101] http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-dev/25101
-    #   and #2469 http://redmine.ruby-lang.org/issues/show/2469
   end
 
   it "raises IOError on closed stream" do

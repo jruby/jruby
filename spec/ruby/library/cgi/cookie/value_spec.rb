@@ -40,7 +40,7 @@ describe "CGI::Cookie#value" do
 end
 
 describe "CGI::Cookie#value=" do
-  before(:each) do
+  before :each do
     @cookie = CGI::Cookie.new("test-cookie")
   end
 

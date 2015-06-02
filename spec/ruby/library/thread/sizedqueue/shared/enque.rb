@@ -11,7 +11,6 @@ describe :sizedqueue_enq, :shared => true do
 
     q.size.should == 1
     q.pop.should == :first_element
-    q.size.should == 0
 
     blocked_thread.join
     q.size.should == 1

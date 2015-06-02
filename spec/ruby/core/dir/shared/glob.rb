@@ -1,12 +1,14 @@
 # -*- encoding: utf-8 -*-
 describe :dir_glob, :shared => true do
-  before(:all) do
+  before :all do
+    DirSpecs.create_mock_dirs
     @cwd = Dir.pwd
     Dir.chdir DirSpecs.mock_dir
   end
 
-  after(:all) do
+  after :all do
     Dir.chdir @cwd
+    DirSpecs.delete_mock_dirs
   end
 
   with_feature :encoding do
@@ -274,7 +276,7 @@ describe :dir_glob, :shared => true do
 end
 
 describe :dir_glob_recursive, :shared => true do
-  before(:all) do
+  before :all do
     @cwd = Dir.pwd
     @mock_dir = File.expand_path tmp('dir_glob_mock')
 
@@ -290,7 +292,7 @@ describe :dir_glob_recursive, :shared => true do
     Dir.chdir @mock_dir
   end
 
-  after(:all) do
+  after :all do
     Dir.chdir @cwd
     rm_r @mock_dir
   end
@@ -319,6 +321,29 @@ describe :dir_glob_recursive, :shared => true do
       ]
 
       Dir.send(@method, 'a/**/e').uniq.sort.should == expected
+    end
+  end
+end
+
+describe :dir_glob_encoding, :shared => true do
+  before :all do
+    DirSpecs.create_mock_dirs
+    @cwd = Dir.pwd
+    Dir.chdir DirSpecs.mock_dir
+  end
+
+  after :all do
+    Dir.chdir @cwd
+    DirSpecs.delete_mock_dirs
+  end
+
+  platform_is_not :windows, :darwin do
+    it "returns Strings in the encoding of the pattern" do
+      a = "file_one*".force_encoding Encoding::IBM437
+      b = "file_two*".force_encoding Encoding::EUC_JP
+
+      Dir.send(@method, a).first.encoding.should equal(Encoding::IBM437)
+      Dir.send(@method, b).first.encoding.should equal(Encoding::EUC_JP)
     end
   end
 end

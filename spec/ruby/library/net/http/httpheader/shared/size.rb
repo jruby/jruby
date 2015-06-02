@@ -1,5 +1,5 @@
 describe :net_httpheader_size, :shared => true do
-  before(:each) do
+  before :each do
     @headers = NetHTTPHeaderSpecs::Example.new
   end
 

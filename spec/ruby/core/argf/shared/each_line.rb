@@ -13,7 +13,7 @@ describe :argf_each_line, :shared => true do
 
   it "is a public method" do
     argv [@file1_name, @file2_name] do
-      ARGF.public_methods(false).should include(stasy(@method))
+      ARGF.public_methods(false).should include(@method)
     end
   end
 

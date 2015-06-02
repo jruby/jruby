@@ -1,5 +1,5 @@
 describe :cgi_htmlextension_popup_menu, :shared => true do
-  before(:each) do
+  before :each do
     @html = CGISpecs.cgi_new
   end
 

@@ -16,9 +16,9 @@ describe "The private keyword" do
     c = Private::B::C.new
     c.methods.should include(:baz)
     c.baz
-    Private::B::public_class_method1.should == 1
-    Private::B::public_class_method2.should == 2
-    lambda { Private::B::private_class_method1 }.should raise_error(NoMethodError)
+    Private::B.public_class_method1.should == 1
+    Private::B.public_class_method2.should == 2
+    lambda { Private::B.private_class_method1 }.should raise_error(NoMethodError)
   end
 
   it "is no longer in effect when the class is closed" do

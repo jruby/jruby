@@ -54,11 +54,11 @@ describe "Enumerable#find_index" do
   end
 
   describe "with block" do
-    before(:each) do
+    before :each do
       ScratchPad.record []
     end
 
-    after(:each) do
+    after :each do
       ScratchPad.clear
     end
 

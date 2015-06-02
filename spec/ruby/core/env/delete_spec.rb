@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "ENV.delete" do
-  after(:each) do
+  after :each do
     ENV.delete("foo")
   end
 

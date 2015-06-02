@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Kernel#local_variables" do
-  after(:each) do
+  after :each do
     ScratchPad.clear
   end
 

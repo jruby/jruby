@@ -3,7 +3,7 @@ require 'bigdecimal'
 
 describe "BigDecimal#to_s" do
 
-  before(:each) do
+  before :each do
     @bigdec_str = "3.14159265358979323846264338327950288419716939937"
     @bigneg_str = "-3.1415926535897932384626433832795028841971693993"
     @bigdec = BigDecimal(@bigdec_str)

@@ -85,8 +85,6 @@ describe "String#casecmp independent of case" do
       @lower_a_tilde = "\xe3"
     end
 
-    # These could be encoded in Latin-1, but there's no way
-    # to express that in 1.8.
     it "returns -1 when numerically less than other" do
       @upper_a_tilde.casecmp(@lower_a_tilde).should == -1
     end

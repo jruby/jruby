@@ -3,6 +3,9 @@ module ProcessSpecs
     attr_reader :input, :data, :signal
 
     def initialize
+      # Fast feedback for implementations without Process.daemon
+      raise NotImplementedError, "Process.daemon is not implemented" unless Process.respond_to? :daemon
+
       @script = fixture __FILE__, "daemon.rb"
       @input = tmp("process_daemon_input_file")
       @data = tmp("process_daemon_data_file")

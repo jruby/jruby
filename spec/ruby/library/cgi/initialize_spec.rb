@@ -8,12 +8,12 @@ describe "CGI#initialize" do
 end
 
 describe "CGI#initialize when passed no arguments" do
-  before(:each) do
+  before :each do
     ENV['REQUEST_METHOD'], @old_request_method = "GET", ENV['REQUEST_METHOD']
     @cgi = CGI.allocate
   end
 
-  after(:each) do
+  after :each do
     ENV['REQUEST_METHOD'] = @old_request_method
   end
 
@@ -72,12 +72,12 @@ describe "CGI#initialize when passed no arguments" do
 end
 
 describe "CGI#initialize when passed type" do
-  before(:each) do
+  before :each do
     ENV['REQUEST_METHOD'], @old_request_method = "GET", ENV['REQUEST_METHOD']
     @cgi = CGI.allocate
   end
 
-  after(:each) do
+  after :each do
     ENV['REQUEST_METHOD'] = @old_request_method
   end
 

@@ -49,6 +49,6 @@ describe "Module#private" do
   it "raises a NameError when given an undefined name" do
     lambda do
       Module.new.send(:private, :undefined)
-    end.should raise_exception(NameError)
+    end.should raise_error(NameError)
   end
 end

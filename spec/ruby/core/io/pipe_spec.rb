@@ -70,12 +70,12 @@ describe "IO.pipe" do
 end
 
 describe "IO.pipe" do
-  before(:each) do
+  before :each do
     @default_external = Encoding.default_external
     @default_internal = Encoding.default_internal
   end
 
-  after(:each) do
+  after :each do
     Encoding.default_external = @default_external
     Encoding.default_internal = @default_internal
   end

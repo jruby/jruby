@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Method#unbind" do
-  before(:each) do
+  before :each do
     @normal = MethodSpecs::Methods.new
     @normal_m = @normal.method :foo
     @normal_um = @normal_m.unbind

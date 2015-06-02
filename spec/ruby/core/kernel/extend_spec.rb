@@ -19,7 +19,7 @@ module KernelSpecs::M
 end
 
 describe "Kernel#extend" do
-  before(:each) do
+  before :each do
     ScratchPad.record []
   end
 
@@ -57,7 +57,7 @@ describe "Kernel#extend" do
   end
 
   describe "on frozen instance" do
-    before(:each) do
+    before :each do
       @frozen = Object.new.freeze
       @module = KernelSpecs::M
     end

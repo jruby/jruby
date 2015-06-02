@@ -1,7 +1,7 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 
 describe :numeric_arg, :shared => true do
-  before(:each) do
+  before :each do
     @numbers = [
       20,
       Rational(3, 4),

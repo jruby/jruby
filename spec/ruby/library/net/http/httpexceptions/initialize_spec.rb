@@ -3,7 +3,7 @@ require 'net/http'
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Net::HTTPExceptions#initialize when passed message, response" do
-  before(:each) do
+  before :each do
     @exception = NetHTTPExceptionsSpecs::Simple.new("error message", "a http response")
   end
 

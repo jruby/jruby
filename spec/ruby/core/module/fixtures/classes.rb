@@ -367,10 +367,10 @@ module ModuleSpecs
     end
   end
 
-  # This class isn't inherited from or included in anywhere. It exists to test
-  # 1.9's constant scoping rules
+  # This class isn't inherited from or included in anywhere.
+  # It exists to test the constant scoping rules.
   class Detached
-    DETATCHED_CONSTANT = :d
+    DETACHED_CONSTANT = :d
   end
 
   class ParentPrivateMethodRedef

@@ -1520,11 +1520,7 @@ module URI
           proxy_uri = ENV["CGI_#{name.upcase}"]
         end
       elsif name == 'http_proxy'
-        unless proxy_uri = ENV[name]
-          if proxy_uri = ENV[name.upcase]
-            warn 'The environment variable HTTP_PROXY is discouraged.  Use http_proxy.'
-          end
-        end
+        proxy_uri = http_proxy_from_env
       else
         proxy_uri = ENV[name] || ENV[name.upcase]
       end
@@ -1542,8 +1538,7 @@ module URI
         end
       end
 
-      name = 'no_proxy'
-      if no_proxy = ENV[name] || ENV[name.upcase]
+      if no_proxy = no_proxy_from_env
         no_proxy.scan(/([^:,]*)(?::(\d+))?/) {|host, port|
           if /(\A|\.)#{Regexp.quote host}\z/i =~ self.host &&
             (!port || self.port == port.to_i)
@@ -1553,5 +1548,44 @@ module URI
       end
       URI.parse(proxy_uri)
     end
+
+    def http_proxy_from_env
+      proxy_uri = ENV['http_proxy']
+
+      if proxy_uri.nil? && (proxy_uri = ENV['HTTP_PROXY'])
+        warn 'The environment variable HTTP_PROXY is discouraged.  Use http_proxy.'
+      end
+
+      if proxy_uri.nil? || proxy_uri.empty?
+        proxy_host = ENV_JAVA['http.proxyHost']
+
+        if proxy_host
+          begin
+            proxy_port = (ENV_JAVA['http.proxyPort'] || 80).to_i
+            if proxy_port > 0
+              proxy_uri = "http://#{proxy_host}:#{proxy_port}"
+            else
+              warn "invalid http.proxyPort property: #{ENV_JAVA['http.proxyPort']}"
+            end
+          end
+        end
+      end
+
+      proxy_uri
+    end
+    private :http_proxy_from_env
+
+    DEFAULT_JVM_NON_PROXY_HOSTS = "local|*.local|169.254/16|*.169.254/16|127.0.0.1|localhost|*.localhost"
+    def no_proxy_from_env
+      name = "no_proxy"
+      no_proxy = ENV[name] || ENV[name.upcase]
+
+      if no_proxy.nil? || no_proxy.empty?
+        no_proxy = ENV_JAVA['http.nonProxyHosts']
+      end
+
+      no_proxy
+    end
+    private :no_proxy_from_env
   end
 end

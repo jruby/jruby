@@ -18,11 +18,11 @@ describe "The super keyword" do
 
   it "searches class methods" do
     Super::S3::A.new.foo([]).should == ["A#foo"]
-    Super::S3::A.foo([]).should == ["A::foo"]
-    Super::S3::A.bar([]).should == ["A::bar","A::foo"]
+    Super::S3::A.foo([]).should == ["A.foo"]
+    Super::S3::A.bar([]).should == ["A.bar","A.foo"]
     Super::S3::B.new.foo([]).should == ["A#foo"]
-    Super::S3::B.foo([]).should == ["B::foo","A::foo"]
-    Super::S3::B.bar([]).should == ["B::bar","A::bar","B::foo","A::foo"]
+    Super::S3::B.foo([]).should == ["B.foo","A.foo"]
+    Super::S3::B.bar([]).should == ["B.bar","A.bar","B.foo","A.foo"]
   end
 
   it "calls the method on the calling class including modules" do
@@ -49,8 +49,8 @@ describe "The super keyword" do
     Super::MS3::A.foo([]).should == ["ModA#foo"]
     Super::MS3::A.bar([]).should == ["ModA#bar","ModA#foo"]
     Super::MS3::B.new.foo([]).should == ["A#foo"]
-    Super::MS3::B.foo([]).should == ["B::foo","ModA#foo"]
-    Super::MS3::B.bar([]).should == ["B::bar","ModA#bar","B::foo","ModA#foo"]
+    Super::MS3::B.foo([]).should == ["B.foo","ModA#foo"]
+    Super::MS3::B.bar([]).should == ["B.bar","ModA#bar","B.foo","ModA#foo"]
   end
 
   it "calls the correct method when the method visibility is modified" do

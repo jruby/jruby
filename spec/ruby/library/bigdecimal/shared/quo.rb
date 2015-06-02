@@ -1,7 +1,7 @@
 require 'bigdecimal'
 
 describe :bigdecimal_quo, :shared => true do
-  before(:each) do
+  before :each do
     @one = BigDecimal("1")
     @zero = BigDecimal("0")
     @zero_plus = BigDecimal("+0")

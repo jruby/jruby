@@ -93,7 +93,6 @@ VALUE hash_spec_rb_hash_new(VALUE self) {
 #endif
 
 #ifdef HAVE_RB_HASH_SIZE
-/* rb_hash_size is a static symbol in MRI */
 VALUE hash_spec_rb_hash_size(VALUE self, VALUE hash) {
   return rb_hash_size(hash);
 }

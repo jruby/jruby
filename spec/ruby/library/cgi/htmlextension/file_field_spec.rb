@@ -3,7 +3,7 @@ require 'cgi'
 require File.expand_path('../fixtures/common', __FILE__)
 
 describe "CGI::HtmlExtension#file_field" do
-  before(:each) do
+  before :each do
     @html = CGISpecs.cgi_new
   end
 

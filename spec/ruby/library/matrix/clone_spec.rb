@@ -3,7 +3,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 require 'matrix'
 
 describe "Matrix#clone" do
-  before(:each) do
+  before :each do
     @a = Matrix[[1, 2], [3, 4], [5, 6]]
   end
 

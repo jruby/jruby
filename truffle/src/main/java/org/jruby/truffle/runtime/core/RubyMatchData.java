@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
@@ -23,32 +22,22 @@ import java.util.Arrays;
 public class RubyMatchData extends RubyBasicObject {
 
     private final RubyBasicObject source;
-    private final Regex regex;
+    private final RubyRegexp regexp;
     private final Region region;
     private final Object[] values;
     private final RubyBasicObject pre;
     private final RubyBasicObject post;
     private final RubyBasicObject global;
 
-    public RubyMatchData(RubyClass rubyClass, RubyBasicObject source, Regex regex, Region region, Object[] values, RubyBasicObject pre, RubyBasicObject post, RubyBasicObject global) {
+    public RubyMatchData(RubyClass rubyClass, RubyBasicObject source, RubyRegexp regexp, Region region, Object[] values, RubyBasicObject pre, RubyBasicObject post, RubyBasicObject global) {
         super(rubyClass);
         this.source = source;
-        this.regex = regex;
+        this.regexp = regexp;
         this.region = region;
         this.values = values;
         this.pre = pre;
         this.post = post;
         this.global = global;
-    }
-
-    public Object[] valuesAt(int... indices) {
-        final Object[] result = new Object[indices.length];
-
-        for (int n = 0; n < indices.length; n++) {
-            result[n] = values[indices[n]];
-        }
-
-        return result;
     }
 
     public Object[] getValues() {
@@ -94,7 +83,7 @@ public class RubyMatchData extends RubyBasicObject {
     }
 
     public int getBackrefNumber(ByteList value) {
-        return regex.nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), region);
+        return regexp.getRegex().nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), region);
     }
 
     @Override
@@ -126,4 +115,5 @@ public class RubyMatchData extends RubyBasicObject {
         return source;
     }
 
+    public RubyBasicObject getRegexp() { return regexp; }
 }

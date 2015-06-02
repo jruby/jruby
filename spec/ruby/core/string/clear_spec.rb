@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 with_feature :encoding do
   describe "String#clear" do
-    before(:each) do
+    before :each do
       @s = "Jolene"
     end
 

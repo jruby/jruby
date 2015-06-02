@@ -713,7 +713,7 @@ describe :marshal_load, :shared => true do
   end
 
   describe "when a class does not exist in the namespace" do
-    before(:each) do
+    before :each do
       NamespaceTest.send(:const_set, :SameName, Class.new)
       @data = Marshal.dump(NamespaceTest::SameName.new)
       NamespaceTest.send(:remove_const, :SameName)

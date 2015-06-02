@@ -58,4 +58,9 @@ module Rubinius
       raise ArgumentError, "Class #{cls} is not compatible with #{obj.inspect}"
     end
   end
+
+  def self.get_user_home(name)
+    Rubinius.primitive :vm_get_user_home
+    raise PrimitiveFailure, "Rubinius.get_user_home primitive failed"
+  end
 end

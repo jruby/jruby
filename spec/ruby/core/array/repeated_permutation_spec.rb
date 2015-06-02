@@ -3,7 +3,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Array#repeated_permutation" do
 
-  before(:each) do
+  before :each do
     @numbers = [10, 11, 12]
     @permutations = [[10, 10], [10, 11], [10, 12], [11, 10], [11, 11], [11, 12], [12, 10], [12, 11], [12, 12]]
   end

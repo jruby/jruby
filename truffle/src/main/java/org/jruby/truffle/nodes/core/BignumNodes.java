@@ -43,13 +43,14 @@ public abstract class BignumNodes {
     private static final DynamicObjectFactory BIGNUM_FACTORY;
 
     static {
-        Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
         VALUE_PROPERTY = Property.create(VALUE_IDENTIFIER, allocator.locationForType(BigInteger.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        Shape shape = RubyBasicObject.EMPTY_SHAPE.addProperty(VALUE_PROPERTY);
+        final Shape shape = RubyBasicObject.EMPTY_SHAPE.addProperty(VALUE_PROPERTY);
         BIGNUM_FACTORY = shape.createFactory();
     }
 
     public static RubyBasicObject createRubyBignum(RubyClass rubyClass, BigInteger value) {
+        assert value.compareTo(LONG_MIN) < 0 || value.compareTo(LONG_MAX) > 0 : String.format("%s not in Bignum range", value);
         return new RubyBignum(rubyClass, BIGNUM_FACTORY.newInstance(value));
     }
 
@@ -396,6 +397,15 @@ public abstract class BignumNodes {
         @Specialization(guards = "isRubyBignum(b)")
         public boolean greater(RubyBasicObject a, RubyBasicObject b) {
             return getBigIntegerValue(a).compareTo(getBigIntegerValue(b)) > 0;
+        }
+
+        @Specialization(guards = {
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)",
+                "!isRubyBignum(b)"})
+        public Object compare(VirtualFrame frame, Object a, Object b) {
+            return ruby(frame, "b, a = math_coerce(other, :compare_error); a > b", "other", b);
         }
     }
 

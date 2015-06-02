@@ -42,8 +42,11 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Sysconf;
+import jnr.posix.Passwd;
 import jnr.posix.Times;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
@@ -62,6 +65,7 @@ import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.util.io.PosixShim;
+
 import sun.misc.Signal;
 
 import java.lang.management.ManagementFactory;
@@ -161,6 +165,27 @@ public abstract class VMPrimitiveNodes {
         @Specialization
         public RubyBasicObject vmGetModuleName(RubyModule module) {
             return createString(module.getName());
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "vm_get_user_home", needsSelf = false)
+    public abstract static class VMGetUserHomePrimitiveNode extends RubiniusPrimitiveNode {
+
+        public VMGetUserHomePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject vmGetUserHome(RubyString username) {
+            CompilerDirectives.transferToInterpreter();
+            // TODO BJF 30-APR-2015 Review the more robust getHomeDirectoryPath implementation
+            final Passwd passwd = getContext().getPosix().getpwnam(username.toString());
+            if (passwd == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("user " + username.toString() + " does not exist", this));
+            }
+            return createString(passwd.getHome());
         }
 
     }

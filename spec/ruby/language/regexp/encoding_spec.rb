@@ -97,7 +97,6 @@ describe "Regexps with encoding modifiers" do
     /#{/./}/u.encoding.should == Encoding::UTF_8
   end
 
-  # Fails on 1.9; reported as bug #2052
   it "selects last of multiple encoding specifiers" do
     /foo/ensuensuens.should == /foo/s
   end

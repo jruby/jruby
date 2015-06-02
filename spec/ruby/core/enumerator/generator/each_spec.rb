@@ -1,7 +1,7 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 
 describe "Enumerator::Generator#each" do
-  before(:each) do
+  before :each do
     @generator = enumerator_class::Generator.new do |y, *args|
       y << 3 << 2 << 1
       y << args unless args.empty?

@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Hash#flatten" do
 
-  before(:each) do
+  before :each do
     @h = {:plato => :greek,
           :witgenstein => [:austrian, :british],
           :russell => :welsh}

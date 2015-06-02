@@ -2,7 +2,7 @@ require File.expand_path('../../../../../spec_helper', __FILE__)
 require 'net/http'
 
 describe "Net::HTTPGenericRequest#set_body_internal when passed string" do
-  before(:each) do
+  before :each do
     @request = Net::HTTPGenericRequest.new("POST", true, true, "/some/path")
   end
 

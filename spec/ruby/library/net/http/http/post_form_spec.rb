@@ -3,11 +3,11 @@ require 'net/http'
 require File.expand_path('../fixtures/http_server', __FILE__)
 
 describe "Net::HTTP.post_form when passed URI" do
-  before(:all) do
+  before :all do
     NetHTTPSpecs.start_server
   end
 
-  after(:all) do
+  after :all do
     NetHTTPSpecs.stop_server
   end
 

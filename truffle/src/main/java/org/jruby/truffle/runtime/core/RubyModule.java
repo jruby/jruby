@@ -325,7 +325,13 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
             throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnModule(oldName, this, currentNode));
         }
 
-        addMethod(currentNode, method.withName(newName));
+        InternalMethod aliasMethod = method.withName(newName);
+
+        if (ModuleOperations.isMethodPrivateFromName(newName)) {
+            aliasMethod = aliasMethod.withVisibility(Visibility.PRIVATE);
+        }
+
+        addMethod(currentNode, aliasMethod);
     }
 
     @TruffleBoundary
@@ -343,7 +349,9 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void appendFeatures(Node currentNode, RubyModule other) {
-        // TODO(CS): check only run once
+        if (ModuleOperations.includesModule(this, other)) {
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("cyclic include detected", currentNode));
+        }
         other.include(currentNode, this);
     }
 

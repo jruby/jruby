@@ -47,7 +47,7 @@ describe :process_exec, :shared => true do
   end
 
   describe "with a single argument" do
-    before(:each) do
+    before :each do
       @dir = tmp("exec_with_dir", false)
       Dir.mkdir @dir
 
@@ -56,7 +56,7 @@ describe :process_exec, :shared => true do
       touch @path
     end
 
-    after(:each) do
+    after :each do
       rm_r @path
       rm_r @dir
     end
@@ -78,11 +78,11 @@ describe :process_exec, :shared => true do
   end
 
   describe "(environment variables)" do
-    before(:each) do
+    before :each do
       ENV["FOO"] = "FOO"
     end
 
-    after(:each) do
+    after :each do
       ENV["FOO"] = nil
     end
 

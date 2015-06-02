@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Enumerable#grep" do
-  before(:each) do
+  before :each do
     @a = EnumerableSpecs::EachDefiner.new( 2, 4, 6, 8, 10)
   end
 

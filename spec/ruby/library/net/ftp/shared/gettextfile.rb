@@ -1,5 +1,5 @@
 describe :net_ftp_gettextfile, :shared => :true do
-  before(:each) do
+  before :each do
     @tmp_file = tmp("gettextfile")
 
     @server = NetFTPSpecs::DummyFTP.new
@@ -10,7 +10,7 @@ describe :net_ftp_gettextfile, :shared => :true do
     @ftp.binary = @binary_mode
   end
 
-  after(:each) do
+  after :each do
     @ftp.quit rescue nil
     @ftp.close
     @server.stop

@@ -1,5 +1,3 @@
 fails:ARGF.binmode does not raise an error
 fails:ARGF.binmode puts reading into binmode
 fails:ARGF.binmode puts alls subsequent stream reading through ARGF into binmode
-fails:ARGF.binmode returns self
-fails:ARGF.binmode sets the file's encoding to ASCII-8BIT

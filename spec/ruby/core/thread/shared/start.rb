@@ -1,5 +1,5 @@
 describe :thread_start, :shared => true do
-  before(:each) do
+  before :each do
     ScratchPad.clear
   end
 
