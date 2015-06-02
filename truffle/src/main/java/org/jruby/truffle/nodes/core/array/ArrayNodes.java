@@ -79,7 +79,7 @@ public abstract class ArrayNodes {
     private static final DynamicObjectFactory ARRAY_FACTORY;
 
     static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+        //final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
 
         //STORE_PROPERTY = Property.create(STORE_IDENTIFIER, allocator.locationForType(Object.class, EnumSet.of(LocationModifier.NonNull)), 0);
         //SIZE_PROPERTY = Property.create(SIZE_IDENTIFIER, allocator.locationForType(int.class, EnumSet.of(LocationModifier.NonNull)), 0);
