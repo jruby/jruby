@@ -3616,7 +3616,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyString str = getStringForPattern(obj);
         if (str.scanForCodeRange() == CR_BROKEN) {
             throw runtime.newRegexpError("invalid multybyte character: " +
-                    RubyRegexp.regexpDescription19(runtime, str.value, new RegexpOptions(), str.value.getEncoding()).toString());
+                    RegexpSupport.regexpDescription19(runtime, str.value, new RegexpOptions(), str.value.getEncoding()).toString());
         }
         if (str.value.getEncoding().isDummy()) {
             throw runtime.newArgumentError("can't make regexp with dummy encoding");
