@@ -3,7 +3,7 @@ require 'cgi'
 require File.expand_path('../fixtures/common', __FILE__)
 
 describe "CGI::HtmlExtension#multipart_form" do
-  before(:each) do
+  before :each do
     @html = CGISpecs.cgi_new
     @html.stub!(:script_name).and_return("/path/to/some/script.rb")
   end

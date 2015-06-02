@@ -22,7 +22,7 @@ describe "Dir.mktmpdir when passed no arguments" do
 end
 
 describe "Dir.mkdir when passed a block" do
-  before(:each) do
+  before :each do
     Dir.stub!(:tmpdir).and_return("/tmp")
     FileUtils.stub!(:remove_entry)
     FileUtils.stub!(:remove_entry_secure)

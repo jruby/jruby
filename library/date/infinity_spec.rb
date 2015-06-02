@@ -35,8 +35,6 @@ describe "Date::Infinity" do
     i3.nan?.should == true
   end
 
-  # These checks fail on MRI because of a bug in Date::Infinity#<=>
-  # Fixed in 1.8.7
   it "should be able to compare Infinity objects" do
     i1 = Date::Infinity.new
     i2 = Date::Infinity.new(-1)
@@ -48,8 +46,6 @@ describe "Date::Infinity" do
     (i3 <=> i2).should == 1
   end
 
-  # Also fails because of the same bug as the previous spec
-  # Fixed in 1.8.7
   it "should be able to return plus Infinity for abs" do
     i1 = Date::Infinity.new
     i2 = Date::Infinity.new(-1)

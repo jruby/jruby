@@ -435,28 +435,34 @@ describe "Marshal.dump" do
       it "dumps the zone and the offset" do
         with_timezone 'AST', 3 do
           dump = Marshal.dump(@t)
-          dump.should == "\x04\bIu:\tTime\r#{@t_dump}\a:\voffseti\x020*:\tzoneI\"\bAST\x06:\x06ET"
+          base = "\x04\bIu:\tTime\r#{@t_dump}\a"
+          offset = ":\voffseti\x020*"
+          zone = ":\tzoneI\"\bAST\x06:\x06ET" # Last is 'T' (UTF-8)
+          [ "#{base}#{offset}#{zone}", "#{base}#{zone}#{offset}" ].should include(dump)
         end
       end
 
       it "dumps the zone, but not the offset if zone is UTC" do
         dump = Marshal.dump(@utc)
-        dump.should == "\x04\bIu:\tTime\r#{@utc_dump}\x06:\tzoneI\"\bUTC\x06:\x06ET"
+        zone = ":\tzoneI\"\bUTC\x06:\x06ET" # Last is 'T' (UTF-8)
+        dump.should == "\x04\bIu:\tTime\r#{@utc_dump}\x06#{zone}"
       end
     end
 
     ruby_version_is "2.2" do
-      ruby_bug "#10887", "2.2.0.81" do
-        it "dumps the zone and the offset" do
-          with_timezone 'AST', 3 do
-            dump = Marshal.dump(@t)
-            dump.should == "\x04\bIu:\tTime\r#{@t_dump}\a:\voffseti\x020*:\tzoneI\"\bAST\x06:\x06EF"
-          end
+      it "dumps the zone and the offset" do
+        with_timezone 'AST', 3 do
+          dump = Marshal.dump(@t)
+          base = "\x04\bIu:\tTime\r#{@t_dump}\a"
+          offset = ":\voffseti\x020*"
+          zone = ":\tzoneI\"\bAST\x06:\x06EF" # Last is 'F' (US-ASCII)
+          [ "#{base}#{offset}#{zone}", "#{base}#{zone}#{offset}" ].should include(dump)
+        end
 
-          it "dumps the zone, but not the offset if zone is UTC" do
-            dump = Marshal.dump(@utc)
-            dump.should == "\x04\bIu:\tTime\r#{@utc_dump}\x06:\tzoneI\"\bUTC\x06:\x06EF"
-          end
+        it "dumps the zone, but not the offset if zone is UTC" do
+          dump = Marshal.dump(@utc)
+          zone = ":\tzoneI\"\bUTC\x06:\x06EF" # Last is 'F' (US-ASCII)
+          dump.should == "\x04\bIu:\tTime\r#{@utc_dump}\x06#{zone}"
         end
       end
     end

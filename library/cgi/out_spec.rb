@@ -2,13 +2,13 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require 'cgi'
 
 describe "CGI#out" do
-  before(:each) do
+  before :each do
     ENV['REQUEST_METHOD'], @old_request_method = "GET", ENV['REQUEST_METHOD']
     @cgi = CGI.new
     $stdout, @old_stdout = IOStub.new, $stdout
   end
 
-  after(:each) do
+  after :each do
     $stdout = @old_stdout
     ENV['REQUEST_METHOD'] = @old_request_method
   end
@@ -36,12 +36,12 @@ describe "CGI#out" do
 end
 
 describe "CGI#out when passed no block" do
-  before(:each) do
+  before :each do
     ENV['REQUEST_METHOD'], @old_request_method = "GET", ENV['REQUEST_METHOD']
     @cgi = CGI.new
   end
 
-  after(:each) do
+  after :each do
     ENV['REQUEST_METHOD'] = @old_request_method
   end
 

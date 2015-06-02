@@ -29,24 +29,24 @@ end
 describe :kernel_protected_methods_supers, :shared => true do
   it "returns a unique list for an object extended by a module" do
     m = ReflectSpecs.oed.protected_methods(*@object)
-    m.select { |x| x == stasy(:pro) }.sort.should == [stasy(:pro)]
+    m.select { |x| x == :pro }.sort.should == [:pro]
   end
 
   it "returns a unique list for a class including a module" do
     m = ReflectSpecs::D.new.protected_methods(*@object)
-    m.select { |x| x == stasy(:pro) }.sort.should == [stasy(:pro)]
+    m.select { |x| x == :pro }.sort.should == [:pro]
   end
 
   it "returns a unique list for a subclass of a class that includes a module" do
     m = ReflectSpecs::E.new.protected_methods(*@object)
-    m.select { |x| x == stasy(:pro) }.sort.should == [stasy(:pro)]
+    m.select { |x| x == :pro }.sort.should == [:pro]
   end
 end
 
 describe :kernel_protected_methods_with_falsy, :shared => true do
   it "returns a list of protected methods in without its ancestors" do
-    ReflectSpecs::F.protected_methods(@object).select{|m|/_pro\z/ =~ m}.sort.should == [stasy(:ds_pro), stasy(:fs_pro)]
-    ReflectSpecs::F.new.protected_methods(@object).should == [stasy(:f_pro)]
+    ReflectSpecs::F.protected_methods(@object).select{|m|/_pro\z/ =~ m}.sort.should == [:ds_pro, :fs_pro]
+    ReflectSpecs::F.new.protected_methods(@object).should == [:f_pro]
   end
 end
 

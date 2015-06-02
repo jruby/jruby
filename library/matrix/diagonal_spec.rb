@@ -3,7 +3,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 require 'matrix'
 
 describe "Matrix.diagonal" do
-  before(:each) do
+  before :each do
     @m = Matrix.diagonal(10, 11, 12, 13, 14)
   end
 

@@ -1,5 +1,5 @@
 describe :stringio_each_byte, :shared => true do
-  before(:each) do
+  before :each do
     @io = StringIO.new("xyz")
   end
 

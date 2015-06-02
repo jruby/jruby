@@ -31,25 +31,16 @@ describe "The not keyword" do
 end
 
 describe "not()" do
-  # not(arg).method and method(not(arg)) raise SyntaxErrors on 1.8. Here we
-  # use #inspect to test that the syntax works on 1.9
-
-  it "can be used as a function" do
-    lambda do
-      not(true).inspect
-    end.should_not raise_error(SyntaxError)
-  end
-
   it "returns false if the argument is true" do
-    not(true).inspect.should == "false"
+    not(true).should == false
   end
 
   it "returns true if the argument is false" do
-    not(false).inspect.should == "true"
+    not(false).should == true
   end
 
   it "returns true if the argument is nil" do
-    not(false).inspect.should == "true"
+    not(false).should == true
   end
 end
 
@@ -64,12 +55,12 @@ describe "The `!' keyword" do
     (!nil).should be_true
   end
 
-  it "turns a truthful object into `true'" do
+  it "doubled turns a truthful object into `true'" do
     (!!true).should be_true
     (!!'true').should be_true
   end
 
-  it "turns a not truthful object into `false'" do
+  it "doubled turns a not truthful object into `false'" do
     (!!false).should be_false
     (!!nil).should be_false
   end

@@ -1,6 +1,6 @@
 describe :date_valid_ordinal?, :shared => true do
   it "determines if the date is a valid ordinal date" do
-    # October 1582 (the Gregorian calendar, Ordinal Date in 1.9)
+    # October 1582 (the Gregorian calendar, Ordinal Date)
     #   S   M  Tu   W  Th   F   S
     #     274 275 276 277 278 279
     # 280 281 282 283 284 285 286
@@ -13,7 +13,7 @@ describe :date_valid_ordinal?, :shared => true do
   end
 
   it "handles negative day numbers" do
-    # October 1582 (the Gregorian calendar, Ordinal Date in 1.9)
+    # October 1582 (the Gregorian calendar, Ordinal Date)
     #   S   M  Tu   W  Th   F   S
     #     -82 -81 -80 -79 -78 -77
     # -76 -75 -74 -73 -72 -71 -70

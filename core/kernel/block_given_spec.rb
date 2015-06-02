@@ -3,10 +3,11 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe :kernel_block_given, :shared => true do
   it "returns true if and only if a block is supplied" do
-    @object.accept_block {}.should_not == false
-    @object.accept_block_as_argument {}.should_not == false
-    @object.accept_block.should_not == true
-    @object.accept_block_as_argument.should_not == true
+    @object.accept_block {}.should == true
+    @object.accept_block_as_argument {}.should == true
+
+    @object.accept_block.should == false
+    @object.accept_block_as_argument.should == false
   end
 
   # Clarify: Based on http://www.ruby-forum.com/topic/137822 it appears
@@ -34,8 +35,4 @@ end
 
 describe "self.send(:block_given?)" do
   it_behaves_like :kernel_block_given, :block_given?, KernelSpecs::SelfBlockGiven
-end
-
-describe "Kernel.block_given?" do
-  it "needs to be reviewed for spec completeness"
 end

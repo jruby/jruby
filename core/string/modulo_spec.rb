@@ -585,9 +585,7 @@ describe "String#%" do
     block.should raise_error(ArgumentError)
   end
 
-  # Note: %u has been changed to an alias for %d in MRI 1.9 trunk.
-  # Let's wait a bit for it to cool down and see if it will
-  # be changed for 1.8 as well.
+  # Note: %u has been changed to an alias for %d in 1.9.
   it "supports unsigned formats using %u" do
     ("%u" % 10).should == "10"
     ("% u" % 10).should == " 10"

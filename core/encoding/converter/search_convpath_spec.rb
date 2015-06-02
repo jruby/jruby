@@ -2,7 +2,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 
 with_feature :encoding do
   describe "Encoding::Converter.search_convpath" do
-    before(:all) do
+    before :all do
       @perms = Encoding.name_list.permutation(2).map do |pair|
         Encoding::Converter.search_convpath(pair.first, pair.last) rescue []
       end

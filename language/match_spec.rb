@@ -34,7 +34,7 @@ describe "The =~ operator" do
 end
 
 describe "The =~ operator with named captures" do
-  before(:each) do
+  before :each do
     @regexp = /(?<matched>foo)(?<unmatched>bar)?/
     @string = "foofoo"
   end

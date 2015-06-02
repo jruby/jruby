@@ -47,20 +47,20 @@ module Super
         a << "A#foo"
       end
       def self.foo(a)
-        a << "A::foo"
+        a << "A.foo"
       end
       def self.bar(a)
-        a << "A::bar"
+        a << "A.bar"
         foo(a)
       end
     end
     class B < A
       def self.foo(a)
-        a << "B::foo"
+        a << "B.foo"
         super(a)
       end
       def self.bar(a)
-        a << "B::bar"
+        a << "B.bar"
         super(a)
       end
     end
@@ -201,11 +201,11 @@ module Super
     end
     class B < A
       def self.foo(a)
-        a << "B::foo"
+        a << "B.foo"
         super(a)
       end
       def self.bar(a)
-        a << "B::bar"
+        a << "B.bar"
         super(a)
       end
     end
@@ -366,6 +366,73 @@ module Super
     class B < A
       def a
         super { 14 }
+      end
+    end
+  end
+
+  module ZSuperWithOptional
+    class A
+      def m(x, y, z)
+        z
+      end
+    end
+
+    class B < A
+      def m(x, y, z = 14)
+        super
+      end
+    end
+
+    class C < A
+      def m(x, y, z = 14)
+        z = 100
+        super
+      end
+    end
+  end
+
+  module ZSuperWithRest
+    class A
+      def m(*args)
+        args
+      end
+
+      def m_modified(*args)
+        args
+      end
+    end
+
+    class B < A
+      def m(*args)
+        super
+      end
+
+      def m_modified(*args)
+        args[1] = 14
+        super
+      end
+    end
+  end
+
+  module ZSuperWithRestAndOthers
+    class A
+      def m(a, b, *args)
+        args
+      end
+
+      def m_modified(a, b, *args)
+        args
+      end
+    end
+
+    class B < A
+      def m(a, b, *args)
+        super
+      end
+
+      def m_modified(a, b, *args)
+        args[1] = 14
+        super
       end
     end
   end

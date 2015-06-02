@@ -57,7 +57,7 @@ describe "Kernel#autoload" do
   end
 
   describe "when Object is frozen" do
-    before(:each) do
+    before :each do
       non_existent = fixture __FILE__, "no_autoload.rb"
 
       @script = <<-"EOD"

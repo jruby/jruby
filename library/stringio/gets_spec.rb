@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require "stringio"
 
 describe "StringIO#gets when passed [separator]" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("this>is>an>example")
   end
 
@@ -68,7 +68,7 @@ describe "StringIO#gets when passed [separator]" do
 end
 
 describe "StringIO#gets when passed no argument" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("this is\nan example\nfor StringIO#gets")
   end
 
@@ -126,7 +126,7 @@ describe "StringIO#gets when passed no argument" do
 end
 
 describe "StringIO#gets when passed [limit]" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("this>is>an>example")
   end
 
@@ -173,7 +173,7 @@ describe "StringIO#gets when passed [limit]" do
 end
 
 describe "StringIO#gets when passed [separator] and [limit]" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("this>is>an>example")
   end
 

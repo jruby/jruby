@@ -64,7 +64,7 @@ describe "Complex#fdiv" do
 end
 
 describe "Complex#fdiv with no imaginary part" do
-  before(:each) do
+  before :each do
     @numbers = [1, 5.43, 10, bignum_value, 99872.2918710].map{|n| [n,-n]}.flatten
   end
 
@@ -94,7 +94,7 @@ describe "Complex#fdiv with no imaginary part" do
 end
 
 describe "Complex#fdiv with an imaginary part" do
-  before(:each) do
+  before :each do
     @numbers = [1, 5.43, 10, bignum_value, 99872.2918710].map{|n| [n,-n]}.flatten
   end
 

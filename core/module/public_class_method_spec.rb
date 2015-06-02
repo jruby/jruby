@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Module#public_class_method" do
-  before(:each) do
+  before :each do
     class << ModuleSpecs::Parent
       private
       def public_method_1; end
@@ -44,7 +44,7 @@ describe "Module#public_class_method" do
   it "raises a NameError if class method doesn't exist" do
     lambda do
       ModuleSpecs.public_class_method :no_method_here
-    end.should raise_exception(NameError)
+    end.should raise_error(NameError)
   end
 
   it "makes a class method public" do
@@ -61,7 +61,7 @@ describe "Module#public_class_method" do
       c = Class.new do
         public_class_method :foo
       end
-    end.should raise_exception(NameError)
+    end.should raise_error(NameError)
   end
 
   it "raises a NameError when the given name is an instance method" do
@@ -70,6 +70,6 @@ describe "Module#public_class_method" do
         def foo() "foo" end
         public_class_method :foo
       end
-    end.should raise_exception(NameError)
+    end.should raise_error(NameError)
   end
 end

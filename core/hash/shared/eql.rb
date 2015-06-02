@@ -92,7 +92,6 @@ describe :hash_eql, :shared => true do
   end
 end
 
-# All these tests are true for ==, and for eql? when Ruby >= 1.8.7
 describe :hash_eql_additional, :shared => true do
   it "compares values when keys match" do
     x = mock('x')
@@ -185,8 +184,6 @@ describe :hash_eql_additional, :shared => true do
     a[1].tainted?.should be_true
   end
 
-  # The specs above all pass in 1.8.6p287 for Hash#== but not Hash#eql
-  # except this one, which does not pass for Hash#==.
   it "compares the values in self to values in other hash" do
     l_val = mock("left")
     r_val = mock("right")

@@ -4,13 +4,13 @@ require File.expand_path('../../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
 describe :enumerator_lazy_collect, :shared => true do
-  before(:each) do
+  before :each do
     @yieldsmixed = EnumeratorLazySpecs::YieldsMixed.new.to_enum.lazy
     @eventsmixed = EnumeratorLazySpecs::EventsMixed.new.to_enum.lazy
     ScratchPad.record []
   end
 
-  after(:each) do
+  after :each do
     ScratchPad.clear
   end
 

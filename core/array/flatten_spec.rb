@@ -109,6 +109,29 @@ describe "Array#flatten" do
   it "returns an untrusted array if self is untrusted" do
     [].untrust.flatten.untrusted?.should be_true
   end
+
+  it "performs respond_to? and method_missing-aware checks when coercing elements to array" do
+    bo = BasicObject.new
+    [bo].flatten.should == [bo]
+
+    def bo.method_missing(name, *)
+      [1,2]
+    end
+
+    [bo].flatten.should == [1,2]
+
+    def bo.respond_to?(name, *)
+      false
+    end
+
+    [bo].flatten.should == [bo]
+
+    def bo.respond_to?(name, *)
+      true
+    end
+
+    [bo].flatten.should == [1,2]
+  end
 end
 
 describe "Array#flatten!" do

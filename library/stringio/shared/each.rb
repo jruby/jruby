@@ -1,5 +1,5 @@
 describe :stringio_each_separator, :shared => true do
-  before(:each) do
+  before :each do
     @io = StringIO.new("a b c d e\n1 2 3 4 5")
   end
 
@@ -45,7 +45,7 @@ describe :stringio_each_separator, :shared => true do
 end
 
 describe :stringio_each_no_arguments, :shared => true do
-  before(:each) do
+  before :each do
     @io = StringIO.new("a b c d e\n1 2 3 4 5")
   end
 

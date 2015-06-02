@@ -18,11 +18,11 @@ describe "The super keyword" do
 
   it "searches class methods" do
     Super::S3::A.new.foo([]).should == ["A#foo"]
-    Super::S3::A.foo([]).should == ["A::foo"]
-    Super::S3::A.bar([]).should == ["A::bar","A::foo"]
+    Super::S3::A.foo([]).should == ["A.foo"]
+    Super::S3::A.bar([]).should == ["A.bar","A.foo"]
     Super::S3::B.new.foo([]).should == ["A#foo"]
-    Super::S3::B.foo([]).should == ["B::foo","A::foo"]
-    Super::S3::B.bar([]).should == ["B::bar","A::bar","B::foo","A::foo"]
+    Super::S3::B.foo([]).should == ["B.foo","A.foo"]
+    Super::S3::B.bar([]).should == ["B.bar","A.bar","B.foo","A.foo"]
   end
 
   it "calls the method on the calling class including modules" do
@@ -49,8 +49,8 @@ describe "The super keyword" do
     Super::MS3::A.foo([]).should == ["ModA#foo"]
     Super::MS3::A.bar([]).should == ["ModA#bar","ModA#foo"]
     Super::MS3::B.new.foo([]).should == ["A#foo"]
-    Super::MS3::B.foo([]).should == ["B::foo","ModA#foo"]
-    Super::MS3::B.bar([]).should == ["B::bar","ModA#bar","B::foo","ModA#foo"]
+    Super::MS3::B.foo([]).should == ["B.foo","ModA#foo"]
+    Super::MS3::B.bar([]).should == ["B.bar","ModA#bar","B.foo","ModA#foo"]
   end
 
   it "calls the correct method when the method visibility is modified" do
@@ -162,8 +162,40 @@ describe "The super keyword" do
     Super::AnonymousModuleIncludedTwice.new.a([]).should == ["anon", "anon", "non-anon"]
   end
 
-  it "can accept a block but still pass the original arguments" do
+  it "without explicit arguments can accept a block but still pass the original arguments" do
     Super::ZSuperWithBlock::B.new.a.should == 14
+  end
+
+  it "without explicit arguments passes optional arguments that have a default value" do
+    Super::ZSuperWithOptional::B.new.m(1, 2).should == 14
+  end
+
+  it "without explicit arguments passes optional arguments that have a non-default value" do
+    Super::ZSuperWithOptional::B.new.m(1, 2, 3).should == 3
+  end
+
+  it "without explicit arguments passes optional arguments that have a default value but were modified" do
+    Super::ZSuperWithOptional::C.new.m(1, 2).should == 100
+  end
+
+  it "without explicit arguments passes optional arguments that have a non-default value but were modified" do
+    Super::ZSuperWithOptional::C.new.m(1, 2, 3).should == 100
+  end
+
+  it "without explicit arguments passes rest arguments" do
+    Super::ZSuperWithRest::B.new.m(1, 2, 3).should == [1, 2, 3]
+  end
+
+  it "without explicit arguments passes rest arguments including any modifications" do
+    Super::ZSuperWithRest::B.new.m_modified(1, 2, 3).should == [1, 14, 3]
+  end
+
+  it "without explicit arguments passes arguments and rest arguments" do
+    Super::ZSuperWithRestAndOthers::B.new.m(1, 2, 3, 4, 5).should == [3, 4, 5]
+  end
+
+  it "without explicit arguments passes arguments and rest arguments including any modifications" do
+    Super::ZSuperWithRestAndOthers::B.new.m_modified(1, 2, 3, 4, 5).should == [3, 14, 5]
   end
 
 end

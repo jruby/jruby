@@ -1,113 +1,111 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/common', __FILE__)
 
-if Process.respond_to?(:daemon)
-  describe :process_daemon_keep_stdio_open_false, :shared => true do
-    it "redirects stdout to /dev/null" do
-      @daemon.invoke("keep_stdio_open_false_stdout", @object).should be_nil
-    end
-
-    it "redirects stderr to /dev/null" do
-      @daemon.invoke("keep_stdio_open_false_stderr", @object).should be_nil
-    end
-
-    it "redirects stdin to /dev/null" do
-      @daemon.invoke("keep_stdio_open_false_stdin", @object).should == ""
-    end
-
-    it "does not close open files" do
-      @daemon.invoke("keep_stdio_open_files", @object).should == "false"
-    end
+describe :process_daemon_keep_stdio_open_false, :shared => true do
+  it "redirects stdout to /dev/null" do
+    @daemon.invoke("keep_stdio_open_false_stdout", @object).should be_nil
   end
 
-  describe :process_daemon_keep_stdio_open_true, :shared => true do
-    it "does not redirect stdout to /dev/null" do
-      @daemon.invoke("keep_stdio_open_true_stdout", @object).should == "writing to stdout"
-    end
-
-    it "does not redirect stderr to /dev/null" do
-      @daemon.invoke("keep_stdio_open_true_stderr", @object).should == "writing to stderr"
-    end
-
-    it "does not redirect stdin to /dev/null" do
-      @daemon.invoke("keep_stdio_open_true_stdin", @object).should == "reading from stdin"
-    end
-
-    it "does not close open files" do
-      @daemon.invoke("keep_stdio_open_files", @object).should == "false"
-    end
+  it "redirects stderr to /dev/null" do
+    @daemon.invoke("keep_stdio_open_false_stderr", @object).should be_nil
   end
 
-  describe "Process.daemon" do
-    before :each do
-      @invoke_dir = Dir.pwd
-      @daemon = ProcessSpecs::Daemonizer.new
-    end
+  it "redirects stdin to /dev/null" do
+    @daemon.invoke("keep_stdio_open_false_stdin", @object).should == ""
+  end
 
-    after :each do
-      rm_r @daemon.input, @daemon.data, @daemon.signal
-    end
+  it "does not close open files" do
+    @daemon.invoke("keep_stdio_open_files", @object).should == "false"
+  end
+end
 
-    it "returns 0" do
-      @daemon.invoke("return_value").should == "0"
-    end
+describe :process_daemon_keep_stdio_open_true, :shared => true do
+  it "does not redirect stdout to /dev/null" do
+    @daemon.invoke("keep_stdio_open_true_stdout", @object).should == "writing to stdout"
+  end
 
-    it "has a different PID after daemonizing" do
-      parent, daemon = @daemon.invoke("pid").split(":")
-      parent.should_not == daemon
-    end
+  it "does not redirect stderr to /dev/null" do
+    @daemon.invoke("keep_stdio_open_true_stderr", @object).should == "writing to stderr"
+  end
 
-    it "has a different process group after daemonizing" do
-      parent, daemon = @daemon.invoke("process_group").split(":")
-      parent.should_not == daemon
-    end
+  it "does not redirect stdin to /dev/null" do
+    @daemon.invoke("keep_stdio_open_true_stdin", @object).should == "reading from stdin"
+  end
 
-    it "does not run existing at_exit handlers when daemonizing" do
-      @daemon.invoke("daemonizing_at_exit").should == "not running at_exit"
-    end
+  it "does not close open files" do
+    @daemon.invoke("keep_stdio_open_files", @object).should == "false"
+  end
+end
 
-    it "runs at_exit handlers when the daemon exits" do
-      @daemon.invoke("daemon_at_exit").should == "running at_exit"
-    end
+describe "Process.daemon" do
+  before :each do
+    @invoke_dir = Dir.pwd
+    @daemon = ProcessSpecs::Daemonizer.new
+  end
 
-    it "changes directory to the root directory if the first argument is not given" do
-      @daemon.invoke("stay_in_dir").should == "/"
-    end
+  after :each do
+    rm_r @daemon.input, @daemon.data, @daemon.signal if @daemon
+  end
 
-    it "changes directory to the root directory if the first argument is false" do
-      @daemon.invoke("stay_in_dir", [false]).should == "/"
-    end
+  it "returns 0" do
+    @daemon.invoke("return_value").should == "0"
+  end
 
-    it "changes directory to the root directory if the first argument is nil" do
-      @daemon.invoke("stay_in_dir", [nil]).should == "/"
-    end
+  it "has a different PID after daemonizing" do
+    parent, daemon = @daemon.invoke("pid").split(":")
+    parent.should_not == daemon
+  end
 
-    it "does not change to the root directory if the first argument is true" do
-      @daemon.invoke("stay_in_dir", [true]).should == @invoke_dir
-    end
+  it "has a different process group after daemonizing" do
+    parent, daemon = @daemon.invoke("process_group").split(":")
+    parent.should_not == daemon
+  end
 
-    it "does not change to the root directory if the first argument is non-false" do
-      @daemon.invoke("stay_in_dir", [:yes]).should == @invoke_dir
-    end
+  it "does not run existing at_exit handlers when daemonizing" do
+    @daemon.invoke("daemonizing_at_exit").should == "not running at_exit"
+  end
 
-    describe "when the second argument is not given" do
-      it_behaves_like :process_daemon_keep_stdio_open_false, nil, [false]
-    end
+  it "runs at_exit handlers when the daemon exits" do
+    @daemon.invoke("daemon_at_exit").should == "running at_exit"
+  end
 
-    describe "when the second argument is false" do
-      it_behaves_like :process_daemon_keep_stdio_open_false, nil, [false, false]
-    end
+  it "changes directory to the root directory if the first argument is not given" do
+    @daemon.invoke("stay_in_dir").should == "/"
+  end
 
-    describe "when the second argument is nil" do
-      it_behaves_like :process_daemon_keep_stdio_open_false, nil, [false, nil]
-    end
+  it "changes directory to the root directory if the first argument is false" do
+    @daemon.invoke("stay_in_dir", [false]).should == "/"
+  end
 
-    describe "when the second argument is true" do
-      it_behaves_like :process_daemon_keep_stdio_open_true, nil, [false, true]
-    end
+  it "changes directory to the root directory if the first argument is nil" do
+    @daemon.invoke("stay_in_dir", [nil]).should == "/"
+  end
 
-    describe "when the second argument is non-false" do
-      it_behaves_like :process_daemon_keep_stdio_open_true, nil, [false, :yes]
-    end
+  it "does not change to the root directory if the first argument is true" do
+    @daemon.invoke("stay_in_dir", [true]).should == @invoke_dir
+  end
+
+  it "does not change to the root directory if the first argument is non-false" do
+    @daemon.invoke("stay_in_dir", [:yes]).should == @invoke_dir
+  end
+
+  describe "when the second argument is not given" do
+    it_behaves_like :process_daemon_keep_stdio_open_false, nil, [false]
+  end
+
+  describe "when the second argument is false" do
+    it_behaves_like :process_daemon_keep_stdio_open_false, nil, [false, false]
+  end
+
+  describe "when the second argument is nil" do
+    it_behaves_like :process_daemon_keep_stdio_open_false, nil, [false, nil]
+  end
+
+  describe "when the second argument is true" do
+    it_behaves_like :process_daemon_keep_stdio_open_true, nil, [false, true]
+  end
+
+  describe "when the second argument is non-false" do
+    it_behaves_like :process_daemon_keep_stdio_open_true, nil, [false, :yes]
   end
 end

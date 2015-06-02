@@ -1,5 +1,5 @@
 describe :stringio_read, :shared => true do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example")
   end
 
@@ -33,7 +33,7 @@ describe :stringio_read, :shared => true do
 end
 
 describe :stringio_read_length, :shared => true do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example")
   end
 
@@ -74,7 +74,7 @@ describe :stringio_read_length, :shared => true do
 end
 
 describe :stringio_read_no_arguments, :shared => true do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example")
   end
 

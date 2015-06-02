@@ -13,7 +13,7 @@ describe "Net::HTTPGenericRequest#body" do
 end
 
 describe "Net::HTTPGenericRequest#body=" do
-  before(:each) do
+  before :each do
     @request = Net::HTTPGenericRequest.new("POST", true, true, "/some/path")
   end
 

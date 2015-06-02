@@ -7,7 +7,7 @@ describe "Net::FTP#help" do
     yield
   end
 
-  before(:each) do
+  before :each do
     @server = NetFTPSpecs::DummyFTP.new
     @server.serve_once
 
@@ -15,7 +15,7 @@ describe "Net::FTP#help" do
     @ftp.connect("localhost", 9921)
   end
 
-  after(:each) do
+  after :each do
     @ftp.quit rescue nil
     @ftp.close
     @server.stop

@@ -2,11 +2,11 @@ require File.expand_path('../../fixtures/classes', __FILE__)
 require File.expand_path('../../fixtures/encoded_strings', __FILE__)
 
 describe :array_join_with_default_separator, :shared => true do
-  before(:each) do
+  before :each do
     @separator = $,
   end
 
-  after(:each) do
+  after :each do
     $, = @separator
   end
 

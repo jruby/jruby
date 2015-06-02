@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Numeric#coerce" do
-  before(:each) do
+  before :each do
     @obj = NumericSpecs::Subclass.new
     @obj.should_receive(:to_f).any_number_of_times.and_return(10.5)
   end

@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "StringIO#readlines when passed [separator]" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("this>is>an>example")
   end
 
@@ -45,7 +45,7 @@ describe "StringIO#readlines when passed [separator]" do
 end
 
 describe "StringIO#readlines when passed no argument" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("this is\nan example\nfor StringIO#readlines")
   end
 

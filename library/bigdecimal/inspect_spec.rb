@@ -3,7 +3,7 @@ require 'bigdecimal'
 
 describe "BigDecimal#inspect" do
 
-  before(:each) do
+  before :each do
     @bigdec = BigDecimal.new("1234.5678")
   end
 

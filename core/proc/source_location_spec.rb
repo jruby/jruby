@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/source_location', __FILE__)
 
 describe "Proc#source_location" do
-  before(:each) do
+  before :each do
     @proc = ProcSpecs::SourceLocation.my_proc
     @lambda = ProcSpecs::SourceLocation.my_lambda
     @proc_new = ProcSpecs::SourceLocation.my_proc_new

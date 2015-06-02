@@ -16,10 +16,6 @@ describe :rational_div_rat, :shared => true do
 end
 
 describe :rational_div_float, :shared => true do
-
-  # The version guard is necessary because 1.8 can't cope with Floats passed
-  # to Rational(), so we need to simplify the examples accordingly.
-
   it "performs integer division and returns the result" do
     Rational(2, 3).div(30.333).should == 0
     Rational(2, 9).div(Rational(-8.6)).should == -1

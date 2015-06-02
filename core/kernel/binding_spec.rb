@@ -12,7 +12,7 @@ describe "Kernel#binding" do
     Kernel.should have_private_instance_method(:binding)
   end
 
-  before(:each) do
+  before :each do
     @b1 = KernelSpecs::Binding.new(99).get_binding
     ScratchPad.clear
   end

@@ -7,7 +7,7 @@ describe "Net::HTTP#initialize" do
   end
 
   describe "when passed address" do
-    before(:each) do
+    before :each do
       @net = Net::HTTP.allocate
       @net.send(:initialize, "localhost")
     end
@@ -26,7 +26,7 @@ describe "Net::HTTP#initialize" do
   end
 
   describe "when passed address, port" do
-    before(:each) do
+    before :each do
       @net = Net::HTTP.allocate
       @net.send(:initialize, "localhost", 3333)
     end

@@ -3,15 +3,15 @@ require 'net/http'
 require File.expand_path('../fixtures/http_server', __FILE__)
 
 describe "Net::HTTP#finish" do
-  before(:all) do
+  before :all do
     NetHTTPSpecs.start_server
   end
 
-  after(:all) do
+  after :all do
     NetHTTPSpecs.stop_server
   end
 
-  before(:each) do
+  before :each do
     @http = Net::HTTP.new("localhost", 3333)
   end
 

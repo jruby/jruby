@@ -11,7 +11,7 @@ end
 
 describe "BigDecimal#div" do
 
-  before(:each) do
+  before :each do
     @one = BigDecimal("1")
     @zero = BigDecimal("0")
     @zero_plus = BigDecimal("+0")

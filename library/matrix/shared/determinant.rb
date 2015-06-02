@@ -1,13 +1,6 @@
 require 'matrix'
 
 describe :determinant, :shared => true do
-  # Ruby versions less than 1.9.0, AFAICT, return the wrong determinant in
-  # most non-trivial cases. As the rdoc for Matrix suggests, "require 'mathn'"
-  # seems to fix this, but as Matrix doesn't require that library itself, the
-  # bug remains. I've reported http://redmine.ruby-lang.org/issues/show/1516 ,
-  # which is ostensibly about the documentation for #determinant not
-  # reflecting this bug, but raises the question of why 1.8.7 doesn't handle
-  # this properly.
   it "returns the determinant of a square Matrix" do
     m = Matrix[ [7,6], [3,9] ]
     m.send(@method).should == 45

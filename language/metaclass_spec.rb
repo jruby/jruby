@@ -31,7 +31,7 @@ describe "self in a metaclass body (class << obj)" do
 end
 
 describe "A constant on a metaclass" do
-  before(:each) do
+  before :each do
     @object = Object.new
     class << @object
       CONST = self

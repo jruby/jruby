@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe :enum_rewind, :shared => true do
 
-  before(:each) do
+  before :each do
     @enum = enumerator_class.new(1, :upto, 3)
   end
 

@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require 'strscan'
 
 describe "StringScanner#dup" do
-  before(:each) do
+  before :each do
     @string = "this is a test"
     @orig_s = StringScanner.new(@string)
   end

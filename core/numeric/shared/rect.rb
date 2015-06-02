@@ -1,7 +1,7 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 
 describe :numeric_rect, :shared => true do
-  before(:each) do
+  before :each do
     @numbers = [
       20,             # Integer
       398.72,         # Float

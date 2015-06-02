@@ -3,7 +3,7 @@ require File.expand_path('../../fixtures/classes', __FILE__)
 
 describe "BasicSocket#setsockopt" do
 
-  before(:each) do
+  before :each do
     @sock = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
   end
 

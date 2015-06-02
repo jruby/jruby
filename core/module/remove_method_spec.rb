@@ -28,7 +28,7 @@ module ModuleSpecs
 end
 
 describe "Module#remove_method" do
-  before(:each) do
+  before :each do
     @module = Module.new { def method_to_remove; end }
   end
 
@@ -47,7 +47,7 @@ describe "Module#remove_method" do
     x.method_to_remove.should == 1
   end
 
-  it "requires multiple arguments" do
+  it "accepts multiple arguments" do
     Module.instance_method(:remove_method).arity.should < 0
   end
 
@@ -79,7 +79,7 @@ describe "Module#remove_method" do
   end
 
   describe "on frozen instance" do
-    before(:each) do
+    before :each do
       @frozen = @module.dup.freeze
     end
 

@@ -19,15 +19,15 @@ ruby_version_is ''...'2.2' do
       @app.start
       @log_file.rewind
       app_start, discard, app_end  = @log_file.readlines
-      LoggerSpecs::strip_date(app_start).should == "INFO -- TestApp: Start of TestApp.\n"
-      LoggerSpecs::strip_date(app_end).should   == "INFO -- TestApp: End of TestApp. (status: true)\n"
+      LoggerSpecs.strip_date(app_start).should == "INFO -- TestApp: Start of TestApp.\n"
+      LoggerSpecs.strip_date(app_end).should   == "INFO -- TestApp: End of TestApp. (status: true)\n"
     end
 
     it "returns the status code" do
       code = @app.start
       @log_file.rewind
       app_end  = @log_file.readlines.last
-      /true/.should =~ LoggerSpecs::strip_date(app_end)
+      /true/.should =~ LoggerSpecs.strip_date(app_end)
       code.should == true
     end
 
