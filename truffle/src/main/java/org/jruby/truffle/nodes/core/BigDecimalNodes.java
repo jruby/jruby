@@ -19,6 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -1227,4 +1228,38 @@ public abstract class BigDecimalNodes {
 
     }
 
+    @CoreMethod(names = {"to_i", "to_int"})
+    public abstract static class ToINode extends BigDecimalCoreMethodNode {
+
+        @Child private FixnumOrBignumNode fixnumOrBignum;
+
+        public ToINode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isNormal(value)")
+        public Object toINormal(RubyBasicObject value) {
+            return fixnumOrBignum.fixnumOrBignum(getBigDecimalValue(value).toBigInteger());
+        }
+
+        @Specialization(guards = "!isNormal(value)")
+        public int toISpecial(RubyBasicObject value) {
+            switch (getBigDecimalType(value)) {
+                case NEGATIVE_INFINITY:
+                    throw new RaiseException(getContext().getCoreLibrary().floatDomainError("-Infinity", this));
+                case POSITIVE_INFINITY:
+                    throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Infinity", this));
+                case NAN:
+                    throw new RaiseException(getContext().getCoreLibrary().floatDomainError("NaN", this));
+                case NEGATIVE_ZERO:
+                    return 0;
+                default:
+                    throw new RuntimeException();
+            }
+
+        }
+
+    }
 }
