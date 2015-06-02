@@ -148,10 +148,8 @@ public class URLResource extends AbstractFileResource {
         return new ChannelDescriptor(inputStream(), flags);
     }
 
-    public static FileResource createClassloaderURI(Ruby runtime, String pathname) {
-        // retrieve the classloader from the runtime if available otherwise mimic how the runtime got its classloader and
-        // take this
-        ClassLoader cl = runtime != null ? runtime.getJRubyClassLoader() : URLResource.class.getClassLoader();
+    public static FileResource create(ClassLoader cl, String pathname) {
+        // fall back on thread context classloader
         if (cl == null ) {
             cl = Thread.currentThread().getContextClassLoader();
         }
@@ -167,6 +165,13 @@ public class URLResource extends AbstractFileResource {
                                cl,
                                url == null ? null : pathname,
                                files);
+    }
+
+    public static FileResource createClassloaderURI(Ruby runtime, String pathname) {
+        // retrieve the classloader from the runtime if available otherwise mimic how the runtime got its classloader and
+        // take this
+        ClassLoader cl = runtime != null ? runtime.getJRubyClassLoader() : URLResource.class.getClassLoader();
+        return create(cl, pathname);
     }
 
     public static FileResource create(Ruby runtime, String pathname)

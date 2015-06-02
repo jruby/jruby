@@ -12,7 +12,7 @@ import org.jruby.util.io.ModeFlags;
 
 public class ClasspathResource extends AbstractFileResource {
 
-    public static final String CLASSPATH = "classpath:/";
+    public static final String CLASSPATH = "classpath:";
 
     private final String uri;
     
@@ -28,7 +28,8 @@ public class ClasspathResource extends AbstractFileResource {
     }
 
     public static URL getResourceURL(String pathname) {
-        String path = pathname.substring(CLASSPATH.length() );
+        String path = pathname.substring(CLASSPATH.length());
+        if (path.startsWith("/")) path = path.substring(1);
         // this is the J2EE case
         URL url = Thread.currentThread().getContextClassLoader().getResource(path);
         if ( url != null ) {
