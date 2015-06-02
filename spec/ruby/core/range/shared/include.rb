@@ -17,7 +17,7 @@ describe :range_include, :shared => true do
 
   describe "with weird succ" do
     describe "when included end value" do
-      before(:each) do
+      before :each do
         @range = RangeSpecs::TenfoldSucc.new(1)..RangeSpecs::TenfoldSucc.new(99)
       end
 
@@ -47,7 +47,7 @@ describe :range_include, :shared => true do
     end
 
     describe "when excluded end value" do
-      before(:each) do
+      before :each do
         @range = RangeSpecs::TenfoldSucc.new(1)...RangeSpecs::TenfoldSucc.new(99)
       end
 

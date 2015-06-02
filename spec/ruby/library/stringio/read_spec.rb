@@ -33,7 +33,7 @@ describe "StringIO#read when self is not readable" do
 end
 
 describe "StringIO#read when passed [length]" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example")
   end
 

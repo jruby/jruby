@@ -73,7 +73,7 @@ describe "Module#const_set" do
   end
 
   describe "on a frozen module" do
-    before(:each) do
+    before :each do
       @frozen = Module.new.freeze
       @name = :Foo
     end

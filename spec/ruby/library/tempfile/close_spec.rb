@@ -3,11 +3,11 @@ require File.expand_path('../fixtures/common', __FILE__)
 require 'tempfile'
 
 describe "Tempfile#close when passed no argument or [false]" do
-  before(:each) do
+  before :each do
     @tempfile = Tempfile.new("specs", tmp(""))
   end
 
-  after(:each) do
+  after :each do
     TempfileSpecs.cleanup(@tempfile)
   end
 
@@ -18,11 +18,11 @@ describe "Tempfile#close when passed no argument or [false]" do
 end
 
 describe "Tempfile#close when passed [true]" do
-  before(:each) do
+  before :each do
     @tempfile = Tempfile.new("specs", tmp(""))
   end
 
-  after(:each) do
+  after :each do
     TempfileSpecs.cleanup(@tempfile)
   end
 
@@ -39,11 +39,11 @@ describe "Tempfile#close when passed [true]" do
 end
 
 describe "Tempfile#close!" do
-  before(:each) do
+  before :each do
     @tempfile = Tempfile.new("specs", tmp(""))
   end
 
-  after(:each) do
+  after :each do
     @tempfile.unlink if @tempfile.path
   end
 

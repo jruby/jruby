@@ -18,15 +18,13 @@ describe "A class definition" do
   end
 
   it "raises TypeError if constant given as class name exists and is not a Module" do
-    # 1.9 needs the constant defined here because of it's scoping rules
-    ClassSpecsNumber = 12
     lambda {
       class ClassSpecsNumber
       end
     }.should raise_error(TypeError)
   end
 
-  # test case known to be detecting bugs (JRuby, MRI 1.9)
+  # test case known to be detecting bugs (JRuby, MRI)
   it "raises TypeError if the constant qualifying the class is nil" do
     lambda {
       class nil::Foo
@@ -59,11 +57,6 @@ describe "A class definition" do
     meta = obj.singleton_class
     lambda { class ClassSpecs::MetaclassSuper < meta; end }.should raise_error(TypeError)
   end
-
-#  # I do not think this is a valid spec   -- rue
-#  it "has no class-level instance variables" do
-#    ClassSpecs::A.instance_variables.should == []
-#  end
 
   it "allows the declaration of class variables in the body" do
     ClassSpecs.string_class_variables(ClassSpecs::B).should == ["@@cvar"]

@@ -1,5 +1,5 @@
 describe :getoptlong_get, :shared => true do
-  before(:each) do
+  before :each do
     @opts = GetoptLong.new(
       [ '--size', '-s',             GetoptLong::REQUIRED_ARGUMENT ],
       [ '--verbose', '-v',          GetoptLong::NO_ARGUMENT ],

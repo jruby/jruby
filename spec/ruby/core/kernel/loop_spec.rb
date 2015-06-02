@@ -48,7 +48,7 @@ describe "Kernel.loop" do
   end
 
   it "rescues StopIteration's subclasses" do
-    finish = Class::new StopIteration
+    finish = Class.new StopIteration
     n = 42
     loop do
       raise finish

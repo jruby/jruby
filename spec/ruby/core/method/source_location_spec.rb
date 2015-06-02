@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Method#source_location" do
-  before(:each) do
+  before :each do
     @method = MethodSpecs::SourceLocation.method(:location)
   end
 

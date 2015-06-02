@@ -26,11 +26,11 @@ describe :dir_pos, :shared => true do
 end
 
 describe :dir_pos_set, :shared => true do
-  before(:each) do
+  before :each do
     @dir = Dir.open DirSpecs.mock_dir
   end
 
-  after(:each) do
+  after :each do
     @dir.close
   end
 

@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Bignum#>> with n >> m" do
-  before(:each) do
+  before :each do
     @bignum = bignum_value() * 16
   end
 

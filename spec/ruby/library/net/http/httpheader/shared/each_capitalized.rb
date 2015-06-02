@@ -1,5 +1,5 @@
 describe :net_httpheader_each_capitalized, :shared => true do
-  before(:each) do
+  before :each do
     @headers = NetHTTPHeaderSpecs::Example.new
     @headers["my-header"] = "test"
     @headers.add_field("my-Other-Header", "a")

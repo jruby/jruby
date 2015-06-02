@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Array#fill" do
-  before(:all) do
+  before :all do
     @never_passed = lambda do |i|
       raise ExpectationNotMetError, "the control path should not pass here"
     end

@@ -36,24 +36,24 @@ end
 describe :kernel_public_methods_supers, :shared => true do
   it "returns a unique list for an object extended by a module" do
     m = ReflectSpecs.oed.public_methods(*@object)
-    m.select { |x| x == stasy(:pub) }.sort.should == [stasy(:pub)]
+    m.select { |x| x == :pub }.sort.should == [:pub]
   end
 
   it "returns a unique list for a class including a module" do
     m = ReflectSpecs::D.new.public_methods(*@object)
-    m.select { |x| x == stasy(:pub) }.sort.should == [stasy(:pub)]
+    m.select { |x| x == :pub }.sort.should == [:pub]
   end
 
   it "returns a unique list for a subclass of a class that includes a module" do
     m = ReflectSpecs::E.new.public_methods(*@object)
-    m.select { |x| x == stasy(:pub) }.sort.should == [stasy(:pub)]
+    m.select { |x| x == :pub }.sort.should == [:pub]
   end
 end
 
 describe :kernel_public_methods_with_falsy, :shared => true do
   it "returns a list of public methods in without its ancestors" do
-    ReflectSpecs::F.public_methods(@object).select{|m|/_pub\z/ =~ m}.sort.should == [stasy(:ds_pub), stasy(:fs_pub)]
-    ReflectSpecs::F.new.public_methods(@object).should == [stasy(:f_pub)]
+    ReflectSpecs::F.public_methods(@object).select{|m|/_pub\z/ =~ m}.sort.should == [:ds_pub, :fs_pub]
+    ReflectSpecs::F.new.public_methods(@object).should == [:f_pub]
   end
 end
 

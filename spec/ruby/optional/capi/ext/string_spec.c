@@ -25,27 +25,6 @@ static VALUE string_spec_rb_cstr_to_inum(VALUE self, VALUE str, VALUE inum, VALU
 }
 #endif
 
-#ifdef HAVE_RB_STR2CSTR
-VALUE string_spec_rb_str2cstr(VALUE self, VALUE str, VALUE return_length) {
-  if(return_length == Qtrue) {
-    long len = 0;
-    char* ptr = rb_str2cstr(str, &len);
-    VALUE ary = rb_ary_new();
-    rb_ary_push(ary, rb_str_new2(ptr));
-    rb_ary_push(ary, INT2FIX(len));
-    return ary;
-  } else {
-    return rb_str_new2(rb_str2cstr(str, NULL));
-  }
-}
-
-VALUE string_spec_rb_str2cstr_replace(VALUE self, VALUE str) {
-  char* ptr = rb_str2cstr(str, NULL);
-  ptr[0] = 'f'; ptr[1] = 'o'; ptr[2] = 'o'; ptr[3] = 0;
-  return Qnil;
-}
-#endif
-
 #ifdef HAVE_RB_STR2INUM
 VALUE string_spec_rb_str2inum(VALUE self, VALUE str, VALUE inum) {
   int num = FIX2INT(inum);
@@ -210,7 +189,6 @@ VALUE string_spec_rb_str_new(VALUE self, VALUE str, VALUE len) {
 #endif
 
 #ifdef HAVE_RB_STR_NEW2
-#ifdef RUBY_VERSION_IS_1_9
 VALUE string_spec_rb_str_new2(VALUE self, VALUE str) {
   if(NIL_P(str)) {
     return rb_str_new2("");
@@ -218,15 +196,6 @@ VALUE string_spec_rb_str_new2(VALUE self, VALUE str) {
     return rb_str_new2(RSTRING_PTR(str));
   }
 }
-#else
-VALUE string_spec_rb_str_new2(VALUE self, VALUE str) {
-  if(NIL_P(str)) {
-    return rb_str_new2(NULL);
-  } else {
-    return rb_str_new2(RSTRING_PTR(str));
-  }
-}
-#endif
 #endif
 
 #ifdef HAVE_RB_STR_ENCODE
@@ -236,7 +205,6 @@ VALUE string_spec_rb_str_encode(VALUE self, VALUE str, VALUE enc, VALUE flags, V
 #endif
 
 #ifdef HAVE_RB_STR_NEW_CSTR
-#ifdef RUBY_VERSION_IS_1_9
 VALUE string_spec_rb_str_new_cstr(VALUE self, VALUE str) {
   if(NIL_P(str)) {
     return rb_str_new_cstr("");
@@ -244,15 +212,6 @@ VALUE string_spec_rb_str_new_cstr(VALUE self, VALUE str) {
     return rb_str_new_cstr(RSTRING_PTR(str));
   }
 }
-#else
-VALUE string_spec_rb_str_new_cstr(VALUE self, VALUE str) {
-  if(NIL_P(str)) {
-    return rb_str_new_cstr(NULL);
-  } else {
-    return rb_str_new_cstr(RSTRING_PTR(str));
-  }
-}
-#endif
 #endif
 
 #ifdef HAVE_RB_EXTERNAL_STR_NEW
@@ -422,60 +381,6 @@ VALUE string_spec_rb_str_to_str(VALUE self, VALUE arg) {
 }
 #endif
 
-#ifdef HAVE_RSTRING
-VALUE string_spec_RSTRING_len(VALUE self, VALUE str) {
-  return INT2FIX(RSTRING(str)->len);
-}
-
-VALUE string_spec_RSTRING_ptr_iterate(VALUE self, VALUE str) {
-  int i;
-  char* ptr;
-
-  ptr = RSTRING(str)->ptr;
-  for(i = 0; i < RSTRING_LEN(str); i++) {
-    rb_yield(INT2FIX(ptr[i]));
-  }
-  return Qnil;
-}
-
-VALUE string_spec_RSTRING_ptr_assign(VALUE self, VALUE str, VALUE chr) {
-  int i;
-  char c;
-  char* ptr;
-
-  ptr = RSTRING(str)->ptr;
-  c = FIX2INT(chr);
-
-  for(i = 0; i < RSTRING_LEN(str); i++) {
-    ptr[i] = c;
-  }
-  return Qnil;
-}
-
-VALUE string_spec_RSTRING_ptr_assign_call(VALUE self, VALUE str) {
-  char *ptr = RSTRING(str)->ptr;
-
-  ptr[1] = 'x';
-  RSTRING(str)->len = 2;
-  rb_str_concat(str, rb_str_new2("d"));
-  return str;
-}
-
-VALUE string_spec_RSTRING_ptr_assign_funcall(VALUE self, VALUE str) {
-  char *ptr = RSTRING(str)->ptr;
-
-  ptr[1] = 'x';
-  rb_funcall(str, rb_intern("<<"), 1, rb_str_new2("e"));
-  return str;
-}
-
-VALUE string_spec_RSTRING_ptr_write(VALUE self, VALUE str, VALUE text) {
-  strcpy(RSTRING(str)->ptr, RSTRING_PTR(text));
-  RSTRING(str)->len = RSTRING_LEN(text);
-  return Qnil;
-}
-#endif
-
 #ifdef HAVE_RSTRING_LEN
 VALUE string_spec_RSTRING_LEN(VALUE self, VALUE str) {
   return INT2FIX(RSTRING_LEN(str));
@@ -521,18 +426,6 @@ VALUE string_spec_RSTRING_PTR_after_funcall(VALUE self, VALUE str, VALUE cb) {
   }
 
   return rb_str_new2(RSTRING_PTR(str));
-}
-#endif
-
-#ifdef HAVE_STR2CSTR
-VALUE string_spec_STR2CSTR(VALUE self, VALUE str) {
-  return rb_str_new2(STR2CSTR(str));
-}
-
-VALUE string_spec_STR2CSTR_replace(VALUE self, VALUE str) {
-  char* ptr = STR2CSTR(str);
-  ptr[0] = 'f'; ptr[1] = 'o'; ptr[2] = 'o'; ptr[3] = 0;
-  return Qnil;
 }
 #endif
 
@@ -599,11 +492,6 @@ void Init_string_spec() {
 
 #ifdef HAVE_RB_CSTR_TO_INUM
   rb_define_method(cls, "rb_cstr_to_inum", string_spec_rb_cstr_to_inum, 3);
-#endif
-
-#ifdef HAVE_RB_STR2CSTR
-  rb_define_method(cls, "rb_str2cstr", string_spec_rb_str2cstr, 2);
-  rb_define_method(cls, "rb_str2cstr_replace", string_spec_rb_str2cstr_replace, 1);
 #endif
 
 #ifdef HAVE_RB_STR2INUM
@@ -776,16 +664,6 @@ void Init_string_spec() {
   rb_define_method(cls, "rb_str_to_str", string_spec_rb_str_to_str, 1);
 #endif
 
-#ifdef HAVE_RSTRING
-  rb_define_method(cls, "RSTRING_ptr_iterate", string_spec_RSTRING_ptr_iterate, 1);
-  rb_define_method(cls, "RSTRING_ptr_assign", string_spec_RSTRING_ptr_assign, 2);
-  rb_define_method(cls, "RSTRING_ptr_assign_call", string_spec_RSTRING_ptr_assign_call, 1);
-  rb_define_method(cls, "RSTRING_ptr_write", string_spec_RSTRING_ptr_write, 2);
-  rb_define_method(cls, "RSTRING_ptr_assign_funcall",
-      string_spec_RSTRING_ptr_assign_funcall, 1);
-  rb_define_method(cls, "RSTRING_len", string_spec_RSTRING_len, 1);
-#endif
-
 #ifdef HAVE_RSTRING_LEN
   rb_define_method(cls, "RSTRING_LEN", string_spec_RSTRING_LEN, 1);
 #endif
@@ -799,11 +677,6 @@ void Init_string_spec() {
   rb_define_method(cls, "RSTRING_PTR_assign", string_spec_RSTRING_PTR_assign, 2);
   rb_define_method(cls, "RSTRING_PTR_after_funcall",
       string_spec_RSTRING_PTR_after_funcall, 2);
-#endif
-
-#ifdef HAVE_STR2CSTR
-  rb_define_method(cls, "STR2CSTR", string_spec_STR2CSTR, 1);
-  rb_define_method(cls, "STR2CSTR_replace", string_spec_STR2CSTR_replace, 1);
 #endif
 
 #ifdef HAVE_STRINGVALUE

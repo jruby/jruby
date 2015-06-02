@@ -10,7 +10,7 @@ describe :keep_if, :shared => true do
   end
 
   describe "on frozen objects" do
-    before(:each) do
+    before :each do
       @origin = [true, false]
       @frozen = @origin.dup.freeze
     end

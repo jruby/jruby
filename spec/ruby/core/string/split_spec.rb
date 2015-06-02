@@ -346,9 +346,6 @@ describe "String#split with Regexp" do
     end
   end
 
-  # When split is called with a limit of -1, empty fields are not suppressed
-  # and a final empty field is *alawys* created (who knows why). This empty
-  # string is not tainted (again, who knows why) on 1.8 but is on 1.9.
   it "taints an empty string if self is tainted" do
     ":".taint.split(//, -1).last.tainted?.should be_true
   end

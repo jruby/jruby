@@ -19,7 +19,7 @@ describe "Enumerable#none?" do
 end
 
 describe "Enumerable#none? with a block" do
-  before(:each) do
+  before :each do
     @e = EnumerableSpecs::Numerous.new(1,1,2,3,4)
   end
 

@@ -1,5 +1,5 @@
 describe :stringio_write, :shared => true do
-  before(:each) do
+  before :each do
     @io = StringIO.new('12345')
   end
 
@@ -12,7 +12,7 @@ describe :stringio_write, :shared => true do
 end
 
 describe :stringio_write_string, :shared => true do
-  before(:each) do
+  before :each do
     @io = StringIO.new('12345')
   end
 
@@ -68,7 +68,7 @@ describe :stringio_write_not_writable, :shared => true do
 end
 
 describe :stringio_write_append, :shared => true do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example", "a")
   end
 

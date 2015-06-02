@@ -6,12 +6,12 @@ describe "File.setuid?" do
 end
 
 describe "File.setuid?" do
-  before(:each) do
+  before :each do
     @name = tmp('test.txt')
     touch @name
   end
 
-  after(:each) do
+  after :each do
     rm_r @name
   end
 

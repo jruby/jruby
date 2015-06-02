@@ -6,7 +6,7 @@ require File.expand_path('../../spec_helper', __FILE__)
 
 describe "Ruby character strings" do
 
-  before(:each) do
+  before :each do
     @ip = 'xxx' # used for interpolation
     $ip = 'xxx'
     @@ip = 'xxx'

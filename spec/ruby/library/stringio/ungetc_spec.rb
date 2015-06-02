@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "StringIO#ungetc when passed [char]" do
-  before(:each) do
+  before :each do
     @io = StringIO.new('1234')
   end
 

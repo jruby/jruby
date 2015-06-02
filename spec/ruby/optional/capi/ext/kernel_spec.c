@@ -45,7 +45,6 @@ VALUE kernel_spec_rb_block_call(VALUE self, VALUE ary) {
   return rb_block_call(ary, rb_intern("map"), 0, NULL, block_call_inject, Qnil);
 }
 
-#ifdef RUBY_VERSION_IS_1_9
 VALUE block_call_inject_multi_arg(VALUE yield_value, VALUE data2, int argc, VALUE argv[]) {
   /* yield_value yields the first block argument */
   VALUE sum  = yield_value;
@@ -64,7 +63,6 @@ VALUE kernel_spec_rb_block_call_no_func(VALUE self, VALUE ary) {
   return rb_block_call(ary, rb_intern("map"), 0, NULL, NULL, Qnil);
 }
 
-#endif
 #endif
 
 #ifdef HAVE_RB_ENSURE
@@ -303,10 +301,8 @@ void Init_kernel_spec() {
 
 #ifdef HAVE_RB_BLOCK_CALL
   rb_define_method(cls, "rb_block_call", kernel_spec_rb_block_call, 1);
-#ifdef RUBY_VERSION_IS_1_9
   rb_define_method(cls, "rb_block_call_multi_arg", kernel_spec_rb_block_call_multi_arg, 1);
   rb_define_method(cls, "rb_block_call_no_func", kernel_spec_rb_block_call_no_func, 1);
-#endif
 #endif
 
 #ifdef HAVE_RB_BLOCK_PROC

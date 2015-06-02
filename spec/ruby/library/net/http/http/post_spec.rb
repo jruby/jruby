@@ -3,19 +3,19 @@ require 'net/http'
 require File.expand_path('../fixtures/http_server', __FILE__)
 
 describe "Net::HTTP#post" do
-  before(:all) do
+  before :all do
     NetHTTPSpecs.start_server
   end
 
-  after(:all) do
+  after :all do
     NetHTTPSpecs.stop_server
   end
 
-  before(:each) do
+  before :each do
     @http = Net::HTTP.start("localhost", 3333)
   end
 
-  after(:each) do
+  after :each do
     @http.finish if @http.started?
   end
 

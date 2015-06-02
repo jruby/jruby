@@ -29,24 +29,24 @@ end
 describe :kernel_private_methods_supers, :shared => true do
   it "returns a unique list for an object extended by a module" do
     m = ReflectSpecs.oed.private_methods(*@object)
-    m.select { |x| x == stasy(:pri) }.sort.should == [stasy(:pri)]
+    m.select { |x| x == :pri }.sort.should == [:pri]
   end
 
   it "returns a unique list for a class including a module" do
     m = ReflectSpecs::D.new.private_methods(*@object)
-    m.select { |x| x == stasy(:pri) }.sort.should == [stasy(:pri)]
+    m.select { |x| x == :pri }.sort.should == [:pri]
   end
 
   it "returns a unique list for a subclass of a class that includes a module" do
     m = ReflectSpecs::E.new.private_methods(*@object)
-    m.select { |x| x == stasy(:pri) }.sort.should == [stasy(:pri)]
+    m.select { |x| x == :pri }.sort.should == [:pri]
   end
 end
 
 describe :kernel_private_methods_with_falsy, :shared => true do
   it "returns a list of private methods in without its ancestors" do
-    ReflectSpecs::F.private_methods(@object).select{|m|/_pri\z/ =~ m}.sort.should == [stasy(:ds_pri), stasy(:fs_pri)]
-    ReflectSpecs::F.new.private_methods(@object).should == [stasy(:f_pri)]
+    ReflectSpecs::F.private_methods(@object).select{|m|/_pri\z/ =~ m}.sort.should == [:ds_pri, :fs_pri]
+    ReflectSpecs::F.new.private_methods(@object).should == [:f_pri]
   end
 end
 

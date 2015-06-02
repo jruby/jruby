@@ -1,5 +1,5 @@
 describe :net_ftp_getbinaryfile, :shared => :true do
-  before(:each) do
+  before :each do
     @fixture_file = File.dirname(__FILE__) + "/../fixtures/getbinaryfile"
     @tmp_file = tmp("getbinaryfile")
 
@@ -11,7 +11,7 @@ describe :net_ftp_getbinaryfile, :shared => :true do
     @ftp.binary = @binary_mode
   end
 
-  after(:each) do
+  after :each do
     @ftp.quit rescue nil
     @ftp.close
     @server.stop
@@ -42,7 +42,7 @@ describe :net_ftp_getbinaryfile, :shared => :true do
   end
 
   describe "when resuming an existing file" do
-    before(:each) do
+    before :each do
       @tmp_file = tmp("getbinaryfile_resume")
 
       File.open(@tmp_file, "wb") do |f|

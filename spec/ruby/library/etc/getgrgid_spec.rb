@@ -14,7 +14,7 @@ end
 # TODO: verify these on non-windows, non-darwin OS
 platform_is_not :windows do
   describe "Etc.getgrgid" do
-    before(:all) do
+    before :all do
       @gid = `id -g`.strip.to_i
       @name = `id -gn`.strip
     end

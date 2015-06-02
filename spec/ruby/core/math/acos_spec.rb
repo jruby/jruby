@@ -3,7 +3,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 # arccosine : (-1.0, 1.0) --> (0, PI)
 describe "Math.acos" do
-  before(:each) do
+  before :each do
     ScratchPad.clear
   end
 

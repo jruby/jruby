@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "File.absolute_path" do
-  before(:each) do
+  before :each do
     @abs = File.expand_path(__FILE__)
   end
 

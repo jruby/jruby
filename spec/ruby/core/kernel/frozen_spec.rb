@@ -29,7 +29,7 @@ describe "Kernel#frozen?" do
   end
 
   describe "on integers" do
-    before(:each) do
+    before :each do
       @fixnum = 1
       @bignum = bignum_value
     end
@@ -41,7 +41,7 @@ describe "Kernel#frozen?" do
   end
 
   describe "on a Float" do
-    before(:each) do
+    before :each do
       @float = 0.1
     end
 
@@ -51,7 +51,7 @@ describe "Kernel#frozen?" do
   end
 
   describe "on a Symbol" do
-    before(:each) do
+    before :each do
       @symbol = :symbol
     end
 

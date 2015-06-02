@@ -28,7 +28,7 @@ describe "Zlib::Deflate#deflate" do
 
 end
 
-describe "Zlib::Deflate::deflate" do
+describe "Zlib::Deflate.deflate" do
 
   it "deflates some data" do
     data = "\000" * 10

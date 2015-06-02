@@ -3,7 +3,7 @@ require 'net/ftp'
 require File.expand_path('../fixtures/server', __FILE__)
 
 describe "Net::FTP#storlines" do
-  before(:each) do
+  before :each do
     @server = NetFTPSpecs::DummyFTP.new
     @server.serve_once
 
@@ -14,7 +14,7 @@ describe "Net::FTP#storlines" do
     @ftp.connect("localhost", 9921)
   end
 
-  after(:each) do
+  after :each do
     @ftp.quit rescue nil
     @ftp.close
     @server.stop

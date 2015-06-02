@@ -1,6 +1,6 @@
 describe :net_httpheader_set_content_type, :shared => true do
   describe "when passed type, params" do
-    before(:each) do
+    before :each do
       @headers = NetHTTPHeaderSpecs::Example.new
     end
 

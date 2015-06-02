@@ -3,7 +3,6 @@ require File.expand_path('../fixtures/classes', __FILE__)
 require File.expand_path('../../../fixtures/reflection', __FILE__)
 
 # TODO: rewrite
-# On Ruby < 1.9 #methods returns an Array of Strings
 describe "Kernel#methods" do
   it "returns singleton methods defined by obj.meth" do
     KernelSpecs::Methods.methods(false).should include(:ichi)
@@ -72,7 +71,7 @@ end
 
 describe :kernel_methods_supers, :shared => true do
   before :all do
-    @ms = [stasy(:pro), stasy(:pub)]
+    @ms = [:pro, :pub]
   end
 
   it "returns a unique list for an object extended by a module" do

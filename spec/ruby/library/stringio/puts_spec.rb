@@ -4,7 +4,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "StringIO#puts when passed an Array" do
-  before(:each) do
+  before :each do
     @io = StringIO.new
   end
 
@@ -54,7 +54,7 @@ describe "StringIO#puts when passed an Array" do
 end
 
 describe "StringIO#puts when passed 1 or more objects" do
-  before(:each) do
+  before :each do
     @io = StringIO.new
   end
 
@@ -94,7 +94,7 @@ describe "StringIO#puts when passed 1 or more objects" do
 end
 
 describe "StringIO#puts when passed no arguments" do
-  before(:each) do
+  before :each do
     @io = StringIO.new
   end
 
@@ -119,7 +119,7 @@ describe "StringIO#puts when passed no arguments" do
 end
 
 describe "StringIO#puts when in append mode" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example", "a")
   end
 

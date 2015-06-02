@@ -23,7 +23,7 @@ describe "Class#initialize" do
   end
 
   describe "when given the Class" do
-    before(:each) do
+    before :each do
       @uninitialized = Class.allocate
     end
 

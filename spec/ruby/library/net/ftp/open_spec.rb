@@ -2,7 +2,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 require 'net/ftp'
 
 describe "Net::FTP.open" do
-  before(:each) do
+  before :each do
     @ftp = mock("Net::FTP instance")
     Net::FTP.stub!(:new).and_return(@ftp)
   end
@@ -19,7 +19,7 @@ describe "Net::FTP.open" do
   end
 
   describe "when passed a block" do
-    before(:each) do
+    before :each do
       @ftp.stub!(:close)
     end
 

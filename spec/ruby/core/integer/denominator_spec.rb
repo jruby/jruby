@@ -3,7 +3,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 describe "Integer#denominator" do
   # The Numeric child classes override this method, so their behaviour is
   # specified in the appropriate place
-  before(:each) do
+  before :each do
     @numbers = [
       20,             # Integer
       -2709,          # Negative Integer

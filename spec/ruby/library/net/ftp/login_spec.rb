@@ -3,7 +3,7 @@ require 'net/ftp'
 require File.expand_path('../fixtures/server', __FILE__)
 
 describe "Net::FTP#login" do
-  before(:each) do
+  before :each do
     @server = NetFTPSpecs::DummyFTP.new
     @server.serve_once
 
@@ -11,7 +11,7 @@ describe "Net::FTP#login" do
     @ftp.connect("localhost", 9921)
   end
 
-  after(:each) do
+  after :each do
     @ftp.quit rescue nil
     @ftp.close
     @server.stop
@@ -121,7 +121,7 @@ describe "Net::FTP#login" do
   end
 
   describe "when the PASS command fails" do
-    before(:each) do
+    before :each do
       @server.should_receive(:user).and_respond("331 User name okay, need password.")
     end
 
@@ -157,7 +157,7 @@ describe "Net::FTP#login" do
   end
 
   describe "when the ACCT command fails" do
-    before(:each) do
+    before :each do
       @server.should_receive(:user).and_respond("331 User name okay, need password.")
       @server.should_receive(:pass).and_respond("332 Need account for login.")
     end

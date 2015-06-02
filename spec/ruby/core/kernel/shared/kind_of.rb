@@ -1,7 +1,7 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
 describe :kernel_kind_of, :shared => true do
-  before(:each) do
+  before :each do
     @o = KernelSpecs::KindaClass.new
   end
 

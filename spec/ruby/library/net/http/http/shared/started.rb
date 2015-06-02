@@ -1,13 +1,13 @@
 describe :net_http_started_p, :shared => true do
-  before(:all) do
+  before :all do
     NetHTTPSpecs.start_server
   end
 
-  after(:all) do
+  after :all do
     NetHTTPSpecs.stop_server
   end
 
-  before(:each) do
+  before :each do
     @net = Net::HTTP.new("localhost", 3333)
   end
 

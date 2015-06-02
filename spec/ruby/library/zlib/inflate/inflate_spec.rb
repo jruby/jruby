@@ -42,7 +42,7 @@ describe "Zlib::Inflate#inflate" do
 
 end
 
-describe "Zlib::Inflate::inflate" do
+describe "Zlib::Inflate.inflate" do
 
   it "inflates some data" do
     data = "x\234c`\200\001\000\000\n\000\001"

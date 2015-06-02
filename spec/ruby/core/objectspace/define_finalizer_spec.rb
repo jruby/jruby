@@ -51,7 +51,7 @@ describe "ObjectSpace.define_finalizer" do
   with_feature :fork do
     it "calls finalizer on process termination" do
       rd, wr = IO.pipe
-      if Kernel::fork then
+      if Kernel.fork then
         wr.close
         rd.read.should == "finalized"
         rd.close
@@ -66,7 +66,7 @@ describe "ObjectSpace.define_finalizer" do
 
     it "calls finalizer at exit even if it is self-referencing" do
       rd, wr = IO.pipe
-      if Kernel::fork then
+      if Kernel.fork then
         wr.close
         rd.read.should == "finalized"
         rd.close

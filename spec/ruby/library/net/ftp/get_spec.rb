@@ -5,7 +5,7 @@ require File.expand_path('../shared/gettextfile', __FILE__)
 require File.expand_path('../shared/getbinaryfile', __FILE__)
 
 describe "Net::FTP#get (binary mode)" do
-  before(:each) do
+  before :each do
     @binary_mode = true
   end
 
@@ -13,7 +13,7 @@ describe "Net::FTP#get (binary mode)" do
 end
 
 describe "Net::FTP#get (text mode)" do
-  before(:each) do
+  before :each do
     @binary_mode = false
   end
 

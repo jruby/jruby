@@ -121,8 +121,7 @@ describe "C-API Hash function" do
     end
   end
 
-  # rb_hash_size is a static symbol in MRI
-  extended_on :rubinius do
+  ruby_version_is "2.2" do
     describe "rb_hash_size" do
       it "returns the size of the hash" do
         hsh = {:fast => 'car', :good => 'music'}
@@ -133,25 +132,24 @@ describe "C-API Hash function" do
         @s.rb_hash_size({}).should == 0
       end
     end
+  end
 
-    # TODO: make this shared so it runs on 1.8.7
-    describe "rb_hash_lookup" do
-      it "returns the value associated with the key" do
-        hsh = {:chunky => 'bacon'}
-        @s.rb_hash_lookup(hsh, :chunky).should == 'bacon'
-      end
+  describe "rb_hash_lookup" do
+    it "returns the value associated with the key" do
+      hsh = {:chunky => 'bacon'}
+      @s.rb_hash_lookup(hsh, :chunky).should == 'bacon'
+    end
 
-      it "does not return the default value if it exists" do
-        hsh = Hash.new(0)
-        @s.rb_hash_lookup(hsh, :chunky).should be_nil
-        @s.rb_hash_lookup_nil(hsh, :chunky).should be_true
-      end
+    it "does not return the default value if it exists" do
+      hsh = Hash.new(0)
+      @s.rb_hash_lookup(hsh, :chunky).should be_nil
+      @s.rb_hash_lookup_nil(hsh, :chunky).should be_true
+    end
 
-      it "returns nil if the key does not exist" do
-        hsh = { }
-        @s.rb_hash_lookup(hsh, :chunky).should be_nil
-        @s.rb_hash_lookup_nil(hsh, :chunky).should be_true
-      end
+    it "returns nil if the key does not exist" do
+      hsh = { }
+      @s.rb_hash_lookup(hsh, :chunky).should be_nil
+      @s.rb_hash_lookup_nil(hsh, :chunky).should be_true
     end
   end
 end

@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Module#alias_method" do
-  before(:each) do
+  before :each do
     @class = Class.new(ModuleSpecs::Aliasing)
     @object = @class.new
   end
@@ -90,7 +90,7 @@ describe "Module#alias_method" do
   end
 
   describe "aliasing special methods" do
-    before(:all) do
+    before :all do
       @class = ModuleSpecs::Aliasing
       @subclass = ModuleSpecs::AliasingSubclass
     end

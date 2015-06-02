@@ -2,7 +2,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 require 'cgi'
 
 describe "CGI::Cookie#secure" do
-  before(:each) do
+  before :each do
     @cookie = CGI::Cookie.new("test-cookie")
   end
 
@@ -16,7 +16,7 @@ describe "CGI::Cookie#secure" do
 end
 
 describe "CGI::Cookie#secure= when passed true" do
-  before(:each) do
+  before :each do
     @cookie = CGI::Cookie.new("test-cookie")
   end
 
@@ -31,7 +31,7 @@ describe "CGI::Cookie#secure= when passed true" do
 end
 
 describe "CGI::Cookie#secure= when passed false" do
-  before(:each) do
+  before :each do
     @cookie = CGI::Cookie.new("test-cookie")
   end
 
@@ -46,7 +46,7 @@ describe "CGI::Cookie#secure= when passed false" do
 end
 
 describe "CGI::Cookie#secure= when passed Object" do
-  before(:each) do
+  before :each do
     @cookie = CGI::Cookie.new("test-cookie")
   end
 

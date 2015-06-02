@@ -23,15 +23,19 @@ module SocketSpecs
     Socket.getaddrinfo(host, nil)[0][3]
   end
 
+  def self.find_available_port
+    begin
+      s = TCPServer.open(0)
+      port = s.addr[1]
+      s.close
+      port
+    rescue
+      43191
+    end
+  end
+
   def self.port
-    @@_port ||= begin
-                  s = TCPServer.open(0)
-                  port = s.addr[1]
-                  s.close
-                  port
-                rescue
-                  43191
-                end
+    @@_port ||= find_available_port
   end
 
   def self.str_port
@@ -85,6 +89,12 @@ module SocketSpecs
       @main = nil
       @server = nil
       @threads = []
+    end
+
+    def accept
+      wait_for @server do
+        @server.accept
+      end
     end
 
     def start

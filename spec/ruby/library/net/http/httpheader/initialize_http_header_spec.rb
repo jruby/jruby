@@ -3,7 +3,7 @@ require 'net/http'
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Net::HTTPHeader#initialize_http_header when passed Hash" do
-  before(:each) do
+  before :each do
     @headers = NetHTTPHeaderSpecs::Example.allocate
   end
 

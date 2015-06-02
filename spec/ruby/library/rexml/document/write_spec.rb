@@ -23,8 +23,6 @@ describe "REXML::Document#write" do
     @str.should =~ /\s*<Springfield>\s*<EvergreenTerrace>\s*<House742\/>\s*<\/EvergreenTerrace>\s*<\/Springfield>/
   end
 
-  # REXML in 1.8 is screwed up:
-  # Document#write uses wrong arity for Formatters::Transitive#initialize
   it "returns document with transitive support" do
     @d.write(@str, 2, true)
     @str.should =~ /\s*<Springfield\s*><EvergreenTerrace\s*><House742\s*\/><\/EvergreenTerrace\s*><\/Springfield\s*>/

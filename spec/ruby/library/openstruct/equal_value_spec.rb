@@ -3,7 +3,7 @@ require "ostruct"
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "OpenStruct#==" do
-  before(:each) do
+  before :each do
     @os = OpenStruct.new(:name => "John")
   end
 

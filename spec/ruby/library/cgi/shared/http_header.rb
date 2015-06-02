@@ -3,12 +3,12 @@ require 'cgi'
 
 describe :cgi_http_header, :shared => true do
   describe "CGI#http_header when passed no arguments" do
-    before(:each) do
+    before :each do
       ENV['REQUEST_METHOD'], @old_request_method = "GET", ENV['REQUEST_METHOD']
       @cgi = CGI.new
     end
 
-    after(:each) do
+    after :each do
       ENV['REQUEST_METHOD'] = @old_request_method
     end
 
@@ -24,12 +24,12 @@ describe :cgi_http_header, :shared => true do
   end
 
   describe "CGI#http_header when passed String" do
-    before(:each) do
+    before :each do
       ENV['REQUEST_METHOD'], @old_request_method = "GET", ENV['REQUEST_METHOD']
       @cgi = CGI.new
     end
 
-    after(:each) do
+    after :each do
       ENV['REQUEST_METHOD'] = @old_request_method
     end
 
@@ -45,12 +45,12 @@ describe :cgi_http_header, :shared => true do
   end
 
   describe "CGI#http_header when passed Hash" do
-    before(:each) do
+    before :each do
       ENV['REQUEST_METHOD'], @old_request_method = "GET", ENV['REQUEST_METHOD']
       @cgi = CGI.new
     end
 
-    after(:each) do
+    after :each do
       ENV['REQUEST_METHOD'] = @old_request_method
     end
 

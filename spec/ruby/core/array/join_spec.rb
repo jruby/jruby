@@ -33,11 +33,11 @@ describe "Array#join" do
 end
 
 describe "Array#join with $," do
-  before(:each) do
+  before :each do
     @before_separator = $,
   end
 
-  after(:each) do
+  after :each do
     $, = @before_separator
   end
 

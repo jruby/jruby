@@ -1,5 +1,5 @@
 describe "Hash#compare_by_identity" do
-  before(:each) do
+  before :each do
     @h = new_hash
     @idh = new_hash.compare_by_identity
   end

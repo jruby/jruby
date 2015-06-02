@@ -4,14 +4,14 @@ require File.expand_path('../fixtures/server', __FILE__)
 
 # TODO: Add specs for using the SOCKSSocket
 describe "Net::FTP#connect" do
-  before(:each) do
+  before :each do
     @server = NetFTPSpecs::DummyFTP.new
     @server.serve_once
 
     @ftp = Net::FTP.new
   end
 
-  after(:each) do
+  after :each do
     @server.connect_message = nil
     @ftp.quit rescue nil
     @ftp.close

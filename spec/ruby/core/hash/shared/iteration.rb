@@ -1,5 +1,5 @@
 describe :hash_iteration_no_block, :shared => true do
-  before(:each) do
+  before :each do
     @hsh = new_hash(1 => 2, 3 => 4, 5 => 6)
     @empty = new_hash
   end

@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Bignum#[]" do
-  before(:each) do
+  before :each do
     @bignum = bignum_value(4996)
   end
 

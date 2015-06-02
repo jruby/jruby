@@ -51,11 +51,6 @@ module DelegateSpecs
       @__getobj__ = o
     end
 
-    # Needed for 1.8.x compatibility
-    def initialize(obj)
-      super
-      __setobj__(obj)
-    end
     include Extra
   end
 

@@ -18,7 +18,7 @@ describe :date_valid_civil?, :shared => true do
   end
 
   it "handles negative months and days" do
-    # October 1582 (the Gregorian calendar, Civil Date in 1.9)
+    # October 1582 (the Gregorian calendar, Civil Date)
     #     S   M  Tu   W  Th   F   S
     #       -21 -20 -19 -18 -17 -16
     #   -15 -14 -13 -12 -11 -10  -9

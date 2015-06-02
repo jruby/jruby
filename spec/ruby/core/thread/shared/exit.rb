@@ -1,5 +1,5 @@
 describe :thread_exit, :shared => true do
-  before(:each) do
+  before :each do
     ScratchPad.clear
   end
 
@@ -152,14 +152,11 @@ describe :thread_exit, :shared => true do
   end
 
   # Hangs on 1.8.6.114 OS X, possibly also on Linux
-  # FIX: There is no such thing as not_compliant_on(:ruby)!!!
   quarantine! do
-  not_compliant_on(:ruby) do # Doing a sleep in the ensure block hangs the process
     it "is deferred if ensure clause sleeps" do
       ThreadSpecs.wakeup_dying_sleeping_thread(@method) { sleep; ScratchPad.record :after_sleep }
       ScratchPad.recorded.should == :after_sleep
     end
-  end
   end
 
   # This case occurred in JRuby where native threads are used to provide

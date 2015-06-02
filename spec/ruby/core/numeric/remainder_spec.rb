@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Numeric#remainder" do
-  before(:each) do
+  before :each do
     @obj    = NumericSpecs::Subclass.new
     @result = mock("Numeric#% result")
     @other  = mock("Passed Object")

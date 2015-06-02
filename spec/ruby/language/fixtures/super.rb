@@ -47,20 +47,20 @@ module Super
         a << "A#foo"
       end
       def self.foo(a)
-        a << "A::foo"
+        a << "A.foo"
       end
       def self.bar(a)
-        a << "A::bar"
+        a << "A.bar"
         foo(a)
       end
     end
     class B < A
       def self.foo(a)
-        a << "B::foo"
+        a << "B.foo"
         super(a)
       end
       def self.bar(a)
-        a << "B::bar"
+        a << "B.bar"
         super(a)
       end
     end
@@ -201,11 +201,11 @@ module Super
     end
     class B < A
       def self.foo(a)
-        a << "B::foo"
+        a << "B.foo"
         super(a)
       end
       def self.bar(a)
-        a << "B::bar"
+        a << "B.bar"
         super(a)
       end
     end

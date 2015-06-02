@@ -9,7 +9,7 @@ require File.expand_path('../fixtures/send', __FILE__)
 # M - Manditory Args
 # O - Optional Arg
 # R - Rest Arg
-# Q - Post Manditory Args (1.9)
+# Q - Post Manditory Args
 
 specs = LangSendSpecs
 

@@ -7,15 +7,15 @@ describe :method_missing_defined_module, :shared => true do
       @object.method_public.should == :module_public_method
     end
 
-    it "is called when an undefined method is called" do
-      @object.method_undefined.should == :module_method_missing
+    it "is called when a not defined method is called" do
+      @object.not_defined_method.should == :module_method_missing
     end
 
-    it "is called when an protected method is called" do
+    it "is called when a protected method is called" do
       @object.method_protected.should == :module_method_missing
     end
 
-    it "is called when an private method is called" do
+    it "is called when a private method is called" do
       @object.method_private.should == :module_method_missing
     end
   end

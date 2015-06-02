@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require 'stringio'
 
 describe "StringIO#initialize when passed [Object, mode]" do
-  before(:each) do
+  before :each do
     @io = StringIO.allocate
   end
 
@@ -133,7 +133,7 @@ describe "StringIO#initialize when passed [Object, mode]" do
 end
 
 describe "StringIO#initialize when passed [Object]" do
-  before(:each) do
+  before :each do
     @io = StringIO.allocate
   end
 
@@ -164,7 +164,7 @@ describe "StringIO#initialize when passed [Object]" do
 end
 
 describe "StringIO#initialize when passed no arguments" do
-  before(:each) do
+  before :each do
     @io = StringIO.allocate
   end
 

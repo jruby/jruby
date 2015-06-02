@@ -7,7 +7,6 @@ describe "Hash" do
 end
 
 describe "Hash#hash" do
-  # prior to 1.8.7, there were no sensible Hash#hash defined at all
   it "returns a value which doesn't depend on the hash order" do
     new_hash(0=>2, 11=>1).hash.should == new_hash(11=>1, 0=>2).hash
   end
