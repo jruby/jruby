@@ -1211,12 +1211,18 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = "!isNormal(value)")
         public double toFSpecial(RubyBasicObject value) {
-            final Type type = getBigDecimalType(value);
-            if (type == Type.NAN) return Double.NaN;
-            if (type == Type.POSITIVE_INFINITY) return Double.POSITIVE_INFINITY;
-            if (type == Type.NEGATIVE_INFINITY) return Double.NEGATIVE_INFINITY;
-            if (type == Type.NEGATIVE_ZERO) return 0.0D;
-            throw new RuntimeException();
+            switch (getBigDecimalType(value)) {
+                case NEGATIVE_INFINITY:
+                    return Double.NEGATIVE_INFINITY;
+                case POSITIVE_INFINITY:
+                    return Double.POSITIVE_INFINITY;
+                case NEGATIVE_ZERO:
+                    return 0.0D;
+                case NAN:
+                    return Double.NaN;
+                default:
+                    throw new RuntimeException();
+            }
         }
 
     }
