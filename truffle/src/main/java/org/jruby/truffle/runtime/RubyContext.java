@@ -35,6 +35,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyNil;
 import org.jruby.TruffleContextInterface;
 import org.jruby.ext.ffi.Platform;
+import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyNode;
@@ -174,7 +175,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             instrumentationServerManager = null;
         }
 
-        runningOnWindows = Platform.getPlatform().getOS() == Platform.OS.WINDOWS;
+        runningOnWindows = Platform.getPlatform().getOS() == OS_TYPE.WINDOWS;
 
         attachmentsManager = new AttachmentsManager(this);
         sourceManager = new SourceManager(this);
