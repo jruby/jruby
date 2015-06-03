@@ -1,4 +1,2 @@
-fails:Enumerator#each returns self if not given arguments and not given a block
-fails:Enumerator#each passes given arguments at initialized to receiver.each
 fails:Enumerator#each appends given arguments to receiver.each
 fails:Enumerator#each returns the same value from receiver.each if block and arguments are given
