@@ -8,9 +8,9 @@ describe :complex_hash, :shared => true do
   end
 
   it "is different for different instances" do
-	Complex(1, 2).hash.should_not == Complex(1, 1).hash
+    Complex(1, 2).hash.should_not == Complex(1, 1).hash
     Complex(2, 1).hash.should_not == Complex(1, 1).hash
 
-  	Complex(1, 2).hash.should_not == Complex(2, 1).hash
+    Complex(1, 2).hash.should_not == Complex(2, 1).hash
   end
 end
