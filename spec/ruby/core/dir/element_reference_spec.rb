@@ -10,12 +10,6 @@ describe "Dir.[]" do
   it_behaves_like :dir_glob_recursive, :[]
 end
 
-with_feature :encoding do
-  describe "Dir.[]" do
-    it_behaves_like :dir_glob_encoding, :[]
-  end
-end
-
 describe "Dir.[]" do
   before :all do
     DirSpecs.create_mock_dirs

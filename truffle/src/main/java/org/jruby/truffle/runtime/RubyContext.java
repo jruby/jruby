@@ -36,6 +36,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyNil;
 import org.jruby.TruffleContextInterface;
 import org.jruby.ext.ffi.Platform;
+import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyNode;
@@ -74,6 +75,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -81,7 +83,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class RubyContext extends ExecutionContext implements TruffleContextInterface {
 
-    private static RubyContext latestInstance;
+    private static volatile RubyContext latestInstance;
 
     private static final boolean TRUFFLE_COVERAGE = Options.TRUFFLE_COVERAGE.load();
     private static final int INSTRUMENTATION_SERVER_PORT = Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load();
@@ -91,7 +93,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     private final POSIX posix;
     private final NativeSockets nativeSockets;
 
-    private final TranslatorDriver translator;
     private final CoreLibrary coreLibrary;
     private final FeatureManager featureManager;
     private final TraceManager traceManager;
@@ -101,7 +102,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
     private final Warnings warnings;
     private final SafepointManager safepointManager;
-    private final Random random = new Random();
     private final LexicalScope rootLexicalScope;
     private final CompilerOptions compilerOptions;
     private final RubiniusPrimitiveManager rubiniusPrimitiveManager;
@@ -170,8 +170,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
         coreLibrary.initialize();
 
-        translator = new TranslatorDriver(this);
-
         featureManager = new FeatureManager(this);
         traceManager = new TraceManager();
         atExitManager = new AtExitManager(this);
@@ -188,7 +186,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             instrumentationServerManager = null;
         }
 
-        runningOnWindows = Platform.getPlatform().getOS() == Platform.OS.WINDOWS;
+        runningOnWindows = Platform.getPlatform().getOS() == OS_TYPE.WINDOWS;
 
         attachmentsManager = new AttachmentsManager(this);
         sourceManager = new SourceManager(this);
@@ -369,6 +367,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     @TruffleBoundary
     public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode, NodeWrapper wrapper) {
+        final TranslatorDriver translator = new TranslatorDriver(this);
         final RubyRootNode rootNode = translator.parse(this, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
@@ -552,10 +551,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return threadManager;
     }
 
-    public TranslatorDriver getTranslator() {
-        return translator;
-    }
-
     public AtExitManager getAtExitManager() {
         return atExitManager;
     }
@@ -578,7 +573,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public Random getRandom() {
-        return random;
+        return ThreadLocalRandom.current();
     }
 
     public LexicalScope getRootLexicalScope() {

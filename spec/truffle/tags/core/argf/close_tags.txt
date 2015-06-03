@@ -1,2 +1,3 @@
 fails:ARGF.close can close STDIN
 slow:ARGF.close does not close STDIN
+fails:ARGF.close does not close STDIN

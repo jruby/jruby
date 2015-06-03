@@ -29,23 +29,28 @@ public class InstrumentationServerManager {
 
     private final RubyContext context;
     private final int port;
+    private final HttpServer server; // not final as we want a gentler failure
 
-    private HttpServer server;
     private volatile boolean shuttingDown = false;
 
     public InstrumentationServerManager(RubyContext context, int port) {
         this.context = context;
         this.port = port;
-    }
 
-    public void start() {
+        HttpServer server = null;
         try {
             server = HttpServer.create(new InetSocketAddress(port), 0);
         } catch (IOException e) {
             e.printStackTrace();
-            return;
         }
+        this.server = server;
+    }
 
+    public int getPort() {
+        return port;
+    }
+
+    public void start() {
         server.createContext("/stacks", new HttpHandler() {
 
             @Override

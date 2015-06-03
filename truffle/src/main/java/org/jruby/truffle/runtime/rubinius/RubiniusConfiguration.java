@@ -68,7 +68,7 @@ public class RubiniusConfiguration {
         return configuration;
     }
 
-    private final Map<String, Object> configuration = new HashMap<>();
+    private final Map<String, Object> configuration = new HashMap<>(); // Only written to by create() once per RubyContext.
 
     private RubiniusConfiguration() {
     }

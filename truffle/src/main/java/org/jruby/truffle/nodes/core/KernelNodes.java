@@ -303,7 +303,7 @@ public abstract class KernelNodes {
         public RubySymbol calleeName(VirtualFrame frame) {
             CompilerDirectives.transferToInterpreter();
             // the "called name" of a method.
-            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(frame).getName());
+            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(getContext(), frame).getName());
         }
     }
 
@@ -1058,7 +1058,7 @@ public abstract class KernelNodes {
         public RubySymbol methodName(VirtualFrame frame) {
             CompilerDirectives.transferToInterpreter();
             // the "original/definition name" of the method.
-            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(frame).getSharedMethodInfo().getName());
+            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(getContext(), frame).getSharedMethodInfo().getName());
         }
 
     }
