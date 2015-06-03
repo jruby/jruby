@@ -19,7 +19,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
-import org.jruby.truffle.nodes.dispatch.UseMethodMissingException;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -364,12 +363,7 @@ public abstract class MathNodes {
         @Fallback
         public RubyBasicObject frexp(VirtualFrame frame, Object a) {
             if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
-                try {
-                    return frexp(floatNode.callFloat(frame, a, "to_f", null));
-                } catch (UseMethodMissingException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            a, getContext().getCoreLibrary().getFloatClass(), this));
-                }
+                return frexp(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
 
@@ -529,14 +523,9 @@ public abstract class MathNodes {
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
             if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
-                try {
-                    return function(
-                            floatANode.callFloat(frame, a, "to_f", null),
-                            integerBNode.callLongFixnum(frame, b, "to_int", null));
-                } catch (UseMethodMissingException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            a, getContext().getCoreLibrary().getIntegerClass(), this));
-                }
+                return function(
+                        floatANode.callFloat(frame, a, "to_f", null),
+                        integerBNode.callLongFixnum(frame, b, "to_int", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
 
@@ -593,12 +582,7 @@ public abstract class MathNodes {
         @Fallback
         public RubyBasicObject lgamma(VirtualFrame frame, Object a) {
             if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
-                try {
-                    return lgamma(floatNode.callFloat(frame, a, "to_f", null));
-                } catch (UseMethodMissingException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            a, getContext().getCoreLibrary().getFloatClass(), this));
-                }
+                return lgamma(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
 
@@ -639,13 +623,7 @@ public abstract class MathNodes {
         @Specialization
         public double function(VirtualFrame frame, Object a, NotProvided b) {
             if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
-                try {
-                    return doFunction(
-                            floatANode.callFloat(frame, a, "to_f", null));
-                } catch (UseMethodMissingException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            a, getContext().getCoreLibrary().getFloatClass(), this));
-                }
+                return doFunction(floatANode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
 
@@ -825,12 +803,7 @@ public abstract class MathNodes {
         @Fallback
         public double function(VirtualFrame frame, Object a) {
             if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
-                try {
-                    return doFunction(floatNode.callFloat(frame, a, "to_f", null));
-                } catch (UseMethodMissingException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            a, getContext().getCoreLibrary().getFloatClass(), this));
-                }
+                return doFunction(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
 
@@ -943,14 +916,9 @@ public abstract class MathNodes {
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
             if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass()) && isANode.executeIsA(frame, b, getContext().getCoreLibrary().getNumericClass())) {
-                try {
-                    return doFunction(
-                            floatANode.callFloat(frame, a, "to_f", null),
-                            floatBNode.callFloat(frame, b, "to_f", null));
-                } catch (UseMethodMissingException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            a, getContext().getCoreLibrary().getFloatClass(), this));
-                }
+                return doFunction(
+                        floatANode.callFloat(frame, a, "to_f", null),
+                        floatBNode.callFloat(frame, b, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
 
