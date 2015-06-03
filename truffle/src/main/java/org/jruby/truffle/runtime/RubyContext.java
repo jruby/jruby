@@ -515,6 +515,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
                 return getCoreLibrary().encodingCompatibilityError(jrubyException.getMessage().toString(), currentNode);
             case "TypeError":
                 return getCoreLibrary().typeError(jrubyException.getMessage().toString(), currentNode);
+            case "RegexpError":
+                return getCoreLibrary().regexpError(jrubyException.getMessage().toString(), currentNode);
         }
 
         throw new UnsupportedOperationException("Don't know how to translate " + jrubyException.getMetaClass().getName());

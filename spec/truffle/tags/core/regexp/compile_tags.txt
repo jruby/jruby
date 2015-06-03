@@ -1,13 +1,5 @@
 fails:Regexp.compile works by default for subclasses with overridden #initialize
-fails:Regexp.compile given a String ignores the third argument if it is 'e' or 'euc' (case-insensitive)
-fails:Regexp.compile given a String ignores the third argument if it is 's' or 'sjis' (case-insensitive)
-fails:Regexp.compile given a String ignores the third argument if it is 'u' or 'utf8' (case-insensitive)
-fails:Regexp.compile given a String uses US_ASCII encoding if third argument is 'n' or 'none' (case insensitive) and only ascii characters
 fails:Regexp.compile given a String with escaped characters raises a RegexpError if \x is not followed by any hexadecimal digits
 fails:Regexp.compile given a String with escaped characters raises a RegexpError if less than four digits are given for \uHHHH
 fails:Regexp.compile given a String with escaped characters raises a RegexpError if the \u{} escape is empty
 fails:Regexp.compile given a String with escaped characters raises a RegexpError if more than six hexadecimal digits are given
-fails:Regexp.compile given a String with escaped characters returns a Regexp with US-ASCII encoding if only 7-bit ASCII characters are present regardless of the input String's encoding
-fails:Regexp.compile given a String with escaped characters returns a Regexp with source String having US-ASCII encoding if only 7-bit ASCII characters are present regardless of the input String's encoding
-fails:Regexp.compile given a String with escaped characters returns a Regexp with US-ASCII encoding if UTF-8 escape sequences using only 7-bit ASCII are present
-fails:Regexp.compile given a String with escaped characters returns a Regexp with source String having US-ASCII encoding if UTF-8 escape sequences using only 7-bit ASCII are present

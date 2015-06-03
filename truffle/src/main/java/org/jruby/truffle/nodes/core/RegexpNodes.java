@@ -197,11 +197,7 @@ public abstract class RegexpNodes {
                 throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
             }
 
-            if(regexp.getOptions() != null){
-                return regexp.getOptions().toOptions();
-            }
-
-            return RegexpOptions.fromJoniOptions(regexp.getRegex().getOptions()).toOptions();
+            return regexp.getOptions().toOptions();
         }
 
     }

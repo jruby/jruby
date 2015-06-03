@@ -47,11 +47,6 @@ public class InteroplatedRegexpNode extends RubyNode {
             strings[n] = org.jruby.RubyString.newString(getContext().getRuntime(), StringNodes.getByteList(((RubyString) toS.call(frame, child, "to_s", null))));
         }
 
-        // TODO 27-APR=2015 BJF Adding workaround to temporarily fix CGI error until Regex overhaul https://github.com/jruby/jruby/issues/2802
-        if (!options.isEncodingNone() && strings.length > 0 && strings[0].getEncoding() == ASCIIEncoding.INSTANCE && strings[0].getByteList().getRealSize() == 0) {
-            strings[0].setEncoding(USASCIIEncoding.INSTANCE);
-        }
-
         final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getRuntime(), strings, options);
 
         final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), preprocessed.getByteList(), options);

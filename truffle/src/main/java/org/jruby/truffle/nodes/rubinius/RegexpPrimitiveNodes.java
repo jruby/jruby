@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.joni.Matcher;
+import org.joni.Regex;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -20,12 +21,14 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Regexp} class.
  * <p>
  * Also see {@link RubyRegexp}.
+
  */
 public abstract class RegexpPrimitiveNodes {
 
@@ -77,6 +80,8 @@ public abstract class RegexpPrimitiveNodes {
                         String.format("invalid byte sequence in %s", StringNodes.getByteList(string).getEncoding()), this));
             }
 
+            final ByteList bl = regexp.getSource();
+            final Regex r = new Regex(bl.getUnsafeBytes(), bl.getBegin(), bl.getBegin() + bl.getRealSize(), regexp.getRegex().getOptions(), regexp.checkEncoding(StringNodes.getCodeRangeable(string), true));
             final Matcher matcher = regexp.getRegex().matcher(StringNodes.getByteList(string).bytes());
 
             return regexp.matchCommon(string, false, false, matcher, start, end);
