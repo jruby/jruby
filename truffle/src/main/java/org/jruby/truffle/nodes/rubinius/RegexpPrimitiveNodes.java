@@ -61,6 +61,28 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "regexp_options")
+    public static abstract class RegexpOptionsPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public RegexpOptionsPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isInitialized(regexp)")
+        public int options(RubyRegexp regexp) {
+            return regexp.getOptions().toOptions();
+        }
+
+        @Specialization(guards = "!isInitialized(regexp)")
+        public int optionsNotInitialized(RubyRegexp regexp) {
+            throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
+        }
+
+        public static boolean isInitialized(RubyRegexp regexp) {
+            return regexp.getRegex() != null;
+        }
+    }
+
     @RubiniusPrimitive(name = "regexp_search_region", lowerFixnumParameters = {1, 2})
     public static abstract class RegexpSearchRegionPrimitiveNode extends RubiniusPrimitiveNode {
 

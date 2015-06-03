@@ -147,27 +147,6 @@ public abstract class RegexpNodes {
         }
     }
 
-    @CoreMethod(names = "options")
-    public abstract static class OptionsNode extends CoreMethodArrayArgumentsNode {
-
-        private final ConditionProfile notYetInitializedProfile = ConditionProfile.createBinaryProfile();
-
-        public OptionsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public int options(RubyRegexp regexp) {
-            if (notYetInitializedProfile.profile(regexp.getRegex() == null)) {
-                throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
-            }
-
-            return regexp.getOptions().toOptions();
-        }
-
-    }
-
     @CoreMethod(names = { "quote", "escape" }, needsSelf = false, onSingleton = true, required = 1)
     public abstract static class QuoteNode extends CoreMethodArrayArgumentsNode {
 
