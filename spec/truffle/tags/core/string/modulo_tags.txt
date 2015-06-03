@@ -12,7 +12,6 @@ fails:String#% allows more than one digit of position
 fails:String#% raises an ArgumentError when multiple width star tokens are given for one format specifier
 fails:String#% raises an ArgumentError when a width star token is seen after a width token
 fails:String#% raises an ArgumentError when multiple precision tokens are given
-fails:String#% raises an ArgumentError when there are less arguments than format specifiers
 fails:String#% raises an ArgumentError when absolute and relative argument numbers are mixed
 fails:String#% allows reuse of the one argument multiple via absolute argument numbers
 fails:String#% always interprets an array argument as a list of argument parameters
@@ -57,7 +56,6 @@ fails:String#% taints result for %s when argument is tainted
 fails:String#% raises an ArgumentError for huge precisions for %s
 fails:String#% supports unsigned formats using %u
 fails:String#% formats negative values with a leading sign using %u
-fails:String#% supports negative bignums with %u or %d
 fails:String#% supports hex formats using %x for positive numbers
 fails:String#% supports hex formats using %x for negative numbers
 fails:String#% supports hex formats using %X for positive numbers
@@ -65,12 +63,7 @@ fails:String#% supports hex formats using %X for negative numbers
 fails:String#% formats zero without prefix using %#x
 fails:String#% formats zero without prefix using %#X
 fails:String#% behaves as if calling Kernel#Integer for %b argument, if it does not respond to #to_ary
-fails:String#% behaves as if calling Kernel#Integer for %d argument, if it does not respond to #to_ary
-fails:String#% behaves as if calling Kernel#Integer for %i argument, if it does not respond to #to_ary
 fails:String#% behaves as if calling Kernel#Integer for %o argument, if it does not respond to #to_ary
-fails:String#% behaves as if calling Kernel#Integer for %u argument, if it does not respond to #to_ary
-fails:String#% behaves as if calling Kernel#Integer for %x argument, if it does not respond to #to_ary
-fails:String#% behaves as if calling Kernel#Integer for %X argument, if it does not respond to #to_ary
 fails:String#% tries to convert the passed argument to an Array using #to_ary
 fails:String#% behaves as if calling Kernel#Float for %e arguments, when the passed argument does not respond to #to_ary
 fails:String#% behaves as if calling Kernel#Float for %e arguments, when the passed argument is hexadecimal string

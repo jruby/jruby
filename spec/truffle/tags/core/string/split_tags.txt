@@ -1,2 +1,1 @@
 fails(regexp):String#split with String splits on multibyte characters
-fails(regexp):String#split with Regexp taints the resulting strings if self is tainted
