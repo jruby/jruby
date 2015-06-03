@@ -79,7 +79,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class RubyContext extends ExecutionContext implements TruffleContextInterface {
 
-    private static RubyContext latestInstance;
+    private static volatile RubyContext latestInstance;
 
     private static final boolean TRUFFLE_COVERAGE = Options.TRUFFLE_COVERAGE.load();
     private static final int INSTRUMENTATION_SERVER_PORT = Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load();
