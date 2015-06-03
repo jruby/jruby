@@ -27,7 +27,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
-import org.jruby.util.RegexpOptions;
 
 import java.util.Iterator;
 
@@ -35,39 +34,6 @@ import static org.jruby.util.StringSupport.CR_7BIT;
 
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
-
-    public abstract static class EscapingNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private EscapeNode escapeNode;
-
-        public EscapingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        protected RubyBasicObject escape(VirtualFrame frame, RubyString string) {
-            if (escapeNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                escapeNode = insert(RegexpNodesFactory.EscapeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
-            }
-            return escapeNode.executeEscape(frame, string);
-        }
-    }
-
-    public abstract static class EscapingYieldingNode extends YieldingCoreMethodNode {
-        @Child private EscapeNode escapeNode;
-
-        public EscapingYieldingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        protected RubyBasicObject escape(VirtualFrame frame, RubyString string) {
-            if (escapeNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                escapeNode = insert(RegexpNodesFactory.EscapeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
-            }
-            return escapeNode.executeEscape(frame, string);
-        }
-    }
 
     @CoreMethod(names = "=~", required = 1)
     public abstract static class MatchOperatorNode extends CoreMethodArrayArgumentsNode {
