@@ -55,6 +55,24 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_nothing_raised { BigDecimal(x) }
   end
 
+  def test_cmp
+    begin
+      BigDecimal.new('10') < "foo"
+    rescue ArgumentError => e
+      assert_equal 'comparison of BigDecimal with String failed', e.message
+    else
+      fail 'expected cmp to fail'
+    end
+
+    begin
+      BigDecimal.new('10') >= nil
+    rescue ArgumentError => e
+      assert_equal 'comparison of BigDecimal with nil failed', e.message
+    else
+      fail 'expected cmp to fail'
+    end
+  end
+
   require "bigdecimal/newton"
   include Newton
 

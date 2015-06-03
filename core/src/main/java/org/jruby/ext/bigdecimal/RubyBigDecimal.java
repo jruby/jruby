@@ -392,51 +392,49 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static RoundingMode getRoundingMode(Ruby runtime) {
-        RubyFixnum roundingMode = (RubyFixnum)runtime.getClass("BigDecimal")
+        RubyClass BigDecimal = runtime.getClass("BigDecimal");
+        RubyFixnum roundingMode = (RubyFixnum) BigDecimal
                 .searchInternalModuleVariable("vpRoundingMode");
-        return RoundingMode.valueOf((int)roundingMode.getLongValue());
+        return RoundingMode.valueOf((int) roundingMode.getLongValue());
     }
 
     private static boolean isNaNExceptionMode(Ruby runtime) {
-        RubyFixnum currentExceptionMode = (RubyFixnum)runtime.getClass("BigDecimal")
+        RubyClass BigDecimal = runtime.getClass("BigDecimal");
+        RubyFixnum currentExceptionMode = (RubyFixnum) BigDecimal
                 .searchInternalModuleVariable("vpExceptionMode");
-        RubyFixnum EXCEPTION_NaN = (RubyFixnum)runtime.getClass("BigDecimal")
-                .getConstant("EXCEPTION_NaN");
+        RubyFixnum EXCEPTION_NaN = (RubyFixnum) BigDecimal.getConstant("EXCEPTION_NaN");
         return (currentExceptionMode.getLongValue() & EXCEPTION_NaN.getLongValue()) != 0;
     }
 
     private static boolean isInfinityExceptionMode(Ruby runtime) {
-        RubyFixnum currentExceptionMode = (RubyFixnum)runtime.getClass("BigDecimal")
+        RubyClass BigDecimal = runtime.getClass("BigDecimal");
+        RubyFixnum currentExceptionMode = (RubyFixnum) BigDecimal
                 .searchInternalModuleVariable("vpExceptionMode");
-        RubyFixnum EXCEPTION_INFINITY = (RubyFixnum)runtime.getClass("BigDecimal")
-                .getConstant("EXCEPTION_INFINITY");
+        RubyFixnum EXCEPTION_INFINITY = (RubyFixnum) BigDecimal.getConstant("EXCEPTION_INFINITY");
         return (currentExceptionMode.getLongValue() & EXCEPTION_INFINITY.getLongValue()) != 0;
     }
 
     private static boolean isOverflowExceptionMode(Ruby runtime) {
-        RubyFixnum currentExceptionMode = (RubyFixnum)runtime.getClass("BigDecimal")
+        RubyClass BigDecimal = runtime.getClass("BigDecimal");
+        RubyFixnum currentExceptionMode = (RubyFixnum) BigDecimal
                 .searchInternalModuleVariable("vpExceptionMode");
-        RubyFixnum EXCEPTION_OVERFLOW = (RubyFixnum)runtime.getClass("BigDecimal")
-                .getConstant("EXCEPTION_OVERFLOW");
+        RubyFixnum EXCEPTION_OVERFLOW = (RubyFixnum) BigDecimal.getConstant("EXCEPTION_OVERFLOW");
         return (currentExceptionMode.getLongValue() & EXCEPTION_OVERFLOW.getLongValue()) != 0;
     }
 
     private static RubyBigDecimal cannotBeCoerced(ThreadContext context, IRubyObject value, boolean must) {
         if (must) {
-            final String err;
-
-            if (value == null) {
-            	err = "nil";
-            } else if (value.isImmediate()) {
-                err = RubyObject.inspect(context, value).toString();
-            } else {
-                err = value.getMetaClass().getBaseName();
-            }
-
-            throw context.runtime.newTypeError(err + " can't be coerced into BigDecimal");
+            throw context.runtime.newTypeError(
+                errMessageType(context, value) + " can't be coerced into BigDecimal"
+            );
         }
-
         return null;
+    }
+
+    private static String errMessageType(ThreadContext context, IRubyObject value) {
+        if (value == null || value.isNil()) return "nil";
+        if (value.isImmediate()) return RubyObject.inspect(context, value).toString();
+        return value.getMetaClass().getBaseName();
     }
 
     private static RubyBigDecimal unableToCoerceWithoutPrec(ThreadContext context, IRubyObject value, boolean must) {
@@ -1212,18 +1210,16 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private IRubyObject cmp(ThreadContext context, final IRubyObject arg, final char op) {
-        int e = 0;
+        final int e;
         RubyBigDecimal rb = getVpValue(context, arg, false);
         if (rb == null) {
-            IRubyObject ee = callCoerced(context, "<=>", arg);
-            if (ee.isNil()) {
+            IRubyObject cmp = callCoerced(context, "<=>", arg, false);
+            if ( cmp.isNil() ) { // arg.coerce failed
                 if (op == '*') return context.nil;
-                else if (op == '=' || isNaN()) return context.runtime.getFalse();
-                else {
-                    throw context.runtime.newArgumentError("nil could not be coerced into a BigDecmil");
-                }
+                if (op == '=' || isNaN()) return context.runtime.getFalse();
+                throw context.runtime.newArgumentError("comparison of BigDecimal with "+ errMessageType(context, arg) +" failed");
             }
-            e = RubyNumeric.fix2int(ee);
+            e = RubyNumeric.fix2int(cmp);
         } else {
             if (isNaN() | rb.isNaN()) {
                 return (op == '*') ? context.nil : context.runtime.getFalse();
@@ -1438,9 +1434,7 @@ public class RubyBigDecimal extends RubyNumeric {
             mod = mod.add(val.value);
         }
 
-        return RubyArray.newArray(runtime,
-                new RubyBigDecimal(runtime, div),
-                new RubyBigDecimal(runtime, mod));
+        return RubyArray.newArray(runtime, new RubyBigDecimal(runtime, div), new RubyBigDecimal(runtime, mod));
     }
 
     @JRubyMethod(name = "exponent")
@@ -1470,7 +1464,7 @@ public class RubyBigDecimal extends RubyNumeric {
             n = RubyNumeric.fix2int(args[0]);
         }
 
-        RubyBigDecimal floor = null;
+        final RubyBigDecimal floor;
         if (value.scale() > n) { // rounding neccessary
             floor = new RubyBigDecimal(getRuntime(),
                     value.setScale(n, RoundingMode.FLOOR));
@@ -1478,15 +1472,11 @@ public class RubyBigDecimal extends RubyNumeric {
             floor = this;
         }
 
-        if (getRuntime().is1_8()) {
-            return floor;
-        } else {
-            if (args.length == 0) {
-                return floor.to_int19();
-            } else {
-                return floor;
-            }
+        if (getRuntime().is1_8()) return floor;
+        if (args.length == 0) {
+            return floor.to_int19();
         }
+        return floor;
     }
 
     @JRubyMethod(name = "floor", optional = 1, compat = CompatVersion.RUBY1_9)
@@ -1591,7 +1581,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         RoundingMode mode = (args.length > 1) ? javaRoundingModeFromRubyRoundingMode(context.runtime, args[1]) : getRoundingMode(context.runtime);
         // JRUBY-914: Java 1.4 BigDecimal does not allow a negative scale, so we have to simulate it
-        RubyBigDecimal bigDecimal = null;
+        final RubyBigDecimal bigDecimal;
         if (scale < 0) {
           // shift the decimal point just to the right of the digit to be rounded to (divide by 10**(abs(scale)))
           // -1 -> 10's digit, -2 -> 100's digit, etc.
