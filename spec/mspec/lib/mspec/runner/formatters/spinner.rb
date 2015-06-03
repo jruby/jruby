@@ -9,10 +9,7 @@ class SpinnerFormatter < DottedFormatter
   MIN = 60
 
   def initialize(out=nil)
-    @exception = @failure = false
-    @exceptions = []
-    @count = 0
-    @out = $stdout
+    super(nil)
 
     @which = 0
     @loaded = 0
@@ -60,15 +57,18 @@ class SpinnerFormatter < DottedFormatter
     bar
   end
 
-  def spin
+  def progress_line
     @which = (@which + 1) % Spins.size
+    data = [Spins[@which], percentage, etr, @counter.failures, @counter.errors]
     if @color
-      print "\r[%s | %s | %s] \e[0;#{@fail_color}m%6dF \e[0;#{@error_color}m%6dE\e[0m" %
-          [Spins[@which], percentage, etr, @counter.failures, @counter.errors]
+      "\r[%s | %s | %s] \e[0;#{@fail_color}m%6dF \e[0;#{@error_color}m%6dE\e[0m" % data
     else
-      print "\r[%s | %s | %s] %6dF %6dE" %
-          [Spins[@which], percentage, etr, @counter.failures, @counter.errors]
+      "\r[%s | %s | %s] %6dF %6dE" % data
     end
+  end
+
+  def clear_progress_line
+    print "\r#{' '*progress_line.length}"
   end
 
   # Callback for the MSpec :start event. Stores the total
@@ -89,11 +89,21 @@ class SpinnerFormatter < DottedFormatter
     super
     @fail_color =  "31" if exception.failure?
     @error_color = "33" unless exception.failure?
+
+    clear_progress_line
+    print_exception(exception, @count)
   end
 
   # Callback for the MSpec :after event. Updates the spinner
   # and progress bar.
   def after(state)
-    spin
+    print progress_line
+  end
+
+  def finish
+    clear_progress_line
+    # We already printed the exceptions
+    @exceptions = []
+    super
   end
 end
