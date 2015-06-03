@@ -1,32 +1,32 @@
 module KernelSpecs
-  class MethodTest
+  class CalleeTest
     def f
-      __method__
+      __callee__
     end
 
     alias_method :g, :f
 
     def in_block
-      (1..2).map { __method__ }
+      (1..2).map { __callee__ }
     end
 
     define_method(:dm) do
-      __method__
+      __callee__
     end
 
     define_method(:dm_block) do
-      (1..2).map { __method__ }
+      (1..2).map { __callee__ }
     end
 
     def from_send
-      send "__method__"
+      send "__callee__"
     end
 
     def from_eval
-      eval "__method__"
+      eval "__callee__"
     end
 
-    @@method = __method__
+    @@method = __callee__
     def from_class_body
       @@method
     end
