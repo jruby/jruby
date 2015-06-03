@@ -43,6 +43,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.translator.NodeWrapper;
@@ -150,6 +151,8 @@ public class CoreLibrary {
 
     @CompilationFinal private RubySymbol eachSymbol;
     @CompilationFinal private RubyBasicObject envHash;
+
+    @CompilationFinal private InternalMethod basicObjectSendMethod;
 
     private enum State {
         INITIALIZING,
@@ -453,6 +456,9 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(DigestNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BigDecimalNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ZlibNodesFactory.getFactories());
+
+        basicObjectSendMethod = basicObjectClass.getMethods().get("__send__");
+        assert basicObjectSendMethod != null;
     }
 
     private void initializeGlobalVariables() {
@@ -1384,14 +1390,6 @@ public class CoreLibrary {
         return rubiniusUndefined;
     }
 
-    public boolean isLoadingRubyCore() {
-        return state == State.LOADING_RUBY_CORE;
-    }
-
-    public boolean isLoaded() {
-        return state == State.LOADED;
-    }
-
     public RubyClass getErrnoClass(Errno errno) {
         return errnoClasses.get(errno);
     }
@@ -1408,4 +1406,15 @@ public class CoreLibrary {
         return ioBufferClass;
     }
 
+    public boolean isLoadingRubyCore() {
+        return state == State.LOADING_RUBY_CORE;
+    }
+
+    public boolean isLoaded() {
+        return state == State.LOADED;
+    }
+
+    public boolean isSend(InternalMethod method) {
+        return method.getCallTarget() == basicObjectSendMethod.getCallTarget();
+    }
 }
