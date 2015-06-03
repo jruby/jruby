@@ -23,9 +23,11 @@ import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.tools.CoverageTracker;
+
 import jnr.ffi.LibraryLoader;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -68,6 +70,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -94,7 +97,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
     private final Warnings warnings;
     private final SafepointManager safepointManager;
-    private final Random random = new Random();
     private final LexicalScope rootLexicalScope;
     private final CompilerOptions compilerOptions;
     private final RubiniusPrimitiveManager rubiniusPrimitiveManager;
@@ -559,7 +561,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public Random getRandom() {
-        return random;
+        return ThreadLocalRandom.current();
     }
 
     public LexicalScope getRootLexicalScope() {
