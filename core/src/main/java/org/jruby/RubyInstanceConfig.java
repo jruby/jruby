@@ -142,11 +142,11 @@ public class RubyInstanceConfig {
         // default ClassCache using jitMax as a soft upper bound
         classCache = new ClassCache<Script>(loader, jitMax);
         threadDumpSignal = Options.THREAD_DUMP_SIGNAL.load();
-        
+
+        environment = new HashMap<String,String>();
         try {
-            environment = System.getenv();
+            environment.putAll(System.getenv());
         } catch (SecurityException se) {
-            environment = new HashMap<String,String>();
         }
     }
     
@@ -704,6 +704,12 @@ public class RubyInstanceConfig {
     }
 
     public Map getEnvironment() {
+        if (!new File(getJRubyHome()).exists() && !environment.containsKey("RUBY")) {
+            // the assumption that if JRubyHome is not a regular file that java.class.path
+            // is the one which launched jruby is probably wrong. but is sufficient for
+            // java -jar jruby-complete.jar
+            environment.put("RUBY", "java -cp " + System.getProperty("java.class.path") + " org.jruby.Main");
+        }
         return environment;
     }
 
