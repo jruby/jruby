@@ -36,12 +36,6 @@ import java.util.regex.Pattern;
 @CoreClass(name = "Truffle::BigDecimal")
 public abstract class BigDecimalNodes {
 
-    public static class BigDecimalType extends BasicObjectType {
-        private BigDecimalType() {
-            super();
-        }
-    }
-
     public static final BigDecimalType BIG_DECIMAL_TYPE = new BigDecimalType();
     public static final Property VALUE_PROPERTY;
     public static final Property TYPE_PROPERTY;
@@ -65,34 +59,6 @@ public abstract class BigDecimalNodes {
                 addProperty(TYPE_PROPERTY).
                 addProperty(VALUE_PROPERTY).
                 createFactory();
-    }
-
-    public static class RubyBigDecimalAllocator implements Allocator {
-
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return createRubyBigDecimal(rubyClass, BigDecimal.ZERO);
-        }
-
-    }
-
-    public enum Type {
-        NEGATIVE_INFINITY("-Infinity"),
-        POSITIVE_INFINITY("Infinity"),
-        NAN("NaN"),
-        NEGATIVE_ZERO("-0"),
-        NORMAL(null);
-
-        private final String representation;
-
-        Type(String representation) {
-            this.representation = representation;
-        }
-
-        public String getRepresentation() {
-            assert representation != null;
-            return representation;
-        }
     }
 
     public static BigDecimal getBigDecimalValue(long v) {
@@ -140,6 +106,40 @@ public abstract class BigDecimalNodes {
 
     private static int nearestBiggerMultipleOf4(int value) {
         return ((value / 4) + 1) * 4;
+    }
+
+    public enum Type {
+        NEGATIVE_INFINITY("-Infinity"),
+        POSITIVE_INFINITY("Infinity"),
+        NAN("NaN"),
+        NEGATIVE_ZERO("-0"),
+        NORMAL(null);
+
+        private final String representation;
+
+        Type(String representation) {
+            this.representation = representation;
+        }
+
+        public String getRepresentation() {
+            assert representation != null;
+            return representation;
+        }
+    }
+
+    public static class BigDecimalType extends BasicObjectType {
+        private BigDecimalType() {
+            super();
+        }
+    }
+
+    public static class RubyBigDecimalAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+            return createRubyBigDecimal(rubyClass, BigDecimal.ZERO);
+        }
+
     }
 
     public abstract static class BigDecimalCoreMethodNode extends CoreMethodArrayArgumentsNode {
@@ -533,11 +533,11 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "*", required = 1)
     public abstract static class MultOpNode extends BigDecimalCoreMethodNode {
 
+        private final ConditionProfile zeroNormal = ConditionProfile.createBinaryProfile();
+
         public MultOpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
-
-        private final ConditionProfile zeroNormal = ConditionProfile.createBinaryProfile();
 
         @TruffleBoundary
         private Object multBigDecimal(RubyBasicObject a, BigDecimal b) {
@@ -698,11 +698,11 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = {"/", "quo"}, required = 1)
     public abstract static class DivOpNode extends BigDecimalCoreMethodNode {
 
+        final ConditionProfile normalZero = ConditionProfile.createBinaryProfile();
+
         public DivOpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
-
-        final ConditionProfile normalZero = ConditionProfile.createBinaryProfile();
 
         @TruffleBoundary
         private Object div(RubyBasicObject a, BigDecimal b) {
