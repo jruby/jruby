@@ -167,7 +167,7 @@ module Commands
     puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
     puts 'jt untag spec/ruby/language                    untag passing specs in this directory'
     puts 'jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file'
-    puts 'jt bench debug benchmark                       run a single benchmark with options for compiler debugging'
+    puts 'jt bench debug [--ruby-backtrace] benchmark    run a single benchmark with options for compiler debugging'
     puts 'jt bench reference [benchmarks]                run a set of benchmarks and record a reference point'
     puts 'jt bench compare [benchmarks]                  run a set of benchmarks and compare against a reference point'
     puts '    benchmarks can be any benchmarks or group of benchmarks supported'
@@ -347,7 +347,12 @@ module Commands
     bench_args = ["-I#{bench_dir}/lib", "#{bench_dir}/bin/bench"]
     case command
     when 'debug'
-      env_vars = env_vars.merge({'JRUBY_OPTS' => '-J-G:+TraceTruffleCompilation -J-G:+DumpOnError -J-G:+TruffleCompilationExceptionsAreThrown'})
+      if args.delete '--ruby-backtrace'
+        compilation_exceptions_behaviour = "-J-G:+TruffleCompilationExceptionsAreThrown"
+      else
+        compilation_exceptions_behaviour = "-J-G:+TruffleCompilationExceptionsAreFatal"
+      end
+      env_vars = env_vars.merge({'JRUBY_OPTS' => "-J-G:+TraceTruffleCompilation -J-G:+DumpOnError #{compilation_exceptions_behaviour}"})
       bench_args += ['score', 'jruby-9000-dev-truffle-graal', '--show-commands', '--show-samples']
       raise 'specify a single benchmark for run - eg classic-fannkuch-redux' if args.size != 1
     when 'reference'
