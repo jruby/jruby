@@ -290,6 +290,10 @@ public class RubyEnumerator extends RubyObject {
      */
     @JRubyMethod
     public IRubyObject each(ThreadContext context, Block block) {
+        if (!block.isGiven()) {
+            return this;
+        }
+
         return object.callMethod(context, method, methodArgs, block);
     }
 
