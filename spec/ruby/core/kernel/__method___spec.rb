@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
 require File.expand_path('../fixtures/__method__', __FILE__)
 
 describe "Kernel.__method__" do
@@ -21,6 +20,10 @@ describe "Kernel.__method__" do
 
   it "returns the caller from block inside define_method too" do
     KernelSpecs::MethodTest.new.dm_block.should == [:dm_block, :dm_block]
+  end
+
+  it "returns method name even from send" do
+    KernelSpecs::MethodTest.new.from_send.should == :from_send
   end
 
   it "returns method name even from eval" do
