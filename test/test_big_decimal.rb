@@ -73,6 +73,28 @@ class TestBigDecimal < Test::Unit::TestCase
     end
   end
 
+  class MyNum
+    def *(other)
+      33
+    end
+
+    def /(other)
+      99
+    end
+
+    def coerce(other)
+      [MyNum.new, self]
+    end
+  end
+
+  def test_coerce_div_mul
+    require 'bigdecimal/util'
+
+    assert_equal 33, BigDecimal.new('10') * MyNum.new
+    assert_equal 99, 10.0 / MyNum.new
+    assert_equal 99, 10.0.to_d / MyNum.new
+  end
+
   require "bigdecimal/newton"
   include Newton
 
