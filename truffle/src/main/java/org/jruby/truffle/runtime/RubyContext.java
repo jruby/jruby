@@ -85,7 +85,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     private final POSIX posix;
     private final NativeSockets nativeSockets;
 
-    private final TranslatorDriver translator;
     private final CoreLibrary coreLibrary;
     private final FeatureManager featureManager;
     private final TraceManager traceManager;
@@ -156,8 +155,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         coreLibrary = new CoreLibrary(this);
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
         coreLibrary.initialize();
-
-        translator = new TranslatorDriver(this);
 
         featureManager = new FeatureManager(this);
         traceManager = new TraceManager();
@@ -356,6 +353,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     @TruffleBoundary
     public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode, NodeWrapper wrapper) {
+        final TranslatorDriver translator = new TranslatorDriver(this);
         final RubyRootNode rootNode = translator.parse(this, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
@@ -537,10 +535,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     public ThreadManager getThreadManager() {
         return threadManager;
-    }
-
-    public TranslatorDriver getTranslator() {
-        return translator;
     }
 
     public AtExitManager getAtExitManager() {
