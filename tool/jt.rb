@@ -2,7 +2,7 @@
 # Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
-# 
+#
 # Eclipse Public License version 1.0
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
@@ -18,6 +18,7 @@ JRUBY_DIR = File.expand_path('../..', __FILE__)
 
 JDEBUG_PORT = 51819
 JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},suspend=y"
+JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
 
 # wait for sub-processes to handle the interrupt
 trap(:INT) {}
@@ -148,11 +149,12 @@ module Commands
     puts 'jt irb                                         irb'
     puts 'jt rebuild                                     clean and build'
     puts 'jt run [options] args...                       run JRuby with -X+T and args'
-    puts '    --graal        use Graal (set GRAAL_BIN or it will try to automagically find it)'
-    puts '    --asm          show assembly (implies --graal)'
-    puts '    --server       run an instrumentation server on port 8080'
-    puts '    --igv          make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
-    puts '    --jdebug       run a JDWP debug server on 8000'
+    puts '    --graal         use Graal (set GRAAL_BIN or it will try to automagically find it)'
+    puts '    --asm           show assembly (implies --graal)'
+    puts '    --server        run an instrumentation server on port 8080'
+    puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
+    puts '    --[j]debug      run a JDWP debug server on 8000'
+    puts '    --jexception[s] print java exceptions'
     puts 'jt e 14 + 2                                    evaluate an expression'
     puts 'jt puts 14 + 2                                 evaluate and print an expression'
     puts 'jt test                                        run all mri tests and specs'
@@ -228,8 +230,12 @@ module Commands
       jruby_args += %w[-J-XX:+UnlockDiagnosticVMOptions -J-XX:CompileCommand=print,*::callRoot]
     end
 
-    if args.delete('--jdebug')
+    if args.delete('--jdebug') || args.delete('--debug')
       jruby_args << JDEBUG
+    end
+
+    if args.delete('--jexception') || args.delete('--jexceptions')
+      jruby_args << JEXCEPTION
     end
 
     if args.delete('--server')
@@ -301,7 +307,7 @@ module Commands
     env_vars = {}
 
     options = %w[--excl-tag fails]
-    
+
     if args.first == 'fast'
       args.shift
       options += %w[--excl-tag slow]
@@ -312,8 +318,12 @@ module Commands
       options << '-T-J-server'
     end
 
-    if args.delete('--jdebug')
+    if args.delete('--jdebug') || args.delete('--debug')
       options << "-T#{JDEBUG}"
+    end
+
+    if args.delete('--jexception') || args.delete('--jexceptions')
+      options << "-T#{JEXCEPTION}"
     end
 
     mspec_env env_vars, 'run', *options, *args
