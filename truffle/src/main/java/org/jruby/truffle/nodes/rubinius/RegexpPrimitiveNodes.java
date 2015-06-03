@@ -104,7 +104,7 @@ public abstract class RegexpPrimitiveNodes {
 
             final ByteList bl = regexp.getSource();
             final Regex r = new Regex(bl.getUnsafeBytes(), bl.getBegin(), bl.getBegin() + bl.getRealSize(), regexp.getRegex().getOptions(), regexp.checkEncoding(StringNodes.getCodeRangeable(string), true));
-            final Matcher matcher = regexp.getRegex().matcher(StringNodes.getByteList(string).bytes());
+            final Matcher matcher = r.matcher(StringNodes.getByteList(string).bytes());
 
             return regexp.matchCommon(string, false, false, matcher, start, end);
         }

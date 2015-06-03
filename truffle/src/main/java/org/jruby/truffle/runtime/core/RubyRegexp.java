@@ -476,13 +476,7 @@ public class RubyRegexp extends RubyBasicObject {
             if (fixedEnc[0] != null) options.setFixed(true);
             //if (regexpOptions.isEncodingNone()) setEncodingNone();
 
-
-            Encoding sourceEncoding = bytes.getEncoding();
-            boolean fixedEncoding = options.isFixed();
-            boolean noEncoding = options.isEncodingNone();
-
             bytes.setEncoding(enc);
-
 
             Regex ret = new Regex(unescaped.getUnsafeBytes(), unescaped.getBegin(), unescaped.getBegin() + unescaped.getRealSize(), options.toJoniOptions(), enc, Syntax.RUBY);
             ret.setUserObject(bytes);
@@ -516,9 +510,11 @@ public class RubyRegexp extends RubyBasicObject {
     public Encoding checkEncoding(CodeRangeable str, boolean warn) {
         final Regex pattern = this.regex;
 
+        /*
         if (str.scanForCodeRange() == StringSupport.CR_BROKEN) {
-            //throw getRuntime().newArgumentError("invalid byte sequence in " + str.getEncoding());
+            throw getRuntime().newArgumentError("invalid byte sequence in " + str.getEncoding());
         }
+        */
         //check();
         Encoding enc = str.getByteList().getEncoding();
         if (!enc.isAsciiCompatible()) {
@@ -526,16 +522,20 @@ public class RubyRegexp extends RubyBasicObject {
                 //encodingMatchError(getRuntime(), pattern, enc);
             }
         } else if (options.isFixed()) {
+            /*
             if (enc != pattern.getEncoding() &&
                     (!pattern.getEncoding().isAsciiCompatible() ||
                             str.scanForCodeRange() != StringSupport.CR_7BIT)) {
-                // encodingMatchError(getRuntime(), pattern, enc);
+                encodingMatchError(getRuntime(), pattern, enc);
             }
+            */
             enc = pattern.getEncoding();
         }
+        /*
         if (warn && this.options.isEncodingNone() && enc != ASCIIEncoding.INSTANCE && str.scanForCodeRange() != StringSupport.CR_7BIT) {
-            //getRuntime().getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "regexp match /.../n against to " + enc + " string");
+            getRuntime().getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "regexp match /.../n against to " + enc + " string");
         }
+        */
         return enc;
     }
 
