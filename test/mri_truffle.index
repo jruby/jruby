@@ -491,8 +491,8 @@ ruby/enc/test_utf32.rb
 # open-uri/test_ssl.rb
 # openssl/test_fips.rb
 # openssl/test_pkcs5.rb
-# optparse/test_acceptable.rb
-# optparse/test_autoconf.rb
+optparse/test_acceptable.rb
+optparse/test_autoconf.rb
 # psych/handlers/test_recorder.rb
 # psych/test_safe_load.rb
 # psych/test_yamldbm.rb
@@ -725,7 +725,7 @@ ruby/enc/test_utf32.rb
 # ruby/test_iseq.rb
 # ruby/test_keyword.rb
 # ruby/test_lazy_enumerator.rb
-# ruby/test_not.rb
+ruby/test_not.rb
 # ruby/test_refinement.rb
 # ruby/test_rubyvm.rb
 # ruby/test_threadgroup.rb
@@ -868,17 +868,17 @@ ruby/enc/test_utf32.rb
 # rubygems/test_gem_version_option.rb
 # rubygems/test_kernel.rb
 # rubygems/test_require.rb
-# scanf/test_scanfio.rb
+scanf/test_scanfio.rb
 # sdbm/test_sdbm.rb
 # shell/test_command_processor.rb
 # syslog/test_syslog_logger.rb
-# test_abbrev.rb
+test_abbrev.rb
 # test_curses.rb
 # test_rbconfig.rb
 # test_tmpdir.rb
 # test_unicode_normalize.rb
 # test_weakref.rb
-# testunit/test_assertion.rb
+testunit/test_assertion.rb
 # testunit/test_hideskip.rb
 # testunit/test_parallel.rb
 # testunit/test_rake_integration.rb
@@ -905,7 +905,7 @@ ruby/enc/test_utf32.rb
 # webrick/test_httputils.rb
 # webrick/test_httpversion.rb
 # webrick/test_server.rb
-# webrick/test_utils.rb
+webrick/test_utils.rb
 # win32ole/test_err_in_callback.rb
 # win32ole/test_folderitem2_invokeverb.rb
 # win32ole/test_nil2vtempty.rb

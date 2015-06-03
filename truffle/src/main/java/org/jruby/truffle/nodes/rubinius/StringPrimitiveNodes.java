@@ -694,7 +694,7 @@ public abstract class StringPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "string_character_index", needsSelf = false)
+    @RubiniusPrimitive(name = "string_character_index", needsSelf = false, lowerFixnumParameters = 3)
     public static abstract class StringCharacterIndexPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringCharacterIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
