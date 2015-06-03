@@ -1,5 +1,0 @@
-fails:Module#attr_reader allows for adding an attr_reader to an immediate
-fails:Module#attr_reader converts non string/symbol/fixnum names to strings using to_str
-fails:Module#attr_reader raises a TypeError when the given names can't be converted to strings using to_str
-fails:Module#attr_reader applies current visibility to methods created
-fails:Module#attr_reader is a private method

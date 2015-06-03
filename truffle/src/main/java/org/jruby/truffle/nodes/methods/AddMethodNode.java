@@ -75,7 +75,7 @@ public class AddMethodNode extends RubyNode {
         }
     }
 
-    private static Visibility getVisibility(Frame frame) {
+    public static Visibility getVisibility(Frame frame) {
         while (frame != null) {
             Visibility visibility = findVisibility(frame);
             if (visibility != null) {
