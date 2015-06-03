@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
@@ -139,7 +140,7 @@ public class CoreLibrary {
     private final RubyBasicObject globalVariablesObject;
     private final RubyBasicObject mainObject;
     private final RubyBasicObject nilObject;
-    private RubyBasicObject rubiniusUndefined;
+    private final RubyBasicObject rubiniusUndefined;
 
     private final ArrayNodes.MinBlock arrayMinBlock;
     private final ArrayNodes.MaxBlock arrayMaxBlock;
@@ -147,8 +148,8 @@ public class CoreLibrary {
     private final RubyClass rubyInternalMethod;
     private final Map<Errno, RubyClass> errnoClasses = new HashMap<>();
 
-    @CompilerDirectives.CompilationFinal private RubySymbol eachSymbol;
-    @CompilerDirectives.CompilationFinal private RubyBasicObject envHash;
+    @CompilationFinal private RubySymbol eachSymbol;
+    @CompilationFinal private RubyBasicObject envHash;
 
     private enum State {
         INITIALIZING,
