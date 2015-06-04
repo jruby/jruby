@@ -12,58 +12,79 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.interop.ForeignAccessFactory;
-import com.oracle.truffle.api.interop.InteropPredicate;
-import com.oracle.truffle.api.interop.TruffleObject;
-import com.oracle.truffle.api.interop.exception.UnsupportedMessageException;
-import com.oracle.truffle.api.interop.messages.Message;
+import com.oracle.truffle.api.interop.ForeignAccess;
+import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.NullSourceSection;
-import com.oracle.truffle.interop.messages.*;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.interop.InteropNode;
 import org.jruby.truffle.runtime.RubyContext;
 
-public class StringForeignAccessFactory implements ForeignAccessFactory {
+public class StringForeignAccessFactory implements ForeignAccess.Factory10 {
 
     private final RubyContext context;
 
-    public StringForeignAccessFactory(RubyContext context) {
+    private StringForeignAccessFactory(RubyContext context) {
         this.context = context;
     }
 
-    @Override
-    public InteropPredicate getLanguageCheck() {
-        return new InteropPredicate() {
-            @Override
-            public boolean test(TruffleObject o) {
-                return o instanceof  RubyString;
-            }
-        };
+    public static ForeignAccess create(RubyContext context) {
+        return ForeignAccess.create(RubyString.class, new StringForeignAccessFactory(context));
     }
 
-    public CallTarget getAccess(Message tree) {
-        if (Read.create(Receiver.create(), Argument.create()).matchStructure(tree)) {
-            return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createStringRead(context, new NullSourceSection("", ""), (Read) tree)));
-        } else if (Execute.create(Read.create(Receiver.create(), Argument.create()),0).matchStructure(tree)) {
-            return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createExecuteAfterRead(context, new NullSourceSection("", ""), (Execute) tree)));
-        } else if (Write.create(Receiver.create(), Argument.create(), Argument.create()).matchStructure(tree)) {
-            return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createWrite(context, new NullSourceSection("", ""), (Write) tree)));
-        } else if (IsExecutable.create(Receiver.create()).matchStructure(tree)) { //ok
-            return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsExecutable(context, new NullSourceSection("", ""))));
-        } else if (IsBoxed.create(Receiver.create()).matchStructure(tree)) { //ok
-            return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createStringIsBoxed(context, new NullSourceSection("", ""))));
-        } else if (IsNull.create(Receiver.create()).matchStructure(tree)) {  //ok
-            return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsNull(context, new NullSourceSection("", ""))));
-        } else if (HasSize.create(Receiver.create()).matchStructure(tree)) { //ok
-            return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createHasSizePropertyTrue(context, new NullSourceSection("", ""))));
-        } else if (GetSize.create(Receiver.create()).matchStructure(tree)) { //ok
-            return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createGetSize(context, new NullSourceSection("", ""))));
-        } else if (Unbox.create(Receiver.create()).matchStructure(tree)) { //ok
-            return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createStringUnbox(context, new NullSourceSection("", ""))));
-        } else {
-            throw new UnsupportedMessageException("Message not supported: " + tree.toString());
-        }
+    @Override
+    public CallTarget accessIsNull() {
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsNull(context, new NullSourceSection("", ""))));
+    }
+
+    @Override
+    public CallTarget accessIsExecutable() {
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsExecutable(context, new NullSourceSection("", ""))));
+    }
+
+    @Override
+    public CallTarget accessIsBoxed() {
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createStringIsBoxed(context, new NullSourceSection("", ""))));
+    }
+
+    @Override
+    public CallTarget accessHasSize() {
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createHasSizePropertyTrue(context, new NullSourceSection("", ""))));
+    }
+
+    @Override
+    public CallTarget accessGetSize() {
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createGetSize(context, new NullSourceSection("", ""))));
+    }
+
+    @Override
+    public CallTarget accessUnbox() {
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createStringUnbox(context, new NullSourceSection("", ""))));
+    }
+
+    @Override
+    public CallTarget accessRead() {
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createStringRead(context, new NullSourceSection("", ""))));
+    }
+
+    @Override
+    public CallTarget accessWrite() {
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createWrite(context, new NullSourceSection("", ""))));
+    }
+
+    @Override
+    public CallTarget accessExecute(int arity) {
+        return null;
+    }
+
+    @Override
+    public CallTarget accessInvoke(int arity) {
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createExecuteAfterRead(context, new NullSourceSection("", ""), arity)));
+    }
+
+    @Override
+    public CallTarget accessMessage(Message msg) {
+        return null;
     }
 
     protected static final class RubyInteropRootNode extends RootNode {

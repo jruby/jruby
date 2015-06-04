@@ -17,17 +17,11 @@ import org.jruby.truffle.runtime.core.RubyProc;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.interop.messages.Argument;
-import com.oracle.truffle.interop.messages.Execute;
-import com.oracle.truffle.interop.messages.IsNull;
-import com.oracle.truffle.interop.messages.Read;
-import com.oracle.truffle.interop.messages.Receiver;
-import com.oracle.truffle.interop.messages.Write;
-import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
-
 
 
 public final class CachedForeignDispatchNode extends CachedDispatchNode {
@@ -36,11 +30,11 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
     private final String nameForMessage;
     private final int arity;
 
-    @Child private ForeignObjectAccessNode directArray;
-    @Child private ForeignObjectAccessNode directField;
-    @Child private ForeignObjectAccessNode directCall;
-    @Child private ForeignObjectAccessNode nullCheck;
-    @Child private ForeignObjectAccessNode access;
+    @Child private Node directArray;
+    @Child private Node directField;
+    @Child private Node directCall;
+    @Child private Node nullCheck;
+    @Child private Node access;
     @Child private PrepareArguments prepareArguments;
 
     public CachedForeignDispatchNode(RubyContext context, DispatchNode next, Object cachedName, int arity) {
@@ -60,21 +54,21 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
 
     private void initializeNodes(RubyContext context, int arity) {
         if (name.equals("[]")) {
-            directArray = ForeignObjectAccessNode.getAccess(Read.create(Receiver.create(), Argument.create()));
+            directArray = ForeignAccess.node(ForeignAccess.msgRead());
         } else if (name.equals("[]=")) {
-        	directArray = ForeignObjectAccessNode.getAccess(Write.create(Receiver.create(), Argument.create(), Argument.create()));
+        	directArray = ForeignAccess.node(ForeignAccess.msgWrite());
         } else if (name.endsWith("=") && arity == 1) {
-            directField = ForeignObjectAccessNode.getAccess(Write.create(Receiver.create(), Argument.create(), Argument.create()));
+            directField = ForeignAccess.node(ForeignAccess.msgWrite());
         } else if (name.endsWith("call")) {// arity + 1 for receiver
-        	directCall = ForeignObjectAccessNode.getAccess(Execute.create(Receiver.create(), arity + 1));
+        	directCall = ForeignAccess.node(ForeignAccess.msgExecute(arity + 1));
         } else if (name.endsWith("nil?")) {
-        	nullCheck = ForeignObjectAccessNode.getAccess(IsNull.create(Receiver.create()));
+        	nullCheck = ForeignAccess.node(ForeignAccess.msgIsNull());
         } else if (arity == 0) {
-        	directField = ForeignObjectAccessNode.getAccess(Read.create(Receiver.create(), Argument.create()));
+        	directField = ForeignAccess.node(ForeignAccess.msgRead());
         } else {
             // do not forget to pass the receiver!
             // EXECUTE(READ(rec, a0), a1<receiver>, ...)
-            access = ForeignObjectAccessNode.getAccess(Execute.create(Read.create(Receiver.create(),Argument.create()),arity + 1));
+            access = ForeignAccess.node(ForeignAccess.msgInvoke(arity + 1));
         }
         prepareArguments = new PrepareArguments(context, getSourceSection(), arity);
     }
@@ -113,23 +107,23 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
         }
         if (directArray != null) {
             Object[] args = prepareArguments.convertArguments(frame, arguments, 0);
-            return directArray.executeForeign(frame, receiverObject, args);
+            return ForeignAccess.execute(directArray, frame, receiverObject, args);
         } else if (directField != null) {
             Object[] args = prepareArguments.convertArguments(frame, arguments, 1);
             args[0] = nameForMessage;
-            return directField.executeForeign(frame, receiverObject, args);
+            return ForeignAccess.execute(directField, frame, receiverObject, args);
         } else if (directCall != null) {
             Object[] args = prepareArguments.convertArguments(frame, arguments, 1);
             args[0] = receiverObject;
-            return directCall.executeForeign(frame, receiverObject, args);
+            return ForeignAccess.execute(directCall, frame, receiverObject, args);
         } else if (nullCheck != null) {
             Object[] args = prepareArguments.convertArguments(frame, arguments, 0);
-            return nullCheck.executeForeign(frame, receiverObject, args);
+            return ForeignAccess.execute(nullCheck, frame, receiverObject, args);
         } else if (access != null) {
             Object[] args = prepareArguments.convertArguments(frame, arguments, 2);
             args[0] = name;
             args[1] = receiverObject;
-            return access.executeForeign(frame, receiverObject, args);
+            return ForeignAccess.execute(access, frame, receiverObject, args);
         } else {
             CompilerDirectives.transferToInterpreter();
             throw new IllegalStateException();
