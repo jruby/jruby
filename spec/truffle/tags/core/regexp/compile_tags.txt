@@ -1,5 +1,0 @@
-fails:Regexp.compile works by default for subclasses with overridden #initialize
-fails:Regexp.compile given a String with escaped characters raises a RegexpError if \x is not followed by any hexadecimal digits
-fails:Regexp.compile given a String with escaped characters raises a RegexpError if less than four digits are given for \uHHHH
-fails:Regexp.compile given a String with escaped characters raises a RegexpError if the \u{} escape is empty
-fails:Regexp.compile given a String with escaped characters raises a RegexpError if more than six hexadecimal digits are given
