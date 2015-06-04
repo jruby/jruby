@@ -32,16 +32,8 @@ class MSpecScript
     # require 'timeout'
     "^spec/ruby/core/process/detach_spec.rb",
 
-    # problems with comparing special characters and tags
-    "^spec/ruby/core/regexp/compile_spec.rb",
-    "^spec/ruby/core/string/chomp_spec.rb",
+    # fail tag not excluding
     "^spec/ruby/core/string/modulo_spec.rb",
-
-    # NullPointerException on load
-    "^spec/ruby/core/regexp/encoding_spec.rb",
-
-    # infinite loop on some examples
-    # "^spec/ruby/core/string/gsub_spec.rb",
 
     # require etc, linux only spec
     "^spec/ruby/core/io/advise_spec.rb",
