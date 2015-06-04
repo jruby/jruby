@@ -352,4 +352,32 @@ class TestBigDecimal < Test::Unit::TestCase
       assert_equal(BigDecimal.new("10.9", 2).to_f, 10.9)
     end
   end
+
+  class BigDeci < BigDecimal
+
+    # MRI does not invoke initialize on 1.8./1.9
+    def initialize(arg); raise super(arg.to_s) end
+
+    def abs; -super end
+    def infinite?; false end
+
+  end
+
+  def test_subclass
+    a = BigDeci.new 1.to_s
+    assert_equal -1, a.abs
+    assert_equal false, a.infinite?
+
+    a = BigDeci.new '-100'
+    assert_equal -5, a.div(20)
+    assert_equal -100, a.abs
+
+    assert a.inspect.index('#<BigDecimal:')
+    assert_equal '-0.1E3', a.to_s
+
+    assert_equal BigDeci, a.class
+    assert a.is_a?(BigDeci)
+    assert a.kind_of?(BigDeci)
+  end
+
 end
