@@ -1792,47 +1792,30 @@ public class RubyBigDecimal extends RubyNumeric {
         return groups;
     }
 
-    private boolean hasArg(IRubyObject[] args) {
-        return args.length != 0 && !args[0].isNil();
+    private static String firstArgument(IRubyObject[] args) {
+        if ( args.length == 0 ) return null;
+        final IRubyObject arg = args[0];
+        return arg.isNil() ? null : arg.toString();
     }
 
-    private String format(IRubyObject[] args) {
-        return args[0].toString();
+    private static boolean posSpace(String arg) {
+        if ( arg == null ) return false;
+        return formatHasLeadingSpace(arg);
     }
 
-    private String firstArgument(IRubyObject[] args) {
-        if (hasArg(args)) {
-            return format(args);
-        }
-        return null;
+    private static boolean posSign(String arg) {
+        if ( arg == null ) return false;
+        return formatHasLeadingPlus(arg) || posSpace(arg);
     }
 
-    private boolean posSpace(String arg) {
-        if (null != arg) {
-            return formatHasLeadingSpace(arg);
-        }
-        return false;
+    private static boolean asEngineering(String arg) {
+        if ( arg == null ) return true;
+        return ! formatHasFloatingPointNotation(arg);
     }
 
-    private boolean posSign(String arg) {
-        if (null != arg) {
-            return formatHasLeadingPlus(arg) || posSpace(arg);
-        }
-        return false;
-    }
-
-    private boolean asEngineering(String arg) {
-        if (null != arg) {
-            return !formatHasFloatingPointNotation(arg);
-        }
-        return true;
-    }
-
-    private int groups(String arg) {
-        if (null != arg) {
-            return formatFractionalDigitGroups(arg);
-        }
-        return 0;
+    private static int groups(String arg) {
+        if (arg == null) return 0;
+        return formatFractionalDigitGroups(arg);
     }
 
     private boolean isZero() {
@@ -1859,8 +1842,9 @@ public class RubyBigDecimal extends RubyNumeric {
         return signum == -1 ? "-" : (signum == 1 ? (posSign(arg) ? (posSpace(arg) ? " " : "+") : "") : "");
     }
 
-    private IRubyObject engineeringValue(String arg) {
-        StringBuilder build = new StringBuilder().append(sign(arg, value.signum())).append("0.");
+    private CharSequence engineeringValue(String arg) {
+        StringBuilder build = new StringBuilder();
+        build.append( sign(arg, value.signum()) ).append("0.");
         String s = removeTrailingZeroes(unscaledValue());
 
         if (groups(arg) == 0) {
@@ -1875,11 +1859,11 @@ public class RubyBigDecimal extends RubyNumeric {
                 sep = " ";
             }
         }
-        build.append("E").append(getExponent());
-        return getRuntime().newString(build.toString());
+        build.append('E').append(getExponent());
+        return build;
     }
 
-    private IRubyObject floatingPointValue(String arg) {
+    private CharSequence floatingPointValue(String arg) {
         String values[] = value.abs().stripTrailingZeros().toPlainString().split("\\.");
         String whole = "0";
         if (values.length > 0) {
@@ -1924,34 +1908,22 @@ public class RubyBigDecimal extends RubyNumeric {
                 }
             }
         }
-        return getRuntime().newString(build.toString());
+        return build;
     }
 
     @JRubyMethod(name = "to_s", optional = 1)
-    public IRubyObject to_s(IRubyObject[] args) {
+    public RubyString to_s(IRubyObject[] args) {
         String arg = firstArgument(args);
-        if (isNaN()) {
-            return getRuntime().newString("NaN");
+        if ( isNaN() ) return getRuntime().newString("NaN");
+        if ( infinitySign != 0 ) {
+            return getRuntime().newString(infinitySign == -1 ? "-Infinity" : "Infinity");
         }
-        if (infinitySign != 0) {
-            if (infinitySign == -1) {
-                return getRuntime().newString("-Infinity");
-            } else {
-                return getRuntime().newString("Infinity");
-            }
+        if ( isZero() ) {
+            return getRuntime().newString(zeroSign < 0 ? "-0.0" : "0.0");
         }
-        if (isZero()) {
-            String zero = "0.0";
-            if (zeroSign < 0) {
-                zero = "-" + zero;
-            }
-            return getRuntime().newString(zero);
-        }
-        if (asEngineering(arg)) {
-            return engineeringValue(arg);
-        } else {
-            return floatingPointValue(arg);
-        }
+        return getRuntime().newString(
+            ( asEngineering(arg) ? engineeringValue(arg) : floatingPointValue(arg) ).toString()
+        );
     }
 
     // Note: #fix has only no-arg form, but truncate allows optional parameter.
