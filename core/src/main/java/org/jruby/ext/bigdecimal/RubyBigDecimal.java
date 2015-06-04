@@ -69,8 +69,9 @@ import org.jruby.util.SafeDoubleParser;
  */
 @JRubyClass(name="BigDecimal", parent="Numeric")
 public class RubyBigDecimal extends RubyNumeric {
-    private static final ObjectAllocator BIGDECIMAL_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+
+    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+        public RubyBigDecimal allocate(Ruby runtime, RubyClass klass) {
             return new RubyBigDecimal(runtime, klass);
         }
     };
@@ -126,7 +127,7 @@ public class RubyBigDecimal extends RubyNumeric {
     private static final double SQRT_10 = 3.162277660168379332;
 
     public static RubyClass createBigDecimal(Ruby runtime) {
-        RubyClass bigDecimal = runtime.defineClass("BigDecimal", runtime.getNumeric(), BIGDECIMAL_ALLOCATOR);
+        RubyClass bigDecimal = runtime.defineClass("BigDecimal", runtime.getNumeric(), ALLOCATOR);
 
         runtime.getKernel().defineAnnotatedMethods(BigDecimalKernelMethods.class);
 
@@ -589,35 +590,22 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(runtime, (RubyClass)recv, decimal);
     }
 
-    private static RubyBigDecimal newZero(Ruby runtime, int sign) {
-        int zeroSign;
-        if (sign < 0) {
-            zeroSign = -1;
-        } else {
-            zeroSign = 1;
-        }
-        RubyBigDecimal rbd = new RubyBigDecimal(runtime, BigDecimal.ZERO, 0, zeroSign);
-        return rbd;
+    private static RubyBigDecimal newZero(final Ruby runtime, final int sign) {
+        return new RubyBigDecimal(runtime, BigDecimal.ZERO, 0, sign < 0 ? -1 : 1);
     }
 
     private static RubyBigDecimal newNaN(Ruby runtime) {
-        if (isNaNExceptionMode(runtime)) throw runtime.newFloatDomainError("Computation results to 'NaN'(Not a Number)");
-
-        RubyBigDecimal rbd = new RubyBigDecimal(runtime, BigDecimal.ZERO, true);
-        return rbd;
+        if ( isNaNExceptionMode(runtime) ) {
+            throw runtime.newFloatDomainError("Computation results to 'NaN'(Not a Number)");
+        }
+        return new RubyBigDecimal(runtime, BigDecimal.ZERO, true);
     }
 
-    private static RubyBigDecimal newInfinity(Ruby runtime, int sign) {
-        int infinitySign;
-        if (sign < 0) {
-            infinitySign = -1;
-        } else {
-            infinitySign = 1;
+    private static RubyBigDecimal newInfinity(final Ruby runtime, final int sign) {
+        if ( isInfinityExceptionMode(runtime) ) {
+            throw runtime.newFloatDomainError("Computation results to 'Infinity'");
         }
-        RubyBigDecimal rbd =  new RubyBigDecimal(runtime, BigDecimal.ZERO, infinitySign);
-        if (isInfinityExceptionMode(runtime)) throw runtime.newFloatDomainError("Computation results to 'Infinity'");
-
-        return rbd;
+        return new RubyBigDecimal(runtime, BigDecimal.ZERO, sign < 0 ? -1 : 1);
     }
 
     private RubyBigDecimal setResult() {
