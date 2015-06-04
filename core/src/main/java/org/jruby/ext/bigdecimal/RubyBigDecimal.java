@@ -421,14 +421,6 @@ public class RubyBigDecimal extends RubyNumeric {
         return value.getMetaClass().getBaseName();
     }
 
-    private static RubyBigDecimal unableToCoerceWithoutPrec(ThreadContext context, IRubyObject value, boolean must) {
-        if (must) {
-            throw context.runtime.newArgumentError(value.getMetaClass().getBaseName() + " can't be coerced into BigDecimal without a precision");
-        }
-
-        return null;
-    }
-
     private static RubyBigDecimal getVpValue19(ThreadContext context, IRubyObject v, boolean must) {
         long precision;
         if (v instanceof RubyFloat) {
@@ -457,19 +449,26 @@ public class RubyBigDecimal extends RubyNumeric {
             if (value instanceof RubyFloat) {
                 if (precision > Long.MAX_VALUE) cannotBeCoerced(context, value, must);
 
-                RubyFloat f = (RubyFloat)value;
+                RubyFloat f = (RubyFloat) value;
                 value = new RubyBigDecimal(context.runtime, BigDecimal.valueOf(f.getDoubleValue()));
                 continue;
-            } else if (value instanceof RubyRational) {
-                if (precision < 0) return unableToCoerceWithoutPrec(context, value, must);
+            }
+            else if (value instanceof RubyRational) {
+                if (precision < 0) {
+                    if (must) {
+                        throw context.runtime.newArgumentError(value.getMetaClass().getBaseName() + " can't be coerced into BigDecimal without a precision");
+                    }
+                    return null;
+                }
 
                 value = getVpRubyObjectWithPrec19Inner(context, (RubyRational) value, precision, must);
                 continue;
-            } else if (value instanceof RubyBigDecimal) {
+            }
+            else if (value instanceof RubyBigDecimal) {
                 return (RubyBigDecimal) value;
-            } else if (value instanceof RubyFixnum || value instanceof RubyBignum) {
-                String s = value.toString();
-                return newInstance(value.getRuntime().getClass("BigDecimal"), new IRubyObject[]{value.getRuntime().newString(s)});
+            }
+            else if (value instanceof RubyFixnum || value instanceof RubyBignum) {
+                return newInstance(context, context.runtime.getClass("BigDecimal"), value.asString());
             }
 
             return cannotBeCoerced(context, value, must);
@@ -479,8 +478,7 @@ public class RubyBigDecimal extends RubyNumeric {
     private static RubyBigDecimal getVpValue(ThreadContext context, IRubyObject value, boolean must) {
         if (value instanceof RubyBigDecimal) return (RubyBigDecimal) value;
         if (value instanceof RubyFixnum || value instanceof RubyBignum) {
-            IRubyObject str = value.callMethod(context, "to_s");
-            return newInstance(context.runtime.getClass("BigDecimal"), new IRubyObject[] { str });
+            return newInstance(context, context.runtime.getClass("BigDecimal"), value.asString());
         }
         return cannotBeCoerced(context, value, must);
     }
@@ -489,9 +487,6 @@ public class RubyBigDecimal extends RubyNumeric {
     public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return getVpValue(context, arg, true);
     }
-
-    private final static Pattern INFINITY_PATTERN = Pattern.compile("^([+-])?Infinity$");
-    private final static Pattern NUMBER_PATTERN = Pattern.compile("^([+-]?\\d*\\.?\\d*([eE][+-]?)?\\d*).*");
 
     private static RubyBigDecimal newInstance(Ruby runtime, IRubyObject recv, RubyBigDecimal arg) {
         return new RubyBigDecimal(runtime, (RubyClass) recv, arg);
@@ -520,12 +515,21 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(arg.getBigIntegerValue(), mathContext));
     }
 
+    private final static Pattern NUMBER_PATTERN = Pattern.compile("^([+-]?\\d*\\.?\\d*([eE][+-]?)?\\d*).*");
+
     private static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg, MathContext mathContext) {
         String strValue = arg.convertToString().toString().trim();
-        if ("NaN".equals(strValue)) return newNaN(context.runtime);
 
-        Matcher m = INFINITY_PATTERN.matcher(strValue);
-        if (m.matches()) return newInfinity(context.runtime, "-".equals(m.group(1)) ? -1 : 1);
+        switch ( strValue.length() > 2 ? strValue.charAt(0) : ' ' ) { // do not case length == 1
+            case 'N' :
+                if ( "NaN".equals(strValue) ) return newNaN(context.runtime);
+            case 'I' :
+                if ( "Infinity".equals(strValue) ) return newInfinity(context.runtime, 1);
+            case '-' :
+                if ( "-Infinity".equals(strValue) ) return newInfinity(context.runtime, -1);
+            case '+' :
+                if ( "+Infinity".equals(strValue) ) return newInfinity(context.runtime, +1);
+        }
 
         // Convert String to Java understandable format (for BigDecimal).
         strValue = strValue.replaceFirst("[dD]", "E");                  // 1. MRI allows d and D as exponent separators

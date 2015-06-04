@@ -309,6 +309,25 @@ class TestBigDecimal < Test::Unit::TestCase
     assert BigDecimal.new("5E-69999999").to_f < Float::EPSILON
   end
 
+  def test_infinity
+    assert_equal true, BigDecimal.new("0.0000000001").finite?
+
+    #if RUBY_VERSION > '1.9'
+    #  assert_raises(FloatDomainError) { BigDecimal("Infinity") }
+    #  assert_raises(FloatDomainError) { BigDecimal("+Infinity") }
+    #  assert_raises(FloatDomainError) { BigDecimal("-Infinity") }
+    #else
+      assert_equal 1, BigDecimal("Infinity").infinite?
+      assert_equal false, BigDecimal("-Infinity").finite?
+      assert_equal false, BigDecimal("+Infinity").finite?
+    #end
+
+    assert_raises(TypeError) { BigDecimal(:"+Infinity") }
+
+    assert_equal BigDecimal('0'), BigDecimal("infinity")
+    assert_equal BigDecimal('0'), BigDecimal("+Infinit")
+  end
+
   #JRUBY-5190
   def test_large_precisions
     a = BigDecimal("1").div(BigDecimal("3"), 307)
@@ -319,12 +338,12 @@ class TestBigDecimal < Test::Unit::TestCase
   if RUBY_VERSION =~ /1\.9/ || RUBY_VERSION =~ /2\.0/
     # GH-644, GH-648
     def test_div_by_float_precision_gh644
-      a = BigDecimal.new(11023)/2.2046
+      a = BigDecimal.new(11023) / 2.2046
       assert_equal 5_000, a.to_f
     end
 
     def test_div_by_float_precision_gh648
-      b = BigDecimal.new(1.05, 10)/1.48
+      b = BigDecimal.new(1.05, 10) / 1.48
       assert (b.to_f - 0.7094594594594595) < Float::EPSILON
     end
 
