@@ -560,10 +560,12 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "new", meta = true)
     public static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        if (arg instanceof RubyBigDecimal) return newInstance(context.runtime, recv, (RubyBigDecimal) arg);
-        if (arg instanceof RubyFloat || arg instanceof RubyRational) throw context.runtime.newArgumentError("can't omit precision for a rational");
-        if (arg instanceof RubyFixnum) return newInstance(context.runtime, recv, (RubyFixnum) arg, MathContext.UNLIMITED);
-        if (arg instanceof RubyBignum) return newInstance(context.runtime, recv, (RubyBignum) arg, MathContext.UNLIMITED);
+        if ( context.runtime.is1_9() ) {
+            if (arg instanceof RubyBigDecimal) return newInstance(context.runtime, recv, (RubyBigDecimal) arg);
+            if (arg instanceof RubyFloat || arg instanceof RubyRational) throw context.runtime.newArgumentError("can't omit precision for a rational");
+            if (arg instanceof RubyFixnum) return newInstance(context.runtime, recv, (RubyFixnum) arg, MathContext.UNLIMITED);
+            if (arg instanceof RubyBignum) return newInstance(context.runtime, recv, (RubyBignum) arg, MathContext.UNLIMITED);
+        }
 
         return newInstance(context, recv, arg, MathContext.UNLIMITED);
     }
@@ -575,13 +577,16 @@ public class RubyBigDecimal extends RubyNumeric {
 
         MathContext mathContext = new MathContext(digits);
 
-        if (arg instanceof RubyBigDecimal) return newInstance(context.runtime, recv, (RubyBigDecimal) arg);
-        if (arg instanceof RubyFloat) return newInstance(context.runtime, recv, (RubyFloat) arg, mathContext);
-        if (arg instanceof RubyRational) return newInstance(context, (RubyRational) arg, mathContext);
-        if (arg instanceof RubyFixnum) return newInstance(context.runtime, recv, (RubyFixnum) arg, mathContext);
-        if (arg instanceof RubyBignum) return newInstance(context.runtime, recv, (RubyBignum) arg, mathContext);
+        if ( context.runtime.is1_9() ) {
+            if (arg instanceof RubyBigDecimal) return newInstance(context.runtime, recv, (RubyBigDecimal) arg);
+            if (arg instanceof RubyFloat) return newInstance(context.runtime, recv, (RubyFloat) arg, mathContext);
+            if (arg instanceof RubyRational) return newInstance(context, (RubyRational) arg, mathContext);
+            if (arg instanceof RubyFixnum) return newInstance(context.runtime, recv, (RubyFixnum) arg, mathContext);
+            if (arg instanceof RubyBignum) return newInstance(context.runtime, recv, (RubyBignum) arg, mathContext);
+            mathContext = MathContext.UNLIMITED;
+        }
 
-        return newInstance(context, recv, arg, MathContext.UNLIMITED);
+        return newInstance(context, recv, arg, mathContext);
     }
 
     private static RubyBigDecimal newZero(final Ruby runtime, final int sign) {
