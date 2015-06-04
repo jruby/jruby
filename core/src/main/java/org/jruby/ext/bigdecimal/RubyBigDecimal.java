@@ -806,16 +806,8 @@ public class RubyBigDecimal extends RubyNumeric {
         int times = RubyNumeric.fix2int(arg.convertToInteger());
 
         if (times < 0) {
-            if (isZero()) {
-                return newInfinity(context.runtime, value.signum());
-            }
-
-            // Note: MRI has a very non-trivial way of calculating the precision,
-            // so we use very simple approximation here:
-            int precision = (-times + 4) * (getAllDigits().length() + 4);
-
-            return new RubyBigDecimal(context.runtime,
-                    value.pow(times, new MathContext(precision, RoundingMode.HALF_UP)));
+            if (isZero()) return newInfinity(context.runtime, value.signum());
+            return new RubyBigDecimal(context.runtime, powNegative(times));
         }
         return new RubyBigDecimal(context.runtime, value.pow(times));
     }
@@ -828,6 +820,10 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = {"**", "power"}, required = 1, compat = CompatVersion.RUBY1_9)
     public RubyBigDecimal op_pow19(ThreadContext context, IRubyObject exp) {
         final Ruby runtime = context.runtime;
+
+        if ( ! (exp instanceof RubyNumeric) ) {
+            throw context.runtime.newTypeError("wrong argument type " + exp.getMetaClass() + " (expected scalar Numeric)");
+        }
 
         if (isNaN()) return newNaN(runtime);
 
@@ -856,21 +852,41 @@ public class RubyBigDecimal extends RubyNumeric {
             }
         }
 
-        int times = RubyNumeric.fix2int(exp.convertToInteger());
-
-        if (times < 0) {
-            if (isZero()) {
-                return newInfinity(runtime, value.signum());
-            }
-
-            // Note: MRI has a very non-trivial way of calculating the precision,
-            // so we use very simple approximation here:
-            int precision = (-times + 4) * (getAllDigits().length() + 4);
-
-            return new RubyBigDecimal(runtime,
-                    value.pow(times, new MathContext(precision, RoundingMode.HALF_UP)));
+        final int times; final double rem; // exp's decimal part
+        // when pow is not an integer we're play the oldest trick :
+        // X pow (T+R) = X pow T * X pow R
+        if ( ! ( exp instanceof RubyInteger ) ) {
+            BigDecimal expVal = BigDecimal.valueOf( ((RubyNumeric) exp).getDoubleValue() );
+            BigDecimal[] divAndRem = expVal.divideAndRemainder(BigDecimal.ONE);
+            times = divAndRem[0].intValueExact(); rem = divAndRem[1].doubleValue();
         }
-        return new RubyBigDecimal(runtime, value.pow(times));
+        else {
+            times = RubyNumeric.fix2int(exp); rem = 0;
+        }
+
+        BigDecimal pow;
+        if ( times < 0 ) {
+            if (isZero()) return newInfinity(context.runtime, value.signum());
+            pow = powNegative(times);
+        }
+        else {
+            pow = value.pow(times);
+        }
+
+        if ( rem > 0 ) {
+            // TODO of course this assumes we fit into double (and we loose some precision)
+            double remPow = Math.pow(value.doubleValue(), rem);
+            pow = pow.multiply( BigDecimal.valueOf(remPow) );
+        }
+
+        return new RubyBigDecimal(runtime, pow);
+    }
+
+    private BigDecimal powNegative(final int times) {
+        // Note: MRI has a very non-trivial way of calculating the precision,
+        // so we use very simple approximation here:
+        int precision = (-times + 4) * (getAllDigits().length() + 4);
+        return value.pow(times, new MathContext(precision, RoundingMode.HALF_UP));
     }
 
     @JRubyMethod(name = "+", compat = CompatVersion.RUBY1_8)

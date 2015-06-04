@@ -203,11 +203,36 @@ class TestBigDecimal < Test::Unit::TestCase
 
     if RUBY_VERSION < '1.9'
       assert_raises(TypeError) { n.power(1.1) }
+      assert_raises(TypeError) { n.power('1') }
     else
       n.power(1.1)
 
+      begin
+        n.power('1.1')
+      rescue TypeError => e
+        assert_equal 'wrong argument type String (expected scalar Numeric)', e.message
+      else
+        fail 'expected to raise TypeError'
+      end
+
       assert_equal BigDecimal('0.1E2'), n.power(1.0)
+
+      res = n.power(1.1)
+      #assert_equal BigDecimal('0.125892541E2'), res
+      # NOTE: we're not handling precision the same as MRI with pow
+      assert_equal '0.125892541', res.to_s[0..10]
+      assert_equal 'E2', res.to_s[-2..-1]
+
+      res = 2 ** BigDecimal(1.2, 2)
+      #assert_equal BigDecimal('0.229739671E1'), res
+      # NOTE: we're not handling precision the same as MRI with pow
+      assert_equal '0.22973967', res.to_s[0..9]
+      assert_equal 'E1', res.to_s[-2..-1]
+
+      res = BigDecimal(1.2, 2) ** 2.0
+      assert_equal BigDecimal('0.144E1'), res
     end
+
   end
 
   def test_big_decimal_mode
