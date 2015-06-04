@@ -68,7 +68,7 @@ public abstract class ArrayNodes {
 
     }
 
-    public static final ArrayType ARRAY_TYPE = new ArrayType();
+    //public static final ArrayType ARRAY_TYPE = new ArrayType();
 
     //private static final HiddenKey STORE_IDENTIFIER = new HiddenKey("store");
     //private static final Property STORE_PROPERTY;
@@ -76,7 +76,7 @@ public abstract class ArrayNodes {
     //private static final HiddenKey SIZE_IDENTIFIER = new HiddenKey("size");
     //private static final Property SIZE_PROPERTY;
 
-    private static final DynamicObjectFactory ARRAY_FACTORY;
+    //private static final DynamicObjectFactory ARRAY_FACTORY;
 
     static {
         //final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
@@ -84,11 +84,11 @@ public abstract class ArrayNodes {
         //STORE_PROPERTY = Property.create(STORE_IDENTIFIER, allocator.locationForType(Object.class, EnumSet.of(LocationModifier.NonNull)), 0);
         //SIZE_PROPERTY = Property.create(SIZE_IDENTIFIER, allocator.locationForType(int.class, EnumSet.of(LocationModifier.NonNull)), 0);
 
-        final Shape shape = RubyBasicObject.LAYOUT.createShape(ARRAY_TYPE);
+        //final Shape shape = RubyBasicObject.LAYOUT.createShape(ARRAY_TYPE);
                 //.addProperty(STORE_PROPERTY)
                 //.addProperty(SIZE_PROPERTY);
 
-        ARRAY_FACTORY = shape.createFactory();
+        //ARRAY_FACTORY = shape.createFactory();
     }
 
     public static Object getStore(RubyBasicObject array) {
@@ -390,7 +390,8 @@ public abstract class ArrayNodes {
     }
 
     public static RubyArray createGeneralArray(RubyClass arrayClass, Object store, int size) {
-        return new RubyArray(arrayClass, store, size, ARRAY_FACTORY.newInstance(store, size));
+        //return new RubyArray(arrayClass, store, size, ARRAY_FACTORY.newInstance(store, size));
+        return new RubyArray(arrayClass, store, size, RubyBasicObject.LAYOUT.newInstance(RubyBasicObject.EMPTY_SHAPE));
     }
 
     @CoreMethod(names = "+", required = 1)
