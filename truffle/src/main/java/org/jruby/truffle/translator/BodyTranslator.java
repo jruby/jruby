@@ -1575,7 +1575,7 @@ public class BodyTranslator extends Translator {
         RubyNode rhs;
 
         if (node.getValueNode() == null) {
-            rhs = new DeadNode(context, sourceSection, "null RHS of instance variable assignment");
+            rhs = new DeadNode(context, sourceSection, new Exception("null RHS of instance variable assignment"));
         } else {
             rhs = node.getValueNode().accept(this);
         }
@@ -1768,7 +1768,7 @@ public class BodyTranslator extends Translator {
         RubyNode rhs;
 
         if (node.getValueNode() == null) {
-            rhs = new DeadNode(context, sourceSection, "null RHS of local variable assignment");
+            rhs = new DeadNode(context, sourceSection, new Exception());
         } else {
             if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
                 parentSourceSection.push(sourceSection);
@@ -2243,7 +2243,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitNilNode(org.jruby.ast.NilNode node) {
         if (node.getPosition() == InvalidSourcePosition.INSTANCE && parentSourceSection.peek() == null) {
-            return new DeadNode(context, null, "nil node with no invalid source position - assumed to be implicit null");
+            return new DeadNode(context, null, new Exception());
         }
 
         SourceSection sourceSection = translate(node.getPosition());
@@ -2521,12 +2521,12 @@ public class BodyTranslator extends Translator {
 
         RubyNode tryPart;
 
-        if (node.getBodyNode() != null) {
-            tryPart = node.getBodyNode().accept(this);
-        } else {
+        if (node.getBodyNode() == null || node.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
             tryPart = new DefinedWrapperNode(context, sourceSection,
                     new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                     "nil");
+        } else {
+            tryPart = node.getBodyNode().accept(this);
         }
 
         final List<RescueNode> rescueNodes = new ArrayList<>();
@@ -2571,7 +2571,7 @@ public class BodyTranslator extends Translator {
 
                     RubyNode bodyTranslated;
 
-                    if (rescueBody.getBodyNode() == null) {
+                    if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
                         bodyTranslated = new DefinedWrapperNode(context, sourceSection,
                                 new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                                 "nil");
@@ -2587,7 +2587,7 @@ public class BodyTranslator extends Translator {
             } else {
                 RubyNode bodyNode;
 
-                if (rescueBody.getBodyNode() == null) {
+                if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
                     bodyNode = new DefinedWrapperNode(context, sourceSection,
                             new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                             "nil");
@@ -2604,12 +2604,12 @@ public class BodyTranslator extends Translator {
 
         RubyNode elsePart;
 
-        if (node.getElseNode() != null) {
-            elsePart = node.getElseNode().accept(this);
-        } else {
+        if (node.getElseNode() == null || node.getElseNode().getPosition() == InvalidSourcePosition.INSTANCE) {
             elsePart = new DefinedWrapperNode(context, sourceSection,
                     new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                     "nil");
+        } else {
+            elsePart = node.getElseNode().accept(this);
         }
 
         return new TryNode(context, sourceSection,

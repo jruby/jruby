@@ -20,15 +20,15 @@ import org.jruby.truffle.runtime.RubyContext;
  */
 public class DeadNode extends RubyNode {
 
-    private final String description;
+    private final Exception reason;
 
-    public DeadNode(RubyContext context, SourceSection sourceSection, String description) {
+    public DeadNode(RubyContext context, SourceSection sourceSection, Exception reason) {
         super(context, sourceSection);
-        this.description = description;
+        this.reason = reason;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        throw new UnsupportedOperationException("Dead nodes should have been pruned before execution starts: " + description);
+        throw new UnsupportedOperationException(reason);
     }
 }
