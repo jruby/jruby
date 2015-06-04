@@ -68,6 +68,7 @@ import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.rubinius.CallRubiniusPrimitiveNode;
 import org.jruby.truffle.nodes.rubinius.InvokeRubiniusPrimitiveNode;
+import org.jruby.truffle.nodes.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveConstructor;
 import org.jruby.truffle.nodes.rubinius.RubiniusSingleBlockArgNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
@@ -1481,7 +1482,11 @@ public class BodyTranslator extends Translator {
             RubyNode readNode = environment.findLocalVarNode(name, sourceSection);
 
             if (name.equals("$_")) {
-                readNode = GetFromThreadLocalNodeGen.create(context, sourceSection, readNode);
+                if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/regexp.rb")) {
+                    readNode = new RubiniusLastStringReadNode(context, sourceSection);
+                } else {
+                    readNode = GetFromThreadLocalNodeGen.create(context, sourceSection, readNode);
+                }
             }
 
             return readNode;
