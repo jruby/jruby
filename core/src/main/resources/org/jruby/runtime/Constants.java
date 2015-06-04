@@ -65,7 +65,7 @@ public final class Constants {
     /**
      * The max size of JIT-compiled methods (full class size) allowed.
      */
-    public static final int JIT_MAX_SIZE_LIMIT = 30000;
+    public static final int JIT_MAX_SIZE_LIMIT = 2000;
 
     /**
      * The JIT threshold to the specified method invocation count.
