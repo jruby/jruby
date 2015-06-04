@@ -43,10 +43,6 @@ class MSpecScript
     # NullPointerException on load
     "^spec/ruby/core/regexp/encoding_spec.rb",
 
-    # error compiling regex on load
-    "^spec/ruby/core/regexp/source_spec.rb",
-    "^spec/ruby/core/string/match_spec.rb",
-
     # infinite loop on some examples
     # "^spec/ruby/core/string/gsub_spec.rb",
 
