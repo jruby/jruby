@@ -63,7 +63,13 @@ public abstract class RegexpPrimitiveNodes {
             throw new RaiseException(getContext().getCoreLibrary().securityError("can't modify literal regexp", this));
         }
 
-        @Specialization(guards = "!isRegexpLiteral(regexp)")
+        @Specialization(guards = { "!isRegexpLiteral(regexp)", "isInitialized(regexp)" })
+        public RubyRegexp initializeAlreadyInitialized(RubyRegexp regexp, RubyString pattern, int options) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().typeError("already initialized regexp", this));
+        }
+
+        @Specialization(guards = { "!isRegexpLiteral(regexp)", "!isInitialized(regexp)" })
         public RubyRegexp initialize(RubyRegexp regexp, RubyString pattern, int options) {
             regexp.initialize(this, StringNodes.getByteList(pattern), options);
             return regexp;
