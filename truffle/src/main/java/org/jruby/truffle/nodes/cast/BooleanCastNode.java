@@ -27,10 +27,6 @@ public abstract class BooleanCastNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public BooleanCastNode(BooleanCastNode copy) {
-        super(copy.getContext(), copy.getSourceSection());
-    }
-
     public abstract boolean executeBoolean(VirtualFrame frame, Object value);
 
     @Specialization(guards = "isNil(nil)")
