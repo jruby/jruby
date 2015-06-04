@@ -136,6 +136,7 @@ public class StringTerm extends StrTerm {
             case '{':
                 //lexer.setBraceNest(lexer.getBraceNest() + 1);
                 lexer.setValue("#" + (char) c);
+                lexer.commandStart = true;
                 return Tokens.tSTRING_DBEG;
             default:
                 // We did not find significant char after # so push it back to

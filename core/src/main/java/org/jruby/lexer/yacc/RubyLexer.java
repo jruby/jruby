@@ -210,7 +210,7 @@ public class RubyLexer {
         ELSIF ("elsif", Tokens.kELSIF, Tokens.kELSIF, LexState.EXPR_BEG),
         DEF ("def", Tokens.kDEF, Tokens.kDEF, LexState.EXPR_FNAME),
         RESCUE ("rescue", Tokens.kRESCUE, Tokens.kRESCUE_MOD, LexState.EXPR_MID),
-        NOT ("not", Tokens.kNOT, Tokens.kNOT, LexState.EXPR_BEG),
+        NOT ("not", Tokens.kNOT, Tokens.kNOT, LexState.EXPR_ARG),
         THEN ("then", Tokens.kTHEN, Tokens.kTHEN, LexState.EXPR_BEG),
         YIELD ("yield", Tokens.kYIELD, Tokens.kYIELD, LexState.EXPR_ARG),
         FOR ("for", Tokens.kFOR, Tokens.kFOR, LexState.EXPR_BEG),
@@ -744,6 +744,10 @@ public class RubyLexer {
         return isARG() && spaceSeen && !Character.isWhitespace(c);
     }
 
+    private boolean isLabelSuffix() {
+        return peek(':') && !peek(':', 1);
+    }
+
     private void determineExpressionState() {
         switch (lex_state) {
         case EXPR_FNAME: case EXPR_DOT:
@@ -1229,6 +1233,7 @@ public class RubyLexer {
             case Tokens.tLAMBEG: System.err.print("tLAMBEG,"); break;
             case Tokens.tRPAREN: System.err.print("tRPAREN,"); break;
             case Tokens.tLABEL: System.err.print("tLABEL("+ value() +":),"); break;
+            case Tokens.tLABEL_END: System.err.print("tLABEL_END"); break;
             case '\n': System.err.println("NL"); break;
             case EOF: System.out.println("EOF"); break;
             case Tokens.tDSTAR: System.err.print("tDSTAR"); break;
@@ -1260,18 +1265,15 @@ public class RubyLexer {
 
             if (tok == Tokens.tSTRING_END && (yaccValue.equals("\"") || yaccValue.equals("'"))) {
                 if (((lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_ENDFN) && !conditionState.isInState() ||
-                        isARG()) && peek(':')) {
-                    int c1 = nextc();
-                    if (peek(':')) { // "mod"::SOMETHING (hack MRI does not do this)
-                        pushback(c1);
-                    } else {
-                        nextc();
-                        tok = Tokens.tLABEL_END;
-                    }
+                        isARG()) && isLabelSuffix()) {
+                    nextc();
+                    tok = Tokens.tLABEL_END;
+                    setState(LexState.EXPR_LABELARG);
+                    lex_strterm = null;
                 }
             }
 
-            if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END || tok == Tokens.tLABEL_END) {
+            if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END) {
                 lex_strterm = null;
                 setState(LexState.EXPR_END);
             }
@@ -1691,8 +1693,6 @@ public class RubyLexer {
     }
 
     private int doKeyword(LexState state) {
-        commandStart = true;
-
         if (leftParenBegin > 0 && leftParenBegin == parenNest) {
             leftParenBegin = 0;
             parenNest--;
@@ -1951,24 +1951,23 @@ public class RubyLexer {
 
             if (keyword != null) {
                 LexState state = lex_state; // Save state at time keyword is encountered
+                setState(keyword.state);
 
-                if (keyword == Keyword.NOT) {
-                    setState(LexState.EXPR_ARG);
-                } else {
-                    setState(keyword.state);
-                }
                 if (state == LexState.EXPR_FNAME) {
                     yaccValue = keyword.name;
+                    return keyword.id0;
                 } else {
                     yaccValue = getPosition();
-                    if (keyword.id0 == Tokens.kDO) return doKeyword(state);
                 }
 
-                if (state == LexState.EXPR_BEG || state == LexState.EXPR_VALUE) return keyword.id0;
+                if (keyword.id0 == Tokens.kDO) return doKeyword(state);
 
-                if (keyword.id0 != keyword.id1) setState(LexState.EXPR_BEG);
-
-                return keyword.id1;
+                if (state == LexState.EXPR_BEG || state == LexState.EXPR_VALUE || state == LexState.EXPR_LABELARG) {
+                    return keyword.id0;
+                } else {
+                    if (keyword.id0 != keyword.id1) lex_state = LexState.EXPR_BEG;
+                    return keyword.id1;
+                }
             }
         }
 
@@ -2044,20 +2043,14 @@ public class RubyLexer {
     }
 
     private int leftParen(boolean spaceSeen) throws IOException {
-        int result = Tokens.tLPAREN2;
+        int result;
+
         if (isBEG()) {
             result = Tokens.tLPAREN;
-        } else if (spaceSeen) {
-            // ENEBO: 1.9 is IS_ARG, but we need to break apart for 1.8 support.
-            if (lex_state == LexState.EXPR_CMDARG) {
-                result = Tokens.tLPAREN_ARG;
-            } else if (lex_state == LexState.EXPR_ARG) {
-                result = Tokens.tLPAREN_ARG;
-            }
-
-            if (token == Tokens.tLAMBDA) {
-                result = Tokens.tLPAREN2;
-            }
+        } else if (isSpaceArg('(', spaceSeen)) {
+            result = Tokens.tLPAREN_ARG;
+        } else {
+            result = Tokens.tLPAREN2;
         }
 
         parenNest++;
@@ -2126,7 +2119,7 @@ public class RubyLexer {
             return Tokens.tOP_ASGN;
         }
         if (c == '>') {
-            setState(LexState.EXPR_ARG);
+            setState(LexState.EXPR_ENDFN);
             yaccValue = "->";
             return Tokens.tLAMBDA;
         }
@@ -2336,7 +2329,7 @@ public class RubyLexer {
         setState(LexState.EXPR_ENDARG);
         yaccValue = "}";
         //System.out.println("braceNest: " + braceNest);
-        int tok = /*braceNest != 0 ? Tokens.tSTRING_DEND : */ Tokens.tRCURLY;
+        int tok = braceNest == 0 ? Tokens.tSTRING_DEND : Tokens.tRCURLY;
         braceNest--;
         return tok;
     }
