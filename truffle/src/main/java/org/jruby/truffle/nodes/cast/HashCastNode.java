@@ -83,7 +83,7 @@ public abstract class HashCastNode extends RubyNode {
 
         if (!RubyGuards.isRubyHash(result)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorShouldReturn(object.toString(), "to_hash", "HAsh", this));
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorShouldReturn(object.toString(), "to_hash", "Hash", this));
         }
 
         return result;
