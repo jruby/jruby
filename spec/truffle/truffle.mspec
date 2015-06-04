@@ -20,9 +20,6 @@ class MSpecScript
     # This seems to hang sometimes on Travis
     "^spec/ruby/core/signal",
 
-    # require 'socket'
-    "^spec/ruby/core/file/socket_spec.rb",
-
     # require 'fcntl'
     "^spec/ruby/core/io/reopen_spec.rb",
 
