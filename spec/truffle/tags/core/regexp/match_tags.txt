@@ -1,9 +1,1 @@
-fails:Regexp#match resets $~ if passed nil
-fails:Regexp#match with [string, position] when given a positive position matches the input at a given position
-fails:Regexp#match with [string, position] when given a positive position uses the start as a character offset
-fails:Regexp#match with [string, position] when given a negative position matches the input at a given position
-fails:Regexp#match with [string, position] when given a negative position uses the start as a character offset
-fails:Regexp#match with [string, position] when passed a block yields the MatchData
-fails:Regexp#match with [string, position] when passed a block returns the block result
 fails:Regexp#~ matches against the contents of $_
-fails:Regexp#match returns a MatchData object, when argument is a Symbol

@@ -107,25 +107,6 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "match", required = 1, taintFromSelf = true)
-    public abstract static class MatchNode extends CoreMethodArrayArgumentsNode {
-
-        public MatchNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object match(RubyRegexp regexp, RubyString string) {
-            return regexp.matchCommon(string, false, false);
-        }
-
-        @Specialization(guards = "isNil(nil)")
-        public Object match(RubyRegexp regexp, Object nil) {
-            return nil();
-        }
-
-    }
-
     @RubiniusOnly
     @CoreMethod(names = "match_start", required = 2)
     public abstract static class MatchStartNode extends CoreMethodArrayArgumentsNode {
