@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
@@ -53,12 +54,21 @@ public abstract class RegexpPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRegexpLiteral(regexp)")
+        public RubyRegexp initializeRegexpLiteral(RubyRegexp regexp, RubyString pattern, int options) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().securityError("can't modify literal regexp", this));
+        }
+
+        @Specialization(guards = "!isRegexpLiteral(regexp)")
         public RubyRegexp initialize(RubyRegexp regexp, RubyString pattern, int options) {
             regexp.initialize(this, StringNodes.getByteList(pattern), options);
             return regexp;
         }
 
+        public static boolean isRegexpLiteral(RubyRegexp regexp) {
+            return regexp.getOptions().isLiteral();
+        }
     }
 
     @RubiniusPrimitive(name = "regexp_options")

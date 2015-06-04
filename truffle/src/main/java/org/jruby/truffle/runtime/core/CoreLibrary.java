@@ -105,6 +105,7 @@ public class CoreLibrary {
     private final RubyClass regexpErrorClass;
     private final RubyClass rubyTruffleErrorClass;
     private final RubyClass runtimeErrorClass;
+    private final RubyClass securityErrorClass;
     private final RubyClass standardErrorClass;
     private final RubyClass stringClass;
     private final RubyClass stringDataClass;
@@ -276,7 +277,7 @@ public class CoreLibrary {
         syntaxErrorClass = defineClass(scriptErrorClass, "SyntaxError");
 
         // SecurityError
-        defineClass(exceptionClass, "SecurityError");
+        securityErrorClass = defineClass(exceptionClass, "SecurityError");
 
         // SignalException
         RubyClass signalExceptionClass = defineClass(exceptionClass, "SignalException");
@@ -1159,6 +1160,11 @@ public class CoreLibrary {
     public RubyException threadError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(threadErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException securityError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(securityErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException systemCallError(String message, Node currentNode) {
