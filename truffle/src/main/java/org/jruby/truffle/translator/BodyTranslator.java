@@ -1166,7 +1166,12 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitEvStrNode(org.jruby.ast.EvStrNode node) {
-        return node.getBody().accept(this);
+        if (node.getBody() == null) {
+            final SourceSection sourceSection = translate(node.getPosition());
+            return new LiteralNode(context, sourceSection, StringNodes.createEmptyString(context.getCoreLibrary().getStringClass()));
+        } else {
+            return node.getBody().accept(this);
+        }
     }
 
     @Override
