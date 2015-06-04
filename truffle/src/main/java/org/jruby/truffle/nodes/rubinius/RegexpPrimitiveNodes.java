@@ -85,6 +85,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization(guards = "!isInitialized(regexp)")
         public int optionsNotInitialized(RubyRegexp regexp) {
+            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
         }
 
