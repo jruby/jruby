@@ -11,10 +11,12 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.joni.Matcher;
 import org.joni.Regex;
+import org.jruby.truffle.nodes.core.RegexpGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -48,6 +50,7 @@ public abstract class RegexpPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "regexp_initialize")
+    @ImportStatic(RegexpGuards.class)
     public static abstract class RegexpInitializePrimitiveNode extends RubiniusPrimitiveNode {
 
         public RegexpInitializePrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -66,12 +69,10 @@ public abstract class RegexpPrimitiveNodes {
             return regexp;
         }
 
-        public static boolean isRegexpLiteral(RubyRegexp regexp) {
-            return regexp.getOptions().isLiteral();
-        }
     }
 
     @RubiniusPrimitive(name = "regexp_options")
+    @ImportStatic(RegexpGuards.class)
     public static abstract class RegexpOptionsPrimitiveNode extends RubiniusPrimitiveNode {
 
         public RegexpOptionsPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -89,9 +90,6 @@ public abstract class RegexpPrimitiveNodes {
             throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
         }
 
-        public static boolean isInitialized(RubyRegexp regexp) {
-            return regexp.getRegex() != null;
-        }
     }
 
     @RubiniusPrimitive(name = "regexp_search_region", lowerFixnumParameters = {1, 2})
