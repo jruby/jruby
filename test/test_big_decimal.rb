@@ -193,12 +193,21 @@ class TestBigDecimal < Test::Unit::TestCase
   end
 
   def test_big_decimal_power
+    require 'bigdecimal/math'
+
     n = BigDecimal("10")
     assert_equal(n.power(0), BigDecimal("1"))
     assert_equal(n.power(1), n)
     assert_equal(n.power(2), BigDecimal("100"))
     assert_equal(n.power(-1), BigDecimal("0.1"))
-    assert_raises(TypeError) { n.power(1.1) }
+
+    if RUBY_VERSION < '1.9'
+      assert_raises(TypeError) { n.power(1.1) }
+    else
+      n.power(1.1)
+
+      assert_equal BigDecimal('0.1E2'), n.power(1.0)
+    end
   end
 
   def test_big_decimal_mode
