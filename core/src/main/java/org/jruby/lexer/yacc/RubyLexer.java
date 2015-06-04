@@ -748,6 +748,10 @@ public class RubyLexer {
         return peek(':') && !peek(':', 1);
     }
 
+    private boolean isAfterOperator() {
+        return lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT;
+    }
+
     private void determineExpressionState() {
         switch (lex_state) {
         case EXPR_FNAME: case EXPR_DOT:
@@ -2190,7 +2194,7 @@ public class RubyLexer {
     
     private int plus(boolean spaceSeen) throws IOException {
         int c = nextc();
-        if (lex_state == LexState.EXPR_FNAME || lex_state == LexState.EXPR_DOT) {
+        if (isAfterOperator()) {
             setState(LexState.EXPR_ARG);
             if (c == '@') {
                 yaccValue = "+@";

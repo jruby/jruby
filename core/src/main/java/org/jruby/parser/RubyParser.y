@@ -1173,8 +1173,12 @@ arg             : lhs '=' arg {
                 | kDEFINED opt_nl arg {
                     $$ = support.new_defined($1, $3);
                 }
-                | arg '?' arg opt_nl ':' arg {
-                    $$ = new IfNode(support.getPosition($1), support.getConditionNode($1), $3, $6);
+                | arg '?' {
+                    lexer.getConditionState().begin();
+                } arg opt_nl ':' {
+                    lexer.getConditionState().end();
+                } arg {
+                    $$ = new IfNode(support.getPosition($1), support.getConditionNode($1), $4, $8);
                 }
                 | primary {
                     $$ = $1;
