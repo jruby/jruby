@@ -501,7 +501,7 @@ public class RubyRegexp extends RubyBasicObject {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyRegexp(context.getCoreLibrary().getRegexpClass());
+            return new RubyRegexp(rubyClass);
         }
 
     }
