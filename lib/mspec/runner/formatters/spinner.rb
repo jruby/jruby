@@ -101,7 +101,6 @@ class SpinnerFormatter < DottedFormatter
   end
 
   def finish
-    clear_progress_line
     # We already printed the exceptions
     @exceptions = []
     super
