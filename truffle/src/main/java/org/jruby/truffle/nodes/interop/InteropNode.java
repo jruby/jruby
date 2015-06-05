@@ -17,6 +17,7 @@ import com.oracle.truffle.interop.ForeignAccessArguments;
 import com.oracle.truffle.interop.messages.Execute;
 import com.oracle.truffle.interop.messages.Read;
 import com.oracle.truffle.interop.messages.Write;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
@@ -196,7 +197,7 @@ public abstract class InteropNode extends RubyNode {
         @Override
         public Object execute(VirtualFrame frame) {
             Object label = ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex);
-            if (label instanceof  String || label instanceof  RubySymbol || label instanceof Integer) {
+            if (label instanceof  String || RubyGuards.isRubySymbol(label) || label instanceof Integer) {
                 if (label instanceof  String) {
                     String name = (String) label;
                     if (name.startsWith("@")) {
@@ -210,7 +211,7 @@ public abstract class InteropNode extends RubyNode {
                     return this.replace(new ResolvedInteropIndexedReadNode(getContext(), getSourceSection(), labelIndex)).execute(frame);
                 } else if (label instanceof  String) {
                     return this.replace(new ResolvedInteropReadNode(getContext(), getSourceSection(), (String) label, labelIndex)).execute(frame);
-                } else if (label instanceof  RubySymbol) {
+                } else if (RubyGuards.isRubySymbol(label)) {
                     return this.replace(new ResolvedInteropReadFromSymbolNode(getContext(), getSourceSection(), (RubySymbol) label, labelIndex)).execute(frame);
                 } else {
                     CompilerDirectives.transferToInterpreter();
@@ -235,7 +236,7 @@ public abstract class InteropNode extends RubyNode {
         @Override
         public Object execute(VirtualFrame frame) {
             Object label = ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex);
-            if (label instanceof  String || label instanceof  RubySymbol || label instanceof Integer) {
+            if (label instanceof  String || RubyGuards.isRubySymbol(label) || label instanceof Integer) {
                 if (label instanceof  String) {
                     String name = (String) label;
                     if (name.startsWith("@")) {
@@ -246,7 +247,7 @@ public abstract class InteropNode extends RubyNode {
                     return this.replace(new InteropReadStringByteNode(getContext(), getSourceSection(), labelIndex)).execute(frame);
                 } else if (label instanceof  String) {
                     return this.replace(new ResolvedInteropReadNode(getContext(), getSourceSection(), (String) label, labelIndex)).execute(frame);
-                } else if (label instanceof  RubySymbol) {
+                } else if (RubyGuards.isRubySymbol(label)) {
                     return this.replace(new ResolvedInteropReadFromSymbolNode(getContext(), getSourceSection(), (RubySymbol) label, labelIndex)).execute(frame);
                 } else {
                     CompilerDirectives.transferToInterpreter();
@@ -445,7 +446,7 @@ public abstract class InteropNode extends RubyNode {
         @Override
         public Object execute(VirtualFrame frame) {
             Object label = ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex);
-            if (label instanceof  String || label instanceof  RubySymbol || label instanceof Integer) {
+            if (label instanceof  String || RubyGuards.isRubySymbol(label) || label instanceof Integer) {
                 if (label instanceof  String) {
                     String name = (String) label;
                     if (name.startsWith("@")) {
@@ -459,7 +460,7 @@ public abstract class InteropNode extends RubyNode {
                     return this.replace(new ResolvedInteropIndexedWriteNode(getContext(), getSourceSection(), labelIndex, valueIndex)).execute(frame);
                 } else if (label instanceof  String) {
                     return this.replace(new ResolvedInteropWriteNode(getContext(), getSourceSection(), (String) label, labelIndex, valueIndex)).execute(frame);
-                } else if (label instanceof  RubySymbol) {
+                } else if (RubyGuards.isRubySymbol(label)) {
                     return this.replace(new ResolvedInteropWriteToSymbolNode(getContext(), getSourceSection(), (RubySymbol) label, labelIndex, valueIndex)).execute(frame);
                 } else {
                     CompilerDirectives.transferToInterpreter();

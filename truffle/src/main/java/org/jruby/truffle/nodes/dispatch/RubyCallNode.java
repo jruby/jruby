@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.arguments.OptionalKeywordArgMissingNode;
 import org.jruby.truffle.nodes.arguments.UnknownArgumentErrorNode;
@@ -287,7 +288,7 @@ public class RubyCallNode extends RubyNode {
             for (int j = 0; j < hashNode.size(); j++) {
                 Object key = hashNode.getKey(j);
                 boolean keyIsSymbol = key instanceof LiteralNode &&
-                        ((LiteralNode) key).getObject() instanceof RubySymbol;
+                        RubyGuards.isRubySymbol(((LiteralNode) key).getObject());
 
                 if (!keyIsSymbol) {
                     // cannot optimize case where keyword label is dynamic (not a fixed RubySymbol)

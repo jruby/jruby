@@ -181,7 +181,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             return createMethodMissingNode(first, methodName, receiverObject);
         }
 
-        if (receiverObject instanceof RubySymbol) {
+        if (RubyGuards.isRubySymbol(receiverObject)) {
             return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, method, indirect, getDispatchAction());
         } else {
             return new CachedBoxedDispatchNode(getContext(), methodName, first,

@@ -26,6 +26,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
@@ -1644,7 +1645,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             for (Object name : args) {
-                if (name instanceof RubySymbol) {
+                if (RubyGuards.isRubySymbol(name)) {
                     module.changeConstantVisibility(this, name.toString(), true);
                 } else {
                     throw new UnsupportedOperationException();
@@ -1666,7 +1667,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             for (Object name : args) {
-                if (name instanceof RubySymbol) {
+                if (RubyGuards.isRubySymbol(name)) {
                     module.changeConstantVisibility(this, name.toString(), false);
                 } else {
                     throw new UnsupportedOperationException();

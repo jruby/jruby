@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -57,7 +58,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
 
     @Override
     protected boolean guard(Object methodName, Object receiver) {
-        return guardName(methodName) && (receiver instanceof RubySymbol);
+        return guardName(methodName) && (RubyGuards.isRubySymbol(receiver));
     }
 
     @Override

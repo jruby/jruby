@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -33,10 +34,10 @@ public abstract class CachedDispatchNode extends DispatchNode {
             DispatchAction dispatchAction) {
         super(context, dispatchAction);
 
-        assert (cachedName instanceof String) || (cachedName instanceof RubySymbol) || (cachedName instanceof RubyString);
+        assert (cachedName instanceof String) || (RubyGuards.isRubySymbol(cachedName)) || (cachedName instanceof RubyString);
         this.cachedName = cachedName;
 
-        if (cachedName instanceof RubySymbol) {
+        if (RubyGuards.isRubySymbol(cachedName)) {
             cachedNameAsSymbol = (RubySymbol) cachedName;
         } else if (cachedName instanceof RubyString) {
             cachedNameAsSymbol = context.getSymbol(StringNodes.getByteList(((RubyString) cachedName)));
@@ -65,7 +66,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
 
         if (cachedName instanceof String) {
             return cachedName.equals(methodName);
-        } else if (cachedName instanceof RubySymbol) {
+        } else if (RubyGuards.isRubySymbol(cachedName)) {
             // TODO(CS, 11-Jan-15) this just repeats the above guard...
             return cachedName == methodName;
         } else if (cachedName instanceof RubyString) {
