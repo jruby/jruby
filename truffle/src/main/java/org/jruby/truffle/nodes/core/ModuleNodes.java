@@ -1276,7 +1276,7 @@ public abstract class ModuleNodes {
         public Object name(RubyModule module) {
             CompilerDirectives.transferToInterpreter();
 
-            if (!module.hasName()) {
+            if (!module.hasPartialName()) {
                 return nil();
             }
 
