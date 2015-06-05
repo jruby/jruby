@@ -15,6 +15,20 @@ describe "IO#lines" do
     @io.lines.should be_an_instance_of(enumerator_class)
   end
 
+  describe "when no block is given" do
+    it "returns an Enumerator" do
+      @io.lines.should be_an_instance_of(enumerator_class)
+    end
+
+    describe "returned Enumerator" do
+      describe "size" do
+        it "should return nil" do
+          @io.lines.size.should == nil
+        end
+      end
+    end
+  end
+
   it "returns a line when accessed" do
     enum = @io.lines
     enum.first.should == IOSpecs.lines[0]

@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../shared/enumerable_enumeratorized', __FILE__)
 
 describe "Enumerable#find_index" do
   before :each do
@@ -76,4 +77,6 @@ describe "Enumerable#find_index" do
       end
     end
   end
+
+  it_behaves_like :enumerable_enumeratorized_with_unknown_size, :find_index
 end

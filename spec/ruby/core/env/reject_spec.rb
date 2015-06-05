@@ -1,4 +1,5 @@
 require File.expand_path('../../../spec_helper', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "ENV.reject!" do
   it "rejects entries based on key" do
@@ -33,6 +34,8 @@ describe "ENV.reject!" do
       ENV.replace orig
     end
   end
+
+  it_behaves_like :enumeratorized_with_origin_size, :reject!, ENV
 end
 
 describe "ENV.reject" do
@@ -69,4 +72,6 @@ describe "ENV.reject" do
       ENV.replace orig
     end
   end
+
+  it_behaves_like :enumeratorized_with_origin_size, :reject, ENV
 end

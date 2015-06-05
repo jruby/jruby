@@ -11,8 +11,18 @@ describe :io_codepoints, :shared => true do
     @io.close
   end
 
-  it "returns an Enumerator when passed no block" do
-    @enum.should be_an_instance_of(enumerator_class)
+  describe "when no block is given" do
+    it "returns an Enumerator" do
+      @enum.should be_an_instance_of(enumerator_class)
+    end
+
+    describe "returned Enumerator" do
+      describe "size" do
+        it "should return nil" do
+          @enum.size.should == nil
+        end
+      end
+    end
   end
 
   it "yields each codepoint" do

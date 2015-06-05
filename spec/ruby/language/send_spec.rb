@@ -26,7 +26,7 @@ describe "Invoking a method" do
     end
   end
 
-  describe "with only manditory arguments" do
+  describe "with only mandatory arguments" do
     it "requires exactly the same number of passed values" do
       specs.fooM1(1).should == [1]
       specs.fooM2(1,2).should == [1,2]
@@ -58,12 +58,12 @@ describe "Invoking a method" do
     end
   end
 
-  describe "with manditory and optional arguments" do
+  describe "with mandatory and optional arguments" do
     it "uses the passed values in left to right order" do
       specs.fooM1O1(2).should == [2,1]
     end
 
-    it "raises an ArgumentError if there are no values for the manditory args" do
+    it "raises an ArgumentError if there are no values for the mandatory args" do
       lambda {
         specs.fooM1O1
       }.should raise_error(ArgumentError)
@@ -187,11 +187,20 @@ describe "Invoking a method" do
   end
 
   describe "when the method is not available" do
-    it "invokes method_missing" do
+    it "invokes method_missing if it is defined" do
       o = LangSendSpecs::MethodMissing.new
       o.not_there(1,2)
       o.message.should == :not_there
       o.args.should == [1,2]
+    end
+    
+    it "raises NameError if invoked as a vcall" do
+      lambda { no_such_method }.should raise_error NameError
+    end
+    
+    it "raises NoMethodError if invoked as an unambiguous method call" do
+      lambda { no_such_method() }.should raise_error NoMethodError
+      lambda { no_such_method(1,2,3) }.should raise_error NoMethodError
     end
   end
 
@@ -242,7 +251,7 @@ describe "Invoking a method" do
     end
   end
 
-  describe "with manditory arguments after optional arguments" do
+  describe "with mandatory arguments after optional arguments" do
     it "binds the required arguments first" do
       specs.fooO1Q1(0,1).should == [0,1]
       specs.fooO1Q1(2).should == [1,2]

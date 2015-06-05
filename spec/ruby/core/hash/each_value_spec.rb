@@ -1,6 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 require File.expand_path('../shared/iteration', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Hash#each_value" do
   it "calls block once for each key, passing value" do
@@ -18,4 +19,5 @@ describe "Hash#each_value" do
   end
 
   it_behaves_like(:hash_iteration_no_block, :each_value)
+  it_behaves_like(:enumeratorized_with_origin_size, :each_value, new_hash(1 => 2, 3 => 4, 5 => 6))
 end

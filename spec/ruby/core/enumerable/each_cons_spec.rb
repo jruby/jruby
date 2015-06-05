@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../shared/enumeratorized', __FILE__)
 
 describe "Enumerable#each_cons" do
   before :each do
@@ -18,6 +19,10 @@ describe "Enumerable#each_cons" do
     lambda{ @enum.each_cons(-2){}   }.should raise_error(ArgumentError)
     lambda{ @enum.each_cons{}       }.should raise_error(ArgumentError)
     lambda{ @enum.each_cons(2,2){}  }.should raise_error(ArgumentError)
+    lambda{ @enum.each_cons(0)      }.should raise_error(ArgumentError)
+    lambda{ @enum.each_cons(-2)     }.should raise_error(ArgumentError)
+    lambda{ @enum.each_cons         }.should raise_error(ArgumentError)
+    lambda{ @enum.each_cons(2,2)    }.should raise_error(ArgumentError)
   end
 
   it "tries to convert n to an Integer using #to_int" do
@@ -46,14 +51,45 @@ describe "Enumerable#each_cons" do
     cnt.times_yielded.should == 3
   end
 
-  it "returns an enumerator if no block" do
-    e = @enum.each_cons(3)
-    e.should be_an_instance_of(enumerator_class)
-    e.to_a.should == @in_threes
-  end
-
   it "gathers whole arrays as elements when each yields multiple" do
     multi = EnumerableSpecs::YieldsMulti.new
     multi.each_cons(2).to_a.should == [[[1, 2], [3, 4, 5]], [[3, 4, 5], [6, 7, 8, 9]]]
+  end
+
+  describe "when no block is given" do
+    it "returns an enumerator" do
+      e = @enum.each_cons(3)
+      e.should be_an_instance_of(enumerator_class)
+      e.to_a.should == @in_threes
+    end
+
+    describe "Enumerable with size" do
+      describe "returned Enumerator" do
+        describe "size" do
+          it "returns enum size - each_cons argument + 1" do
+            enum = EnumerableSpecs::NumerousWithSize.new(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+            enum.each_cons(10).size.should == 1
+            enum.each_cons(9).size.should == 2
+            enum.each_cons(3).size.should == 8
+            enum.each_cons(2).size.should == 9
+            enum.each_cons(1).size.should == 10
+          end
+
+          it "returns 0 when the enum is empty" do
+            enum = EnumerableSpecs::EmptyWithSize.new
+            enum.each_cons(10).size.should == 0
+          end
+        end
+      end
+    end
+
+    describe "Enumerable with no size" do
+      before :all do
+        @object = EnumerableSpecs::Numerous.new(1, 2, 3, 4)
+        @method = :each_cons
+        @method_args = [8]
+      end
+      it_should_behave_like :enumeratorized_with_unknown_size
+    end
   end
 end

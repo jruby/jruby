@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../shared/enumerable_enumeratorized', __FILE__)
 
 describe "Enumerable#min_by" do
   it "returns an enumerator if no block" do
@@ -38,4 +39,6 @@ describe "Enumerable#min_by" do
     multi = EnumerableSpecs::YieldsMulti.new
     multi.min_by {|e| e.size}.should == [1, 2]
   end
+
+  it_behaves_like :enumerable_enumeratorized_with_origin_size, :min_by
 end

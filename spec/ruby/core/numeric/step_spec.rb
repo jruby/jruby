@@ -284,4 +284,105 @@ describe "Numeric#step" do
   it "does not rescue TypeError exceptions" do
     lambda { 1.step(2) { raise TypeError, "" } }.should raise_error(TypeError)
   end
+
+  describe "when no block is given" do
+    describe "returned Enumerator" do
+      describe "size" do
+        ruby_version_is "2.1" do
+          it "raises an ArgumentError when step is 0" do
+            enum = 1.step(5, 0)
+            lambda { enum.size }.should raise_error(ArgumentError)
+          end
+
+          it "raises an ArgumentError when step is 0.0" do
+            enum = 1.step(2, 0.0)
+            lambda { enum.size }.should raise_error(ArgumentError)
+          end
+        end
+
+        describe "when self, stop and step are Fixnums and step is positive" do
+          it "returns the difference between self and stop divided by the number of steps" do
+            5.step(10, 11).size.should == 1
+            5.step(10, 6).size.should == 1
+            5.step(10, 5).size.should == 2
+            5.step(10, 4).size.should == 2
+            5.step(10, 2).size.should == 3
+            5.step(10, 1).size.should == 6
+            5.step(10).size.should == 6
+            10.step(10, 1).size.should == 1
+          end
+
+          it "returns 0 if value > limit" do
+            11.step(10, 1).size.should == 0
+          end
+        end
+
+        describe "when self, stop and step are Fixnums and step is negative" do
+          it "returns the difference between self and stop divided by the number of steps" do
+            10.step(5, -11).size.should == 1
+            10.step(5, -6).size.should == 1
+            10.step(5, -5).size.should == 2
+            10.step(5, -4).size.should == 2
+            10.step(5, -2).size.should == 3
+            10.step(5, -1).size.should == 6
+            10.step(10, -1).size.should == 1
+          end
+
+          it "returns 0 if value < limit" do
+            10.step(11, -1).size.should == 0
+          end
+        end
+
+        describe "when self, stop or step is a Float" do
+          describe "and step is positive" do
+            it "returns the difference between self and stop divided by the number of steps" do
+              5.step(10, 11.0).size.should == 1
+              5.step(10, 6.0).size.should == 1
+              5.step(10, 5.0).size.should == 2
+              5.step(10, 4.0).size.should == 2
+              5.step(10, 2.0).size.should == 3
+              5.step(10, 0.5).size.should == 11
+              5.step(10, 1.0).size.should == 6
+              5.step(10.5).size.should == 6
+              10.step(10, 1.0).size.should == 1
+            end
+
+            it "returns 0 if value > limit" do
+              10.step(5.5).size.should == 0
+              11.step(10, 1.0).size.should == 0
+              11.step(10, 1.5).size.should == 0
+              10.step(5, Float::INFINITY).size.should == 0
+            end
+
+            it "returns 1 if step is Float::INFINITY" do
+              5.step(10, Float::INFINITY).size.should == 1
+            end
+          end
+
+          describe "and step is negative" do
+            it "returns the difference between self and stop divided by the number of steps" do
+              10.step(5, -11.0).size.should == 1
+              10.step(5, -6.0).size.should == 1
+              10.step(5, -5.0).size.should == 2
+              10.step(5, -4.0).size.should == 2
+              10.step(5, -2.0).size.should == 3
+              10.step(5, -0.5).size.should == 11
+              10.step(5, -1.0).size.should == 6
+              10.step(10, -1.0).size.should == 1
+            end
+
+            it "returns 0 if value < limit" do
+              10.step(11, -1.0).size.should == 0
+              10.step(11, -1.5).size.should == 0
+              5.step(10, -Float::INFINITY).size.should == 0
+            end
+
+            it "returns 1 if step is Float::INFINITY" do
+              10.step(5, -Float::INFINITY).size.should == 1
+            end
+          end
+        end
+      end
+    end
+  end
 end

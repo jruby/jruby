@@ -51,12 +51,22 @@ describe :io_each, :shared => true do
       ScratchPad.recorded.should == [ 1,2,3,4,5,6,7,8,9 ]
     end
 
-    it "returns an Enumerator when passed no block" do
-      enum = @io.send(@method)
-      enum.should be_an_instance_of(enumerator_class)
+    describe "when no block is given" do
+      it "returns an Enumerator" do
+        enum = @io.send(@method)
+        enum.should be_an_instance_of(enumerator_class)
 
-      enum.each { |l| ScratchPad << l }
-      ScratchPad.recorded.should == IOSpecs.lines
+        enum.each { |l| ScratchPad << l }
+        ScratchPad.recorded.should == IOSpecs.lines
+      end
+
+      describe "returned Enumerator" do
+        describe "size" do
+          it "should return nil" do
+            @io.send(@method).size.should == nil
+          end
+        end
+      end
     end
   end
 

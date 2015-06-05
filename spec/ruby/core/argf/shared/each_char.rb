@@ -36,4 +36,27 @@ describe :argf_each_char, :shared => true do
       chars.should == @chars
     end
   end
+
+  describe "when no block is given" do
+    it "returns an Enumerator" do
+      argv [@file1_name, @file2_name] do
+        enum = ARGF.send(@method)
+        enum.should be_an_instance_of(enumerator_class)
+
+        chars = []
+        enum.each { |c| chars << c }
+        chars.should == @chars
+      end
+    end
+
+    describe "returned Enumerator" do
+      describe "size" do
+        it "should return nil" do
+          argv [@file1_name, @file2_name] do
+            ARGF.send(@method).size.should == nil
+          end
+        end
+      end
+    end
+  end
 end

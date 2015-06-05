@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../shared/enumerable_enumeratorized', __FILE__)
 
 describe "Enumerable#slice_before" do
   before :each do
@@ -76,4 +77,9 @@ describe "Enumerable#slice_before" do
     lambda { @enum.slice_before("one", "two") }.should raise_error(ArgumentError)
     lambda { @enum.slice_before }.should raise_error(ArgumentError)
   end
+
+  before :all do
+    @method_args = [3]
+  end
+  it_behaves_like :enumerable_enumeratorized_with_unknown_size, :slice_before
 end

@@ -766,4 +766,11 @@ describe "C-API String function" do
       @s.rb_sprintf2(s, "string", "content").should == "Awesome string is here with content"
     end
   end
+
+  describe "rb_vsprintf" do
+    it "returns a formatted String from a variable number of arguments" do
+      s = @s.rb_vsprintf("%s, %d, %.2f", "abc", 42, 2.7);
+      s.should == "abc, 42, 2.70"
+    end
+  end
 end

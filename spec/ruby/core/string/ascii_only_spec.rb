@@ -44,7 +44,6 @@ with_feature :encoding do
           ["hello, \u{6666}".force_encoding(Encoding::US_ASCII),  false],
         ].should be_computed_by(:ascii_only?)
       end
-
     end
 
     it "returns true for the empty String with an ASCII-compatible encoding" do
@@ -71,5 +70,16 @@ with_feature :encoding do
       interp.ascii_only?.should be_false
     end
 
+    it "returns false after appending non ASCII characters to an empty String" do
+      ("" << "λ").ascii_only?.should be_false
+    end
+
+    it "returns false when concatenating an ASCII and non-ASCII String" do
+      "".concat("λ").ascii_only?.should be_false
+    end
+
+    it "returns false when replacing an ASCII String with a non-ASCII String" do
+      "".replace("λ").ascii_only?.should be_false
+    end
   end
 end

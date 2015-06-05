@@ -1,6 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 require File.expand_path('../shared/iteration', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Hash#reject" do
   it "returns a new hash removing keys for which the block yields true" do
@@ -51,6 +52,7 @@ describe "Hash#reject" do
   end
 
   it_behaves_like(:hash_iteration_no_block, :reject)
+  it_behaves_like(:enumeratorized_with_origin_size, :reject, new_hash(1 => 2, 3 => 4, 5 => 6))
 end
 
 describe "Hash#reject!" do
@@ -90,4 +92,5 @@ describe "Hash#reject!" do
   end
 
   it_behaves_like(:hash_iteration_no_block, :reject!)
+  it_behaves_like(:enumeratorized_with_origin_size, :reject!, new_hash(1 => 2, 3 => 4, 5 => 6))
 end
