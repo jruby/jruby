@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.interop.TruffleObject;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.ext.BigDecimalNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.ThreadLocalObject;
