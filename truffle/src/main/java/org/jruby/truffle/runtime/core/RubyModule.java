@@ -175,6 +175,11 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public void include(Node currentNode, RubyModule module) {
         checkFrozen(currentNode);
 
+        // If the module we want to include already includes us, it is cyclic
+        if (ModuleOperations.includesModule(module, this)) {
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("cyclic include detected", currentNode));
+        }
+
         // We need to traverse the module chain in reverse order
         Stack<RubyModule> moduleAncestors = new Stack<>();
         for (RubyModule ancestor : module.ancestors()) {
@@ -183,8 +188,10 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         while (!moduleAncestors.isEmpty()) {
             RubyModule mod = moduleAncestors.pop();
-            parentModule = new IncludedModule(mod, parentModule);
-            mod.addDependent(this);
+            if (!ModuleOperations.includesModule(this, mod)) {
+                parentModule = new IncludedModule(mod, parentModule);
+                mod.addDependent(this);
+            }
         }
         newVersion();
     }
@@ -345,14 +352,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         } else {
             throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(this, name, currentNode));
         }
-    }
-
-    @TruffleBoundary
-    public void appendFeatures(Node currentNode, RubyModule other) {
-        if (ModuleOperations.includesModule(this, other)) {
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("cyclic include detected", currentNode));
-        }
-        other.include(currentNode, this);
     }
 
     public RubyContext getContext() {

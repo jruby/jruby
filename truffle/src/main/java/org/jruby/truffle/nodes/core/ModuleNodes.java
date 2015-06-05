@@ -351,13 +351,13 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject appendFeatures(RubyModule module, RubyModule other) {
-            if (module instanceof RubyClass) {
+        public RubyBasicObject appendFeatures(RubyModule features, RubyModule target) {
+            if (features instanceof RubyClass) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("append_features must be called only on modules", this));
             }
-            module.appendFeatures(this, other);
-            taintResultNode.maybeTaint(module, other);
+            target.include(this, features);
+            taintResultNode.maybeTaint(features, target);
             return nil();
         }
     }
