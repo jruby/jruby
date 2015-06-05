@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.NullSourceSection;
 
@@ -28,10 +27,8 @@ import java.util.ArrayList;
 public abstract class RubyCallStack {
 
     /** Ignores Kernel#send and aliases */
-    public static FrameInstance getCallerFrame(final RubyContext context, VirtualFrame frame) {
+    public static FrameInstance getCallerFrame(final RubyContext context) {
         CompilerAsserts.neverPartOfCompilation();
-
-        final InternalMethod currentMethod = RubyArguments.getMethod(frame.getArguments());
 
         return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
             @Override
@@ -39,7 +36,7 @@ public abstract class RubyCallStack {
                 final InternalMethod method = getMethod(frameInstance);
                 assert method != null;
 
-                if (method != currentMethod && !context.getCoreLibrary().isSend(method)) {
+                if (!context.getCoreLibrary().isSend(method)) {
                     return frameInstance;
                 } else {
                     return null;
@@ -48,8 +45,8 @@ public abstract class RubyCallStack {
         });
     }
 
-    public static InternalMethod getCallingMethod(final RubyContext context, VirtualFrame frame) {
-        return getMethod(getCallerFrame(context, frame));
+    public static InternalMethod getCallingMethod(final RubyContext context) {
+        return getMethod(getCallerFrame(context));
     }
 
     private static InternalMethod getMethod(FrameInstance frame) {

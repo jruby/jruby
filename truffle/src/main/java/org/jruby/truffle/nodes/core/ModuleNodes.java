@@ -1293,12 +1293,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject nesting(VirtualFrame frame) {
+        public RubyBasicObject nesting() {
             CompilerDirectives.transferToInterpreter();
 
             final List<RubyModule> modules = new ArrayList<>();
 
-            InternalMethod method = RubyCallStack.getCallingMethod(getContext(), frame);
+            InternalMethod method = RubyCallStack.getCallingMethod(getContext());
             LexicalScope lexicalScope = method == null ? null : method.getSharedMethodInfo().getLexicalScope();
             RubyClass object = getContext().getCoreLibrary().getObjectClass();
 
@@ -1858,7 +1858,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             if (names.length == 0) {
-                setCurrentVisibility(frame, visibility);
+                setCurrentVisibility(visibility);
             } else {
                 for (Object name : names) {
                     setMethodVisibilityNode.executeSetMethodVisibility(frame, module, name);
@@ -1868,10 +1868,10 @@ public abstract class ModuleNodes {
             return module;
         }
 
-        private void setCurrentVisibility(VirtualFrame frame, Visibility visibility) {
+        private void setCurrentVisibility(Visibility visibility) {
             CompilerDirectives.transferToInterpreter();
 
-            final Frame callerFrame = RubyCallStack.getCallerFrame(getContext(), frame).getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
+            final Frame callerFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
             assert callerFrame != null;
             assert callerFrame.getFrameDescriptor() != null;
 
