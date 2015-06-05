@@ -15,13 +15,15 @@ import org.jruby.util.ByteList;
 
 import java.lang.ref.WeakReference;
 import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class SymbolTable {
 
     private final RubyContext context;
 
-    private final Map<ByteList, WeakReference<RubyBasicObject>> symbolsTable
-            = Collections.synchronizedMap(new WeakHashMap<ByteList, WeakReference<RubyBasicObject>>());
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final WeakHashMap<ByteList, WeakReference<RubyBasicObject>> symbolsTable = new WeakHashMap<>();
 
     public SymbolTable(RubyContext context) {
         this.context = context;
@@ -34,33 +36,55 @@ public class SymbolTable {
 
     @CompilerDirectives.TruffleBoundary
     public RubyBasicObject getSymbol(ByteList bytes) {
-        final WeakReference<RubyBasicObject> symbolReference = symbolsTable.get(bytes);
+        lock.readLock().lock();
 
-        if (symbolReference != null) {
-            final RubyBasicObject symbol = symbolReference.get();
+        try {
+            final WeakReference<RubyBasicObject> symbolReference = symbolsTable.get(bytes);
 
-            if (symbol != null) {
-                return symbol;
+            if (symbolReference != null) {
+                final RubyBasicObject symbol = symbolReference.get();
+
+                if (symbol != null) {
+                    return symbol;
+                }
             }
+        } finally {
+            lock.readLock().unlock();
         }
 
-        final ByteList storedBytes = bytes.dup();
+        lock.writeLock().lock();
 
-        final RubyBasicObject newSymbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), bytes.toString(), storedBytes);
+        try {
+            final WeakReference<RubyBasicObject> symbolReference = symbolsTable.get(bytes);
 
-        final WeakReference<RubyBasicObject> interleavedSymbolReference
-                = symbolsTable.putIfAbsent(storedBytes, new WeakReference<>(newSymbol));
+            if (symbolReference != null) {
+                final RubyBasicObject symbol = symbolReference.get();
 
-        if (interleavedSymbolReference != null) {
-            return interleavedSymbolReference.get();
+                if (symbol != null) {
+                    return symbol;
+                }
+            }
+
+            final ByteList storedBytes = bytes.dup();
+            final RubyBasicObject newSymbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), bytes.toString(), storedBytes);
+            symbolsTable.put(storedBytes, new WeakReference<>(newSymbol));
+            return newSymbol;
+        } finally {
+            lock.writeLock().unlock();
         }
-
-        return newSymbol;
     }
 
     @CompilerDirectives.TruffleBoundary
     public Collection<RubyBasicObject> allSymbols() {
-        final Collection<WeakReference<RubyBasicObject>> symbolReferences = symbolsTable.values();
+        final Collection<WeakReference<RubyBasicObject>> symbolReferences;
+
+        lock.readLock().lock();
+
+        try {
+            symbolReferences = symbolsTable.values();
+        } finally {
+            lock.readLock().unlock();
+        }
 
         final Collection<RubyBasicObject> symbols = new ArrayList<>(symbolReferences.size());
 
