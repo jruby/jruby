@@ -88,7 +88,7 @@ public abstract class WriteBERNode extends PackNode {
 
         if (PackGuards.isRubyBignum(from)) {
             BigInteger big128 = BigInteger.valueOf(128);
-            from = BignumNodes.getBigIntegerValue((RubyBignum) from);
+            from = BignumNodes.getBigIntegerValue((RubyBasicObject) from);
             while (true) {
                 BigInteger bignum = (BigInteger)from;
                 BigInteger[] ary = bignum.divideAndRemainder(big128);

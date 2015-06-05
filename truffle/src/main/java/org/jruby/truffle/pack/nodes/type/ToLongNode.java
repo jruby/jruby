@@ -93,7 +93,7 @@ public abstract class ToLongNode extends PackNode {
         }
 
         if (seenBignum && PackGuards.isRubyBignum(value)) {
-            return toLong(frame, (RubyBignum) value);
+            return toLong(frame, (RubyBasicObject) value);
         }
 
         CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -114,7 +114,7 @@ public abstract class ToLongNode extends PackNode {
 
         if (PackGuards.isRubyBignum(value)) {
             seenBignum = true;
-            return toLong(frame, (RubyBignum) value);
+            return toLong(frame, (RubyBasicObject) value);
         }
 
         // TODO CS 5-April-15 missing the (Object#to_int gives String) part
