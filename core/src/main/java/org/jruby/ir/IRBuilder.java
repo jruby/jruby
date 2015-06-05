@@ -2720,9 +2720,8 @@ public class IRBuilder {
     }
 
     public Operand buildMatch3(Match3Node matchNode) {
-        // This reversal is intentional
-        Operand receiver = build(matchNode.getValueNode());
-        Operand value = build(matchNode.getReceiverNode());
+        Operand receiver = build(matchNode.getReceiverNode());
+        Operand value = build(matchNode.getValueNode());
 
         return addResultInstr(new MatchInstr(createTemporaryVariable(), receiver, value));
     }

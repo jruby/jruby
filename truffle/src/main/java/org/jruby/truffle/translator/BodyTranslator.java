@@ -1864,10 +1864,8 @@ public class BodyTranslator extends Translator {
     public RubyNode visitMatch3Node(org.jruby.ast.Match3Node node) {
         // Triggered when a Regexp literal is the RHS of an expression.
 
-        // This looks weird, but the receiver and value nodes are reversed by the time they get to us, so we need to
-        // reverse them back in the CallNode.
-        final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), node.getReceiverNode());
-        final org.jruby.ast.Node callNode = new CallNode(node.getPosition(), node.getValueNode(), "=~", argsNode, null);
+        final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), node.getValueNode());
+        final org.jruby.ast.Node callNode = new CallNode(node.getPosition(), node.getReceiverNode(), "=~", argsNode, null);
         return callNode.accept(this);
     }
 
