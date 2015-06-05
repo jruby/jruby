@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../shared/enumerable_enumeratorized', __FILE__)
 
 describe "Enumerable#max_by" do
   it "returns an enumerator if no block" do
@@ -37,4 +38,6 @@ describe "Enumerable#max_by" do
     multi = EnumerableSpecs::YieldsMulti.new
     multi.max_by {|e| e.size}.should == [6, 7, 8, 9]
   end
+
+  it_behaves_like :enumerable_enumeratorized_with_origin_size, :max_by
 end

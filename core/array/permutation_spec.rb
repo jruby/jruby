@@ -106,4 +106,33 @@ describe "Array#permutation" do
 
     accum.should == [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]]
   end
+
+  describe "when no block is given" do
+    describe "returned Enumerator" do
+      describe "size" do
+        describe "with an array size greater than 0" do
+          it "returns the descending factorial of array size and given length" do
+            @numbers.permutation(4).size.should == 0
+            @numbers.permutation(3).size.should == 6
+            @numbers.permutation(2).size.should == 6
+            @numbers.permutation(1).size.should == 3
+            @numbers.permutation(0).size.should == 1
+          end
+          it "returns the descending factorial of array size with array size when there's no param" do
+            @numbers.permutation.size.should == 6
+            [1,2,3,4].permutation.size.should == 24
+            [1].permutation.size.should == 1
+          end
+        end
+        describe "with an empty array" do
+          it "returns 1 when the given length is 0" do
+            [].permutation(0).size.should == 1
+          end
+          it "returns 1 when there's param" do
+            [].permutation.size.should == 1
+          end
+        end
+      end
+    end
+  end
 end

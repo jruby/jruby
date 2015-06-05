@@ -104,4 +104,12 @@ describe "C-API Symbol function" do
       @s.rb_is_class_id(:foo).should == false
     end
   end
+
+  ruby_version_is "2.2" do
+    describe "rb_sym2str" do
+      it "converts a Symbol to a String" do
+        @s.rb_sym2str(:bacon).should == "bacon"
+      end
+    end
+  end
 end

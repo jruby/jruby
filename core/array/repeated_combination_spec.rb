@@ -54,4 +54,31 @@ describe "Array#repeated_combination" do
     end
     accum.sort.should == [[10, 10], [10, 11], [10, 12], [11, 11], [11, 12], [12, 12]]
   end
+
+  describe "when no block is given" do
+    describe "returned Enumerator" do
+      describe "size" do
+        it "returns 0 when the combination_size is < 0" do
+          @array.repeated_combination(-1).size.should == 0
+          [].repeated_combination(-2).size.should == 0
+        end
+
+        it "returns 1 when the combination_size is 0" do
+          @array.repeated_combination(0).size.should == 1
+          [].repeated_combination(0).size.should == 1
+        end
+
+        it "returns the binomial coeficient between combination_size and array size + combination_size -1" do
+          @array.repeated_combination(5).size.should == 21
+          @array.repeated_combination(4).size.should == 15
+          @array.repeated_combination(3).size.should == 10
+          @array.repeated_combination(2).size.should == 6
+          @array.repeated_combination(1).size.should == 3
+          @array.repeated_combination(0).size.should == 1
+          [].repeated_combination(0).size.should == 1
+          [].repeated_combination(1).size.should == 0
+        end
+      end
+    end
+  end
 end

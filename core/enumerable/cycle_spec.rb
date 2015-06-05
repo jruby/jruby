@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../shared/enumeratorized', __FILE__)
 
 describe "Enumerable#cycle" do
   describe "passed no argument or nil" do
@@ -83,4 +84,21 @@ describe "Enumerable#cycle" do
       multi.cycle(2).to_a.should == [[1, 2], [3, 4, 5], [6, 7, 8, 9], [1, 2], [3, 4, 5], [6, 7, 8, 9]]
     end
   end
+
+  describe "Enumerable with size" do
+    before :all do
+      @object = EnumerableSpecs::NumerousWithSize.new(1, 2, 3, 4)
+      @empty_object = EnumerableSpecs::EmptyWithSize.new
+    end
+    it_should_behave_like :enumeratorized_with_cycle_size
+  end
+
+  describe "Enumerable with no size" do
+    before :all do
+      @object = EnumerableSpecs::Numerous.new(1, 2, 3, 4)
+      @method = :cycle
+    end
+    it_should_behave_like :enumeratorized_with_unknown_size
+  end
+
 end

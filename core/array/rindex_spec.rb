@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 # Modifying a collection while the contents are being iterated
 # gives undefined behavior. See
@@ -72,4 +73,6 @@ describe "Array#rindex" do
       enum.each { |x| x < 2 }.should == 4
     end
   end
+
+  it_behaves_like :enumeratorized_with_unknown_size, :bsearch, [1,2,3]
 end

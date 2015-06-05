@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../shared/enumerable_enumeratorized', __FILE__)
 
 describe "Enumerable#take_while" do
   before :each do
@@ -45,4 +46,6 @@ describe "Enumerable#take_while" do
     EnumerableSpecs::YieldsMixed.new.take_while{ |v| yields << v }
     yields.should == [1, [2], 3, 5, [8, 9], nil, []]
   end
+
+  it_behaves_like :enumerable_enumeratorized_with_unknown_size, :take_while
 end

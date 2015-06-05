@@ -1,8 +1,17 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../../../shared/enumerator/with_index', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Enumerator#with_index" do
   it_behaves_like(:enum_with_index, :with_index)
+  it_behaves_like(:enumeratorized_with_origin_size, :with_index, [1,2,3].select)
+
+  it "returns a new Enumerator when no block is given" do
+    enum1 = [1,2,3].select
+    enum2 = enum1.with_index
+    enum2.should be_an_instance_of(enumerator_class)
+    enum1.should_not === enum2
+  end
 
   it "accepts an optional argument when given a block" do
     lambda do

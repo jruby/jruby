@@ -402,46 +402,104 @@ describe :process_spawn, :shared => true do
     @name.should have_data("")
   end
 
-  # :close_others
+  context "when passed :close_others => true" do
+    before :each do
+      @output = tmp("spawn_close_others_true")
+      @options = { :close_others => true }
+      @command = %[Process.wait spawn("#{RUBY_EXE}", "-e", "%s", #{@options.inspect})]
+    end
 
-  it "closes file descriptors >= 3 in the child process" do
-    IO.pipe do |r, w|
-      begin
-        pid = @object.spawn(ruby_cmd(""))
-        w.close
-        lambda { r.read_nonblock(1) }.should raise_error(EOFError)
-      ensure
-        Process.kill(:TERM, pid)
-        Process.wait(pid)
+    after :each do
+      rm_r @output
+    end
+
+    it "closes file descriptors >= 3 in the child process" do
+      IO.pipe do |r, w|
+        begin
+          pid = @object.spawn(ruby_cmd(""), @options)
+          w.close
+          lambda { r.read_nonblock(1) }.should raise_error(EOFError)
+        ensure
+          Process.kill(:TERM, pid)
+          Process.wait(pid)
+        end
       end
+    end
+
+    it "does not close STDIN" do
+      cmd = @command % ["STDOUT.puts STDIN.read(0).inspect"]
+      ruby_exe(cmd, :args => "> #{@output}")
+      @output.should have_data(%[""\n])
+    end
+
+    it "does not close STDOUT" do
+      cmd = @command % ["STDOUT.puts 'hello'"]
+      ruby_exe(cmd, :args => "> #{@output}")
+      @output.should have_data("hello\n")
+    end
+
+    it "does not close STDERR" do
+      cmd = @command % ["STDERR.puts 'hello'"]
+      ruby_exe(cmd, :args => "2> #{@output}")
+      @output.should have_data("hello\n")
     end
   end
 
-  it "closes file descriptors >= 3 in the child process even if given a false :close_others option because they are set close_on_exec" do
-    IO.pipe do |r, w|
-      begin
-        pid = @object.spawn(ruby_cmd(""), :close_others => false)
-        w.close
-        lambda { r.read_nonblock(1) }.should raise_error(EOFError)
-      ensure
-        Process.kill(:TERM, pid)
-        Process.wait(pid)
+  context "when passed :close_others => false" do
+    before :each do
+      @output = tmp("spawn_close_others_false")
+      @options = { :close_others => false }
+      @command = %[Process.wait spawn("#{RUBY_EXE}", "-e", "%s", #{@options.inspect})]
+    end
+
+    after :each do
+      rm_r @output
+    end
+
+    it "closes file descriptors >= 3 in the child process because they are set close_on_exec by default" do
+      IO.pipe do |r, w|
+        begin
+          pid = @object.spawn(ruby_cmd(""), @options)
+          w.close
+          lambda { r.read_nonblock(1) }.should raise_error(EOFError)
+        ensure
+          Process.kill(:TERM, pid)
+          Process.wait(pid)
+        end
       end
     end
-  end
 
-  it "does not close file descriptors >= 3 in the child process when given a false :close_others option and fds are set close_on_exec=false" do
-    IO.pipe do |r, w|
-      r.close_on_exec = false
-      w.close_on_exec = false
-      begin
-        pid = @object.spawn(ruby_cmd(""), :close_others => false)
-        w.close
-        lambda { r.read_nonblock(1) }.should raise_error(Errno::EAGAIN)
-      ensure
-        Process.kill(:TERM, pid)
-        Process.wait(pid)
+    it "does not close file descriptors >= 3 in the child process if fds are set close_on_exec=false" do
+      IO.pipe do |r, w|
+        r.close_on_exec = false
+        w.close_on_exec = false
+        begin
+          pid = @object.spawn(ruby_cmd(""), @options)
+          w.close
+          lambda { r.read_nonblock(1) }.should raise_error(Errno::EAGAIN)
+        ensure
+          Process.kill(:TERM, pid)
+          Process.wait(pid)
+        end
       end
+    end
+
+    it "does not close STDIN" do
+      cmd = @command % ["STDOUT.puts STDIN.read(0).inspect"]
+      ruby_exe(cmd, :args => "> #{@output}")
+      @output.should have_data(%[""\n])
+    end
+
+    it "does not close STDOUT" do
+      cmd = @command % ["STDOUT.puts 'hello'"]
+      ruby_exe(cmd, :args => "> #{@output}")
+      @output.should have_data("hello\n")
+    end
+
+    it "does not close STDERR" do
+      cmd = @command % ["STDERR.puts 'hello'"]
+      ruby_exe(cmd, :args => "2> #{@output}")
+      @output.should have_data("hello\n")
     end
   end
 

@@ -86,6 +86,12 @@ VALUE hash_spec_rb_hash_lookup_nil(VALUE self, VALUE hash, VALUE key) {
 }
 #endif
 
+#ifdef HAVE_RB_HASH_LOOKUP2
+VALUE hash_spec_rb_hash_lookup2(VALUE self, VALUE hash, VALUE key, VALUE def) {
+  return rb_hash_lookup2(hash, key, def);
+}
+#endif
+
 #ifdef HAVE_RB_HASH_NEW
 VALUE hash_spec_rb_hash_new(VALUE self) {
   return rb_hash_new();
@@ -95,6 +101,12 @@ VALUE hash_spec_rb_hash_new(VALUE self) {
 #ifdef HAVE_RB_HASH_SIZE
 VALUE hash_spec_rb_hash_size(VALUE self, VALUE hash) {
   return rb_hash_size(hash);
+}
+#endif
+
+#ifdef HAVE_RB_HASH_SET_IFNONE
+VALUE hash_spec_rb_hash_set_ifnone(VALUE self, VALUE hash, VALUE def) {
+  return rb_hash_set_ifnone(hash, def);
 }
 #endif
 
@@ -134,12 +146,20 @@ void Init_hash_spec() {
   rb_define_method(cls, "rb_hash_lookup", hash_spec_rb_hash_lookup, 2);
 #endif
 
+#ifdef HAVE_RB_HASH_LOOKUP2
+  rb_define_method(cls, "rb_hash_lookup2", hash_spec_rb_hash_lookup2, 3);
+#endif
+
 #ifdef HAVE_RB_HASH_NEW
   rb_define_method(cls, "rb_hash_new", hash_spec_rb_hash_new, 0);
 #endif
 
 #ifdef HAVE_RB_HASH_SIZE
   rb_define_method(cls, "rb_hash_size", hash_spec_rb_hash_size, 1);
+#endif
+
+#ifdef HAVE_RB_HASH_SET_IFNONE
+  rb_define_method(cls, "rb_hash_set_ifnone", hash_spec_rb_hash_set_ifnone, 2);
 #endif
 }
 

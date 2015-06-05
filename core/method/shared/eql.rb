@@ -54,6 +54,14 @@ describe :method_equal, :shared => true do
     @m_foo.send(@method, m2).should be_true
   end
 
+  it "returns false if comparing a method defined via define_method and def" do
+    defn = @m.method(:zero)
+    defined = @m.method(:zero_defined_method)
+
+    defn.send(@method, defined).should be_false
+    defined.send(@method, defn).should be_false
+  end
+
   describe 'missing methods' do
     it "returns true for the same method missing" do
       miss1 = @m.method(:handled_via_method_missing)

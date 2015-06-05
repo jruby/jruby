@@ -551,3 +551,15 @@ describe "String#sub! with pattern and Hash" do
     str.sub!(/a$/, 'a' => 'di'.taint).tainted?.should be_true
   end
 end
+
+describe "String#sub with pattern and without replacement and block" do
+  it "raises a ArgumentError" do
+    lambda { "abca".sub(/a/) }.should raise_error(ArgumentError)
+  end
+end
+
+describe "String#sub! with pattern and without replacement and block" do
+  it "raises a ArgumentError" do
+    lambda { "abca".sub!(/a/) }.should raise_error(ArgumentError)
+  end
+end

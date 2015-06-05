@@ -23,10 +23,20 @@ describe :io_chars, :shared => true do
     ScratchPad.recorded.should == ["Q", "u", "i", " ", "è"]
   end
 
-  it "returns an Enumerator when passed no block" do
-    enum = @io.send(@method)
-    enum.should be_an_instance_of(enumerator_class)
-    enum.first(5).should == ["V", "o", "i", "c", "i"]
+  describe "when no block is given" do
+    it "returns an Enumerator" do
+      enum = @io.send(@method)
+      enum.should be_an_instance_of(enumerator_class)
+      enum.first(5).should == ["V", "o", "i", "c", "i"]
+    end
+
+    describe "returned Enumerator" do
+      describe "size" do
+        it "should return nil" do
+          @io.send(@method).size.should == nil
+        end
+      end
+    end
   end
 
   it "returns itself" do

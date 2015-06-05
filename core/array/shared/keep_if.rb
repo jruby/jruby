@@ -1,3 +1,5 @@
+require File.expand_path('../../../enumerable/shared/enumeratorized', __FILE__)
+
 describe :keep_if, :shared => true do
   it "deletes elements for which the block returns a false value" do
     array = [1, 2, 3, 4, 5]
@@ -8,6 +10,11 @@ describe :keep_if, :shared => true do
   it "returns an enumerator if no block is given" do
     [1, 2, 3].send(@method).should be_an_instance_of(enumerator_class)
   end
+
+  before :all do
+    @object = [1,2,3]
+  end
+  it_should_behave_like :enumeratorized_with_origin_size
 
   describe "on frozen objects" do
     before :each do

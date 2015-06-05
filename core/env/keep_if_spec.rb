@@ -1,4 +1,5 @@
 require File.expand_path('../../../spec_helper', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "ENV.keep_if" do
   it "deletes pairs if the block returns false" do
@@ -21,4 +22,6 @@ describe "ENV.keep_if" do
     enum.each { |k, v| k != "foo" }
     ENV["foo"].should == nil
   end
+
+  it_behaves_like :enumeratorized_with_origin_size, :keep_if, ENV
 end

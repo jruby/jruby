@@ -28,7 +28,7 @@ describe "Array#transpose" do
 
     a = [1]; a << a
     b = [2]; b << b
-    [a, b].transpose == [ [1, 2], [a, b] ]
+    [a, b].transpose.should == [ [1, 2], [a, b] ]
   end
 
   it "raises a TypeError if the passed Argument does not respond to #to_ary" do

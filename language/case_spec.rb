@@ -143,6 +143,47 @@ describe "The 'case'-construct" do
     end.should == "foo"
   end
 
+  it "takes an expanded array before additional listed values" do
+    case 'f'
+      when *['a', 'b', 'c', 'd'], 'f'
+        "foo"
+      when *['x', 'y', 'z']
+        "bar"
+    end.should == 'foo'
+  end
+
+  it "expands arrays from variables before additional listed values" do
+    a = ['a', 'b', 'c']
+    case 'a'
+      when *a, 'd', 'e'
+        "foo"
+      when 'x'
+        "bar"
+    end.should == "foo"
+  end
+
+  it "expands arrays from variables before a single additional listed value" do
+    a = ['a', 'b', 'c']
+    case 'a'
+      when *a, 'd'
+        "foo"
+      when 'x'
+        "bar"
+    end.should == "foo"
+  end
+
+  it "expands multiple arrays from variables before additional listed values" do
+    a = ['a', 'b', 'c']
+    b = ['d', 'e', 'f']
+
+    case 'f'
+      when *a, *b, 'g', 'h'
+        "foo"
+      when 'x'
+        "bar"
+    end.should == "foo"
+  end
+
   # MR: critical
   it "concats arrays before expanding them" do
     a = ['a', 'b', 'c', 'd']

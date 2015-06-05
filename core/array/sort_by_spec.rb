@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Array#sort_by!" do
   it "sorts array in place by passing each element to the given block" do
@@ -42,4 +43,6 @@ describe "Array#sort_by!" do
     }
     partially_sorted.any?{|ary| ary != [1, 2, 3, 4, 5]}.should be_true
   end
+
+  it_behaves_like :enumeratorized_with_origin_size, :sort_by!, [1,2,3]
 end

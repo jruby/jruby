@@ -151,5 +151,31 @@ describe "C-API Hash function" do
       @s.rb_hash_lookup(hsh, :chunky).should be_nil
       @s.rb_hash_lookup_nil(hsh, :chunky).should be_true
     end
+
+    describe "rb_hash_lookup2" do
+      it "returns the value associated with the key" do
+        hash = {:chunky => 'bacon'}
+
+        @s.rb_hash_lookup2(hash, :chunky, nil).should == 'bacon'
+      end
+
+      it "returns the default value if the key does not exist" do
+        hash = {}
+
+        @s.rb_hash_lookup2(hash, :chunky, 10).should == 10
+      end
+    end
+  end
+
+  ruby_version_is "2.2" do
+    describe "rb_hash_set_ifnone" do
+      it "sets the default value of non existing keys" do
+        hash = {}
+
+        @s.rb_hash_set_ifnone(hash, 10)
+
+        hash[:chunky].should == 10
+      end
+    end
   end
 end

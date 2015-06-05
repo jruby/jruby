@@ -64,4 +64,16 @@ describe "Integer#times" do
 
     result.should == [0, 1, 2]
   end
+
+  describe "when no block is given" do
+    describe "returned Enumerator" do
+      describe "size" do
+        it "returns self" do
+          5.times.size.should == 5
+          10.times.size.should == 10
+          0.times.size.should == 0
+        end
+      end
+    end
+  end
 end

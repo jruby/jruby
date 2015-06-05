@@ -71,4 +71,10 @@ describe "Enumerable#chunk" do
       end
     end
   end
+
+  it 'returned Enumerator size returns nil' do
+    e = EnumerableSpecs::NumerousWithSize.new(1, 2, 3, 2, 1)
+    enum = e.chunk { |x| true }
+    enum.size.should == nil
+  end
 end

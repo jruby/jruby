@@ -27,19 +27,93 @@ describe :marshal_load, :shared => true do
     lambda { Marshal.send(@method, kaboom) }.should raise_error(ArgumentError)
   end
 
-  it "returns the value of the proc when called with a proc" do
-    Marshal.send(@method, Marshal.dump([1,2]), proc { [3,4] }).should ==  [3,4]
+  describe "when called with a proc" do
+    it "returns the value of the proc" do
+      Marshal.send(@method, Marshal.dump([1,2]), proc { [3,4] }).should ==  [3,4]
+    end
+
+    it "calls the proc for recursively visited data" do
+      a = [1]
+      a << a
+      ret = []
+      Marshal.send(@method, Marshal.dump(a), proc { |arg| ret << arg; arg })
+      ret.first.should == 1
+      ret[1].should == [1,a]
+      ret[2].should == a
+      ret.size.should == 3
+    end
+
+    it "loads an Array with proc" do
+      arr = []
+      s = 'hi'
+      s.instance_variable_set(:@foo, 5)
+      st = Struct.new("Brittle", :a).new
+      st.instance_variable_set(:@clue, 'none')
+      st.a = 0.0
+      h = Hash.new('def')
+      h['nine'] = 9
+      a = [:a, :b, :c]
+      a.instance_variable_set(:@two, 2)
+      obj = [s, 10, s, s, st, a]
+      obj.instance_variable_set(:@zoo, 'ant')
+      proc = Proc.new { |o| arr << o; o}
+
+      Marshal.send(@method, "\x04\bI[\vI\"\ahi\a:\x06EF:\t@fooi\ni\x0F@\x06@\x06IS:\x14Struct::Brittle\x06:\x06af\x060\x06:\n@clueI\"\tnone\x06;\x00FI[\b;\b:\x06b:\x06c\x06:\t@twoi\a\x06:\t@zooI\"\bant\x06;\x00F", proc)
+
+      arr.should == ["hi", false, 5, 10, "hi", "hi", 0.0, st, "none", false,
+                     :b, :c, a, 2, ["hi", 10, "hi", "hi", st, [:a, :b, :c]], "ant", false]
+    end
   end
 
-  it "calls the proc for recursively visited data" do
-    a = [1]
-    a << a
-    ret = []
-    Marshal.send(@method, Marshal.dump(a), proc { |arg| ret << arg; arg })
-    ret.first.should == 1
-    ret[1].should == [1,a]
-    ret[2].should == a
-    ret.size.should == 3
+  describe "when called on objects with custom _dump methods" do
+    it "does not set instance variables of an object with user-defined _dump/_load" do
+      # this string represents: <#UserPreviouslyDefinedWithInitializedIvar @field2=7 @field1=6>
+      dump_str = "\004\bu:-UserPreviouslyDefinedWithInitializedIvar\a:\f@field2i\f:\f@field1i\v"
+
+      UserPreviouslyDefinedWithInitializedIvar.should_receive(:_load).and_return(UserPreviouslyDefinedWithInitializedIvar.new)
+      marshaled_obj = Marshal.send(@method, dump_str)
+
+      marshaled_obj.should be_an_instance_of(UserPreviouslyDefinedWithInitializedIvar)
+      marshaled_obj.field1.should be_nil
+      marshaled_obj.field2.should be_nil
+    end
+
+    describe "that return an immediate value" do
+      it "loads an array containing an instance of the object, followed by multiple instances of another object" do
+        str = "string"
+
+        # this string represents: [<#UserDefinedImmediate A>, <#String "string">, <#String "string">]
+        marshaled_obj = Marshal.send(@method, "\004\b[\bu:\031UserDefinedImmediate\000\"\vstring@\a")
+
+        marshaled_obj.should == [nil, str, str]
+      end
+
+      it "loads any structure with multiple references to the same object, followed by multiple instances of another object" do
+        str = "string"
+
+        # this string represents: {:a => <#UserDefinedImmediate A>, :b => <#UserDefinedImmediate A>, :c => <#String "string">, :d => <#String "string">}
+        hash_dump = "\x04\b{\t:\x06aIu:\x19UserDefinedImmediate\x00\x06:\x06ET:\x06b@\x06:\x06cI\"\vstring\x06;\aT:\x06d@\a"
+
+        marshaled_obj = Marshal.send(@method, hash_dump)
+        marshaled_obj.should == {:a => nil, :b => nil, :c => str, :d => str}
+
+        # this string represents: [<#UserDefinedImmediate A>, <#UserDefinedImmediate A>, <#String "string">, <#String "string">]
+        array_dump = "\x04\b[\tIu:\x19UserDefinedImmediate\x00\x06:\x06ET@\x06I\"\vstring\x06;\x06T@\a"
+
+        marshaled_obj = Marshal.send(@method, array_dump)
+        marshaled_obj.should == [nil, nil, str, str]
+      end
+
+      it "loads an array containing references to multiple instances of the object, followed by multiple instances of another object" do
+        str = "string"
+
+        # this string represents: [<#UserDefinedImmediate A>, <#UserDefinedImmediate B>, <#String "string">, <#String "string">]
+        array_dump = "\x04\b[\tIu:\x19UserDefinedImmediate\x00\x06:\x06ETIu;\x00\x00\x06;\x06TI\"\vstring\x06;\x06T@\b"
+
+        marshaled_obj = Marshal.send(@method, array_dump)
+        marshaled_obj.should == [nil, nil, str, str]
+      end
+    end
   end
 
   it "loads an array containing objects having _dump method, and with proc" do
@@ -54,26 +128,6 @@ describe :marshal_load, :shared => true do
     arr.should == [o1, o2, o1, o2, obj]
   end
 
-  it "loads an array containing an object with _dump that returns an immediate value, followed by multiple instances of another object" do
-    str = "string"
-
-    marshaled_obj = Marshal.send(@method, "\004\b[\bu:\031UserDefinedImmediate\000\"\vstring@\a")
-
-    marshaled_obj.should == [nil, str, str]
-  end
-
-  it "does not set instance variables of an object with user-defined _dump/_load" do
-    # this string represents: <#UserPreviouslyDefinedWithInitializedIvar @field2=7 @field1=6>
-    dump_str = "\004\bu:-UserPreviouslyDefinedWithInitializedIvar\a:\f@field2i\f:\f@field1i\v"
-
-    UserPreviouslyDefinedWithInitializedIvar.should_receive(:_load).and_return(UserPreviouslyDefinedWithInitializedIvar.new)
-    marshaled_obj = Marshal.send(@method, dump_str)
-
-    marshaled_obj.should be_an_instance_of(UserPreviouslyDefinedWithInitializedIvar)
-    marshaled_obj.field1.should be_nil
-    marshaled_obj.field2.should be_nil
-  end
-
   it "loads an array containing objects having marshal_dump method, and with proc" do
     arr = []
     proc = Proc.new { |o| arr << o; o }
@@ -84,27 +138,6 @@ describe :marshal_load, :shared => true do
     Marshal.send(@method, "\004\b[\tU:\020UserMarshal\"\nstuffU:\030UserMarshalWithIvar[\006\"\fmy data@\006@\b", proc)
 
     arr.should == ['stuff', o1, 'my data', ['my data'], o2, o1, o2, obj]
-  end
-
-  it "loads an Array with proc" do
-    arr = []
-    s = 'hi'
-    s.instance_variable_set(:@foo, 5)
-    st = Struct.new("Brittle", :a).new
-    st.instance_variable_set(:@clue, 'none')
-    st.a = 0.0
-    h = Hash.new('def')
-    h['nine'] = 9
-    a = [:a, :b, :c]
-    a.instance_variable_set(:@two, 2)
-    obj = [s, 10, s, s, st, a]
-    obj.instance_variable_set(:@zoo, 'ant')
-    proc = Proc.new { |o| arr << o; o}
-
-    Marshal.send(@method, "\x04\bI[\vI\"\ahi\a:\x06EF:\t@fooi\ni\x0F@\x06@\x06IS:\x14Struct::Brittle\x06:\x06af\x060\x06:\n@clueI\"\tnone\x06;\x00FI[\b;\b:\x06b:\x06c\x06:\t@twoi\a\x06:\t@zooI\"\bant\x06;\x00F", proc)
-
-    arr.should == ["hi", false, 5, 10, "hi", "hi", 0.0, st, "none", false,
-      :b, :c, a, 2, ["hi", 10, "hi", "hi", st, [:a, :b, :c]], "ant", false]
   end
 
   it "assigns classes to nested subclasses of Array correctly" do

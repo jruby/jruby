@@ -558,6 +558,22 @@ describe "String#gsub with pattern and block" do
   end
 end
 
+describe "String#gsub with pattern and without replacement and block" do
+  it "returns an enumerator" do
+    enum = "abca".gsub(/a/)
+    enum.should be_an_instance_of(enumerator_class)
+    enum.to_a.should == ["a", "a"]
+  end
+
+  describe "returned Enumerator" do
+    describe "size" do
+      it "should return nil" do
+        "abca".gsub(/a/).size.should == nil
+      end
+    end
+  end
+end
+
 describe "String#gsub! with pattern and replacement" do
   it "modifies self in place and returns self" do
     a = "hello"
@@ -655,5 +671,21 @@ describe "String#gsub! with pattern and block" do
 
   it "raises an ArgumentError if encoding is not valid" do
     lambda { "a\x92b".gsub!(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
+  end
+end
+
+describe "String#gsub! with pattern and without replacement and block" do
+  it "returns an enumerator" do
+    enum = "abca".gsub!(/a/)
+    enum.should be_an_instance_of(enumerator_class)
+    enum.to_a.should == ["a", "a"]
+  end
+
+  describe "returned Enumerator" do
+    describe "size" do
+      it "should return nil" do
+        "abca".gsub!(/a/).size.should == nil
+      end
+    end
   end
 end

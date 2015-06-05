@@ -32,6 +32,10 @@ describe "String#slice with String" do
   it_behaves_like :string_slice_string, :slice
 end
 
+describe "String#slice with Symbol" do
+  it_behaves_like :string_slice_symbol, :slice
+end
+
 describe "String#slice! with index" do
   it "deletes and return the char at the given position" do
     a = "hello"

@@ -12,6 +12,18 @@ ruby_version_is "2.1" do
     it "replaces invalid byte sequences" do
       "abc\u3042\x81".scrub.should == "abc\u3042\uFFFD"
     end
+
+    it "returns a copy of self when the input encoding is BINARY" do
+      input = "foo".encode('BINARY')
+
+      input.scrub.should == "foo"
+    end
+
+    it "replaces invalid byte sequences when using ASCII as the input encoding" do
+      input = "abc\u3042\xE3\x80".force_encoding('ASCII')
+
+      input.scrub.should == "abc?????"
+    end
   end
 
   describe "String#scrub with a custom replacement" do
