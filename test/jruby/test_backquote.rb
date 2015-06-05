@@ -31,6 +31,7 @@ class TestBackquote < Test::Unit::TestCase
       assert_raise(Errno::ENOENT) {``}
       assert_raise(Errno::ENOENT) {`   `}
       assert_raise(Errno::ENOENT) {`\n`}
+      # pend "#{__method__}: `\\n` does not raise Errno::ENOENT as expected"
     else # we just check that empty backquotes won't blow up JRuby
       ``    rescue nil
       `   ` rescue nil
@@ -49,10 +50,15 @@ class TestBackquote < Test::Unit::TestCase
 
       assert_equal "arguments: one two\n", `./arguments one two 2> /dev/null`
       assert_equal "", `./arguments three four > /dev/null`
-      ruby = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name'])
+      # ruby = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name'])
       assert_equal "arguments: five six\n", jruby(%{-e 'puts "arguments: five six"' 2> /dev/null})
     end
   ensure
     File.delete("arguments") rescue nil
   end
+
+  private
+
+  def pend(msg); warn msg end unless method_defined? :pend
+
 end

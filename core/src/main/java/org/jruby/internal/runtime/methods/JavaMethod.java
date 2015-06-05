@@ -10,7 +10,7 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -77,7 +77,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         {null, null, null, JavaMethodThreeOrNBlock.class},
     };
 
-    
+
     public JavaMethod(RubyModule implementationClass, Visibility visibility) {
         this(implementationClass, visibility, CallConfiguration.FrameFullScopeNone);
     }
@@ -85,25 +85,25 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     public JavaMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
         super(implementationClass, visibility, callConfig);
     }
-    
+
     public JavaMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
         super(implementationClass, visibility, callConfig, name);
     }
-    
+
     protected JavaMethod() {}
-    
+
     public void init(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, CallConfiguration callConfig) {
         this.staticScope = staticScope;
         this.arity = arity;
         super.init(implementationClass, visibility, callConfig);
     }
-    
+
     public DynamicMethod dup() {
         try {
-            JavaMethod msm = (JavaMethod)clone();
-            return msm;
-        } catch (CloneNotSupportedException cnse) {
-            return null;
+            return (JavaMethod) super.clone();
+        }
+        catch (CloneNotSupportedException ex) {
+            throw new AssertionError(ex);
         }
     }
 
@@ -186,7 +186,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     protected final void returnTraceCompiled(ThreadContext context, boolean enabled, String name) {
         if (enabled) context.trace(RubyEvent.RETURN, name, getImplementationClass());
     }
-    
+
     public void setArity(Arity arity) {
         this.arity = arity;
     }
@@ -195,23 +195,23 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     public Arity getArity() {
         return arity;
     }
-    
+
     public void setJavaName(String javaName) {
         this.javaName = javaName;
     }
-    
+
     public String getJavaName() {
         return javaName;
     }
-    
+
     public void setSingleton(boolean isSingleton) {
         this.isSingleton = isSingleton;
     }
-    
+
     public boolean isSingleton() {
         return isSingleton;
     }
-    
+
     @Override
     public boolean isNative() {
         return true;
@@ -220,12 +220,12 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     public StaticScope getStaticScope() {
         return staticScope;
     }
-    
+
     public void setParameterDesc(String parameterDesc) {
         this.parameterDesc = parameterDesc;
         this.parameterList = null;
     }
-    
+
     public void setParameterList(String[] parameterList) {
         this.parameterDesc = null;
         this.parameterList = parameterList;
@@ -239,7 +239,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
                 parameterList = new String[0];
             }
         }
-        
+
         return parameterList;
     }
 
@@ -259,8 +259,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     protected static IRubyObject raiseArgumentError(JavaMethod method, ThreadContext context, String name, int given, int min, int max) {
         Arity.raiseArgumentError(context.runtime, name, given, min, max);
-        // never reached
-        return context.runtime.getNil();
+        throw new AssertionError("expected to throw ArgumentError"); // never reached
     }
 
     protected static void checkArgumentCount(JavaMethod method, ThreadContext context, String name, IRubyObject[] args, int num) {
@@ -590,12 +589,14 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
             switch (args.length) {
-            case 0:
-                throw context.runtime.newArgumentError(0, 1);
-            case 1: return call(context, self, clazz, name, args[0], block);
-            case 2: return call(context, self, clazz, name, args[0], args[1], block);
-            case 3: return call(context, self, clazz, name, args[0], args[1], args[2], block);
-            default: return raiseArgumentError(this, context, name, args.length, 3, 3);
+            case 1:
+                return call(context, self, clazz, name, args[0], block);
+            case 2:
+                return call(context, self, clazz, name, args[0], args[1], block);
+            case 3:
+                return call(context, self, clazz, name, args[0], args[1], args[2], block);
+            default:
+                return raiseArgumentError(this, context, name, args.length, 1, 3);
             }
         }
     }
@@ -722,7 +723,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroOrOneOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility, callConfig);
         }
-        
+
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
             return call(context, self, clazz, name, arg0);
@@ -778,7 +779,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodOneOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
             super(implementationClass, visibility, callConfig, name);
         }
-        
+
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
             return call(context, self, clazz, name, arg0);

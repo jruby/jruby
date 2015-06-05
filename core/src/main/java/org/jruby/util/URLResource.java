@@ -150,12 +150,16 @@ public class URLResource extends AbstractFileResource {
     }
 
     public static FileResource create(ClassLoader cl, String pathname, boolean isFile) {
+        // fall back on thread context classloader
+        if (cl == null ) {
+            cl = Thread.currentThread().getContextClassLoader();
+        }
         try
-      {
-          pathname = new URI(pathname.replaceFirst("^/*", "/")).normalize().getPath().replaceAll("^/([.][.]/)*", "");
-      } catch (URISyntaxException e) {
+        {
+            pathname = new URI(pathname.replaceFirst("^/*", "/")).normalize().getPath().replaceAll("^/([.][.]/)*", "");
+        } catch (URISyntaxException e) {
           pathname = pathname.replaceAll("^[.]?/*", "");
-      }
+        }
       URL url = cl.getResource(pathname);
       String[] files = isFile ? null : listClassLoaderFiles(cl, pathname);
       return new URLResource(URI_CLASSLOADER + "/" + pathname,
@@ -164,9 +168,23 @@ public class URLResource extends AbstractFileResource {
                              files);
     }
 
-    public static FileResource createClassloaderURI(Ruby runtime, String pathname, boolean isFile) {
-        return create(runtime.getJRubyClassLoader(), pathname, isFile);
+    public static FileResource create(ClassLoader cl, String pathname) {
+        return create(cl, pathname, true);
     }
+
+    public static FileResource createClassloaderURI(Ruby runtime, String pathname, boolean isFile) {
+        // retrieve the classloader from the runtime if available otherwise mimic how the runtime got its classloader and
+        // take this
+        ClassLoader cl = runtime != null ? runtime.getJRubyClassLoader() : URLResource.class.getClassLoader();
+        return create(cl, pathname, isFile);
+    }
+
+//    public static FileResource createClassloaderURI(Ruby runtime, String pathname) {
+//        // retrieve the classloader from the runtime if available otherwise mimic how the runtime got its classloader and
+//        // take this
+//        ClassLoader cl = runtime != null ? runtime.getJRubyClassLoader() : URLResource.class.getClassLoader();
+//        return create(cl, pathname);
+//    }
 
     public static FileResource create(Ruby runtime, String pathname, boolean isFile)
     {

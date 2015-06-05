@@ -7,22 +7,22 @@ import org.jruby.Ruby;
 import junit.framework.TestCase;
 
 public class URLResourceTest extends TestCase {
-    
-    public void testDirectory(){        
+
+    public void testDirectory(){
         String uri = Thread.currentThread().getContextClassLoader().getResource( "somedir" ).toExternalForm();
-        FileResource resource = URLResource.create(Ruby.getGlobalRuntime(), "uri:" + uri, false);
-        
+        FileResource resource = URLResource.create((Ruby) null, "uri:" + uri, false);
+
         assertNotNull(resource );
         assertFalse(resource.isFile());
         assertTrue(resource.isDirectory());
         assertTrue(resource.exists());
-        assertEquals(Arrays.asList(resource.list()), 
+        assertEquals(Arrays.asList(resource.list()),
                      Arrays.asList(new String[] {".", "dir_without_listing", "dir_with_listing"}));
     }
 
     public void testNoneDirectory(){
         String uri = Thread.currentThread().getContextClassLoader().getResource( "somedir/dir_without_listing" ).toExternalForm();
-        FileResource resource = URLResource.create(Ruby.getGlobalRuntime(), "uri:" + uri, false);
+        FileResource resource = URLResource.create((Ruby) null, "uri:" + uri, false);
 
         assertNotNull(resource );
         // you can open streams on file-system directories
@@ -34,8 +34,8 @@ public class URLResourceTest extends TestCase {
 
     public void testFile(){
         String uri = Thread.currentThread().getContextClassLoader().getResource( "somedir/.jrubydir" ).toExternalForm();
-        FileResource resource = URLResource.create(Ruby.getGlobalRuntime(), "uri:" + uri, false);
-        
+        FileResource resource = URLResource.create((Ruby) null, "uri:" + uri, false);
+
         assertNotNull(resource );
         // you can open streams on file-system directories
         assertTrue(resource.isFile());
@@ -43,11 +43,11 @@ public class URLResourceTest extends TestCase {
         assertFalse(resource.isDirectory());
         assertNull(resource.list());
     }
-    
+
     public void testNonExistingFile(){
         String uri = Thread.currentThread().getContextClassLoader().getResource( "somedir" ).toExternalForm();
-        FileResource resource = URLResource.create(Ruby.getGlobalRuntime(), "uri:" + uri + "/not_there", false);
-        
+        FileResource resource = URLResource.create((Ruby) null, "uri:" + uri + "/not_there", false);
+
         assertNotNull(resource );
         assertFalse(resource.isFile());
         assertFalse(resource.exists());
@@ -57,7 +57,7 @@ public class URLResourceTest extends TestCase {
 
     public void testDirectoryClassloader()
     {
-        FileResource resource = URLResource.create(Ruby.getGlobalRuntime(),
+        FileResource resource = URLResource.create((Ruby) null,
                 "uri:classloader:/somedir", false);
 
         assertNotNull( resource );
@@ -71,7 +71,7 @@ public class URLResourceTest extends TestCase {
 
     public void testNoneDirectoryClassloader()
     {
-        FileResource resource = URLResource.create(Ruby.getGlobalRuntime(), 
+        FileResource resource = URLResource.create((Ruby) null,
                 "uri:classloader:/somedir/dir_without_listing", false);
 
         assertNotNull( resource );
@@ -84,7 +84,7 @@ public class URLResourceTest extends TestCase {
 
     public void testFileClassloader()
     {
-        FileResource resource = URLResource.create(Ruby.getGlobalRuntime(),
+        FileResource resource = URLResource.create((Ruby) null,
                 "uri:classloader:/somedir/.jrubydir", false );
 
         assertNotNull( resource );
@@ -97,7 +97,7 @@ public class URLResourceTest extends TestCase {
 
     public void testNonExistingFileClassloader()
     {
-        FileResource resource = URLResource.create(Ruby.getGlobalRuntime(),
+        FileResource resource = URLResource.create((Ruby) null,
                 "uri:classloader:/somedir/not_there", false );
 
         assertNotNull( resource );

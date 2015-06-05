@@ -118,12 +118,12 @@ class TestFile < Test::Unit::TestCase
     end
 
 	def test_windows_network_path
-	
+
 		assert_equal("\\\\network\\share", File.dirname("\\\\network\\share\\file.bat"))
 		assert_equal("\\\\network\\share", File.dirname("\\\\network\\share"))
 		assert_equal("\\\\localhost\\c$", File.dirname("\\\\localhost\\c$\\boot.bat"))
 		assert_equal("\\\\localhost\\c$", File.dirname("\\\\localhost\\c$"))
-	
+
 	end
 
     def test_expand_path_windows
@@ -267,7 +267,8 @@ class TestFile < Test::Unit::TestCase
     end
 
     def test_mkdir_with_non_file_uri_raises_error
-      assert_raises(Errno::ENOTDIR) { FileUtils.mkdir_p("classpath:/META-INF/jruby.home/foo") }
+      assert_raises(Errno::ENOTDIR) { FileUtils.mkdir_p("classpath:/META-INF/jruby.home") }
+      assert !File.directory?("classpath:/META-INF/jruby.home")
     end
 
     def test_mkdir_with_file_uri_works_as_expected
@@ -493,10 +494,10 @@ class TestFile < Test::Unit::TestCase
   end
 
   def test_readable_query # - readable?
-    assert(File.readable?(__FILE__))
-    assert(File.readable?(File.dirname(__FILE__)))
+    assert(File.readable?('test/jruby/test_file.rb'))
+    assert(File.readable?('test'))
     assert(! File.readable?('test_not'))
-    result = jruby("-e 'print File.readable?(\"test_not\");print File.readable?(\"#{File.dirname(__FILE__)}\");print File.readable?(\"#{__FILE__}\")'", 'jruby.native.enabled' => 'false' )
+    result = jruby("-e 'print File.readable?(\"test_not\");print File.readable?(\"test\");print File.readable?(\"test/jruby/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
     assert(result == 'falsetruetrue')
   end
 
@@ -514,7 +515,7 @@ class TestFile < Test::Unit::TestCase
       result = jruby("-e 'print File.#{method}(\"#{exec_file}\");print File.#{method}(\"test_not\");print File.#{method}(\"test\");print File.#{method}(\"test/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
       assert(result == 'truefalsetruefalse')
     end
-  end 
+  end
 
   def test_file_exist_query
     assert(File.exist?('test'))
@@ -546,7 +547,7 @@ class TestFile < Test::Unit::TestCase
         assert require('foo')
         assert $LOADED_FEATURES.pop =~ /foo\.rb$/
       end
-      
+
       with_load_path("file:" + File.expand_path("test/jruby/dir with spaces/test_jar.jar") + "!") do
         assert require('abc/foo')
         assert $LOADED_FEATURES.pop =~ /foo\.rb$/
@@ -660,22 +661,21 @@ class TestFile < Test::Unit::TestCase
   end
 
   # JRUBY-2524
-  # GH #2048 Stat of an empty resource does not generate proper Exception
-  # def test_file_time_uri_prefixes
-  #   assert_raise(Errno::ENOENT) do
-  #     File.atime("file:")
-  #   end
-  #   assert_raise(Errno::ENOENT) do
-  #     File.atime("file:!")
-  #   end
+  def test_file_time_uri_prefixes
+    assert_raise(Errno::ENOENT) do
+      File.atime("file:")
+    end
+    assert_raise(Errno::ENOENT) do
+      File.atime("file:!")
+    end
 
-  #   assert_raise(Errno::ENOENT) do
-  #     File.ctime("file:")
-  #   end
-  #   assert_raise(Errno::ENOENT) do
-  #     File.ctime("file:!")
-  #   end
-  # end
+    assert_raise(Errno::ENOENT) do
+      File.ctime("file:")
+    end
+    assert_raise(Errno::ENOENT) do
+      File.ctime("file:!")
+    end
+  end
 
   def test_file_open_utime
     filename = "__test__file"
@@ -1110,7 +1110,7 @@ class TestFile < Test::Unit::TestCase
     File.open('file:test/jruby/dir with spaces/test_jar.jar!/abc/foo.rb'){}
     File.open('jar:file:test/jruby/dir with spaces/test_jar.jar!/abc/foo.rb'){}
   end
-  
+
   # JRUBY-3634: File.read or File.open with a url to a file resource fails with StringIndexOutOfBounds exception
   def test_file_url
     path = File.expand_path(__FILE__)
@@ -1197,5 +1197,5 @@ class TestFile < Test::Unit::TestCase
   # jruby/jruby#2331
   def test_classpath_realpath
     assert_equal("classpath:/java/lang/String.class", File.realpath("classpath:/java/lang/String.class"))
-  end if RUBY_VERSION >= '1.9'
+  end
 end

@@ -135,22 +135,18 @@ class TestDir < Test::Unit::TestCase
         pwd.gsub! '\\', '/'
         assert_equal("testDir_4", pwd.split("/")[-1].strip)
       end
-
-#      FIXME: does not pass in 2.0 mode
-#      pwd = `java -cp "#{java_test_classes}" org.jruby.util.Pwd`
-#      pwd.gsub! '\\', '/'
-#      assert_equal("testDir_4", pwd.split("/")[-1].strip)
+      pwd = `java -cp "#{java_test_classes}" org.jruby.util.Pwd`
+      pwd.gsub! '\\', '/'
+      assert_equal("testDir_4", pwd.split("/")[-1].strip)
     end
-#    FIXME: does not pass in 2.0 mode
-#    Dir.chdir("testDir_4")
-#    pwd = `java -cp "#{java_test_classes}" org.jruby.util.Pwd`
-#    pwd.gsub! '\\', '/'
-#    assert_equal("testDir_4", pwd.split("/")[-1].strip)
+    Dir.chdir("testDir_4")
+    pwd = `java -cp "#{java_test_classes}" org.jruby.util.Pwd`
+    pwd.gsub! '\\', '/'
+    assert_equal("testDir_4", pwd.split("/")[-1].strip)
   end
 
   def test_glob_inside_jar_file
-    # the respective files get found via the classloader
-    jar_file = jar_file_with_spaces.sub(/.*!/, 'uri:classloader:')
+    jar_file = jar_file_with_spaces
 
     ["#{jar_file}/abc", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].each do |f|
       assert $__glob_value.include?(f), "#{f} not found in #{$__glob_value.inspect}"
@@ -208,7 +204,9 @@ class TestDir < Test::Unit::TestCase
     require 'test/jruby/dir with spaces/test_jar.jar'
     require 'inside_jar'
 
-    "file:" + File.join(File.dirname(__FILE__), "dir with spaces", "test_jar.jar") + "!"
+    first = File.expand_path(File.join(File.dirname(__FILE__), '..'))
+
+    "file:" + File.join(first, "test", "dir with spaces", "test_jar.jar") + "!"
   end
 
   # JRUBY-4177
