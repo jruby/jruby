@@ -965,7 +965,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         klass = getMetaClass();
         str = strDup(klass.getClassRuntime());
         str.setCodeRange(getCodeRange());
-        str.modify();
         str.setFrozen(true);
         return str;
     }
@@ -973,10 +972,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_resize
      */
     public final void resize(int length) {
-        modify();
         if (value.getRealSize() > length) {
+            modify();
             value.setRealSize(length);
         } else if (value.length() < length) {
+            modify();
             value.length(length);
         }
     }
