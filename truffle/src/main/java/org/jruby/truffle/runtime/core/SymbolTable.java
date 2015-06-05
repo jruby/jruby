@@ -14,14 +14,16 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
-import java.util.Collection;
+import java.lang.ref.WeakReference;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SymbolTable {
 
     private final RubyContext context;
 
-    private final ConcurrentHashMap<ByteList, RubySymbol> symbolsTable = new ConcurrentHashMap<>();
+    private final Map<ByteList, WeakReference<RubySymbol>> symbolsTable
+            = Collections.synchronizedMap(new WeakHashMap<ByteList, WeakReference<RubySymbol>>());
 
     public SymbolTable(RubyContext context) {
         this.context = context;
@@ -34,29 +36,45 @@ public class SymbolTable {
 
     @CompilerDirectives.TruffleBoundary
     public RubySymbol getSymbol(ByteList bytes) {
-        RubySymbol symbol = symbolsTable.get(bytes);
+        final WeakReference<RubySymbol> symbolReference = symbolsTable.get(bytes);
 
-        if (symbol == null) {
-            final ByteList storedBytes = bytes.dup();
+        if (symbolReference != null) {
+            final RubySymbol symbol = symbolReference.get();
 
-            final RubySymbol newSymbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), bytes.toString(), storedBytes);
-
-            final RubySymbol existingSymbol = symbolsTable.putIfAbsent(storedBytes, newSymbol);
-
-            if (existingSymbol != null) {
-                symbol = existingSymbol;
-            } else {
-                symbol = newSymbol;
+            if (symbol != null) {
+                return symbol;
             }
         }
 
-        return symbol;
+        final ByteList storedBytes = bytes.dup();
 
+        final RubySymbol newSymbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), bytes.toString(), storedBytes);
+
+        final WeakReference<RubySymbol> interleavedSymbolReference
+                = symbolsTable.putIfAbsent(storedBytes, new WeakReference<>(newSymbol));
+
+        if (interleavedSymbolReference != null) {
+            return interleavedSymbolReference.get();
+        }
+
+        return newSymbol;
     }
 
     @CompilerDirectives.TruffleBoundary
     public Collection<RubySymbol> allSymbols() {
-        return symbolsTable.values();
+        final Collection<WeakReference<RubySymbol>> symbolReferences = symbolsTable.values();
+
+        final Collection<RubySymbol> symbols = new ArrayList<>(symbolReferences.size());
+
+        for (WeakReference<RubySymbol> reference : symbolReferences) {
+            final RubySymbol symbol = reference.get();
+
+            if (symbol != null) {
+                symbols.add(symbol);
+            }
+        }
+
+        return symbols;
     }
 
 }
