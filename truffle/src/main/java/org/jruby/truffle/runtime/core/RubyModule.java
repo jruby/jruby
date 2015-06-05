@@ -614,7 +614,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     }
 
-    public Collection<RubySymbol> filterMethods(boolean includeAncestors, MethodFilter filter) {
+    public Collection<RubyBasicObject> filterMethods(boolean includeAncestors, MethodFilter filter) {
         final Map<String, InternalMethod> allMethods;
         if (includeAncestors) {
             allMethods = ModuleOperations.getAllMethods(this);
@@ -624,7 +624,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         return filterMethods(allMethods, filter);
     }
 
-    public Collection<RubySymbol> filterMethodsOnObject(boolean includeAncestors, MethodFilter filter) {
+    public Collection<RubyBasicObject> filterMethodsOnObject(boolean includeAncestors, MethodFilter filter) {
         final Map<String, InternalMethod> allMethods;
         if (includeAncestors) {
             allMethods = ModuleOperations.getAllMethods(this);
@@ -634,7 +634,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         return filterMethods(allMethods, filter);
     }
 
-    public Collection<RubySymbol> filterSingletonMethods(boolean includeAncestors, MethodFilter filter) {
+    public Collection<RubyBasicObject> filterSingletonMethods(boolean includeAncestors, MethodFilter filter) {
         final Map<String, InternalMethod> allMethods;
         if (includeAncestors) {
             allMethods = ModuleOperations.getMethodsBeforeLogicalClass(this);
@@ -644,10 +644,10 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         return filterMethods(allMethods, filter);
     }
 
-    private Collection<RubySymbol> filterMethods(Map<String, InternalMethod> allMethods, MethodFilter filter) {
+    private Collection<RubyBasicObject> filterMethods(Map<String, InternalMethod> allMethods, MethodFilter filter) {
         final Map<String, InternalMethod> methods = ModuleOperations.withoutUndefinedMethods(allMethods);
 
-        final Set<RubySymbol> filtered = new HashSet<>();
+        final Set<RubyBasicObject> filtered = new HashSet<>();
         for (InternalMethod method : methods.values()) {
             if (filter.filter(method)) {
                 filtered.add(getContext().getSymbolTable().getSymbol(method.getName()));

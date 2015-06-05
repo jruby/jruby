@@ -13,13 +13,14 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 
 public abstract class CachedDispatchNode extends DispatchNode {
 
     private final Object cachedName;
-    private final RubySymbol cachedNameAsSymbol;
+    private final RubyBasicObject cachedNameAsSymbol;
     private final boolean indirect;
 
     @Child protected DispatchNode next;
@@ -76,7 +77,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
         }
     }
 
-    protected RubySymbol getCachedNameAsSymbol() {
+    protected RubyBasicObject getCachedNameAsSymbol() {
         return cachedNameAsSymbol;
     }
 

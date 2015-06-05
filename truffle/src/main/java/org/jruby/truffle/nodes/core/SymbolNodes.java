@@ -154,7 +154,7 @@ public abstract class SymbolNodes {
         public RubyBasicObject allSymbols() {
             final RubyBasicObject array = createEmptyArray();
 
-            for (RubySymbol s : getContext().getSymbolTable().allSymbols()) {
+            for (RubyBasicObject s : getContext().getSymbolTable().allSymbols()) {
                 ArrayNodes.slowPush(array, s);
             }
             return array;
@@ -170,7 +170,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubySymbol capitalize(RubySymbol symbol) {
+        public RubyBasicObject capitalize(RubySymbol symbol) {
             final ByteList byteList = SymbolNodesHelper.capitalize(getByteList(symbol));
             return getSymbol(byteList);
         }
@@ -206,7 +206,7 @@ public abstract class SymbolNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubySymbol downcase(RubySymbol symbol) {
+        public RubyBasicObject downcase(RubySymbol symbol) {
             final ByteList byteList = SymbolNodesHelper.downcase(getByteList(symbol));
             return getSymbol(byteList);
         }
@@ -263,7 +263,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubySymbol intern(RubySymbol symbol) {
+        public RubyBasicObject intern(RubySymbol symbol) {
             return symbol;
         }
 
@@ -292,7 +292,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubySymbol toSym(RubySymbol symbol) {
+        public RubyBasicObject toSym(RubySymbol symbol) {
             return symbol;
         }
 
@@ -349,7 +349,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubySymbol swapcase(RubySymbol symbol) {
+        public RubyBasicObject swapcase(RubySymbol symbol) {
             final ByteList byteList = SymbolNodesHelper.swapcase(getByteList(symbol));
             return getSymbol(byteList);
         }
@@ -364,7 +364,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubySymbol upcase(RubySymbol symbol) {
+        public RubyBasicObject upcase(RubySymbol symbol) {
             final ByteList byteList = SymbolNodesHelper.upcase(getByteList(symbol));
             return getSymbol(byteList);
         }

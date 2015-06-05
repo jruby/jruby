@@ -24,7 +24,6 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -798,7 +797,7 @@ public abstract class ModuleNodes {
         public RubyBasicObject constants(RubyModule module, boolean inherit) {
             CompilerDirectives.transferToInterpreter();
 
-            final List<RubySymbol> constantsArray = new ArrayList<>();
+            final List<RubyBasicObject> constantsArray = new ArrayList<>();
 
             final Map<String, RubyConstant> constants;
             if (inherit) {
@@ -1022,31 +1021,31 @@ public abstract class ModuleNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, String name, NotProvided proc, NotProvided block) {
+        public RubyBasicObject defineMethod(RubyModule module, String name, NotProvided proc, NotProvided block) {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("needs either proc or block", this));
         }
 
         @TruffleBoundary
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, String name, NotProvided proc, RubyProc block) {
+        public RubyBasicObject defineMethod(RubyModule module, String name, NotProvided proc, RubyProc block) {
             return defineMethod(module, name, block, NotProvided.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, String name, RubyProc proc, NotProvided block) {
+        public RubyBasicObject defineMethod(RubyModule module, String name, RubyProc proc, NotProvided block) {
             return defineMethod(module, name, proc);
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyMethod(method)")
-        public RubySymbol defineMethod(RubyModule module, String name, RubyBasicObject method, NotProvided block) {
+        public RubyBasicObject defineMethod(RubyModule module, String name, RubyBasicObject method, NotProvided block) {
             module.addMethod(this, MethodNodes.getMethod(method).withName(name));
             return getSymbol(name);
         }
 
         @Specialization(guards = "isRubyUnboundMethod(method)")
-        public RubySymbol defineMethod(VirtualFrame frame, RubyModule module, String name, RubyBasicObject method, NotProvided block) {
+        public RubyBasicObject defineMethod(VirtualFrame frame, RubyModule module, String name, RubyBasicObject method, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
             RubyModule origin = UnboundMethodNodes.getOrigin(method);
@@ -1060,7 +1059,7 @@ public abstract class ModuleNodes {
             return addMethod(module, name, UnboundMethodNodes.getMethod(method));
         }
 
-        private RubySymbol defineMethod(RubyModule module, String name, RubyProc proc) {
+        private RubyBasicObject defineMethod(RubyModule module, String name, RubyProc proc) {
             CompilerDirectives.transferToInterpreter();
 
             final CallTarget modifiedCallTarget = proc.getCallTargetForLambdas();
@@ -1070,7 +1069,7 @@ public abstract class ModuleNodes {
             return addMethod(module, name, modifiedMethod);
         }
 
-        private RubySymbol addMethod(RubyModule module, String name, InternalMethod method) {
+        private RubyBasicObject addMethod(RubyModule module, String name, InternalMethod method) {
             method = method.withName(name);
 
             if (ModuleOperations.isMethodPrivateFromName(name)) {

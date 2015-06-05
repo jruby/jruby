@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubySymbol;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class TaintNode extends RubyNode {

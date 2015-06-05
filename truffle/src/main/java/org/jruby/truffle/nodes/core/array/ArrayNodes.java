@@ -1490,7 +1490,7 @@ public abstract class ArrayNodes {
         private final BranchProfile nextProfile = BranchProfile.create();
         private final BranchProfile redoProfile = BranchProfile.create();
 
-        private final RubySymbol eachSymbol;
+        private final RubyBasicObject eachSymbol;
 
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

@@ -532,8 +532,8 @@ public abstract class InteropNode extends RubyNode {
     private static class ResolvedInteropWriteToSymbolNode extends InteropNode {
 
         @Child private DispatchHeadNode head;
-        private final RubySymbol name;
-        private final RubySymbol accessName;
+        private final RubyBasicObject name;
+        private final RubyBasicObject  accessName;
         private final int labelIndex;
         private final int valueIndex;
 

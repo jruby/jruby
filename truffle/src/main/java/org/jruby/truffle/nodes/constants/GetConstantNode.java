@@ -24,9 +24,9 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.util.IdUtil;
 
 @NodeChildren({
@@ -63,7 +63,7 @@ public abstract class GetConstantNode extends RubyNode {
     protected Object missingConstant(VirtualFrame frame, RubyModule module, String name, Object constant,
             @Cached("isValidConstantName(name)") boolean isValidConstantName,
             @Cached("createConstMissingNode()") CallDispatchHeadNode constMissingNode,
-            @Cached("getSymbol(name)") RubySymbol symbolName) {
+            @Cached("getSymbol(name)") RubyBasicObject symbolName) {
         if (!isValidConstantName) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, this));

@@ -24,7 +24,10 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyEncodingConverter;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
 /**
@@ -225,7 +228,7 @@ public abstract class EncodingConverterPrimitiveNodes {
             return ret;
         }
 
-        private RubySymbol eConvResultToSymbol(EConvResult result) {
+        private RubyBasicObject eConvResultToSymbol(EConvResult result) {
             switch(result) {
                 case InvalidByteSequence: return getSymbol("invalid_byte_sequence");
                 case UndefinedConversion: return getSymbol("undefined_conversion");

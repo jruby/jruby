@@ -21,8 +21,8 @@ import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class AddMethodNode extends RubyNode {
@@ -39,7 +39,7 @@ public class AddMethodNode extends RubyNode {
     }
 
     @Override
-    public RubySymbol execute(VirtualFrame frame) {
+    public RubyBasicObject execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
         final Object receiverObject = receiver.execute(frame);

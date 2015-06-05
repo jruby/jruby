@@ -299,7 +299,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubySymbol calleeName() {
+        public RubyBasicObject calleeName() {
             CompilerDirectives.transferToInterpreter();
             // the "called name" of a method.
             return getSymbol(RubyCallStack.getCallingMethod(getContext()).getName());
@@ -1054,7 +1054,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubySymbol methodName() {
+        public RubyBasicObject methodName() {
             CompilerDirectives.transferToInterpreter();
             // the "original/definition name" of the method.
             return getSymbol(RubyCallStack.getCallingMethod(getContext()).getSharedMethodInfo().getName());

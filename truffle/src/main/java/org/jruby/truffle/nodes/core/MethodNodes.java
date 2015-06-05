@@ -161,7 +161,7 @@ public abstract class MethodNodes {
         }
 
         @Specialization
-        public RubySymbol name(RubyBasicObject method) {
+        public RubyBasicObject name(RubyBasicObject method) {
             CompilerDirectives.transferToInterpreter();
 
             return getSymbol(getMethod(method).getName());

@@ -287,11 +287,11 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return symbolTable;
     }
 
-    public RubySymbol getSymbol(String name) {
+    public RubyBasicObject getSymbol(String name) {
         return symbolTable.getSymbol(name);
     }
 
-    public RubySymbol getSymbol(ByteList name) {
+    public RubyBasicObject getSymbol(ByteList name) {
         return symbolTable.getSymbol(name);
     }
 

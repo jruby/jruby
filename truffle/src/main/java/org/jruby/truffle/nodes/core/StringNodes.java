@@ -2184,7 +2184,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubySymbol toSym(RubyString string) {
+        public RubyBasicObject toSym(RubyString string) {
             return getSymbol(getByteList(string));
         }
     }
