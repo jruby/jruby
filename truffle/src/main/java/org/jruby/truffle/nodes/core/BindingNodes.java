@@ -68,11 +68,11 @@ public abstract class BindingNodes {
     @CoreMethod(names = "local_variable_get", required = 1)
     public abstract static class LocalVariableGetNode extends CoreMethodArrayArgumentsNode {
 
-        private final RubySymbol dollarUnderscore;
+        private final RubyBasicObject dollarUnderscore;
 
         public LocalVariableGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dollarUnderscore = getContext().getSymbol("$_");
+            dollarUnderscore = getSymbol("$_");
         }
 
         @Specialization(guards = {
@@ -164,11 +164,11 @@ public abstract class BindingNodes {
     @CoreMethod(names = "local_variable_set", required = 2)
     public abstract static class LocalVariableSetNode extends CoreMethodArrayArgumentsNode {
 
-        private final RubySymbol dollarUnderscore;
+        private final RubyBasicObject dollarUnderscore;
 
         public LocalVariableSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dollarUnderscore = getContext().getSymbol("$_");
+            dollarUnderscore = getSymbol("$_");
         }
 
         @Specialization(guards = {
@@ -249,7 +249,7 @@ public abstract class BindingNodes {
             while (frame != null) {
                 for (Object name : frame.getFrameDescriptor().getIdentifiers()) {
                     if (name instanceof String) {
-                        ArrayNodes.slowPush(array, getContext().getSymbol((String) name));
+                        ArrayNodes.slowPush(array, getSymbol((String) name));
                     }
                 }
 

@@ -1490,11 +1490,11 @@ public abstract class ArrayNodes {
         private final BranchProfile nextProfile = BranchProfile.create();
         private final BranchProfile redoProfile = BranchProfile.create();
 
-        private final RubySymbol eachSymbol;
+        private final RubyBasicObject eachSymbol;
 
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eachSymbol = getContext().getSymbol("each");
+            eachSymbol = getSymbol("each");
         }
 
         @Specialization
@@ -2285,8 +2285,8 @@ public abstract class ArrayNodes {
             return initial;
         }
 
-        @Specialization
-        public Object inject(VirtualFrame frame, RubyArray array, RubySymbol symbol, NotProvided block) {
+        @Specialization(guards = "isRubySymbol(symbol)")
+        public Object inject(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
             final Object[] store = slowToArray(array);

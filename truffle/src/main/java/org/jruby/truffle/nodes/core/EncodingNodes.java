@@ -115,7 +115,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization
         public Object isCompatible(RubyRegexp first, RubySymbol second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), second.getByteList().getEncoding());
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), SymbolNodes.getByteList(second).getEncoding());
 
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
@@ -127,7 +127,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization
         public Object isCompatible(RubySymbol first, RubyRegexp second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getByteList().getEncoding(), second.getRegex().getEncoding());
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(SymbolNodes.getByteList(first).getEncoding(), second.getRegex().getEncoding());
 
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
@@ -139,7 +139,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization
         public Object isCompatible(RubyString first, RubySymbol second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringNodes.getCodeRangeable(first), second);
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringNodes.getCodeRangeable(first), SymbolNodes.getCodeRangeable(second));
 
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
@@ -151,7 +151,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization
         public Object isCompatible(RubySymbol first, RubySymbol second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(SymbolNodes.getCodeRangeable(first), SymbolNodes.getCodeRangeable(second));
 
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
@@ -362,19 +362,19 @@ public abstract class EncodingNodes {
 
             final Encoding defaultInternalEncoding = getContext().getRuntime().getDefaultInternalEncoding();
             final Object internalTuple = getContext().makeTuple(frame, newTupleNode, createString("internal"), indexLookup(encodings, defaultInternalEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("INTERNAL"), internalTuple);
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("INTERNAL"), internalTuple);
 
             final Encoding defaultExternalEncoding = getContext().getRuntime().getDefaultExternalEncoding();
             final Object externalTuple = getContext().makeTuple(frame, newTupleNode, createString("external"), indexLookup(encodings, defaultExternalEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("EXTERNAL"), externalTuple);
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("EXTERNAL"), externalTuple);
 
             final Encoding localeEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
             final Object localeTuple = getContext().makeTuple(frame, newTupleNode, createString("locale"), indexLookup(encodings, localeEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("LOCALE"), localeTuple);
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("LOCALE"), localeTuple);
 
             final Encoding filesystemEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
             final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, createString("filesystem"), indexLookup(encodings, filesystemEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("FILESYSTEM"), filesystemTuple);
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("FILESYSTEM"), filesystemTuple);
 
             return ret;
         }
