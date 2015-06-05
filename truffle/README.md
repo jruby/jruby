@@ -116,7 +116,7 @@ dump the current call stack of all threads:
 Truffle is built as part of JRuby, but if you are working on the Truffle code
 base you may appreciate the `jt` tool. To use it alias it in your shell
 `function jt { ruby tool/jt.rb $@; }`, then run `jt --help` to see the commands
-available.
+available. You need a standard `ruby` from your system to run the tool.
 
 For example:
 
