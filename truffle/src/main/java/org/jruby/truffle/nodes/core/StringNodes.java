@@ -111,11 +111,11 @@ public abstract class StringNodes {
         ((RubyString) string).codeRange = newCodeRange;
     }
 
-    public static CodeRangeableWrapper getCodeRangeable(RubyBasicObject string) {
+    public static StringCodeRangeableWrapper getCodeRangeable(RubyBasicObject string) {
         assert RubyGuards.isRubyString(string);
 
         if (((RubyString) string).codeRangeableWrapper == null) {
-            ((RubyString) string).codeRangeableWrapper = new CodeRangeableWrapper((RubyString) string);
+            ((RubyString) string).codeRangeableWrapper = new StringCodeRangeableWrapper((RubyString) string);
         }
 
         return ((RubyString) string).codeRangeableWrapper;

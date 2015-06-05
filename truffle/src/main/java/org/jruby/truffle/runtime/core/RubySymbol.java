@@ -33,11 +33,12 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Represents the Ruby {@code Symbol} class.
  */
-public class RubySymbol extends RubyBasicObject implements CodeRangeable {
+public class RubySymbol extends RubyBasicObject {
 
     private final String symbol;
     private final ByteList bytes;
     private int codeRange = StringSupport.CR_UNKNOWN;
+    public SymbolCodeRangeableWrapper codeRangeableWrapper;
 
     private RubySymbol(RubyClass symbolClass, String symbol, ByteList bytes) {
         super(symbolClass);
@@ -47,6 +48,14 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
 
     public static RubySymbol newSymbol(RubyContext runtime, String name) {
         return runtime.getSymbolTable().getSymbol(name, ASCIIEncoding.INSTANCE);
+    }
+
+    public SymbolCodeRangeableWrapper getCodeRangeable() {
+        if (codeRangeableWrapper == null) {
+            codeRangeableWrapper = new SymbolCodeRangeableWrapper(this);
+        }
+
+        return codeRangeableWrapper;
     }
 
     public RubyProc toProc(SourceSection sourceSection, final Node currentNode) {
@@ -82,12 +91,10 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
         return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), toString());
     }
 
-    @Override
     public int getCodeRange() {
         return codeRange;
     }
 
-    @Override
     @TruffleBoundary
     public int scanForCodeRange() {
         int cr = getCodeRange();
@@ -100,51 +107,42 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
         return cr;
     }
 
-    @Override
     public boolean isCodeRangeValid() {
         return codeRange == StringSupport.CR_VALID;
     }
 
-    @Override
     public final void setCodeRange(int codeRange) {
         this.codeRange = codeRange;
     }
 
-    @Override
     public final void clearCodeRange() {
         codeRange = StringSupport.CR_UNKNOWN;
     }
 
-    @Override
     public final void keepCodeRange() {
         if (getCodeRange() == StringSupport.CR_BROKEN) {
             clearCodeRange();
         }
     }
 
-    @Override
     public final void modify() {
         throw new UnsupportedOperationException();
     }
 
-    @Override
     public final void modify(int length) {
         throw new UnsupportedOperationException();
     }
 
-    @Override
     public final void modifyAndKeepCodeRange() {
         modify();
         keepCodeRange();
     }
 
-    @Override
     public Encoding checkEncoding(CodeRangeable other) {
         // TODO (nirvdrum Jan. 13, 2015): This should check if the encodings are compatible rather than just always succeeding.
         return bytes.getEncoding();
     }
 
-    @Override
     public ByteList getByteList() {
         return bytes;
     }

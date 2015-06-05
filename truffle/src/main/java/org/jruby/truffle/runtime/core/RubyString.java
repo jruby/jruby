@@ -17,7 +17,7 @@ public class RubyString extends RubyBasicObject {
 
     public ByteList bytes;
     public int codeRange = StringSupport.CR_UNKNOWN;
-    public CodeRangeableWrapper codeRangeableWrapper;
+    public StringCodeRangeableWrapper codeRangeableWrapper;
 
     public RubyString(RubyClass stringClass, ByteList bytes, DynamicObject dynamicObject) {
         super(stringClass, dynamicObject);
