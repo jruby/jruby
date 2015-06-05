@@ -25,6 +25,7 @@ import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadServiceResource;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -742,7 +743,7 @@ public class CoreLibrary {
             return (long) value;
         }
 
-        if (value instanceof RubyBignum) {
+        if (RubyGuards.isRubyBignum(value)) {
             return BignumNodes.getBigIntegerValue((RubyBignum) value).doubleValue();
         }
 

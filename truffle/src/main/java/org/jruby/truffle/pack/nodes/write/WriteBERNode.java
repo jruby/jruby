@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.nodes.core.BignumNodes;
+import org.jruby.truffle.pack.nodes.PackGuards;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.CantCompressNegativeException;
 import org.jruby.truffle.runtime.RubyContext;
@@ -85,7 +86,7 @@ public abstract class WriteBERNode extends PackNode {
 
         long l;
 
-        if (from instanceof RubyBignum) {
+        if (PackGuards.isRubyBignum(from)) {
             BigInteger big128 = BigInteger.valueOf(128);
             from = BignumNodes.getBigIntegerValue((RubyBignum) from);
             while (true) {

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.pack.nodes.PackGuards;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.nodes.type.ToLongNode;
@@ -66,7 +67,7 @@ public abstract class ReadLongOrBigIntegerNode extends PackNode {
     public Object read(VirtualFrame frame, Object[] source) {
         final Object value = source[advanceSourcePosition(frame)];
 
-        if (bignumProfile.profile(value instanceof RubyBignum)) {
+        if (bignumProfile.profile(PackGuards.isRubyBignum(value))) {
             return value;
         } else {
             if (toLongNode == null) {

@@ -112,7 +112,7 @@ public abstract class RubyNode extends Node {
     public RubyBignum executeRubyBignum(VirtualFrame frame) throws UnexpectedResultException {
         final Object value = execute(frame);
 
-        if (value instanceof RubyBignum) {
+        if (RubyGuards.isRubyBignum(value)) {
             return (RubyBignum) value;
         } else {
             throw new UnexpectedResultException(value);

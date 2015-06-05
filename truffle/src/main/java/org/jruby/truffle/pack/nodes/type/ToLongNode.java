@@ -19,6 +19,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.pack.nodes.PackGuards;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.CantConvertException;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
@@ -91,7 +92,7 @@ public abstract class ToLongNode extends PackNode {
             return toLong(frame, (long) value);
         }
 
-        if (seenBignum && value instanceof RubyBignum) {
+        if (seenBignum && PackGuards.isRubyBignum(value)) {
             return toLong(frame, (RubyBignum) value);
         }
 
@@ -111,7 +112,7 @@ public abstract class ToLongNode extends PackNode {
             return toLong(frame, (long) value);
         }
 
-        if (value instanceof RubyBignum) {
+        if (PackGuards.isRubyBignum(value)) {
             seenBignum = true;
             return toLong(frame, (RubyBignum) value);
         }

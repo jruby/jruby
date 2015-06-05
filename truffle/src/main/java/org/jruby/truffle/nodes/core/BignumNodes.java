@@ -28,6 +28,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.object.BasicObjectType;
 
 import java.math.BigInteger;
 import java.util.EnumSet;
@@ -38,6 +39,12 @@ public abstract class BignumNodes {
     public static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
     public static final BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
 
+    public static class BignumType extends BasicObjectType {
+
+    }
+
+    public static final BignumType BIGNUM_TYPE = new BignumType();
+
     private static final HiddenKey VALUE_IDENTIFIER = new HiddenKey("value");
     public static final Property VALUE_PROPERTY;
     private static final DynamicObjectFactory BIGNUM_FACTORY;
@@ -45,7 +52,7 @@ public abstract class BignumNodes {
     static {
         final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
         VALUE_PROPERTY = Property.create(VALUE_IDENTIFIER, allocator.locationForType(BigInteger.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        final Shape shape = RubyBasicObject.EMPTY_SHAPE.addProperty(VALUE_PROPERTY);
+        final Shape shape = RubyBasicObject.LAYOUT.createShape(BIGNUM_TYPE).addProperty(VALUE_PROPERTY);
         BIGNUM_FACTORY = shape.createFactory();
     }
 
