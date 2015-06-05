@@ -15,3 +15,6 @@ fails:Process.spawn with Integer option keys maps the key to a file descriptor i
 fails:Process.spawn does not unset other environment variables when given a false :unsetenv_others option
 fails:Process.spawn does not unset environment variables included in the environment hash
 fails:Process.spawn joins the current process if :pgroup => false
+fails:Process.spawn redirects STDOUT to the given file if :out => String
+fails:Process.spawn redirects STDERR to the given file if :err => String
+fails:Process.spawn when passed :close_others => false does not close file descriptors >= 3 in the child process if fds are set close_on_exec=false

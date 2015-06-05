@@ -15,3 +15,6 @@ fails:Marshal.load when a class with the same name as the dumped one exists outs
 fails:Marshal.load when a class with the same name as the dumped one exists outside the namespace invokes Module#const_missing
 fails:Marshal.load loads an array containing an object with _dump that returns an immediate value, followed by multiple instances of another object
 fails:Marshal.load when a class does not exist in the namespace raises an ArgumentError
+fails:Marshal.load when called on objects with custom _dump methods that return an immediate value loads an array containing an instance of the object, followed by multiple instances of another object
+fails:Marshal.load when called on objects with custom _dump methods that return an immediate value loads any structure with multiple references to the same object, followed by multiple instances of another object
+fails:Marshal.load when called on objects with custom _dump methods that return an immediate value loads an array containing references to multiple instances of the object, followed by multiple instances of another object
