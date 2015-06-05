@@ -21,7 +21,6 @@ import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.nodes.type.ToLongNode;
 import org.jruby.truffle.pack.nodes.type.ToLongNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBignum;
 
 import java.math.BigInteger;
 

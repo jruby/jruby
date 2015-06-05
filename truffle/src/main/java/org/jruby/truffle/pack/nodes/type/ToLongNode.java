@@ -25,7 +25,6 @@ import org.jruby.truffle.pack.runtime.exceptions.CantConvertException;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
 
 /**
  * Convert a value to a {@code long}.

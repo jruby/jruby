@@ -17,7 +17,6 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.*;
-import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jcodings.specific.USASCIIEncoding;
@@ -58,7 +57,6 @@ import org.jruby.util.Memo;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.Random;
 
 @CoreClass(name = "Array")

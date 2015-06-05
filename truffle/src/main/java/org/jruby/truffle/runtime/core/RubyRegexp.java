@@ -27,19 +27,13 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.util.ByteList;
-import org.jruby.util.CodeRangeable;
-import org.jruby.util.RegexpOptions;
-import org.jruby.util.RegexpSupport;
-import org.jruby.util.StringSupport;
+import org.jruby.util.*;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import static org.jruby.util.KCode.*;
 
 /**
  * Represents the Ruby {@code Regexp} class.
