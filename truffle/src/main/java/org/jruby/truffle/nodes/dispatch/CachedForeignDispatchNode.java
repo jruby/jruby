@@ -18,6 +18,7 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
+import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.Node;
@@ -54,21 +55,21 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
 
     private void initializeNodes(RubyContext context, int arity) {
         if (name.equals("[]")) {
-            directArray = ForeignAccess.node(ForeignAccess.msgRead());
+            directArray = Message.READ.createNode();
         } else if (name.equals("[]=")) {
-        	directArray = ForeignAccess.node(ForeignAccess.msgWrite());
+        	directArray = Message.WRITE.createNode();
         } else if (name.endsWith("=") && arity == 1) {
-            directField = ForeignAccess.node(ForeignAccess.msgWrite());
+            directField = Message.WRITE.createNode();
         } else if (name.endsWith("call")) {// arity + 1 for receiver
-        	directCall = ForeignAccess.node(ForeignAccess.msgExecute(arity + 1));
+        	directCall = Message.createExecute(arity + 1).createNode();
         } else if (name.endsWith("nil?")) {
-        	nullCheck = ForeignAccess.node(ForeignAccess.msgIsNull());
+        	nullCheck = Message.IS_NULL.createNode();
         } else if (arity == 0) {
-        	directField = ForeignAccess.node(ForeignAccess.msgRead());
+        	directField = Message.READ.createNode();
         } else {
             // do not forget to pass the receiver!
             // EXECUTE(READ(rec, a0), a1<receiver>, ...)
-            access = ForeignAccess.node(ForeignAccess.msgInvoke(arity + 1));
+            access = Message.createInvoke(arity + 1).createNode();
         }
         prepareArguments = new PrepareArguments(context, getSourceSection(), arity);
     }

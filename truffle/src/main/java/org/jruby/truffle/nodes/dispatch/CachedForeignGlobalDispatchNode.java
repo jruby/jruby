@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.dispatch;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
+import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.runtime.RubyContext;
@@ -36,7 +37,7 @@ public final class CachedForeignGlobalDispatchNode extends CachedDispatchNode {
 
     private Node create() {
         // + 1 because language is the first argument
-        return ForeignAccess.node(ForeignAccess.msgInvoke(numberOfArguments + 1));
+        return Message.createInvoke(numberOfArguments + 1).createNode();
     }
 
     @Override

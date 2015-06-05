@@ -15,6 +15,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
+import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
@@ -81,7 +82,7 @@ public abstract class TruffleInteropNodes {
 
         public IsExecutableNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignAccess.node(ForeignAccess.msgIsExecutable());
+            this.node = Message.IS_EXECUTABLE.createNode();
         }
 
         @Specialization
@@ -98,7 +99,7 @@ public abstract class TruffleInteropNodes {
 
         public IsBoxedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignAccess.node(ForeignAccess.msgIsBoxed());
+            this.node = Message.IS_BOXED.createNode();
         }
 
         @Specialization
@@ -115,7 +116,7 @@ public abstract class TruffleInteropNodes {
 
         public IsNullNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignAccess.node(ForeignAccess.msgIsNull());
+            this.node = Message.IS_NULL.createNode();
         }
 
         @Specialization
@@ -132,7 +133,7 @@ public abstract class TruffleInteropNodes {
 
         public HasSizePropertyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignAccess.node(ForeignAccess.msgHasSize());
+            this.node = Message.HAS_SIZE.createNode();
         }
 
         @Specialization
@@ -149,7 +150,7 @@ public abstract class TruffleInteropNodes {
 
         public ReadPropertyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignAccess.node(ForeignAccess.msgRead());
+            this.node = Message.READ.createNode();
         }
 
         @Specialization
@@ -197,7 +198,7 @@ public abstract class TruffleInteropNodes {
 
         public WritePropertyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignAccess.node(ForeignAccess.msgWrite());
+            this.node = Message.WRITE.createNode();
         }
 
         @Specialization
@@ -240,7 +241,7 @@ public abstract class TruffleInteropNodes {
 
         public UnboxValueNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignAccess.node(ForeignAccess.msgUnbox());
+            this.node = Message.UNBOX.createNode();
         }
 
         @Specialization
@@ -263,7 +264,7 @@ public abstract class TruffleInteropNodes {
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver, Object[] arguments) {
             if (node == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.node = ForeignAccess.node(ForeignAccess.msgExecute(arguments.length));
+                this.node = Message.createExecute(arguments.length).createNode();
             }
             return ForeignAccess.execute(node, frame, receiver, arguments);
         }
@@ -277,7 +278,7 @@ public abstract class TruffleInteropNodes {
 
         public GetSizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.node = ForeignAccess.node(ForeignAccess.msgGetSize());
+            this.node = Message.GET_SIZE.createNode();
         }
 
         @Specialization
