@@ -17,6 +17,7 @@ import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.cast.IntegerCastNode;
 import org.jruby.truffle.nodes.cast.IntegerCastNodeGen;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
@@ -73,30 +74,34 @@ public abstract class BigDecimalNodes {
         return BigDecimal.valueOf(v);
     }
 
-    public static BigDecimal getBigDecimalValue(RubyBignum v) {
+    public static BigDecimal getBignumBigDecimalValue(RubyBasicObject v) {
         return new BigDecimal(BignumNodes.getBigIntegerValue(v));
     }
 
-    public static BigDecimal getBigDecimalValue(RubyBasicObject bignum) {
-        assert bignum.getDynamicObject().getShape().hasProperty(VALUE_IDENTIFIER);
-        return (BigDecimal) VALUE_PROPERTY.get(bignum.getDynamicObject(), true);
+    public static BigDecimal getBigDecimalValue(RubyBasicObject bigdecimal) {
+        assert RubyGuards.isRubyBigDecimal(bigdecimal);
+        assert bigdecimal.getDynamicObject().getShape().hasProperty(VALUE_IDENTIFIER);
+        return (BigDecimal) VALUE_PROPERTY.get(bigdecimal.getDynamicObject(), true);
     }
 
-    public static Type getBigDecimalType(RubyBasicObject bignum) {
-        assert bignum.getDynamicObject().getShape().hasProperty(TYPE_IDENTIFIER);
-        return (Type) TYPE_PROPERTY.get(bignum.getDynamicObject(), true);
+    public static Type getBigDecimalType(RubyBasicObject bigdecimal) {
+        assert RubyGuards.isRubyBigDecimal(bigdecimal);
+        assert bigdecimal.getDynamicObject().getShape().hasProperty(TYPE_IDENTIFIER);
+        return (Type) TYPE_PROPERTY.get(bigdecimal.getDynamicObject(), true);
     }
 
-    private static void setBigDecimalValue(RubyBasicObject bignum, BigDecimal value) {
-        assert bignum.getDynamicObject().getShape().hasProperty(VALUE_IDENTIFIER);
-        VALUE_PROPERTY.setSafe(bignum.getDynamicObject(), value, null);
-        TYPE_PROPERTY.setSafe(bignum.getDynamicObject(), Type.NORMAL, null);
+    private static void setBigDecimalValue(RubyBasicObject bigdecimal, BigDecimal value) {
+        assert RubyGuards.isRubyBigDecimal(bigdecimal);
+        assert bigdecimal.getDynamicObject().getShape().hasProperty(VALUE_IDENTIFIER);
+        VALUE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), value, null);
+        TYPE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), Type.NORMAL, null);
     }
 
-    private static void setBigDecimalValue(RubyBasicObject bignum, Type type) {
-        assert bignum.getDynamicObject().getShape().hasProperty(TYPE_IDENTIFIER);
-        VALUE_PROPERTY.setSafe(bignum.getDynamicObject(), BigDecimal.ZERO, null);
-        TYPE_PROPERTY.setSafe(bignum.getDynamicObject(), type, null);
+    private static void setBigDecimalValue(RubyBasicObject bigdecimal, Type type) {
+        assert RubyGuards.isRubyBigDecimal(bigdecimal);
+        assert bigdecimal.getDynamicObject().getShape().hasProperty(TYPE_IDENTIFIER);
+        VALUE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), BigDecimal.ZERO, null);
+        TYPE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), type, null);
     }
 
     public static RubyBasicObject createRubyBigDecimal(RubyClass rubyClass, Type type) {
@@ -203,14 +208,14 @@ public abstract class BigDecimalNodes {
             return self;
         }
 
-        @Specialization()
-        public RubyBasicObject initialize(RubyBasicObject self, RubyBignum value, NotProvided digits) {
-            setBigDecimalValue(self, getBigDecimalValue(value));
+        @Specialization(guards = "isRubyBignum(value)")
+        public RubyBasicObject initializeBignum(RubyBasicObject self, RubyBasicObject value, NotProvided digits) {
+            setBigDecimalValue(self, getBignumBigDecimalValue(value));
             return self;
         }
 
         @Specialization(guards = "isRubyBigDecimal(value)")
-        public RubyBasicObject initialize(RubyBasicObject self, RubyBasicObject value, NotProvided digits) {
+        public RubyBasicObject initializeBigDecimal(RubyBasicObject self, RubyBasicObject value, NotProvided digits) {
             setBigDecimalValue(self, getBigDecimalValue(value));
             return self;
         }
@@ -288,9 +293,9 @@ public abstract class BigDecimalNodes {
             return addBigDecimal(a, getBigDecimalValue(b));
         }
 
-        @Specialization(guards = "isNormal(a)")
-        public Object add(RubyBasicObject a, RubyBignum b) {
-            return addBigDecimal(a, getBigDecimalValue(b));
+        @Specialization(guards = {"isNormal(a)", "isRubyBignum(b)"})
+        public Object addBignum(RubyBasicObject a, RubyBasicObject b) {
+            return addBigDecimal(a, getBignumBigDecimalValue(b));
         }
 
         @Specialization(guards = {
@@ -311,9 +316,9 @@ public abstract class BigDecimalNodes {
             return addSpecial(a, createRubyBigDecimal(getBigDecimalValue(b)));
         }
 
-        @Specialization(guards = "!isNormal(a)")
-        public Object addSpecial(RubyBasicObject a, RubyBignum b) {
-            return addSpecial(a, createRubyBigDecimal(getBigDecimalValue(b)));
+        @Specialization(guards = {"!isNormal(a)", "isRubyBignum(b)"})
+        public Object addSpecialBignum(RubyBasicObject a, RubyBasicObject b) {
+            return addSpecial(a, createRubyBigDecimal(getBignumBigDecimalValue(b)));
         }
 
         @Specialization(guards = {
@@ -366,9 +371,9 @@ public abstract class BigDecimalNodes {
             return addBigDecimal(a, getBigDecimalValue(b), precision);
         }
 
-        @Specialization(guards = "isNormal(a)")
-        public Object add(RubyBasicObject a, RubyBignum b, int precision) {
-            return addBigDecimal(a, getBigDecimalValue(b), precision);
+        @Specialization(guards = {"isNormal(a)", "isRubyBignum(b)"})
+        public Object addBignum(RubyBasicObject a, RubyBasicObject b, int precision) {
+            return addBigDecimal(a, getBignumBigDecimalValue(b), precision);
         }
 
         @Specialization(guards = {
@@ -403,9 +408,9 @@ public abstract class BigDecimalNodes {
             return subBigDecimal(a, getBigDecimalValue(b));
         }
 
-        @Specialization(guards = "isNormal(a)")
-        public Object sub(RubyBasicObject a, RubyBignum b) {
-            return subBigDecimal(a, getBigDecimalValue(b));
+        @Specialization(guards = {"isNormal(a)", "isRubyBignum(b)"})
+        public Object subBignum(RubyBasicObject a, RubyBasicObject b) {
+            return subBigDecimal(a, getBignumBigDecimalValue(b));
         }
 
         @Specialization(guards = {
@@ -426,9 +431,9 @@ public abstract class BigDecimalNodes {
             return subSpecial(a, createRubyBigDecimal(getBigDecimalValue(b)));
         }
 
-        @Specialization(guards = "!isNormal(a)")
-        public Object subSpecial(RubyBasicObject a, RubyBignum b) {
-            return subSpecial(a, createRubyBigDecimal(getBigDecimalValue(b)));
+        @Specialization(guards = {"!isNormal(a)", "isRubyBignum(b)"})
+        public Object subSpecialBignum(RubyBasicObject a, RubyBasicObject b) {
+            return subSpecial(a, createRubyBigDecimal(getBignumBigDecimalValue(b)));
         }
 
         @Specialization(guards = {
@@ -520,9 +525,9 @@ public abstract class BigDecimalNodes {
             return subBigDecimal(a, getBigDecimalValue(b), precision);
         }
 
-        @Specialization(guards = "isNormal(a)")
-        public Object sub(RubyBasicObject a, RubyBignum b, int precision) {
-            return subBigDecimal(a, getBigDecimalValue(b), precision);
+        @Specialization(guards = {"isNormal(a)", "isRubyBignum(b)"})
+        public Object subBignum(RubyBasicObject a, RubyBasicObject b, int precision) {
+            return subBigDecimal(a, getBignumBigDecimalValue(b), precision);
         }
 
         @Specialization(guards = {
@@ -560,9 +565,9 @@ public abstract class BigDecimalNodes {
             return multBigDecimal(a, getBigDecimalValue(b));
         }
 
-        @Specialization(guards = "isNormal(a)")
-        public Object mult(RubyBasicObject a, RubyBignum b) {
-            return multBigDecimal(a, getBigDecimalValue(b));
+        @Specialization(guards = {"isNormal(a)", "isRubyBignum(b)"})
+        public Object multBignum(RubyBasicObject a, RubyBasicObject b) {
+            return multBigDecimal(a, getBignumBigDecimalValue(b));
         }
 
         @Specialization(guards = {
@@ -591,9 +596,9 @@ public abstract class BigDecimalNodes {
             return multSpecialNormal(a, createRubyBigDecimal(getBigDecimalValue(b)));
         }
 
-        @Specialization(guards = "!isNormal(a)")
-        public Object multSpecialNormal(RubyBasicObject a, RubyBignum b) {
-            return multSpecialNormal(a, createRubyBigDecimal(getBigDecimalValue(b)));
+        @Specialization(guards = {"!isNormal(a)", "isRubyBignum(b)"})
+        public Object multSpecialNormalBignum(RubyBasicObject a, RubyBasicObject b) {
+            return multSpecialNormal(a, createRubyBigDecimal(getBignumBigDecimalValue(b)));
         }
 
         @Specialization(guards = {
@@ -683,9 +688,9 @@ public abstract class BigDecimalNodes {
             return mulBigDecimal(a, getBigDecimalValue(b), precision);
         }
 
-        @Specialization(guards = "isNormal(a)")
-        public Object mult(RubyBasicObject a, RubyBignum b, int precision) {
-            return mulBigDecimal(a, getBigDecimalValue(b), precision);
+        @Specialization(guards = {"isNormal(a)", "isRubyBignum(b)"})
+        public Object multBignum(RubyBasicObject a, RubyBasicObject b, int precision) {
+            return mulBigDecimal(a, getBignumBigDecimalValue(b), precision);
         }
 
         @Specialization(guards = {
@@ -738,9 +743,9 @@ public abstract class BigDecimalNodes {
             return div(a, getBigDecimalValue(b));
         }
 
-        @Specialization(guards = "isNormal(a)")
-        public Object div(RubyBasicObject a, RubyBignum b) {
-            return div(a, getBigDecimalValue(b));
+        @Specialization(guards = {"isNormal(a)", "isRubyBignum(b)"})
+        public Object divBignum(RubyBasicObject a, RubyBasicObject b) {
+            return div(a, getBignumBigDecimalValue(b));
         }
 
         @Specialization(guards = {
@@ -799,9 +804,9 @@ public abstract class BigDecimalNodes {
             return divSpecialNormal(a, createRubyBigDecimal(getBigDecimalValue(b)));
         }
 
-        @Specialization(guards = "!isNormal(a)")
-        public Object divSpecialNormal(RubyBasicObject a, RubyBignum b) {
-            return divSpecialNormal(a, createRubyBigDecimal(getBigDecimalValue(b)));
+        @Specialization(guards = {"!isNormal(a)", "isRubyBignum(b)"})
+        public Object divSpecialNormalBignum(RubyBasicObject a, RubyBasicObject b) {
+            return divSpecialNormal(a, createRubyBigDecimal(getBignumBigDecimalValue(b)));
         }
 
         @Specialization(guards = {
@@ -890,9 +895,9 @@ public abstract class BigDecimalNodes {
             return compareBigDecimal(a, getBigDecimalValue(b));
         }
 
-        @Specialization(guards = "isNormal(a)")
-        public int compare(RubyBasicObject a, RubyBignum b) {
-            return compareBigDecimal(a, getBigDecimalValue(b));
+        @Specialization(guards = {"isNormal(a)", "isRubyBignum(b)"})
+        public int compare(RubyBasicObject a, RubyBasicObject b) {
+            return compareBigDecimal(a, getBignumBigDecimalValue(b));
         }
 
         @Specialization(guards = {
@@ -913,9 +918,9 @@ public abstract class BigDecimalNodes {
             return compareSpecial(a, createRubyBigDecimal(getBigDecimalValue(b)));
         }
 
-        @Specialization(guards = "!isNormal(a)")
-        public Object compareSpecial(RubyBasicObject a, RubyBignum b) {
-            return compareSpecial(a, createRubyBigDecimal(getBigDecimalValue(b)));
+        @Specialization(guards = {"!isNormal(a)", "isRubyBignum(b)"})
+        public Object compareSpecialBignum(RubyBasicObject a, RubyBasicObject b) {
+            return compareSpecial(a, createRubyBigDecimal(getBignumBigDecimalValue(b)));
         }
 
         @Specialization(guards = {
