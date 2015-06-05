@@ -88,6 +88,9 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @CompilationFinal protected ModuleChain parentModule;
 
+    private final RubyModule lexicalParent;
+    private final String givenBaseName;
+    /** Full name, including named parent */
     private String name;
 
     private final Map<String, InternalMethod> methods = new ConcurrentHashMap<>();
@@ -109,11 +112,13 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, Node currentNode) {
         super(context, selfClass);
         this.context = context;
+        this.lexicalParent = lexicalParent;
+        this.givenBaseName = name;
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
 
-        if (lexicalParent == null) {
-            this.name = name;
+        if (lexicalParent == null) { // bootstrap or anonymous module
+            this.name = givenBaseName;
         } else {
             getAdoptedByLexicalParent(lexicalParent, name, currentNode);
         }
@@ -402,6 +407,8 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public String getName() {
         if (name != null) {
             return name;
+        } else if (givenBaseName != null) {
+            return lexicalParent.getName() + "::" + givenBaseName;
         } else if (getLogicalClass() == this) { // For the case of class Class during initialization
             return "#<cyclic>";
         } else {
@@ -410,7 +417,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     public boolean hasName() {
-        return name != null;
+        return name != null || givenBaseName != null;
     }
 
     @Override
