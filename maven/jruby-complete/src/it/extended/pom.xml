@@ -8,7 +8,7 @@
   <name>extended</name>
   <properties>
     <jruby.home>${basedir}/../../../../..</jruby.home>
-    <jruby.version>1.7.21-SNAPSHOT</jruby.version>
+    <jruby.version>@project.version@</jruby.version>
     <jruby.plugins.version>1.0.8</jruby.plugins.version>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
   </properties>

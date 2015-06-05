@@ -2,7 +2,6 @@
 
 properties( 'polyglot.dump.pom' => 'pom.xml',
             'jruby.version' => '@project.version@',
-            'jruby.version' => '1.7.21-SNAPSHOT',
             'jruby.plugins.version' => '1.0.8',
             'jruby.home' => '${basedir}/../../../../..' )
 
