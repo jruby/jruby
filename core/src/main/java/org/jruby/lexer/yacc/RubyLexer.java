@@ -1941,13 +1941,12 @@ public class RubyLexer {
         String tempVal = createTokenString();
         
         if (isLabelPossible(commandState)) {
-            int c2 = nextc();
-            if (c2 == ':' && !peek(':')) {
+            if (isLabelSuffix()) {
                 setState(LexState.EXPR_LABELARG);
+                nextc();
                 yaccValue = tempVal.intern();
                 return Tokens.tLABEL;
             }
-            pushback(c2);
         }
 
         if (lex_state != LexState.EXPR_DOT) {

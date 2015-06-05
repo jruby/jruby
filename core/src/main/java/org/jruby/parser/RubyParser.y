@@ -1331,21 +1331,29 @@ primary         : literal
                 | tFID {
                     $$ = support.new_fcall($1);
                 }
-                | kBEGIN bodystmt kEND {
-                    $$ = new BeginNode($1, $2 == null ? NilImplicitNode.NIL : $2);
+                | kBEGIN {
+                    $$ = lexer.getCmdArgumentState().getStack();
+                    lexer.getCmdArgumentState().reset();
+                } bodystmt kEND {
+                    lexer.getCmdArgumentState().reset($<Long>2.longValue());
+                    $$ = new BeginNode($1, $3 == null ? NilImplicitNode.NIL : $3);
                 }
                 | tLPAREN_ARG {
                     lexer.setState(LexState.EXPR_ENDARG);
                 } rparen {
                     $$ = null; //FIXME: Should be implicit nil?
                 }
-                | tLPAREN_ARG expr {
+                | tLPAREN_ARG {
+                    $$ = lexer.getCmdArgumentState().getStack();
+                    lexer.getCmdArgumentState().reset();
+                } expr {
                     lexer.setState(LexState.EXPR_ENDARG); 
                 } rparen {
+                    lexer.getCmdArgumentState().reset($<Long>2.longValue());
                     if (Options.PARSER_WARN_GROUPED_EXPRESSIONS.load()) {
                       support.warning(ID.GROUPED_EXPRESSION, $1, "(...) interpreted as grouped expression");
                     }
-                    $$ = $2;
+                    $$ = $3;
                 }
                 | tLPAREN compstmt tRPAREN {
                     if ($2 != null) {
@@ -2011,7 +2019,9 @@ string_content  : tSTRING_CONTENT {
                    $$ = lexer.getStrTerm();
                    lexer.setStrTerm(null);
                    lexer.getConditionState().stop();
-                   lexer.getCmdArgumentState().stop();
+                } {
+                   $$ = lexer.getCmdArgumentState().getStack();
+                   lexer.getCmdArgumentState().reset();
                 } {
                    $$ = lexer.getState();
                    lexer.setState(LexState.EXPR_BEG);
@@ -2020,12 +2030,12 @@ string_content  : tSTRING_CONTENT {
                    lexer.setBraceNest(0);
                 } compstmt tSTRING_DEND {
                    lexer.getConditionState().restart();
-                   lexer.getCmdArgumentState().restart();
                    lexer.setStrTerm($<StrTerm>2);
-                   lexer.setState($<LexState>3);
-                   lexer.setBraceNest($<Integer>4);
+                   lexer.getCmdArgumentState().reset($<Long>3.longValue());
+                   lexer.setState($<LexState>4);
+                   lexer.setBraceNest($<Integer>5);
 
-                   $$ = support.newEvStrNode(support.getPosition($5), $5);
+                   $$ = support.newEvStrNode(support.getPosition($6), $6);
                 }
 
 string_dvar     : tGVAR {
