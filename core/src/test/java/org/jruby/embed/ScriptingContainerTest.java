@@ -2407,30 +2407,12 @@ public class ScriptingContainerTest {
     }
 
     /**
-     * Test of getJitMaxSize method, of class ScriptingContainer.
-     */
-    @Test
-    public void testGetJitMaxSize() {
-        logger1.info("getJitMaxSize");
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        instance.setError(pstream);
-        instance.setOutput(pstream);
-        instance.setWriter(writer);
-        instance.setErrorWriter(writer);
-        int expResult = 30000;
-        int result = instance.getJitMaxSize();
-        assertEquals(expResult, result);
-
-        instance = null;
-    }
-
-    /**
      * Test of setJitMaxSize method, of class ScriptingContainer.
      */
     @Test
-    public void testSetJitMaxSize() {
+    public void testJitMaxSize() {
         logger1.info("setJitMaxSize");
-        int maxSize = 0;
+        int maxSize = 10000;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
@@ -2438,6 +2420,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.setJitMaxSize(maxSize);
 
+        assertEquals(maxSize, instance.getJitMaxSize());
         instance = null;
     }
 

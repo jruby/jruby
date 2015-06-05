@@ -15,7 +15,6 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.joni.NameEntry;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
@@ -24,10 +23,8 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
-import org.jruby.util.RegexpOptions;
 
 import java.util.Iterator;
 
@@ -35,39 +32,6 @@ import static org.jruby.util.StringSupport.CR_7BIT;
 
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
-
-    public abstract static class EscapingNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private EscapeNode escapeNode;
-
-        public EscapingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        protected RubyBasicObject escape(VirtualFrame frame, RubyString string) {
-            if (escapeNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                escapeNode = insert(RegexpNodesFactory.EscapeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
-            }
-            return escapeNode.executeEscape(frame, string);
-        }
-    }
-
-    public abstract static class EscapingYieldingNode extends YieldingCoreMethodNode {
-        @Child private EscapeNode escapeNode;
-
-        public EscapingYieldingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        protected RubyBasicObject escape(VirtualFrame frame, RubyString string) {
-            if (escapeNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                escapeNode = insert(RegexpNodesFactory.EscapeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
-            }
-            return escapeNode.executeEscape(frame, string);
-        }
-    }
 
     @CoreMethod(names = "=~", required = 1)
     public abstract static class MatchOperatorNode extends CoreMethodArrayArgumentsNode {
@@ -143,25 +107,6 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "match", required = 1, taintFromSelf = true)
-    public abstract static class MatchNode extends CoreMethodArrayArgumentsNode {
-
-        public MatchNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object match(RubyRegexp regexp, RubyString string) {
-            return regexp.matchCommon(string, false, false);
-        }
-
-        @Specialization(guards = "isNil(nil)")
-        public Object match(RubyRegexp regexp, Object nil) {
-            return nil();
-        }
-
-    }
-
     @RubiniusOnly
     @CoreMethod(names = "match_start", required = 2)
     public abstract static class MatchStartNode extends CoreMethodArrayArgumentsNode {
@@ -179,31 +124,6 @@ public abstract class RegexpNodes {
             }
             return nil();
         }
-    }
-
-    @CoreMethod(names = "options")
-    public abstract static class OptionsNode extends CoreMethodArrayArgumentsNode {
-
-        private final ConditionProfile notYetInitializedProfile = ConditionProfile.createBinaryProfile();
-
-        public OptionsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public int options(RubyRegexp regexp) {
-            if (notYetInitializedProfile.profile(regexp.getRegex() == null)) {
-                throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
-            }
-
-            if(regexp.getOptions() != null){
-                return regexp.getOptions().toOptions();
-            }
-
-            return RegexpOptions.fromJoniOptions(regexp.getRegex().getOptions()).toOptions();
-        }
-
     }
 
     @CoreMethod(names = { "quote", "escape" }, needsSelf = false, onSingleton = true, required = 1)

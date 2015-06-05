@@ -9,6 +9,8 @@ describe :enum_each, :shared => true do
     end
 
     @enum_with_arguments = object_each_with_arguments.to_enum(:each_with_arguments, :arg0, :arg1, :arg2)
+
+    @enum_with_yielder = Enumerator.new {|y| y.yield :ok}
   end
 
   it "yields each element of self to the given block" do
@@ -53,6 +55,8 @@ describe :enum_each, :shared => true do
 
   it "returns self if not given arguments and not given a block" do
     @enum_with_arguments.each.should equal(@enum_with_arguments)
+
+    @enum_with_yielder.each.should equal(@enum_with_yielder)
   end
 
   it "returns the same value from receiver.each if block is given" do

@@ -1,4 +1,2 @@
-fails:Enumerator#inject returns self if not given arguments and not given a block
-fails:Enumerator#inject passes given arguments at initialized to receiver.each
 fails:Enumerator#inject appends given arguments to receiver.each
 fails:Enumerator#inject returns the same value from receiver.each if block and arguments are given

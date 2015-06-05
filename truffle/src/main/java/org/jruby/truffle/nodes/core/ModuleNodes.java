@@ -18,12 +18,11 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
-import jnr.posix.Passwd;
 
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
@@ -41,11 +40,13 @@ import org.jruby.truffle.nodes.constants.GetConstantNodeGen;
 import org.jruby.truffle.nodes.constants.LookupConstantNodeGen;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.KernelNodes.BindingNode;
+import org.jruby.truffle.nodes.core.ModuleNodesFactory.GenerateAccessorNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.methods.AddMethodNode;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -361,139 +362,147 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "attr_reader", argumentsAsArray = true)
-    public abstract static class AttrReaderNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+    public abstract static class GenerateAccessorNode extends RubyNode {
 
-        public AttrReaderNode(RubyContext context, SourceSection sourceSection) {
+        final boolean isGetter;
+        @Child NameToJavaStringNode nameToJavaStringNode;
+
+        public GenerateAccessorNode(RubyContext context, SourceSection sourceSection, boolean isGetter) {
             super(context, sourceSection);
+            this.isGetter = isGetter;
+            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
         }
+
+        public abstract RubyBasicObject executeGenerateAccessor(VirtualFrame frame, RubyModule module, Object name);
 
         @Specialization
-        public RubyBasicObject attrReader(RubyModule module, Object[] args) {
+        public RubyBasicObject generateAccessor(VirtualFrame frame, RubyModule module, Object nameObject) {
+            final String name = nameToJavaStringNode.executeToJavaString(frame, nameObject);
+
             CompilerDirectives.transferToInterpreter();
+            final FrameInstance callerFrame = Truffle.getRuntime().getCallerFrame();
+            final SourceSection sourceSection = callerFrame.getCallNode().getEncapsulatingSourceSection();
+            final Visibility visibility = AddMethodNode.getVisibility(callerFrame.getFrame(FrameAccess.READ_ONLY, true));
+            final Arity arity = isGetter ? Arity.NO_ARGUMENTS : Arity.ONE_REQUIRED;
+            final String ivar = "@" + name;
+            final String accessorName = isGetter ? name : name + "=";
+            final String indicativeName = name + "(attr_" + (isGetter ? "reader" : "writer") + ")";
 
-            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+            final CheckArityNode checkArity = new CheckArityNode(getContext(), sourceSection, arity);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, indicativeName, false, null, false);
 
-            for (Object arg : args) {
-                final String accessorName;
-
-                if (arg instanceof RubySymbol) {
-                    accessorName = ((RubySymbol) arg).toString();
-                } else if (arg instanceof RubyString) {
-                    accessorName = ((RubyString) arg).toString();
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-
-                attrReader(this, getContext(), sourceSection, module, accessorName);
+            final SelfNode self = new SelfNode(getContext(), sourceSection);
+            final RubyNode accessInstanceVariable;
+            if (isGetter) {
+                accessInstanceVariable = new ReadInstanceVariableNode(getContext(), sourceSection, ivar, self, false);
+            } else {
+                ReadPreArgumentNode readArgument = new ReadPreArgumentNode(getContext(), sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
+                accessInstanceVariable = new WriteInstanceVariableNode(getContext(), sourceSection, ivar, self, readArgument, false);
             }
-
-            return nil();
-        }
-
-        public static void attrReader(Node currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
-            CompilerDirectives.transferToInterpreter();
-
-            final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, new Arity(0, 0, false, false, false, 0));
-
-            final SelfNode self = new SelfNode(context, sourceSection);
-            final ReadInstanceVariableNode readInstanceVariable = new ReadInstanceVariableNode(context, sourceSection, "@" + name, self, false);
-
-            final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, readInstanceVariable);
-
-            final String indicativeName = name + "(attr_reader)";
-
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, indicativeName, false, null, false);
-            final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, block);
+            final RubyNode sequence = SequenceNode.sequence(getContext(), sourceSection, checkArity, accessInstanceVariable);
+            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final InternalMethod method = new InternalMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null);
-            module.addMethod(currentNode, method);
+            final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, false, callTarget, null);
+
+            module.addMethod(this, method);
+            return nil();
         }
     }
 
-    @CoreMethod(names = "attr_writer", argumentsAsArray = true)
-    public abstract static class AttrWriterNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "attr", argumentsAsArray = true, visibility = Visibility.PRIVATE)
+    public abstract static class AttrNode extends CoreMethodArrayArgumentsNode {
 
-        public AttrWriterNode(RubyContext context, SourceSection sourceSection) {
+        @Child GenerateAccessorNode generateGetterNode;
+        @Child GenerateAccessorNode generateSetterNode;
+
+        public AttrNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.generateGetterNode = GenerateAccessorNodeGen.create(context, sourceSection, true, null, null);
+            this.generateSetterNode = GenerateAccessorNodeGen.create(context, sourceSection, false, null, null);
         }
 
         @Specialization
-        public RubyBasicObject attrWriter(RubyModule module, Object[] args) {
+        public RubyBasicObject attr(VirtualFrame frame, RubyModule module, Object[] names) {
             CompilerDirectives.transferToInterpreter();
-
-            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
-
-            for (Object arg : args) {
-                final String accessorName;
-
-                if (arg instanceof RubySymbol) {
-                    accessorName = ((RubySymbol) arg).toString();
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-
-                attrWriter(this, getContext(), sourceSection, module, accessorName);
+            final boolean setter;
+            if (names.length == 2 && names[1] instanceof Boolean) {
+                setter = (boolean) names[1];
+                names = new Object[] { names[0] };
+            } else {
+                setter = false;
             }
 
+            for (Object name : names) {
+                generateGetterNode.executeGenerateAccessor(frame, module, name);
+                if (setter) {
+                    generateSetterNode.executeGenerateAccessor(frame, module, name);
+                }
+            }
             return nil();
         }
 
-        public static void attrWriter(Node currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
-            CompilerDirectives.transferToInterpreter();
-
-            final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, new Arity(1, 0, false, false, false, 0));
-
-            final SelfNode self = new SelfNode(context, sourceSection);
-            final ReadPreArgumentNode readArgument = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
-            final WriteInstanceVariableNode writeInstanceVariable = new WriteInstanceVariableNode(context, sourceSection, "@" + name, self, readArgument, false);
-
-            final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, writeInstanceVariable);
-
-            final String indicativeName = name + "(attr_writer)";
-
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.ONE_REQUIRED, indicativeName, false, null, false);
-            final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, block);
-            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final InternalMethod method = new InternalMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null);
-            module.addMethod(currentNode, method);
-        }
     }
 
-    @CoreMethod(names = {"attr_accessor", "attr"}, argumentsAsArray = true)
+    @CoreMethod(names = "attr_accessor", argumentsAsArray = true, visibility = Visibility.PRIVATE)
     public abstract static class AttrAccessorNode extends CoreMethodArrayArgumentsNode {
+
+        @Child GenerateAccessorNode generateGetterNode;
+        @Child GenerateAccessorNode generateSetterNode;
 
         public AttrAccessorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.generateGetterNode = GenerateAccessorNodeGen.create(context, sourceSection, true, null, null);
+            this.generateSetterNode = GenerateAccessorNodeGen.create(context, sourceSection, false, null, null);
         }
 
         @Specialization
-        public RubyBasicObject attrAccessor(RubyModule module, Object[] args) {
-            CompilerDirectives.transferToInterpreter();
-
-            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
-
-            for (Object arg : args) {
-                final String accessorName;
-
-                if (arg instanceof RubySymbol) {
-                    accessorName = ((RubySymbol) arg).toString();
-                } else if (arg instanceof RubyString) {
-                    accessorName = ((RubyString) arg).toString();
-                } else {
-                    throw new RaiseException(getContext().getCoreLibrary().typeError(" is not a symbol or string", this));
-                }
-
-                attrAccessor(this, getContext(), sourceSection, module, accessorName);
+        public RubyBasicObject attrAccessor(VirtualFrame frame, RubyModule module, Object[] names) {
+            for (Object name : names) {
+                generateGetterNode.executeGenerateAccessor(frame, module, name);
+                generateSetterNode.executeGenerateAccessor(frame, module, name);
             }
-
             return nil();
         }
 
-        public static void attrAccessor(Node currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
-            CompilerDirectives.transferToInterpreter();
-            AttrReaderNode.attrReader(currentNode, context, sourceSection, module, name);
-            AttrWriterNode.attrWriter(currentNode, context, sourceSection, module, name);
+    }
+
+    @CoreMethod(names = "attr_reader", argumentsAsArray = true, visibility = Visibility.PRIVATE)
+    public abstract static class AttrReaderNode extends CoreMethodArrayArgumentsNode {
+
+        @Child GenerateAccessorNode generateGetterNode;
+
+        public AttrReaderNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            this.generateGetterNode = GenerateAccessorNodeGen.create(context, sourceSection, true, null, null);
+        }
+
+        @Specialization
+        public RubyBasicObject attrReader(VirtualFrame frame, RubyModule module, Object[] names) {
+            for (Object name : names) {
+                generateGetterNode.executeGenerateAccessor(frame, module, name);
+            }
+            return nil();
+        }
+
+    }
+
+    @CoreMethod(names = "attr_writer", argumentsAsArray = true, visibility = Visibility.PRIVATE)
+    public abstract static class AttrWriterNode extends CoreMethodArrayArgumentsNode {
+
+        @Child GenerateAccessorNode generateSetterNode;
+
+        public AttrWriterNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            this.generateSetterNode = GenerateAccessorNodeGen.create(context, sourceSection, false, null, null);
+        }
+
+        @Specialization
+        public RubyBasicObject attrWriter(VirtualFrame frame, RubyModule module, Object[] names) {
+            for (Object name : names) {
+                generateSetterNode.executeGenerateAccessor(frame, module, name);
+            }
+            return nil();
         }
 
     }

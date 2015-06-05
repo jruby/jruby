@@ -16,6 +16,7 @@ class Truffle::BigDecimal < Numeric
   end
 
   alias_method :eql?, :==
+  alias_method :===, :==
 
   def coerce(other)
     [BigDecimal(other), self]

@@ -59,20 +59,21 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             Object receiverObject,
             Object methodName,
             RubyProc blockObject,
-            Object... argumentsObjects) throws UseMethodMissingException {
+            Object... argumentsObjects) {
         final Object value = call(frame, receiverObject, methodName, blockObject, argumentsObjects);
-
-        if (missingBehavior == MissingBehavior.RETURN_MISSING && value == DispatchNode.MISSING) {
-            throw new UseMethodMissingException();
-        }
 
         if (value instanceof Double) {
             return (double) value;
         }
 
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
-                receiverObject, context.getCoreLibrary().getFloatClass(), (String) methodName, value, this));
+        if (value == DispatchNode.MISSING) {
+            throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertInto(
+                    receiverObject, context.getCoreLibrary().getFloatClass(), this));
+        } else {
+            throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
+                    receiverObject, context.getCoreLibrary().getFloatClass(), (String) methodName, value, this));
+        }
     }
 
     public long callLongFixnum(
@@ -80,12 +81,8 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             Object receiverObject,
             Object methodName,
             RubyProc blockObject,
-            Object... argumentsObjects) throws UseMethodMissingException {
+            Object... argumentsObjects) {
         final Object value = call(frame, receiverObject, methodName, blockObject, argumentsObjects);
-
-        if (missingBehavior == MissingBehavior.RETURN_MISSING && value == DispatchNode.MISSING) {
-            throw new UseMethodMissingException();
-        }
 
         if (value instanceof Integer) {
             return (int) value;
@@ -96,8 +93,13 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
         }
 
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
-                receiverObject, context.getCoreLibrary().getFixnumClass(), (String) methodName, value, this));
+        if (value == DispatchNode.MISSING) {
+            throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertInto(
+                    receiverObject, context.getCoreLibrary().getFixnumClass(), this));
+        } else {
+            throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
+                    receiverObject, context.getCoreLibrary().getFixnumClass(), (String) methodName, value, this));
+        }
     }
 
 }

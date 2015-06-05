@@ -71,15 +71,16 @@ describe SpinnerFormatter, "#after" do
     @formatter.after @state
     @formatter.after @state
 
+    output = nil
     if ENV["TERM"] != "dumb"
-      $stdout.should == "\r[/ | ========          20%                    | 00:00:00] " \
-                        "\e[0;32m     0F \e[0;32m     0E\e[0m" \
-                        "\r[- | ========          20%                    | 00:00:00] " \
-                        "\e[0;32m     0F \e[0;32m     0E\e[0m"
+      output = "\r[/ | ========          20%                    | 00:00:00] " \
+               "\e[0;32m     0F \e[0;32m     0E\e[0m" \
+               "\r[- | ========          20%                    | 00:00:00] " \
+               "\e[0;32m     0F \e[0;32m     0E\e[0m"
     else
-      $stdout.should == "\r[/ | ========          20%                    | 00:00:00] " \
-                        "     0F      0E\r[- | ========          20%                 " \
-                        "   | 00:00:00]      0F      0E"
+      output = "\r[/ | ========          20%                    | 00:00:00]      0F      0E" \
+               "\r[- | ========          20%                    | 00:00:00]      0F      0E"
     end
+    $stdout.should == output
   end
 end

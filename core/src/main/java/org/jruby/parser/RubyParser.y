@@ -981,16 +981,16 @@ reswords        : k__LINE__ {
                 | kYIELD {
                     $$ = "yield";
                 }
-                | kIF_MOD {
+                | kIF {
                     $$ = "if";
                 }
-                | kUNLESS_MOD {
+                | kUNLESS {
                     $$ = "unless";
                 }
-                | kWHILE_MOD {
+                | kWHILE {
                     $$ = "while";
                 }
-                | kUNTIL_MOD {
+                | kUNTIL {
                     $$ = "until";
                 }
                 | kRESCUE_MOD {
@@ -1173,8 +1173,12 @@ arg             : lhs '=' arg {
                 | kDEFINED opt_nl arg {
                     $$ = support.new_defined($1, $3);
                 }
-                | arg '?' arg opt_nl ':' arg {
-                    $$ = new IfNode(support.getPosition($1), support.getConditionNode($1), $3, $6);
+                | arg '?' {
+                    lexer.getConditionState().begin();
+                } arg opt_nl ':' {
+                    lexer.getConditionState().end();
+                } arg {
+                    $$ = new IfNode(support.getPosition($1), support.getConditionNode($1), $4, $8);
                 }
                 | primary {
                     $$ = $1;
@@ -2011,13 +2015,17 @@ string_content  : tSTRING_CONTENT {
                 } {
                    $$ = lexer.getState();
                    lexer.setState(LexState.EXPR_BEG);
-                } compstmt tRCURLY {
+                } {
+                   $$ = lexer.getBraceNest();
+                   lexer.setBraceNest(0);
+                } compstmt tSTRING_DEND {
                    lexer.getConditionState().restart();
                    lexer.getCmdArgumentState().restart();
                    lexer.setStrTerm($<StrTerm>2);
                    lexer.setState($<LexState>3);
+                   lexer.setBraceNest($<Integer>4);
 
-                   $$ = support.newEvStrNode(support.getPosition($4), $4);
+                   $$ = support.newEvStrNode(support.getPosition($5), $5);
                 }
 
 string_dvar     : tGVAR {
@@ -2178,6 +2186,7 @@ superclass      : term {
                 }
                 | tLT {
                    lexer.setState(LexState.EXPR_BEG);
+                   lexer.commandStart = true;
                 } expr_value term {
                     $$ = $3;
                 }

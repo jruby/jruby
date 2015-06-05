@@ -6,6 +6,3 @@ fails:BigDecimal#** other powers of 0 are 0
 fails:BigDecimal#** returns NaN if self is NaN
 fails:BigDecimal#** returns 0.0 if self is infinite and argument is negative
 fails:BigDecimal#** returns infinite if self is infinite and argument is positive
-fails:BigDecimal#exponent returns an Integer
-fails:BigDecimal#exponent is n if number can be represented as 0.xxx*10**n
-fails:BigDecimal#exponent returns 0 if self is 0

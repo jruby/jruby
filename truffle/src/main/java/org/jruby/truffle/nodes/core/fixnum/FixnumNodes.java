@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -502,11 +503,14 @@ public abstract class FixnumNodes {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) < 0;
         }
 
-        @Specialization(guards = { "!isRubyBignum(b)", "!isInteger(b)", "!isLong(b)", "!isDouble(b)" })
-        public Object less(VirtualFrame frame, long a, Object b) {
+        @Specialization(guards = {
+                "!isRubyBignum(b)",
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)" })
+        public Object lessCoerced(VirtualFrame frame, long a, Object b) {
             return ruby(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
         }
-
     }
 
     @CoreMethod(names = "<=", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
@@ -539,6 +543,15 @@ public abstract class FixnumNodes {
         @Specialization(guards = "isRubyBignum(b)")
         public boolean lessEqual(long a, RubyBasicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) <= 0;
+        }
+
+        @Specialization(guards = {
+                "!isRubyBignum(b)",
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)" })
+        public Object lessEqualCoerced(VirtualFrame frame, long a, Object b) {
+            return ruby(frame, "b, a = math_coerce other, :compare_error; a <= b", "other", b);
         }
     }
 
@@ -580,8 +593,7 @@ public abstract class FixnumNodes {
         @Specialization(guards = {
                 "!isInteger(b)",
                 "!isLong(b)",
-                "!isRubyBignum(b)"
-        })
+                "!isRubyBignum(b)"})
         public Object equal(VirtualFrame frame, Object a, Object b) {
             return reverseCallNode.call(frame, b, "==", null, a);
         }
@@ -662,6 +674,15 @@ public abstract class FixnumNodes {
         public boolean greaterEqual(long a, RubyBasicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) >= 0;
         }
+
+        @Specialization(guards = {
+                "!isRubyBignum(b)",
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)"})
+        public Object greaterEqualCoerced(VirtualFrame frame, long a, Object b) {
+            return ruby(frame, "b, a = math_coerce other, :compare_error; a >= b", "other", b);
+        }
     }
 
     @CoreMethod(names = ">", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
@@ -698,11 +719,11 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = {
+                "!isRubyBignum(b)",
                 "!isInteger(b)",
                 "!isLong(b)",
-                "!isDouble(b)",
-                "!isRubyBignum(b)"})
-        public Object compare(VirtualFrame frame, Object a, Object b) {
+                "!isDouble(b)"})
+        public Object greaterCoerced(VirtualFrame frame, long a, Object b) {
             return ruby(frame, "b, a = math_coerce(other, :compare_error); a > b", "other", b);
         }
     }

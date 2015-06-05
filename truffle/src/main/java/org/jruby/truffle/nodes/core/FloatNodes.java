@@ -295,10 +295,13 @@ public abstract class FloatNodes {
             return a < BignumNodes.getBigIntegerValue(b).doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(other)")
-        public boolean less(double a, RubyBasicObject other) {
-            throw new RaiseException(getContext().getCoreLibrary().argumentError(
-                    String.format("comparison of Float with %s failed", other.getLogicalClass().getName()), this));
+        @Specialization(guards = {
+                "!isRubyBignum(b)",
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)"})
+        public Object lessCoerced(VirtualFrame frame, double a, Object b) {
+            return ruby(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
         }
     }
 
@@ -324,10 +327,13 @@ public abstract class FloatNodes {
             return a <= BignumNodes.getBigIntegerValue(b).doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(other)")
-        public boolean less(double a, RubyBasicObject other) {
-            throw new RaiseException(getContext().getCoreLibrary().argumentError(
-                    String.format("comparison of Float with %s failed", other.getLogicalClass().getName()), this));
+        @Specialization(guards = {
+                "!isRubyBignum(b)",
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)"})
+        public Object lessEqualCoerced(VirtualFrame frame, double a, Object b) {
+            return ruby(frame, "b, a = math_coerce other, :compare_error; a <= b", "other", b);
         }
     }
 
@@ -436,11 +442,15 @@ public abstract class FloatNodes {
             return a >= BignumNodes.getBigIntegerValue(b).doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(other)")
-        public boolean less(double a, RubyBasicObject other) {
-            throw new RaiseException(getContext().getCoreLibrary().argumentError(
-                    String.format("comparison of Float with %s failed", other.getLogicalClass().getName()), this));
+        @Specialization(guards = {
+                "!isRubyBignum(b)",
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)"})
+        public Object greaterEqualCoerced(VirtualFrame frame, double a, Object b) {
+            return ruby(frame, "b, a = math_coerce other, :compare_error; a >= b", "other", b);
         }
+
     }
 
     @CoreMethod(names = ">", required = 1)
@@ -465,9 +475,13 @@ public abstract class FloatNodes {
             return a > BignumNodes.getBigIntegerValue(b).doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(other)")
-        public Object greater(VirtualFrame frame, double a, RubyBasicObject other) {
-            return ruby(frame, "b, a = math_coerce(other, :compare_error); a > b", "other", other);
+        @Specialization(guards = {
+                "!isRubyBignum(b)",
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)"})
+        public Object greaterCoerced(VirtualFrame frame, double a, Object b) {
+            return ruby(frame, "b, a = math_coerce(other, :compare_error); a > b", "other", b);
         }
     }
 

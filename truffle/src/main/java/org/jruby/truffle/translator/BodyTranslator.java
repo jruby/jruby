@@ -68,6 +68,7 @@ import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.rubinius.CallRubiniusPrimitiveNode;
 import org.jruby.truffle.nodes.rubinius.InvokeRubiniusPrimitiveNode;
+import org.jruby.truffle.nodes.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveConstructor;
 import org.jruby.truffle.nodes.rubinius.RubiniusSingleBlockArgNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
@@ -1166,7 +1167,12 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitEvStrNode(org.jruby.ast.EvStrNode node) {
-        return node.getBody().accept(this);
+        if (node.getBody() == null) {
+            final SourceSection sourceSection = translate(node.getPosition());
+            return new LiteralNode(context, sourceSection, StringNodes.createEmptyString(context.getCoreLibrary().getStringClass()));
+        } else {
+            return node.getBody().accept(this);
+        }
     }
 
     @Override
@@ -1476,7 +1482,11 @@ public class BodyTranslator extends Translator {
             RubyNode readNode = environment.findLocalVarNode(name, sourceSection);
 
             if (name.equals("$_")) {
-                readNode = GetFromThreadLocalNodeGen.create(context, sourceSection, readNode);
+                if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/regexp.rb")) {
+                    readNode = new RubiniusLastStringReadNode(context, sourceSection);
+                } else {
+                    readNode = GetFromThreadLocalNodeGen.create(context, sourceSection, readNode);
+                }
             }
 
             return readNode;
@@ -1570,7 +1580,7 @@ public class BodyTranslator extends Translator {
         RubyNode rhs;
 
         if (node.getValueNode() == null) {
-            rhs = new DeadNode(context, sourceSection, "null RHS of instance variable assignment");
+            rhs = new DeadNode(context, sourceSection, new Exception("null RHS of instance variable assignment"));
         } else {
             rhs = node.getValueNode().accept(this);
         }
@@ -1763,7 +1773,7 @@ public class BodyTranslator extends Translator {
         RubyNode rhs;
 
         if (node.getValueNode() == null) {
-            rhs = new DeadNode(context, sourceSection, "null RHS of local variable assignment");
+            rhs = new DeadNode(context, sourceSection, new Exception());
         } else {
             if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
                 parentSourceSection.push(sourceSection);
@@ -2238,7 +2248,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitNilNode(org.jruby.ast.NilNode node) {
         if (node.getPosition() == InvalidSourcePosition.INSTANCE && parentSourceSection.peek() == null) {
-            return new DeadNode(context, null, "nil node with no invalid source position - assumed to be implicit null");
+            return new DeadNode(context, null, new Exception());
         }
 
         SourceSection sourceSection = translate(node.getPosition());
@@ -2463,22 +2473,10 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitRegexpNode(org.jruby.ast.RegexpNode node) {
-        Regex regex = RubyRegexp.compile(currentNode, context, node.getValue().bytes(), node.getEncoding(), node.getOptions().toJoniOptions());
+        Regex regex = RubyRegexp.compile(currentNode, context, node.getValue(), node.getOptions());
 
         final RubyRegexp regexp = new RubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, node.getValue(), node.getOptions());
-
-        // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
-        if (node.getOptions().isEncodingNone()) {
-            if (!all7Bit(node.getValue().bytes())) {
-                regexp.getSource().setEncoding(ASCIIEncoding.INSTANCE);
-            } else {
-                regexp.getSource().setEncoding(USASCIIEncoding.INSTANCE);
-            }
-        } else if (node.getOptions().getKCode().getKCode().equals("SJIS")) {
-            regexp.getSource().setEncoding(Windows_31JEncoding.INSTANCE);
-        } else if (node.getOptions().getKCode().getKCode().equals("UTF8")) {
-            regexp.getSource().setEncoding(UTF8Encoding.INSTANCE);
-        }
+        regexp.getOptions().setLiteral(true);
 
         final LiteralNode literalNode = new LiteralNode(context, translate(node.getPosition()), regexp);
 
@@ -2528,12 +2526,12 @@ public class BodyTranslator extends Translator {
 
         RubyNode tryPart;
 
-        if (node.getBodyNode() != null) {
-            tryPart = node.getBodyNode().accept(this);
-        } else {
+        if (node.getBodyNode() == null || node.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
             tryPart = new DefinedWrapperNode(context, sourceSection,
                     new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                     "nil");
+        } else {
+            tryPart = node.getBodyNode().accept(this);
         }
 
         final List<RescueNode> rescueNodes = new ArrayList<>();
@@ -2578,7 +2576,7 @@ public class BodyTranslator extends Translator {
 
                     RubyNode bodyTranslated;
 
-                    if (rescueBody.getBodyNode() == null) {
+                    if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
                         bodyTranslated = new DefinedWrapperNode(context, sourceSection,
                                 new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                                 "nil");
@@ -2594,7 +2592,7 @@ public class BodyTranslator extends Translator {
             } else {
                 RubyNode bodyNode;
 
-                if (rescueBody.getBodyNode() == null) {
+                if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
                     bodyNode = new DefinedWrapperNode(context, sourceSection,
                             new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                             "nil");
@@ -2611,12 +2609,12 @@ public class BodyTranslator extends Translator {
 
         RubyNode elsePart;
 
-        if (node.getElseNode() != null) {
-            elsePart = node.getElseNode().accept(this);
-        } else {
+        if (node.getElseNode() == null || node.getElseNode().getPosition() == InvalidSourcePosition.INSTANCE) {
             elsePart = new DefinedWrapperNode(context, sourceSection,
                     new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                     "nil");
+        } else {
+            elsePart = node.getElseNode().accept(this);
         }
 
         return new TryNode(context, sourceSection,

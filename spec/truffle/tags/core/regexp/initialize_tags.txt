@@ -1,2 +1,0 @@
-fails:Regexp#initialize raises a SecurityError on a Regexp literal
-fails:Regexp#initialize raises a TypeError on an initialized non-literal Regexp

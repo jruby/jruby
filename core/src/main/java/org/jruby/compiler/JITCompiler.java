@@ -38,6 +38,7 @@ import org.jruby.ast.util.SexpMaker;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.IRMethod;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -363,7 +364,13 @@ public class JITCompiler implements JITCompilerMBean {
             // Time the compilation
             long start = System.nanoTime();
 
-            method.ensureInstrsReady();
+            InterpreterContext ic = method.ensureInstrsReady();
+
+            int insnCount = ic.getInstructions().length;
+            if (insnCount > Options.JIT_MAXSIZE.load()) {
+                // methods with more than our limit of basic blocks are likely too large to JIT, so bail out
+                throw new NotCompilableException("Could not compile " + method + "; instruction count " + insnCount + " exceeds threshold of " + Options.JIT_MAXSIZE.load());
+            }
 
             // This may not be ok since we'll end up running passes specific to JIT
             // CON FIXME: Really should clone scope before passes in any case

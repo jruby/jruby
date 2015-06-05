@@ -17,6 +17,8 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.joni.*;
 import org.joni.exception.SyntaxException;
 import org.joni.exception.ValueException;
@@ -26,7 +28,9 @@ import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
+import org.jruby.util.CodeRangeable;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.RegexpSupport;
 import org.jruby.util.StringSupport;
 
 import java.nio.ByteBuffer;
@@ -34,6 +38,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import static org.jruby.util.KCode.*;
 
 /**
  * Represents the Ruby {@code Regexp} class.
@@ -43,7 +49,7 @@ public class RubyRegexp extends RubyBasicObject {
     // TODO(CS): not sure these compilation finals are correct - are they needed anyway?
     @CompilationFinal private Regex regex;
     @CompilationFinal private ByteList source;
-    @CompilationFinal private RegexpOptions options;
+    @CompilationFinal private RegexpOptions options = RegexpOptions.NULL_OPTIONS;
 
     private Object cachedNames;
 
@@ -54,15 +60,16 @@ public class RubyRegexp extends RubyBasicObject {
     public RubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, RegexpOptions options) {
         this(regexpClass);
         this.options = options;
-        initialize(compile(currentNode, getContext(), regex, options.toJoniOptions()), regex);
+        initialize(compile(currentNode, getContext(), regex, options), regex);
     }
 
     public RubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, int options) {
         this(regexpClass);
-        initialize(compile(currentNode, getContext(), regex, options), regex);
+        this.options = RegexpOptions.fromEmbeddedOptions(options);
+        initialize(compile(currentNode, getContext(), regex, this.options), regex);
     }
 
-    public RubyRegexp(RubyClass regexpClass, Regex regex, ByteList source, RegexpOptions options ) {
+    public RubyRegexp(RubyClass regexpClass, Regex regex, ByteList source, RegexpOptions options) {
         this(regexpClass);
         this.options = options;
         initialize(regex, source);
@@ -74,8 +81,9 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     public void initialize(Node currentNode, ByteList setSource, int options) {
-        regex = compile(currentNode, getContext(), setSource, options);
         source = setSource;
+        this.options = RegexpOptions.fromEmbeddedOptions(options);
+        regex = compile(currentNode, getContext(), setSource, this.options);
     }
 
     public void initialize(Regex setRegex, ByteList setSource) {
@@ -103,7 +111,10 @@ public class RubyRegexp extends RubyBasicObject {
     @TruffleBoundary
     public Object matchCommon(RubyString source, boolean operator, boolean setNamedCaptures, int startPos) {
         final byte[] stringBytes = StringNodes.getByteList(source).bytes();
-        final Matcher matcher = regex.matcher(stringBytes);
+
+        final ByteList bl = this.getSource();
+        final Regex r = new Regex(bl.getUnsafeBytes(), bl.getBegin(), bl.getBegin() + bl.getRealSize(), this.options.toJoniOptions(), checkEncoding(StringNodes.getCodeRangeable(source), true));
+        final Matcher matcher = r.matcher(stringBytes);
         int range = stringBytes.length;
 
         return matchCommon(source, operator, setNamedCaptures, matcher, startPos, range);
@@ -428,14 +439,49 @@ public class RubyRegexp extends RubyBasicObject {
         }
     }
 
-    public static Regex compile(Node currentNode, RubyContext context, ByteList bytes, int options) {
-        return compile(currentNode, context, bytes.bytes(), bytes.getEncoding(), options);
-    }
-
     @TruffleBoundary
-    public static Regex compile(Node currentNode, RubyContext context, byte[] bytes, Encoding encoding, int options) {
+    public static Regex compile(Node currentNode, RubyContext context, ByteList bytes, RegexpOptions options) {
         try {
-            return new Regex(bytes, 0, bytes.length, options, encoding, Syntax.RUBY);
+            /*
+                    // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
+        if (node.getOptions().isEncodingNone()) {
+            if (!all7Bit(node.getValue().bytes())) {
+                regexp.getSource().setEncoding(ASCIIEncoding.INSTANCE);
+            } else {
+                regexp.getSource().setEncoding(USASCIIEncoding.INSTANCE);
+            }
+        } else if (node.getOptions().getKCode().getKCode().equals("SJIS")) {
+            regexp.getSource().setEncoding(Windows_31JEncoding.INSTANCE);
+        } else if (node.getOptions().getKCode().getKCode().equals("UTF8")) {
+            regexp.getSource().setEncoding(UTF8Encoding.INSTANCE);
+        }
+             */
+
+            Encoding enc = bytes.getEncoding();
+            Encoding[] fixedEnc = new Encoding[]{null};
+            ByteList unescaped = RegexpSupport.preprocess(context.getRuntime(), bytes, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
+            if (fixedEnc[0] != null) {
+                if ((fixedEnc[0] != enc && options.isFixed()) ||
+                        (fixedEnc[0] != ASCIIEncoding.INSTANCE && options.isEncodingNone())) {
+                    RegexpSupport.raiseRegexpError19(context.getRuntime(), bytes, enc, options, "incompatible character encoding");
+                }
+                if (fixedEnc[0] != ASCIIEncoding.INSTANCE) {
+                    options.setFixed(true);
+                    enc = fixedEnc[0];
+                }
+            } else if (!options.isFixed()) {
+                enc = USASCIIEncoding.INSTANCE;
+            }
+
+            if (fixedEnc[0] != null) options.setFixed(true);
+            //if (regexpOptions.isEncodingNone()) setEncodingNone();
+
+            bytes.setEncoding(enc);
+
+            Regex ret = new Regex(unescaped.getUnsafeBytes(), unescaped.getBegin(), unescaped.getBegin() + unescaped.getRealSize(), options.toJoniOptions(), enc, Syntax.RUBY);
+            ret.setUserObject(bytes);
+
+            return ret;
         } catch (ValueException e) {
             throw new org.jruby.truffle.runtime.control.RaiseException(context.getCoreLibrary().runtimeError("error compiling regex", currentNode));
         } catch (SyntaxException e) {
@@ -455,9 +501,42 @@ public class RubyRegexp extends RubyBasicObject {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyRegexp(context.getCoreLibrary().getRegexpClass());
+            return new RubyRegexp(rubyClass);
         }
 
+    }
+
+    // TODO (nirvdrum 03-June-15) Unify with JRuby in RegexpSupport.
+    public Encoding checkEncoding(CodeRangeable str, boolean warn) {
+        final Regex pattern = this.regex;
+
+        /*
+        if (str.scanForCodeRange() == StringSupport.CR_BROKEN) {
+            throw getRuntime().newArgumentError("invalid byte sequence in " + str.getEncoding());
+        }
+        */
+        //check();
+        Encoding enc = str.getByteList().getEncoding();
+        if (!enc.isAsciiCompatible()) {
+            if (enc != pattern.getEncoding()) {
+                //encodingMatchError(getRuntime(), pattern, enc);
+            }
+        } else if (options.isFixed()) {
+            /*
+            if (enc != pattern.getEncoding() &&
+                    (!pattern.getEncoding().isAsciiCompatible() ||
+                            str.scanForCodeRange() != StringSupport.CR_7BIT)) {
+                encodingMatchError(getRuntime(), pattern, enc);
+            }
+            */
+            enc = pattern.getEncoding();
+        }
+        /*
+        if (warn && this.options.isEncodingNone() && enc != ASCIIEncoding.INSTANCE && str.scanForCodeRange() != StringSupport.CR_7BIT) {
+            getRuntime().getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "regexp match /.../n against to " + enc + " string");
+        }
+        */
+        return enc;
     }
 
 }

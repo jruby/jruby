@@ -1,0 +1,1 @@
+fails:StringScanner#getbyte is not multi-byte character sensitive
