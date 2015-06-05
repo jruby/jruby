@@ -21,3 +21,6 @@ fails:Module#prepend does not import constants
 fails:Module#prepend does not import methods to modules and classes
 fails:Module#prepend accepts no-arguments
 fails:Module#prepend supports super when the module is prepended into a singleton class
+fails:Module#prepend reports the prepended module as the method owner
+fails:Module#prepend reports the prepended module as the unbound method owner
+fails:Module#prepend causes the prepended module's method to be aliased by alias_method

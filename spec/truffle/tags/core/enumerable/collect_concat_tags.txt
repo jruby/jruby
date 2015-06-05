@@ -1,0 +1,2 @@
+fails:Enumerable#collect_concat appends an element that defines #to_ary that returns nil
+fails:Enumerable#collect_concat Enumerable with size when no block is given returned Enumerator size returns the enumerable size

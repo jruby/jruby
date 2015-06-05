@@ -21,3 +21,4 @@ fails:Proc#curry with arity argument returns a Proc that consumes the remainder 
 fails:Proc#curry with arity argument can be specified multiple times on the same Proc
 fails:Proc#curry with arity argument raises an ArgumentError if passed more than _arity_ arguments when created from a lambda
 fails:Proc#curry with arity argument returns Procs with arities of -1 regardless of the value of _arity_
+fails:Proc#curry combines arguments and calculates incoming arity accurately for successively currying
