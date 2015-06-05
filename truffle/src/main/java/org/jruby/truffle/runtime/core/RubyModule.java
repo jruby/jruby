@@ -36,7 +36,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      */
     private static class IncludedModule implements ModuleChain {
         private final RubyModule includedModule;
-        private final ModuleChain parentModule;
+        @CompilationFinal private ModuleChain parentModule;
 
         public IncludedModule(RubyModule includedModule, ModuleChain parentModule) {
             this.includedModule = includedModule;
@@ -56,6 +56,11 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         @Override
         public String toString() {
             return super.toString() + "(" + includedModule + ")";
+        }
+
+        @Override
+        public void insertAfter(RubyModule module) {
+            parentModule = new IncludedModule(module, parentModule);
         }
     }
 
@@ -171,6 +176,11 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         }
     }
 
+    @Override
+    public void insertAfter(RubyModule module) {
+        parentModule = new IncludedModule(module, parentModule);
+    }
+
     @TruffleBoundary
     public void include(Node currentNode, RubyModule module) {
         checkFrozen(currentNode);
@@ -180,20 +190,51 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("cyclic include detected", currentNode));
         }
 
-        // We need to traverse the module chain in reverse order
-        Stack<RubyModule> moduleAncestors = new Stack<>();
+        // We need to include the module ancestors in reverse order for a given inclusionPoint
+        ModuleChain inclusionPoint = this;
+        Stack<RubyModule> modulesToInclude = new Stack<>();
         for (RubyModule ancestor : module.ancestors()) {
-            moduleAncestors.push(ancestor);
-        }
+            if (ModuleOperations.includesModule(this, ancestor)) {
+                if (isIncludedModuleBeforeSuperClass(ancestor)) {
+                    // Include the modules at the appropriate inclusionPoint
+                    performIncludes(inclusionPoint, modulesToInclude);
+                    assert modulesToInclude.isEmpty();
 
-        while (!moduleAncestors.isEmpty()) {
-            RubyModule mod = moduleAncestors.pop();
-            if (!ModuleOperations.includesModule(this, mod)) {
-                parentModule = new IncludedModule(mod, parentModule);
-                mod.addDependent(this);
+                    // We need to include the others after that module
+                    inclusionPoint = parentModule;
+                    while (inclusionPoint.getActualModule() != ancestor) {
+                        inclusionPoint = inclusionPoint.getParentModule();
+                    }
+                } else {
+                    // Just ignore this module, as it is included above the superclass
+                }
+            } else {
+                modulesToInclude.push(ancestor);
             }
         }
+
+        performIncludes(inclusionPoint, modulesToInclude);
+
         newVersion();
+    }
+
+    private void performIncludes(ModuleChain inclusionPoint, Stack<RubyModule> moduleAncestors) {
+        while (!moduleAncestors.isEmpty()) {
+            RubyModule mod = moduleAncestors.pop();
+            inclusionPoint.insertAfter(mod);
+            mod.addDependent(this);
+        }
+    }
+
+    private boolean isIncludedModuleBeforeSuperClass(RubyModule module) {
+        boolean isDirectlyIncluded = false;
+        for (RubyModule includedModule : includedModules()) {
+            if (includedModule == module) {
+                isDirectlyIncluded = true;
+                break;
+            }
+        }
+        return isDirectlyIncluded;
     }
 
     /**

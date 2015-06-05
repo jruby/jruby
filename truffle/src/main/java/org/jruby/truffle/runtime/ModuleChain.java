@@ -19,4 +19,6 @@ public interface ModuleChain {
     ModuleChain getParentModule();
 
     RubyModule getActualModule();
+
+    void insertAfter(RubyModule module);
 }
