@@ -59,17 +59,17 @@ public class SymbolCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public void modify() {
-        SymbolNodes.modify();
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void modify(int length) {
-        SymbolNodes.modify(length);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void modifyAndKeepCodeRange() {
-        SymbolNodes.modifyAndKeepCodeRange(symbol);
+        throw new UnsupportedOperationException();
     }
 
     @Override

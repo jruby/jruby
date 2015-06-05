@@ -89,19 +89,6 @@ public abstract class SymbolNodes {
         }
     }
 
-    public static void modify() {
-        throw new UnsupportedOperationException();
-    }
-
-    public static void modify(int length) {
-        throw new UnsupportedOperationException();
-    }
-
-    public static void modifyAndKeepCodeRange(RubySymbol symbol) {
-        modify();
-        keepCodeRange(symbol);
-    }
-
     public static Encoding checkEncoding(RubySymbol symbol, CodeRangeable other) {
         // TODO (nirvdrum Jan. 13, 2015): This should check if the encodings are compatible rather than just always succeeding.
         return symbol.bytes.getEncoding();
