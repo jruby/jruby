@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import org.jcodings.Encoding;
+import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 
@@ -28,57 +29,57 @@ public class SymbolCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public int getCodeRange() {
-        return symbol.getCodeRange();
+        return SymbolNodes.getCodeRange(symbol);
     }
 
     @Override
     public int scanForCodeRange() {
-        return symbol.scanForCodeRange();
+        return SymbolNodes.scanForCodeRange(symbol);
     }
 
     @Override
     public boolean isCodeRangeValid() {
-        return symbol.isCodeRangeValid();
+        return SymbolNodes.isCodeRangeValid(symbol);
     }
 
     @Override
     public void setCodeRange(int codeRange) {
-        symbol.setCodeRange(codeRange);
+        SymbolNodes.setCodeRange(symbol, codeRange);
     }
 
     @Override
     public void clearCodeRange() {
-        symbol.clearCodeRange();
+        SymbolNodes.clearCodeRange(symbol);
     }
 
     @Override
     public void keepCodeRange() {
-        symbol.keepCodeRange();
+        SymbolNodes.keepCodeRange(symbol);
     }
 
     @Override
     public void modify() {
-        symbol.modify();
+        SymbolNodes.modify();
     }
 
     @Override
     public void modify(int length) {
-        symbol.modify(length);
+        SymbolNodes.modify(length);
     }
 
     @Override
     public void modifyAndKeepCodeRange() {
-        symbol.modifyAndKeepCodeRange();
+        SymbolNodes.modifyAndKeepCodeRange(symbol);
     }
 
     @Override
     public Encoding checkEncoding(CodeRangeable other) {
-        return symbol.checkEncoding(other);
+        return SymbolNodes.checkEncoding(symbol, other);
     }
 
     @Override
     public ByteList getByteList() {
-        return symbol.getByteList();
+        return SymbolNodes.getByteList(symbol);
     }
 
 }

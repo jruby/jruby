@@ -9,20 +9,112 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.Encoding;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.methods.SymbolProcNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyEncoding;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.methods.Arity;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
+import org.jruby.util.CodeRangeable;
+import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
+
+    public static SymbolCodeRangeableWrapper getCodeRangeable(RubySymbol symbol) {
+        if (symbol.codeRangeableWrapper == null) {
+            symbol.codeRangeableWrapper = new SymbolCodeRangeableWrapper(symbol);
+        }
+
+        return symbol.codeRangeableWrapper;
+    }
+
+    public static RubyProc toProc(RubySymbol symbol, SourceSection sourceSection, final Node currentNode) {
+        // TODO(CS): cache this?
+
+        final RubyContext context = symbol.getContext();
+
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, symbol.symbol, true, null, false);
+
+        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, new FrameDescriptor(), sharedMethodInfo,
+                new SymbolProcNode(context, sourceSection, symbol.symbol));
+
+        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+
+        return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo, callTarget,
+                callTarget, callTarget, null, null, symbol.getContext().getCoreLibrary().getNilObject(), null);
+    }
+
+    public static int getCodeRange(RubySymbol symbol) {
+        return symbol.codeRange;
+    }
+
+    @TruffleBoundary
+    public static int scanForCodeRange(RubySymbol symbol) {
+        int cr = getCodeRange(symbol);
+
+        if (cr == StringSupport.CR_UNKNOWN) {
+            cr = slowCodeRangeScan(symbol);
+            setCodeRange(symbol, cr);
+        }
+
+        return cr;
+    }
+
+    public static boolean isCodeRangeValid(RubySymbol symbol) {
+        return symbol.codeRange == StringSupport.CR_VALID;
+    }
+
+    public static void setCodeRange(RubySymbol symbol, int codeRange) {
+        symbol.codeRange = codeRange;
+    }
+
+    public static void clearCodeRange(RubySymbol symbol) {
+        symbol.codeRange = StringSupport.CR_UNKNOWN;
+    }
+
+    public static void keepCodeRange(RubySymbol symbol) {
+        if (getCodeRange(symbol) == StringSupport.CR_BROKEN) {
+            clearCodeRange(symbol);
+        }
+    }
+
+    public static void modify() {
+        throw new UnsupportedOperationException();
+    }
+
+    public static void modify(int length) {
+        throw new UnsupportedOperationException();
+    }
+
+    public static void modifyAndKeepCodeRange(RubySymbol symbol) {
+        modify();
+        keepCodeRange(symbol);
+    }
+
+    public static Encoding checkEncoding(RubySymbol symbol, CodeRangeable other) {
+        // TODO (nirvdrum Jan. 13, 2015): This should check if the encodings are compatible rather than just always succeeding.
+        return symbol.bytes.getEncoding();
+    }
+
+    public static ByteList getByteList(RubySymbol symbol) {
+        return symbol.bytes;
+    }
+
+    @TruffleBoundary
+    private static int slowCodeRangeScan(RubySymbol symbol) {
+        return StringSupport.codeRangeScan(symbol.bytes.getEncoding(), symbol.bytes);
+    }
 
     @CoreMethod(names = {"==", "==="}, required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
@@ -54,7 +146,7 @@ public abstract class SymbolNodes {
         @TruffleBoundary
         @Specialization
         public int compare(RubySymbol a, RubySymbol b) {
-            return a.getByteList().cmp(b.getByteList());
+            return getByteList(a).cmp(getByteList(b));
         }
 
         @Specialization(guards = "!isRubySymbol(other)")
@@ -92,7 +184,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubySymbol capitalize(RubySymbol symbol) {
-            final ByteList byteList = SymbolNodesHelper.capitalize(symbol.getByteList());
+            final ByteList byteList = SymbolNodesHelper.capitalize(getByteList(symbol));
             return getContext().getSymbol(byteList);
         }
 
@@ -108,7 +200,7 @@ public abstract class SymbolNodes {
         @TruffleBoundary
         @Specialization
         public int caseCompare(RubySymbol symbol, RubySymbol other) {
-            return symbol.getByteList().caseInsensitiveCmp(other.getByteList());
+            return getByteList(symbol).caseInsensitiveCmp(getByteList(other));
         }
 
         @Specialization(guards = "!isRubySymbol(other)")
@@ -128,7 +220,7 @@ public abstract class SymbolNodes {
         @TruffleBoundary
         @Specialization
         public RubySymbol downcase(RubySymbol symbol) {
-            final ByteList byteList = SymbolNodesHelper.downcase(symbol.getByteList());
+            final ByteList byteList = SymbolNodesHelper.downcase(getByteList(symbol));
             return getContext().getSymbol(byteList);
         }
 
@@ -157,7 +249,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubyEncoding encoding(RubySymbol symbol) {
-            return RubyEncoding.getEncoding(symbol.getByteList().getEncoding());
+            return RubyEncoding.getEncoding(getByteList(symbol).getEncoding());
         }
 
     }
@@ -201,7 +293,7 @@ public abstract class SymbolNodes {
         @Specialization
         public RubyProc toProc(RubySymbol symbol) {
             // TODO(CS): this should be doing all kinds of caching
-            return symbol.toProc(Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection(), this);
+            return SymbolNodes.toProc(symbol, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection(), this);
         }
     }
 
@@ -228,7 +320,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubyBasicObject toS(RubySymbol symbol) {
-            return createString(symbol.getSymbolBytes().dup());
+            return createString(getByteList(symbol).dup());
         }
 
     }
@@ -243,7 +335,7 @@ public abstract class SymbolNodes {
         @TruffleBoundary
         @Specialization
         public RubyBasicObject inspect(RubySymbol symbol) {
-            return createString(symbol.getJRubySymbol().inspect(getContext().getRuntime().getCurrentContext()).asString().decodeString());
+            return createString(symbol.getContext().toJRuby(symbol).inspect(getContext().getRuntime().getCurrentContext()).asString().decodeString());
         }
 
     }
@@ -257,7 +349,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public int size(RubySymbol symbol) {
-            return symbol.getByteList().lengthEnc();
+            return getByteList(symbol).lengthEnc();
         }
 
     }
@@ -271,7 +363,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubySymbol swapcase(RubySymbol symbol) {
-            final ByteList byteList = SymbolNodesHelper.swapcase(symbol.getByteList());
+            final ByteList byteList = SymbolNodesHelper.swapcase(getByteList(symbol));
             return getContext().getSymbol(byteList);
         }
 
@@ -286,7 +378,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubySymbol upcase(RubySymbol symbol) {
-            final ByteList byteList = SymbolNodesHelper.upcase(symbol.getByteList());
+            final ByteList byteList = SymbolNodesHelper.upcase(getByteList(symbol));
             return getContext().getSymbol(byteList);
         }
 

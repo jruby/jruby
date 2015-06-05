@@ -24,6 +24,7 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -764,7 +765,7 @@ public abstract class ModuleNodes {
             final RubyBasicObject array = ArrayNodes.createEmptyArray(module.getContext().getCoreLibrary().getArrayClass());
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
-                ArrayNodes.slowPush(array, RubySymbol.newSymbol(module.getContext(), variable));
+                ArrayNodes.slowPush(array, module.getContext().getSymbolTable().getSymbol(variable, ASCIIEncoding.INSTANCE));
             }
             return array;
         }
