@@ -2285,8 +2285,8 @@ public abstract class ArrayNodes {
             return initial;
         }
 
-        @Specialization
-        public Object inject(VirtualFrame frame, RubyArray array, RubySymbol symbol, NotProvided block) {
+        @Specialization(guards = "isRubySymbol(symbol)")
+        public Object inject(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
             final Object[] store = slowToArray(array);

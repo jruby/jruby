@@ -40,8 +40,8 @@ public abstract class NameToSymbolOrStringNode extends RubyNode {
 
     public abstract RubyBasicObject executeToSymbolOrString(VirtualFrame frame, Object name);
 
-    @Specialization
-    public RubySymbol coerceRubySymbol(RubySymbol symbol) {
+    @Specialization(guards = "isRubySymbol(symbol)")
+    public RubyBasicObject coerceRubySymbol(RubyBasicObject symbol) {
         return symbol;
     }
 

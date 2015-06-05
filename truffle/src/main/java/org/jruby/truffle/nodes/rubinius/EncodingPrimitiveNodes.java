@@ -36,9 +36,9 @@ public abstract class EncodingPrimitiveNodes {
             return RubyEncoding.getEncoding(StringNodes.getByteList(string).getEncoding());
         }
 
-        @Specialization
-        public RubyEncoding encodingGetObjectEncoding(RubySymbol symbol) {
-            return RubyEncoding.getEncoding(SymbolNodes.getByteList(symbol).getEncoding());
+        @Specialization(guards = "isRubySymbol(symbol)")
+        public RubyEncoding encodingGetObjectEncodingSymbol(RubyBasicObject symbol) {
+            return RubyEncoding.getEncoding(SymbolNodes.getByteList((RubySymbol) symbol).getEncoding());
         }
 
         @Specialization

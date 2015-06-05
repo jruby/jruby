@@ -62,8 +62,8 @@ public abstract class IsFrozenNode extends RubyNode {
         return true;
     }
 
-    @Specialization
-    public boolean isFrozen(RubySymbol object) {
+    @Specialization(guards = "isRubySymbol(symbol)")
+    public boolean isFrozenSymbol(RubyBasicObject symbol) {
         return true;
     }
 

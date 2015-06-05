@@ -51,8 +51,8 @@ public abstract class IsTaintedNode extends RubyNode {
         return false;
     }
 
-    @Specialization
-    public boolean isTainted(RubySymbol object) {
+    @Specialization(guards = "isRubySymbol(symbol)")
+    public boolean isTaintedSymbol(RubyBasicObject symbol) {
         return false;
     }
 

@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 
@@ -39,8 +40,8 @@ public abstract class NameToJavaStringNode extends RubyNode {
 
     public abstract String executeToJavaString(VirtualFrame frame, Object name);
 
-    @Specialization
-    public String coerceRubySymbol(RubySymbol symbol) {
+    @Specialization(guards = "isRubySymbol(symbol)")
+    public String coerceRubySymbol(RubyBasicObject symbol) {
         return symbol.toString();
     }
 

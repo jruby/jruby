@@ -51,9 +51,9 @@ public abstract class TaintNode extends RubyNode {
         return frozen(object);
     }
 
-    @Specialization
-    public Object taint(RubySymbol object) {
-        return frozen(object);
+    @Specialization(guards = "isRubySymbol(symbol)")
+    public Object taintSymbol(RubyBasicObject symbol) {
+        return frozen(symbol);
     }
 
     @Specialization(guards = "!isRubySymbol(object)")
