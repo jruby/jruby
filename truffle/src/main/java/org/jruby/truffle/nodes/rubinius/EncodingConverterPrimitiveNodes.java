@@ -137,7 +137,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                     outBytes.setEncoding(ec.destinationEncoding);
                 }
 
-                return getContext().getSymbol(res.symbolicName());
+                return getSymbol(res.symbolicName());
             }
         }
 
@@ -213,13 +213,13 @@ public abstract class EncodingConverterPrimitiveNodes {
 
             Object ret = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
 
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("result"), eConvResultToSymbol(lastError.getResult()));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("source_encoding_name"), createString(new ByteList(lastError.getSource())));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("destination_encoding_name"), createString(new ByteList(lastError.getDestination())));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("error_bytes"), createString(new ByteList(lastError.getErrorBytes())));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("result"), eConvResultToSymbol(lastError.getResult()));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("source_encoding_name"), createString(new ByteList(lastError.getSource())));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("destination_encoding_name"), createString(new ByteList(lastError.getDestination())));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("error_bytes"), createString(new ByteList(lastError.getErrorBytes())));
 
             if (lastError.getReadAgainLength() != 0) {
-                lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("read_again_bytes"), lastError.getReadAgainLength());
+                lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("read_again_bytes"), lastError.getReadAgainLength());
             }
 
             return ret;
@@ -227,13 +227,13 @@ public abstract class EncodingConverterPrimitiveNodes {
 
         private RubySymbol eConvResultToSymbol(EConvResult result) {
             switch(result) {
-                case InvalidByteSequence: return getContext().getSymbol("invalid_byte_sequence");
-                case UndefinedConversion: return getContext().getSymbol("undefined_conversion");
-                case DestinationBufferFull: return getContext().getSymbol("destination_buffer_full");
-                case SourceBufferEmpty: return getContext().getSymbol("source_buffer_empty");
-                case Finished: return getContext().getSymbol("finished");
-                case AfterOutput: return getContext().getSymbol("after_output");
-                case IncompleteInput: return getContext().getSymbol("incomplete_input");
+                case InvalidByteSequence: return getSymbol("invalid_byte_sequence");
+                case UndefinedConversion: return getSymbol("undefined_conversion");
+                case DestinationBufferFull: return getSymbol("destination_buffer_full");
+                case SourceBufferEmpty: return getSymbol("source_buffer_empty");
+                case Finished: return getSymbol("finished");
+                case AfterOutput: return getSymbol("after_output");
+                case IncompleteInput: return getSymbol("incomplete_input");
             }
 
             throw new UnsupportedOperationException(String.format("Unknown EConv result: %s", result));
@@ -254,7 +254,7 @@ public abstract class EncodingConverterPrimitiveNodes {
 
             final EConv ec = encodingConverter.getEConv();
 
-            final Object[] ret = { getContext().getSymbol(ec.lastError.getResult().symbolicName()), nil(), nil(), nil(), nil() };
+            final Object[] ret = { getSymbol(ec.lastError.getResult().symbolicName()), nil(), nil(), nil(), nil() };
 
             if (ec.lastError.getSource() != null) {
                 ret[1] = createString(new ByteList(ec.lastError.getSource()));

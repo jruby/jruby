@@ -41,7 +41,7 @@ public class ReturnEnumeratorIfNoBlockNode extends RubyNode {
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return toEnumNode.call(frame, RubyArguments.getSelf(frame.getArguments()), "to_enum", null, RubyArguments.extractUserArgumentsWithUnshift(getContext().getSymbolTable().getSymbol(methodName), frame.getArguments()));
+            return toEnumNode.call(frame, RubyArguments.getSelf(frame.getArguments()), "to_enum", null, RubyArguments.extractUserArgumentsWithUnshift(getSymbol(methodName), frame.getArguments()));
 
         } else {
 

@@ -64,7 +64,7 @@ public class AddMethodNode extends RubyNode {
             module.addMethod(this, method);
         }
 
-        return getContext().getSymbol(method.getName());
+        return getSymbol(method.getName());
     }
 
     private static Visibility getVisibility(Frame frame, String name) {

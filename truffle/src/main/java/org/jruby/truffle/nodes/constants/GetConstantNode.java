@@ -63,7 +63,7 @@ public abstract class GetConstantNode extends RubyNode {
     protected Object missingConstant(VirtualFrame frame, RubyModule module, String name, Object constant,
             @Cached("isValidConstantName(name)") boolean isValidConstantName,
             @Cached("createConstMissingNode()") CallDispatchHeadNode constMissingNode,
-            @Cached("getContext().getSymbol(name)") RubySymbol symbolName) {
+            @Cached("getSymbol(name)") RubySymbol symbolName) {
         if (!isValidConstantName) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, this));

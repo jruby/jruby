@@ -225,7 +225,7 @@ public abstract class RegexpNodes {
 
             for (final Iterator<NameEntry> i = regexp.getRegex().namedBackrefIterator(); i.hasNext();) {
                 final NameEntry e = i.next();
-                final RubySymbol name = getContext().getSymbol(new ByteList(e.name, e.nameP, e.nameEnd - e.nameP, false));
+                final RubySymbol name = getSymbol(new ByteList(e.name, e.nameP, e.nameEnd - e.nameP, false));
 
                 final int[] backrefs = e.getBackRefs();
                 final RubyBasicObject backrefsRubyArray = ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), backrefs, backrefs.length);

@@ -239,6 +239,14 @@ public abstract class RubyNode extends Node {
         return getContext().getCoreLibrary().getNilObject();
     }
 
+    public RubySymbol getSymbol(String name) {
+        return getContext().getSymbol(name);
+    }
+
+    public RubySymbol getSymbol(ByteList name) {
+        return getContext().getSymbol(name);
+    }
+
     protected RubyBasicObject createEmptyString() {
         return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
     }

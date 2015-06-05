@@ -765,7 +765,7 @@ public abstract class ModuleNodes {
             final RubyBasicObject array = ArrayNodes.createEmptyArray(module.getContext().getCoreLibrary().getArrayClass());
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
-                ArrayNodes.slowPush(array, module.getContext().getSymbolTable().getSymbol(variable, ASCIIEncoding.INSTANCE));
+                ArrayNodes.slowPush(array, getSymbol(variable));
             }
             return array;
         }
@@ -808,7 +808,7 @@ public abstract class ModuleNodes {
 
             for (Entry<String, RubyConstant> constant : constants.entrySet()) {
                 if (!constant.getValue().isPrivate()) {
-                    constantsArray.add(getContext().getSymbol(constant.getKey()));
+                    constantsArray.add(getSymbol(constant.getKey()));
                 }
             }
 
@@ -1041,7 +1041,7 @@ public abstract class ModuleNodes {
         @Specialization(guards = "isRubyMethod(method)")
         public RubySymbol defineMethod(RubyModule module, String name, RubyBasicObject method, NotProvided block) {
             module.addMethod(this, MethodNodes.getMethod(method).withName(name));
-            return getContext().getSymbolTable().getSymbol(name);
+            return getSymbol(name);
         }
 
         @Specialization(guards = "isRubyUnboundMethod(method)")
@@ -1077,7 +1077,7 @@ public abstract class ModuleNodes {
             }
 
             module.addMethod(this, method);
-            return getContext().getSymbolTable().getSymbol(name);
+            return getSymbol(name);
         }
 
     }
@@ -1775,7 +1775,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
             if (module.getMethods().containsKey(name)) {
                 module.removeMethod(name);
-                methodRemovedNode.call(frame, module, "method_removed", null, getContext().getSymbol(name));
+                methodRemovedNode.call(frame, module, "method_removed", null, getSymbol(name));
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorMethodNotDefinedIn(module, name, this));
@@ -1829,7 +1829,7 @@ public abstract class ModuleNodes {
 
             if (method != null) {
                 module.undefMethod(this, method);
-                methodUndefinedNode.call(frame, module, "method_undefined", null, getContext().getSymbol(name));
+                methodUndefinedNode.call(frame, module, "method_undefined", null, getSymbol(name));
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnModule(name, module, this));

@@ -72,7 +72,7 @@ public abstract class BindingNodes {
 
         public LocalVariableGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dollarUnderscore = getContext().getSymbol("$_");
+            dollarUnderscore = getSymbol("$_");
         }
 
         @Specialization(guards = {
@@ -168,7 +168,7 @@ public abstract class BindingNodes {
 
         public LocalVariableSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dollarUnderscore = getContext().getSymbol("$_");
+            dollarUnderscore = getSymbol("$_");
         }
 
         @Specialization(guards = {
@@ -249,7 +249,7 @@ public abstract class BindingNodes {
             while (frame != null) {
                 for (Object name : frame.getFrameDescriptor().getIdentifiers()) {
                     if (name instanceof String) {
-                        ArrayNodes.slowPush(array, getContext().getSymbol((String) name));
+                        ArrayNodes.slowPush(array, getSymbol((String) name));
                     }
                 }
 

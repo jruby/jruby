@@ -37,12 +37,12 @@ public abstract class ToSymbolNode extends RubyNode {
 
     @Specialization
     protected RubySymbol toSymbol(RubyString string) {
-        return getContext().getSymbol(StringNodes.getByteList(string));
+        return getSymbol(StringNodes.getByteList(string));
     }
 
     @Specialization
     protected RubySymbol toSymbol(String string) {
-        return getContext().getSymbol(string);
+        return getSymbol(string);
     }
 
 }

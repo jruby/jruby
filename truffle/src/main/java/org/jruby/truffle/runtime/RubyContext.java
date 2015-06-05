@@ -27,7 +27,6 @@ import jnr.ffi.LibraryLoader;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
@@ -288,18 +287,10 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return symbolTable;
     }
 
-
-    @TruffleBoundary
     public RubySymbol getSymbol(String name) {
-        return symbolTable.getSymbol(name, ASCIIEncoding.INSTANCE);
+        return symbolTable.getSymbol(name);
     }
 
-    @TruffleBoundary
-    public RubySymbol getSymbol(String name, Encoding encoding) {
-        return symbolTable.getSymbol(name, encoding);
-    }
-
-    @TruffleBoundary
     public RubySymbol getSymbol(ByteList name) {
         return symbolTable.getSymbol(name);
     }

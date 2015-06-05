@@ -1494,7 +1494,7 @@ public abstract class ArrayNodes {
 
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eachSymbol = getContext().getSymbol("each");
+            eachSymbol = getSymbol("each");
         }
 
         @Specialization

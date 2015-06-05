@@ -10,7 +10,6 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
@@ -20,52 +19,44 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SymbolTable {
 
-    private final ConcurrentHashMap<ByteList, RubySymbol> symbolsTable = new ConcurrentHashMap<>();
     private final RubyContext context;
+
+    private final ConcurrentHashMap<ByteList, RubySymbol> symbolsTable = new ConcurrentHashMap<>();
 
     public SymbolTable(RubyContext context) {
         this.context = context;
     }
 
     @CompilerDirectives.TruffleBoundary
-    public RubySymbol getSymbol(String name) {
-        return getSymbol(name, ASCIIEncoding.INSTANCE);
+    public RubySymbol getSymbol(String string) {
+        return getSymbol(ByteList.create(string));
     }
 
     @CompilerDirectives.TruffleBoundary
-    public RubySymbol getSymbol(String name, Encoding encoding) {
-        final ByteList byteList = org.jruby.RubySymbol.symbolBytesFromString(context.getRuntime(), name);
-        byteList.setEncoding(encoding);
-
-        RubySymbol symbol = symbolsTable.get(byteList);
+    public RubySymbol getSymbol(ByteList bytes) {
+        RubySymbol symbol = symbolsTable.get(bytes);
 
         if (symbol == null) {
-            symbol = createSymbol(name, byteList);
+            final ByteList storedBytes = bytes.dup();
+
+            final RubySymbol newSymbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), bytes.toString(), storedBytes);
+
+            final RubySymbol existingSymbol = symbolsTable.putIfAbsent(storedBytes, newSymbol);
+
+            if (existingSymbol != null) {
+                symbol = existingSymbol;
+            } else {
+                symbol = newSymbol;
+            }
         }
-        return symbol;
-    }
 
-    @CompilerDirectives.TruffleBoundary
-    public RubySymbol getSymbol(ByteList byteList) {
-        // TODO(CS): is this broken? ByteList is mutable...
-
-        RubySymbol symbol = symbolsTable.get(byteList);
-
-        if (symbol == null) {
-            symbol = createSymbol(byteList.toString(), byteList);
-        }
         return symbol;
 
-    }
-
-    private RubySymbol createSymbol(String name, ByteList byteList) {
-        RubySymbol symbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), name, byteList);
-        RubySymbol existingSymbol = symbolsTable.putIfAbsent(byteList, symbol);
-        return existingSymbol == null ? symbol : existingSymbol;
     }
 
     @CompilerDirectives.TruffleBoundary
     public Collection<RubySymbol> allSymbols() {
         return symbolsTable.values();
     }
+
 }

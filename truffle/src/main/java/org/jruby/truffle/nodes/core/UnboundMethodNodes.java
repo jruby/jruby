@@ -155,7 +155,7 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public RubySymbol name(RubyBasicObject unboundMethod) {
-            return getContext().getSymbol(getMethod(unboundMethod).getName());
+            return getSymbol(getMethod(unboundMethod).getName());
         }
 
     }

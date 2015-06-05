@@ -164,7 +164,7 @@ public abstract class MethodNodes {
         public RubySymbol name(RubyBasicObject method) {
             CompilerDirectives.transferToInterpreter();
 
-            return getContext().getSymbol(getMethod(method).getName());
+            return getSymbol(getMethod(method).getName());
         }
 
     }

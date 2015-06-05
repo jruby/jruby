@@ -185,7 +185,7 @@ public abstract class SymbolNodes {
         @Specialization
         public RubySymbol capitalize(RubySymbol symbol) {
             final ByteList byteList = SymbolNodesHelper.capitalize(getByteList(symbol));
-            return getContext().getSymbol(byteList);
+            return getSymbol(byteList);
         }
 
     }
@@ -221,7 +221,7 @@ public abstract class SymbolNodes {
         @Specialization
         public RubySymbol downcase(RubySymbol symbol) {
             final ByteList byteList = SymbolNodesHelper.downcase(getByteList(symbol));
-            return getContext().getSymbol(byteList);
+            return getSymbol(byteList);
         }
 
     }
@@ -364,7 +364,7 @@ public abstract class SymbolNodes {
         @Specialization
         public RubySymbol swapcase(RubySymbol symbol) {
             final ByteList byteList = SymbolNodesHelper.swapcase(getByteList(symbol));
-            return getContext().getSymbol(byteList);
+            return getSymbol(byteList);
         }
 
     }
@@ -379,7 +379,7 @@ public abstract class SymbolNodes {
         @Specialization
         public RubySymbol upcase(RubySymbol symbol) {
             final ByteList byteList = SymbolNodesHelper.upcase(getByteList(symbol));
-            return getContext().getSymbol(byteList);
+            return getSymbol(byteList);
         }
 
     }
