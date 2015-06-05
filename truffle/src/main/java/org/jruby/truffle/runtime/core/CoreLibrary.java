@@ -742,7 +742,7 @@ public class CoreLibrary {
         }
 
         if (RubyGuards.isRubyBignum(value)) {
-            return BignumNodes.getBigIntegerValue((RubyBignum) value).doubleValue();
+            return BignumNodes.getBigIntegerValue((RubyBasicObject) value).doubleValue();
         }
 
         if (value instanceof Double) {

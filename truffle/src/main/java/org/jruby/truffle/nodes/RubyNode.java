@@ -109,16 +109,6 @@ public abstract class RubyNode extends Node {
         }
     }
 
-    public RubyBignum executeRubyBignum(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (RubyGuards.isRubyBignum(value)) {
-            return (RubyBignum) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
     public RubyRange.IntegerFixnumRange executeIntegerFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
         final Object value = execute(frame);
 
