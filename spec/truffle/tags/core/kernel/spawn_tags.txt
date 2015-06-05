@@ -159,3 +159,15 @@ fails:Kernel#spawn when passed :close_others => false does not close file descri
 fails:Kernel.spawn when passed :close_others => true closes file descriptors >= 3 in the child process
 fails:Kernel.spawn when passed :close_others => false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
 fails:Kernel.spawn when passed :close_others => false does not close file descriptors >= 3 in the child process if fds are set close_on_exec=false
+fails:Kernel#spawn when passed :close_others => true does not close STDIN
+fails:Kernel#spawn when passed :close_others => true does not close STDOUT
+fails:Kernel#spawn when passed :close_others => true does not close STDERR
+fails:Kernel#spawn when passed :close_others => false does not close STDIN
+fails:Kernel#spawn when passed :close_others => false does not close STDOUT
+fails:Kernel#spawn when passed :close_others => false does not close STDERR
+fails:Kernel.spawn when passed :close_others => true does not close STDIN
+fails:Kernel.spawn when passed :close_others => true does not close STDOUT
+fails:Kernel.spawn when passed :close_others => true does not close STDERR
+fails:Kernel.spawn when passed :close_others => false does not close STDIN
+fails:Kernel.spawn when passed :close_others => false does not close STDOUT
+fails:Kernel.spawn when passed :close_others => false does not close STDERR
