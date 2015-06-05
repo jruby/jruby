@@ -19,6 +19,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubySymbol;
 
 @NodeChild(value = "child")
 public abstract class IsFrozenNode extends RubyNode {
@@ -61,8 +62,8 @@ public abstract class IsFrozenNode extends RubyNode {
         return true;
     }
 
-    @Specialization(guards = "isRubySymbol(symbol)")
-    public boolean isFrozenSymbol(RubyBasicObject symbol) {
+    @Specialization
+    public boolean isFrozen(RubySymbol object) {
         return true;
     }
 

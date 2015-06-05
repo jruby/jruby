@@ -111,11 +111,11 @@ public abstract class StringNodes {
         ((RubyString) string).codeRange = newCodeRange;
     }
 
-    public static StringCodeRangeableWrapper getCodeRangeable(RubyBasicObject string) {
+    public static CodeRangeableWrapper getCodeRangeable(RubyBasicObject string) {
         assert RubyGuards.isRubyString(string);
 
         if (((RubyString) string).codeRangeableWrapper == null) {
-            ((RubyString) string).codeRangeableWrapper = new StringCodeRangeableWrapper((RubyString) string);
+            ((RubyString) string).codeRangeableWrapper = new CodeRangeableWrapper((RubyString) string);
         }
 
         return ((RubyString) string).codeRangeableWrapper;
@@ -2184,8 +2184,8 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyBasicObject toSym(RubyString string) {
-            return getSymbol(getByteList(string));
+        public RubySymbol toSym(RubyString string) {
+            return getContext().getSymbol(getByteList(string));
         }
     }
 

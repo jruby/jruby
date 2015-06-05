@@ -25,7 +25,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
@@ -765,7 +764,7 @@ public abstract class ModuleNodes {
             final RubyBasicObject array = ArrayNodes.createEmptyArray(module.getContext().getCoreLibrary().getArrayClass());
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
-                ArrayNodes.slowPush(array, getSymbol(variable));
+                ArrayNodes.slowPush(array, RubySymbol.newSymbol(module.getContext(), variable));
             }
             return array;
         }
@@ -797,7 +796,7 @@ public abstract class ModuleNodes {
         public RubyBasicObject constants(RubyModule module, boolean inherit) {
             CompilerDirectives.transferToInterpreter();
 
-            final List<RubyBasicObject> constantsArray = new ArrayList<>();
+            final List<RubySymbol> constantsArray = new ArrayList<>();
 
             final Map<String, RubyConstant> constants;
             if (inherit) {
@@ -808,7 +807,7 @@ public abstract class ModuleNodes {
 
             for (Entry<String, RubyConstant> constant : constants.entrySet()) {
                 if (!constant.getValue().isPrivate()) {
-                    constantsArray.add(getSymbol(constant.getKey()));
+                    constantsArray.add(getContext().getSymbol(constant.getKey()));
                 }
             }
 
@@ -1021,31 +1020,31 @@ public abstract class ModuleNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject defineMethod(RubyModule module, String name, NotProvided proc, NotProvided block) {
+        public RubySymbol defineMethod(RubyModule module, String name, NotProvided proc, NotProvided block) {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("needs either proc or block", this));
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject defineMethod(RubyModule module, String name, NotProvided proc, RubyProc block) {
+        public RubySymbol defineMethod(RubyModule module, String name, NotProvided proc, RubyProc block) {
             return defineMethod(module, name, block, NotProvided.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject defineMethod(RubyModule module, String name, RubyProc proc, NotProvided block) {
+        public RubySymbol defineMethod(RubyModule module, String name, RubyProc proc, NotProvided block) {
             return defineMethod(module, name, proc);
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyMethod(method)")
-        public RubyBasicObject defineMethod(RubyModule module, String name, RubyBasicObject method, NotProvided block) {
+        public RubySymbol defineMethod(RubyModule module, String name, RubyBasicObject method, NotProvided block) {
             module.addMethod(this, MethodNodes.getMethod(method).withName(name));
-            return getSymbol(name);
+            return getContext().getSymbolTable().getSymbol(name);
         }
 
         @Specialization(guards = "isRubyUnboundMethod(method)")
-        public RubyBasicObject defineMethod(VirtualFrame frame, RubyModule module, String name, RubyBasicObject method, NotProvided block) {
+        public RubySymbol defineMethod(VirtualFrame frame, RubyModule module, String name, RubyBasicObject method, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
             RubyModule origin = UnboundMethodNodes.getOrigin(method);
@@ -1059,7 +1058,7 @@ public abstract class ModuleNodes {
             return addMethod(module, name, UnboundMethodNodes.getMethod(method));
         }
 
-        private RubyBasicObject defineMethod(RubyModule module, String name, RubyProc proc) {
+        private RubySymbol defineMethod(RubyModule module, String name, RubyProc proc) {
             CompilerDirectives.transferToInterpreter();
 
             final CallTarget modifiedCallTarget = proc.getCallTargetForLambdas();
@@ -1069,7 +1068,7 @@ public abstract class ModuleNodes {
             return addMethod(module, name, modifiedMethod);
         }
 
-        private RubyBasicObject addMethod(RubyModule module, String name, InternalMethod method) {
+        private RubySymbol addMethod(RubyModule module, String name, InternalMethod method) {
             method = method.withName(name);
 
             if (ModuleOperations.isMethodPrivateFromName(name)) {
@@ -1077,7 +1076,7 @@ public abstract class ModuleNodes {
             }
 
             module.addMethod(this, method);
-            return getSymbol(name);
+            return getContext().getSymbolTable().getSymbol(name);
         }
 
     }
@@ -1644,7 +1643,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             for (Object name : args) {
-                if (RubyGuards.isRubySymbol(name)) {
+                if (name instanceof RubySymbol) {
                     module.changeConstantVisibility(this, name.toString(), true);
                 } else {
                     throw new UnsupportedOperationException();
@@ -1666,7 +1665,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             for (Object name : args) {
-                if (RubyGuards.isRubySymbol(name)) {
+                if (name instanceof RubySymbol) {
                     module.changeConstantVisibility(this, name.toString(), false);
                 } else {
                     throw new UnsupportedOperationException();
@@ -1775,7 +1774,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
             if (module.getMethods().containsKey(name)) {
                 module.removeMethod(name);
-                methodRemovedNode.call(frame, module, "method_removed", null, getSymbol(name));
+                methodRemovedNode.call(frame, module, "method_removed", null, getContext().getSymbol(name));
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorMethodNotDefinedIn(module, name, this));
@@ -1829,7 +1828,7 @@ public abstract class ModuleNodes {
 
             if (method != null) {
                 module.undefMethod(this, method);
-                methodUndefinedNode.call(frame, module, "method_undefined", null, getSymbol(name));
+                methodUndefinedNode.call(frame, module, "method_undefined", null, getContext().getSymbol(name));
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnModule(name, module, this));

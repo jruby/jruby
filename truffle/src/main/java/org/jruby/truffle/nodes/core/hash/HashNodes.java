@@ -756,7 +756,7 @@ public abstract class HashNodes {
             }
 
             InternalMethod method = RubyArguments.getMethod(frame.getArguments());
-            return toEnumNode.call(frame, hash, "to_enum", null, getSymbol(method.getName()));
+            return toEnumNode.call(frame, hash, "to_enum", null, getContext().getSymbolTable().getSymbol(method.getName()));
         }
 
     }

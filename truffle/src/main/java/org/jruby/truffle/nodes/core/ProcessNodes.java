@@ -14,7 +14,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import sun.misc.Signal;
@@ -28,8 +27,8 @@ public abstract class ProcessNodes {
     @CoreMethod(names = "clock_gettime", onSingleton = true, required = 1, optional = 1)
     public abstract static class ClockGetTimeNode extends CoreMethodArrayArgumentsNode {
 
-        private final RubyBasicObject floatSecondSymbol;
-        private final RubyBasicObject nanosecondSymbol;
+        private final RubySymbol floatSecondSymbol;
+        private final RubySymbol nanosecondSymbol;
 
         public ClockGetTimeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -39,12 +38,12 @@ public abstract class ProcessNodes {
 
         @Specialization(guards = "isMonotonic(clock_id)")
         Object clock_gettime_monotonic(int clock_id, NotProvided unit) {
-            return clock_gettime_monotonic(CLOCK_MONOTONIC, (RubySymbol) floatSecondSymbol);
+            return clock_gettime_monotonic(CLOCK_MONOTONIC, floatSecondSymbol);
         }
 
         @Specialization(guards = "isRealtime(clock_id)")
         Object clock_gettime_realtime(int clock_id, NotProvided unit) {
-            return clock_gettime_realtime(CLOCK_REALTIME, (RubySymbol) floatSecondSymbol);
+            return clock_gettime_realtime(CLOCK_REALTIME, floatSecondSymbol);
         }
 
         @Specialization(guards = "isMonotonic(clock_id)")

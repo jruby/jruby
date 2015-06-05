@@ -18,6 +18,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubySymbol;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class IsTaintedNode extends RubyNode {
@@ -50,8 +51,8 @@ public abstract class IsTaintedNode extends RubyNode {
         return false;
     }
 
-    @Specialization(guards = "isRubySymbol(symbol)")
-    public boolean isTaintedSymbol(RubyBasicObject symbol) {
+    @Specialization
+    public boolean isTainted(RubySymbol object) {
         return false;
     }
 

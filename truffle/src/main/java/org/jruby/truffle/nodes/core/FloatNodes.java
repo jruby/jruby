@@ -203,7 +203,7 @@ public abstract class FloatNodes {
                 redoCoercedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
 
-            return redoCoercedNode.call(frame, a, "redo_coerced", null, getSymbol("/"), b);
+            return redoCoercedNode.call(frame, a, "redo_coerced", null, getContext().getSymbolTable().getSymbol("/"), b);
         }
 
     }

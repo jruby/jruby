@@ -299,10 +299,10 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyBasicObject calleeName() {
+        public RubySymbol calleeName() {
             CompilerDirectives.transferToInterpreter();
             // the "called name" of a method.
-            return getSymbol(RubyCallStack.getCallingMethod(getContext()).getName());
+            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(getContext()).getName());
         }
     }
 
@@ -924,7 +924,7 @@ public abstract class KernelNodes {
 
             for (Object name : instanceVariableNames) {
                 if (name instanceof String) {
-                    ArrayNodes.slowPush(array, getSymbol((String) name));
+                    ArrayNodes.slowPush(array, getContext().getSymbolTable().getSymbol((String) name));
                 }
             }
 
@@ -1037,7 +1037,7 @@ public abstract class KernelNodes {
 
             for (Object name : Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
                 if (name instanceof String) {
-                    ArrayNodes.slowPush(array, getSymbol((String) name));
+                    ArrayNodes.slowPush(array, getContext().getSymbol((String) name));
                 }
             }
 
@@ -1054,10 +1054,10 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyBasicObject methodName() {
+        public RubySymbol methodName() {
             CompilerDirectives.transferToInterpreter();
             // the "original/definition name" of the method.
-            return getSymbol(RubyCallStack.getCallingMethod(getContext()).getSharedMethodInfo().getName());
+            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(getContext()).getSharedMethodInfo().getName());
         }
 
     }

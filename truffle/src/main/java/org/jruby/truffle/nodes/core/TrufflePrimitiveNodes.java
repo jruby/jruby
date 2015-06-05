@@ -19,7 +19,6 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -380,7 +379,7 @@ public abstract class TrufflePrimitiveNodes {
             int n = 0;
 
             for (Object object : ArrayNodes.slowToArray(array)) {
-                if (object instanceof RubyString || RubyGuards.isRubySymbol(object)) {
+                if (object instanceof RubyString || object instanceof RubySymbol) {
                     strings[n] = object.toString();
                     n++;
                 } else {

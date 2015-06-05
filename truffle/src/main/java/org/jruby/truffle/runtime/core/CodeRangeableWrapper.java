@@ -14,11 +14,11 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 
-public class StringCodeRangeableWrapper implements CodeRangeable {
+public class CodeRangeableWrapper implements CodeRangeable {
 
     private final RubyString string;
 
-    public StringCodeRangeableWrapper(RubyString string) {
+    public CodeRangeableWrapper(RubyString string) {
         this.string = string;
     }
 

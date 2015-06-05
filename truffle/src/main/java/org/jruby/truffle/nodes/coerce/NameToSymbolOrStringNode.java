@@ -22,6 +22,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
 
 /**
  * Take a Symbol or some object accepting #to_str
@@ -39,8 +40,8 @@ public abstract class NameToSymbolOrStringNode extends RubyNode {
 
     public abstract RubyBasicObject executeToSymbolOrString(VirtualFrame frame, Object name);
 
-    @Specialization(guards = "isRubySymbol(symbol)")
-    public RubyBasicObject coerceRubySymbol(RubyBasicObject symbol) {
+    @Specialization
+    public RubySymbol coerceRubySymbol(RubySymbol symbol) {
         return symbol;
     }
 
