@@ -1,5 +1,3 @@
 fails:Module#public on a superclass method calls the redefined method
-fails:Module#public without arguments stops setting visibility if the body encounters other visibility setters without arguments
-fails:Module#public without arguments does not affect method definitions when itself is inside an eval and method definitions are outside
 fails:Module#public without arguments affects evaled method definitions when itself is outside the eval
 fails:Module#public without arguments affects normally if itself and following method definitions are inside a eval

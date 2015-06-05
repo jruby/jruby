@@ -28,19 +28,19 @@ import java.util.ArrayList;
 public abstract class RubyCallStack {
 
     /** Ignores Kernel#send and aliases */
-    public static InternalMethod getCallingMethod(final RubyContext context, VirtualFrame frame) {
+    public static FrameInstance getCallerFrame(final RubyContext context, VirtualFrame frame) {
         CompilerAsserts.neverPartOfCompilation();
 
         final InternalMethod currentMethod = RubyArguments.getMethod(frame.getArguments());
 
-        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<InternalMethod>() {
+        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
             @Override
-            public InternalMethod visitFrame(FrameInstance frameInstance) {
+            public FrameInstance visitFrame(FrameInstance frameInstance) {
                 final InternalMethod method = getMethod(frameInstance);
                 assert method != null;
 
                 if (method != currentMethod && !context.getCoreLibrary().isSend(method)) {
-                    return method;
+                    return frameInstance;
                 } else {
                     return null;
                 }
@@ -48,9 +48,12 @@ public abstract class RubyCallStack {
         });
     }
 
-    public static InternalMethod getMethod(FrameInstance frame) {
-        CompilerAsserts.neverPartOfCompilation();
+    public static InternalMethod getCallingMethod(final RubyContext context, VirtualFrame frame) {
+        return getMethod(getCallerFrame(context, frame));
+    }
 
+    private static InternalMethod getMethod(FrameInstance frame) {
+        CompilerAsserts.neverPartOfCompilation();
         return RubyArguments.getMethod(frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true).getArguments());
     }
 

@@ -1858,7 +1858,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             if (names.length == 0) {
-                setCurrentVisibility(visibility);
+                setCurrentVisibility(frame, visibility);
             } else {
                 for (Object name : names) {
                     setMethodVisibilityNode.executeSetMethodVisibility(frame, module, name);
@@ -1868,11 +1868,10 @@ public abstract class ModuleNodes {
             return module;
         }
 
-        private void setCurrentVisibility(Visibility visibility) {
+        private void setCurrentVisibility(VirtualFrame frame, Visibility visibility) {
             CompilerDirectives.transferToInterpreter();
 
-            final Frame callerFrame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
-
+            final Frame callerFrame = RubyCallStack.getCallerFrame(getContext(), frame).getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
             assert callerFrame != null;
             assert callerFrame.getFrameDescriptor() != null;
 
