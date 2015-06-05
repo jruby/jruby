@@ -141,3 +141,15 @@ fails:Kernel#spawn with Integer option keys maps the key to a file descriptor in
 fails:Kernel.spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
 fails(windows):Kernel#spawn raises an ArgumentError if given :pgroup option
 fails(windows):Kernel.spawn raises an ArgumentError if given :pgroup option
+slow:Kernel#spawn when passed :close_others => true does not close STDIN
+slow:Kernel#spawn when passed :close_others => true does not close STDOUT
+slow:Kernel#spawn when passed :close_others => true does not close STDERR
+slow:Kernel#spawn when passed :close_others => false does not close STDIN
+slow:Kernel#spawn when passed :close_others => false does not close STDOUT
+slow:Kernel#spawn when passed :close_others => false does not close STDERR
+slow:Kernel.spawn when passed :close_others => true does not close STDIN
+slow:Kernel.spawn when passed :close_others => true does not close STDOUT
+slow:Kernel.spawn when passed :close_others => true does not close STDERR
+slow:Kernel.spawn when passed :close_others => false does not close STDIN
+slow:Kernel.spawn when passed :close_others => false does not close STDOUT
+slow:Kernel.spawn when passed :close_others => false does not close STDERR
