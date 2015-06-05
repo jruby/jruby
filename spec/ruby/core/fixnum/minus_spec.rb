@@ -11,7 +11,7 @@ describe "Fixnum#-" do
 
   it "returns a Bignum only if the result is too large to be a Fixnum" do
     (5 - 10).should be_an_instance_of Fixnum
-    (1 - bignum_value).should be_an_instance_of Bignum
+    (-1 - bignum_value).should be_an_instance_of Bignum
 
     bignum_zero = bignum_value.coerce(0).first
     (1 - bignum_zero).should be_an_instance_of Fixnum
