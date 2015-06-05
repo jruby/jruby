@@ -99,24 +99,29 @@ public abstract class RegexpPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "regexp_search_region", lowerFixnumParameters = {1, 2})
+    @ImportStatic(RegexpGuards.class)
     public static abstract class RegexpSearchRegionPrimitiveNode extends RubiniusPrimitiveNode {
 
         public RegexpSearchRegionPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
+        @Specialization(guards = "!isInitialized(regexp)")
+        public Object searchRegionNotInitialized(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
+        }
+
+        @Specialization(guards = "!isValidEncoding(string)")
+        public Object searchRegionInvalidEncoding(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError(
+                    String.format("invalid byte sequence in %s", StringNodes.getByteList(string).getEncoding()), this));
+        }
+
         @TruffleBoundary
-        @Specialization
+        @Specialization(guards = { "isInitialized(regexp)", "isValidEncoding(string)" })
         public Object searchRegion(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
-            if (regexp.getRegex() == null) {
-                throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
-            }
-
-            if (StringNodes.scanForCodeRange(string) == StringSupport.CR_BROKEN) {
-                throw new RaiseException(getContext().getCoreLibrary().argumentError(
-                        String.format("invalid byte sequence in %s", StringNodes.getByteList(string).getEncoding()), this));
-            }
-
             final ByteList bl = regexp.getSource();
             final Regex r = new Regex(bl.getUnsafeBytes(), bl.getBegin(), bl.getBegin() + bl.getRealSize(), regexp.getRegex().getOptions(), regexp.checkEncoding(StringNodes.getCodeRangeable(string), true));
             final Matcher matcher = r.matcher(StringNodes.getByteList(string).bytes());
