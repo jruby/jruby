@@ -389,7 +389,7 @@ public class RubyInstanceConfig {
                 return getInput();
             } else {
                 final String script = getScriptFileName();
-                FileResource resource =JRubyFile.createResource(null, getCurrentDirectory(), getScriptFileName());
+                FileResource resource = JRubyFile.createResource(null, getCurrentDirectory(), getScriptFileName());
                 if (resource != null && resource.exists()) {
                     if (resource.isFile() || resource.isSymLink()) {
                         if (isXFlag()) {
@@ -1387,7 +1387,7 @@ public class RubyInstanceConfig {
         this.profilingService = service;
     }
 
-    private static ClassLoader setupLoader() {
+    public static ClassLoader defaultClassLoader() {
         ClassLoader loader = RubyInstanceConfig.class.getClassLoader();
 
         // loader can be null for example when jruby comes from the boot-classLoader
@@ -1443,7 +1443,7 @@ public class RubyInstanceConfig {
     private ProfileOutput profileOutput = new ProfileOutput(System.err);
     private String profilingService;
 
-    private ClassLoader loader = setupLoader();
+    private ClassLoader loader = defaultClassLoader();
 
     public ClassLoader getCurrentThreadClassLoader() {
         return Thread.currentThread().getContextClassLoader();

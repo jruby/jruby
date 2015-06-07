@@ -673,8 +673,8 @@ public class ArgumentProcessor {
     }
 
     public String resolveScriptUsingClassLoader(String scriptName) {
-        if(Ruby.getClassLoader().getResourceAsStream("bin/" + scriptName) != null){
-            return "classpath:bin/" + scriptName;
+        if(RubyInstanceConfig.defaultClassLoader().getResourceAsStream("bin/" + scriptName) != null){
+            return "classpath:/bin/" + scriptName;
         } else {
             return null;
         }

@@ -19,6 +19,7 @@ import java.util.Set;
 import jnr.posix.FileStat;
 
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.util.io.ModeFlags;
 
 public class URLResource extends AbstractFileResource {
@@ -149,11 +150,8 @@ public class URLResource extends AbstractFileResource {
         return Channels.newChannel(inputStream());
     }
 
-    public static FileResource create(ClassLoader cl, String pathname, boolean isFile) {
-        // fall back on thread context classloader
-        if (cl == null ) {
-            cl = Thread.currentThread().getContextClassLoader();
-        }
+    public static FileResource createClassloaderURI(Ruby runtime, String pathname, boolean isFile) {
+        ClassLoader cl = runtime != null ? runtime.getJRubyClassLoader() : RubyInstanceConfig.defaultClassLoader();
         try
         {
             pathname = new URI(pathname.replaceFirst("^/*", "/")).normalize().getPath().replaceAll("^/([.][.]/)*", "");
@@ -166,17 +164,6 @@ public class URLResource extends AbstractFileResource {
                              cl,
                              url == null ? null : pathname,
                              files);
-    }
-
-    public static FileResource create(ClassLoader cl, String pathname) {
-        return create(cl, pathname, true);
-    }
-
-    public static FileResource createClassloaderURI(Ruby runtime, String pathname, boolean isFile) {
-        // retrieve the classloader from the runtime if available otherwise mimic how the runtime got its classloader and
-        // take this
-        ClassLoader cl = runtime != null ? runtime.getJRubyClassLoader() : URLResource.class.getClassLoader();
-        return create(cl, pathname, isFile);
     }
 
     public static FileResource create(Ruby runtime, String pathname, boolean isFile)
