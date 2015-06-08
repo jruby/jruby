@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.Encoding;
 import org.joni.Matcher;
 import org.joni.Regex;
 import org.jruby.truffle.nodes.core.RegexpGuards;
@@ -25,6 +26,7 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
+import org.jruby.util.RegexpSupport;
 import org.jruby.util.StringSupport;
 
 /**
@@ -138,7 +140,10 @@ public abstract class RegexpPrimitiveNodes {
         @Specialization(guards = { "isInitialized(regexp)", "isValidEncoding(string)" })
         public Object searchRegion(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
             final ByteList bl = regexp.getSource();
-            final Regex r = new Regex(bl.getUnsafeBytes(), bl.getBegin(), bl.getBegin() + bl.getRealSize(), regexp.getRegex().getOptions(), regexp.checkEncoding(StringNodes.getCodeRangeable(string), true));
+            final Encoding enc = regexp.checkEncoding(StringNodes.getCodeRangeable(string), true);
+            final ByteList preprocessed = RegexpSupport.preprocess(getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
+
+            final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), regexp.getRegex().getOptions(), regexp.checkEncoding(StringNodes.getCodeRangeable(string), true));
             final Matcher matcher = r.matcher(StringNodes.getByteList(string).bytes());
 
             return regexp.matchCommon(string, false, false, matcher, start, end);

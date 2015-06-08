@@ -1,2 +1,1 @@
 fails(regexp):String#=~ returns the character index of a found match
-fails(regexp):String#match matches a literal Regexp that uses ASCII-only UTF-8 escape sequences
