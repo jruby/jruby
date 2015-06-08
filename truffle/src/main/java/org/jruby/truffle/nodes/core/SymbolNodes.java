@@ -31,14 +31,6 @@ import org.jruby.util.StringSupport;
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
 
-    public static SymbolCodeRangeableWrapper getCodeRangeable(RubySymbol symbol) {
-        if (symbol.codeRangeableWrapper == null) {
-            symbol.codeRangeableWrapper = new SymbolCodeRangeableWrapper(symbol);
-        }
-
-        return symbol.codeRangeableWrapper;
-    }
-
     public static ByteList getByteList(RubySymbol symbol) {
         return symbol.bytes;
     }
@@ -57,44 +49,16 @@ public abstract class SymbolNodes {
         return symbol.codeRange;
     }
 
-    @TruffleBoundary
-    public static int scanForCodeRange(RubySymbol symbol) {
-        int cr = getCodeRange(symbol);
-
-        if (cr == StringSupport.CR_UNKNOWN) {
-            cr = slowCodeRangeScan(symbol);
-            setCodeRange(symbol, cr);
-        }
-
-        return cr;
-    }
-
-    public static boolean isCodeRangeValid(RubySymbol symbol) {
-        return symbol.codeRange == StringSupport.CR_VALID;
-    }
-
     public static void setCodeRange(RubySymbol symbol, int codeRange) {
         symbol.codeRange = codeRange;
     }
 
-    public static void clearCodeRange(RubySymbol symbol) {
-        symbol.codeRange = StringSupport.CR_UNKNOWN;
-    }
-
-    public static void keepCodeRange(RubySymbol symbol) {
-        if (getCodeRange(symbol) == StringSupport.CR_BROKEN) {
-            clearCodeRange(symbol);
+    public static SymbolCodeRangeableWrapper getCodeRangeable(RubySymbol symbol) {
+        if (symbol.codeRangeableWrapper == null) {
+            symbol.codeRangeableWrapper = new SymbolCodeRangeableWrapper(symbol);
         }
-    }
 
-    public static Encoding checkEncoding(RubySymbol symbol, CodeRangeable other) {
-        // TODO (nirvdrum Jan. 13, 2015): This should check if the encodings are compatible rather than just always succeeding.
-        return symbol.bytes.getEncoding();
-    }
-
-    @TruffleBoundary
-    private static int slowCodeRangeScan(RubySymbol symbol) {
-        return StringSupport.codeRangeScan(symbol.bytes.getEncoding(), symbol.bytes);
+        return symbol.codeRangeableWrapper;
     }
 
     @CoreMethod(names = "all_symbols", onSingleton = true)
@@ -171,6 +135,7 @@ public abstract class SymbolNodes {
             return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo, callTarget,
                     callTarget, callTarget, null, null, symbol.getContext().getCoreLibrary().getNilObject(), null);
         }
+
     }
 
     @CoreMethod(names = "to_s")

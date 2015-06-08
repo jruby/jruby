@@ -9,10 +9,12 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
+import org.jruby.util.StringSupport;
 
 public class SymbolCodeRangeableWrapper implements CodeRangeable {
 
@@ -32,14 +34,22 @@ public class SymbolCodeRangeableWrapper implements CodeRangeable {
         return SymbolNodes.getCodeRange(symbol);
     }
 
+    @CompilerDirectives.TruffleBoundary
     @Override
     public int scanForCodeRange() {
-        return SymbolNodes.scanForCodeRange(symbol);
+        int cr = SymbolNodes.getCodeRange(symbol);
+
+        if (cr == StringSupport.CR_UNKNOWN) {
+            cr = StringSupport.codeRangeScan(SymbolNodes.getByteList(symbol).getEncoding(), symbol.bytes);
+            SymbolNodes.setCodeRange(symbol, cr);
+        }
+
+        return cr;
     }
 
     @Override
     public boolean isCodeRangeValid() {
-        return SymbolNodes.isCodeRangeValid(symbol);
+        return SymbolNodes.getCodeRange(symbol) == StringSupport.CR_VALID;
     }
 
     @Override
@@ -49,12 +59,14 @@ public class SymbolCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public void clearCodeRange() {
-        SymbolNodes.clearCodeRange(symbol);
+        SymbolNodes.setCodeRange(symbol, StringSupport.CR_UNKNOWN);
     }
 
     @Override
     public void keepCodeRange() {
-        SymbolNodes.keepCodeRange(symbol);
+        if (SymbolNodes.getCodeRange(symbol) == StringSupport.CR_BROKEN) {
+            SymbolNodes.setCodeRange(symbol, StringSupport.CR_UNKNOWN);
+        }
     }
 
     @Override
@@ -74,7 +86,8 @@ public class SymbolCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public Encoding checkEncoding(CodeRangeable other) {
-        return SymbolNodes.checkEncoding(symbol, other);
+        // TODO (nirvdrum Jan. 13, 2015): This should check if the encodings are compatible rather than just always succeeding.
+        return SymbolNodes.getByteList(symbol).getEncoding();
     }
 
     @Override
