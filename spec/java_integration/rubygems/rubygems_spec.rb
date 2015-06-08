@@ -17,16 +17,17 @@ describe "RubyGems extensions" do
     url_paths = ["file:/var/tmp",
                  "http://jruby.org",
                  "classpath:/META-INF/jruby.home",
+                 "uri:classpath:/META-INF/jruby.home",
+                 "uri:classpath:/",
                  "uri:jar:file://META-INF/jruby.home!/some/path",
                  "jar:file:/var/tmp/some.jar!/some/path"]
     Gem.use_paths(nil, url_paths)
     Gem.path.should include(*url_paths)
-    Gem.path.should_not include("file", "http", "classpath", "jar")
+    Gem.path.should_not include("file", "http", "classpath", "jar", "uri", "classloader")
   end
 
   it "should not create gem subdirectories on a non-file: URL" do
     Gem.ensure_gem_subdirectories("classpath:/bogus/classpath")
-    File.exist?("classpath:").should be_false
     File.exist?("classpath:/bogus/classpath").should be_false
     Gem.ensure_gem_subdirectories("file:")
     File.exist?("file:").should be_false
