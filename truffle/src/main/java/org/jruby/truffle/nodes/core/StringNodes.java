@@ -39,6 +39,7 @@ import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.jruby.Ruby;
@@ -245,11 +246,12 @@ public abstract class StringNodes {
     }
 
     public static RubyBasicObject createString(RubyClass stringClass, String string) {
-        return createString(stringClass, string, USASCIIEncoding.INSTANCE);
+        return createString(stringClass, string, UTF8Encoding.INSTANCE);
     }
 
+    @TruffleBoundary
     public static RubyBasicObject createString(RubyClass stringClass, String string, Encoding encoding) {
-        return createString(stringClass, new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), encoding, false));
+        return createString(stringClass, org.jruby.RubyString.encodeBytelist(string, encoding));
     }
 
     public static RubyBasicObject createString(RubyClass stringClass, byte[] bytes) {
