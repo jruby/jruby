@@ -747,19 +747,6 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "=~", required = 1)
-    public abstract static class MatchOperatorNode extends CoreMethodArrayArgumentsNode {
-
-        public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object match(RubyString string, RubyRegexp regexp) {
-            return regexp.matchCommon(string, true, false);
-        }
-    }
-
     @CoreMethod(names = "ascii_only?")
     public abstract static class ASCIIOnlyNode extends CoreMethodArrayArgumentsNode {
 
@@ -1519,28 +1506,6 @@ public abstract class StringNodes {
             }
 
             return nil();
-        }
-    }
-
-    @CoreMethod(names = "match", required = 1, taintFromSelf = true)
-    public abstract static class MatchNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode regexpMatchNode;
-
-        public MatchNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            regexpMatchNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        @Specialization
-        public Object match(VirtualFrame frame, RubyString string, RubyString regexpString) {
-            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), getByteList(regexpString), Option.DEFAULT);
-            return regexpMatchNode.call(frame, regexp, "match", null, string);
-        }
-
-        @Specialization
-        public Object match(VirtualFrame frame, RubyString string, RubyRegexp regexp) {
-            return regexpMatchNode.call(frame, regexp, "match", null, string);
         }
     }
 

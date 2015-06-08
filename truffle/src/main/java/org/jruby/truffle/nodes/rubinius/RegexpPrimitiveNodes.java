@@ -98,6 +98,21 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "regexp_propagate_last_match")
+    public static abstract class RegexpPropagateLastMatchPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public RegexpPropagateLastMatchPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject propagateLastMatch(RubyClass regexpClass) {
+            // TODO (nirvdrum 08-Jun-15): This method seems to exist just to fix Rubinius's broken frame-local scoping.  This assertion needs to be verified, however.
+            return nil();
+        }
+
+    }
+
     @RubiniusPrimitive(name = "regexp_search_region", lowerFixnumParameters = {1, 2})
     @ImportStatic(RegexpGuards.class)
     public static abstract class RegexpSearchRegionPrimitiveNode extends RubiniusPrimitiveNode {
