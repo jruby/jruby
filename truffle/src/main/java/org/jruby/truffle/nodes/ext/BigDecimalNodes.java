@@ -24,9 +24,13 @@ import org.jruby.truffle.nodes.cast.IntegerCastNodeGen;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.constants.GetConstantNodeGen;
+import org.jruby.truffle.nodes.constants.LookupConstantNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -1005,36 +1009,88 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "sign")
     public abstract static class SignNode extends BigDecimalCoreMethodNode {
 
+        final private ConditionProfile positive = ConditionProfile.createBinaryProfile();
+        @Child private IntegerCastNode negativeInfinitySign;
+        @Child private IntegerCastNode positiveInfinitySign;
+        @Child private IntegerCastNode negativeZeroSign;
+        @Child private IntegerCastNode positiveZeroSign;
+        @Child private IntegerCastNode negativeFiniteSign;
+        @Child private IntegerCastNode positiveFiniteSign;
+        @Child private IntegerCastNode nanSign;
+
         public SignNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+        }
+
+        protected IntegerCastNode createGetSignConstantNodeChain(String constantName) {
+            final RubyContext context = getContext();
+            final SourceSection sourceSection = getSourceSection();
+
+            return IntegerCastNodeGen.create(context, sourceSection,
+                    ToIntNodeGen.create(context, sourceSection,
+                            GetConstantNodeGen.create(context, sourceSection,
+                                    new LiteralNode(context, sourceSection, getContext().getCoreLibrary().getBigDecimalClass()),
+                                    new LiteralNode(context, sourceSection, constantName),
+                                    LookupConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, null, null))));
         }
 
         @Specialization(guards = {
                 "isNormal(value)",
                 "isNormalZero(value)"})
-        public int signNormalZero(RubyBasicObject value) {
-            return 1;
+        public int signNormalZero(VirtualFrame frame, RubyBasicObject value) {
+            if (positiveZeroSign == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                positiveZeroSign = insert(createGetSignConstantNodeChain("SIGN_POSITIVE_ZERO"));
+            }
+            return positiveZeroSign.executeInteger(frame);
         }
 
         @Specialization(guards = {
                 "isNormal(value)",
                 "!isNormalZero(value)"})
-        public int signNormal(RubyBasicObject value) {
-            return getBigDecimalValue(value).signum() * 2;
+        public int signNormal(VirtualFrame frame, RubyBasicObject value) {
+            if (positive.profile(getBigDecimalValue(value).signum() > 0)) {
+                if (positiveFiniteSign == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    positiveFiniteSign = insert(createGetSignConstantNodeChain("SIGN_POSITIVE_FINITE"));
+                }
+                return positiveFiniteSign.executeInteger(frame);
+            } else {
+                if (negativeFiniteSign == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    negativeFiniteSign = insert(createGetSignConstantNodeChain("SIGN_NEGATIVE_FINITE"));
+                }
+                return negativeFiniteSign.executeInteger(frame);
+            }
         }
 
         @Specialization(guards = "!isNormal(value)")
-        public int signSpecial(RubyBasicObject value) {
-            // TODO (pitr 26-May-2015): should be using const look up nodes to use values of BigDecimal::SIGN_* constants
+        public int signSpecial(VirtualFrame frame, RubyBasicObject value) {
             switch (getBigDecimalType(value)) {
                 case NEGATIVE_INFINITY:
-                    return -3;
+                    if (negativeInfinitySign == null) {
+                        CompilerDirectives.transferToInterpreterAndInvalidate();
+                        negativeInfinitySign = insert(createGetSignConstantNodeChain("SIGN_NEGATIVE_INFINITE"));
+                    }
+                    return negativeInfinitySign.executeInteger(frame);
                 case POSITIVE_INFINITY:
-                    return 3;
+                    if (positiveInfinitySign == null) {
+                        CompilerDirectives.transferToInterpreterAndInvalidate();
+                        positiveInfinitySign = insert(createGetSignConstantNodeChain("SIGN_POSITIVE_INFINITE"));
+                    }
+                    return positiveInfinitySign.executeInteger(frame);
                 case NEGATIVE_ZERO:
-                    return -1;
+                    if (negativeZeroSign == null) {
+                        CompilerDirectives.transferToInterpreterAndInvalidate();
+                        negativeZeroSign = insert(createGetSignConstantNodeChain("SIGN_NEGATIVE_ZERO"));
+                    }
+                    return negativeZeroSign.executeInteger(frame);
                 case NAN:
-                    return 0;
+                    if (nanSign == null) {
+                        CompilerDirectives.transferToInterpreterAndInvalidate();
+                        nanSign = insert(createGetSignConstantNodeChain("SIGN_NaN"));
+                    }
+                    return nanSign.executeInteger(frame);
             }
             CompilerAsserts.neverPartOfCompilation();
             throw new UnsupportedOperationException();
