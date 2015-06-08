@@ -21,6 +21,8 @@ import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -190,6 +192,38 @@ public abstract class MatchDataNodes {
             } else {
                 return matchData.end(index);
             }
+        }
+    }
+
+    @RubiniusOnly
+    @CoreMethod(names = "full")
+    public abstract static class FullNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private CallDispatchHeadNode newTupleNode;
+
+        public FullNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object full(VirtualFrame frame, RubyMatchData matchData) {
+            if (matchData.getFullTuple() != null) {
+                return matchData.getFullTuple();
+            }
+
+            if (newTupleNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                newTupleNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            final Object fullTuple = newTupleNode.call(frame,
+                    getContext().getCoreLibrary().getTupleClass(),
+                    "create",
+                    null, matchData.getFullBegin(), matchData.getFullEnd());
+
+            matchData.setFullTuple(fullTuple);
+
+            return fullTuple;
         }
     }
 

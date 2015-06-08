@@ -93,16 +93,6 @@ end
 
 ENV['TZ'] = 'UTC'
 
-class MatchData
-  def full
-    @cached_full ||= begin
-      tuple = Rubinius::Tuple.new
-      tuple << self.begin(0)
-      tuple << self.end(0)
-      tuple
-    end
-  end
-end
 
 # Wrapper class for Rubinius's exposure of @data within String.
 #

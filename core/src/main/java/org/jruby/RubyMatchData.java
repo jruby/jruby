@@ -50,6 +50,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.ByteListHolder;
 import org.jruby.util.StringSupport;
 
 /**
@@ -398,7 +399,7 @@ public class RubyMatchData extends RubyObject {
         return nameToBackrefNumber(getRuntime(), pattern, regs, str);
     }
 
-    private static int nameToBackrefNumber(Ruby runtime, Regex pattern, Region regs, RubyString str) {
+    private static int nameToBackrefNumber(Ruby runtime, Regex pattern, Region regs, ByteListHolder str) {
         if (pattern == null) {
             throw runtime.newIndexError("undefined group name reference: " + str);
         }
