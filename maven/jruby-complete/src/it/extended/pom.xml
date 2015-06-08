@@ -67,7 +67,7 @@
                 <argument>${project.build.directory}/dependency/jruby-complete-${jruby.version}.jar</argument>
                 <argument>-S</argument>
                 <argument>rake</argument>
-                <argument>test:mri</argument>
+                <argument>test:objectspace</argument>
               </arguments>
             </configuration>
           </execution>

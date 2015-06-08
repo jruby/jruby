@@ -26,8 +26,8 @@ phase :package do
     execute_goal( :exec, :id => 'rake -T',
                   :arguments => [ '-jar', '${project.build.directory}/dependency/jruby-complete-${jruby.version}.jar', '-S', 'rake', '-T' ] )
 
-    execute_goal( :exec, :id => 'rake test:mri',
-                  :arguments => [ '-jar', '${project.build.directory}/dependency/jruby-complete-${jruby.version}.jar', '-S', 'rake', 'test:mri' ] )
+    execute_goal( :exec, :id => 'rake test:objectspace',
+                  :arguments => [ '-jar', '${project.build.directory}/dependency/jruby-complete-${jruby.version}.jar', '-S', 'rake', 'test:objectspace' ] )
     
   end
 end

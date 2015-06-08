@@ -457,8 +457,17 @@ public class ShellLauncher {
                 } else {
                     log(runtime, "Launching directly (no shell)");
                     cfg.verifyExecutableForDirect();
-                    aProcess = buildProcess(runtime, cfg.getExecArgs(), getCurrentEnv(runtime, mergeEnv), pwd);
                 }
+                String[] args = cfg.getExecArgs();
+                // only if we inside a jar and spawning org.jruby.Main we
+                // change to the current directory inside the jar
+                if (runtime.getCurrentDirectory().startsWith("uri:classloader:") &&
+                        args[args.length - 1].contains("org.jruby.Main")) {
+                    pwd = new File(System.getProperty("user.dir"));
+                    args[args.length - 1] = args[args.length - 1].replace("org.jruby.Main",
+                            "org.jruby.Main -C " + runtime.getCurrentDirectory());
+                }
+                aProcess = buildProcess(runtime, args, getCurrentEnv(runtime, mergeEnv), pwd);
             } catch (SecurityException se) {
                 throw runtime.newSecurityError(se.getLocalizedMessage());
             }
@@ -497,12 +506,20 @@ public class ShellLauncher {
                     // execute command with sh -c
                     // this does shell expansion of wildcards
                     cfg.verifyExecutableForShell();
-                    aProcess = buildProcess(runtime, cfg.getExecArgs(), getCurrentEnv(runtime, (Map)env), pwd);
                 } else {
                     log(runtime, "Launching directly (no shell)");
                     cfg.verifyExecutableForDirect();
-                    aProcess = buildProcess(runtime, cfg.getExecArgs(), getCurrentEnv(runtime, (Map)env), pwd);
                 }
+                String[] finalArgs = cfg.getExecArgs();
+                // only if we inside a jar and spawning org.jruby.Main we
+                // change to the current directory inside the jar
+                if (runtime.getCurrentDirectory().startsWith("uri:classloader:") &&
+                        finalArgs[finalArgs.length - 1].contains("org.jruby.Main")) {
+                    pwd = new File(".");
+                    finalArgs[finalArgs.length - 1] = finalArgs[finalArgs.length - 1].replace("org.jruby.Main",
+                            "org.jruby.Main -C " + runtime.getCurrentDirectory());
+                }
+                aProcess = buildProcess(runtime, finalArgs, getCurrentEnv(runtime, (Map)env), pwd);
             } catch (SecurityException se) {
                 throw runtime.newSecurityError(se.getLocalizedMessage());
             }
@@ -1432,7 +1449,7 @@ public class ShellLauncher {
                     log(runtime, "Launching directly (no shell)");
                     cfg.verifyExecutableForDirect();
                 }
-                String[] args = cfg.execArgs;
+                String[] args = cfg.getExecArgs();
                 // only if we inside a jar and spawning org.jruby.Main we
                 // change to the current directory inside the jar
                 if (runtime.getCurrentDirectory().startsWith("uri:classloader:") &&

@@ -6,7 +6,7 @@ String log = FileUtils.fileRead( new File( basedir, "build.log" ) );
 String expected = "Run RSpec code examples";
 if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not contain '" + expected + "'" );
 
-expected = "uri:classloader:/Rakefile []";
+expected = "uri:classloader:/Rakefile [\"-T\"]";
 if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not contain '" + expected + "'" );
 
 expected = "uri:classloader:/Rakefile [\"spec\"]";
