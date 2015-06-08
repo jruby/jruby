@@ -227,8 +227,12 @@ public class ArgumentProcessor {
                     config.getLoadPaths().addAll(Arrays.asList(ls));
                     break FOR;
                 case 'J':
-                    grabOptionalValue();
+                    String js = grabOptionalValue();
                     config.getError().println("warning: " + argument + " argument ignored (launched in same VM?)");
+                    if (js.equals("-cp") || js.equals("-classpath")) {
+                        for(;grabOptionalValue() != null;) {}
+                        grabValue(getArgumentError(" -J-cp must be followed by a path expression"));
+                    }
                     break FOR;
                 case 'K':
                     // FIXME: No argument seems to work for -K in MRI plus this should not
