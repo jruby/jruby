@@ -66,7 +66,7 @@ public class SymbolTable {
             }
 
             final ByteList storedBytes = bytes.dup();
-            final RubyBasicObject newSymbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), bytes.toString(), storedBytes);
+            final RubyBasicObject newSymbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), bytes.toString(), storedBytes, bytes.toString().hashCode());
             symbolsTable.put(storedBytes, new WeakReference<>(newSymbol));
             return newSymbol;
         } finally {

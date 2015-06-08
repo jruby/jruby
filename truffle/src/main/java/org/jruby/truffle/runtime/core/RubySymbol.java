@@ -16,13 +16,15 @@ public class RubySymbol extends RubyBasicObject {
 
     public final String symbol;
     public final ByteList bytes;
+    public final int hashCode;
     public int codeRange = StringSupport.CR_UNKNOWN;
     public SymbolCodeRangeableWrapper codeRangeableWrapper;
 
-    public RubySymbol(RubyClass symbolClass, String symbol, ByteList bytes) {
+    public RubySymbol(RubyClass symbolClass, String symbol, ByteList bytes, int hashCode) {
         super(symbolClass);
         this.symbol = symbol;
         this.bytes = bytes;
+        this.hashCode = hashCode;
     }
 
 }

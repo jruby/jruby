@@ -39,6 +39,20 @@ public abstract class SymbolNodes {
         return symbol.codeRangeableWrapper;
     }
 
+    public static ByteList getByteList(RubySymbol symbol) {
+        return symbol.bytes;
+    }
+
+    public static String getString(RubyBasicObject symbol) {
+        assert RubyGuards.isRubySymbol(symbol);
+        return ((RubySymbol) symbol).symbol;
+    }
+
+    public static int getHashCode(RubyBasicObject symbol) {
+        assert RubyGuards.isRubySymbol(symbol);
+        return ((RubySymbol) symbol).hashCode;
+    }
+
     public static int getCodeRange(RubySymbol symbol) {
         return symbol.codeRange;
     }
@@ -78,18 +92,9 @@ public abstract class SymbolNodes {
         return symbol.bytes.getEncoding();
     }
 
-    public static ByteList getByteList(RubySymbol symbol) {
-        return symbol.bytes;
-    }
-
     @TruffleBoundary
     private static int slowCodeRangeScan(RubySymbol symbol) {
         return StringSupport.codeRangeScan(symbol.bytes.getEncoding(), symbol.bytes);
-    }
-
-    public static String getString(RubyBasicObject symbol) {
-        assert RubyGuards.isRubySymbol(symbol);
-        return ((RubySymbol) symbol).symbol;
     }
 
     @CoreMethod(names = "all_symbols", onSingleton = true)
@@ -135,7 +140,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public int hash(RubySymbol symbol) {
-            return getString(symbol).hashCode();
+            return getHashCode(symbol);
         }
 
     }
