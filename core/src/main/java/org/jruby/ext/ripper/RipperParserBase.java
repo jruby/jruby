@@ -351,6 +351,18 @@ public class RipperParserBase {
         return inSingleton;
     }
 
+    public int getBraceNest() {
+        return lexer.getBraceNest();
+    }
+
+    public LexState getState() {
+        return lexer.getState();
+    }
+
+    public void setBraceNest(int braceNest) {
+        lexer.setBraceNest(braceNest);
+    }
+
     public void setState(LexState lexState) {
         lexer.setState(lexState);
     }
