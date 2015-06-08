@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.ext;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -1317,12 +1318,15 @@ public abstract class BigDecimalNodes {
             final Type type = getBigDecimalType(value);
             switch (type) {
                 case NEGATIVE_INFINITY:
+                    CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().
                             floatDomainError(type.getRepresentation(), this));
                 case POSITIVE_INFINITY:
+                    CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().
                             floatDomainError(type.getRepresentation(), this));
                 case NAN:
+                    CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().
                             floatDomainError(type.getRepresentation(), this));
                 case NEGATIVE_ZERO:
