@@ -1,3 +1,0 @@
-fails(regexp mbc):String#index with Regexp returns the character index of a multibyte character
-fails(regexp):String#index with Regexp returns the character index after offset
-fails(regexp):String#index with Regexp treats the offset as a character index
