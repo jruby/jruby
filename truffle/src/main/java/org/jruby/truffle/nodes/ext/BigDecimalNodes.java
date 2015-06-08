@@ -45,7 +45,6 @@ public abstract class BigDecimalNodes {
     public static final BigDecimalType BIG_DECIMAL_TYPE = new BigDecimalType();
     public static final Property VALUE_PROPERTY;
     public static final Property TYPE_PROPERTY;
-    // TODO (pitr 22-May-2015): would it make sense to have two shapes, special(type) and normal(type, value)?
     private static final HiddenKey VALUE_IDENTIFIER = new HiddenKey("value");
     private static final HiddenKey TYPE_IDENTIFIER = new HiddenKey("type");
     private static final DynamicObjectFactory BIG_DECIMAL_FACTORY;
@@ -1186,7 +1185,6 @@ public abstract class BigDecimalNodes {
         @Specialization(guards = "isNormal(value)")
         public RubyBasicObject precsNormal(RubyBasicObject value) {
             final BigDecimal bigDecimalValue = getBigDecimalValue(value).abs();
-            // TODO (pitr 26-May-2015): replace with ArrayBuilder node
             return createArray(
                     new int[]{
                             bigDecimalValue.stripTrailingZeros().unscaledValue().toString().length(),
@@ -1196,7 +1194,6 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = "!isNormal(value)")
         public Object precsSpecial(RubyBasicObject value) {
-            // TODO (pitr 26-May-2015): replace with ArrayBuilder node
             return createArray(new int[]{1, 1}, 2);
         }
 
