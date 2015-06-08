@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.ext;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -636,7 +637,8 @@ public abstract class BigDecimalNodes {
                             return createRubyBigDecimal(Type.POSITIVE_INFINITY);
                     }
             }
-            throw new RuntimeException();
+            CompilerAsserts.neverPartOfCompilation();
+            throw new UnsupportedOperationException();
         }
 
         @Specialization(guards = {
@@ -661,7 +663,8 @@ public abstract class BigDecimalNodes {
             if (aType == Type.NEGATIVE_INFINITY)
                 return bType == Type.POSITIVE_INFINITY ? a : createRubyBigDecimal(Type.POSITIVE_INFINITY);
 
-            throw new RuntimeException();
+            CompilerAsserts.neverPartOfCompilation();
+            throw new UnsupportedOperationException();
         }
 
     }
@@ -724,7 +727,8 @@ public abstract class BigDecimalNodes {
                     case -1:
                         return createRubyBigDecimal(Type.NEGATIVE_INFINITY);
                     default:
-                        throw new RuntimeException();
+                        CompilerAsserts.neverPartOfCompilation();
+                        throw new UnsupportedOperationException();
                 }
             } else {
                 final int sumOfPrecisions = getBigDecimalValue(a).precision() + b.precision();
@@ -790,7 +794,8 @@ public abstract class BigDecimalNodes {
                             return createRubyBigDecimal(BigDecimal.ZERO);
                     }
             }
-            throw new RuntimeException();
+            CompilerAsserts.neverPartOfCompilation();
+            throw new UnsupportedOperationException();
         }
 
 
@@ -845,7 +850,8 @@ public abstract class BigDecimalNodes {
                             return createRubyBigDecimal(Type.POSITIVE_INFINITY);
                     }
             }
-            throw new RuntimeException();
+            CompilerAsserts.neverPartOfCompilation();
+            throw new UnsupportedOperationException();
         }
 
         @Specialization(guards = {
@@ -1031,8 +1037,8 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return 0;
             }
-            // TODO (pitr 28-may-2015): is it ok to throw exception in unreachable branch?
-            throw new RuntimeException();
+            CompilerAsserts.neverPartOfCompilation();
+            throw new UnsupportedOperationException();
         }
 
     }
@@ -1110,7 +1116,8 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return value;
                 default:
-                    throw new RuntimeException();
+                    CompilerAsserts.neverPartOfCompilation();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -1246,7 +1253,8 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return Double.NaN;
                 default:
-                    throw new RuntimeException();
+                    CompilerAsserts.neverPartOfCompilation();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -1332,7 +1340,8 @@ public abstract class BigDecimalNodes {
                 case NEGATIVE_ZERO:
                     return 0;
                 default:
-                    throw new RuntimeException();
+                    CompilerAsserts.neverPartOfCompilation();
+                    throw new UnsupportedOperationException();
             }
 
         }
