@@ -14,7 +14,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameDescriptor;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -38,22 +37,6 @@ public abstract class SymbolNodes {
         }
 
         return symbol.codeRangeableWrapper;
-    }
-
-    public static RubyProc toProc(RubySymbol symbol, SourceSection sourceSection, final Node currentNode) {
-        // TODO(CS): cache this?
-
-        final RubyContext context = symbol.getContext();
-
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, symbol.symbol, true, null, false);
-
-        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, new FrameDescriptor(), sharedMethodInfo,
-                new SymbolProcNode(context, sourceSection, symbol.symbol));
-
-        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-
-        return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo, callTarget,
-                callTarget, callTarget, null, null, symbol.getContext().getCoreLibrary().getNilObject(), null);
     }
 
     public static int getCodeRange(RubySymbol symbol) {
@@ -167,8 +150,21 @@ public abstract class SymbolNodes {
         @TruffleBoundary
         @Specialization
         public RubyProc toProc(RubySymbol symbol) {
-            // TODO(CS): this should be doing all kinds of caching
-            return SymbolNodes.toProc(symbol, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection(), this);
+            // TODO(CS): this should be doing all kinds of caching - or just write in Ruby?
+
+            SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+
+            final RubyContext context = symbol.getContext();
+
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, symbol.symbol, true, null, false);
+
+            final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, new FrameDescriptor(), sharedMethodInfo,
+                    new SymbolProcNode(context, sourceSection, symbol.symbol));
+
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+
+            return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo, callTarget,
+                    callTarget, callTarget, null, null, symbol.getContext().getCoreLibrary().getNilObject(), null);
         }
     }
 
