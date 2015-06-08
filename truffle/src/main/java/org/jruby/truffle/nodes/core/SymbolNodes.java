@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.methods.SymbolProcNode;
@@ -101,6 +102,11 @@ public abstract class SymbolNodes {
     @TruffleBoundary
     private static int slowCodeRangeScan(RubySymbol symbol) {
         return StringSupport.codeRangeScan(symbol.bytes.getEncoding(), symbol.bytes);
+    }
+
+    public static String getString(RubyBasicObject symbol) {
+        assert RubyGuards.isRubySymbol(symbol);
+        return ((RubySymbol) symbol).symbol;
     }
 
     @CoreMethod(names = {"==", "==="}, required = 1)
@@ -222,7 +228,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public boolean empty(RubySymbol symbol) {
-            return symbol.toString().isEmpty();
+            return getString(symbol).isEmpty();
         }
 
     }
@@ -250,7 +256,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public int hash(RubySymbol symbol) {
-            return symbol.toString().hashCode();
+            return getString(symbol).hashCode();
         }
 
     }

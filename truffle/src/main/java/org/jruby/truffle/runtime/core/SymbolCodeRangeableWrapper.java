@@ -24,7 +24,7 @@ public class SymbolCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public String toString() {
-        return symbol.toString();
+        return SymbolNodes.getString(symbol);
     }
 
     @Override

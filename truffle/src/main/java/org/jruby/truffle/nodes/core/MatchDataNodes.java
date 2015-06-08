@@ -77,7 +77,7 @@ public abstract class MatchDataNodes {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                    getContext().getCoreLibrary().indexError(String.format("undefined group name reference: %s", index.toString()), this));
+                    getContext().getCoreLibrary().indexError(String.format("undefined group name reference: %s", SymbolNodes.getString(index)), this));
             }
         }
 

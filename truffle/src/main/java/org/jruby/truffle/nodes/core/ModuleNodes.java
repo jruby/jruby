@@ -530,7 +530,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyBasicObject autoload(RubyModule module, RubySymbol name, RubyString filename) {
-            return autoload(module, name.toString(), filename);
+            return autoload(module, SymbolNodes.getString(name), filename);
         }
 
         @Specialization
@@ -564,7 +564,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object autoloadQuery(RubyModule module, RubySymbol name) {
-            return autoloadQuery(module, name.toString());
+            return autoloadQuery(module, SymbolNodes.getString(name));
         }
 
         @Specialization
@@ -713,7 +713,7 @@ public abstract class ModuleNodes {
         public boolean isClassVariableDefined(RubyModule module, RubySymbol name) {
             CompilerDirectives.transferToInterpreter();
 
-            return module.getClassVariables().containsKey(name.toString());
+            return module.getClassVariables().containsKey(SymbolNodes.getString(name));
         }
 
     }
@@ -881,12 +881,12 @@ public abstract class ModuleNodes {
 
         @Specialization(guards = "inherit")
         public Object getConstant(VirtualFrame frame, RubyModule module, RubySymbol name, boolean inherit) {
-            return getConstantNode.executeGetConstant(frame, module, name.toString());
+            return getConstantNode.executeGetConstant(frame, module, SymbolNodes.getString(name));
         }
 
         @Specialization(guards = "!inherit")
         public Object getConstantNoInherit(VirtualFrame frame, RubyModule module, RubySymbol name, boolean inherit) {
-            return getConstantNoInherit(module, name.toString(), this);
+            return getConstantNoInherit(module, SymbolNodes.getString(name), this);
         }
 
         // String
@@ -1645,7 +1645,7 @@ public abstract class ModuleNodes {
 
             for (Object name : args) {
                 if (RubyGuards.isRubySymbol(name)) {
-                    module.changeConstantVisibility(this, name.toString(), true);
+                    module.changeConstantVisibility(this, SymbolNodes.getString((RubyBasicObject) name), true);
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -1667,7 +1667,7 @@ public abstract class ModuleNodes {
 
             for (Object name : args) {
                 if (RubyGuards.isRubySymbol(name)) {
-                    module.changeConstantVisibility(this, name.toString(), false);
+                    module.changeConstantVisibility(this, SymbolNodes.getString((RubyBasicObject) name), false);
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -1712,7 +1712,7 @@ public abstract class ModuleNodes {
         public RubyModule removeClassVariable(RubyModule module, RubySymbol name) {
             CompilerDirectives.transferToInterpreter();
 
-            module.removeClassVariable(this, name.toString());
+            module.removeClassVariable(this, SymbolNodes.getString(name));
             return module;
         }
 

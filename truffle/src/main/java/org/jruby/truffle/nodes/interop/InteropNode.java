@@ -20,6 +20,7 @@ import com.oracle.truffle.interop.messages.Write;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
@@ -540,7 +541,7 @@ public abstract class InteropNode extends RubyNode {
         public ResolvedInteropWriteToSymbolNode(RubyContext context, SourceSection sourceSection, RubySymbol name, int labelIndex, int valueIndex) {
             super(context, sourceSection);
             this.name = name;
-            this.accessName = context.getSymbol(name.toString() + "=");
+            this.accessName = context.getSymbol(SymbolNodes.getString(name) + "=");
             this.head = new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
             this.labelIndex = labelIndex;
             this.valueIndex = valueIndex;

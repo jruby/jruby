@@ -167,7 +167,7 @@ public abstract class TruffleInteropNodes {
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubySymbol identifier) {
             if (this.identifier == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.identifier = identifier.toString().intern();
+                this.identifier = SymbolNodes.getString(identifier).intern();
             }
             return node.executeForeign(frame, receiver, this.identifier);
         }
@@ -210,7 +210,7 @@ public abstract class TruffleInteropNodes {
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubySymbol identifier,  Object value) {
             if (this.identifier == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.identifier = identifier.toString().intern();
+                this.identifier = SymbolNodes.getString(identifier).intern();
             }
             return node.executeForeign(frame, receiver, this.identifier, value);
         }

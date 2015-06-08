@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -45,6 +46,6 @@ public abstract class RubyToIndexLabelNode extends TargetableRubyNode {
 
     @TruffleBoundary
     private String toString(RubySymbol index) {
-        return index.toString();
+        return SymbolNodes.getString(index);
     }
 }

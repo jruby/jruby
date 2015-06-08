@@ -88,7 +88,7 @@ public abstract class BindingNodes {
                                              @Cached("createReadNode(cachedFrameSlot)") ReadFrameSlotNode readLocalVariableNode) {
             if (cachedFrameSlot == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(symbol.toString(), binding, this));
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(SymbolNodes.getString(symbol), binding, this));
             } else {
                 return readLocalVariableNode.executeRead(binding.getFrame());
             }
@@ -98,10 +98,10 @@ public abstract class BindingNodes {
         @Specialization(guards = "!isLastLine(symbol)")
         public Object localVariableGetUncached(RubyBinding binding, RubySymbol symbol) {
             final MaterializedFrame frame = binding.getFrame();
-            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(symbol.toString());
+            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(SymbolNodes.getString(symbol));
 
             if (frameSlot == null) {
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(symbol.toString(), binding, this));
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(SymbolNodes.getString(symbol), binding, this));
             }
 
             return frame.getValue(frameSlot);
@@ -111,10 +111,10 @@ public abstract class BindingNodes {
         @Specialization(guards = "isLastLine(symbol)")
         public Object localVariableGetLastLine(RubyBinding binding, RubySymbol symbol) {
             final MaterializedFrame frame = binding.getFrame();
-            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(symbol.toString());
+            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(SymbolNodes.getString(symbol));
 
             if (frameSlot == null) {
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(symbol.toString(), binding, this));
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(SymbolNodes.getString(symbol), binding, this));
             }
 
             final Object value = frame.getValue(frameSlot);
@@ -130,7 +130,7 @@ public abstract class BindingNodes {
         }
 
         protected FrameSlot findFrameSlot(RubyBinding binding, RubySymbol symbol) {
-            final String symbolString = symbol.toString();
+            final String symbolString = SymbolNodes.getString(symbol);
 
             MaterializedFrame frame = binding.getFrame();
 
@@ -187,7 +187,7 @@ public abstract class BindingNodes {
         @Specialization(guards = "!isLastLine(symbol)")
         public Object localVariableSetUncached(RubyBinding binding, RubySymbol symbol, Object value) {
             final MaterializedFrame frame = binding.getFrame();
-            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(symbol.toString());
+            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(SymbolNodes.getString(symbol));
             frame.setObject(frameSlot, value);
             return value;
         }
@@ -196,7 +196,7 @@ public abstract class BindingNodes {
         @Specialization(guards = "isLastLine(symbol)")
         public Object localVariableSetLastLine(RubyBinding binding, RubySymbol symbol, Object value) {
             final MaterializedFrame frame = binding.getFrame();
-            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(symbol.toString());
+            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(SymbolNodes.getString(symbol));
             frame.setObject(frameSlot, ThreadLocalObject.wrap(getContext(), value));
             return value;
         }
@@ -206,7 +206,7 @@ public abstract class BindingNodes {
         }
 
         protected FrameSlot findFrameSlot(RubyBinding binding, RubySymbol symbol) {
-            final String symbolString = symbol.toString();
+            final String symbolString = SymbolNodes.getString(symbol);
 
             MaterializedFrame frame = binding.getFrame();
 

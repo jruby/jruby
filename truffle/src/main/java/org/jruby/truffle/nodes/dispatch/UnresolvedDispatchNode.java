@@ -19,12 +19,15 @@ import com.oracle.truffle.interop.messages.Read;
 import com.oracle.truffle.interop.messages.Receiver;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.concurrent.Callable;
@@ -125,7 +128,9 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
         }
 
-        final InternalMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
+        final String methodNameString = toString(methodName);
+
+        final InternalMethod method = lookup(callerClass, receiverObject, methodNameString, ignoreVisibility);
 
         if (method == null) {
             return createMethodMissingNode(first, methodName, receiverObject);
@@ -136,14 +141,14 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     getContext().getCoreLibrary().getFalseClass().getUnmodifiedAssumption();
 
             final InternalMethod falseMethod =
-                    lookup(callerClass, false, methodName.toString(),
+                    lookup(callerClass, false, methodNameString,
                             ignoreVisibility);
 
             final Assumption trueUnmodifiedAssumption =
                     getContext().getCoreLibrary().getTrueClass().getUnmodifiedAssumption();
 
             final InternalMethod trueMethod =
-                    lookup(callerClass, true, methodName.toString(),
+                    lookup(callerClass, true, methodNameString,
                             ignoreVisibility);
 
             if ((falseMethod == null) && (trueMethod == null)) {
@@ -169,7 +174,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object argumentsObjects) {
         final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
-        final InternalMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
+        final InternalMethod method = lookup(callerClass, receiverObject, toString(methodName), ignoreVisibility);
 
         if (method == null) {
             final DispatchNode multilanguage = tryMultilanguage(frame, first, methodName, argumentsObjects);
@@ -185,6 +190,18 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         } else {
             return new CachedBoxedDispatchNode(getContext(), methodName, first,
                     getContext().getCoreLibrary().getMetaClass(receiverObject), method, indirect, getDispatchAction());
+        }
+    }
+
+    private String toString(Object methodName) {
+        if (methodName instanceof String) {
+            return (String) methodName;
+        } else if (RubyGuards.isRubyString(methodName)) {
+            return methodName.toString();
+        } else if (RubyGuards.isRubySymbol(methodName)) {
+            return SymbolNodes.getString((RubySymbol) methodName);
+        } else {
+            throw new UnsupportedOperationException();
         }
     }
 

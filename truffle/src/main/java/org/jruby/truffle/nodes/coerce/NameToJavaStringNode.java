@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -41,7 +42,7 @@ public abstract class NameToJavaStringNode extends RubyNode {
 
     @Specialization(guards = "isRubySymbol(symbol)")
     public String coerceRubySymbol(RubyBasicObject symbol) {
-        return symbol.toString();
+        return SymbolNodes.getString(symbol);
     }
 
     @Specialization

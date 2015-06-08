@@ -244,11 +244,11 @@ public abstract class BasicObjectNodes {
             if (lastCallWasVCall()) {
                 throw new RaiseException(
                         getContext().getCoreLibrary().nameErrorUndefinedLocalVariableOrMethod(
-                                name.toString(),
+                                SymbolNodes.getString(name),
                                 getContext().getCoreLibrary().getLogicalClass(self).getName(),
                                 this));
             } else {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnReceiver(name.toString(), self, this));
+                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnReceiver(SymbolNodes.getString(name), self, this));
             }
         }
 

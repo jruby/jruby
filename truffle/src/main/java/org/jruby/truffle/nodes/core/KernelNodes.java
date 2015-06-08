@@ -850,7 +850,7 @@ public abstract class KernelNodes {
         public boolean isInstanceVariableDefined(RubyBasicObject object, RubySymbol name) {
             CompilerDirectives.transferToInterpreter();
 
-            return object.isFieldDefined(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
+            return object.isFieldDefined(RubyContext.checkInstanceVariableName(getContext(), SymbolNodes.getString(name), this));
         }
 
     }
@@ -871,7 +871,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public Object instanceVariableGet(RubyBasicObject object, RubySymbol name) {
-            return instanceVariableGet(object, name.toString());
+            return instanceVariableGet(object, SymbolNodes.getString(name));
         }
 
         private Object instanceVariableGet(RubyBasicObject object, String name) {
@@ -899,7 +899,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public Object instanceVariableSet(RubyBasicObject object, RubySymbol name, Object value) {
-            RubyBasicObject.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
+            RubyBasicObject.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), SymbolNodes.getString(name), this), value);
             return value;
         }
 
@@ -1071,7 +1071,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyBasicObject method(Object object, RubySymbol name) {
-            return method(object, name.toString());
+            return method(object, SymbolNodes.getString(name));
         }
 
         @Specialization

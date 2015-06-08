@@ -142,7 +142,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public RubyBasicObject quote(RubySymbol raw) {
-            return quote(StringNodes.createString(raw.getContext().getCoreLibrary().getStringClass(), raw.toString()));
+            return quote(StringNodes.createString(raw.getContext().getCoreLibrary().getStringClass(), SymbolNodes.getString(raw)));
         }
 
     }
