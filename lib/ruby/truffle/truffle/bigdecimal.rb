@@ -62,6 +62,13 @@ class Truffle::BigDecimal < Numeric
   def nonzero?
     zero? ? nil : self
   end
+
+  def split
+    sign = self.sign
+    sign = 1 if sign > 1
+    sign = -1 if sign < -1
+    [sign, unscaled, 10, exponent]
+  end
 end
 
 BigDecimal = Truffle::BigDecimal

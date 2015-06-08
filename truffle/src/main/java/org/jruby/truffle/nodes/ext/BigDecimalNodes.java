@@ -18,16 +18,14 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.cast.IntegerCastNode;
 import org.jruby.truffle.nodes.cast.IntegerCastNodeGen;
-import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.constants.GetConstantNodeGen;
 import org.jruby.truffle.nodes.constants.LookupConstantNodeGen;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.LexicalScope;
@@ -1313,49 +1311,25 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(names = "split")
-    public abstract static class SplitNode extends BigDecimalCoreMethodNode {
+    @RubiniusOnly
+    @CoreMethod(names = "unscaled", visibility = Visibility.PRIVATE)
+    public abstract static class UnscaledNode extends BigDecimalCoreMethodNode {
 
-        final private ConditionProfile wasNormal;
-        @Child private CallDispatchHeadNode signCall;
-        @Child private CallDispatchHeadNode exponentCall;
-        @Child private ToIntNode signToInt;
-        @Child private ToIntNode exponentToInt;
-        @Child private IntegerCastNode signIntegerCast;
-
-        public SplitNode(RubyContext context, SourceSection sourceSection) {
+        public UnscaledNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            wasNormal = ConditionProfile.createBinaryProfile();
-            signCall = DispatchHeadNodeFactory.createMethodCall(context);
-            exponentCall = DispatchHeadNodeFactory.createMethodCall(context);
-            signToInt = ToIntNodeGen.create(context, sourceSection, null);
-            exponentToInt = ToIntNodeGen.create(context, sourceSection, null);
-            signIntegerCast = IntegerCastNodeGen.create(context, sourceSection, null);
-        }
-
-        @Specialization
-        public RubyBasicObject split(VirtualFrame frame, RubyBasicObject value) {
-            final String digits;
-
-            if (wasNormal.profile(isNormal(value))) {
-                digits = getNormalDigits(value);
-            } else {
-                final String type = getBigDecimalType(value).getRepresentation();
-                digits = type.startsWith("-") ? type.substring(1) : type;
-            }
-
-            final int sign = Integer.signum(signIntegerCast.executeInteger(frame,
-                    signToInt.executeIntOrLong(frame, signCall.call(frame, value, "sign", null))));
-            final Object exponent =
-                    exponentToInt.executeIntOrLong(frame, this.exponentCall.call(frame, value, "exponent", null));
-
-            return createArray(new Object[]{sign, createString(digits), 10, exponent}, 4);
         }
 
         @TruffleBoundary
-        private String getNormalDigits(RubyBasicObject value) {
-            return getBigDecimalValue(value).abs().stripTrailingZeros().unscaledValue().toString();
+        @Specialization(guards = "isNormal(value)")
+        public RubyBasicObject unscaled(RubyBasicObject value) {
+            return createString(getBigDecimalValue(value).abs().stripTrailingZeros().unscaledValue().toString());
         }
+        @Specialization(guards = "!isNormal(value)")
+        public RubyBasicObject unscaledSpecial(RubyBasicObject value) {
+            final String type = getBigDecimalType(value).getRepresentation();
+            return createString(type.startsWith("-") ? type.substring(1) : type);
+        }
+
     }
 
     @CoreMethod(names = {"to_i", "to_int"})
