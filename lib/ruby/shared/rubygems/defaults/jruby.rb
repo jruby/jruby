@@ -11,12 +11,15 @@ module Gem
     alias_method :original_ruby, :ruby
     def ruby
       ruby_path = original_ruby
-      ruby_path = "java -jar #{jar_path(ruby_path)}" if jarred_path?(ruby_path)
+      if jarred_path?(ruby_path)
+        # use quote as the original_ruby does it
+        ruby_path = "\"#{org.jruby.util.Classpath.jrubyCommand(JRuby.runtime)}\""
+      end
       ruby_path
     end
 
     def jarred_path?(p)
-      p =~ /^file:/
+      p =~ /^(file|uri|jar|classpath):/
     end
     
     # A jar path looks like this on non-Windows platforms:

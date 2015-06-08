@@ -41,6 +41,7 @@ import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.load.LoadService19;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
 import org.jruby.util.ClassCache;
+import org.jruby.util.ClasspathLauncher;
 import org.jruby.util.FileResource;
 import org.jruby.util.InputStreamMarkCursor;
 import org.jruby.util.JRubyFile;
@@ -65,8 +66,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.math.BigDecimal;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -149,6 +148,7 @@ public class RubyInstanceConfig {
             environment.putAll(System.getenv());
         } catch (SecurityException se) {
         }
+        setupEnvironment(getJRubyHome());
     }
     
     public RubyInstanceConfig(RubyInstanceConfig parentConfig) {
@@ -173,11 +173,12 @@ public class RubyInstanceConfig {
 
         classCache = new ClassCache<Script>(loader, jitMax);
 
+        environment = new HashMap<String, String>();
         try {
-            environment = System.getenv();
+            environment.putAll(System.getenv());
         } catch (SecurityException se) {
-            environment = new HashMap();
         }
+        setupEnvironment(getJRubyHome());
     }
     
     public RubyInstanceConfig(final InputStream in, final PrintStream out, final PrintStream err) {
@@ -512,6 +513,7 @@ public class RubyInstanceConfig {
 
     public void setJRubyHome(String home) {
         jrubyHome = verifyHome(home, error);
+        setupEnvironment(jrubyHome);
     }
 
     public CompileMode getCompileMode() {
@@ -698,31 +700,22 @@ public class RubyInstanceConfig {
     }
 
     public void setEnvironment(Map newEnvironment) {
-        if (newEnvironment == null) {
-            newEnvironment = new HashMap<String, String>();
+        environment = new HashMap<String, String>();
+        if (newEnvironment != null) {
+            environment.putAll(newEnvironment);
         }
-        this.environment = newEnvironment;
+        setupEnvironment(getJRubyHome());
+    }
+
+    private void setupEnvironment(String jrubyHome) {
+        if (!new File(jrubyHome).exists() && !environment.containsKey("RUBY")) {
+            // the assumption that if JRubyHome is not a regular file that jruby
+            // got launched in an embedded fashion
+            environment.put("RUBY", ClasspathLauncher.jrubyCommand(defaultClassLoader()) );
+        }
     }
 
     public Map getEnvironment() {
-        if (!new File(getJRubyHome()).exists() && !environment.containsKey("RUBY")) {
-            // the assumption that if JRubyHome is not a regular file that java.class.path
-            // is the one which launched jruby is probably wrong. but is sufficient for
-            // java -jar jruby-complete.jar
-            StringBuilder command = new StringBuilder("java -cp ");
-            if (defaultClassLoader() instanceof URLClassLoader) {
-                for(URL url : ((URLClassLoader) defaultClassLoader()).getURLs()) {
-                    if (url.getProtocol().equals("file")) {
-                        command.append(File.pathSeparatorChar).append(url.getPath());
-                    }
-                }
-            }
-            else {
-                command.append(File.pathSeparatorChar).append(SafePropertyAccessor.getProperty("java.class.path"));
-            }
-            command.append(" org.jruby.Main");
-            environment.put("RUBY", command.toString() );
-        }
         return environment;
     }
 
@@ -1432,6 +1425,18 @@ public class RubyInstanceConfig {
 
     public void setProfilingService( String service )  {
         this.profilingService = service;
+    }
+
+    public static ClassLoader defaultClassLoader() {
+        ClassLoader loader = RubyInstanceConfig.class.getClassLoader();
+
+        // loader can be null for example when jruby comes from the boot-classLoader
+
+        if (loader == null) {
+            loader = Thread.currentThread().getContextClassLoader();
+        }
+
+        return loader;
     }
 
     ////////////////////////////////////////////////////////////////////////////
