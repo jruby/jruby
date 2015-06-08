@@ -66,6 +66,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -708,7 +709,19 @@ public class RubyInstanceConfig {
             // the assumption that if JRubyHome is not a regular file that java.class.path
             // is the one which launched jruby is probably wrong. but is sufficient for
             // java -jar jruby-complete.jar
-            environment.put("RUBY", "java -cp " + System.getProperty("java.class.path") + " org.jruby.Main");
+            StringBuilder command = new StringBuilder("java -cp ");
+            if (defaultClassLoader() instanceof URLClassLoader) {
+                for(URL url : ((URLClassLoader) defaultClassLoader()).getURLs()) {
+                    if (url.getProtocol().equals("file")) {
+                        command.append(File.pathSeparatorChar).append(url.getPath());
+                    }
+                }
+            }
+            else {
+                command.append(File.pathSeparatorChar).append(SafePropertyAccessor.getProperty("java.class.path"));
+            }
+            command.append(" org.jruby.Main");
+            environment.put("RUBY", command.toString() );
         }
         return environment;
     }
