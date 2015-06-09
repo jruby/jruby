@@ -10,8 +10,10 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 import java.lang.ref.WeakReference;
 import java.util.*;
@@ -66,7 +68,14 @@ public class SymbolTable {
             }
 
             final ByteList storedBytes = bytes.dup();
-            final RubyBasicObject newSymbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), bytes.toString(), storedBytes, bytes.toString().hashCode());
+
+            final RubyBasicObject newSymbol = new RubySymbol(
+                    context.getCoreLibrary().getSymbolClass(),
+                    SymbolNodes.SYMBOL_FACTORY.newInstance(
+                            storedBytes.toString(), storedBytes,
+                            storedBytes.toString().hashCode(),
+                            StringSupport.CR_UNKNOWN, null));
+
             symbolsTable.put(storedBytes, new WeakReference<>(newSymbol));
             return newSymbol;
         } finally {

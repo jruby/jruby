@@ -9,22 +9,12 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class RubySymbol extends RubyBasicObject {
 
-    public final String symbol;
-    public final ByteList bytes;
-    public final int hashCode;
-    public int codeRange = StringSupport.CR_UNKNOWN;
-    public SymbolCodeRangeableWrapper codeRangeableWrapper;
-
-    public RubySymbol(RubyClass symbolClass, String symbol, ByteList bytes, int hashCode) {
-        super(symbolClass);
-        this.symbol = symbol;
-        this.bytes = bytes;
-        this.hashCode = hashCode;
+    public RubySymbol(RubyClass symbolClass, DynamicObject dynamicObject) {
+        super(symbolClass, dynamicObject);
     }
 
 }

@@ -37,10 +37,12 @@ public class SymbolCodeRangeableWrapper implements CodeRangeable {
     @CompilerDirectives.TruffleBoundary
     @Override
     public int scanForCodeRange() {
+        final ByteList byteList = SymbolNodes.getByteList(symbol);
+
         int cr = SymbolNodes.getCodeRange(symbol);
 
         if (cr == StringSupport.CR_UNKNOWN) {
-            cr = StringSupport.codeRangeScan(SymbolNodes.getByteList(symbol).getEncoding(), symbol.bytes);
+            cr = StringSupport.codeRangeScan(byteList.getEncoding(), byteList);
             SymbolNodes.setCodeRange(symbol, cr);
         }
 
