@@ -652,19 +652,19 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isSingleByteOptimizableOrAsciiCompatible(string)")
+        @Specialization(guards = "isSingleByteOptimizableOrAsciiOnly(string)")
         public int stringByteCharacterIndexSingleByte(RubyString string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index.
             return index;
         }
 
-        @Specialization(guards = { "!isSingleByteOptimizableOrAsciiCompatible(string)", "isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
+        @Specialization(guards = { "!isSingleByteOptimizableOrAsciiOnly(string)", "isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
         public int stringByteCharacterIndexFixedWidth(RubyString string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index.
             return index / StringNodes.getByteList(string).getEncoding().minLength();
         }
 
-        @Specialization(guards = { "!isSingleByteOptimizableOrAsciiCompatible(string)", "!isFixedWidthEncoding(string)", "isValidUtf8(string)" })
+        @Specialization(guards = { "!isSingleByteOptimizableOrAsciiOnly(string)", "!isFixedWidthEncoding(string)", "isValidUtf8(string)" })
         public int stringByteCharacterIndexValidUtf8(RubyString string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index.
 
@@ -673,7 +673,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = { "!isSingleByteOptimizableOrAsciiCompatible(string)", "!isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
+        @Specialization(guards = { "!isSingleByteOptimizableOrAsciiOnly(string)", "!isFixedWidthEncoding(string)", "!isValidUtf8(string)" })
         public int stringByteCharacterIndex(RubyString string, int index, int start) {
             // Taken from Rubinius's String::find_byte_character_index and Encoding::find_byte_character_index.
 
