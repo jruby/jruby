@@ -135,26 +135,24 @@ class TestDir < Test::Unit::TestCase
         pwd.gsub! '\\', '/'
         assert_equal("testDir_4", pwd.split("/")[-1].strip)
       end
-      pend 'FIXME: been commented out on 9K (works on 1.7) - please review'
-      pwd = `java -cp "#{java_test_classes}" org.jruby.util.Pwd`
+      pwd = `#{RUBY} -e "puts ENV_JAVA['user.dir']"`
       pwd.gsub! '\\', '/'
       assert_equal("testDir_4", pwd.split("/")[-1].strip)
     end
     Dir.chdir("testDir_4")
-    pend 'FIXME: been commented out on 9K (works on 1.7) - please review'
-    pwd = `java -cp "#{java_test_classes}" org.jruby.util.Pwd`
+    pwd = `#{RUBY} -e "puts ENV_JAVA['user.dir']"`
     pwd.gsub! '\\', '/'
     assert_equal("testDir_4", pwd.split("/")[-1].strip)
   end
 
   def test_glob_inside_jar_file
-    pend 'FIXME: needs more work after merge - (@mkristian) please review'
     jar_file = jar_file_with_spaces
 
-    ["#{jar_file}/abc", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].each do |f|
+    prefix = 'uri:classloader:'
+    ["#{prefix}/abc", "#{prefix}/inside_jar.rb", "#{prefix}/second_jar.rb"].each do |f|
       assert $__glob_value.include?(f), "#{f} not found in #{$__glob_value.inspect}"
     end
-    ["#{jar_file}/abc", "#{jar_file}/abc/foo.rb", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].each do |f|
+    ["#{prefix}/abc", "#{prefix}/abc/foo.rb", "#{prefix}/inside_jar.rb", "#{prefix}/second_jar.rb"].each do |f|
       assert $__glob_value2.include?(f)
     end
     assert_equal ["#{jar_file}/abc"], Dir["#{jar_file}/abc"]
@@ -167,7 +165,6 @@ class TestDir < Test::Unit::TestCase
     aref = Dir["#{jar_file}/[a-z]*_jar.rb"]
     glob = Dir.glob("#{jar_file}/[a-z]*_jar.rb")
 
-    pend 'FIXME: regression after merge - (@mkristian) please review'
     [aref, glob].each do |collect|
       ["#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].each do |f|
         assert collect.include?(f)
@@ -210,7 +207,7 @@ class TestDir < Test::Unit::TestCase
 
     first = File.expand_path(File.join(File.dirname(__FILE__), '..'))
 
-    "file:" + File.join(first, "test", "dir with spaces", "test_jar.jar") + "!"
+    "file:" + File.join(first, "jruby", "dir with spaces", "test_jar.jar") + "!"
   end
 
   # JRUBY-4177
