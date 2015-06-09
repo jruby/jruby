@@ -71,7 +71,7 @@ public class SymbolTable {
 
             final ByteList storedBytes = bytes.dup();
 
-            final RubyBasicObject newSymbol = new RubySymbol(
+            final RubyBasicObject newSymbol = new RubyBasicObject(
                     context.getCoreLibrary().getSymbolClass(),
                     SymbolNodes.SYMBOL_FACTORY.newInstance(
                             storedBytes.toString(), storedBytes,
