@@ -70,7 +70,7 @@ public abstract class MatchDataNodes {
             CompilerDirectives.transferToInterpreter();
 
             try {
-                final int i = matchData.getBackrefNumber(index.getSymbolBytes());
+                final int i = matchData.getBackrefNumber(SymbolNodes.getByteList(index));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             } catch (final ValueException e) {

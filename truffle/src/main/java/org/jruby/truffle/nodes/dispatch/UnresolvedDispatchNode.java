@@ -25,7 +25,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.concurrent.Callable;
@@ -181,7 +180,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             return createMethodMissingNode(first, methodName, receiverObject);
         }
 
-        if (receiverObject instanceof RubySymbol) {
+        if (RubyGuards.isRubySymbol(receiverObject)) {
             return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, method, indirect, getDispatchAction());
         } else {
             return new CachedBoxedDispatchNode(getContext(), methodName, first,

@@ -27,7 +27,6 @@ import jnr.ffi.LibraryLoader;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
@@ -39,10 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.core.BignumNodes;
-import org.jruby.truffle.nodes.core.LoadRequiredLibrariesNode;
-import org.jruby.truffle.nodes.core.SetTopLevelBindingNode;
-import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.exceptions.TopLevelRaiseHandler;
@@ -93,7 +89,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     private final ObjectSpaceManager objectSpaceManager;
     private final ThreadManager threadManager;
     private final AtExitManager atExitManager;
-    private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
+    private final SymbolTable symbolTable = new SymbolTable(this);
     private final Warnings warnings;
     private final SafepointManager safepointManager;
     private final LexicalScope rootLexicalScope;
@@ -287,23 +283,15 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         execute(source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode, composed);
     }
 
-    public RubySymbol.SymbolTable getSymbolTable() {
+    public SymbolTable getSymbolTable() {
         return symbolTable;
     }
 
-
-    @TruffleBoundary
-    public RubySymbol getSymbol(String name) {
-        return symbolTable.getSymbol(name, ASCIIEncoding.INSTANCE);
+    public RubyBasicObject getSymbol(String name) {
+        return symbolTable.getSymbol(name);
     }
 
-    @TruffleBoundary
-    public RubySymbol getSymbol(String name, Encoding encoding) {
-        return symbolTable.getSymbol(name, encoding);
-    }
-
-    @TruffleBoundary
-    public RubySymbol getSymbol(ByteList name) {
+    public RubyBasicObject getSymbol(ByteList name) {
         return symbolTable.getSymbol(name);
     }
 
@@ -445,6 +433,10 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         }
 
         return jrubyString;
+    }
+
+    public org.jruby.RubySymbol toJRuby(RubySymbol symbol) {
+        return getRuntime().newSymbol(SymbolNodes.getByteList(symbol));
     }
 
     public Object toTruffle(IRubyObject object) {

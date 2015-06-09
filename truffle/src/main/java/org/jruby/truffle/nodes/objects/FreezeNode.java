@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubySymbol;
 
 @NodeChild(value = "child")
 public abstract class FreezeNode extends RubyNode {
@@ -61,9 +60,9 @@ public abstract class FreezeNode extends RubyNode {
         return object;
     }
 
-    @Specialization
-    public Object freeze(RubySymbol object) {
-        return object;
+    @Specialization(guards = "isRubySymbol(symbol)")
+    public Object freezeSymbol(RubyBasicObject symbol) {
+        return symbol;
     }
 
     @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
