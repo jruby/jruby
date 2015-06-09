@@ -19,6 +19,8 @@ import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.arguments.CheckArityNode;
+import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.methods.SymbolProcNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -215,7 +217,9 @@ public abstract class SymbolNodes {
                     getContext(), sourceSection,
                     new FrameDescriptor(),
                     sharedMethodInfo,
-                    new SymbolProcNode(getContext(), sourceSection, getString(symbol)));
+                    SequenceNode.sequence(getContext(), sourceSection,
+                            new CheckArityNode(getContext(), sourceSection, Arity.AT_LEAST_ONE),
+                            new SymbolProcNode(getContext(), sourceSection, getString(symbol))));
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
