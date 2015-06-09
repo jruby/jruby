@@ -602,16 +602,26 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_index", lowerFixnumParameters = 1)
     public static abstract class StringIndexPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child StringByteCharacterIndexNode byteIndexToCharIndexNode;
+
         public StringIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
 
             super(context, sourceSection);
         }
 
         @Specialization
-        public Object stringIndex(RubyString string, RubyString pattern, int start) {
+        public Object stringIndex(VirtualFrame frame, RubyString string, RubyString pattern, int start) {
+            if (byteIndexToCharIndexNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                byteIndexToCharIndexNode = insert(StringPrimitiveNodesFactory.StringByteCharacterIndexNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+            }
+
+            // Rubinius will pass in a byte index for the `start` value, but StringSupport.index requires a character index.
+            final int charIndex = byteIndexToCharIndexNode.executeStringBytCharacterIndex(frame, string, start, 0);
+
             final int index = StringSupport.index(StringNodes.getCodeRangeable(string),
                     StringNodes.getCodeRangeable(pattern),
-                    start, StringNodes.getByteList(string).getEncoding());
+                    charIndex, StringNodes.getByteList(string).getEncoding());
 
             if (index == -1) {
                 return nil();
@@ -651,6 +661,8 @@ public abstract class StringPrimitiveNodes {
         public StringByteCharacterIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
+
+        public abstract int executeStringBytCharacterIndex(VirtualFrame frame, RubyString string, int index, int start);
 
         @Specialization(guards = "isSingleByteOptimizableOrAsciiOnly(string)")
         public int stringByteCharacterIndexSingleByte(RubyString string, int index, int start) {
