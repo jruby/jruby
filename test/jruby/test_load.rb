@@ -192,8 +192,9 @@ OUT
   end
 
   def test_load_rb_if_jar_doesnt_exist
-    pend 'someone (@mkristian?) please fix me'
-    require 'test/jruby/fake.jar' # test/fake.jar does not exist, but test/fake.jar.rb does.
+    # commit f5d1f9b99aa667c4449241b43dd4dcec258548cb removed this feature
+    # keep this for easier merging with jruby-1_7
+    #require 'test/jruby/fake.jar' # test/fake.jar does not exist, but test/fake.jar.rb does.
   end
 
   def test_overriding_require_shouldnt_cause_problems
