@@ -31,6 +31,7 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.util.ByteList;
 
+import java.util.Collection;
 import java.util.EnumSet;
 
 @CoreClass(name = "Symbol")
@@ -149,12 +150,7 @@ public abstract class SymbolNodes {
         @TruffleBoundary
         @Specialization
         public RubyBasicObject allSymbols() {
-            final RubyBasicObject array = createEmptyArray();
-
-            for (RubyBasicObject s : getContext().getSymbolTable().allSymbols()) {
-                ArrayNodes.slowPush(array, s);
-            }
-            return array;
+            return createArray(getContext().getSymbolTable().allSymbols().toArray());
         }
 
     }

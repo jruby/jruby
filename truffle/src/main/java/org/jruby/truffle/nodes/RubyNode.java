@@ -275,6 +275,10 @@ public abstract class RubyNode extends Node {
         return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
     }
 
+    protected RubyBasicObject createArray(Object... store) {
+        return createArray(store, store.length);
+    }
+
     protected RubyBasicObject createArray(int[] store, int size) {
         return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
     }
