@@ -417,7 +417,11 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     public boolean hasName() {
-        return name != null || givenBaseName != null;
+        return name != null;
+    }
+
+    public boolean hasPartialName() {
+        return hasName() || givenBaseName != null;
     }
 
     @Override

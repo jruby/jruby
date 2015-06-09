@@ -210,11 +210,16 @@ public class RipperParserBase {
     }
 
     public IRubyObject keyword_arg(IRubyObject key, IRubyObject value) {
-        RubyHash hash = RubyHash.newHash(context.runtime);
+        RubyArray array = RubyArray.newArray(context.runtime, 2);
 
-        hash.fastASet(key, value);
+        array.append(key);
+        if (value != null) {
+            array.append(value);
+        } else {
+            array.append(context.nil);
+        }
 
-        return hash;
+        return array;
     }
 
     public IRubyObject new_args(IRubyObject f, IRubyObject o, IRubyObject r, IRubyObject p, ArgsTailHolder tail) {
@@ -349,6 +354,18 @@ public class RipperParserBase {
 
     public int getInSingle() {
         return inSingleton;
+    }
+
+    public int getBraceNest() {
+        return lexer.getBraceNest();
+    }
+
+    public LexState getState() {
+        return lexer.getState();
+    }
+
+    public void setBraceNest(int braceNest) {
+        lexer.setBraceNest(braceNest);
     }
 
     public void setState(LexState lexState) {

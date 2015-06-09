@@ -46,6 +46,7 @@ import org.jruby.ast.CallNode;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
+import org.jruby.ast.StrNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
@@ -702,6 +703,7 @@ public final class Ruby implements Constantizable {
             whileBody.add(oldRoot.getBodyNode());
         }
 
+        newBody.prepend(new GlobalAsgnNode(pos, "$/", new StrNode(pos, new ByteList(getInstanceConfig().getRecordSeparator().getBytes()))));
         GlobalVarNode dollarUnderscore = new GlobalVarNode(pos, "$_");
 
         newBody.add(new WhileNode(pos, new VCallNode(pos, "gets"), whileBody));

@@ -887,8 +887,12 @@ arg             : lhs '=' arg {
                 | kDEFINED opt_nl arg {
                     $$ = p.dispatch("on_defined", $3);
                 }
-                | arg '?' arg opt_nl ':' arg {
-                    $$ = p.dispatch("on_ifop", $1, $3, $6);
+                | arg '?' {
+                    p.getConditionState().begin();
+                } arg opt_nl ':' {
+                    p.getConditionState().end();
+                } arg {
+                    $$ = p.dispatch("on_ifop", $1, $4, $8);
                 }
                 | primary {
                     $$ = $1;
@@ -1024,19 +1028,27 @@ primary         : literal
                 | tFID {
                     $$ = p.dispatch("on_method_add_arg", p.dispatch("on_fcall", $1), p.dispatch("on_args_new"));
                 }
-                | kBEGIN bodystmt kEND {
-                    $$ = p.dispatch("on_begin", $2);
+                | kBEGIN {
+                    $$ = p.getCmdArgumentState().getStack();
+                    p.getCmdArgumentState().reset();
+                } bodystmt kEND {
+                    p.getCmdArgumentState().reset($<Long>2.longValue());
+                    $$ = p.dispatch("on_begin", $3);
                 }
                 | tLPAREN_ARG {
                     p.setState(LexState.EXPR_ENDARG);
                 } rparen {
                     $$ = p.dispatch("on_paren", null);
                 }
-                | tLPAREN_ARG expr {
+                | tLPAREN_ARG {
+                    $$ = p.getCmdArgumentState().getStack();
+                    p.getCmdArgumentState().reset();
+                } expr {
                     p.setState(LexState.EXPR_ENDARG); 
                 } rparen {
+                    p.getCmdArgumentState().reset($<Long>2.longValue());
                     p.warning("(...) interpreted as grouped expression");
-                    $$ = p.dispatch("on_paren", $2);
+                    $$ = p.dispatch("on_paren", $3);
                 }
                 | tLPAREN compstmt tRPAREN {
                     $$ = p.dispatch("on_paren", $2);
@@ -1611,15 +1623,24 @@ string_content  : tSTRING_CONTENT
                 }
                 | tSTRING_DBEG {
                    $$ = p.getStrTerm();
-                   p.getConditionState().stop();
-                   p.getCmdArgumentState().stop();
                    p.setStrTerm(null);
+                   p.getConditionState().stop();
+                } {
+                   $$ = p.getCmdArgumentState().getStack();
+                   p.getCmdArgumentState().reset();
+                } {
+                   $$ = p.getState();
                    p.setState(LexState.EXPR_BEG);
-                } compstmt tRCURLY {
+                } {
+                   $$ = p.getBraceNest();
+                   p.setBraceNest(0);
+                } compstmt tSTRING_DEND {
                    p.getConditionState().restart();
-                   p.getCmdArgumentState().restart();
                    p.setStrTerm($<StrTerm>2);
-                   $$ = p.dispatch("on_string_embexpr", $3);
+                   p.getCmdArgumentState().reset($<Long>3.longValue());
+                   p.setState($<LexState>4);
+                   p.setBraceNest($<Integer>5);
+                   $$ = p.dispatch("on_string_embexpr", $6);
                 }
 
 string_dvar     : tGVAR {

@@ -15,6 +15,7 @@ University Linz](http://ssw.jku.at).
 * Chris Seaton
 * Benoit Daloze
 * Kevin Menard
+* Petr Chalupa
 * Thomas Würthinger
 * Matthias Grimmer
 * Josef Haider
