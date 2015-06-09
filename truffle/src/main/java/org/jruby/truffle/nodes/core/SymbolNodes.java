@@ -22,7 +22,10 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.methods.SymbolProcNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyEncoding;
+import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.SymbolCodeRangeableWrapper;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.object.BasicObjectType;
@@ -125,7 +128,7 @@ public abstract class SymbolNodes {
             return wrapper;
         }
 
-        wrapper = new SymbolCodeRangeableWrapper((RubySymbol) symbol);
+        wrapper = new SymbolCodeRangeableWrapper(symbol);
 
         try {
             CODE_RANGEABLE_WRAPPER_PROPERTY.set(symbol.getDynamicObject(), wrapper, symbol.getDynamicObject().getShape());
@@ -164,7 +167,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubyEncoding encoding(RubySymbol symbol) {
+        public RubyEncoding encoding(RubyBasicObject symbol) {
             return RubyEncoding.getEncoding(getByteList(symbol).getEncoding());
         }
 
@@ -178,7 +181,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public int hash(RubySymbol symbol) {
+        public int hash(RubyBasicObject symbol) {
             return getHashCode(symbol);
         }
 
@@ -192,19 +195,19 @@ public abstract class SymbolNodes {
         }
 
         @Specialization(guards = "cachedSymbol == symbol")
-        public RubyProc toProcCached(RubySymbol symbol,
-                                     @Cached("symbol") RubySymbol cachedSymbol,
+        public RubyProc toProcCached(RubyBasicObject symbol,
+                                     @Cached("symbol") RubyBasicObject cachedSymbol,
                                      @Cached("createProc(symbol)") RubyProc cachedProc) {
             return cachedProc;
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyProc toProcUncached(RubySymbol symbol) {
+        public RubyProc toProcUncached(RubyBasicObject symbol) {
             return createProc(symbol);
         }
 
-        protected RubyProc createProc(RubySymbol symbol) {
+        protected RubyProc createProc(RubyBasicObject symbol) {
             final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame()
                     .getCallNode().getEncapsulatingSourceSection();
 
@@ -240,7 +243,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubyBasicObject toS(RubySymbol symbol) {
+        public RubyBasicObject toS(RubyBasicObject symbol) {
             return createString(getByteList(symbol).dup());
         }
 

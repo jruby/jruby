@@ -30,7 +30,6 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 
@@ -213,7 +212,7 @@ public abstract class InteropNode extends RubyNode {
                 } else if (label instanceof  String) {
                     return this.replace(new ResolvedInteropReadNode(getContext(), getSourceSection(), (String) label, labelIndex)).execute(frame);
                 } else if (RubyGuards.isRubySymbol(label)) {
-                    return this.replace(new ResolvedInteropReadFromSymbolNode(getContext(), getSourceSection(), (RubySymbol) label, labelIndex)).execute(frame);
+                    return this.replace(new ResolvedInteropReadFromSymbolNode(getContext(), getSourceSection(), (RubyBasicObject) label, labelIndex)).execute(frame);
                 } else {
                     CompilerDirectives.transferToInterpreter();
                     throw new IllegalStateException(label + " not allowed as name");
@@ -249,7 +248,7 @@ public abstract class InteropNode extends RubyNode {
                 } else if (label instanceof  String) {
                     return this.replace(new ResolvedInteropReadNode(getContext(), getSourceSection(), (String) label, labelIndex)).execute(frame);
                 } else if (RubyGuards.isRubySymbol(label)) {
-                    return this.replace(new ResolvedInteropReadFromSymbolNode(getContext(), getSourceSection(), (RubySymbol) label, labelIndex)).execute(frame);
+                    return this.replace(new ResolvedInteropReadFromSymbolNode(getContext(), getSourceSection(), (RubyBasicObject) label, labelIndex)).execute(frame);
                 } else {
                     CompilerDirectives.transferToInterpreter();
                     throw new IllegalStateException(label + " not allowed as name");
@@ -412,10 +411,10 @@ public abstract class InteropNode extends RubyNode {
     private static class ResolvedInteropReadFromSymbolNode extends InteropNode {
 
         @Child private DispatchHeadNode head;
-        private final RubySymbol name;
+        private final RubyBasicObject name;
         private final int labelIndex;
 
-        public ResolvedInteropReadFromSymbolNode(RubyContext context, SourceSection sourceSection, RubySymbol name, int labelIndex) {
+        public ResolvedInteropReadFromSymbolNode(RubyContext context, SourceSection sourceSection, RubyBasicObject name, int labelIndex) {
             super(context, sourceSection);
             this.name = name;
             this.head = new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
@@ -462,7 +461,7 @@ public abstract class InteropNode extends RubyNode {
                 } else if (label instanceof  String) {
                     return this.replace(new ResolvedInteropWriteNode(getContext(), getSourceSection(), (String) label, labelIndex, valueIndex)).execute(frame);
                 } else if (RubyGuards.isRubySymbol(label)) {
-                    return this.replace(new ResolvedInteropWriteToSymbolNode(getContext(), getSourceSection(), (RubySymbol) label, labelIndex, valueIndex)).execute(frame);
+                    return this.replace(new ResolvedInteropWriteToSymbolNode(getContext(), getSourceSection(), (RubyBasicObject) label, labelIndex, valueIndex)).execute(frame);
                 } else {
                     CompilerDirectives.transferToInterpreter();
                     throw new IllegalStateException(label + " not allowed as name");
@@ -538,7 +537,7 @@ public abstract class InteropNode extends RubyNode {
         private final int labelIndex;
         private final int valueIndex;
 
-        public ResolvedInteropWriteToSymbolNode(RubyContext context, SourceSection sourceSection, RubySymbol name, int labelIndex, int valueIndex) {
+        public ResolvedInteropWriteToSymbolNode(RubyContext context, SourceSection sourceSection, RubyBasicObject name, int labelIndex, int valueIndex) {
             super(context, sourceSection);
             this.name = name;
             this.accessName = context.getSymbol(SymbolNodes.getString(name) + "=");

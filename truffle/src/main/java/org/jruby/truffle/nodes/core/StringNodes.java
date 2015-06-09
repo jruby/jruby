@@ -374,7 +374,7 @@ public abstract class StringNodes {
                 respondToNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null, null }));
             }
 
-            if (respondToNode.doesRespondTo(frame, b, (RubyString) StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "to_str"), false)) {
+            if (respondToNode.doesRespondToString(frame, b, (RubyString) StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "to_str"), false)) {
                 if (objectEqualNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     objectEqualNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -422,7 +422,7 @@ public abstract class StringNodes {
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null, null }));
             }
 
-            if (respondToToStrNode.doesRespondTo(frame, b, (RubyString) StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "to_str"), false)) {
+            if (respondToToStrNode.doesRespondToString(frame, b, (RubyString) StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "to_str"), false)) {
                 if (toStrNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
@@ -446,7 +446,7 @@ public abstract class StringNodes {
                 respondToCmpNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null, null }));
             }
 
-            if (respondToCmpNode.doesRespondTo(frame, b, (RubyString) StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "<=>"), false)) {
+            if (respondToCmpNode.doesRespondToString(frame, b, (RubyString) StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "<=>"), false)) {
                 if (cmpNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));

@@ -15,7 +15,6 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
 
 public abstract class CachedDispatchNode extends DispatchNode {
 
@@ -39,7 +38,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
         this.cachedName = cachedName;
 
         if (RubyGuards.isRubySymbol(cachedName)) {
-            cachedNameAsSymbol = (RubySymbol) cachedName;
+            cachedNameAsSymbol = (RubyBasicObject) cachedName;
         } else if (cachedName instanceof RubyString) {
             cachedNameAsSymbol = context.getSymbol(StringNodes.getByteList(((RubyString) cachedName)));
         } else if (cachedName instanceof String) {

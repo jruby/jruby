@@ -17,7 +17,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Encoding} class..
@@ -38,7 +37,7 @@ public abstract class EncodingPrimitiveNodes {
 
         @Specialization(guards = "isRubySymbol(symbol)")
         public RubyEncoding encodingGetObjectEncodingSymbol(RubyBasicObject symbol) {
-            return RubyEncoding.getEncoding(SymbolNodes.getByteList((RubySymbol) symbol).getEncoding());
+            return RubyEncoding.getEncoding(SymbolNodes.getByteList(symbol).getEncoding());
         }
 
         @Specialization

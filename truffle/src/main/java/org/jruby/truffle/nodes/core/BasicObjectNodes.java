@@ -29,7 +29,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
@@ -233,12 +232,12 @@ public abstract class BasicObjectNodes {
         public Object methodMissing(Object self, Object[] args, RubyProc block) {
             CompilerDirectives.transferToInterpreter();
 
-            final RubySymbol name = (RubySymbol) args[0];
+            final RubyBasicObject name = (RubyBasicObject) args[0];
             final Object[] sentArgs = ArrayUtils.extractRange(args, 1, args.length);
             return methodMissing(self, name, sentArgs, block);
         }
 
-        private Object methodMissing(Object self, RubySymbol name, Object[] args, RubyProc block) {
+        private Object methodMissing(Object self, RubyBasicObject name, Object[] args, RubyProc block) {
             CompilerDirectives.transferToInterpreter();
             // TODO: should not be a call to Java toString(), but rather sth like name_err_mesg_to_str() in MRI error.c
             if (lastCallWasVCall()) {

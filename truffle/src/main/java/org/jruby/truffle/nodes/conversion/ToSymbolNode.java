@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
 
 @NodeChild(value="child", type=RubyNode.class)
 public abstract class ToSymbolNode extends RubyNode {
@@ -27,12 +26,12 @@ public abstract class ToSymbolNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract RubySymbol executeRubySymbol(VirtualFrame frame, Object object);
+    public abstract RubyBasicObject executeRubySymbol(VirtualFrame frame, Object object);
 
     // TODO(CS): cache the conversion to a symbol? Or should the user do that themselves?
 
-    @Specialization
-    protected RubyBasicObject toSymbol(RubySymbol symbol) {
+    @Specialization(guards = "isRubySymbol(symbol)")
+    protected RubyBasicObject toSymbol(RubyBasicObject symbol) {
         return symbol;
     }
 

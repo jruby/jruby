@@ -528,13 +528,13 @@ public abstract class ModuleNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), filename);
         }
 
-        @Specialization
-        public RubyBasicObject autoload(RubyModule module, RubySymbol name, RubyString filename) {
+        @Specialization(guards = "isRubySymbol(name)")
+        public RubyBasicObject autoloadSymbol(RubyModule module, RubyBasicObject name, RubyString filename) {
             return autoload(module, SymbolNodes.getString(name), filename);
         }
 
-        @Specialization
-        public RubyBasicObject autoload(RubyModule module, RubyString name, RubyString filename) {
+        @Specialization(guards = "isRubyString(name)")
+        public RubyBasicObject autoloadString(RubyModule module, RubyBasicObject name, RubyString filename) {
             return autoload(module, name.toString(), filename);
         }
 
@@ -562,13 +562,13 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object autoloadQuery(RubyModule module, RubySymbol name) {
+        @Specialization(guards = "isRubySymbol(name)")
+        public Object autoloadQuerySymbol(RubyModule module, RubyBasicObject name) {
             return autoloadQuery(module, SymbolNodes.getString(name));
         }
 
-        @Specialization
-        public Object autoloadQuery(RubyModule module, RubyString name) {
+        @Specialization(guards = "isRubyString(name)")
+        public Object autoloadQueryString(RubyModule module, RubyBasicObject name) {
             return autoloadQuery(module, name.toString());
         }
 
@@ -702,17 +702,15 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public boolean isClassVariableDefined(RubyModule module, RubyString name) {
-            CompilerDirectives.transferToInterpreter();
-
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(name)")
+        public boolean isClassVariableDefinedString(RubyModule module, RubyBasicObject name) {
             return module.getClassVariables().containsKey(name.toString());
         }
 
-        @Specialization
-        public boolean isClassVariableDefined(RubyModule module, RubySymbol name) {
-            CompilerDirectives.transferToInterpreter();
-
+        @TruffleBoundary
+        @Specialization(guards = "isRubySymbol(name)")
+        public boolean isClassVariableDefinedSymbol(RubyModule module, RubyBasicObject name) {
             return module.getClassVariables().containsKey(SymbolNodes.getString(name));
         }
 
@@ -874,18 +872,18 @@ public abstract class ModuleNodes {
         }
 
         // Symbol
-        @Specialization
-        public Object getConstant(VirtualFrame frame, RubyModule module, RubySymbol name, NotProvided inherit) {
+        @Specialization(guards = "isRubySymbol(name)")
+        public Object getConstant(VirtualFrame frame, RubyModule module, RubyBasicObject name, NotProvided inherit) {
             return getConstant(frame, module, name, true);
         }
 
-        @Specialization(guards = "inherit")
-        public Object getConstant(VirtualFrame frame, RubyModule module, RubySymbol name, boolean inherit) {
+        @Specialization(guards = {"inherit", "isRubySymbol(name)"})
+        public Object getConstant(VirtualFrame frame, RubyModule module, RubyBasicObject name, boolean inherit) {
             return getConstantNode.executeGetConstant(frame, module, SymbolNodes.getString(name));
         }
 
-        @Specialization(guards = "!inherit")
-        public Object getConstantNoInherit(VirtualFrame frame, RubyModule module, RubySymbol name, boolean inherit) {
+        @Specialization(guards = {"!inherit", "isRubySymbol(name)"})
+        public Object getConstantNoInherit(VirtualFrame frame, RubyModule module, RubyBasicObject name, boolean inherit) {
             return getConstantNoInherit(module, SymbolNodes.getString(name), this);
         }
 
@@ -1700,18 +1698,16 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyModule removeClassVariable(RubyModule module, RubyString name) {
-            CompilerDirectives.transferToInterpreter();
-
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(name)")
+        public RubyModule removeClassVariableString(RubyModule module, RubyBasicObject name) {
             module.removeClassVariable(this, name.toString());
             return module;
         }
 
-        @Specialization
-        public RubyModule removeClassVariable(RubyModule module, RubySymbol name) {
-            CompilerDirectives.transferToInterpreter();
-
+        @TruffleBoundary
+        @Specialization(guards = "isRubySymbol(name)")
+        public RubyModule removeClassVariableSymbol(RubyModule module, RubyBasicObject name) {
             module.removeClassVariable(this, SymbolNodes.getString(name));
             return module;
         }

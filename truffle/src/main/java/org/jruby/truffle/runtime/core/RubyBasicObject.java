@@ -208,7 +208,7 @@ public class RubyBasicObject implements TruffleObject {
         if (this instanceof RubyString) {
             return Helpers.decodeByteList(getContext().getRuntime(), StringNodes.getByteList(((RubyString) this)));
         } else if (RubyGuards.isRubySymbol(this)) {
-            return SymbolNodes.getString((RubySymbol) this);
+            return SymbolNodes.getString(this);
         } else {
             return String.format("RubyBasicObject@%x<logicalClass=%s>", System.identityHashCode(this), logicalClass.getName());
         }

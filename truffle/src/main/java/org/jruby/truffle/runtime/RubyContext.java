@@ -38,7 +38,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.core.BignumNodes;
+import org.jruby.truffle.nodes.core.LoadRequiredLibrariesNode;
+import org.jruby.truffle.nodes.core.SetTopLevelBindingNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.exceptions.TopLevelRaiseHandler;
@@ -433,10 +436,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         }
 
         return jrubyString;
-    }
-
-    public org.jruby.RubySymbol toJRuby(RubySymbol symbol) {
-        return getRuntime().newSymbol(SymbolNodes.getByteList(symbol));
     }
 
     public Object toTruffle(IRubyObject object) {

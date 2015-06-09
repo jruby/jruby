@@ -18,9 +18,9 @@ import org.jruby.util.StringSupport;
 
 public class SymbolCodeRangeableWrapper implements CodeRangeable {
 
-    private final RubySymbol symbol;
+    private final RubyBasicObject symbol;
 
-    public SymbolCodeRangeableWrapper(RubySymbol symbol) {
+    public SymbolCodeRangeableWrapper(RubyBasicObject symbol) {
         this.symbol = symbol;
     }
 

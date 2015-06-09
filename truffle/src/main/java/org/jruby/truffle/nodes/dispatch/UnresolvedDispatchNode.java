@@ -26,8 +26,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.concurrent.Callable;
@@ -199,7 +197,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         } else if (RubyGuards.isRubyString(methodName)) {
             return methodName.toString();
         } else if (RubyGuards.isRubySymbol(methodName)) {
-            return SymbolNodes.getString((RubySymbol) methodName);
+            return SymbolNodes.getString((RubyBasicObject) methodName);
         } else {
             throw new UnsupportedOperationException();
         }

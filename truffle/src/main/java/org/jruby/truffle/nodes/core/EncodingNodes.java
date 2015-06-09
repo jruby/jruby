@@ -25,7 +25,10 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyEncoding;
+import org.jruby.truffle.runtime.core.RubyRegexp;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
 @CoreClass(name = "Encoding")
@@ -113,8 +116,8 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubyRegexp first, RubySymbol second) {
+        @Specialization(guards = "isRubySymbol(second)")
+        public Object isCompatible(RubyRegexp first, RubyBasicObject second) {
             final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), SymbolNodes.getByteList(second).getEncoding());
 
             if (compatibleEncoding != null) {
@@ -125,8 +128,8 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubySymbol first, RubyRegexp second) {
+        @Specialization(guards = "isRubySymbol(first)")
+        public Object isCompatible(RubyBasicObject first, RubyRegexp second) {
             final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(SymbolNodes.getByteList(first).getEncoding(), second.getRegex().getEncoding());
 
             if (compatibleEncoding != null) {
@@ -137,8 +140,8 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubyString first, RubySymbol second) {
+        @Specialization(guards = "isRubySymbol(second)")
+        public Object isCompatible(RubyString first, RubyBasicObject second) {
             final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringNodes.getCodeRangeable(first), SymbolNodes.getCodeRangeable(second));
 
             if (compatibleEncoding != null) {
@@ -149,8 +152,8 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubySymbol first, RubySymbol second) {
+        @Specialization(guards = {"isRubySymbol(first)", "isRubySymbol(second)"})
+        public Object isCompatible(RubyBasicObject first, RubyBasicObject second) {
             final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(SymbolNodes.getCodeRangeable(first), SymbolNodes.getCodeRangeable(second));
 
             if (compatibleEncoding != null) {
