@@ -17,7 +17,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -28,8 +27,6 @@ import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.util.ByteList;
-import org.jruby.util.CodeRangeable;
-import org.jruby.util.StringSupport;
 
 import java.util.EnumSet;
 
@@ -45,8 +42,8 @@ public abstract class SymbolNodes {
     private static final HiddenKey STRING_IDENTIFIER = new HiddenKey("string");
     private static final Property STRING_PROPERTY;
 
-    private static final HiddenKey BYTES_IDENTIFIER = new HiddenKey("bytes");
-    private static final Property BYTES_PROPERTY;
+    private static final HiddenKey BYTE_LIST_IDENTIFIER = new HiddenKey("byteList");
+    private static final Property BYTE_LIST_PROPERTY;
 
     private static final HiddenKey HASH_CODE_IDENTIFIER = new HiddenKey("hashCode");
     private static final Property HASH_CODE_PROPERTY;
@@ -63,14 +60,14 @@ public abstract class SymbolNodes {
         final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
 
         STRING_PROPERTY = Property.create(STRING_IDENTIFIER, allocator.locationForType(String.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
-        BYTES_PROPERTY = Property.create(BYTES_IDENTIFIER, allocator.locationForType(ByteList.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
+        BYTE_LIST_PROPERTY = Property.create(BYTE_LIST_IDENTIFIER, allocator.locationForType(ByteList.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
         HASH_CODE_PROPERTY = Property.create(HASH_CODE_IDENTIFIER, allocator.locationForType(int.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
         CODE_RANGE_PROPERTY = Property.create(CODE_RANGE_IDENTIFIER, allocator.locationForType(int.class, EnumSet.of(LocationModifier.NonNull)), 0);
         CODE_RANGEABLE_WRAPPER_PROPERTY = Property.create(CODE_RANGEABLE_WRAPPER_IDENTIFIER, allocator.locationForType(SymbolCodeRangeableWrapper.class), 0);
 
         final Shape shape = RubyBasicObject.LAYOUT.createShape(SYMBOL_TYPE)
             .addProperty(STRING_PROPERTY)
-            .addProperty(BYTES_PROPERTY)
+            .addProperty(BYTE_LIST_PROPERTY)
             .addProperty(HASH_CODE_PROPERTY)
             .addProperty(CODE_RANGE_PROPERTY)
             .addProperty(CODE_RANGEABLE_WRAPPER_PROPERTY);
@@ -87,9 +84,9 @@ public abstract class SymbolNodes {
 
     public static ByteList getByteList(RubyBasicObject symbol) {
         assert RubyGuards.isRubySymbol(symbol);
-        assert symbol.getDynamicObject().getShape().hasProperty(BYTES_IDENTIFIER);
+        assert symbol.getDynamicObject().getShape().hasProperty(BYTE_LIST_IDENTIFIER);
 
-        return (ByteList) BYTES_PROPERTY.get(symbol.getDynamicObject(), true);
+        return (ByteList) BYTE_LIST_PROPERTY.get(symbol.getDynamicObject(), true);
     }
 
     public static int getHashCode(RubyBasicObject symbol) {
