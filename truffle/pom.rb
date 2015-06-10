@@ -58,7 +58,7 @@ project 'JRuby Truffle' do
                        :artifactSet => { :includes => [
                           'com.oracle:truffle',
                           'com.oracle:truffle-interop' ] },
-                       :shadedArtifactAttached =>  'true',
+                       :shadedArtifactAttached =>  'false',
                        :shadedClassifierName =>  'complete' )
       end
     end
