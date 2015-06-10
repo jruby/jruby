@@ -146,7 +146,13 @@ public abstract class RegexpPrimitiveNodes {
             final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), regexp.getRegex().getOptions(), regexp.checkEncoding(StringNodes.getCodeRangeable(string), true));
             final Matcher matcher = r.matcher(StringNodes.getByteList(string).bytes());
 
-            return regexp.matchCommon(string, false, false, matcher, start, end);
+            if (forward) {
+                // Search forward through the string.
+                return regexp.matchCommon(string, false, false, matcher, start, end);
+            } else {
+                // Search backward through the string.
+                return regexp.matchCommon(string, false, false, matcher, end, start);
+            }
         }
 
     }
