@@ -16,15 +16,14 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.constants.platform.Errno;
-
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadServiceResource;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -32,6 +31,8 @@ import org.jruby.truffle.nodes.core.array.ArrayNodesFactory;
 import org.jruby.truffle.nodes.core.fixnum.FixnumNodesFactory;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
+import org.jruby.truffle.nodes.ext.BigDecimalNodes;
+import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory;
 import org.jruby.truffle.nodes.ext.DigestNodesFactory;
 import org.jruby.truffle.nodes.ext.ZlibNodesFactory;
 import org.jruby.truffle.nodes.objects.*;
@@ -742,8 +743,8 @@ public class CoreLibrary {
             return (long) value;
         }
 
-        if (value instanceof RubyBignum) {
-            return BignumNodes.getBigIntegerValue((RubyBignum) value).doubleValue();
+        if (RubyGuards.isRubyBignum(value)) {
+            return BignumNodes.getBigIntegerValue((RubyBasicObject) value).doubleValue();
         }
 
         if (value instanceof Double) {

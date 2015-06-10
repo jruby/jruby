@@ -69,3 +69,18 @@ fails:Process.spawn when passed :chdir changes to the directory passed for :chdi
 fails:Process.spawn when passed :chdir calls #to_path to convert the :chdir value
 fails:Process.spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
 fails(windows):Process.spawn raises an ArgumentError if given :pgroup option
+slow:Process.spawn when passed :close_others => true does not close STDIN
+slow:Process.spawn when passed :close_others => true does not close STDOUT
+slow:Process.spawn when passed :close_others => true does not close STDERR
+slow:Process.spawn when passed :close_others => false does not close STDIN
+slow:Process.spawn when passed :close_others => false does not close STDOUT
+slow:Process.spawn when passed :close_others => false does not close STDERR
+fails:Process.spawn when passed :close_others => true closes file descriptors >= 3 in the child process
+fails:Process.spawn when passed :close_others => false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
+fails:Process.spawn when passed :close_others => false does not close file descriptors >= 3 in the child process if fds are set close_on_exec=false
+fails:Process.spawn when passed :close_others => true does not close STDIN
+fails:Process.spawn when passed :close_others => true does not close STDOUT
+fails:Process.spawn when passed :close_others => true does not close STDERR
+fails:Process.spawn when passed :close_others => false does not close STDIN
+fails:Process.spawn when passed :close_others => false does not close STDOUT
+fails:Process.spawn when passed :close_others => false does not close STDERR

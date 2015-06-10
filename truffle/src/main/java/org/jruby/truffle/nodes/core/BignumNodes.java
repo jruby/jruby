@@ -25,9 +25,8 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.object.BasicObjectType;
 
 import java.math.BigInteger;
 import java.util.EnumSet;
@@ -38,6 +37,12 @@ public abstract class BignumNodes {
     public static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
     public static final BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
 
+    public static class BignumType extends BasicObjectType {
+
+    }
+
+    public static final BignumType BIGNUM_TYPE = new BignumType();
+
     private static final HiddenKey VALUE_IDENTIFIER = new HiddenKey("value");
     public static final Property VALUE_PROPERTY;
     private static final DynamicObjectFactory BIGNUM_FACTORY;
@@ -45,13 +50,13 @@ public abstract class BignumNodes {
     static {
         final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
         VALUE_PROPERTY = Property.create(VALUE_IDENTIFIER, allocator.locationForType(BigInteger.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        final Shape shape = RubyBasicObject.EMPTY_SHAPE.addProperty(VALUE_PROPERTY);
+        final Shape shape = RubyBasicObject.LAYOUT.createShape(BIGNUM_TYPE).addProperty(VALUE_PROPERTY);
         BIGNUM_FACTORY = shape.createFactory();
     }
 
     public static RubyBasicObject createRubyBignum(RubyClass rubyClass, BigInteger value) {
         assert value.compareTo(LONG_MIN) < 0 || value.compareTo(LONG_MAX) > 0 : String.format("%s not in Bignum range", value);
-        return new RubyBignum(rubyClass, BIGNUM_FACTORY.newInstance(value));
+        return new RubyBasicObject(rubyClass, BIGNUM_FACTORY.newInstance(value));
     }
 
     public static BigInteger getBigIntegerValue(RubyBasicObject bignum) {

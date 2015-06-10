@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.pack.nodes;
 
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyString;
 
 import java.math.BigInteger;
@@ -38,7 +38,7 @@ public class PackGuards {
     }
 
     public static boolean isRubyBignum(Object object) {
-        return object instanceof RubyBignum;
+        return RubyGuards.isRubyBignum(object);
     }
 
     public static boolean isRubyString(Object object) {

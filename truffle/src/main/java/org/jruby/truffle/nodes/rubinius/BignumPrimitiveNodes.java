@@ -16,7 +16,6 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Bignum} class.
@@ -54,7 +53,7 @@ public abstract class BignumPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public RubyBignum pow(RubyBasicObject a, RubyBasicObject b) {
+        public Void pow(RubyBasicObject a, RubyBasicObject b) {
             throw new UnsupportedOperationException();
         }
 

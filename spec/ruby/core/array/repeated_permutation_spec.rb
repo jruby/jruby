@@ -67,4 +67,28 @@ describe "Array#repeated_permutation" do
        [1, 2, 2], [2, 1, 1], [2, 1, 2],
        [2, 2, 1], [2, 2, 2]]
   end
+
+  describe "when no block is given" do
+    describe "returned Enumerator" do
+      describe "size" do
+        it "returns 0 when combination_size is < 0" do
+          @numbers.repeated_permutation(-1).size.should == 0
+          [].repeated_permutation(-1).size.should == 0
+        end
+
+        it "returns array size ** combination_size" do
+          @numbers.repeated_permutation(4).size.should == 81
+          @numbers.repeated_permutation(3).size.should == 27
+          @numbers.repeated_permutation(2).size.should == 9
+          @numbers.repeated_permutation(1).size.should == 3
+          @numbers.repeated_permutation(0).size.should == 1
+          [].repeated_permutation(4).size.should == 0
+          [].repeated_permutation(3).size.should == 0
+          [].repeated_permutation(2).size.should == 0
+          [].repeated_permutation(1).size.should == 0
+          [].repeated_permutation(0).size.should == 1
+        end
+      end
+    end
+  end
 end

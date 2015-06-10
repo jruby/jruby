@@ -1,6 +1,2 @@
-fails:Module#protected without arguments sets visibility to following method definitions
-fails:Module#protected without arguments stops setting visibility if the body encounters other visibility setters without arguments
-fails:Module#protected without arguments continues setting visibility if the body encounters other visibility setters with arguments
-fails:Module#protected without arguments affects normally if itself and method definitions are inside a module_eval
 fails:Module#protected without arguments affects evaled method definitions when itself is outside the eval
 fails:Module#protected without arguments affects normally if itself and following method definitions are inside a eval

@@ -19,12 +19,12 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.pack.nodes.PackGuards;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.CantConvertException;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
 
 /**
  * Convert a value to a {@code long}.
@@ -91,8 +91,8 @@ public abstract class ToLongNode extends PackNode {
             return toLong(frame, (long) value);
         }
 
-        if (seenBignum && value instanceof RubyBignum) {
-            return toLong(frame, (RubyBignum) value);
+        if (seenBignum && PackGuards.isRubyBignum(value)) {
+            return toLong(frame, (RubyBasicObject) value);
         }
 
         CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -111,9 +111,9 @@ public abstract class ToLongNode extends PackNode {
             return toLong(frame, (long) value);
         }
 
-        if (value instanceof RubyBignum) {
+        if (PackGuards.isRubyBignum(value)) {
             seenBignum = true;
-            return toLong(frame, (RubyBignum) value);
+            return toLong(frame, (RubyBasicObject) value);
         }
 
         // TODO CS 5-April-15 missing the (Object#to_int gives String) part

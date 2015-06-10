@@ -2,6 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 $extmk = false
 
 require 'rbconfig'
+require 'fileutils'
 
 objdir = File.expand_path("spec/rubyspec/optional/capi/ext")
 

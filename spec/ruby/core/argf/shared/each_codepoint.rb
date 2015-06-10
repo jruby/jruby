@@ -41,4 +41,22 @@ describe :argf_each_codepoint, :shared => true do
       ARGF.send(@method).to_a.should == @codepoints
     end
   end
+
+  describe "when no block is given" do
+    it "returns an Enumerator" do
+      argv @filenames do
+        ARGF.send(@method).should be_an_instance_of(enumerator_class)
+      end
+    end
+
+    describe "returned Enumerator" do
+      describe "size" do
+        it "should return nil" do
+          argv @filenames do
+            ARGF.send(@method).size.should == nil
+          end
+        end
+      end
+    end
+  end
 end

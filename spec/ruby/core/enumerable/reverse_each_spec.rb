@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../shared/enumerable_enumeratorized', __FILE__)
 
 describe "Enumerable#reverse_each" do
   it "traverses enum in reverse order and pass each element to block" do
@@ -20,4 +21,6 @@ describe "Enumerable#reverse_each" do
     multi.reverse_each {|e| yielded << e }
     yielded.should == [[6, 7, 8, 9], [3, 4, 5], [1, 2]]
   end
+
+  it_behaves_like :enumerable_enumeratorized_with_origin_size, :reverse_each
 end

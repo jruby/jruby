@@ -1,1 +1,3 @@
 fails(regexp):String#sub! with pattern and block raises a RuntimeError if the string is modified while substituting
+fails:String#sub with pattern and without replacement and block raises a ArgumentError
+fails:String#sub! with pattern and without replacement and block raises a ArgumentError

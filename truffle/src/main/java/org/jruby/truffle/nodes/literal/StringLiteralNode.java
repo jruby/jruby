@@ -15,7 +15,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
 public class StringLiteralNode extends RubyNode {

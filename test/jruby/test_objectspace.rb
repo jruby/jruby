@@ -35,12 +35,12 @@ class TestObjectSpace < Test::Unit::TestCase
     assert_equal(-19, -10.object_id)
 
     assert_equal(0, false.object_id)
-    assert_equal(2, true.object_id)
-    assert_equal(4, nil.object_id)
+    assert_equal(20, true.object_id)
+    assert_equal(8, nil.object_id)
 
     assert_equal(false, ObjectSpace._id2ref(0))
-    assert_equal(true, ObjectSpace._id2ref(2))
-    assert_equal(nil, ObjectSpace._id2ref(4))
+    assert_equal(true, ObjectSpace._id2ref(20))
+    assert_equal(nil, ObjectSpace._id2ref(8))
   end
   
   def test_jruby_objectspace
@@ -65,27 +65,32 @@ class TestObjectSpace < Test::Unit::TestCase
     end
   end
 
-  # JRUBY-4839
+  def body(objectspace, results)
+    JRuby.objectspace = objectspace
+    obj1 = "lemon"
+    obj2 = "apple"
+
+    ObjectSpace.define_finalizer obj1, finalizer(results)
+    ObjectSpace.define_finalizer obj2, finalizer(results)
+
+    results << obj1.object_id
+
+    ObjectSpace.undefine_finalizer obj2
+
+    obj1 = nil
+    obj2 = nil
+  end
+
+  # JRUBY-4839 GH #3028
   def test_finalization
     [true, false].each do |objectspace|
-      JRuby.objectspace = objectspace
-      obj1 = "lemon"
-      obj2 = "apple"
       results = []
 
-      ObjectSpace.define_finalizer obj1, finalizer(results)
-      ObjectSpace.define_finalizer obj2, finalizer(results)
-
-      obj1_id = obj1.object_id
-
-      ObjectSpace.undefine_finalizer obj2
-
-      obj1 = nil
-      obj2 = nil
+      body(objectspace, results)
 
       t = Time.now
-      (JRuby.gc; sleep 0.1) until (Time.now - t > 5) || results.length > 0
-      assert_equal ["finalizing #{obj1_id}"], results
+      (JRuby.gc; sleep 0.1) until (Time.now - t > 5) || results.length > 1
+      assert_equal "finalizing #{results[0]}", results[1]
     end
   end
 end

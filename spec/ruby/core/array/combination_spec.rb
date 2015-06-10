@@ -50,4 +50,25 @@ describe "Array#combination" do
     end
     accum.should == [[1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]]
   end
+
+  describe "when no block is given" do
+    describe "returned Enumerator" do
+      describe "size" do
+        it "returns 0 when the number of combinations is < 0" do
+          @array.combination(-1).size.should == 0
+          [].combination(-2).size.should == 0
+        end
+        it "returns the binomial coeficient between the array size the number of combinations" do
+          @array.combination(5).size.should == 0
+          @array.combination(4).size.should == 1
+          @array.combination(3).size.should == 4
+          @array.combination(2).size.should == 6
+          @array.combination(1).size.should == 4
+          @array.combination(0).size.should == 1
+          [].combination(0).size.should == 1
+          [].combination(1).size.should == 0
+        end
+      end
+    end
+  end
 end

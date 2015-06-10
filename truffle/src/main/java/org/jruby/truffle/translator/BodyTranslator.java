@@ -13,10 +13,6 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
-import org.jcodings.specific.UTF8Encoding;
-import org.jcodings.specific.Windows_31JEncoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
@@ -66,11 +62,7 @@ import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.UndefNode;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
-import org.jruby.truffle.nodes.rubinius.CallRubiniusPrimitiveNode;
-import org.jruby.truffle.nodes.rubinius.InvokeRubiniusPrimitiveNode;
-import org.jruby.truffle.nodes.rubinius.RubiniusLastStringReadNode;
-import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveConstructor;
-import org.jruby.truffle.nodes.rubinius.RubiniusSingleBlockArgNode;
+import org.jruby.truffle.nodes.rubinius.*;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
@@ -1864,10 +1856,8 @@ public class BodyTranslator extends Translator {
     public RubyNode visitMatch3Node(org.jruby.ast.Match3Node node) {
         // Triggered when a Regexp literal is the RHS of an expression.
 
-        // This looks weird, but the receiver and value nodes are reversed by the time they get to us, so we need to
-        // reverse them back in the CallNode.
-        final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), node.getReceiverNode());
-        final org.jruby.ast.Node callNode = new CallNode(node.getPosition(), node.getValueNode(), "=~", argsNode, null);
+        final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), node.getValueNode());
+        final org.jruby.ast.Node callNode = new CallNode(node.getPosition(), node.getReceiverNode(), "=~", argsNode, null);
         return callNode.accept(this);
     }
 

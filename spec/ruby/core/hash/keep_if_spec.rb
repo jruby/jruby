@@ -1,6 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 require File.expand_path('../shared/iteration', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Hash#keep_if" do
   it "yields two arguments: key and value" do
@@ -26,4 +27,5 @@ describe "Hash#keep_if" do
   end
 
   it_behaves_like(:hash_iteration_no_block, :keep_if)
+  it_behaves_like(:enumeratorized_with_origin_size, :keep_if, new_hash(1 => 2, 3 => 4, 5 => 6))
 end

@@ -3,11 +3,11 @@ require File.expand_path('../fixtures/common', __FILE__)
 
 describe :process_daemon_keep_stdio_open_false, :shared => true do
   it "redirects stdout to /dev/null" do
-    @daemon.invoke("keep_stdio_open_false_stdout", @object).should be_nil
+    @daemon.invoke("keep_stdio_open_false_stdout", @object).should == ""
   end
 
   it "redirects stderr to /dev/null" do
-    @daemon.invoke("keep_stdio_open_false_stderr", @object).should be_nil
+    @daemon.invoke("keep_stdio_open_false_stderr", @object).should == ""
   end
 
   it "redirects stdin to /dev/null" do
@@ -44,7 +44,7 @@ describe "Process.daemon" do
   end
 
   after :each do
-    rm_r @daemon.input, @daemon.data, @daemon.signal if @daemon
+    rm_r @daemon.input, @daemon.data if @daemon
   end
 
   it "returns 0" do

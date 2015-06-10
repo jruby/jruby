@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../../../fixtures/constants', __FILE__)
 
@@ -42,6 +44,16 @@ describe "Module#const_defined?" do
     ConstantSpecs.const_defined?("ModuleA").should == true
     ConstantSpecs.const_defined?("ClassA").should == true
     ConstantSpecs::ContainerA.const_defined?("ChildA").should == true
+  end
+
+  it "returns true when passed a constant name with unicode characters" do
+    ConstantSpecs.const_defined?("CS_CONSTλ").should be_true
+  end
+
+  it "returns true when passed a constant name with EUC-JP characters" do
+    str = "CS_CONSTλ".encode("euc-jp")
+    ConstantSpecs.const_set str, 1
+    ConstantSpecs.const_defined?(str).should be_true
   end
 
   it "returns false if the constant is not defined in the receiver, its superclass, or any included modules" do

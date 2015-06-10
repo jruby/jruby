@@ -21,7 +21,6 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -300,10 +299,10 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubySymbol calleeName(VirtualFrame frame) {
+        public RubySymbol calleeName() {
             CompilerDirectives.transferToInterpreter();
             // the "called name" of a method.
-            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(getContext(), frame).getName());
+            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(getContext()).getName());
         }
     }
 
@@ -1055,10 +1054,10 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubySymbol methodName(VirtualFrame frame) {
+        public RubySymbol methodName() {
             CompilerDirectives.transferToInterpreter();
             // the "original/definition name" of the method.
-            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(getContext(), frame).getSharedMethodInfo().getName());
+            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(getContext()).getSharedMethodInfo().getName());
         }
 
     }

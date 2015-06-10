@@ -15,7 +15,10 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyEncoding;
+import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.util.ByteList;
 
 @CoreClass(name = "Symbol")

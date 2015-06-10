@@ -1,1 +1,4 @@
 fails:Time.new with a utc_offset argument disallows a value for minutes greater than 59
+fails:Time.new timezone changes correctly adjusts the timezone change to 'EET' on 'Europe/Istanbul'
+fails:Time.new timezone changes correctly adjusts the timezone change to 'WET' on 'Europe/Lisbon'
+fails:Time.new timezone changes correctly adjusts the timezone change to 'CEST' on 'Europe/Amsterdam'

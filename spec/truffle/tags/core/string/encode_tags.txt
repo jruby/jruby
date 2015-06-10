@@ -2,3 +2,5 @@ fails(inherited - rubinius):String#encode given the :xml => :text option replace
 fails(inherited - rubinius):String#encode given the :xml => :attr option replaces undefined characters with their upper-case hexadecimal numeric character references
 fails(inherited - rubinius):String#encode! given the :xml => :text option replaces undefined characters with their upper-case hexadecimal numeric character references
 fails(inherited - rubinius):String#encode! given the :xml => :attr option replaces undefined characters with their upper-case hexadecimal numeric character references
+fails:String#encode when passed options replaces invalid characters when replacing Emacs-Mule encoded strings
+fails:String#encode! when passed options replaces invalid characters when replacing Emacs-Mule encoded strings

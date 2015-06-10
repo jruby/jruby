@@ -8,3 +8,6 @@ fails:Time.mktime handles fractional microseconds as a Float
 fails:Time.mktime handles fractional microseconds as a Rational
 fails:Time.mktime ignores fractional seconds if a passed whole number of microseconds
 fails:Time.mktime ignores fractional seconds if a passed fractional number of microseconds
+fails:Time.mktime timezone changes correctly adjusts the timezone change to 'EET' on 'Europe/Istanbul'
+fails:Time.mktime timezone changes correctly adjusts the timezone change to 'WET' on 'Europe/Lisbon'
+fails:Time.mktime timezone changes correctly adjusts the timezone change to 'CEST' on 'Europe/Amsterdam'

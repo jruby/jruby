@@ -297,7 +297,11 @@
 #define HAVE_RB_HASH_DELETE_IF             1
 #define HAVE_RB_HASH_FOREACH               1
 #define HAVE_RB_HASH_LOOKUP                1
+#define HAVE_RB_HASH_LOOKUP2               1
 #define HAVE_RB_HASH_NEW                   1
+#ifdef RUBY_VERSION_IS_2_1
+#define HAVE_RB_HASH_SET_IFNONE            1
+#endif
 #ifdef RUBY_VERSION_IS_2_2
 #define HAVE_RB_HASH_SIZE                  1
 #endif
@@ -545,6 +549,7 @@
 #define HAVE_RB_STR_LENGTH                 1
 #define HAVE_RB_STR_EQUAL                  1
 #define HAVE_RB_STR_SUBSEQ                 1
+#define HAVE_RB_VSPRINTF                   1
 
 /* Struct */
 #define HAVE_RB_STRUCT_AREF                1
@@ -561,6 +566,9 @@
 #define HAVE_RB_IS_CLASS_ID                1
 #define HAVE_RB_IS_CONST_ID                1
 #define HAVE_RB_IS_INSTANCE_ID             1
+#ifdef RUBY_VERSION_IS_2_2
+#define HAVE_RB_SYM2STR                    1
+#endif
 
 /* Thread */
 #define HAVE_RB_THREAD_ALONE               1

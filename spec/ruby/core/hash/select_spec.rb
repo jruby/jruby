@@ -1,6 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 require File.expand_path('../shared/iteration', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Hash#select" do
   before :each do
@@ -40,6 +41,7 @@ describe "Hash#select" do
   end
 
   it_behaves_like(:hash_iteration_no_block, :select)
+  it_behaves_like(:enumeratorized_with_origin_size, :select, new_hash(1 => 2, 3 => 4, 5 => 6))
 end
 
 describe "Hash#select!" do
@@ -71,4 +73,5 @@ describe "Hash#select!" do
   end
 
   it_behaves_like(:hash_iteration_no_block, :select!)
+  it_behaves_like(:enumeratorized_with_origin_size, :select!, new_hash(1 => 2, 3 => 4, 5 => 6))
 end

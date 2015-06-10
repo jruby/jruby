@@ -36,7 +36,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      */
     private static class IncludedModule implements ModuleChain {
         private final RubyModule includedModule;
-        private final ModuleChain parentModule;
+        @CompilationFinal private ModuleChain parentModule;
 
         public IncludedModule(RubyModule includedModule, ModuleChain parentModule) {
             this.includedModule = includedModule;
@@ -56,6 +56,11 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         @Override
         public String toString() {
             return super.toString() + "(" + includedModule + ")";
+        }
+
+        @Override
+        public void insertAfter(RubyModule module) {
+            parentModule = new IncludedModule(module, parentModule);
         }
     }
 
@@ -83,6 +88,9 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @CompilationFinal protected ModuleChain parentModule;
 
+    private final RubyModule lexicalParent;
+    private final String givenBaseName;
+    /** Full name, including named parent */
     private String name;
 
     private final Map<String, InternalMethod> methods = new ConcurrentHashMap<>();
@@ -104,11 +112,13 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, Node currentNode) {
         super(context, selfClass);
         this.context = context;
+        this.lexicalParent = lexicalParent;
+        this.givenBaseName = name;
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
 
-        if (lexicalParent == null) {
-            this.name = name;
+        if (lexicalParent == null) { // bootstrap or anonymous module
+            this.name = givenBaseName;
         } else {
             getAdoptedByLexicalParent(lexicalParent, name, currentNode);
         }
@@ -171,22 +181,65 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         }
     }
 
+    @Override
+    public void insertAfter(RubyModule module) {
+        parentModule = new IncludedModule(module, parentModule);
+    }
+
     @TruffleBoundary
     public void include(Node currentNode, RubyModule module) {
         checkFrozen(currentNode);
 
-        // We need to traverse the module chain in reverse order
-        Stack<RubyModule> moduleAncestors = new Stack<>();
-        for (RubyModule ancestor : module.ancestors()) {
-            moduleAncestors.push(ancestor);
+        // If the module we want to include already includes us, it is cyclic
+        if (ModuleOperations.includesModule(module, this)) {
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("cyclic include detected", currentNode));
         }
 
+        // We need to include the module ancestors in reverse order for a given inclusionPoint
+        ModuleChain inclusionPoint = this;
+        Stack<RubyModule> modulesToInclude = new Stack<>();
+        for (RubyModule ancestor : module.ancestors()) {
+            if (ModuleOperations.includesModule(this, ancestor)) {
+                if (isIncludedModuleBeforeSuperClass(ancestor)) {
+                    // Include the modules at the appropriate inclusionPoint
+                    performIncludes(inclusionPoint, modulesToInclude);
+                    assert modulesToInclude.isEmpty();
+
+                    // We need to include the others after that module
+                    inclusionPoint = parentModule;
+                    while (inclusionPoint.getActualModule() != ancestor) {
+                        inclusionPoint = inclusionPoint.getParentModule();
+                    }
+                } else {
+                    // Just ignore this module, as it is included above the superclass
+                }
+            } else {
+                modulesToInclude.push(ancestor);
+            }
+        }
+
+        performIncludes(inclusionPoint, modulesToInclude);
+
+        newVersion();
+    }
+
+    private void performIncludes(ModuleChain inclusionPoint, Stack<RubyModule> moduleAncestors) {
         while (!moduleAncestors.isEmpty()) {
             RubyModule mod = moduleAncestors.pop();
-            parentModule = new IncludedModule(mod, parentModule);
+            inclusionPoint.insertAfter(mod);
             mod.addDependent(this);
         }
-        newVersion();
+    }
+
+    private boolean isIncludedModuleBeforeSuperClass(RubyModule module) {
+        boolean isDirectlyIncluded = false;
+        for (RubyModule includedModule : includedModules()) {
+            if (includedModule == module) {
+                isDirectlyIncluded = true;
+                break;
+            }
+        }
+        return isDirectlyIncluded;
     }
 
     /**
@@ -347,14 +400,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         }
     }
 
-    @TruffleBoundary
-    public void appendFeatures(Node currentNode, RubyModule other) {
-        if (ModuleOperations.includesModule(this, other)) {
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("cyclic include detected", currentNode));
-        }
-        other.include(currentNode, this);
-    }
-
     public RubyContext getContext() {
         return context;
     }
@@ -362,6 +407,8 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public String getName() {
         if (name != null) {
             return name;
+        } else if (givenBaseName != null) {
+            return lexicalParent.getName() + "::" + givenBaseName;
         } else if (getLogicalClass() == this) { // For the case of class Class during initialization
             return "#<cyclic>";
         } else {
@@ -371,6 +418,10 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     public boolean hasName() {
         return name != null;
+    }
+
+    public boolean hasPartialName() {
+        return hasName() || givenBaseName != null;
     }
 
     @Override

@@ -23,7 +23,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -351,13 +350,13 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject appendFeatures(RubyModule module, RubyModule other) {
-            if (module instanceof RubyClass) {
+        public RubyBasicObject appendFeatures(RubyModule features, RubyModule target) {
+            if (features instanceof RubyClass) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("append_features must be called only on modules", this));
             }
-            module.appendFeatures(this, other);
-            taintResultNode.maybeTaint(module, other);
+            target.include(this, features);
+            taintResultNode.maybeTaint(features, target);
             return nil();
         }
     }
@@ -1277,7 +1276,7 @@ public abstract class ModuleNodes {
         public Object name(RubyModule module) {
             CompilerDirectives.transferToInterpreter();
 
-            if (!module.hasName()) {
+            if (!module.hasPartialName()) {
                 return nil();
             }
 
@@ -1293,12 +1292,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject nesting(VirtualFrame frame) {
+        public RubyBasicObject nesting() {
             CompilerDirectives.transferToInterpreter();
 
             final List<RubyModule> modules = new ArrayList<>();
 
-            InternalMethod method = RubyCallStack.getCallingMethod(getContext(), frame);
+            InternalMethod method = RubyCallStack.getCallingMethod(getContext());
             LexicalScope lexicalScope = method == null ? null : method.getSharedMethodInfo().getLexicalScope();
             RubyClass object = getContext().getCoreLibrary().getObjectClass();
 
@@ -1871,8 +1870,7 @@ public abstract class ModuleNodes {
         private void setCurrentVisibility(Visibility visibility) {
             CompilerDirectives.transferToInterpreter();
 
-            final Frame callerFrame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
-
+            final Frame callerFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
             assert callerFrame != null;
             assert callerFrame.getFrameDescriptor() != null;
 

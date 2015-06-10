@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 # Contains all static code examples of all constants behavior in language and
 # library specs. The specs include language/constants_spec.rb and the specs
 # for Module#const_defined?, Module#const_get, Module#const_set,
@@ -247,6 +249,8 @@ module ConstantSpecs
       end
     end
   end
+
+  CS_CONSTλ = :const_unicode
 
   # Constants
   CS_CONST2 = :const2   # only defined here

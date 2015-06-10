@@ -261,7 +261,7 @@ public class ParserSupport {
                 return new Match2Node(firstNode.getPosition(), firstNode, secondNode);
             }
         } else if (secondNode instanceof DRegexpNode || secondNode instanceof RegexpNode) {
-            return new Match3Node(firstNode.getPosition(), secondNode, firstNode);
+            return new Match3Node(firstNode.getPosition(), firstNode, secondNode);
         }
 
         return getOperatorCallNode(firstNode, "=~", secondNode);

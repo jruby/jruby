@@ -24,11 +24,9 @@ import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.tools.CoverageTracker;
-
 import jnr.ffi.LibraryLoader;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
-
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;

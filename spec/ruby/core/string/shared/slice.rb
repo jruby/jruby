@@ -525,3 +525,9 @@ describe :string_slice_regexp_group, :shared => true do
     end
   end
 end
+
+describe :string_slice_symbol, :shared => true do
+  it "raises TypeError" do
+    lambda { 'hello'.send(@method, :hello) }.should raise_error(TypeError)
+  end
+end

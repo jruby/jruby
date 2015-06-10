@@ -141,3 +141,33 @@ fails:Kernel#spawn with Integer option keys maps the key to a file descriptor in
 fails:Kernel.spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
 fails(windows):Kernel#spawn raises an ArgumentError if given :pgroup option
 fails(windows):Kernel.spawn raises an ArgumentError if given :pgroup option
+slow:Kernel#spawn when passed :close_others => true does not close STDIN
+slow:Kernel#spawn when passed :close_others => true does not close STDOUT
+slow:Kernel#spawn when passed :close_others => true does not close STDERR
+slow:Kernel#spawn when passed :close_others => false does not close STDIN
+slow:Kernel#spawn when passed :close_others => false does not close STDOUT
+slow:Kernel#spawn when passed :close_others => false does not close STDERR
+slow:Kernel.spawn when passed :close_others => true does not close STDIN
+slow:Kernel.spawn when passed :close_others => true does not close STDOUT
+slow:Kernel.spawn when passed :close_others => true does not close STDERR
+slow:Kernel.spawn when passed :close_others => false does not close STDIN
+slow:Kernel.spawn when passed :close_others => false does not close STDOUT
+slow:Kernel.spawn when passed :close_others => false does not close STDERR
+fails:Kernel#spawn when passed :close_others => true closes file descriptors >= 3 in the child process
+fails:Kernel#spawn when passed :close_others => false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
+fails:Kernel#spawn when passed :close_others => false does not close file descriptors >= 3 in the child process if fds are set close_on_exec=false
+fails:Kernel.spawn when passed :close_others => true closes file descriptors >= 3 in the child process
+fails:Kernel.spawn when passed :close_others => false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
+fails:Kernel.spawn when passed :close_others => false does not close file descriptors >= 3 in the child process if fds are set close_on_exec=false
+fails:Kernel#spawn when passed :close_others => true does not close STDIN
+fails:Kernel#spawn when passed :close_others => true does not close STDOUT
+fails:Kernel#spawn when passed :close_others => true does not close STDERR
+fails:Kernel#spawn when passed :close_others => false does not close STDIN
+fails:Kernel#spawn when passed :close_others => false does not close STDOUT
+fails:Kernel#spawn when passed :close_others => false does not close STDERR
+fails:Kernel.spawn when passed :close_others => true does not close STDIN
+fails:Kernel.spawn when passed :close_others => true does not close STDOUT
+fails:Kernel.spawn when passed :close_others => true does not close STDERR
+fails:Kernel.spawn when passed :close_others => false does not close STDIN
+fails:Kernel.spawn when passed :close_others => false does not close STDOUT
+fails:Kernel.spawn when passed :close_others => false does not close STDERR

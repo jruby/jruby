@@ -1,3 +1,5 @@
+require File.expand_path('../enumerable_enumeratorized', __FILE__)
+
 describe :enumerable_find_all, :shared => true do
   before :each do
     ScratchPad.record []
@@ -24,4 +26,6 @@ describe :enumerable_find_all, :shared => true do
     multi = EnumerableSpecs::YieldsMulti.new
     multi.send(@method) {|e| e == [3, 4, 5] }.should == [[3, 4, 5]]
   end
+
+  it_should_behave_like :enumerable_enumeratorized_with_origin_size
 end

@@ -713,6 +713,12 @@ describe "CApiObject" do
         @o.rb_iv_set(@test, "@foo", 42).should == 42
         @test.instance_eval { @foo }.should == 42
       end
+
+      it "sets and returns the instance variable with a bare name" do
+        @o.rb_iv_set(@test, "foo", 42).should == 42
+        @o.rb_iv_get(@test, "foo").should == 42
+        @test.instance_eval { @foo }.should == 7
+      end
     end
 
     describe "rb_ivar_get" do

@@ -62,12 +62,6 @@ describe "String#upto" do
     lambda { "a".upto(:c).to_a }.should raise_error(TypeError)
   end
 
-  it "returns an enumerator when no block given" do
-    enum = "aaa".upto("baa", true)
-    enum.should be_an_instance_of(enumerator_class)
-    enum.count.should == 26**2
-  end
-
   it "returns non-alphabetic characters in the ASCII range for single letters" do
     "9".upto("A").to_a.should == ["9", ":", ";", "<", "=", ">", "?", "@", "A"]
     "Z".upto("a").to_a.should == ["Z", "[", "\\", "]", "^", "_", "`", "a"]
@@ -83,6 +77,22 @@ describe "String#upto" do
   describe "on sequence of numbers" do
     it "calls the block as Integer#upto"  do
       "8".upto("11").to_a.should == 8.upto(11).map(&:to_s)
+    end
+  end
+
+  describe "when no block is given" do
+    it "returns an enumerator" do
+      enum = "aaa".upto("baa", true)
+      enum.should be_an_instance_of(enumerator_class)
+      enum.count.should == 26**2
+    end
+
+    describe "returned Enumerator" do
+      describe "size" do
+        it "should return nil" do
+          "a".upto("b").size.should == nil
+        end
+      end
     end
   end
 end

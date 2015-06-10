@@ -10,11 +10,8 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.interop.TruffleObject;
-import org.jruby.truffle.nodes.core.BigDecimalNodes;
-import org.jruby.truffle.nodes.core.MethodNodes;
-import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.nodes.core.UnboundMethodNodes;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.ext.BigDecimalNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.ThreadLocalObject;
@@ -43,7 +40,11 @@ public abstract class RubyGuards {
     // Ruby types
 
     public static boolean isRubyBignum(Object value) {
-        return value instanceof RubyBignum;
+        return (value instanceof RubyBasicObject) && isRubyBignum((RubyBasicObject) value);
+    }
+
+    public static boolean isRubyBignum(RubyBasicObject value) {
+        return value.getDynamicObject().getShape().getObjectType() == BignumNodes.BIGNUM_TYPE;
     }
 
     public static boolean isRubyBigDecimal(RubyBasicObject value) {
@@ -66,6 +67,7 @@ public abstract class RubyGuards {
         //return value.getDynamicObject().getShape().getObjectType() == ArrayNodes.ARRAY_TYPE;
         return value instanceof RubyArray;
     }
+
     public static boolean isRubyBinding(Object value) {
         return value instanceof RubyBinding;
     }
