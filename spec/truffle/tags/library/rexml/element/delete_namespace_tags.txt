@@ -1,0 +1,2 @@
+fails:REXML::Element#delete_namespace deletes a namespace from the element
+fails:REXML::Element#delete_namespace deletes default namespace when called with no args
