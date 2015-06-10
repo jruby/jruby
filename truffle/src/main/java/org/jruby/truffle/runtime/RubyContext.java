@@ -642,15 +642,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     @Override
     public void shutdown() {
-        try {
-            innerShutdown(true);
-        } catch (RaiseException e) {
-            final RubyException rubyException = e.getRubyException();
-
-            for (String line : Backtrace.DISPLAY_FORMATTER.format(e.getRubyException().getContext(), rubyException, rubyException.getBacktrace())) {
-                System.err.println(line);
-            }
-        }
+        innerShutdown(true);
     }
 
     public PrintStream getDebugStandardOut() {
