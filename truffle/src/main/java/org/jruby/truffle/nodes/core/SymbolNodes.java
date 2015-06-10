@@ -9,58 +9,137 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.arguments.CheckArityNode;
+import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.methods.SymbolProcNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.core.SymbolCodeRangeableWrapper;
+import org.jruby.truffle.runtime.methods.Arity;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.util.ByteList;
+
+import java.util.Collection;
+import java.util.EnumSet;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
 
-    @CoreMethod(names = {"==", "==="}, required = 1)
-    public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public boolean equal(RubySymbol a, RubySymbol b) {
-            return a == b;
-        }
-
-
-        @Specialization(guards = "!isRubySymbol(b)")
-        public boolean equal(RubySymbol a, Object b) {
-            return false;
-        }
+    public static class SymbolType extends BasicObjectType {
 
     }
 
-    @CoreMethod(names = "<=>", required = 1)
-    public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
+    public static final SymbolType SYMBOL_TYPE = new SymbolType();
 
-        public CompareNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
+    private static final HiddenKey STRING_IDENTIFIER = new HiddenKey("string");
+    private static final Property STRING_PROPERTY;
+
+    private static final HiddenKey BYTE_LIST_IDENTIFIER = new HiddenKey("byteList");
+    private static final Property BYTE_LIST_PROPERTY;
+
+    private static final HiddenKey HASH_CODE_IDENTIFIER = new HiddenKey("hashCode");
+    private static final Property HASH_CODE_PROPERTY;
+
+    private static final HiddenKey CODE_RANGE_IDENTIFIER = new HiddenKey("codeRange");
+    private static final Property CODE_RANGE_PROPERTY;
+
+    private static final HiddenKey CODE_RANGEABLE_WRAPPER_IDENTIFIER = new HiddenKey("codeRangeableWrapper");
+    private static final Property CODE_RANGEABLE_WRAPPER_PROPERTY;
+
+    public static final DynamicObjectFactory SYMBOL_FACTORY;
+
+    static {
+        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+
+        STRING_PROPERTY = Property.create(STRING_IDENTIFIER, allocator.locationForType(String.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
+        BYTE_LIST_PROPERTY = Property.create(BYTE_LIST_IDENTIFIER, allocator.locationForType(ByteList.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
+        HASH_CODE_PROPERTY = Property.create(HASH_CODE_IDENTIFIER, allocator.locationForType(int.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
+        CODE_RANGE_PROPERTY = Property.create(CODE_RANGE_IDENTIFIER, allocator.locationForType(int.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        CODE_RANGEABLE_WRAPPER_PROPERTY = Property.create(CODE_RANGEABLE_WRAPPER_IDENTIFIER, allocator.locationForType(SymbolCodeRangeableWrapper.class), 0);
+
+        final Shape shape = RubyBasicObject.LAYOUT.createShape(SYMBOL_TYPE)
+            .addProperty(STRING_PROPERTY)
+            .addProperty(BYTE_LIST_PROPERTY)
+            .addProperty(HASH_CODE_PROPERTY)
+            .addProperty(CODE_RANGE_PROPERTY)
+            .addProperty(CODE_RANGEABLE_WRAPPER_PROPERTY);
+
+        SYMBOL_FACTORY = shape.createFactory();
+    }
+
+    public static String getString(RubyBasicObject symbol) {
+        assert RubyGuards.isRubySymbol(symbol);
+        assert symbol.getDynamicObject().getShape().hasProperty(STRING_IDENTIFIER);
+
+        return (String) STRING_PROPERTY.get(symbol.getDynamicObject(), true);
+    }
+
+    public static ByteList getByteList(RubyBasicObject symbol) {
+        assert RubyGuards.isRubySymbol(symbol);
+        assert symbol.getDynamicObject().getShape().hasProperty(BYTE_LIST_IDENTIFIER);
+
+        return (ByteList) BYTE_LIST_PROPERTY.get(symbol.getDynamicObject(), true);
+    }
+
+    public static int getHashCode(RubyBasicObject symbol) {
+        assert RubyGuards.isRubySymbol(symbol);
+        assert symbol.getDynamicObject().getShape().hasProperty(HASH_CODE_IDENTIFIER);
+
+        return (int) HASH_CODE_PROPERTY.get(symbol.getDynamicObject(), true);
+    }
+
+    public static int getCodeRange(RubyBasicObject symbol) {
+        assert RubyGuards.isRubySymbol(symbol);
+        assert symbol.getDynamicObject().getShape().hasProperty(CODE_RANGE_IDENTIFIER);
+
+        return (int) CODE_RANGE_PROPERTY.get(symbol.getDynamicObject(), true);
+    }
+
+    public static void setCodeRange(RubyBasicObject symbol, int codeRange) {
+        assert RubyGuards.isRubySymbol(symbol);
+        assert symbol.getDynamicObject().getShape().hasProperty(CODE_RANGE_IDENTIFIER);
+
+        try {
+            CODE_RANGE_PROPERTY.set(symbol.getDynamicObject(), codeRange, symbol.getDynamicObject().getShape());
+        } catch (IncompatibleLocationException | FinalLocationException e) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    public static SymbolCodeRangeableWrapper getCodeRangeable(RubyBasicObject symbol) {
+        assert RubyGuards.isRubySymbol(symbol);
+        assert symbol.getDynamicObject().getShape().hasProperty(CODE_RANGEABLE_WRAPPER_IDENTIFIER);
+
+        SymbolCodeRangeableWrapper wrapper = (SymbolCodeRangeableWrapper)
+                CODE_RANGEABLE_WRAPPER_PROPERTY.get(symbol.getDynamicObject(), true);
+
+        if (wrapper != null) {
+            return wrapper;
         }
 
-        @TruffleBoundary
-        @Specialization
-        public int compare(RubySymbol a, RubySymbol b) {
-            return a.getByteList().cmp(b.getByteList());
+        wrapper = new SymbolCodeRangeableWrapper(symbol);
+
+        try {
+            CODE_RANGEABLE_WRAPPER_PROPERTY.set(symbol.getDynamicObject(), wrapper, symbol.getDynamicObject().getShape());
+        } catch (IncompatibleLocationException | FinalLocationException e) {
+            throw new UnsupportedOperationException();
         }
 
-        @Specialization(guards = "!isRubySymbol(other)")
-        public RubyBasicObject compare(RubySymbol symbol,  Object other) {
-            return nil();
-        }
+        return wrapper;
     }
 
     @CoreMethod(names = "all_symbols", onSingleton = true)
@@ -73,77 +152,7 @@ public abstract class SymbolNodes {
         @TruffleBoundary
         @Specialization
         public RubyBasicObject allSymbols() {
-            final RubyBasicObject array = createEmptyArray();
-
-            for (RubySymbol s : getContext().getSymbolTable().allSymbols()) {
-                ArrayNodes.slowPush(array, s);
-            }
-            return array;
-        }
-
-    }
-
-    @CoreMethod(names = "capitalize")
-    public abstract static class CapitalizeNode extends CoreMethodArrayArgumentsNode {
-
-        public CapitalizeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubySymbol capitalize(RubySymbol symbol) {
-            final ByteList byteList = SymbolNodesHelper.capitalize(symbol.getByteList());
-            return getContext().getSymbol(byteList);
-        }
-
-    }
-
-    @CoreMethod(names = "casecmp", required = 1)
-    public abstract static class CaseCompareNode extends CoreMethodArrayArgumentsNode {
-
-        public CaseCompareNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public int caseCompare(RubySymbol symbol, RubySymbol other) {
-            return symbol.getByteList().caseInsensitiveCmp(other.getByteList());
-        }
-
-        @Specialization(guards = "!isRubySymbol(other)")
-        public RubyBasicObject caseCompare(RubySymbol symbol,  Object other) {
-            return nil();
-        }
-
-    }
-
-    @CoreMethod(names = "downcase")
-    public abstract static class DowncaseNode extends CoreMethodArrayArgumentsNode {
-
-        public DowncaseNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public RubySymbol downcase(RubySymbol symbol) {
-            final ByteList byteList = SymbolNodesHelper.downcase(symbol.getByteList());
-            return getContext().getSymbol(byteList);
-        }
-
-    }
-
-    @CoreMethod(names = "empty?")
-    public abstract static class EmptyNode extends CoreMethodArrayArgumentsNode {
-
-        public EmptyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public boolean empty(RubySymbol symbol) {
-            return symbol.toString().isEmpty();
+            return createArray(getContext().getSymbolTable().allSymbols().toArray());
         }
 
     }
@@ -156,8 +165,8 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubyEncoding encoding(RubySymbol symbol) {
-            return RubyEncoding.getEncoding(symbol.getByteList().getEncoding());
+        public RubyEncoding encoding(RubyBasicObject symbol) {
+            return RubyEncoding.getEncoding(getByteList(symbol).getEncoding());
         }
 
     }
@@ -170,22 +179,8 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public int hash(RubySymbol symbol) {
-            return symbol.toString().hashCode();
-        }
-
-    }
-
-    @CoreMethod(names = "intern")
-    public abstract static class InternNode extends CoreMethodArrayArgumentsNode {
-
-        public InternNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubySymbol intern(RubySymbol symbol) {
-            return symbol;
+        public int hash(RubyBasicObject symbol) {
+            return getHashCode(symbol);
         }
 
     }
@@ -197,29 +192,50 @@ public abstract class SymbolNodes {
             super(context, sourceSection);
         }
 
+        @Specialization(guards = "cachedSymbol == symbol")
+        public RubyProc toProcCached(RubyBasicObject symbol,
+                                     @Cached("symbol") RubyBasicObject cachedSymbol,
+                                     @Cached("createProc(symbol)") RubyProc cachedProc) {
+            return cachedProc;
+        }
+
         @TruffleBoundary
         @Specialization
-        public RubyProc toProc(RubySymbol symbol) {
-            // TODO(CS): this should be doing all kinds of caching
-            return symbol.toProc(Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection(), this);
+        public RubyProc toProcUncached(RubyBasicObject symbol) {
+            return createProc(symbol);
         }
+
+        protected RubyProc createProc(RubyBasicObject symbol) {
+            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame()
+                    .getCallNode().getEncapsulatingSourceSection();
+
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
+                    sourceSection, null, Arity.NO_ARGUMENTS, getString(symbol),
+                    true, null, false);
+
+            final RubyRootNode rootNode = new RubyRootNode(
+                    getContext(), sourceSection,
+                    new FrameDescriptor(),
+                    sharedMethodInfo,
+                    SequenceNode.sequence(getContext(), sourceSection,
+                            new CheckArityNode(getContext(), sourceSection, Arity.AT_LEAST_ONE),
+                            new SymbolProcNode(getContext(), sourceSection, getString(symbol))));
+
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+
+            return new RubyProc(
+                    getContext().getCoreLibrary().getProcClass(),
+                    RubyProc.Type.PROC,
+                    sharedMethodInfo,
+                    callTarget, callTarget, callTarget,
+                    null, null,
+                    symbol.getContext().getCoreLibrary().getNilObject(),
+                    null);
+        }
+
     }
 
-    @CoreMethod(names = "to_sym")
-    public abstract static class ToSymNode extends CoreMethodArrayArgumentsNode {
-
-        public ToSymNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubySymbol toSym(RubySymbol symbol) {
-            return symbol;
-        }
-
-    }
-
-    @CoreMethod(names = { "to_s", "id2name" })
+    @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -227,133 +243,8 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubyBasicObject toS(RubySymbol symbol) {
-            return createString(symbol.getSymbolBytes().dup());
-        }
-
-    }
-
-    @CoreMethod(names = "inspect")
-    public abstract static class InspectNode extends CoreMethodArrayArgumentsNode {
-
-        public InspectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public RubyBasicObject inspect(RubySymbol symbol) {
-            return createString(symbol.getJRubySymbol().inspect(getContext().getRuntime().getCurrentContext()).asString().decodeString());
-        }
-
-    }
-
-    @CoreMethod(names = {"size", "length"})
-    public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
-
-        public SizeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public int size(RubySymbol symbol) {
-            return symbol.getByteList().lengthEnc();
-        }
-
-    }
-
-    @CoreMethod(names = { "swapcase"})
-    public abstract static class SwapcaseNode extends CoreMethodArrayArgumentsNode {
-
-        public SwapcaseNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubySymbol swapcase(RubySymbol symbol) {
-            final ByteList byteList = SymbolNodesHelper.swapcase(symbol.getByteList());
-            return getContext().getSymbol(byteList);
-        }
-
-    }
-
-    @CoreMethod(names = "upcase")
-    public abstract static class UpcaseNode extends CoreMethodArrayArgumentsNode {
-
-        public UpcaseNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubySymbol upcase(RubySymbol symbol) {
-            final ByteList byteList = SymbolNodesHelper.upcase(symbol.getByteList());
-            return getContext().getSymbol(byteList);
-        }
-
-    }
-
-    public static class SymbolNodesHelper {
-
-        @TruffleBoundary
-        public static ByteList downcase(ByteList originalByteList) {
-            final ByteList byteList = originalByteList.dup();
-            final int length = byteList.length();
-            for (int i = 0; i < length; i++) {
-                final char c = byteList.charAt(i);
-                if ((c >= 'A') && (c <= 'Z')) {
-                    byteList.set(i, c ^ 0x20);
-                }
-            }
-            return byteList;
-        }
-
-        @TruffleBoundary
-        public static ByteList upcase(ByteList originalByteList) {
-            final ByteList byteList = originalByteList.dup();
-            final int length = byteList.length();
-            for (int i = 0; i < length; i++) {
-                final char c = byteList.charAt(i);
-                if ((c >= 'a') && (c <= 'z')) {
-                    byteList.set(i, c & 0x5f);
-                }
-            }
-            return byteList;
-        }
-
-
-
-        @TruffleBoundary
-        public static ByteList swapcase(ByteList originalByteList) {
-            final ByteList byteList = originalByteList.dup();
-            final int length = byteList.length();
-            for (int i = 0; i < length; i++) {
-                final char c = byteList.charAt(i);
-                if ((c >= 'a') && (c <= 'z')) {
-                    byteList.set(i, c & 0x5f);
-                } else if ((c >= 'A') && (c <= 'Z')) {
-                    byteList.set(i, c ^ 0x20);
-                }
-            }
-            return byteList;
-        }
-
-        @TruffleBoundary
-        public static ByteList capitalize(ByteList originalByteList) {
-            final ByteList byteList = originalByteList.dup();
-            final int length = byteList.length();
-            if (length > 0) {
-                final char c = byteList.charAt(0);
-                if ((c >= 'a') && (c <= 'z')) {
-                    byteList.set(0, c & 0x5f);
-                }
-            }
-            for (int i = 1; i < length; i++) {
-                final char c = byteList.charAt(i);
-                if ((c >= 'A') && (c <= 'Z')) {
-                    byteList.set(i, c ^ 0x20);
-                }
-            }
-            return byteList;
+        public RubyBasicObject toS(RubyBasicObject symbol) {
+            return createString(getByteList(symbol).dup());
         }
 
     }

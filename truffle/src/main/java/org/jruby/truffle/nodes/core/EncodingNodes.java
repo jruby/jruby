@@ -25,7 +25,10 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyEncoding;
+import org.jruby.truffle.runtime.core.RubyRegexp;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
 @CoreClass(name = "Encoding")
@@ -113,9 +116,9 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubyRegexp first, RubySymbol second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), second.getByteList().getEncoding());
+        @Specialization(guards = "isRubySymbol(second)")
+        public Object isCompatible(RubyRegexp first, RubyBasicObject second) {
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), SymbolNodes.getByteList(second).getEncoding());
 
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
@@ -125,9 +128,9 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubySymbol first, RubyRegexp second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getByteList().getEncoding(), second.getRegex().getEncoding());
+        @Specialization(guards = "isRubySymbol(first)")
+        public Object isCompatible(RubyBasicObject first, RubyRegexp second) {
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(SymbolNodes.getByteList(first).getEncoding(), second.getRegex().getEncoding());
 
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
@@ -137,9 +140,9 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubyString first, RubySymbol second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringNodes.getCodeRangeable(first), second);
+        @Specialization(guards = "isRubySymbol(second)")
+        public Object isCompatible(RubyString first, RubyBasicObject second) {
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringNodes.getCodeRangeable(first), SymbolNodes.getCodeRangeable(second));
 
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
@@ -149,9 +152,9 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubySymbol first, RubySymbol second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
+        @Specialization(guards = {"isRubySymbol(first)", "isRubySymbol(second)"})
+        public Object isCompatible(RubyBasicObject first, RubyBasicObject second) {
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(SymbolNodes.getCodeRangeable(first), SymbolNodes.getCodeRangeable(second));
 
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
@@ -362,19 +365,19 @@ public abstract class EncodingNodes {
 
             final Encoding defaultInternalEncoding = getContext().getRuntime().getDefaultInternalEncoding();
             final Object internalTuple = getContext().makeTuple(frame, newTupleNode, createString("internal"), indexLookup(encodings, defaultInternalEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("INTERNAL"), internalTuple);
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("INTERNAL"), internalTuple);
 
             final Encoding defaultExternalEncoding = getContext().getRuntime().getDefaultExternalEncoding();
             final Object externalTuple = getContext().makeTuple(frame, newTupleNode, createString("external"), indexLookup(encodings, defaultExternalEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("EXTERNAL"), externalTuple);
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("EXTERNAL"), externalTuple);
 
             final Encoding localeEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
             final Object localeTuple = getContext().makeTuple(frame, newTupleNode, createString("locale"), indexLookup(encodings, localeEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("LOCALE"), localeTuple);
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("LOCALE"), localeTuple);
 
             final Encoding filesystemEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
             final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, createString("filesystem"), indexLookup(encodings, filesystemEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().getSymbol("FILESYSTEM"), filesystemTuple);
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("FILESYSTEM"), filesystemTuple);
 
             return ret;
         }

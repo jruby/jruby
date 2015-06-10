@@ -11,8 +11,8 @@ package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.interop.TruffleObject;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.nodes.ext.BigDecimalNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
+import org.jruby.truffle.nodes.ext.BigDecimalNodes;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.core.*;
@@ -105,7 +105,11 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubySymbol(Object value) {
-        return value instanceof RubySymbol;
+        return (value instanceof RubyBasicObject) && isRubySymbol((RubyBasicObject) value);
+    }
+
+    public static boolean isRubySymbol(RubyBasicObject value) {
+        return value.getDynamicObject().getShape().getObjectType() == SymbolNodes.SYMBOL_TYPE;
     }
 
     public static boolean isRubyMethod(Object value) {

@@ -151,7 +151,6 @@ public class CoreLibrary {
     private final RubyClass rubyInternalMethod;
     private final Map<Errno, RubyClass> errnoClasses = new HashMap<>();
 
-    @CompilationFinal private RubySymbol eachSymbol;
     @CompilationFinal private RubyBasicObject envHash;
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;

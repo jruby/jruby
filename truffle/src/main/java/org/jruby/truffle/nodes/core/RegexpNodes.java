@@ -23,7 +23,10 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyMatchData;
+import org.jruby.truffle.runtime.core.RubyRegexp;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
 import java.util.Iterator;
@@ -48,8 +51,8 @@ public abstract class RegexpNodes {
             return regexp.matchCommon(string, true, true);
         }
 
-        @Specialization
-        public Object match(VirtualFrame frame, RubyRegexp regexp, RubySymbol symbol) {
+        @Specialization(guards = "isRubySymbol(symbol)")
+        public Object match(VirtualFrame frame, RubyRegexp regexp, RubyBasicObject symbol) {
             if (toSNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -135,14 +138,14 @@ public abstract class RegexpNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(raw)")
-        public RubyBasicObject quote(RubyBasicObject raw) {
+        public RubyBasicObject quoteString(RubyBasicObject raw) {
             boolean isAsciiOnly = StringNodes.getByteList(raw).getEncoding().isAsciiCompatible() && StringNodes.scanForCodeRange(raw) == CR_7BIT;
             return createString(org.jruby.RubyRegexp.quote19(StringNodes.getByteList(raw), isAsciiOnly));
         }
 
-        @Specialization
-        public RubyBasicObject quote(RubySymbol raw) {
-            return quote(raw.toRubyString());
+        @Specialization(guards = "isRubySymbol(raw)")
+        public RubyBasicObject quoteSymbol(RubyBasicObject raw) {
+            return quoteString(StringNodes.createString(raw.getContext().getCoreLibrary().getStringClass(), SymbolNodes.getString(raw)));
         }
 
     }
@@ -225,7 +228,7 @@ public abstract class RegexpNodes {
 
             for (final Iterator<NameEntry> i = regexp.getRegex().namedBackrefIterator(); i.hasNext();) {
                 final NameEntry e = i.next();
-                final RubySymbol name = getContext().getSymbol(new ByteList(e.name, e.nameP, e.nameEnd - e.nameP, false));
+                final RubyBasicObject name = getSymbol(new ByteList(e.name, e.nameP, e.nameEnd - e.nameP, false));
 
                 final int[] backrefs = e.getBackRefs();
                 final RubyBasicObject backrefsRubyArray = ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), backrefs, backrefs.length);

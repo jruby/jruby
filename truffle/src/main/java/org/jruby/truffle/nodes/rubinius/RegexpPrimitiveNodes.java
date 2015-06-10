@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.Encoding;
 import org.joni.Matcher;
 import org.joni.Regex;
 import org.jruby.truffle.nodes.core.RegexpGuards;
@@ -25,6 +26,7 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
+import org.jruby.util.RegexpSupport;
 import org.jruby.util.StringSupport;
 
 /**
@@ -98,30 +100,59 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "regexp_propagate_last_match")
+    public static abstract class RegexpPropagateLastMatchPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public RegexpPropagateLastMatchPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject propagateLastMatch(RubyClass regexpClass) {
+            // TODO (nirvdrum 08-Jun-15): This method seems to exist just to fix Rubinius's broken frame-local scoping.  This assertion needs to be verified, however.
+            return nil();
+        }
+
+    }
+
     @RubiniusPrimitive(name = "regexp_search_region", lowerFixnumParameters = {1, 2})
+    @ImportStatic(RegexpGuards.class)
     public static abstract class RegexpSearchRegionPrimitiveNode extends RubiniusPrimitiveNode {
 
         public RegexpSearchRegionPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
+        @Specialization(guards = "!isInitialized(regexp)")
+        public Object searchRegionNotInitialized(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
+        }
+
+        @Specialization(guards = "!isValidEncoding(string)")
+        public Object searchRegionInvalidEncoding(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError(
+                    String.format("invalid byte sequence in %s", StringNodes.getByteList(string).getEncoding()), this));
+        }
+
         @TruffleBoundary
-        @Specialization
+        @Specialization(guards = { "isInitialized(regexp)", "isValidEncoding(string)" })
         public Object searchRegion(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
-            if (regexp.getRegex() == null) {
-                throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
-            }
-
-            if (StringNodes.scanForCodeRange(string) == StringSupport.CR_BROKEN) {
-                throw new RaiseException(getContext().getCoreLibrary().argumentError(
-                        String.format("invalid byte sequence in %s", StringNodes.getByteList(string).getEncoding()), this));
-            }
-
             final ByteList bl = regexp.getSource();
-            final Regex r = new Regex(bl.getUnsafeBytes(), bl.getBegin(), bl.getBegin() + bl.getRealSize(), regexp.getRegex().getOptions(), regexp.checkEncoding(StringNodes.getCodeRangeable(string), true));
+            final Encoding enc = regexp.checkEncoding(StringNodes.getCodeRangeable(string), true);
+            final ByteList preprocessed = RegexpSupport.preprocess(getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
+
+            final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), regexp.getRegex().getOptions(), regexp.checkEncoding(StringNodes.getCodeRangeable(string), true));
             final Matcher matcher = r.matcher(StringNodes.getByteList(string).bytes());
 
-            return regexp.matchCommon(string, false, false, matcher, start, end);
+            if (forward) {
+                // Search forward through the string.
+                return regexp.matchCommon(string, false, false, matcher, start, end);
+            } else {
+                // Search backward through the string.
+                return regexp.matchCommon(string, false, false, matcher, end, start);
+            }
         }
 
     }

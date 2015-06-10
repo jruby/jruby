@@ -26,7 +26,10 @@ import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 
@@ -154,8 +157,8 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public RubySymbol name(RubyBasicObject unboundMethod) {
-            return getContext().getSymbol(getMethod(unboundMethod).getName());
+        public RubyBasicObject name(RubyBasicObject unboundMethod) {
+            return getSymbol(getMethod(unboundMethod).getName());
         }
 
     }

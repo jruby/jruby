@@ -21,10 +21,15 @@ import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyMatchData;
+import org.jruby.truffle.runtime.core.RubyRange;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
 import java.util.Arrays;
@@ -65,19 +70,19 @@ public abstract class MatchDataNodes {
             return createArray(store, length);
         }
 
-        @Specialization
-        public Object getIndex(RubyMatchData matchData, RubySymbol index, NotProvided length) {
+        @Specialization(guards = "isRubySymbol(index)")
+        public Object getIndex(RubyMatchData matchData, RubyBasicObject index, NotProvided length) {
             CompilerDirectives.transferToInterpreter();
 
             try {
-                final int i = matchData.getBackrefNumber(index.getSymbolBytes());
+                final int i = matchData.getBackrefNumber(SymbolNodes.getByteList(index));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             } catch (final ValueException e) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                    getContext().getCoreLibrary().indexError(String.format("undefined group name reference: %s", index.toString()), this));
+                    getContext().getCoreLibrary().indexError(String.format("undefined group name reference: %s", SymbolNodes.getString(index)), this));
             }
         }
 
@@ -187,6 +192,38 @@ public abstract class MatchDataNodes {
             } else {
                 return matchData.end(index);
             }
+        }
+    }
+
+    @RubiniusOnly
+    @CoreMethod(names = "full")
+    public abstract static class FullNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private CallDispatchHeadNode newTupleNode;
+
+        public FullNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object full(VirtualFrame frame, RubyMatchData matchData) {
+            if (matchData.getFullTuple() != null) {
+                return matchData.getFullTuple();
+            }
+
+            if (newTupleNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                newTupleNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            final Object fullTuple = newTupleNode.call(frame,
+                    getContext().getCoreLibrary().getTupleClass(),
+                    "create",
+                    null, matchData.getFullBegin(), matchData.getFullEnd());
+
+            matchData.setFullTuple(fullTuple);
+
+            return fullTuple;
         }
     }
 

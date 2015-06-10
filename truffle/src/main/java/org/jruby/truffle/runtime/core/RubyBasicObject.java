@@ -19,6 +19,7 @@ import com.oracle.truffle.api.object.*;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -202,10 +203,12 @@ public class RubyBasicObject implements TruffleObject {
 
     @Override
     public String toString() {
-        CompilerAsserts.neverPartOfCompilation("should never use RubyBasicObject#toString to implement Ruby functionality");
+        CompilerAsserts.neverPartOfCompilation("RubyBasicObject#toString should only be used for debugging");
 
         if (this instanceof RubyString) {
             return Helpers.decodeByteList(getContext().getRuntime(), StringNodes.getByteList(((RubyString) this)));
+        } else if (RubyGuards.isRubySymbol(this)) {
+            return SymbolNodes.getString(this);
         } else {
             return String.format("RubyBasicObject@%x<logicalClass=%s>", System.identityHashCode(this), logicalClass.getName());
         }
