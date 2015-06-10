@@ -18,8 +18,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.interop.messages.*;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
 
 @CoreClass(name = "Truffle::Interop")
 public abstract class TruffleInteropNodes {
@@ -163,11 +163,11 @@ public abstract class TruffleInteropNodes {
 
         @CompilerDirectives.CompilationFinal private String identifier;
 
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubySymbol identifier) {
+        @Specialization(guards = "isRubySymbol(identifier)")
+        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier) {
             if (this.identifier == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.identifier = identifier.toString().intern();
+                this.identifier = SymbolNodes.getString(identifier).intern();
             }
             return node.executeForeign(frame, receiver, this.identifier);
         }
@@ -206,11 +206,11 @@ public abstract class TruffleInteropNodes {
 
         @CompilerDirectives.CompilationFinal private String identifier;
 
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubySymbol identifier,  Object value) {
+        @Specialization(guards = "isRubySymbol(identifier)")
+        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier,  Object value) {
             if (this.identifier == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.identifier = identifier.toString().intern();
+                this.identifier = SymbolNodes.getString(identifier).intern();
             }
             return node.executeForeign(frame, receiver, this.identifier, value);
         }

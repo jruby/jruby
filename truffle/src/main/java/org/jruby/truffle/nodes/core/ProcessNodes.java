@@ -12,9 +12,10 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import sun.misc.Signal;
 
@@ -27,8 +28,8 @@ public abstract class ProcessNodes {
     @CoreMethod(names = "clock_gettime", onSingleton = true, required = 1, optional = 1)
     public abstract static class ClockGetTimeNode extends CoreMethodArrayArgumentsNode {
 
-        private final RubySymbol floatSecondSymbol;
-        private final RubySymbol nanosecondSymbol;
+        private final RubyBasicObject floatSecondSymbol;
+        private final RubyBasicObject nanosecondSymbol;
 
         public ClockGetTimeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -46,25 +47,27 @@ public abstract class ProcessNodes {
             return clock_gettime_realtime(CLOCK_REALTIME, floatSecondSymbol);
         }
 
-        @Specialization(guards = "isMonotonic(clock_id)")
-        Object clock_gettime_monotonic(int clock_id, RubySymbol unit) {
+        @Specialization(guards = {"isMonotonic(clock_id)", "isRubySymbol(unit)"})
+        Object clock_gettime_monotonic(int clock_id, RubyBasicObject unit) {
             long time = System.nanoTime();
             return timeToUnit(time, unit);
         }
 
-        @Specialization(guards = "isRealtime(clock_id)")
-        Object clock_gettime_realtime(int clock_id, RubySymbol unit) {
+        @Specialization(guards = {"isRealtime(clock_id)", "isRubySymbol(unit)"})
+        Object clock_gettime_realtime(int clock_id, RubyBasicObject unit) {
             long time = System.currentTimeMillis() * 1000000;
             return timeToUnit(time, unit);
         }
 
-        Object timeToUnit(long time, RubySymbol unit) {
+        Object timeToUnit(long time, RubyBasicObject unit) {
+            assert RubyGuards.isRubySymbol(unit);
+
             if (unit == nanosecondSymbol) {
                 return time;
             } else if (unit == floatSecondSymbol) {
                 return time / 1e9;
             } else {
-                throw new UnsupportedOperationException(unit.toString());
+                throw new UnsupportedOperationException(SymbolNodes.getString(unit));
             }
         }
 
@@ -86,12 +89,12 @@ public abstract class ProcessNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public int kill(RubySymbol signalName, int pid) {
+        @Specialization(guards = "isRubySymbol(signalName)")
+        public int kill(RubyBasicObject signalName, int pid) {
             int self = posix().getpid();
 
             if (self == pid) {
-                Signal signal = new Signal(signalName.toString());
+                Signal signal = new Signal(SymbolNodes.getString(signalName));
 
                 SignalOperations.raise(signal);
                 return 1;

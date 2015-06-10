@@ -6,6 +6,8 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
+require_relative 'core/pre'
+
 # Load Rubinius API
 
 require_relative 'core/rubinius/api/compat/type'

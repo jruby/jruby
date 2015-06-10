@@ -25,6 +25,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
@@ -527,13 +528,13 @@ public abstract class ModuleNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), filename);
         }
 
-        @Specialization
-        public RubyBasicObject autoload(RubyModule module, RubySymbol name, RubyString filename) {
-            return autoload(module, name.toString(), filename);
+        @Specialization(guards = "isRubySymbol(name)")
+        public RubyBasicObject autoloadSymbol(RubyModule module, RubyBasicObject name, RubyString filename) {
+            return autoload(module, SymbolNodes.getString(name), filename);
         }
 
-        @Specialization
-        public RubyBasicObject autoload(RubyModule module, RubyString name, RubyString filename) {
+        @Specialization(guards = "isRubyString(name)")
+        public RubyBasicObject autoloadString(RubyModule module, RubyBasicObject name, RubyString filename) {
             return autoload(module, name.toString(), filename);
         }
 
@@ -561,13 +562,13 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object autoloadQuery(RubyModule module, RubySymbol name) {
-            return autoloadQuery(module, name.toString());
+        @Specialization(guards = "isRubySymbol(name)")
+        public Object autoloadQuerySymbol(RubyModule module, RubyBasicObject name) {
+            return autoloadQuery(module, SymbolNodes.getString(name));
         }
 
-        @Specialization
-        public Object autoloadQuery(RubyModule module, RubyString name) {
+        @Specialization(guards = "isRubyString(name)")
+        public Object autoloadQueryString(RubyModule module, RubyBasicObject name) {
             return autoloadQuery(module, name.toString());
         }
 
@@ -701,18 +702,16 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public boolean isClassVariableDefined(RubyModule module, RubyString name) {
-            CompilerDirectives.transferToInterpreter();
-
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(name)")
+        public boolean isClassVariableDefinedString(RubyModule module, RubyBasicObject name) {
             return module.getClassVariables().containsKey(name.toString());
         }
 
-        @Specialization
-        public boolean isClassVariableDefined(RubyModule module, RubySymbol name) {
-            CompilerDirectives.transferToInterpreter();
-
-            return module.getClassVariables().containsKey(name.toString());
+        @TruffleBoundary
+        @Specialization(guards = "isRubySymbol(name)")
+        public boolean isClassVariableDefinedSymbol(RubyModule module, RubyBasicObject name) {
+            return module.getClassVariables().containsKey(SymbolNodes.getString(name));
         }
 
     }
@@ -764,7 +763,7 @@ public abstract class ModuleNodes {
             final RubyBasicObject array = ArrayNodes.createEmptyArray(module.getContext().getCoreLibrary().getArrayClass());
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
-                ArrayNodes.slowPush(array, RubySymbol.newSymbol(module.getContext(), variable));
+                ArrayNodes.slowPush(array, getSymbol(variable));
             }
             return array;
         }
@@ -796,7 +795,7 @@ public abstract class ModuleNodes {
         public RubyBasicObject constants(RubyModule module, boolean inherit) {
             CompilerDirectives.transferToInterpreter();
 
-            final List<RubySymbol> constantsArray = new ArrayList<>();
+            final List<RubyBasicObject> constantsArray = new ArrayList<>();
 
             final Map<String, RubyConstant> constants;
             if (inherit) {
@@ -807,7 +806,7 @@ public abstract class ModuleNodes {
 
             for (Entry<String, RubyConstant> constant : constants.entrySet()) {
                 if (!constant.getValue().isPrivate()) {
-                    constantsArray.add(getContext().getSymbol(constant.getKey()));
+                    constantsArray.add(getSymbol(constant.getKey()));
                 }
             }
 
@@ -873,19 +872,19 @@ public abstract class ModuleNodes {
         }
 
         // Symbol
-        @Specialization
-        public Object getConstant(VirtualFrame frame, RubyModule module, RubySymbol name, NotProvided inherit) {
+        @Specialization(guards = "isRubySymbol(name)")
+        public Object getConstant(VirtualFrame frame, RubyModule module, RubyBasicObject name, NotProvided inherit) {
             return getConstant(frame, module, name, true);
         }
 
-        @Specialization(guards = "inherit")
-        public Object getConstant(VirtualFrame frame, RubyModule module, RubySymbol name, boolean inherit) {
-            return getConstantNode.executeGetConstant(frame, module, name.toString());
+        @Specialization(guards = {"inherit", "isRubySymbol(name)"})
+        public Object getConstant(VirtualFrame frame, RubyModule module, RubyBasicObject name, boolean inherit) {
+            return getConstantNode.executeGetConstant(frame, module, SymbolNodes.getString(name));
         }
 
-        @Specialization(guards = "!inherit")
-        public Object getConstantNoInherit(VirtualFrame frame, RubyModule module, RubySymbol name, boolean inherit) {
-            return getConstantNoInherit(module, name.toString(), this);
+        @Specialization(guards = {"!inherit", "isRubySymbol(name)"})
+        public Object getConstantNoInherit(VirtualFrame frame, RubyModule module, RubyBasicObject name, boolean inherit) {
+            return getConstantNoInherit(module, SymbolNodes.getString(name), this);
         }
 
         // String
@@ -1020,31 +1019,31 @@ public abstract class ModuleNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, String name, NotProvided proc, NotProvided block) {
+        public RubyBasicObject defineMethod(RubyModule module, String name, NotProvided proc, NotProvided block) {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("needs either proc or block", this));
         }
 
         @TruffleBoundary
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, String name, NotProvided proc, RubyProc block) {
+        public RubyBasicObject defineMethod(RubyModule module, String name, NotProvided proc, RubyProc block) {
             return defineMethod(module, name, block, NotProvided.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, String name, RubyProc proc, NotProvided block) {
+        public RubyBasicObject defineMethod(RubyModule module, String name, RubyProc proc, NotProvided block) {
             return defineMethod(module, name, proc);
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyMethod(method)")
-        public RubySymbol defineMethod(RubyModule module, String name, RubyBasicObject method, NotProvided block) {
+        public RubyBasicObject defineMethod(RubyModule module, String name, RubyBasicObject method, NotProvided block) {
             module.addMethod(this, MethodNodes.getMethod(method).withName(name));
-            return getContext().getSymbolTable().getSymbol(name);
+            return getSymbol(name);
         }
 
         @Specialization(guards = "isRubyUnboundMethod(method)")
-        public RubySymbol defineMethod(VirtualFrame frame, RubyModule module, String name, RubyBasicObject method, NotProvided block) {
+        public RubyBasicObject defineMethod(VirtualFrame frame, RubyModule module, String name, RubyBasicObject method, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
             RubyModule origin = UnboundMethodNodes.getOrigin(method);
@@ -1058,7 +1057,7 @@ public abstract class ModuleNodes {
             return addMethod(module, name, UnboundMethodNodes.getMethod(method));
         }
 
-        private RubySymbol defineMethod(RubyModule module, String name, RubyProc proc) {
+        private RubyBasicObject defineMethod(RubyModule module, String name, RubyProc proc) {
             CompilerDirectives.transferToInterpreter();
 
             final CallTarget modifiedCallTarget = proc.getCallTargetForLambdas();
@@ -1068,7 +1067,7 @@ public abstract class ModuleNodes {
             return addMethod(module, name, modifiedMethod);
         }
 
-        private RubySymbol addMethod(RubyModule module, String name, InternalMethod method) {
+        private RubyBasicObject addMethod(RubyModule module, String name, InternalMethod method) {
             method = method.withName(name);
 
             if (ModuleOperations.isMethodPrivateFromName(name)) {
@@ -1076,7 +1075,7 @@ public abstract class ModuleNodes {
             }
 
             module.addMethod(this, method);
-            return getContext().getSymbolTable().getSymbol(name);
+            return getSymbol(name);
         }
 
     }
@@ -1643,8 +1642,8 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             for (Object name : args) {
-                if (name instanceof RubySymbol) {
-                    module.changeConstantVisibility(this, name.toString(), true);
+                if (RubyGuards.isRubySymbol(name)) {
+                    module.changeConstantVisibility(this, SymbolNodes.getString((RubyBasicObject) name), true);
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -1665,8 +1664,8 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             for (Object name : args) {
-                if (name instanceof RubySymbol) {
-                    module.changeConstantVisibility(this, name.toString(), false);
+                if (RubyGuards.isRubySymbol(name)) {
+                    module.changeConstantVisibility(this, SymbolNodes.getString((RubyBasicObject) name), false);
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -1699,19 +1698,17 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyModule removeClassVariable(RubyModule module, RubyString name) {
-            CompilerDirectives.transferToInterpreter();
-
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(name)")
+        public RubyModule removeClassVariableString(RubyModule module, RubyBasicObject name) {
             module.removeClassVariable(this, name.toString());
             return module;
         }
 
-        @Specialization
-        public RubyModule removeClassVariable(RubyModule module, RubySymbol name) {
-            CompilerDirectives.transferToInterpreter();
-
-            module.removeClassVariable(this, name.toString());
+        @TruffleBoundary
+        @Specialization(guards = "isRubySymbol(name)")
+        public RubyModule removeClassVariableSymbol(RubyModule module, RubyBasicObject name) {
+            module.removeClassVariable(this, SymbolNodes.getString(name));
             return module;
         }
 
@@ -1774,7 +1771,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
             if (module.getMethods().containsKey(name)) {
                 module.removeMethod(name);
-                methodRemovedNode.call(frame, module, "method_removed", null, getContext().getSymbol(name));
+                methodRemovedNode.call(frame, module, "method_removed", null, getSymbol(name));
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorMethodNotDefinedIn(module, name, this));
@@ -1828,7 +1825,7 @@ public abstract class ModuleNodes {
 
             if (method != null) {
                 module.undefMethod(this, method);
-                methodUndefinedNode.call(frame, module, "method_undefined", null, getContext().getSymbol(name));
+                methodUndefinedNode.call(frame, module, "method_undefined", null, getSymbol(name));
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnModule(name, module, this));

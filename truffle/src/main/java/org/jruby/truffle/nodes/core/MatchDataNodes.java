@@ -24,7 +24,10 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyMatchData;
+import org.jruby.truffle.runtime.core.RubyRange;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
 import java.util.Arrays;
@@ -65,19 +68,19 @@ public abstract class MatchDataNodes {
             return createArray(store, length);
         }
 
-        @Specialization
-        public Object getIndex(RubyMatchData matchData, RubySymbol index, NotProvided length) {
+        @Specialization(guards = "isRubySymbol(index)")
+        public Object getIndex(RubyMatchData matchData, RubyBasicObject index, NotProvided length) {
             CompilerDirectives.transferToInterpreter();
 
             try {
-                final int i = matchData.getBackrefNumber(index.getSymbolBytes());
+                final int i = matchData.getBackrefNumber(SymbolNodes.getByteList(index));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             } catch (final ValueException e) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                    getContext().getCoreLibrary().indexError(String.format("undefined group name reference: %s", index.toString()), this));
+                    getContext().getCoreLibrary().indexError(String.format("undefined group name reference: %s", SymbolNodes.getString(index)), this));
             }
         }
 
