@@ -58,8 +58,7 @@ project 'JRuby Truffle' do
                        :artifactSet => { :includes => [
                           'com.oracle:truffle',
                           'com.oracle:truffle-interop' ] },
-                       :shadedArtifactAttached =>  'false',
-                       :shadedClassifierName =>  'complete' )
+                       :outputFile => '${project.build.directory}/jruby-truffle-${project.version}-complete.jar' )
       end
     end
   end

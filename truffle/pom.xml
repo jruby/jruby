@@ -114,8 +114,7 @@
                       <include>com.oracle:truffle-interop</include>
                     </includes>
                   </artifactSet>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
+                  <outputFile>${project.build.directory}/jruby-truffle-${project.version}-complete.jar</outputFile>
                 </configuration>
               </execution>
             </executions>
@@ -143,8 +142,7 @@
                       <include>com.oracle:truffle-interop</include>
                     </includes>
                   </artifactSet>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
+                  <outputFile>${project.build.directory}/jruby-truffle-${project.version}-complete.jar</outputFile>
                 </configuration>
               </execution>
             </executions>
@@ -172,8 +170,7 @@
                       <include>com.oracle:truffle-interop</include>
                     </includes>
                   </artifactSet>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
+                  <outputFile>${project.build.directory}/jruby-truffle-${project.version}-complete.jar</outputFile>
                 </configuration>
               </execution>
             </executions>
@@ -201,8 +198,7 @@
                       <include>com.oracle:truffle-interop</include>
                     </includes>
                   </artifactSet>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
+                  <outputFile>${project.build.directory}/jruby-truffle-${project.version}-complete.jar</outputFile>
                 </configuration>
               </execution>
             </executions>
