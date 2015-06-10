@@ -128,6 +128,10 @@ public abstract class RubyGuards {
         return value.getDynamicObject().getShape().getObjectType() == UnboundMethodNodes.UNBOUND_METHOD_TYPE;
     }
 
+    public static boolean isRubyMutex(RubyBasicObject value) {
+        return value.getDynamicObject().getShape().getObjectType() == MutexNodes.MUTEX_TYPE;
+    }
+
     public static boolean isRubyBasicObject(Object value) {
         return value instanceof RubyBasicObject;
     }

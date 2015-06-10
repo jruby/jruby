@@ -16,7 +16,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
+
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConvFlags;
@@ -303,6 +305,7 @@ public class CoreLibrary {
 
         arrayClass = defineClass("Array", new ArrayNodes.ArrayAllocator());
         bindingClass = defineClass("Binding", new RubyBinding.BindingAllocator());
+        defineClass("ConditionVariable", new ConditionVariableNodes.ConditionVariableAllocator());
         dirClass = defineClass("Dir");
         encodingClass = defineClass("Encoding", NO_ALLOCATOR);
         falseClass = defineClass("FalseClass", NO_ALLOCATOR);
@@ -421,6 +424,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(BindingNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BignumNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ClassNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ConditionVariableNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ExceptionNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(FalseClassNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(FiberNodesFactory.getFactories());
