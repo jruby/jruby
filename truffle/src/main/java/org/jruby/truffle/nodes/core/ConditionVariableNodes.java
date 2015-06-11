@@ -143,6 +143,11 @@ public abstract class ConditionVariableNodes {
 
         @Specialization(guards = "isRubyMutex(mutex)")
         RubyBasicObject wait(RubyBasicObject conditionVariable, RubyBasicObject mutex, NotProvided timeout) {
+            return wait(conditionVariable, mutex, nil());
+        }
+
+        @Specialization(guards = { "isRubyMutex(mutex)", "isNil(timeout)" })
+        RubyBasicObject wait(RubyBasicObject conditionVariable, RubyBasicObject mutex, RubyBasicObject timeout) {
             return waitOn(conditionVariable, mutex, new WaitAction() {
                 @Override
                 public void wait(Condition condition) throws InterruptedException {
