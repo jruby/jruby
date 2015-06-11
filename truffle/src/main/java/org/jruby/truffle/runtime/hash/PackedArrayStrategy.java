@@ -121,7 +121,7 @@ public abstract class PackedArrayStrategy {
 
         HashNodes.setStore(hash, buckets, size, firstInSequence, lastInSequence);
 
-        assert HashOperations.verifyStore(hash);
+        assert HashNodes.verifyStore(hash);
     }
 
     @TruffleBoundary

@@ -10,8 +10,8 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.hash.Entry;
-import org.jruby.truffle.runtime.hash.HashOperations;
 
 public class RubyHash extends RubyBasicObject {
 
@@ -31,7 +31,7 @@ public class RubyHash extends RubyBasicObject {
         this.size = size;
         this.firstInSequence = firstInSequence;
         this.lastInSequence = lastInSequence;
-        assert HashOperations.verifyStore(this);
+        assert HashNodes.verifyStore(this);
     }
 
 }
