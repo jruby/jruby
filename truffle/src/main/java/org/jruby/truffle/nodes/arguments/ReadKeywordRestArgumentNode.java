@@ -24,6 +24,7 @@ import org.jruby.truffle.runtime.hash.KeyValue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ReadKeywordRestArgumentNode extends RubyNode {
 
@@ -67,7 +68,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
 
         final List<KeyValue> entries = new ArrayList<>();
 
-        outer: for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
+        outer: for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
             for (String excludedKeyword : excludedKeywords) {
                 if (excludedKeyword.equals(keyValue.getKey().toString())) {
                     continue outer;

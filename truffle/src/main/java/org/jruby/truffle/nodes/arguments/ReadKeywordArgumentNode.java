@@ -16,11 +16,14 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.utilities.ValueProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
+
+import java.util.Map;
 
 public class ReadKeywordArgumentNode extends RubyNode {
 
@@ -75,7 +78,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
     private Object lookupKeywordInHash(RubyBasicObject hash) {
         assert RubyGuards.isRubyHash(hash);
 
-        for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
+        for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
             if (keyValue.getKey().toString().equals(name)) {
                 return keyValue.getValue();
             }

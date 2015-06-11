@@ -36,6 +36,7 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFactory;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
@@ -66,6 +67,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
@@ -90,7 +92,7 @@ public abstract class KernelNodes {
             final List<String> envp = new ArrayList<>();
 
             // TODO(CS): cast
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(env)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(env)) {
                 envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
             }
 
@@ -551,7 +553,7 @@ public abstract class KernelNodes {
 
             final RubyBasicObject env = context.getCoreLibrary().getENV();
 
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(env)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(env)) {
                 builder.environment().put(keyValue.getKey().toString(), keyValue.getValue().toString());
             }
 
@@ -1832,7 +1834,7 @@ public abstract class KernelNodes {
             final List<String> envp = new ArrayList<>();
 
             // TODO(CS): cast
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(env)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(env)) {
                 envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
             }
 

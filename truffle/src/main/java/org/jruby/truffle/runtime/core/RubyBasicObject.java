@@ -21,6 +21,7 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
@@ -154,7 +155,7 @@ public class RubyBasicObject implements TruffleObject {
                 }
             }
         } else if (RubyGuards.isRubyHash(this)) {
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(this)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(this)) {
                 if (keyValue.getKey() instanceof RubyBasicObject) {
                     ((RubyBasicObject) keyValue.getKey()).visitObjectGraph(visitor);
                 }

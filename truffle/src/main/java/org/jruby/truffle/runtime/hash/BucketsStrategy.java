@@ -10,10 +10,14 @@
 package org.jruby.truffle.runtime.hash;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 public abstract class BucketsStrategy {
 
@@ -102,6 +106,64 @@ public abstract class BucketsStrategy {
         HashNodes.setStore(hash, newEntries, HashNodes.getSize(hash), HashNodes.getFirstInSequence(hash), HashNodes.getLastInSequence(hash));
 
         assert HashOperations.verifyStore(hash);
+    }
+
+    @TruffleBoundary
+    public static Iterator<Map.Entry<Object, Object>> iterateKeyValues(final Entry firstInSequence) {
+        return new Iterator<Map.Entry<Object, Object>>() {
+
+            private Entry entry = firstInSequence;
+
+            @Override
+            public boolean hasNext() {
+                return entry != null;
+            }
+
+            @Override
+            public Map.Entry<Object, Object> next() {
+                if (entry == null) {
+                    throw new NoSuchElementException();
+                }
+
+                final Entry finalEntry = entry;
+
+                final Map.Entry<Object, Object> entryResult = new Map.Entry<Object, Object>() {
+
+                    @Override
+                    public Object getKey() {
+                        return finalEntry.getKey();
+                    }
+
+                    @Override
+                    public Object getValue() {
+                        return finalEntry.getValue();
+                    }
+
+                    @Override
+                    public Object setValue(Object value) {
+                        throw new UnsupportedOperationException();
+                    }
+
+                };
+
+                entry = entry.getNextInSequence();
+
+                return entryResult;
+            }
+
+        };
+    }
+
+    @TruffleBoundary
+    public static Iterable<Map.Entry<Object, Object>> iterableKeyValues(final Entry firstInSequence) {
+        return new Iterable<Map.Entry<Object, Object>>() {
+
+            @Override
+            public Iterator<Map.Entry<Object, Object>> iterator() {
+                return iterateKeyValues(firstInSequence);
+            }
+
+        };
     }
 
 }

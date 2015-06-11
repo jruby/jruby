@@ -14,6 +14,9 @@ import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.util.cli.Options;
 
+import java.util.Iterator;
+import java.util.Map;
+
 public abstract class PackedArrayStrategy {
 
     public static final int MAX_ENTRIES = Options.TRUFFLE_HASH_PACKED_ARRAY_MAX.load();
@@ -119,6 +122,48 @@ public abstract class PackedArrayStrategy {
         HashNodes.setStore(hash, buckets, size, firstInSequence, lastInSequence);
 
         assert HashOperations.verifyStore(hash);
+    }
+
+    @TruffleBoundary
+    public static Iterator<Map.Entry<Object, Object>> iterateKeyValues(final Object[] store, final int size) {
+        return new Iterator<Map.Entry<Object, Object>>() {
+
+            private int index = 0;
+
+            @Override
+            public boolean hasNext() {
+                return index < size;
+            }
+
+            @Override
+            public Map.Entry<Object, Object> next() {
+                final int finalIndex = index;
+
+                final Map.Entry<Object, Object> entryResult = new Map.Entry<Object, Object>() {
+
+                    @Override
+                    public Object getKey() {
+                        return PackedArrayStrategy.getKey(store, finalIndex);
+                    }
+
+                    @Override
+                    public Object getValue() {
+                        return PackedArrayStrategy.getValue(store, finalIndex);
+                    }
+
+                    @Override
+                    public Object setValue(Object value) {
+                        throw new UnsupportedOperationException();
+                    }
+
+                };
+
+                index++;
+
+                return entryResult;
+            }
+
+        };
     }
 
 }

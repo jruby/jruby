@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core.hash;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.ImportStatic;
@@ -41,6 +42,9 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
 
 @CoreClass(name = "Hash")
 public abstract class HashNodes {
@@ -142,6 +146,35 @@ public abstract class HashNodes {
 
     public static RubyBasicObject createHash(RubyClass hashClass, RubyProc defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence) {
         return new RubyHash(hashClass, defaultBlock, defaultValue, store, size, firstInSequence, HASH_FACTORY.newInstance());
+    }
+
+    @TruffleBoundary
+    public static Iterator<Map.Entry<Object, Object>> iterateKeyValues(RubyBasicObject hash) {
+        assert RubyGuards.isRubyHash(hash);
+
+        if (HashGuards.isNullHash(hash)) {
+            return Collections.emptyIterator();
+        } if (HashGuards.isPackedHash(hash)) {
+            return PackedArrayStrategy.iterateKeyValues((Object[]) getStore(hash), getSize(hash));
+        } else if (HashGuards.isBucketHash(hash)) {
+            return BucketsStrategy.iterateKeyValues(getFirstInSequence(hash));
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    @TruffleBoundary
+    public static Iterable<Map.Entry<Object, Object>> iterableKeyValues(final RubyBasicObject hash) {
+        assert RubyGuards.isRubyHash(hash);
+
+        return new Iterable<Map.Entry<Object, Object>>() {
+
+            @Override
+            public Iterator<Map.Entry<Object, Object>> iterator() {
+                return iterateKeyValues(hash);
+            }
+
+        };
     }
 
     @CoreMethod(names = "[]", constructor = true, argumentsAsArray = true)
@@ -736,16 +769,11 @@ public abstract class HashNodes {
         public RubyBasicObject eachBuckets(VirtualFrame frame, RubyBasicObject hash, RubyProc block) {
             assert HashOperations.verifyStore(hash);
 
-            for (KeyValue keyValue : verySlowToKeyValues(hash)) {
+            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(getFirstInSequence(hash))) {
                 yield(frame, block, createArray(new Object[]{keyValue.getKey(), keyValue.getValue()}, 2));
             }
 
             return hash;
-        }
-
-        @TruffleBoundary
-        private Collection<KeyValue> verySlowToKeyValues(RubyBasicObject hash) {
-            return HashOperations.verySlowToKeyValues(hash);
         }
 
         @Specialization
@@ -864,7 +892,7 @@ public abstract class HashNodes {
                 return self;
             }
 
-            HashOperations.verySlowSetKeyValues(self, HashOperations.verySlowToKeyValues(from), isCompareByIdentity(from));
+            HashOperations.verySlowSetKeyValues(self, HashNodes.iterableKeyValues(from), isCompareByIdentity(from));
 
             copyOther(self, from);
 
@@ -942,7 +970,7 @@ public abstract class HashNodes {
 
             final RubyBasicObject array = createEmptyArray();
 
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
                 ArrayNodes.slowPush(array, yield(frame, block, keyValue.getKey(), keyValue.getValue()));
             }
 
@@ -1074,12 +1102,12 @@ public abstract class HashNodes {
 
             int size = 0;
 
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
                 HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue(), false);
                 size++;
             }
 
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(other)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(other)) {
                 if (HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue(), false)) {
                     size++;
                 }
@@ -1100,12 +1128,12 @@ public abstract class HashNodes {
 
             int size = 0;
 
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
                 HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue(), false);
                 size++;
             }
 
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(other)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(other)) {
                 final HashLookupResult searchResult = HashOperations.verySlowFindBucket(merged, keyValue.getKey(), false);
                 
                 if (searchResult.getEntry() == null) {
@@ -1324,8 +1352,9 @@ public abstract class HashNodes {
             CompilerDirectives.transferToInterpreter();
 
             assert HashOperations.verifyStore(hash);
+
             
-            HashOperations.verySlowSetKeyValues(hash, HashOperations.verySlowToKeyValues(hash), isCompareByIdentity(hash));
+            HashOperations.verySlowSetKeyValues(hash, HashNodes.iterableKeyValues(hash), isCompareByIdentity(hash));
 
             assert HashOperations.verifyStore(hash);
             

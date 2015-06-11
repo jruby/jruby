@@ -19,7 +19,9 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyString;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public class HashOperations {
 
@@ -33,29 +35,6 @@ public class HashOperations {
         verySlowSetKeyValues(hash, entries, byIdentity);
         assert HashOperations.verifyStore(hash);
         return hash;
-    }
-
-    @TruffleBoundary
-    public static List<KeyValue> verySlowToKeyValues(RubyBasicObject hash) {
-        final List<KeyValue> keyValues = new ArrayList<>();
-
-        if (HashNodes.getStore(hash) instanceof Entry[]) {
-            Entry entry = HashNodes.getFirstInSequence(hash);
-
-            while (entry != null) {
-                keyValues.add(new KeyValue(entry.getKey(), entry.getValue()));
-                entry = entry.getNextInSequence();
-            }
-        } else if (HashNodes.getStore(hash) instanceof Object[]) {
-            final Object[] store = (Object[]) HashNodes.getStore(hash);
-            for (int n = 0; n < HashNodes.getSize(hash); n++) {
-                keyValues.add(new KeyValue(PackedArrayStrategy.getKey(store, n), PackedArrayStrategy.getValue(store, n)));
-            }
-        } else if (HashNodes.getStore(hash) != null) {
-            throw new UnsupportedOperationException();
-        }
-
-        return keyValues;
     }
 
     @TruffleBoundary
@@ -139,6 +118,17 @@ public class HashOperations {
         assert verifyStore(hash);
 
         return hashLookupResult.getEntry() == null;
+    }
+
+    @TruffleBoundary
+    public static void verySlowSetKeyValues(RubyBasicObject hash, Iterable<Map.Entry<Object, Object>> keyValues, boolean byIdentity) {
+        final List<KeyValue> converted = new ArrayList<>();
+
+        for (Map.Entry<Object, Object> keyValue : keyValues) {
+            converted.add(new KeyValue(keyValue.getKey(), keyValue.getValue()));
+        }
+
+        verySlowSetKeyValues(hash, converted, byIdentity);
     }
 
     @TruffleBoundary
