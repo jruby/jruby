@@ -35,61 +35,6 @@ public class HashOperations {
         return hash;
     }
 
-    public static void dump(RubyBasicObject hash) {
-        assert RubyGuards.isRubyHash(hash);
-
-        final StringBuilder builder = new StringBuilder();
-
-        builder.append("[");
-        builder.append(HashNodes.getSize(hash));
-        builder.append("](");
-
-        for (Entry entry : (Entry[]) HashNodes.getStore(hash)) {
-            builder.append("(");
-
-            while (entry != null) {
-                builder.append("[");
-                builder.append(entry.getKey());
-                builder.append(",");
-                builder.append(entry.getValue());
-                builder.append("]");
-                entry = entry.getNextInLookup();
-            }
-
-            builder.append(")");
-        }
-
-        builder.append(")~>(");
-
-        Entry entry = HashNodes.getFirstInSequence(hash);
-
-        while (entry != null) {
-            builder.append("[");
-            builder.append(entry.getKey());
-            builder.append(",");
-            builder.append(entry.getValue());
-            builder.append("]");
-            entry = entry.getNextInSequence();
-        }
-
-        builder.append(")<~(");
-
-        entry = HashNodes.getLastInSequence(hash);
-
-        while (entry != null) {
-            builder.append("[");
-            builder.append(entry.getKey());
-            builder.append(",");
-            builder.append(entry.getValue());
-            builder.append("]");
-            entry = entry.getPreviousInSequence();
-        }
-
-        builder.append(")");
-
-        System.err.println(builder);
-    }
-
     @TruffleBoundary
     public static List<KeyValue> verySlowToKeyValues(RubyBasicObject hash) {
         final List<KeyValue> keyValues = new ArrayList<>();
