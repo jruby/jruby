@@ -44,6 +44,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
+import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -1335,13 +1336,15 @@ public class CoreLibrary {
     }
 
     private RubyBasicObject getSystemEnv() {
-        final List<KeyValue> entries = new ArrayList<>();
+        final Map<Object, Object> entries = new HashMap<>();
 
         for (Map.Entry<String, String> variable : System.getenv().entrySet()) {
-            entries.add(new KeyValue(StringNodes.createString(context.getCoreLibrary().getStringClass(), variable.getKey()), StringNodes.createString(context.getCoreLibrary().getStringClass(), variable.getValue())));
+            entries.put(
+                    StringNodes.createString(context.getCoreLibrary().getStringClass(), variable.getKey()),
+                    StringNodes.createString(context.getCoreLibrary().getStringClass(), variable.getValue()));
         }
 
-        return HashOperations.verySlowFromEntries(context, entries, false);
+        return BucketsStrategy.create(context.getCoreLibrary().getHashClass(), entries.entrySet(), false);
     }
 
     public ArrayNodes.MinBlock getArrayMinBlock() {

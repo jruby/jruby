@@ -15,7 +15,6 @@ import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyString;
 
 import java.util.*;
 
@@ -25,16 +24,23 @@ public abstract class BucketsStrategy {
     public static final double LOAD_FACTOR = 0.75;
 
     // Create this many more buckets than there are entries when resizing or creating from scratch
-    public static final int RESIZE_FACTOR = 4;
+    public static final int OVERALLOCATE_FACTOR = 4;
 
     public static final int SIGN_BIT_MASK = ~(1 << 31);
 
     private static final int[] CAPACITIES = Arrays.copyOf(org.jruby.RubyHash.MRI_PRIMES, org.jruby.RubyHash.MRI_PRIMES.length - 1);
 
+    public static RubyBasicObject create(RubyClass hashClass, int capacity) {
+        final int bucketsCount = capacityGreaterThan(capacity) * OVERALLOCATE_FACTOR;
+        final Entry[] newEntries = new Entry[bucketsCount];
+
+        return HashNodes.createHash(hashClass, null, null, newEntries, 0, null, null);
+    }
+
     public static RubyBasicObject create(RubyClass hashClass, Collection<Map.Entry<Object, Object>> entries, boolean byIdentity) {
         int actualSize = entries.size();
 
-        final int bucketsCount = capacityGreaterThan(entries.size()) * RESIZE_FACTOR;
+        final int bucketsCount = capacityGreaterThan(entries.size()) * OVERALLOCATE_FACTOR;
         final Entry[] newEntries = new Entry[bucketsCount];
 
         Entry firstInSequence = null;
@@ -163,7 +169,7 @@ public abstract class BucketsStrategy {
     public static void resize(RubyBasicObject hash) {
         assert HashOperations.verifyStore(hash);
 
-        final int bucketsCount = capacityGreaterThan(HashNodes.getSize(hash)) * RESIZE_FACTOR;
+        final int bucketsCount = capacityGreaterThan(HashNodes.getSize(hash)) * OVERALLOCATE_FACTOR;
         final Entry[] newEntries = new Entry[bucketsCount];
 
         Entry entry = HashNodes.getFirstInSequence(hash);

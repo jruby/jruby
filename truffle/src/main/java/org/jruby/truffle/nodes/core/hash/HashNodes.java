@@ -399,6 +399,8 @@ public abstract class HashNodes {
             equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
         }
 
+        public abstract Object executeSet(VirtualFrame frame, RubyBasicObject hash, Object key, Object value);
+
         @Specialization(guards = { "isNullHash(hash)", "!isRubyString(key)" })
         public Object setNull(VirtualFrame frame, RubyBasicObject hash, Object key, Object value) {
             setStore(hash, PackedArrayStrategy.createStore(hashNode.hash(frame, key), key, value), 1, null, null);

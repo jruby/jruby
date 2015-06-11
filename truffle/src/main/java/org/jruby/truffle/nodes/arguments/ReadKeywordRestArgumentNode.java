@@ -19,6 +19,7 @@ import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 
@@ -66,7 +67,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
             return HashNodes.createEmptyHash(getContext().getCoreLibrary().getHashClass());
         }
 
-        final List<KeyValue> entries = new ArrayList<>();
+        final List<Map.Entry<Object, Object>> entries = new ArrayList<>();
 
         outer: for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
             for (String excludedKeyword : excludedKeywords) {
@@ -75,10 +76,10 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
                 }
             }
 
-            entries.add(new KeyValue(keyValue.getKey(), keyValue.getValue()));
+            entries.add(keyValue);
         }
 
-        return HashOperations.verySlowFromEntries(getContext(), entries, HashNodes.isCompareByIdentity(hash));
+        return BucketsStrategy.create(getContext().getCoreLibrary().getHashClass(), entries, HashNodes.isCompareByIdentity(hash));
     }
 
 }

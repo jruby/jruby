@@ -14,7 +14,6 @@ import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyString;
 
 import java.util.ArrayList;
@@ -22,55 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 public class HashOperations {
-
-    private static class MapEntryWrapper implements Map.Entry<Object, Object> {
-
-        private final KeyValue keyValue;
-
-        public MapEntryWrapper(KeyValue keyValue) {
-            this.keyValue = keyValue;
-        }
-
-        @Override
-        public Object getKey() {
-            return keyValue.getKey();
-        }
-
-        @Override
-        public Object getValue() {
-            return keyValue.getValue();
-        }
-
-        @Override
-        public Object setValue(Object value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int hashCode() {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    public static RubyBasicObject verySlowFromEntries(RubyContext context, List<KeyValue> entries, boolean byIdentity) {
-        return verySlowFromEntries(context.getCoreLibrary().getHashClass(), entries, byIdentity);
-    }
-
-    @TruffleBoundary
-    public static RubyBasicObject verySlowFromEntries(RubyClass hashClass, List<KeyValue> entries, boolean byIdentity) {
-        final List<Map.Entry<Object, Object>> converted = new ArrayList<>();
-
-        for (KeyValue keyValue : entries) {
-            converted.add(new MapEntryWrapper(keyValue));
-        }
-
-        return BucketsStrategy.create(hashClass, converted, byIdentity);
-    }
 
     public static int hashKey(RubyContext context, Object key) {
         final Object hashValue = DebugOperations.send(context, key, "hash", null);

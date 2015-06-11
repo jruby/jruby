@@ -27,15 +27,13 @@ import org.jruby.truffle.runtime.cext.CExtManager;
 import org.jruby.truffle.runtime.cext.CExtSubsystem;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.Memo;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 @CoreClass(name = "Truffle::Primitive")
 public abstract class TrufflePrimitiveNodes {
@@ -275,15 +273,15 @@ public abstract class TrufflePrimitiveNodes {
                 throw new UnsupportedOperationException("coverage is disabled");
             }
 
-            final List<KeyValue> keyValues = new ArrayList<>();
+            final Map<Object, Object> converted = new HashMap<>();
 
             for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
                 final Object[] store = lineCountsStore(source.getValue());
                 final RubyBasicObject array = createArray(store, store.length);
-                keyValues.add(new KeyValue(createString(source.getKey().getPath()), array));
+                converted.put(createString(source.getKey().getPath()), array);
             }
 
-            return HashOperations.verySlowFromEntries(getContext(), keyValues, false);
+            return BucketsStrategy.create(getContext().getCoreLibrary().getHashClass(), converted.entrySet(), false);
         }
 
         private Object[] lineCountsStore(Long[] array) {
