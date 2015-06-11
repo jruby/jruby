@@ -137,7 +137,7 @@ public abstract class HashNodes {
     }
 
     public static RubyBasicObject createHash(RubyClass hashClass, Object[] store, int size) {
-        return createHash(hashClass, null, null, (Object) store, size, null);
+        return createHash(hashClass, null, null, store, size, null);
     }
 
     public static RubyBasicObject createHash(RubyClass hashClass, RubyProc defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence) {
