@@ -163,16 +163,16 @@ public abstract class ConditionVariableNodes {
 
         @Specialization(guards = "isRubyMutex(mutex)")
         RubyBasicObject wait(RubyBasicObject conditionVariable, RubyBasicObject mutex, final double timeout) {
-            final long start = System.currentTimeMillis();
-            final long timeoutInMillis = ((long) (timeout * 1000.0));
+            final long timeoutInNanos = ((long) (timeout * 1_000_000_000));
 
             return waitOn(conditionVariable, mutex, new WaitAction() {
+                private long remaining = timeoutInNanos;
+
                 @Override
                 public void wait(Condition condition) throws InterruptedException {
-                    final long now = System.currentTimeMillis();
-                    final long waited = now - start;
-                    final long waitMillis = Math.max(0, timeoutInMillis - waited);
-                    condition.awaitNanos(waitMillis * 1_000_000);
+                    while (remaining > 0) {
+                        remaining = condition.awaitNanos(remaining);
+                    }
                 }
             });
         }

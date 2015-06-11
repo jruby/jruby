@@ -171,6 +171,7 @@ public class RubyMatchData extends RubyBasicObject {
 
     private static final class Pair implements Comparable<Pair> {
         int bytePos, charPos;
+
         @Override
         public int compareTo(Pair pair) {
             return bytePos - pair.bytePos;
