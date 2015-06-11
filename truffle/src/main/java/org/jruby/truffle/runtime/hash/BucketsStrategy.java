@@ -12,20 +12,103 @@ package org.jruby.truffle.runtime.hash;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyString;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 public abstract class BucketsStrategy {
 
+    // If the size is more than this fraction of the number of buckets, resize
     public static final double LOAD_FACTOR = 0.75;
+
+    // Create this many more buckets than there are entries when resizing or creating from scratch
+    public static final int RESIZE_FACTOR = 4;
 
     public static final int SIGN_BIT_MASK = ~(1 << 31);
 
     private static final int[] CAPACITIES = Arrays.copyOf(org.jruby.RubyHash.MRI_PRIMES, org.jruby.RubyHash.MRI_PRIMES.length - 1);
+
+    public static RubyBasicObject create(RubyClass hashClass, Collection<Map.Entry<Object, Object>> entries, boolean byIdentity) {
+        int actualSize = entries.size();
+
+        final int bucketsCount = capacityGreaterThan(entries.size()) * RESIZE_FACTOR;
+        final Entry[] newEntries = new Entry[bucketsCount];
+
+        Entry firstInSequence = null;
+        Entry lastInSequence = null;
+
+        for (Map.Entry<Object, Object> entry : entries) {
+            Object key = entry.getKey();
+
+            if (!byIdentity && RubyGuards.isRubyString(key)) {
+                key = DebugOperations.send(hashClass.getContext(), DebugOperations.send(hashClass.getContext(), key, "dup", null), "freeze", null);
+            }
+
+            final int hashed = HashOperations.hashKey(hashClass.getContext(), key);
+            Entry newEntry = new Entry(hashed, key, entry.getValue());
+
+            final int index = BucketsStrategy.getBucketIndex(hashed, newEntries.length);
+            Entry bucketEntry = newEntries[index];
+
+            if (bucketEntry == null) {
+                newEntries[index] = newEntry;
+            } else {
+                Entry previousInBucket = null;
+
+                while (bucketEntry != null) {
+                    if (hashed == bucketEntry.getHashed()
+                            && HashOperations.areKeysEqual(hashClass.getContext(), bucketEntry.getKey(), key, byIdentity)) {
+                        bucketEntry.setValue(entry.getValue());
+
+                        actualSize--;
+
+                        if (bucketEntry.getPreviousInSequence() != null) {
+                            bucketEntry.getPreviousInSequence().setNextInSequence(bucketEntry.getNextInSequence());
+                        }
+
+                        if (bucketEntry.getNextInSequence() != null) {
+                            bucketEntry.getNextInSequence().setPreviousInSequence(bucketEntry.getPreviousInSequence());
+                        }
+
+                        if (bucketEntry == lastInSequence) {
+                            lastInSequence = bucketEntry.getPreviousInSequence();
+                        }
+
+                        // We wasted by allocating newEntry, but never mind
+                        newEntry = bucketEntry;
+                        previousInBucket = null;
+
+                        break;
+                    }
+
+                    previousInBucket = bucketEntry;
+                    bucketEntry = bucketEntry.getNextInLookup();
+                }
+
+                if (previousInBucket != null) {
+                    previousInBucket.setNextInLookup(newEntry);
+                }
+            }
+
+            if (firstInSequence == null) {
+                firstInSequence = newEntry;
+            }
+
+            if (lastInSequence != null) {
+                lastInSequence.setNextInSequence(newEntry);
+            }
+
+            newEntry.setPreviousInSequence(lastInSequence);
+            newEntry.setNextInSequence(null);
+
+            lastInSequence = newEntry;
+        }
+
+        return HashNodes.createHash(hashClass, null, null, newEntries, actualSize, firstInSequence, lastInSequence);
+    }
 
     public static int capacityGreaterThan(int size) {
         for (int capacity : CAPACITIES) {
@@ -80,7 +163,7 @@ public abstract class BucketsStrategy {
     public static void resize(RubyBasicObject hash) {
         assert HashOperations.verifyStore(hash);
 
-        final int bucketsCount = capacityGreaterThan(HashNodes.getSize(hash)) * 2;
+        final int bucketsCount = capacityGreaterThan(HashNodes.getSize(hash)) * RESIZE_FACTOR;
         final Entry[] newEntries = new Entry[bucketsCount];
 
         Entry entry = HashNodes.getFirstInSequence(hash);

@@ -10,7 +10,6 @@
 package org.jruby.truffle.runtime.hash;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
@@ -19,11 +18,44 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyString;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 public class HashOperations {
+
+    private static class MapEntryWrapper implements Map.Entry<Object, Object> {
+
+        private final KeyValue keyValue;
+
+        public MapEntryWrapper(KeyValue keyValue) {
+            this.keyValue = keyValue;
+        }
+
+        @Override
+        public Object getKey() {
+            return keyValue.getKey();
+        }
+
+        @Override
+        public Object getValue() {
+            return keyValue.getValue();
+        }
+
+        @Override
+        public Object setValue(Object value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int hashCode() {
+            throw new UnsupportedOperationException();
+        }
+    }
 
     public static RubyBasicObject verySlowFromEntries(RubyContext context, List<KeyValue> entries, boolean byIdentity) {
         return verySlowFromEntries(context.getCoreLibrary().getHashClass(), entries, byIdentity);
@@ -31,25 +63,48 @@ public class HashOperations {
 
     @TruffleBoundary
     public static RubyBasicObject verySlowFromEntries(RubyClass hashClass, List<KeyValue> entries, boolean byIdentity) {
-        final RubyBasicObject hash = HashNodes.createEmptyHash(hashClass);
-        verySlowSetKeyValues(hash, entries, byIdentity);
-        assert HashOperations.verifyStore(hash);
-        return hash;
+        final List<Map.Entry<Object, Object>> converted = new ArrayList<>();
+
+        for (KeyValue keyValue : entries) {
+            converted.add(new MapEntryWrapper(keyValue));
+        }
+
+        return BucketsStrategy.create(hashClass, converted, byIdentity);
+    }
+
+    public static int hashKey(RubyContext context, Object key) {
+        final Object hashValue = DebugOperations.send(context, key, "hash", null);
+
+        if (hashValue instanceof Integer) {
+            return (int) hashValue;
+        } else if (hashValue instanceof Long) {
+            return (int) (long) hashValue;
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    public static boolean areKeysEqual(RubyContext context, Object a, Object b, boolean byIdentity) {
+        final String method;
+
+        if (byIdentity) {
+            method = "equal?";
+        } else {
+            method = "eql?";
+        }
+
+        final Object equalityResult = DebugOperations.send(context, a, method, null, b);
+
+        if (equalityResult instanceof Boolean) {
+            return (boolean) equalityResult;
+        }
+
+        throw new UnsupportedOperationException();
     }
 
     @TruffleBoundary
     public static HashLookupResult verySlowFindBucket(RubyBasicObject hash, Object key, boolean byIdentity) {
-        final Object hashValue = DebugOperations.send(hash.getContext(), key, "hash", null);
-
-        final int hashed;
-
-        if (hashValue instanceof Integer) {
-            hashed = (int) hashValue;
-        } else if (hashValue instanceof Long) {
-            hashed = (int) (long) hashValue;
-        } else {
-            throw new UnsupportedOperationException();
-        }
+        final int hashed = hashKey(hash.getContext(), key);
 
         final Entry[] entries = (Entry[]) HashNodes.getStore(hash);
         final int bucketIndex = (hashed & BucketsStrategy.SIGN_BIT_MASK) % entries.length;
@@ -58,17 +113,7 @@ public class HashOperations {
         Entry previousEntry = null;
 
         while (entry != null) {
-            // TODO: cast
-            
-            final String method;
-            
-            if (byIdentity) {
-                method = "equal?";
-            } else {
-                method = "eql?";
-            }
-
-            if ((boolean) DebugOperations.send(hash.getContext(), key, method, null, entry.getKey())) {
+            if (areKeysEqual(hash.getContext(), key, entry.getKey(), byIdentity)) {
                 return new HashLookupResult(hashed, bucketIndex, previousEntry, entry);
             }
 

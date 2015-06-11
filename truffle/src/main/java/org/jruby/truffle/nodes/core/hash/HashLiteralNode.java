@@ -138,7 +138,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 size++;
             }
 
-            return HashNodes.createHash(getContext().getCoreLibrary().getHashClass(), null, null, store, size, null);
+            return HashNodes.createHash(getContext().getCoreLibrary().getHashClass(), store, size);
         }
 
     }

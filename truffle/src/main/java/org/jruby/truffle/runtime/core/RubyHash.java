@@ -23,13 +23,14 @@ public class RubyHash extends RubyBasicObject {
     public Entry lastInSequence;
     public boolean compareByIdentity;
 
-    public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, DynamicObject dynamicObject) {
+    public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence, DynamicObject dynamicObject) {
         super(rubyClass, dynamicObject);
         this.defaultBlock = defaultBlock;
         this.defaultValue = defaultValue;
         this.store = store;
         this.size = size;
         this.firstInSequence = firstInSequence;
+        this.lastInSequence = lastInSequence;
         assert HashOperations.verifyStore(this);
     }
 

@@ -137,15 +137,15 @@ public abstract class HashNodes {
     }
 
     public static RubyBasicObject createEmptyHash(RubyClass hashClass) {
-        return createHash(hashClass, null, null, null, 0, null);
+        return createHash(hashClass, null, null, null, 0, null, null);
     }
 
     public static RubyBasicObject createHash(RubyClass hashClass, Object[] store, int size) {
-        return createHash(hashClass, null, null, store, size, null);
+        return createHash(hashClass, null, null, store, size, null, null);
     }
 
-    public static RubyBasicObject createHash(RubyClass hashClass, RubyProc defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence) {
-        return new RubyHash(hashClass, defaultBlock, defaultValue, store, size, firstInSequence, HASH_FACTORY.newInstance());
+    public static RubyBasicObject createHash(RubyClass hashClass, RubyProc defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
+        return new RubyHash(hashClass, defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, HASH_FACTORY.newInstance());
     }
 
     @TruffleBoundary
@@ -1001,7 +1001,7 @@ public abstract class HashNodes {
         public RubyBasicObject mergePackedArrayNull(RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
             final Object[] store = (Object[]) getStore(hash);
             final Object[] copy = PackedArrayStrategy.copyStore(store);
-            return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), copy, getSize(hash), null);
+            return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), copy, getSize(hash), null, null);
         }
 
         @ExplodeLoop
@@ -1046,14 +1046,14 @@ public abstract class HashNodes {
 
             if (mergeFromACount == 0) {
                 nothingFromFirstProfile.enter();
-                return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), PackedArrayStrategy.copyStore(storeB), storeBSize, null);
+                return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), PackedArrayStrategy.copyStore(storeB), storeBSize, null, null);
             }
 
             considerNothingFromSecondProfile.enter();
 
             if (conflictsCount == storeBSize) {
                 nothingFromSecondProfile.enter();
-                return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), PackedArrayStrategy.copyStore(storeA), storeASize, null);
+                return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), PackedArrayStrategy.copyStore(storeA), storeASize, null, null);
             }
 
             considerResultIsSmallProfile.enter();
@@ -1085,7 +1085,7 @@ public abstract class HashNodes {
                     index++;
                 }
 
-                return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), merged, mergedSize, null);
+                return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), merged, mergedSize, null, null);
             }
 
             CompilerDirectives.transferToInterpreter();
@@ -1098,7 +1098,7 @@ public abstract class HashNodes {
         public RubyBasicObject mergeBucketsBuckets(RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
-            final RubyBasicObject merged = createHash(hash.getLogicalClass(), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null);
+            final RubyBasicObject merged = createHash(hash.getLogicalClass(), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null, null);
 
             int size = 0;
 
@@ -1124,7 +1124,7 @@ public abstract class HashNodes {
         public RubyBasicObject merge(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject other, RubyProc block) {
             CompilerDirectives.transferToInterpreter();
             
-            final RubyBasicObject merged = createHash(hash.getLogicalClass(), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null);
+            final RubyBasicObject merged = createHash(hash.getLogicalClass(), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null, null);
 
             int size = 0;
 
