@@ -146,7 +146,7 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>dirgra</artifactId>
-      <version>0.2</version>
+      <version>0.3</version>
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>
