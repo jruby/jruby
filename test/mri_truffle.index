@@ -884,7 +884,7 @@ testunit/test_assertion.rb
 # testunit/test_rake_integration.rb
 # testunit/test_redefinition.rb
 # testunit/test_sorting.rb
-# thread/test_cv.rb
+thread/test_cv.rb
 # thread/test_sync.rb
 # uri/test_common.rb
 # uri/test_ftp.rb

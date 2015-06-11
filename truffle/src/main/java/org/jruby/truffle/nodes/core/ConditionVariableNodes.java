@@ -193,6 +193,11 @@ public abstract class ConditionVariableNodes {
                 throw new RaiseException(getContext().getCoreLibrary().threadError("Attempt to associate a ConditionVariable which already has a Mutex", this));
             }
 
+            if (!MutexNodes.getLock(associatedMutexReference.get()).isHeldByCurrentThread()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().threadError("Called ConditionVariable#wait without holding associated Mutex", this));
+            }
+
             getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
