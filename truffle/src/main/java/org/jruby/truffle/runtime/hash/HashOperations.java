@@ -44,7 +44,14 @@ public class HashOperations {
     }
 
     @TruffleBoundary
-    public static void verySlowSetAtBucket(RubyBasicObject hash, HashLookupResult hashLookupResult, Object key, Object value) {
+    public static boolean verySlowSetInBuckets(RubyBasicObject hash, Object key, Object value, boolean byIdentity) {
+        assert HashNodes.verifyStore(hash);
+
+        if (!byIdentity && key instanceof RubyString) {
+            key = DebugOperations.send(hash.getContext(), DebugOperations.send(hash.getContext(), key, "dup", null), "freeze", null);
+        }
+
+        final HashLookupResult hashLookupResult = verySlowFindBucket(hash, key, byIdentity);
         assert HashNodes.verifyStore(hash);
 
         assert HashNodes.getStore(hash) instanceof Entry[];
@@ -66,53 +73,10 @@ public class HashOperations {
 
             assert HashNodes.verifyStore(hash);
         }
-    }
-
-    @TruffleBoundary
-    public static boolean verySlowSetInBuckets(RubyBasicObject hash, Object key, Object value, boolean byIdentity) {
-        assert HashNodes.verifyStore(hash);
-
-        if (!byIdentity && key instanceof RubyString) {
-            key = DebugOperations.send(hash.getContext(), DebugOperations.send(hash.getContext(), key, "dup", null), "freeze", null);
-        }
-
-        final HashLookupResult hashLookupResult = verySlowFindBucket(hash, key, byIdentity);
-        verySlowSetAtBucket(hash, hashLookupResult, key, value);
 
         assert HashNodes.verifyStore(hash);
 
         return hashLookupResult.getEntry() == null;
-    }
-
-    @TruffleBoundary
-    public static void verySlowSetKeyValues(RubyBasicObject hash, Iterable<Map.Entry<Object, Object>> keyValues, boolean byIdentity) {
-        final List<KeyValue> converted = new ArrayList<>();
-
-        for (Map.Entry<Object, Object> keyValue : keyValues) {
-            converted.add(new KeyValue(keyValue.getKey(), keyValue.getValue()));
-        }
-
-        verySlowSetKeyValues(hash, converted, byIdentity);
-    }
-
-    @TruffleBoundary
-    public static void verySlowSetKeyValues(RubyBasicObject hash, List<KeyValue> keyValues, boolean byIdentity) {
-        assert HashNodes.verifyStore(hash);
-
-        final int size = keyValues.size();
-        HashNodes.setStore(hash, new Entry[BucketsStrategy.capacityGreaterThan(size)], 0, null, null);
-
-        int actualSize = 0;
-
-        for (KeyValue keyValue : keyValues) {
-            if (verySlowSetInBuckets(hash, keyValue.getKey(), keyValue.getValue(), byIdentity)) {
-                actualSize++;
-            }
-        }
-
-        HashNodes.setSize(hash, actualSize);
-
-        assert HashNodes.verifyStore(hash);
     }
 
 }

@@ -41,6 +41,7 @@ import org.jruby.truffle.runtime.hash.*;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -972,19 +973,19 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = {"isRubyHash(from)", "isNullHash(from)"})
-        public RubyBasicObject dupNull(RubyBasicObject self, RubyBasicObject from) {
+        public RubyBasicObject replaceNull(RubyBasicObject self, RubyBasicObject from) {
             if (self == from) {
                 return self;
             }
 
             setStore(self, null, 0, null, null);
-            copyOther(self, from);
+            copyOtherFields(self, from);
 
             return self;
         }
 
         @Specialization(guards = {"isRubyHash(from)", "isPackedHash(from)"})
-        public RubyBasicObject dupPackedArray(RubyBasicObject self, RubyBasicObject from) {
+        public RubyBasicObject replacePackedArray(RubyBasicObject self, RubyBasicObject from) {
             if (self == from) {
                 return self;
             }
@@ -992,7 +993,7 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) getStore(from);
             setStore(self, PackedArrayStrategy.copyStore(store), getSize(from), null, null);
 
-            copyOther(self, from);
+            copyOtherFields(self, from);
 
             assert verifyStore(self);
 
@@ -1001,14 +1002,43 @@ public abstract class HashNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isRubyHash(from)", "isBucketHash(from)"})
-        public RubyBasicObject dupBuckets(RubyBasicObject self, RubyBasicObject from) {
+        public RubyBasicObject replaceBuckets(RubyBasicObject self, RubyBasicObject from) {
             if (self == from) {
                 return self;
             }
 
-            HashOperations.verySlowSetKeyValues(self, HashNodes.iterableKeyValues(from), isCompareByIdentity(from));
+            final Entry[] newEntries = new Entry[((Entry[]) getStore(from)).length];
 
-            copyOther(self, from);
+            Entry firstInSequence = null;
+            Entry lastInSequence = null;
+
+            Entry entry = getFirstInSequence(from);
+
+            while (entry != null) {
+                final Entry newEntry = new Entry(entry.getHashed(), entry.getKey(), entry.getValue());
+
+                final int index = BucketsStrategy.getBucketIndex(entry.getHashed(), newEntries.length);
+
+                newEntry.setNextInLookup(newEntries[index]);
+                newEntries[index] = newEntry;
+
+                if (firstInSequence == null) {
+                    firstInSequence = newEntry;
+                }
+
+                if (lastInSequence != null) {
+                    lastInSequence.setNextInSequence(newEntry);
+                    newEntry.setPreviousInSequence(lastInSequence);
+                }
+
+                lastInSequence = newEntry;
+
+                entry = entry.getNextInSequence();
+            }
+
+            setStore(self, newEntries, getSize(from), firstInSequence, lastInSequence);
+            //HashOperations.verySlowSetKeyValues(self, HashNodes.iterableKeyValues(from), isCompareByIdentity(from));
+            copyOtherFields(self, from);
 
             assert verifyStore(self);
 
@@ -1016,11 +1046,11 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "!isRubyHash(other)")
-        public Object dupBuckets(VirtualFrame frame, RubyBasicObject self, Object other) {
+        public Object replaceBuckets(VirtualFrame frame, RubyBasicObject self, Object other) {
             return ruby(frame, "replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
         }
         
-        private void copyOther(RubyBasicObject self, RubyBasicObject from) {
+        private void copyOtherFields(RubyBasicObject self, RubyBasicObject from) {
             setDefaultBlock(self, getDefaultBlock(from));
             setDefaultValue(self, getDefaultValue(from));
             setCompareByIdentity(self, isCompareByIdentity(from));
@@ -1461,14 +1491,32 @@ public abstract class HashNodes {
             return hash;
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isBucketHash(hash)")
         public RubyBasicObject rehashBuckets(RubyBasicObject hash) {
-            CompilerDirectives.transferToInterpreter();
-
             assert verifyStore(hash);
 
-            
-            HashOperations.verySlowSetKeyValues(hash, HashNodes.iterableKeyValues(hash), isCompareByIdentity(hash));
+            final Entry[] entries = (Entry[]) getStore(hash);
+            Arrays.fill(entries, null);
+
+            Entry entry = getFirstInSequence(hash);
+
+            while (entry != null) {
+                final int index = BucketsStrategy.getBucketIndex(entry.getHashed(), entries.length);
+                Entry bucketEntry = entries[index];
+
+                if (bucketEntry == null) {
+                    entries[index] = entry;
+                } else {
+                    while (bucketEntry.getNextInLookup() != null) {
+                        bucketEntry = bucketEntry.getNextInLookup();
+                    }
+
+                    bucketEntry.setNextInLookup(entry);
+                }
+
+                entry = entry.getNextInSequence();
+            }
 
             assert verifyStore(hash);
             
