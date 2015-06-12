@@ -210,7 +210,7 @@ public abstract class BucketsStrategy {
 
             @Override
             public Map.Entry<Object, Object> next() {
-                if (entry == null) {
+                if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
 

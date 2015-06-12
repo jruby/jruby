@@ -16,6 +16,7 @@ import org.jruby.util.cli.Options;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 public abstract class PackedArrayStrategy {
 
@@ -137,6 +138,10 @@ public abstract class PackedArrayStrategy {
 
             @Override
             public Map.Entry<Object, Object> next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+
                 final int finalIndex = index;
 
                 final Map.Entry<Object, Object> entryResult = new Map.Entry<Object, Object>() {
