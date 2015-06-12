@@ -14,23 +14,28 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
- * Represents a super call - that is a call with self as the receiver, but the superclass of self
- * used for lookup. Currently implemented without any caching, and needs to be replaced with the
- * same caching mechanism as for normal calls without complicating the existing calls too much.
+ * Represents a super call with explicit arguments.
  */
-public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
+public class GeneralSuperCallNode extends RubyNode {
 
     private final boolean isSplatted;
+
     @Child private RubyNode block;
     @Children private final RubyNode[] arguments;
+
+    @Child LookupSuperMethodNode lookupSuperMethodNode;
+    @Child CallMethodNode callMethodNode;
 
     public GeneralSuperCallNode(RubyContext context, SourceSection sourceSection, RubyNode block, RubyNode[] arguments, boolean isSplatted) {
         super(context, sourceSection);
@@ -39,29 +44,28 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
         this.block = block;
         this.arguments = arguments;
         this.isSplatted = isSplatted;
+
+        lookupSuperMethodNode = LookupSuperMethodNodeGen.create(context, sourceSection, null);
+        callMethodNode = CallMethodNodeGen.create(context, sourceSection, null, new RubyNode[] {});
     }
 
     @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
+        CompilerAsserts.compilationConstant(arguments.length);
+
         final Object self = RubyArguments.getSelf(frame.getArguments());
 
         // Execute the arguments
-
         final Object[] argumentsObjects = new Object[arguments.length];
-
-        CompilerAsserts.compilationConstant(arguments.length);
         for (int i = 0; i < arguments.length; i++) {
             argumentsObjects[i] = arguments[i].execute(frame);
         }
 
         // Execute the block
-
-        RubyProc blockObject;
-
+        final RubyProc blockObject;
         if (block != null) {
             final Object blockTempObject = block.execute(frame);
-
             if (blockTempObject == nil()) {
                 blockObject = null;
             } else {
@@ -71,23 +75,37 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
             blockObject = null;
         }
 
-        // Check we have a method and the module is unmodified
-
-        if (!guard(frame, self)) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            lookup(frame);
-        }
-
-        // Call the method
-
+        final Object[] argumentsArray;
         if (isSplatted) {
             // TODO(CS): need something better to splat the arguments array
-            final RubyArray argumentsArray = (RubyArray) argumentsObjects[0];
-            return callNode.call(frame, RubyArguments.pack(superMethod, superMethod.getDeclarationFrame(), self, blockObject, ArrayNodes.slowToArray(argumentsArray)));
+            argumentsArray = ArrayNodes.slowToArray((RubyArray) argumentsObjects[0]);
         } else {
-            return callNode.call(frame, RubyArguments.pack(superMethod, superMethod.getDeclarationFrame(), self, blockObject, argumentsObjects));
+            argumentsArray = argumentsObjects;
         }
+
+        final InternalMethod superMethod = lookupSuperMethodNode.executeLookupSuperMethod(frame, self);
+
+        if (superMethod == null) {
+            CompilerDirectives.transferToInterpreter();
+            final String name = RubyArguments.getMethod(frame.getArguments()).getSharedMethodInfo().getName(); // use the original name
+            throw new RaiseException(getContext().getCoreLibrary().noMethodError(String.format("super: no superclass method `%s'", name), name, this));
+        }
+
+        final Object[] frameArguments = RubyArguments.pack(superMethod, superMethod.getDeclarationFrame(), self, blockObject, argumentsArray);
+
+        return callMethodNode.executeCallMethod(frame, superMethod, frameArguments);
     }
 
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        final Object self = RubyArguments.getSelf(frame.getArguments());
+        final InternalMethod superMethod = lookupSuperMethodNode.executeLookupSuperMethod(frame, self);
+
+        if (superMethod == null) {
+            return nil();
+        } else {
+            return createString("super");
+        }
+    }
 
 }
