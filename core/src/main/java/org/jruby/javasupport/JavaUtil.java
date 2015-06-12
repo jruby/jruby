@@ -216,10 +216,7 @@ public class JavaUtil {
     }
 
     public static Class<?> primitiveToWrapper(final Class<?> type) {
-        if (type.isPrimitive()) {
-            return CodegenUtils.getBoxType(type);
-        }
-        return type;
+        return type.isPrimitive() ? CodegenUtils.getBoxType(type) : type;
     }
 
     @SuppressWarnings("unchecked")

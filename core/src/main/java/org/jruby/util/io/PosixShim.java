@@ -390,17 +390,8 @@ public class PosixShim {
     }
 
     public Channel open(String cwd, String path, ModeFlags flags, int perm) {
-        return open(cwd, path, flags, perm, null);
-    }
-
-    public Channel open(String cwd, String path, ModeFlags flags, int perm, ClassLoader classLoader) {
         if ((path.equals("/dev/null") || path.equalsIgnoreCase("nul")) && Platform.IS_WINDOWS) {
             path = "NUL:";
-        }
-
-        if (path.startsWith("classpath:/") && classLoader != null) {
-            path = path.substring("classpath:/".length());
-            return Channels.newChannel(classLoader.getResourceAsStream(path));
         }
 
         try {
@@ -419,6 +410,16 @@ public class PosixShim {
             throw new RuntimeException("Unhandled IOException: " + e.getLocalizedMessage(), e);
         }
         return null;
+    }
+
+    @Deprecated // special case is already handled with JRubyFile.createResource
+    public Channel open(String cwd, String path, ModeFlags flags, int perm, ClassLoader classLoader) {
+        if (path.startsWith("classpath:/") && classLoader != null) {
+            path = path.substring("classpath:/".length());
+            return Channels.newChannel(classLoader.getResourceAsStream(path));
+        }
+
+        return open(cwd, path, flags, perm);
     }
 
     /**

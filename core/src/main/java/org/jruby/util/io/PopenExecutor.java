@@ -1753,10 +1753,15 @@ public class PopenExecutor {
         if (!opthash.isNil()) {
             checkExecOptions(context, runtime, (RubyHash)opthash, eargp);
         }
-
         // add chdir if necessary
         if (!runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd())) {
-            if (!eargp.chdir_given()) { // only if :chdir is not specified
+            // only if we are inside a jar and spawning org.jruby.Main we
+            // change to the current directory inside the jar
+            if (runtime.getCurrentDirectory().startsWith("uri:classloader:") &&
+                prog.toString().contains("org.jruby.Main")) {
+                prog = RubyString.newString(runtime, prog.toString().replace("org.jruby.Main", "org.jruby.Main -C " + runtime.getCurrentDirectory()));
+            }
+            else if (!eargp.chdir_given()) { // only if :chdir is not specified
                 eargp.chdir_given_set();
                 eargp.chdir_dir = runtime.getCurrentDirectory();
             }

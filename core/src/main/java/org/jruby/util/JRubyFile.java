@@ -91,7 +91,7 @@ public class JRubyFile extends JavaSecuredFile {
 
         if (pathname.contains(":")) { // scheme-oriented resources
             if (pathname.startsWith("classpath:")) {
-                pathname = pathname.replace("classpath:/", "uri:classloader:/");
+                pathname = pathname.replace("classpath:", "uri:classloader:/");
             }
 
             // replace is needed for maven/jruby-complete/src/it/app_using_classpath_uri to work
@@ -110,7 +110,7 @@ public class JRubyFile extends JavaSecuredFile {
         }
 
         // If any other special resource types fail, count it as a filesystem backed resource.
-        return new RegularFileResource(runtime.getPosix(), f);
+        return new RegularFileResource(runtime == null ? null : runtime.getPosix(), f);
     }
 
     public static String normalizeSeps(String path) {

@@ -1,6 +1,5 @@
 require 'test/unit'
-require 'test/test_helper'
-require 'rbconfig'
+require 'test/jruby/test_helper'
 require 'jruby/path_helper'
 
 class TestLoad < Test::Unit::TestCase
