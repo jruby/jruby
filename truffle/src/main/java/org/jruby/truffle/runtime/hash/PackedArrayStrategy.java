@@ -163,6 +163,11 @@ public abstract class PackedArrayStrategy {
                 return entryResult;
             }
 
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+
         };
     }
 

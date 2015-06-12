@@ -240,6 +240,11 @@ public abstract class BucketsStrategy {
                 return entryResult;
             }
 
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+
         };
     }
 
