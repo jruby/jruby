@@ -16,7 +16,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
+
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConvFlags;
@@ -42,6 +44,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
+import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -151,7 +154,6 @@ public class CoreLibrary {
     private final RubyClass rubyInternalMethod;
     private final Map<Errno, RubyClass> errnoClasses = new HashMap<>();
 
-    @CompilationFinal private RubySymbol eachSymbol;
     @CompilationFinal private RubyBasicObject envHash;
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
@@ -304,6 +306,7 @@ public class CoreLibrary {
 
         arrayClass = defineClass("Array", new ArrayNodes.ArrayAllocator());
         bindingClass = defineClass("Binding", new RubyBinding.BindingAllocator());
+        defineClass("ConditionVariable", new ConditionVariableNodes.ConditionVariableAllocator());
         dirClass = defineClass("Dir");
         encodingClass = defineClass("Encoding", NO_ALLOCATOR);
         falseClass = defineClass("FalseClass", NO_ALLOCATOR);
@@ -422,6 +425,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(BindingNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BignumNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ClassNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ConditionVariableNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ExceptionNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(FalseClassNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(FiberNodesFactory.getFactories());
@@ -1332,13 +1336,15 @@ public class CoreLibrary {
     }
 
     private RubyBasicObject getSystemEnv() {
-        final List<KeyValue> entries = new ArrayList<>();
+        final Map<Object, Object> entries = new HashMap<>();
 
         for (Map.Entry<String, String> variable : System.getenv().entrySet()) {
-            entries.add(new KeyValue(StringNodes.createString(context.getCoreLibrary().getStringClass(), variable.getKey()), StringNodes.createString(context.getCoreLibrary().getStringClass(), variable.getValue())));
+            entries.put(
+                    StringNodes.createString(context.getCoreLibrary().getStringClass(), variable.getKey()),
+                    StringNodes.createString(context.getCoreLibrary().getStringClass(), variable.getValue()));
         }
 
-        return HashOperations.verySlowFromEntries(context, entries, false);
+        return BucketsStrategy.create(context.getCoreLibrary().getHashClass(), entries.entrySet(), false);
     }
 
     public ArrayNodes.MinBlock getArrayMinBlock() {

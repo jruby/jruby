@@ -1,0 +1,2 @@
+fails:REXML::Element#attributes returns element's Attributes
+fails:REXML::Element#attributes returns an empty hash if element has no attributes

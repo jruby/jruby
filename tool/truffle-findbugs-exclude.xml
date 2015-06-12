@@ -78,6 +78,10 @@
     <Bug pattern="IMSE_DONT_CATCH_IMSE" />
   </Match>
   <Match>
+    <Class name="~org\.jruby\.truffle\.nodes\.core\.ConditionVariableNodes\$WaitNode.*" />
+    <Bug pattern="WA_AWAIT_NOT_IN_LOOP" />
+  </Match>
+  <Match>
     <Class name="org.jruby.truffle.nodes.core.KernelNodes$BacktickNode" />
     <Bug pattern="OS_OPEN_STREAM" />
   </Match>
@@ -151,6 +155,10 @@
   <Match>
     <Class name="org.jruby.truffle.runtime.RubyContext" />
     <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.runtime.core.RubyMatchData$Pair" />
+    <Bug pattern="EQ_COMPARETO_USE_OBJECT_EQUALS" />
   </Match>
 
   <!-- These we really should fix sooner rather than later -->

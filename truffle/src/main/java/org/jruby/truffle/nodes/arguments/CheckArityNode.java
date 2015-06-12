@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -20,6 +21,8 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.methods.Arity;
+
+import java.util.Map;
 
 /**
  * Check arguments meet the arity of the method.
@@ -67,7 +70,7 @@ public class CheckArityNode extends RubyNode {
         }
 
         if (!keywordsRest && keywordArguments != null) {
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(keywordArguments)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(keywordArguments)) {
                 if (!keywordAllowed(keyValue.getKey().toString())) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("unknown keyword: " + keyValue.getKey().toString(), this));

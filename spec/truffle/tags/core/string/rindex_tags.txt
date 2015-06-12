@@ -1,9 +1,0 @@
-fails(regexp):String#rindex with Regexp behaves the same as String#rindex(string) for escaped string regexps
-fails(regexp):String#rindex with Regexp returns the index of the first match from the end of string of regexp
-fails(regexp):String#rindex with Regexp sets $~ to MatchData of match and nil when there's none
-fails(regexp):String#rindex with Regexp starts the search at the given offset
-fails(regexp):String#rindex with Regexp supports \G which matches at the given start offset
-fails(regexp):String#rindex with Regexp tries to convert start_offset to an integer via to_int
-fails(regexp):String#rindex with Regexp returns the reverse character index of a multibyte character
-fails(regexp):String#rindex with Regexp returns the character index before the finish
-fails:String#rindex with Regexp returns nil if the substring isn't found

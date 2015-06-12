@@ -11,8 +11,12 @@ package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyThread;
 
 import java.util.Collections;
@@ -147,19 +151,35 @@ public class ThreadManager {
     }
 
     public void shutdown() {
-        // kill all threads except main
-        context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
-            @Override
-            public synchronized void run(RubyThread thread, Node currentNode) {
-                if (thread != rootThread && Thread.currentThread() == thread.getRootFiberJavaThread()) {
-                    thread.shutdown();
+        try {
+            killOtherThreads();
+        } finally {
+            rootThread.getFiberManager().shutdown();
+            rootThread.getRootFiber().cleanup();
+            rootThread.cleanup();
+        }
+    }
+
+    private void killOtherThreads() {
+        while (true) {
+            try {
+                context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
+                    @Override
+                    public synchronized void run(RubyThread thread, Node currentNode) {
+                        if (thread != rootThread && Thread.currentThread() == thread.getRootFiberJavaThread()) {
+                            thread.shutdown();
+                        }
+                    }
+                });
+                break; // Successfully executed the safepoint and sent the exceptions.
+            } catch (RaiseException e) {
+                final RubyException rubyException = e.getRubyException();
+
+                for (String line : Backtrace.DISPLAY_FORMATTER.format(e.getRubyException().getContext(), rubyException, rubyException.getBacktrace())) {
+                    System.err.println(line);
                 }
             }
-        });
-
-        rootThread.getFiberManager().shutdown();
-        rootThread.getRootFiber().cleanup();
-        rootThread.cleanup();
+        }
     }
 
 }

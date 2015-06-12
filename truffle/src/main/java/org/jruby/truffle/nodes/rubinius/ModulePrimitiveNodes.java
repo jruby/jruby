@@ -10,8 +10,10 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -21,7 +23,7 @@ public abstract class ModulePrimitiveNodes {
     @RubiniusPrimitive(name = "module_mirror")
     public abstract static class ModuleMirrorPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @CompilerDirectives.CompilationFinal RubyModule stringMirror;
+        @CompilationFinal RubyModule stringMirror;
         
         public ModuleMirrorPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

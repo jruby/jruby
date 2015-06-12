@@ -10,8 +10,8 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.hash.Entry;
-import org.jruby.truffle.runtime.hash.HashOperations;
 
 public class RubyHash extends RubyBasicObject {
 
@@ -23,14 +23,15 @@ public class RubyHash extends RubyBasicObject {
     public Entry lastInSequence;
     public boolean compareByIdentity;
 
-    public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, DynamicObject dynamicObject) {
+    public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence, DynamicObject dynamicObject) {
         super(rubyClass, dynamicObject);
         this.defaultBlock = defaultBlock;
         this.defaultValue = defaultValue;
         this.store = store;
         this.size = size;
         this.firstInSequence = firstInSequence;
-        assert HashOperations.verifyStore(this);
+        this.lastInSequence = lastInSequence;
+        assert HashNodes.verifyStore(this);
     }
 
 }

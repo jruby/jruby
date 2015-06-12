@@ -11,11 +11,13 @@ package org.jruby.truffle.nodes.control;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -27,8 +29,8 @@ public class TraceNode extends RubyNode {
 
     private final RubyContext context;
 
-    @CompilerDirectives.CompilationFinal private Assumption traceAssumption;
-    @CompilerDirectives.CompilationFinal private RubyProc traceFunc;
+    @CompilationFinal private Assumption traceAssumption;
+    @CompilationFinal private RubyProc traceFunc;
     @Child private DirectCallNode callNode;
 
     private final RubyBasicObject event;

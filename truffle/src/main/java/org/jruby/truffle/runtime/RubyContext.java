@@ -28,7 +28,6 @@ import jnr.ffi.LibraryLoader;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
@@ -97,7 +96,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     private final ObjectSpaceManager objectSpaceManager;
     private final ThreadManager threadManager;
     private final AtExitManager atExitManager;
-    private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
+    private final SymbolTable symbolTable = new SymbolTable(this);
     private final Warnings warnings;
     private final SafepointManager safepointManager;
     private final LexicalScope rootLexicalScope;
@@ -298,23 +297,15 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         execute(source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode, composed);
     }
 
-    public RubySymbol.SymbolTable getSymbolTable() {
+    public SymbolTable getSymbolTable() {
         return symbolTable;
     }
 
-
-    @TruffleBoundary
-    public RubySymbol getSymbol(String name) {
-        return symbolTable.getSymbol(name, ASCIIEncoding.INSTANCE);
+    public RubyBasicObject getSymbol(String name) {
+        return symbolTable.getSymbol(name);
     }
 
-    @TruffleBoundary
-    public RubySymbol getSymbol(String name, Encoding encoding) {
-        return symbolTable.getSymbol(name, encoding);
-    }
-
-    @TruffleBoundary
-    public RubySymbol getSymbol(ByteList name) {
+    public RubyBasicObject getSymbol(ByteList name) {
         return symbolTable.getSymbol(name);
     }
 
@@ -651,15 +642,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     @Override
     public void shutdown() {
-        try {
-            innerShutdown(true);
-        } catch (RaiseException e) {
-            final RubyException rubyException = e.getRubyException();
-
-            for (String line : Backtrace.DISPLAY_FORMATTER.format(e.getRubyException().getContext(), rubyException, rubyException.getBacktrace())) {
-                System.err.println(line);
-            }
-        }
+        innerShutdown(true);
     }
 
     public PrintStream getDebugStandardOut() {

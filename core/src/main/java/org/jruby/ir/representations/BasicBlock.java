@@ -1,6 +1,7 @@
 package org.jruby.ir.representations;
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.dirgra.ExplicitVertexID;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.YieldInstr;
@@ -10,7 +11,6 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
-import org.jruby.ir.util.ExplicitVertexID;
 
 import java.util.ArrayList;
 import java.util.List;

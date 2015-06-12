@@ -80,7 +80,6 @@ class MSpecScript
     "^spec/ruby/library/fiber",
     "^spec/ruby/library/mathn",
     "^spec/ruby/library/readline",
-    "^spec/ruby/library/rexml",
     "^spec/ruby/library/syslog",
     "^spec/ruby/library/weakref",
 

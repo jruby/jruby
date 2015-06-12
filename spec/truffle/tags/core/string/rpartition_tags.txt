@@ -1,1 +1,0 @@
-fails(regexp):String#rpartition with String accepts regexp

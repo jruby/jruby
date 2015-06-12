@@ -25,8 +25,9 @@ public class StringGuards {
         return StringNodes.getByteList(string).getEncoding().isAsciiCompatible();
     }
 
-    public static boolean isSingleByteOptimizableOrAsciiCompatible(RubyString string) {
-        return isSingleByteOptimizable(string) || isAsciiCompatible(string);
+    public static boolean isSingleByteOptimizableOrAsciiOnly(RubyString string) {
+        // TODO (nirvdrnum 08-Jun-15) Rubinius tracks whether a String is ASCII-only via a field in the String.
+        return isSingleByteOptimizable(string);
     }
 
     public static boolean isSingleByte(RubyString string) {

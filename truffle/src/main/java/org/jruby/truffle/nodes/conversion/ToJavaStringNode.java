@@ -15,9 +15,10 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
 
 @NodeChild(value="child", type=RubyNode.class)
 public abstract class ToJavaStringNode extends RubyNode {
@@ -31,9 +32,9 @@ public abstract class ToJavaStringNode extends RubyNode {
     // TODO(CS): cache the conversion to a Java String? Or should the user do that themselves?
 
     @TruffleBoundary
-    @Specialization
-    protected String toJavaString(RubySymbol symbol) {
-        return symbol.toString();
+    @Specialization(guards = "isRubySymbol(symbol)")
+    protected String toJavaString(RubyBasicObject symbol) {
+        return SymbolNodes.getString(symbol);
     }
 
     @TruffleBoundary

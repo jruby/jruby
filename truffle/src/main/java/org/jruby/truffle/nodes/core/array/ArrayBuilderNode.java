@@ -10,7 +10,9 @@
 package org.jruby.truffle.nodes.core.array;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -145,7 +147,7 @@ public abstract class ArrayBuilderNode extends Node {
 
         private final int expectedLength;
 
-        @CompilerDirectives.CompilationFinal private boolean hasAppendedIntegerArray = false;
+        @CompilationFinal private boolean hasAppendedIntegerArray = false;
 
         public IntegerArrayBuilderNode(RubyContext context, int expectedLength) {
             super(context);
@@ -380,8 +382,8 @@ public abstract class ArrayBuilderNode extends Node {
 
         private final int expectedLength;
 
-        @CompilerDirectives.CompilationFinal private boolean hasAppendedObjectArray = false;
-        @CompilerDirectives.CompilationFinal private boolean hasAppendedIntArray = false;
+        @CompilationFinal private boolean hasAppendedObjectArray = false;
+        @CompilationFinal private boolean hasAppendedIntArray = false;
 
         public ObjectArrayBuilderNode(RubyContext context, int expectedLength) {
             super(context);

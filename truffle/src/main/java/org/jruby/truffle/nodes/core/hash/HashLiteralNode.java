@@ -20,8 +20,10 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.hash.HashOperations;
+import org.jruby.truffle.runtime.hash.BucketsStrategy;
+import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
 
@@ -138,12 +140,14 @@ public abstract class HashLiteralNode extends RubyNode {
                 size++;
             }
 
-            return HashNodes.createHash(getContext().getCoreLibrary().getHashClass(), null, null, store, size, null);
+            return HashNodes.createHash(getContext().getCoreLibrary().getHashClass(), store, size);
         }
 
     }
 
     public static class GenericHashLiteralNode extends HashLiteralNode {
+
+        @Child HashNodes.SetIndexNode setIndexNode;
 
         public GenericHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
             super(context, sourceSection, keyValues);
@@ -151,17 +155,20 @@ public abstract class HashLiteralNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            CompilerDirectives.transferToInterpreter();
+            if (setIndexNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                setIndexNode = insert(HashNodesFactory.SetIndexNodeFactory.create(getContext(), getEncapsulatingSourceSection(), new RubyNode[]{null, null, null}));
+            }
 
-            final List<KeyValue> entries = new ArrayList<>();
+            final RubyBasicObject hash = BucketsStrategy.create(getContext().getCoreLibrary().getHashClass(), keyValues.length / 2);
 
             for (int n = 0; n < keyValues.length; n += 2) {
                 final Object key = keyValues[n].execute(frame);
                 final Object value = keyValues[n + 1].execute(frame);
-                entries.add(new KeyValue(key, value));
+                setIndexNode.executeSet(frame, hash, key, value);
             }
 
-            return HashOperations.verySlowFromEntries(getContext(), entries, false);
+            return hash;
         }
 
     }

@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -1113,13 +1114,13 @@ public abstract class FixnumNodes {
         @TruffleBoundary
         @Specialization
         public RubyBasicObject inspect(int n) {
-            return createString(Integer.toString(n));
+            return createString(Integer.toString(n), USASCIIEncoding.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization
         public RubyBasicObject inspect(long n) {
-            return createString(Long.toString(n));
+            return createString(Long.toString(n), USASCIIEncoding.INSTANCE);
         }
 
     }
@@ -1167,13 +1168,13 @@ public abstract class FixnumNodes {
         @TruffleBoundary
         @Specialization
         public RubyBasicObject toS(int n, NotProvided base) {
-            return createString(Integer.toString(n));
+            return createString(Integer.toString(n), USASCIIEncoding.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization
         public RubyBasicObject toS(long n, NotProvided base) {
-            return createString(Long.toString(n));
+            return createString(Long.toString(n), USASCIIEncoding.INSTANCE);
         }
 
         @TruffleBoundary
@@ -1184,7 +1185,7 @@ public abstract class FixnumNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
-            return createString(Long.toString(n, base));
+            return createString(Long.toString(n, base), USASCIIEncoding.INSTANCE);
         }
 
     }

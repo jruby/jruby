@@ -10,18 +10,111 @@
 package org.jruby.truffle.runtime.hash;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
 
-import java.util.Arrays;
+import java.util.*;
 
 public abstract class BucketsStrategy {
 
+    // If the size is more than this fraction of the number of buckets, resize
     public static final double LOAD_FACTOR = 0.75;
+
+    // Create this many more buckets than there are entries when resizing or creating from scratch
+    public static final int OVERALLOCATE_FACTOR = 4;
 
     public static final int SIGN_BIT_MASK = ~(1 << 31);
 
     private static final int[] CAPACITIES = Arrays.copyOf(org.jruby.RubyHash.MRI_PRIMES, org.jruby.RubyHash.MRI_PRIMES.length - 1);
+
+    public static RubyBasicObject create(RubyClass hashClass, int capacity) {
+        final int bucketsCount = capacityGreaterThan(capacity) * OVERALLOCATE_FACTOR;
+        final Entry[] newEntries = new Entry[bucketsCount];
+
+        return HashNodes.createHash(hashClass, null, null, newEntries, 0, null, null);
+    }
+
+    public static RubyBasicObject create(RubyClass hashClass, Collection<Map.Entry<Object, Object>> entries, boolean byIdentity) {
+        int actualSize = entries.size();
+
+        final int bucketsCount = capacityGreaterThan(entries.size()) * OVERALLOCATE_FACTOR;
+        final Entry[] newEntries = new Entry[bucketsCount];
+
+        Entry firstInSequence = null;
+        Entry lastInSequence = null;
+
+        for (Map.Entry<Object, Object> entry : entries) {
+            Object key = entry.getKey();
+
+            if (!byIdentity && RubyGuards.isRubyString(key)) {
+                key = DebugOperations.send(hashClass.getContext(), DebugOperations.send(hashClass.getContext(), key, "dup", null), "freeze", null);
+            }
+
+            final int hashed = HashNodes.slowHashKey(hashClass.getContext(), key);
+            Entry newEntry = new Entry(hashed, key, entry.getValue());
+
+            final int index = BucketsStrategy.getBucketIndex(hashed, newEntries.length);
+            Entry bucketEntry = newEntries[index];
+
+            if (bucketEntry == null) {
+                newEntries[index] = newEntry;
+            } else {
+                Entry previousInBucket = null;
+
+                while (bucketEntry != null) {
+                    if (hashed == bucketEntry.getHashed()
+                            && HashNodes.slowAreKeysEqual(hashClass.getContext(), bucketEntry.getKey(), key, byIdentity)) {
+                        bucketEntry.setValue(entry.getValue());
+
+                        actualSize--;
+
+                        if (bucketEntry.getPreviousInSequence() != null) {
+                            bucketEntry.getPreviousInSequence().setNextInSequence(bucketEntry.getNextInSequence());
+                        }
+
+                        if (bucketEntry.getNextInSequence() != null) {
+                            bucketEntry.getNextInSequence().setPreviousInSequence(bucketEntry.getPreviousInSequence());
+                        }
+
+                        if (bucketEntry == lastInSequence) {
+                            lastInSequence = bucketEntry.getPreviousInSequence();
+                        }
+
+                        // We wasted by allocating newEntry, but never mind
+                        newEntry = bucketEntry;
+                        previousInBucket = null;
+
+                        break;
+                    }
+
+                    previousInBucket = bucketEntry;
+                    bucketEntry = bucketEntry.getNextInLookup();
+                }
+
+                if (previousInBucket != null) {
+                    previousInBucket.setNextInLookup(newEntry);
+                }
+            }
+
+            if (firstInSequence == null) {
+                firstInSequence = newEntry;
+            }
+
+            if (lastInSequence != null) {
+                lastInSequence.setNextInSequence(newEntry);
+            }
+
+            newEntry.setPreviousInSequence(lastInSequence);
+            newEntry.setNextInSequence(null);
+
+            lastInSequence = newEntry;
+        }
+
+        return HashNodes.createHash(hashClass, null, null, newEntries, actualSize, firstInSequence, lastInSequence);
+    }
 
     public static int capacityGreaterThan(int size) {
         for (int capacity : CAPACITIES) {
@@ -69,14 +162,14 @@ public abstract class BucketsStrategy {
 
         HashNodes.setSize(hash, HashNodes.getSize(hash) + 1);
 
-        assert HashOperations.verifyStore(hash);
+        assert HashNodes.verifyStore(hash);
     }
 
     @TruffleBoundary
     public static void resize(RubyBasicObject hash) {
-        assert HashOperations.verifyStore(hash);
+        assert HashNodes.verifyStore(hash);
 
-        final int bucketsCount = capacityGreaterThan(HashNodes.getSize(hash)) * 2;
+        final int bucketsCount = capacityGreaterThan(HashNodes.getSize(hash)) * OVERALLOCATE_FACTOR;
         final Entry[] newEntries = new Entry[bucketsCount];
 
         Entry entry = HashNodes.getFirstInSequence(hash);
@@ -101,7 +194,70 @@ public abstract class BucketsStrategy {
 
         HashNodes.setStore(hash, newEntries, HashNodes.getSize(hash), HashNodes.getFirstInSequence(hash), HashNodes.getLastInSequence(hash));
 
-        assert HashOperations.verifyStore(hash);
+        assert HashNodes.verifyStore(hash);
+    }
+
+    @TruffleBoundary
+    public static Iterator<Map.Entry<Object, Object>> iterateKeyValues(final Entry firstInSequence) {
+        return new Iterator<Map.Entry<Object, Object>>() {
+
+            private Entry entry = firstInSequence;
+
+            @Override
+            public boolean hasNext() {
+                return entry != null;
+            }
+
+            @Override
+            public Map.Entry<Object, Object> next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+
+                final Entry finalEntry = entry;
+
+                final Map.Entry<Object, Object> entryResult = new Map.Entry<Object, Object>() {
+
+                    @Override
+                    public Object getKey() {
+                        return finalEntry.getKey();
+                    }
+
+                    @Override
+                    public Object getValue() {
+                        return finalEntry.getValue();
+                    }
+
+                    @Override
+                    public Object setValue(Object value) {
+                        throw new UnsupportedOperationException();
+                    }
+
+                };
+
+                entry = entry.getNextInSequence();
+
+                return entryResult;
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+
+        };
+    }
+
+    @TruffleBoundary
+    public static Iterable<Map.Entry<Object, Object>> iterableKeyValues(final Entry firstInSequence) {
+        return new Iterable<Map.Entry<Object, Object>>() {
+
+            @Override
+            public Iterator<Map.Entry<Object, Object>> iterator() {
+                return iterateKeyValues(firstInSequence);
+            }
+
+        };
     }
 
 }

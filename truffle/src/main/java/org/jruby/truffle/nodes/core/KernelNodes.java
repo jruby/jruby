@@ -36,6 +36,7 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFactory;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
@@ -66,6 +67,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
@@ -90,7 +92,7 @@ public abstract class KernelNodes {
             final List<String> envp = new ArrayList<>();
 
             // TODO(CS): cast
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(env)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(env)) {
                 envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
             }
 
@@ -299,10 +301,10 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubySymbol calleeName() {
+        public RubyBasicObject calleeName() {
             CompilerDirectives.transferToInterpreter();
             // the "called name" of a method.
-            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(getContext()).getName());
+            return getSymbol(RubyCallStack.getCallingMethod(getContext()).getName());
         }
     }
 
@@ -551,7 +553,7 @@ public abstract class KernelNodes {
 
             final RubyBasicObject env = context.getCoreLibrary().getENV();
 
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(env)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(env)) {
                 builder.environment().put(keyValue.getKey().toString(), keyValue.getValue().toString());
             }
 
@@ -839,18 +841,16 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public boolean isInstanceVariableDefined(RubyBasicObject object, RubyString name) {
-            CompilerDirectives.transferToInterpreter();
-
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(name)")
+        public boolean isInstanceVariableDefinedString(RubyBasicObject object, RubyBasicObject name) {
             return object.isFieldDefined(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
         }
 
-        @Specialization
-        public boolean isInstanceVariableDefined(RubyBasicObject object, RubySymbol name) {
-            CompilerDirectives.transferToInterpreter();
-
-            return object.isFieldDefined(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
+        @TruffleBoundary
+        @Specialization(guards = "isRubySymbol(name)")
+        public boolean isInstanceVariableDefinedSymbol(RubyBasicObject object, RubyBasicObject name) {
+            return object.isFieldDefined(RubyContext.checkInstanceVariableName(getContext(), SymbolNodes.getString(name), this));
         }
 
     }
@@ -863,15 +863,15 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object instanceVariableGet(RubyBasicObject object, RubyString name) {
+        @Specialization(guards = "isRubyString(name)")
+        public Object instanceVariableGetString(RubyBasicObject object, RubyBasicObject name) {
             return instanceVariableGet(object, name.toString());
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object instanceVariableGet(RubyBasicObject object, RubySymbol name) {
-            return instanceVariableGet(object, name.toString());
+        @Specialization(guards = "isRubySymbol(name)")
+        public Object instanceVariableGetSymbol(RubyBasicObject object, RubyBasicObject name) {
+            return instanceVariableGet(object, SymbolNodes.getString(name));
         }
 
         private Object instanceVariableGet(RubyBasicObject object, String name) {
@@ -890,16 +890,16 @@ public abstract class KernelNodes {
         // TODO CS 4-Mar-15 this badly needs to be cached
 
         @TruffleBoundary
-        @Specialization
-        public Object instanceVariableSet(RubyBasicObject object, RubyString name, Object value) {
+        @Specialization(guards = "isRubyString(name)")
+        public Object instanceVariableSetString(RubyBasicObject object, RubyBasicObject name, Object value) {
             RubyBasicObject.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object instanceVariableSet(RubyBasicObject object, RubySymbol name, Object value) {
-            RubyBasicObject.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
+        @Specialization(guards = "isRubySymbol(name)")
+        public Object instanceVariableSetSymbol(RubyBasicObject object, RubyBasicObject name, Object value) {
+            RubyBasicObject.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), SymbolNodes.getString(name), this), value);
             return value;
         }
 
@@ -924,7 +924,7 @@ public abstract class KernelNodes {
 
             for (Object name : instanceVariableNames) {
                 if (name instanceof String) {
-                    ArrayNodes.slowPush(array, getContext().getSymbolTable().getSymbol((String) name));
+                    ArrayNodes.slowPush(array, getSymbol((String) name));
                 }
             }
 
@@ -1037,7 +1037,7 @@ public abstract class KernelNodes {
 
             for (Object name : Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
                 if (name instanceof String) {
-                    ArrayNodes.slowPush(array, getContext().getSymbol((String) name));
+                    ArrayNodes.slowPush(array, getSymbol((String) name));
                 }
             }
 
@@ -1054,10 +1054,10 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubySymbol methodName() {
+        public RubyBasicObject methodName() {
             CompilerDirectives.transferToInterpreter();
             // the "original/definition name" of the method.
-            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(getContext()).getSharedMethodInfo().getName());
+            return getSymbol(RubyCallStack.getCallingMethod(getContext()).getSharedMethodInfo().getName());
         }
 
     }
@@ -1069,14 +1069,14 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject method(Object object, RubySymbol name) {
+        @Specialization(guards = "isRubyString(name)")
+        public RubyBasicObject methodString(Object object, RubyBasicObject name) {
             return method(object, name.toString());
         }
 
-        @Specialization
-        public RubyBasicObject method(Object object, RubyString name) {
-            return method(object, name.toString());
+        @Specialization(guards = "isRubySymbol(name)")
+        public RubyBasicObject methodSymbol(Object object, RubyBasicObject name) {
+            return method(object, SymbolNodes.getString(name));
         }
 
         private RubyBasicObject method(Object object, String name) {
@@ -1433,18 +1433,18 @@ public abstract class KernelNodes {
 
         public abstract boolean executeDoesRespondTo(VirtualFrame frame, Object object, Object name, boolean includePrivate);
 
-        @Specialization
-        public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, NotProvided checkVisibility) {
-            return doesRespondTo(frame, object, name, false);
+        @Specialization(guards = "isRubyString(name)")
+        public boolean doesRespondToString(VirtualFrame frame, Object object, RubyBasicObject name, NotProvided checkVisibility) {
+            return doesRespondToString(frame, object, name, false);
         }
 
-        @Specialization
-        public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, RubyBasicObject checkVisibility) {
-            return doesRespondTo(frame, object, name, false);
+        @Specialization(guards = "isRubyString(name)")
+        public boolean doesRespondToString(VirtualFrame frame, Object object, RubyBasicObject name, RubyBasicObject checkVisibility) {
+            return doesRespondToString(frame, object, name, false);
         }
 
-        @Specialization
-        public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, boolean ignoreVisibility) {
+        @Specialization(guards = "isRubyString(name)")
+        public boolean doesRespondToString(VirtualFrame frame, Object object, RubyBasicObject name, boolean ignoreVisibility) {
             if (ignoreVisibility) {
                 return dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
             } else {
@@ -1452,18 +1452,18 @@ public abstract class KernelNodes {
             }
         }
 
-        @Specialization
-        public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, NotProvided checkVisibility) {
-            return doesRespondTo(frame, object, name, false);
+        @Specialization(guards = "isRubySymbol(name)")
+        public boolean doesRespondToSymbol(VirtualFrame frame, Object object, RubyBasicObject name, NotProvided checkVisibility) {
+            return doesRespondToSymbol(frame, object, name, false);
         }
 
-        @Specialization
-        public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, RubyBasicObject checkVisibility) {
-            return doesRespondTo(frame, object, name, false);
+        @Specialization(guards = "isRubySymbol(name)")
+        public boolean doesRespondToSymbol(VirtualFrame frame, Object object, RubyBasicObject name, RubyBasicObject checkVisibility) {
+            return doesRespondToSymbol(frame, object, name, false);
         }
 
-        @Specialization
-        public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, boolean ignoreVisibility) {
+        @Specialization(guards = "isRubySymbol(name)")
+        public boolean doesRespondToSymbol(VirtualFrame frame, Object object, RubyBasicObject name, boolean ignoreVisibility) {
             if (ignoreVisibility) {
                 return dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
             } else {
@@ -1480,23 +1480,23 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public boolean doesRespondToMissing(Object object, RubyString name, NotProvided includeAll) {
+        @Specialization(guards = "isRubyString(name)")
+        public boolean doesRespondToMissingString(Object object, RubyBasicObject name, NotProvided includeAll) {
             return false;
         }
 
-        @Specialization
-        public boolean doesRespondToMissing(Object object, RubySymbol name, NotProvided includeAll) {
+        @Specialization(guards = "isRubySymbol(name)")
+        public boolean doesRespondToMissingSymbol(Object object, RubyBasicObject name, NotProvided includeAll) {
             return false;
         }
 
-        @Specialization
-        public boolean doesRespondToMissing(Object object, RubySymbol name, boolean includeAll) {
+        @Specialization(guards = "isRubyString(name)")
+        public boolean doesRespondToMissingString(Object object, RubyBasicObject name, boolean includeAll) {
             return false;
         }
 
-        @Specialization
-        public boolean doesRespondToMissing(Object object, RubyString name, boolean includeAll) {
+        @Specialization(guards = "isRubySymbol(name)")
+        public boolean doesRespondToMissingSymbol(Object object, RubyBasicObject name, boolean includeAll) {
             return false;
         }
 
@@ -1834,7 +1834,7 @@ public abstract class KernelNodes {
             final List<String> envp = new ArrayList<>();
 
             // TODO(CS): cast
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(env)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(env)) {
                 envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
             }
 

@@ -107,7 +107,10 @@ public class RubyRegexp extends RubyBasicObject {
         final byte[] stringBytes = StringNodes.getByteList(source).bytes();
 
         final ByteList bl = this.getSource();
-        final Regex r = new Regex(bl.getUnsafeBytes(), bl.getBegin(), bl.getBegin() + bl.getRealSize(), this.options.toJoniOptions(), checkEncoding(StringNodes.getCodeRangeable(source), true));
+        final Encoding enc = checkEncoding(StringNodes.getCodeRangeable(source), true);
+        final ByteList preprocessed = RegexpSupport.preprocess(getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
+
+        final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), this.options.toJoniOptions(), checkEncoding(StringNodes.getCodeRangeable(source), true));
         final Matcher matcher = r.matcher(stringBytes);
         int range = stringBytes.length;
 
@@ -169,7 +172,7 @@ public class RubyRegexp extends RubyBasicObject {
         final RubyBasicObject post = makeString(source, region.end[0], bytes.length() - region.end[0]);
         final RubyBasicObject global = makeString(source, region.beg[0], region.end[0] - region.beg[0]);
 
-        final RubyMatchData matchObject = new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), source, this, region, values, pre, post, global);
+        final RubyMatchData matchObject = new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), source, this, region, values, pre, post, global, matcher.getBegin(), matcher.getEnd());
 
         if (operator) {
             if (values.length > 0) {

@@ -884,7 +884,7 @@ testunit/test_assertion.rb
 # testunit/test_rake_integration.rb
 # testunit/test_redefinition.rb
 # testunit/test_sorting.rb
-# thread/test_cv.rb
+thread/test_cv.rb
 # thread/test_sync.rb
 # uri/test_common.rb
 # uri/test_ftp.rb
@@ -924,10 +924,10 @@ webrick/test_utils.rb
 # win32ole/test_win32ole_variant_m.rb
 # win32ole/test_win32ole_variant_outarg.rb
 # win32ole/test_word.rb
-# xmlrpc/test_client.rb
-# xmlrpc/test_cookie.rb
-# xmlrpc/test_datetime.rb
-# xmlrpc/test_features.rb
-# xmlrpc/test_marshal.rb
-# xmlrpc/test_parser.rb
-# xmlrpc/test_webrick_server.rb
+# xmlrpc/test_client.rb # pollutes other tests
+# xmlrpc/test_cookie.rb # undefined method `http' for NilClass
+xmlrpc/test_datetime.rb
+xmlrpc/test_features.rb
+xmlrpc/test_marshal.rb
+# xmlrpc/test_parser.rb # `const_missing': uninitialized constant Test_REXMLStreamParser::GenericParserTest
+# xmlrpc/test_webrick_server.rb # undefined method `<<' for Object

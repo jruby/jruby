@@ -14,12 +14,14 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyThread;
+import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 
 import java.util.EnumSet;
@@ -28,6 +30,11 @@ import java.util.concurrent.locks.ReentrantLock;
 @CoreClass(name = "Mutex")
 public abstract class MutexNodes {
 
+    private static class MutexType extends BasicObjectType {
+    }
+
+    public static final MutexType MUTEX_TYPE = new MutexType();
+
     private static final HiddenKey LOCK_IDENTIFIER = new HiddenKey("lock");
     private static final Property LOCK_PROPERTY;
     private static final DynamicObjectFactory MUTEX_FACTORY;
@@ -35,7 +42,7 @@ public abstract class MutexNodes {
     static {
         Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
         LOCK_PROPERTY = Property.create(LOCK_IDENTIFIER, allocator.locationForType(ReentrantLock.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        Shape shape = RubyBasicObject.EMPTY_SHAPE.addProperty(LOCK_PROPERTY);
+        Shape shape = RubyBasicObject.LAYOUT.createShape(MUTEX_TYPE).addProperty(LOCK_PROPERTY);
         MUTEX_FACTORY = shape.createFactory();
     }
 

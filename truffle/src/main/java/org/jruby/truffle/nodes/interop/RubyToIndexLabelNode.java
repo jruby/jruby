@@ -9,13 +9,13 @@
  */
 package org.jruby.truffle.nodes.interop;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
 
 public abstract class RubyToIndexLabelNode extends TargetableRubyNode {
 
@@ -23,28 +23,20 @@ public abstract class RubyToIndexLabelNode extends TargetableRubyNode {
         super(context, sourceSection);
     }
 
+    @CompilerDirectives.TruffleBoundary
     @Specialization
-    public Object doRubyString(VirtualFrame frame, RubyString index) {
-        return toString(index);
+    public Object doRubyString(RubyString index) {
+        return index.toString();
     }
 
-    @Specialization
-    public Object doRubySymbol(VirtualFrame frame, RubySymbol index) {
-        return toString(index);
+    @Specialization(guards = "isRubySymbol(index)")
+    public Object doRubySymbol(RubyBasicObject index) {
+        return SymbolNodes.getString(index);
     }
 
-    @Specialization
-    public Object doObject(VirtualFrame frame, Object index) {
+    @Specialization(guards = "!isRubySymbol(index)")
+    public Object doObject(Object index) {
         return index;
     }
 
-    @TruffleBoundary
-    private String toString(RubyString index) {
-        return index.toString();
-    }
-
-    @TruffleBoundary
-    private String toString(RubySymbol index) {
-        return index.toString();
-    }
 }

@@ -18,6 +18,7 @@ public class Arity {
 
     public static final Arity NO_ARGUMENTS = new Arity(0, 0, false, false, false, 0);
     public static final Arity ONE_REQUIRED = new Arity(1, 0, false, false, false, 0);
+    public static final Arity AT_LEAST_ONE = new Arity(1, 0, true, false, false, 0);
 
     private final int required;
     private final int optional;
