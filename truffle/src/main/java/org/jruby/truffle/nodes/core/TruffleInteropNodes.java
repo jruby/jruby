@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -17,6 +18,7 @@ import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.interop.messages.*;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -161,7 +163,7 @@ public abstract class TruffleInteropNodes {
             return node.executeForeign(frame, receiver, identifier);
         }
 
-        @CompilerDirectives.CompilationFinal private String identifier;
+        @CompilationFinal private String identifier;
 
         @Specialization(guards = "isRubySymbol(identifier)")
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier) {
@@ -204,7 +206,7 @@ public abstract class TruffleInteropNodes {
             return node.executeForeign(frame, receiver, identifier, value);
         }
 
-        @CompilerDirectives.CompilationFinal private String identifier;
+        @CompilationFinal private String identifier;
 
         @Specialization(guards = "isRubySymbol(identifier)")
         public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier,  Object value) {

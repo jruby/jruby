@@ -12,10 +12,12 @@ package org.jruby.truffle.nodes.supercall;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
@@ -32,10 +34,10 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
     @Child protected MetaClassNode metaClassNode;
     @Child protected DirectCallNode callNode;
 
-    @CompilerDirectives.CompilationFinal private InternalMethod currentMethod;
-    @CompilerDirectives.CompilationFinal private RubyClass selfMetaClass;
-    @CompilerDirectives.CompilationFinal private Assumption unmodifiedAssumption;
-    @CompilerDirectives.CompilationFinal protected InternalMethod superMethod;
+    @CompilationFinal private InternalMethod currentMethod;
+    @CompilationFinal private RubyClass selfMetaClass;
+    @CompilationFinal private Assumption unmodifiedAssumption;
+    @CompilationFinal protected InternalMethod superMethod;
 
     public AbstractGeneralSuperCallNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);

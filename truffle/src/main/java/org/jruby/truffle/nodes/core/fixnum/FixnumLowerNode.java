@@ -10,8 +10,10 @@
 package org.jruby.truffle.nodes.core.fixnum;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.core.CoreLibrary;
@@ -22,14 +24,14 @@ public class FixnumLowerNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    @CompilerDirectives.CompilationFinal private boolean hasSeenInteger = false;
-    @CompilerDirectives.CompilationFinal private boolean hasSeenLong = false;
-    @CompilerDirectives.CompilationFinal private boolean hasSeenIntegerRange = false;
-    @CompilerDirectives.CompilationFinal private boolean hasSeenLongRange = false;
-    @CompilerDirectives.CompilationFinal private boolean hasSeenUndefined = false;
+    @CompilationFinal private boolean hasSeenInteger = false;
+    @CompilationFinal private boolean hasSeenLong = false;
+    @CompilationFinal private boolean hasSeenIntegerRange = false;
+    @CompilationFinal private boolean hasSeenLongRange = false;
+    @CompilationFinal private boolean hasSeenUndefined = false;
 
-    @CompilerDirectives.CompilationFinal private boolean hasNeededToLowerLongFixnum = false;
-    @CompilerDirectives.CompilationFinal private boolean hasNeededToLowerLongFixnumRange = false;
+    @CompilationFinal private boolean hasNeededToLowerLongFixnum = false;
+    @CompilationFinal private boolean hasNeededToLowerLongFixnumRange = false;
 
     public FixnumLowerNode(RubyNode child) {
         super(child.getContext(), child.getEncapsulatingSourceSection());

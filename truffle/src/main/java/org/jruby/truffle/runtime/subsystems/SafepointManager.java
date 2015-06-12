@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.subsystems;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.Node;
@@ -33,7 +34,7 @@ public class SafepointManager {
 
     private final Set<Thread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<Thread, Boolean>());
 
-    @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption("SafepointManager");
+    @CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption("SafepointManager");
     private final ReentrantLock lock = new ReentrantLock();
 
     private final Phaser phaser = new Phaser();

@@ -11,10 +11,12 @@ package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.arguments.OptionalKeywordArgMissingNode;
@@ -46,25 +48,25 @@ public class RubyCallNode extends RubyNode {
     @Child private ProcOrNullNode block;
     @Children private final RubyNode[] arguments;
     @Children private final RubyNode[] keywordOptimizedArguments;
-    @CompilerDirectives.CompilationFinal private int keywordOptimizedArgumentsLength;
+    @CompilationFinal private int keywordOptimizedArgumentsLength;
 
     private final boolean isSplatted;
     private final boolean isVCall;
 
     @Child private CallDispatchHeadNode dispatchHead;
 
-    @CompilerDirectives.CompilationFinal private boolean seenNullInUnsplat = false;
-    @CompilerDirectives.CompilationFinal private boolean seenIntegerFixnumInUnsplat = false;
-    @CompilerDirectives.CompilationFinal private boolean seenLongFixnumInUnsplat = false;
-    @CompilerDirectives.CompilationFinal private boolean seenFloatInUnsplat = false;
-    @CompilerDirectives.CompilationFinal private boolean seenObjectInUnsplat = false;
+    @CompilationFinal private boolean seenNullInUnsplat = false;
+    @CompilationFinal private boolean seenIntegerFixnumInUnsplat = false;
+    @CompilationFinal private boolean seenLongFixnumInUnsplat = false;
+    @CompilationFinal private boolean seenFloatInUnsplat = false;
+    @CompilationFinal private boolean seenObjectInUnsplat = false;
 
     @Child private CallDispatchHeadNode respondToMissing;
     @Child private BooleanCastNode respondToMissingCast;
 
     private final boolean ignoreVisibility;
 
-    @CompilerDirectives.CompilationFinal private boolean cannotOptimize;
+    @CompilationFinal private boolean cannotOptimize;
 
     public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
         this(context, section, methodName, receiver, block, isSplatted, false, arguments);

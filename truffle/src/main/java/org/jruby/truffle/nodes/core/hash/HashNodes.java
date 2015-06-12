@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core.hash;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -23,6 +24,7 @@ import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
@@ -388,7 +390,7 @@ public abstract class HashNodes {
         private final BranchProfile notInHashProfile = BranchProfile.create();
         private final BranchProfile useDefaultProfile = BranchProfile.create();
         
-        @CompilerDirectives.CompilationFinal private Object undefinedValue;
+        @CompilationFinal private Object undefinedValue;
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
