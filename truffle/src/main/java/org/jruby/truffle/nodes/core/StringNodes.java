@@ -1700,23 +1700,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "strip")
-    public abstract static class StripNode extends CoreMethodArrayArgumentsNode {
-
-        public StripNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyBasicObject strip(RubyString string) {
-            CompilerDirectives.transferToInterpreter();
-
-            // Hacky implementation to get something working
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), string.toString().trim());
-        }
-
-    }
-
     @CoreMethod(names = "dump", taintFromSelf = true)
     @ImportStatic(StringGuards.class)
     public abstract static class DumpNode extends CoreMethodArrayArgumentsNode {
