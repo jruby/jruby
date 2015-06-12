@@ -1129,6 +1129,7 @@ public abstract class HashNodes {
 
         @Child private CallDispatchHeadNode eqlNode;
         @Child private CallDispatchHeadNode fallbackCallNode;
+        @Child private LookupEntryNode lookupEntryNode;
 
         private final BranchProfile nothingFromFirstProfile = BranchProfile.create();
         private final BranchProfile considerNothingFromSecondProfile = BranchProfile.create();
@@ -1277,8 +1278,13 @@ public abstract class HashNodes {
                 size++;
             }
 
+            if (lookupEntryNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                lookupEntryNode = insert(new LookupEntryNode(getContext(), getSourceSection()));
+            }
+
             for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(other)) {
-                final HashLookupResult searchResult = HashOperations.verySlowFindBucket(merged, keyValue.getKey(), false);
+                final HashLookupResult searchResult = lookupEntryNode.lookup(frame, merged, keyValue.getKey());
                 
                 if (searchResult.getEntry() == null) {
                     HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue(), false);
