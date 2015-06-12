@@ -88,6 +88,8 @@ public class StaticScope implements Serializable {
     private boolean isBlockOrEval;
     private boolean isArgumentScope; // Is this block and argument scope of a define_method.
 
+    private long commandArgumentStack;
+
     private IRScope irScope; // Method/Closure that this static scope corresponds to
 
     public enum Type {
@@ -471,6 +473,14 @@ public class StaticScope implements Serializable {
 
     public DynamicScope getDummyScope() {
         return dummyScope == null ? dummyScope = new DummyDynamicScope(this) : dummyScope;
+    }
+
+    public void setCommandArgumentStack(long commandArgumentStack) {
+        this.commandArgumentStack = commandArgumentStack;
+    }
+
+    public long getCommandArgumentStack() {
+        return commandArgumentStack;
     }
 
     private void growVariableNames(String name) {
