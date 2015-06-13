@@ -36,7 +36,6 @@ import org.jcodings.Encoding;
 import org.joni.Region;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;

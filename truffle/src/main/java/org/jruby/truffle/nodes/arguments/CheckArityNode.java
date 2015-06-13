@@ -18,8 +18,6 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.hash.HashOperations;
-import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.methods.Arity;
 
 import java.util.Map;

@@ -16,9 +16,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.constants.platform.Errno;
-
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConvFlags;
@@ -45,8 +43,6 @@ import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
-import org.jruby.truffle.runtime.hash.HashOperations;
-import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.truffle.runtime.signal.SignalOperations;
@@ -58,9 +54,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class CoreLibrary {

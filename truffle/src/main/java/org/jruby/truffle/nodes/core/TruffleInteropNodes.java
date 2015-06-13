@@ -18,7 +18,6 @@ import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.interop.messages.*;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
-
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;

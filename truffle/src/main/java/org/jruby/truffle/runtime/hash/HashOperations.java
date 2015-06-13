@@ -15,10 +15,6 @@ import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 public class HashOperations {
 
     @TruffleBoundary

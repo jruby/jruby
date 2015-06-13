@@ -23,12 +23,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
-import org.jruby.truffle.runtime.hash.Entry;
-import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public abstract class HashLiteralNode extends RubyNode {
 

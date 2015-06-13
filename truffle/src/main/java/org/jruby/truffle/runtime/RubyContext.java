@@ -48,7 +48,6 @@ import org.jruby.truffle.nodes.exceptions.TopLevelRaiseHandler;
 import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.InternalMethod;

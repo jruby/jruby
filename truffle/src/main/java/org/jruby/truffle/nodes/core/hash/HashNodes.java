@@ -24,7 +24,6 @@ import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
@@ -39,7 +38,10 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.hash.*;
+import org.jruby.truffle.runtime.hash.BucketsStrategy;
+import org.jruby.truffle.runtime.hash.Entry;
+import org.jruby.truffle.runtime.hash.HashLookupResult;
+import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 
