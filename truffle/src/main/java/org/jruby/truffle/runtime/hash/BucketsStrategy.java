@@ -11,10 +11,12 @@ package org.jruby.truffle.runtime.hash;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.hash.HashGuards;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyHash;
 
 import java.util.*;
 
@@ -131,7 +133,8 @@ public abstract class BucketsStrategy {
     }
 
     public static void addNewEntry(RubyBasicObject hash, int hashed, Object key, Object value) {
-        assert HashNodes.getStore(hash) instanceof Entry[];
+        assert HashGuards.isBucketHash(hash);
+        assert HashNodes.verifyStore(hash);
 
         final Entry[] buckets = (Entry[]) HashNodes.getStore(hash);
 
@@ -167,6 +170,7 @@ public abstract class BucketsStrategy {
 
     @TruffleBoundary
     public static void resize(RubyBasicObject hash) {
+        assert HashGuards.isBucketHash(hash);
         assert HashNodes.verifyStore(hash);
 
         final int bucketsCount = capacityGreaterThan(HashNodes.getSize(hash)) * OVERALLOCATE_FACTOR;
@@ -197,7 +201,6 @@ public abstract class BucketsStrategy {
         assert HashNodes.verifyStore(hash);
     }
 
-    @TruffleBoundary
     public static Iterator<Map.Entry<Object, Object>> iterateKeyValues(final Entry firstInSequence) {
         return new Iterator<Map.Entry<Object, Object>>() {
 
@@ -248,7 +251,6 @@ public abstract class BucketsStrategy {
         };
     }
 
-    @TruffleBoundary
     public static Iterable<Map.Entry<Object, Object>> iterableKeyValues(final Entry firstInSequence) {
         return new Iterable<Map.Entry<Object, Object>>() {
 
@@ -258,6 +260,45 @@ public abstract class BucketsStrategy {
             }
 
         };
+    }
+
+    public static void copyInto(RubyBasicObject from, RubyBasicObject to) {
+        assert RubyGuards.isRubyHash(from);
+        assert HashGuards.isBucketHash(from);
+        assert HashNodes.verifyStore(from);
+        assert RubyGuards.isRubyHash(to);
+        assert HashNodes.verifyStore(to);
+
+        final Entry[] newEntries = new Entry[((Entry[]) HashNodes.getStore(from)).length];
+
+        Entry firstInSequence = null;
+        Entry lastInSequence = null;
+
+        Entry entry = HashNodes.getFirstInSequence(from);
+
+        while (entry != null) {
+            final Entry newEntry = new Entry(entry.getHashed(), entry.getKey(), entry.getValue());
+
+            final int index = BucketsStrategy.getBucketIndex(entry.getHashed(), newEntries.length);
+
+            newEntry.setNextInLookup(newEntries[index]);
+            newEntries[index] = newEntry;
+
+            if (firstInSequence == null) {
+                firstInSequence = newEntry;
+            }
+
+            if (lastInSequence != null) {
+                lastInSequence.setNextInSequence(newEntry);
+                newEntry.setPreviousInSequence(lastInSequence);
+            }
+
+            lastInSequence = newEntry;
+
+            entry = entry.getNextInSequence();
+        }
+
+        HashNodes.setStore(to, newEntries, HashNodes.getSize(from), firstInSequence, lastInSequence);
     }
 
 }

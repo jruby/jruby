@@ -868,37 +868,7 @@ public abstract class HashNodes {
                 return self;
             }
 
-            final Entry[] newEntries = new Entry[((Entry[]) getStore(from)).length];
-
-            Entry firstInSequence = null;
-            Entry lastInSequence = null;
-
-            Entry entry = getFirstInSequence(from);
-
-            while (entry != null) {
-                final Entry newEntry = new Entry(entry.getHashed(), entry.getKey(), entry.getValue());
-
-                final int index = BucketsStrategy.getBucketIndex(entry.getHashed(), newEntries.length);
-
-                newEntry.setNextInLookup(newEntries[index]);
-                newEntries[index] = newEntry;
-
-                if (firstInSequence == null) {
-                    firstInSequence = newEntry;
-                }
-
-                if (lastInSequence != null) {
-                    lastInSequence.setNextInSequence(newEntry);
-                    newEntry.setPreviousInSequence(lastInSequence);
-                }
-
-                lastInSequence = newEntry;
-
-                entry = entry.getNextInSequence();
-            }
-
-            setStore(self, newEntries, getSize(from), firstInSequence, lastInSequence);
-            //HashOperations.verySlowSetKeyValues(self, HashNodes.iterableKeyValues(from), isCompareByIdentity(from));
+            BucketsStrategy.copyInto(from, self);
             copyOtherFields(self, from);
 
             assert verifyStore(self);
@@ -1012,6 +982,7 @@ public abstract class HashNodes {
         private final BranchProfile nothingFromSecondProfile = BranchProfile.create();
         private final BranchProfile considerResultIsSmallProfile = BranchProfile.create();
         private final BranchProfile resultIsSmallProfile = BranchProfile.create();
+        private final BranchProfile promoteProfile = BranchProfile.create();
 
         public MergeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1019,17 +990,72 @@ public abstract class HashNodes {
             setNode = SetNodeGen.create(context, sourceSection, null, null, null, null);
         }
 
-        @Specialization(guards = {"isPackedHash(hash)", "isRubyHash(other)", "isNullHash(other)", "!isCompareByIdentity(hash)"})
-        public RubyBasicObject mergePackedArrayNull(RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
+        // Merge with an empty hash, without a block
+
+        @Specialization(guards = {
+                "isNullHash(hash)",
+                "isRubyHash(other)",
+                "isNullHash(other)"
+        })
+        public RubyBasicObject mergeEmptyEmpty(RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
+            return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), null, 0, null, null);
+        }
+
+        @Specialization(guards = {
+                "isEmptyHash(hash)",
+                "isRubyHash(other)",
+                "isPackedHash(other)"
+        })
+        public RubyBasicObject mergeEmptyPacked(RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
+            final Object[] store = (Object[]) getStore(other);
+            final Object[] copy = PackedArrayStrategy.copyStore(store);
+            return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), copy, getSize(hash), null, null);
+        }
+
+        @Specialization(guards = {
+                "isPackedHash(hash)",
+                "isRubyHash(other)",
+                "isEmptyHash(other)"
+        })
+        public RubyBasicObject mergePackedEmpty(RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
             final Object[] store = (Object[]) getStore(hash);
             final Object[] copy = PackedArrayStrategy.copyStore(store);
             return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), copy, getSize(hash), null, null);
         }
 
+        @Specialization(guards = {
+                "isEmptyHash(hash)",
+                "isRubyHash(other)",
+                "isBucketHash(other)"
+        })
+        public RubyBasicObject mergeEmptyBuckets(RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
+            final RubyBasicObject merged = createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), null, 0, null, null);
+            BucketsStrategy.copyInto(other, merged);
+            return merged;
+        }
+
+        @Specialization(guards = {
+                "isBucketHash(hash)",
+                "isRubyHash(other)",
+                "isEmptyHash(other)"
+        })
+        public RubyBasicObject mergeBucketsEmpty(RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
+            final RubyBasicObject merged = createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), null, 0, null, null);
+            BucketsStrategy.copyInto(hash, merged);
+            return merged;
+        }
+
+        // Merge non-empty packed with non-empty packed, without a block
+
         @ExplodeLoop
-        @Specialization(guards = {"isPackedHash(hash)", "isRubyHash(other)", "isPackedHash(other)", "!isCompareByIdentity(hash)"})
-        public RubyBasicObject mergePackedArrayPackedArray(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
-            // TODO(CS): what happens with the default block here? Which side does it get merged from?
+        @Specialization(guards = {
+                "isPackedHash(hash)",
+                "!isEmptyHash(hash)",
+                "isRubyHash(other)",
+                "isPackedHash(other)",
+                "!isEmptyHash(other)",
+                "!isCompareByIdentity(hash)"})
+        public RubyBasicObject mergePackedPacked(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
             assert verifyStore(hash);
             assert verifyStore(other);
 
@@ -1038,6 +1064,8 @@ public abstract class HashNodes {
 
             final Object[] storeB = (Object[]) getStore(other);
             final int storeBSize = getSize(other);
+
+            // Go through and figure out what gets merged from each hash
 
             final boolean[] mergeFromA = new boolean[storeASize];
             int mergeFromACount = 0;
@@ -1066,19 +1094,29 @@ public abstract class HashNodes {
                 }
             }
 
+            // If nothing comes from A, it's easy
+
             if (mergeFromACount == 0) {
                 nothingFromFirstProfile.enter();
                 return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), PackedArrayStrategy.copyStore(storeB), storeBSize, null, null);
             }
 
+            // Cut off here
+
             considerNothingFromSecondProfile.enter();
+
+            // If everything in B conflicted with something in A, it's easy
 
             if (conflictsCount == storeBSize) {
                 nothingFromSecondProfile.enter();
                 return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), PackedArrayStrategy.copyStore(storeA), storeASize, null, null);
             }
 
+            // Cut off here
+
             considerResultIsSmallProfile.enter();
+
+            // More complicated case where some things from each hash, but it still fits in a packed array
 
             final int mergedSize = storeBSize + mergeFromACount;
 
@@ -1110,22 +1148,20 @@ public abstract class HashNodes {
                 return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), merged, mergedSize, null, null);
             }
 
-            return mergeBucketsBuckets(frame, hash, other, block);
-        }
-        
-        // TODO CS 3-Mar-15 need negative guards on this
-        @Specialization(guards = {"!isCompareByIdentity(hash)", "isRubyHash(other)"})
-        public RubyBasicObject mergeBucketsBuckets(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
+            // Most complicated cases where things from both hashes, and it also needs to be promoted to buckets
 
-            final RubyBasicObject merged = createHash(hash.getLogicalClass(), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null, null);
+            promoteProfile.enter();
 
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
-                setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), false);
+            final RubyBasicObject merged = createHash(hash.getLogicalClass(), null, null, new Entry[BucketsStrategy.capacityGreaterThan(mergedSize)], 0, null, null);
+
+            for (int n = 0; n < storeASize; n++) {
+                if (mergeFromA[n]) {
+                    setNode.executeSet(frame, merged, PackedArrayStrategy.getKey(storeA, n),  PackedArrayStrategy.getValue(storeA, n), false);
+                }
             }
 
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(other)) {
-                setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), false);
+            for (int n = 0; n < storeBSize; n++) {
+                setNode.executeSet(frame, merged, PackedArrayStrategy.getKey(storeB, n),  PackedArrayStrategy.getValue(storeB, n), false);
             }
 
             assert verifyStore(hash);
@@ -1133,10 +1169,101 @@ public abstract class HashNodes {
             return merged;
         }
 
-        @Specialization(guards = {"!isCompareByIdentity(hash)", "isRubyHash(other)"})
+        // Merge non-empty buckets with non-empty buckets, without a block
+
+        @Specialization(guards = {
+                "isBucketHash(hash)",
+                "!isEmptyHash(hash)",
+                "isRubyHash(other)",
+                "isBucketHash(other)",
+                "!isEmptyHash(other)"
+        })
+        public RubyBasicObject mergeBucketsBuckets(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
+            final boolean isCompareByIdentity = isCompareByIdentity(hash);
+
+            final RubyBasicObject merged = createHash(hash.getLogicalClass(), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null, null);
+
+            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(HashNodes.getFirstInSequence(hash))) {
+                setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
+            }
+
+            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(HashNodes.getFirstInSequence(other))) {
+                setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
+            }
+
+            assert verifyStore(hash);
+
+            return merged;
+        }
+
+        // Merge combinations of packed and buckets, without a block
+
+        @Specialization(guards = {
+                "isPackedHash(hash)",
+                "!isEmptyHash(hash)",
+                "isRubyHash(other)",
+                "isBucketHash(other)",
+                "!isEmptyHash(other)"
+        })
+        public RubyBasicObject mergePackedBuckets(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
+            final boolean isCompareByIdentity = isCompareByIdentity(hash);
+
+            final RubyBasicObject merged = createHash(hash.getLogicalClass(), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null, null);
+
+            final Object[] hashStore = (Object[]) getStore(hash);
+            final int hashSize = getSize(hash);
+
+            for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
+                if (n < hashSize) {
+                    setNode.executeSet(frame, merged, PackedArrayStrategy.getKey(hashStore, n), PackedArrayStrategy.getValue(hashStore, n), isCompareByIdentity);
+                }
+            }
+
+            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(HashNodes.getFirstInSequence(other))) {
+                setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
+            }
+
+            assert verifyStore(hash);
+
+            return merged;
+        }
+
+        @Specialization(guards = {
+                "isBucketHash(hash)",
+                "!isEmptyHash(hash)",
+                "isRubyHash(other)",
+                "isPackedHash(other)",
+                "!isEmptyHash(other)"
+        })
+        public RubyBasicObject mergeBucketsPacked(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
+            final boolean isCompareByIdentity = isCompareByIdentity(hash);
+
+            final RubyBasicObject merged = createHash(hash.getLogicalClass(), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null, null);
+
+            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(HashNodes.getFirstInSequence(hash))) {
+                setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
+            }
+
+            final Object[] otherStore = (Object[]) getStore(other);
+            final int otherSize = getSize(other);
+
+            for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
+                if (n < otherSize) {
+                    setNode.executeSet(frame, merged, PackedArrayStrategy.getKey(otherStore, n), PackedArrayStrategy.getValue(otherStore, n), isCompareByIdentity);
+                }
+            }
+
+            assert verifyStore(hash);
+
+            return merged;
+        }
+
+        // Merge using a block
+
+        @Specialization(guards = {"isRubyHash(other)", "!isCompareByIdentity(hash)"})
         public RubyBasicObject merge(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject other, RubyProc block) {
-            CompilerDirectives.transferToInterpreter();
-            
+            CompilerDirectives.bailout("Hash#merge with a block cannot be compiled at the moment");
+
             final RubyBasicObject merged = createHash(hash.getLogicalClass(), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null, null);
 
             int size = 0;
@@ -1153,7 +1280,7 @@ public abstract class HashNodes {
 
             for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(other)) {
                 final HashLookupResult searchResult = lookupEntryNode.lookup(frame, merged, keyValue.getKey());
-                
+
                 if (searchResult.getEntry() == null) {
                     setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), false);
                     size++;
@@ -1173,7 +1300,9 @@ public abstract class HashNodes {
             return merged;
         }
 
-        @Specialization(guards = {"!isRubyHash(other)", "!isCompareByIdentity(hash)"})
+        // Merge with something that wasn't a hash
+
+        @Specialization(guards = "!isRubyHash(other)")
         public Object merge(VirtualFrame frame, RubyBasicObject hash, Object other, Object block) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
