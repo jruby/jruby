@@ -14,9 +14,10 @@ import com.oracle.truffle.api.source.Source;
 
 import java.io.IOException;
 import org.jruby.Ruby;
+import org.jruby.runtime.Constants;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
-@TruffleLanguage.Registration(name = "Ruby", mimeType = "application/x-ruby")
+@TruffleLanguage.Registration(name = "Ruby", version = Constants.RUBY_VERSION, mimeType = "application/x-ruby")
 public class RubyLanguage extends TruffleLanguage {
 
     private final RubyContext context;
