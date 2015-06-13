@@ -990,6 +990,7 @@ public abstract class HashNodes {
         @Child private CallDispatchHeadNode eqlNode;
         @Child private CallDispatchHeadNode fallbackCallNode;
         @Child private LookupEntryNode lookupEntryNode;
+        @Child private SetNode setNode;
 
         private final BranchProfile nothingFromFirstProfile = BranchProfile.create();
         private final BranchProfile considerNothingFromSecondProfile = BranchProfile.create();
@@ -1000,6 +1001,7 @@ public abstract class HashNodes {
         public MergeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
+            setNode = SetNodeGen.create(context, sourceSection, null, null, null, null);
         }
 
         @Specialization(guards = {"isPackedHash(hash)", "isRubyHash(other)", "isNullHash(other)", "!isCompareByIdentity(hash)"})
@@ -1095,22 +1097,22 @@ public abstract class HashNodes {
 
             CompilerDirectives.transferToInterpreter();
 
-            return mergeBucketsBuckets(hash, other, block);
+            return mergeBucketsBuckets(frame, hash, other, block);
         }
         
         // TODO CS 3-Mar-15 need negative guards on this
         @Specialization(guards = {"!isCompareByIdentity(hash)", "isRubyHash(other)"})
-        public RubyBasicObject mergeBucketsBuckets(RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
+        public RubyBasicObject mergeBucketsBuckets(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject other, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
             final RubyBasicObject merged = createHash(hash.getLogicalClass(), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null, null);
 
             for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
-                HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue(), false);
+                setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), false);
             }
 
             for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(other)) {
-                HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue(), false);
+                setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), false);
             }
 
             assert verifyStore(hash);
@@ -1127,7 +1129,7 @@ public abstract class HashNodes {
             int size = 0;
 
             for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
-                HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue(), false);
+                setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), false);
                 size++;
             }
 
@@ -1140,14 +1142,14 @@ public abstract class HashNodes {
                 final HashLookupResult searchResult = lookupEntryNode.lookup(frame, merged, keyValue.getKey());
                 
                 if (searchResult.getEntry() == null) {
-                    HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue(), false);
+                    setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), false);
                     size++;
                 } else {
                     final Object oldValue = searchResult.getEntry().getValue();
                     final Object newValue = keyValue.getValue();
                     final Object mergedValue = yield(frame, block, keyValue.getKey(), oldValue, newValue);
-                    
-                    HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), mergedValue, false);
+
+                    setNode.executeSet(frame, merged, keyValue.getKey(), mergedValue, false);
                 }
             }
 
