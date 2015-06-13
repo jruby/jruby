@@ -321,14 +321,12 @@ public abstract class HashNodes {
                     final Object pair = store[n];
 
                     if (!(pair instanceof RubyArray)) {
-                        CompilerDirectives.transferToInterpreter();
                         return constructFallback(frame, hashClass, args);
                     }
 
                     final RubyArray pairArray = (RubyArray) pair;
 
                     if (!(ArrayNodes.getStore(pairArray) instanceof Object[])) {
-                        CompilerDirectives.transferToInterpreter();
                         return constructFallback(frame, hashClass, args);
                     }
 
@@ -1111,8 +1109,6 @@ public abstract class HashNodes {
 
                 return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), merged, mergedSize, null, null);
             }
-
-            CompilerDirectives.transferToInterpreter();
 
             return mergeBucketsBuckets(frame, hash, other, block);
         }
