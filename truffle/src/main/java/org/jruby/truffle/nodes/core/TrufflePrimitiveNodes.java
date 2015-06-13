@@ -17,6 +17,8 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.Ruby;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -223,7 +225,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public boolean substrate() {
-            return getContext().getRuntime().isSubstrateVM();
+            return Ruby.isSubstrateVM();
         }
 
     }
