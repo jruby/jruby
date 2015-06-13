@@ -100,7 +100,7 @@ public class WrapperMethod extends DynamicMethod {
     }
     
     public DynamicMethod getRealMethod() {
-        return method;
+        return method.getRealMethod();
     }
 
     @Override
