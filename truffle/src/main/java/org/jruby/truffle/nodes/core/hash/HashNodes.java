@@ -27,6 +27,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.core.array.ArrayBuilderNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -924,6 +925,8 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
+        @Child ArrayBuilderNode arrayBuilderNode;
+
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -940,47 +943,59 @@ public abstract class HashNodes {
         public RubyBasicObject mapPackedArray(VirtualFrame frame, RubyBasicObject hash, RubyProc block) {
             assert verifyStore(hash);
 
+            if (arrayBuilderNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                arrayBuilderNode = insert(new ArrayBuilderNode.UninitializedArrayBuilderNode(getContext()));
+            }
+
             final Object[] store = (Object[]) getStore(hash);
-            final int size = getSize(hash);
 
-            final Object[] result = new Object[size];
-
-            int count = 0;
+            final int length = getSize(hash);
+            Object resultStore = arrayBuilderNode.start(length);
 
             try {
                 for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
-                    if (n < size) {
+                    if (n < length) {
                         final Object key = PackedArrayStrategy.getKey(store, n);
                         final Object value = PackedArrayStrategy.getValue(store, n);
-                        result[n] = yield(frame, block, key, value);
-
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
+                        resultStore = arrayBuilderNode.append(resultStore, n, yield(frame, block, key, value));
                     }
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
+                    getRootNode().reportLoopCount(length);
                 }
             }
 
-            return createArray(result, size);
+            return arrayBuilderNode.finishAndCreate(getContext().getCoreLibrary().getArrayClass(), resultStore, length);
         }
 
         @Specialization(guards = "isBucketHash(hash)")
         public RubyBasicObject mapBuckets(VirtualFrame frame, RubyBasicObject hash, RubyProc block) {
-            CompilerDirectives.transferToInterpreter();
-
             assert verifyStore(hash);
 
-            final RubyBasicObject array = createEmptyArray();
-
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
-                ArrayNodes.slowPush(array, yield(frame, block, keyValue.getKey(), keyValue.getValue()));
+            if (arrayBuilderNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                arrayBuilderNode = insert(new ArrayBuilderNode.UninitializedArrayBuilderNode(getContext()));
             }
 
-            return array;
+            final int length = getSize(hash);
+            Object store = arrayBuilderNode.start(length);
+
+            int index = 0;
+
+            try {
+                for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(getFirstInSequence(hash))) {
+                    arrayBuilderNode.append(store, index, yield(frame, block, keyValue.getKey(), keyValue.getValue()));
+                    index++;
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(length);
+                }
+            }
+
+            return arrayBuilderNode.finishAndCreate(getContext().getCoreLibrary().getArrayClass(), store, length);
         }
 
     }
