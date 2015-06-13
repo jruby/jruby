@@ -1,0 +1,2 @@
+fails:MatchData#end returns the offset for multi byte strings
+fails:MatchData#end returns the offset for multi byte strings with unicode regexp
