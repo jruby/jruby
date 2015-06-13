@@ -497,162 +497,20 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class SetIndexNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private HashNode hashNode;
-        @Child private CallDispatchHeadNode eqlNode;
-        @Child private BasicObjectNodes.ReferenceEqualNode equalNode;
-        @Child private LookupEntryNode lookupEntryNode;
-
-        private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
-
-        private final BranchProfile extendProfile = BranchProfile.create();
-        private final ConditionProfile strategyProfile = ConditionProfile.createBinaryProfile();
+        @Child private SetNode setNode;
 
         public SetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            hashNode = new HashNode(context, sourceSection);
-            eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
-            equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
         }
 
-        public abstract Object executeSet(VirtualFrame frame, RubyBasicObject hash, Object key, Object value);
-
-        @Specialization(guards = { "isNullHash(hash)", "!isRubyString(key)" })
+        @Specialization
         public Object setNull(VirtualFrame frame, RubyBasicObject hash, Object key, Object value) {
-            setStore(hash, PackedArrayStrategy.createStore(hashNode.hash(frame, key), key, value), 1, null, null);
-            assert verifyStore(hash);
-            return value;
-        }
-
-        @Specialization(guards = "isNullHash(hash)")
-        public Object setNull(VirtualFrame frame, RubyBasicObject hash, RubyString key, Object value) {
-            if (isCompareByIdentity(hash)) {
-                return setNull(frame, hash, (Object) key, value);
-            } else {
-                return setNull(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value);
-            }
-        }
-
-        @ExplodeLoop
-        @Specialization(guards = {"isPackedHash(hash)", "!isRubyString(key)"})
-        public Object setPackedArray(VirtualFrame frame, RubyBasicObject hash, Object key, Object value) {
-            assert verifyStore(hash);
-
-            final int hashed = hashNode.hash(frame, key);
-
-            final Object[] store = (Object[]) getStore(hash);
-            final int size = getSize(hash);
-
-            for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
-                if (n < size) {
-                    if (hashed == PackedArrayStrategy.getHashed(store, n)) {
-                        final boolean equal;
-
-                        if (byIdentityProfile.profile(isCompareByIdentity(hash))) {
-                            equal = equalNode.executeReferenceEqual(frame, key, PackedArrayStrategy.getKey(store, n));
-                        } else {
-                            equal = eqlNode.callBoolean(frame, key, "eql?", null, PackedArrayStrategy.getKey(store, n));
-                        }
-
-                        if (equal) {
-                            PackedArrayStrategy.setValue(store, n, value);
-                            assert verifyStore(hash);
-                            return value;
-                        }
-                    }
-                }
+            if (setNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                setNode = insert(SetNodeGen.create(getContext(), getEncapsulatingSourceSection(), null, null, null, null));
             }
 
-            extendProfile.enter();
-
-            if (strategyProfile.profile(size + 1 <= PackedArrayStrategy.MAX_ENTRIES)) {
-                PackedArrayStrategy.setHashedKeyValue(store, size, hashed, key, value);
-                setSize(hash, size + 1);
-                return value;
-            } else {
-                PackedArrayStrategy.promoteToBuckets(hash, store, size);
-                BucketsStrategy.addNewEntry(hash, hashed, key, value);
-            }
-
-            assert verifyStore(hash);
-
-            return value;
-        }
-
-        @Specialization(guards = "isPackedHash(hash)")
-        public Object setPackedArray(VirtualFrame frame, RubyBasicObject hash, RubyString key, Object value) {
-            if (isCompareByIdentity(hash)) {
-                return setPackedArray(frame, hash, (Object) key, value);
-            } else {
-                return setPackedArray(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value);
-            }
-        }
-
-        // Can't be @Cached yet as we call from the RubyString specialisation
-        private final ConditionProfile foundProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile bucketCollisionProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile appendingProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile resizeProfile = ConditionProfile.createBinaryProfile();
-
-        @Specialization(guards = {"isBucketHash(hash)", "!isRubyString(key)"})
-        public Object setBuckets(VirtualFrame frame, RubyBasicObject hash, Object key, Object value) {
-            assert verifyStore(hash);
-
-            if (lookupEntryNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                lookupEntryNode = insert(new LookupEntryNode(getContext(), getEncapsulatingSourceSection()));
-            }
-
-            final HashLookupResult result = lookupEntryNode.lookup(frame, hash, key);
-
-            final Entry entry = result.getEntry();
-
-            if (foundProfile.profile(entry == null)) {
-                final Entry[] entries = (Entry[]) getStore(hash);
-
-                final Entry newEntry = new Entry(result.getHashed(), key, value);
-
-                if (bucketCollisionProfile.profile(result.getPreviousEntry() == null)) {
-                    entries[result.getIndex()] = newEntry;
-                } else {
-                    result.getPreviousEntry().setNextInLookup(newEntry);
-                }
-
-                final Entry lastInSequence = getLastInSequence(hash);
-
-                if (appendingProfile.profile(lastInSequence == null)) {
-                    setFirstInSequence(hash, newEntry);
-                } else {
-                    lastInSequence.setNextInSequence(newEntry);
-                    newEntry.setPreviousInSequence(lastInSequence);
-                }
-
-                setLastInSequence(hash, newEntry);
-
-                final int newSize = getSize(hash) + 1;
-
-                setSize(hash, newSize);
-
-                // TODO CS 11-May-15 could store the next size for resize instead of doing a float operation each time
-
-                if (resizeProfile.profile(newSize / (double) entries.length > BucketsStrategy.LOAD_FACTOR)) {
-                    BucketsStrategy.resize(hash);
-                }
-            } else {
-                entry.setKeyValue(result.getHashed(), key, value);
-            }
-
-            assert verifyStore(hash);
-
-            return value;
-        }
-
-        @Specialization(guards = "isBucketHash(hash)")
-        public Object setBuckets(VirtualFrame frame, RubyBasicObject hash, RubyString key, Object value) {
-            if (isCompareByIdentity(hash)) {
-                return setBuckets(frame, hash, (Object) key, value);
-            } else {
-                return setBuckets(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value);
-            }
+            return setNode.executeSet(frame, hash, key, value, isCompareByIdentity(hash));
         }
 
     }

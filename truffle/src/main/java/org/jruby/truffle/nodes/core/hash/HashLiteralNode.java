@@ -147,7 +147,7 @@ public abstract class HashLiteralNode extends RubyNode {
 
     public static class GenericHashLiteralNode extends HashLiteralNode {
 
-        @Child HashNodes.SetIndexNode setIndexNode;
+        @Child SetNode setNode;
 
         public GenericHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
             super(context, sourceSection, keyValues);
@@ -155,9 +155,9 @@ public abstract class HashLiteralNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            if (setIndexNode == null) {
+            if (setNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                setIndexNode = insert(HashNodesFactory.SetIndexNodeFactory.create(getContext(), getEncapsulatingSourceSection(), new RubyNode[]{null, null, null}));
+                setNode = insert(SetNodeGen.create(getContext(), getEncapsulatingSourceSection(), null, null, null, null));
             }
 
             final RubyBasicObject hash = BucketsStrategy.create(getContext().getCoreLibrary().getHashClass(), keyValues.length / 2);
@@ -165,7 +165,7 @@ public abstract class HashLiteralNode extends RubyNode {
             for (int n = 0; n < keyValues.length; n += 2) {
                 final Object key = keyValues[n].execute(frame);
                 final Object value = keyValues[n + 1].execute(frame);
-                setIndexNode.executeSet(frame, hash, key, value);
+                setNode.executeSet(frame, hash, key, value, false);
             }
 
             return hash;
