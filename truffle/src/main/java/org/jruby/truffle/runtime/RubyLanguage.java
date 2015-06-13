@@ -10,6 +10,8 @@
 package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.TruffleLanguage;
+import com.oracle.truffle.api.debug.DebugSupportProvider;
+import com.oracle.truffle.api.instrument.ToolSupportProvider;
 import com.oracle.truffle.api.source.Source;
 
 import java.io.IOException;
@@ -48,8 +50,18 @@ public class RubyLanguage extends TruffleLanguage {
     }
 
     @Override
-    protected boolean isObjectOfLanguage(Object o) {
-        return o instanceof RubyBasicObject;
+    protected boolean isObjectOfLanguage(Object object) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected ToolSupportProvider getToolSupport() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected DebugSupportProvider getDebugSupport() {
+        return null;
     }
 
 }

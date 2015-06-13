@@ -11,12 +11,10 @@ package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.ForeignAccess;
+import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.interop.TruffleObject;
-import com.oracle.truffle.interop.messages.Argument;
-import com.oracle.truffle.interop.messages.Execute;
-import com.oracle.truffle.interop.messages.Read;
-import com.oracle.truffle.interop.messages.Receiver;
-import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -27,7 +25,7 @@ public final class CachedForeignGlobalDispatchNode extends CachedDispatchNode {
     private final TruffleObject language;
     private final int numberOfArguments;
 
-    @Child private ForeignObjectAccessNode access;
+    @Child private Node access;
 
     public CachedForeignGlobalDispatchNode(RubyContext context, DispatchNode next, Object cachedName, TruffleObject language, int numberOfArguments) {
         super(context, cachedName, next, false, DispatchAction.CALL_METHOD);
@@ -37,9 +35,9 @@ public final class CachedForeignGlobalDispatchNode extends CachedDispatchNode {
         this.access = create();
     }
 
-    private ForeignObjectAccessNode create() {
+    private Node create() {
         // + 1 because language is the first argument
-        return ForeignObjectAccessNode.getAccess(Execute.create(Read.create(Receiver.create(), Argument.create()), numberOfArguments + 1));
+        return Message.createInvoke(numberOfArguments + 1).createNode();
     }
 
     @Override
@@ -56,7 +54,7 @@ public final class CachedForeignGlobalDispatchNode extends CachedDispatchNode {
                 ArrayUtils.arraycopy(arguments, 0, args, 2, arguments.length);
                 args[0] = cachedName;
                 args[1] = language;
-                return access.executeForeign(frame, language, args);
+                return ForeignAccess.execute(access, frame, language, args);
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new IllegalStateException("Varargs are not supported");

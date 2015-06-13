@@ -12,12 +12,11 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.interop.ForeignAccessFactory;
+import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
@@ -123,17 +122,17 @@ public class RubyBasicObject implements TruffleObject {
     }
 
     @Override
-    public ForeignAccessFactory getForeignAccessFactory() {
+    public ForeignAccess getForeignAccess() {
         if (RubyGuards.isRubyMethod(this)) {
-            return new RubyMethodForeignAccessFactory(getContext());
+            return RubyMethodForeignAccessFactory.create(getContext());
         } else if (RubyGuards.isRubyArray(this)) {
-            return new ArrayForeignAccessFactory(getContext());
+            return ArrayForeignAccessFactory.create(getContext());
         } else if (RubyGuards.isRubyHash(this)) {
-            return new HashForeignAccessFactory(getContext());
+            return HashForeignAccessFactory.create(getContext());
         } else if (RubyGuards.isRubyString(this)) {
-            return new StringForeignAccessFactory(getContext());
+            return StringForeignAccessFactory.create(getContext());
         } else {
-            return new BasicForeignAccessFactory(getContext());
+            return BasicForeignAccessFactory.create(getContext());
         }
     }
 

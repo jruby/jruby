@@ -546,11 +546,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return atExitManager;
     }
 
-    @Override
-    public String getLanguageShortName() {
-        return "ruby";
-    }
-
     public TraceManager getTraceManager() {
         return traceManager;
     }
