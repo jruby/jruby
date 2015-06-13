@@ -1105,20 +1105,13 @@ public abstract class HashNodes {
 
             final RubyBasicObject merged = createHash(hash.getLogicalClass(), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null, null);
 
-            int size = 0;
-
             for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
                 HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue(), false);
-                size++;
             }
 
             for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(other)) {
-                if (HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue(), false)) {
-                    size++;
-                }
+                HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue(), false);
             }
-
-            setSize(merged, size);
 
             assert verifyStore(hash);
 
