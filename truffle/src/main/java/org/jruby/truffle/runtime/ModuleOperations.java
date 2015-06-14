@@ -270,6 +270,12 @@ public abstract class ModuleOperations {
         return null;
     }
 
+    public static InternalMethod lookupSuperMethod(InternalMethod currentMethod, RubyClass objectMetaClass) {
+        String name = currentMethod.getSharedMethodInfo().getName(); // use the original name
+
+        return lookupSuperMethod(currentMethod.getDeclaringModule(), name, objectMetaClass);
+    }
+
     @TruffleBoundary
     public static InternalMethod lookupSuperMethod(RubyModule declaringModule, String name, RubyClass objectMetaClass) {
         CompilerAsserts.neverPartOfCompilation();

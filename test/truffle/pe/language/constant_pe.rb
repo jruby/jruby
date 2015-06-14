@@ -51,7 +51,9 @@ end
 example "ConstantFixtures.get_existing"
 example "ConstantFixtures.get"
 example "ConstantFixtures.get_const_get(:A)"
-example "ConstantFixtures.get_const_get('A')"
+
+# Internal Graal compiler error
+tagged_example "ConstantFixtures.get_const_get('A')"
 
 example "ConstantFixtures::Nested.get_nested"
 example "ConstantFixtures::Child.get_inherited"

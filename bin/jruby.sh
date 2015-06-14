@@ -110,7 +110,9 @@ done
 # The Truffle jar always needs to be on the boot classpath so that the VM can
 # substitute classes. We add it even if the jar isn't necessarily available,
 # but this doesn't cause any problems.
-JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
+if [ -e "$JRUBY_HOME/lib/jruby-truffle.jar" ]; then
+  JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
+fi
 
 # ----- Set Up The System Classpath -------------------------------------------
 

@@ -27,7 +27,6 @@ import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpSupport;
-import org.jruby.util.StringSupport;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Regexp} class.

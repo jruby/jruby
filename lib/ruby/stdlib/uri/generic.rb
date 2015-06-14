@@ -1550,24 +1550,24 @@ module URI
     end
 
     def http_proxy_from_env
-      proxy_uri = ENV['http_proxy']
+      proxy_host = ENV_JAVA['http.proxyHost']
 
-      if proxy_uri.nil? && (proxy_uri = ENV['HTTP_PROXY'])
-        warn 'The environment variable HTTP_PROXY is discouraged.  Use http_proxy.'
+      if proxy_host
+        begin
+          proxy_port = (ENV_JAVA['http.proxyPort'] || 80).to_i
+          if proxy_port > 0
+            proxy_uri = "http://#{proxy_host}:#{proxy_port}"
+          else
+            warn "invalid http.proxyPort property: #{ENV_JAVA['http.proxyPort']}"
+          end
+        end
       end
 
       if proxy_uri.nil? || proxy_uri.empty?
-        proxy_host = ENV_JAVA['http.proxyHost']
+        proxy_uri = ENV['http_proxy']
 
-        if proxy_host
-          begin
-            proxy_port = (ENV_JAVA['http.proxyPort'] || 80).to_i
-            if proxy_port > 0
-              proxy_uri = "http://#{proxy_host}:#{proxy_port}"
-            else
-              warn "invalid http.proxyPort property: #{ENV_JAVA['http.proxyPort']}"
-            end
-          end
+        if proxy_uri.nil? && (proxy_uri = ENV['HTTP_PROXY'])
+          warn 'The environment variable HTTP_PROXY is discouraged.  Use http_proxy.'
         end
       end
 
@@ -1577,11 +1577,11 @@ module URI
 
     DEFAULT_JVM_NON_PROXY_HOSTS = "local|*.local|169.254/16|*.169.254/16|127.0.0.1|localhost|*.localhost"
     def no_proxy_from_env
-      name = "no_proxy"
-      no_proxy = ENV[name] || ENV[name.upcase]
+      no_proxy = ENV_JAVA['http.nonProxyHosts']
 
       if no_proxy.nil? || no_proxy.empty?
-        no_proxy = ENV_JAVA['http.nonProxyHosts']
+        name = "no_proxy"
+        no_proxy = ENV[name] || ENV[name.upcase]
       end
 
       no_proxy

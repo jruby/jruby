@@ -27,11 +27,41 @@ describe "The Parsing experience" do
     res.should eq("11")
   end
 
-  it "parsers a block do inside of a call arg list" do
+  it "parses a block do inside of a call arg list" do
     self.class.send(:define_method, :foo) { |a| a }
     res = foo (10.times.to_a.map do |i|
                  7 + i
                end)
     res.should eq([7,8,9,10,11,12,13,14,15,16])
   end
+
+  it "parses a do block with magical combo of stuff before it" do
+    class FFFFFFFFF
+      private def f
+        [].each do |i|
+        end
+      end
+    end
+    # No expect...parsing is good enough
+  end
+
+  it "parser weird embexpr bug GH #1887" do
+    Class.new do
+      include Module.new{
+        def a
+          "#{b}"
+        end
+  
+        def c
+          d.e do
+          end
+        end
+      }
+
+      def b
+        1
+      end
+    end.new.a.should eq("1")
+  end
 end
+

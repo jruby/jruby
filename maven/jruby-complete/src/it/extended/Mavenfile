@@ -1,0 +1,34 @@
+#-*- mode: ruby -*-
+
+properties( 'polyglot.dump.pom' => 'pom.xml',
+            'jruby.version' => '@project.version@',
+            'jruby.plugins.version' => '1.0.8',
+            'jruby.home' => '${basedir}/../../../../..' )
+
+phase :package do
+  plugin :dependency do
+    execute_goal( :copy,
+                  :artifactItems => [ {
+                    :groupId => 'org.jruby',
+                    :artifactId => 'jruby-complete',
+                    :version => '${jruby.version}'
+                  } ] )
+  end
+
+  plugin( 'org.codehaus.mojo:exec-maven-plugin:1.2',
+          :executable => 'java',
+          :environmentVariables => {
+            'GEM_PATH' => '${jruby.home}/lib/ruby/gems/shared',
+            'GEM_HOME' => '${jruby.home}/lib/ruby/gems/shared'
+          },
+          :basedir => '${jruby.home}' ) do
+    
+    execute_goal( :exec, :id => 'rake -T',
+                  :arguments => [ '-jar', '${project.build.directory}/dependency/jruby-complete-${jruby.version}.jar', '-S', 'rake', '-T' ] )
+
+    execute_goal( :exec, :id => 'rake test:objectspace',
+                  :arguments => [ '-jar', '${project.build.directory}/dependency/jruby-complete-${jruby.version}.jar', '-S', 'rake', 'test:objectspace' ] )
+    
+  end
+end
+ 

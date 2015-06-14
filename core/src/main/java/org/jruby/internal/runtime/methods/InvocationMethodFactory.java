@@ -41,6 +41,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
@@ -702,27 +703,27 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 int i = 0;
                 for (; i < min; i++) {
                     if (i > 0) descBuilder.append(';');
-                    descBuilder.append("q");
+                    descBuilder.append(ArgumentType.REQ);
                 }
                // variable arity
             } else if (RICH_NATIVE_METHOD_PARAMETERS) {
                 int i = 0;
                 for (; i < min; i++) {
                     if (i > 0) descBuilder.append(';');
-                    descBuilder.append("q");
+                    descBuilder.append(ArgumentType.REQ);
                 }
 
                 for (; i < max; i++) {
                     if (i > 0) descBuilder.append(';');
-                    descBuilder.append("o");
+                    descBuilder.append(ArgumentType.ANONOPT);
                 }
 
                 if (rest) {
                     if (i > 0) descBuilder.append(';');
-                    descBuilder.append("r");
+                    descBuilder.append(ArgumentType.ANONREST);
                 }
             } else {
-                descBuilder.append("r");
+                descBuilder.append(ArgumentType.ANONREST);
             }
             
             parameterDesc = descBuilder.toString();

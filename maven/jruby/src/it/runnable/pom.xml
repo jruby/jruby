@@ -29,7 +29,7 @@
     <dependency>
       <groupId>de.saumya.mojo</groupId>
       <artifactId>jruby-mains</artifactId>
-      <version>0.1.0</version>
+      <version>0.2.0</version>
     </dependency>
   </dependencies>
   <repositories>
@@ -216,11 +216,26 @@
               </arguments>
             </configuration>
           </execution>
+          <execution>
+            <id>rake spec</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <arguments>
+                <argument>-jar</argument>
+                <argument>runnable.jar</argument>
+                <argument>-S</argument>
+                <argument>rake</argument>
+                <argument>spec</argument>
+              </arguments>
+            </configuration>
+          </execution>
         </executions>
         <configuration>
           <executable>java</executable>
           <environmentVariables>
-            <PATH>${basedir}</PATH>
             <HOME>${basedir}</HOME>
             <GEM_PATH>${basedir}</GEM_PATH>
             <GEM_HOME>${basedir}</GEM_HOME>

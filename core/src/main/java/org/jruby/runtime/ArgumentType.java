@@ -19,6 +19,10 @@ public enum ArgumentType {
     anonrest("rest", "R", true),
     anonkeyrest("keyrest", "N", true);
 
+    public static final String ANONOPT = anonopt.prefix;
+    public static final String ANONREST = anonrest.prefix;
+    public static final String REQ = req.prefix;
+
     ArgumentType(String symbolicName, String prefix, boolean anonymous) {
         this.symbolicName = symbolicName;
         this.prefix = prefix;

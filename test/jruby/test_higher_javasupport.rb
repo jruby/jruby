@@ -712,6 +712,14 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal(BigDecimal, BigDecimal.new("1.23").add(BigDecimal.new("2.34")).class)
   end
 
+  #JRUBY-3818
+  def test_decimal_format
+    format = java.text.DecimalFormat.new("#,##0.00")
+    locale_separator = java.text.DecimalFormatSymbols.new().getDecimalSeparator()
+    value = java.math.BigDecimal.new("10")
+    assert_equal "10" + locale_separator.chr + "00", format.format(value)
+  end
+
   def test_direct_package_access
     a = java.util.ArrayList.new
     assert_equal(0, a.size)

@@ -6,11 +6,11 @@ class TestObjectSpace < Test::Unit::TestCase
     @objectspace = JRuby.objectspace
     JRuby.objectspace = true
   end
-  
+
   def teardown
     JRuby.objectspace = @objectspace
   end
-  
+
   def test_id2ref
     # Normal objects
     o1 = "hey"
@@ -42,14 +42,14 @@ class TestObjectSpace < Test::Unit::TestCase
     assert_equal(true, ObjectSpace._id2ref(20))
     assert_equal(nil, ObjectSpace._id2ref(8))
   end
-  
+
   def test_jruby_objectspace
     JRuby.objectspace = false
     assert_equal(false, JRuby.objectspace)
     JRuby.objectspace = true
     assert_equal(true, JRuby.objectspace)
   end
-  
+
   # JRUBY-4330
   def test_object_id_same_with_objectspace
     obj = "wahoo"

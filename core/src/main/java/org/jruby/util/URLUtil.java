@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 
@@ -36,6 +37,7 @@ import java.net.URL;
  *
  * See also:
  * http://weblogs.java.net/blog/2007/04/25/how-convert-javaneturl-javaiofile
+ * http://stackoverflow.com/questions/18520972/converting-java-file-url-to-file-path-platform-independent-including-u
  */
 public class URLUtil {
     public static String getPath(URL url) {
@@ -44,5 +46,13 @@ public class URLUtil {
         } catch (URISyntaxException use) {
             return url.getPath();
         }
+    }
+
+    public static String getPlatformPath(URL url) {
+        if (!url.getProtocol().equals("file")) {
+            return null;
+        }
+       // the getPath from File uses the platform name-separator
+       return new File(getPath(url)).getPath();
     }
 }
