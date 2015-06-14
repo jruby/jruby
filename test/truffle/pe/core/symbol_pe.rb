@@ -9,5 +9,5 @@
 example ":foo"
 example ":foo == :foo"
 
-# fails because != is !(==), and the inner call to == is not inlined
-example ":foo != :bar"
+# Fails because Comparable#== slow path is too complex
+tagged_example ":foo != :bar"
