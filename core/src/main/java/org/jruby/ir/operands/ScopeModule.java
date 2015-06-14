@@ -18,7 +18,7 @@ import java.util.List;
 public class ScopeModule extends Operand {
     // First four scopes are so common and this operand is immutable so we share them.
     public static final ScopeModule[] SCOPE_MODULE = {
-            new ScopeModule(0), new ScopeModule(1), new ScopeModule(2), new ScopeModule(3), new ScopeModule(4)
+        new ScopeModule(0), new ScopeModule(1), new ScopeModule(2), new ScopeModule(3), new ScopeModule(4)
     };
 
     public static ScopeModule ModuleFor(int depth) {

@@ -1220,11 +1220,14 @@ public class IRBuilder {
         int n = 0;
         IRScope cvarScope = scope;
         while (cvarScope != null && !(cvarScope instanceof IREvalScript) && !cvarScope.isNonSingletonClassBody()) {
+            // For loops don't get their own static scope
+            if (!(cvarScope instanceof IRFor)) {
+                n++;
+            }
             cvarScope = cvarScope.getLexicalParent();
-            n++;
         }
 
-        if ((cvarScope != null) && cvarScope.isNonSingletonClassBody()) {
+        if (cvarScope != null && cvarScope.isNonSingletonClassBody()) {
             return ScopeModule.ModuleFor(n);
         } else {
             return addResultInstr(new GetClassVarContainerModuleInstr(createTemporaryVariable(),
