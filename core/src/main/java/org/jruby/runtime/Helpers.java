@@ -2523,7 +2523,7 @@ public class Helpers {
         } else if (method instanceof IRMethodArgs) {
             return ((IRMethodArgs) method).getArgumentDescriptors();
         } else {
-            return new ArgumentDescriptor[]{new ArgumentDescriptor(ArgumentType.rest)};
+            return new ArgumentDescriptor[]{new ArgumentDescriptor(ArgumentType.anonrest)};
         }
     }
 
