@@ -640,17 +640,13 @@ public class CoreLibrary {
     }
 
     public InputStream getRubyCoreInputStream(String fileName) {
-        final LoadServiceResource resource = context.getRuntime().getLoadService().getClassPathResource(getClass().getClassLoader(), fileName);
+        final InputStream resource = getClass().getResourceAsStream("/" + fileName);
 
         if (resource == null) {
             throw new RuntimeException("couldn't load Truffle core library " + fileName);
         }
 
-        try {
-            return resource.getInputStream();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return resource;
     }
 
     public void initializeEncodingConstants() {
