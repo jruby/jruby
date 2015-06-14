@@ -29,8 +29,6 @@
  */
 package org.jruby.embed;
 
-import org.jruby.embed.internal.ConcurrentLocalContextProvider;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -63,6 +61,7 @@ import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyInstanceConfig.LoadServiceCreator;
 import org.jruby.ast.Node;
 import org.jruby.embed.internal.BiVariableMap;
+import org.jruby.embed.internal.ConcurrentLocalContextProvider;
 import org.jruby.embed.internal.LocalContextProvider;
 import org.jruby.embed.internal.SingleThreadLocalContextProvider;
 import org.jruby.embed.internal.SingletonLocalContextProvider;
@@ -205,7 +204,7 @@ public class ScriptingContainerTest {
         result = instance.getProvider();
         assertTrue(result instanceof SingletonLocalContextProvider);
         instance = null;
-        
+
         instance = new ScriptingContainer(LocalContextScope.CONCURRENT);
         instance.setError(pstream);
         instance.setOutput(pstream);
@@ -227,7 +226,7 @@ public class ScriptingContainerTest {
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        Ruby runtime  = JavaEmbedUtils.initialize(new ArrayList());
+        Ruby runtime = JavaEmbedUtils.initialize(new ArrayList());
         Ruby result = instance.getProvider().getRuntime();
         Class expClazz = runtime.getClass();
         Class resultClazz = result.getClass();
@@ -267,7 +266,7 @@ public class ScriptingContainerTest {
         assertEquals(1.2345, instance.getVarMap().get("parameter"));
         result.put("@coefficient", 4);
         assertEquals(4, instance.getVarMap().get("@coefficient"));
-        
+
         result.clear();
         instance = null;
     }
@@ -281,7 +280,7 @@ public class ScriptingContainerTest {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
-        
+
         Map result = instance.getAttributeMap();
         Object obj = result.get(AttributeName.READER);
         assertEquals(obj.getClass(), java.io.InputStreamReader.class);
@@ -289,7 +288,7 @@ public class ScriptingContainerTest {
         assertEquals(obj.getClass(), java.io.PrintWriter.class);
         obj = result.get(AttributeName.ERROR_WRITER);
         assertEquals(obj.getClass(), java.io.PrintWriter.class);
-        
+
         result.put(AttributeName.BASE_DIR, "/usr/local/lib");
         assertEquals("/usr/local/lib", result.get(AttributeName.BASE_DIR));
 
@@ -369,7 +368,7 @@ public class ScriptingContainerTest {
         Object expResult = null;
         Object result = instance.get(key);
         assertEquals(expResult, result);
-        
+
         instance.put("@name", "camellia");
         assertEquals("camellia", instance.get("@name"));
         instance.put("COLOR", "red");
@@ -398,7 +397,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.runScriptlet("ivalue = 200000");
         assertEquals(200000L, instance.get("ivalue"));
-        
+
         instance.getVarMap().clear();
         instance = null;
     }
@@ -582,7 +581,7 @@ public class ScriptingContainerTest {
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
         EmbedEvalUnit result;
-        
+
         try {
             result = instance.parse(type, filename, lines);
         } catch (Throwable t) {
@@ -862,7 +861,7 @@ public class ScriptingContainerTest {
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
         EmbedRubyRuntimeAdapter result = instance.newRuntimeAdapter();
-        String script = 
+        String script =
             "def volume\n"+
             "  (Math::PI * (@r ** 2.0) * @h)/3.0\n" +
             "end\n" +
@@ -1053,12 +1052,12 @@ public class ScriptingContainerTest {
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        
+
         // Verify that empty message name returns null
         Object result = instance.callMethod(null, "", returnType, unit);
         assertEquals(null, result);
 
-        String text = 
+        String text =
             "songs:\n"+
             "- Hey Soul Sister\n" +
             "- Who Says\n" +
@@ -1554,7 +1553,7 @@ public class ScriptingContainerTest {
         List result = instance.getLoadPaths();
         assertTrue(result != null);
         assertTrue(result.size() > 0);
-        
+
         instance = null;
     }
 
@@ -1941,7 +1940,7 @@ public class ScriptingContainerTest {
 
         instance.setEnvironment(environment);
         assertEquals(environment, instance.getEnvironment());
-        
+
         instance = null;
     }
 
@@ -1986,7 +1985,7 @@ public class ScriptingContainerTest {
         instance = new ScriptingContainer();
         instance.setCurrentDirectory(directory);
         assertEquals(directory, instance.getCurrentDirectory());
-        
+
         instance = new ScriptingContainer(LocalContextScope.CONCURRENT);
         instance.setError(pstream);
         instance.setOutput(pstream);
@@ -1994,7 +1993,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.setCurrentDirectory(directory);
         assertEquals(directory, instance.getCurrentDirectory());
-        
+
         instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         instance.setError(pstream);
         instance.setOutput(pstream);
@@ -2162,7 +2161,7 @@ public class ScriptingContainerTest {
         profile = Profile.ALL;
         instance.setProfile(profile);
         assertEquals(profile, instance.getProfile());
-        
+
         instance = null;
     }
 
@@ -2244,7 +2243,7 @@ public class ScriptingContainerTest {
         //instance.setErrorWriter(writer);
         argv = new String[] {"tree", "woods", "forest"};
         instance.setArgv(argv);
-        String script = 
+        String script =
                 "def print_argv\n" +
                   "all_of_them = \"\"\n" +
                   "ARGV.each { |item| all_of_them += item }\n" +
@@ -2636,7 +2635,7 @@ public class ScriptingContainerTest {
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setErrorWriter(writer);
-        
+
         instance.put("my_var", "Hullo!");
 
         StringWriter sw = new StringWriter();
@@ -2646,7 +2645,7 @@ public class ScriptingContainerTest {
         assertEquals("Hullo!", sw.toString().trim());
 
         // need to put the lvar again since lvars vanish after eval on a transient setting
-        instance.put("my_var", "Hullo!"); 
+        instance.put("my_var", "Hullo!");
         sw = new StringWriter();
         instance.setWriter(sw);
         instance.setCompileMode(CompileMode.JIT);
@@ -2662,7 +2661,7 @@ public class ScriptingContainerTest {
 
         instance = null;
     }
-    
+
     public void testEmbedEvalUnitCompileModes() {
         org.jruby.embed.ScriptingContainer container = new org.jruby.embed.ScriptingContainer();
         container.setCompileMode(CompileMode.OFF);
@@ -2711,7 +2710,7 @@ public class ScriptingContainerTest {
             instance = null;
         }
     }
-    
+
     /**
      * Test of setClassLoader method, of SystemPropertyCatcher.
      * This method is only used in JSR223 but tested here. Since, JSR223
@@ -2724,13 +2723,13 @@ public class ScriptingContainerTest {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         org.jruby.embed.util.SystemPropertyCatcher.setClassLoader(instance);
         assertEquals(instance.getClass().getClassLoader(), instance.getClassLoader());
-        
+
         System.setProperty(PropertyName.CLASSLOADER.toString(), "context");
         instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         org.jruby.embed.util.SystemPropertyCatcher.setClassLoader(instance);
         assertEquals(Thread.currentThread().getContextClassLoader(), instance.getClassLoader());
     }
-    
+
     /**
      * Test of setClassLoader method, of SystemPropertyCatcher.
      * This method is only used in JSR223 but tested here. Since, JSR223
@@ -2770,4 +2769,28 @@ public class ScriptingContainerTest {
 
         assertEquals(orig, ChannelDescriptor.getFilenoDescriptorMapReadOnly());
     }
+
+    @Test
+    public void testJavadocExample4() {
+        ScriptingContainer container = new ScriptingContainer();
+        String script =
+         "def message\n" +
+             "\"message: #{@message}\"\n" +
+          "end\n" +
+         "message";
+        container.put("@message", "What's up?");
+        JavaEmbedUtils.EvalUnit unit = container.parse(script);
+        IRubyObject msg = unit.run(); // a RubyString instance
+        assertEquals("message: What's up?", JavaEmbedUtils.rubyToJava(msg));
+        //System.out.println(JavaEmbedUtils.rubyToJava(msg));
+        container.put("@message", "Fabulous!");
+        msg = unit.run();
+        assertEquals("message: Fabulous!", JavaEmbedUtils.rubyToJava(msg));
+        //System.out.println(JavaEmbedUtils.rubyToJava(msg));
+        container.put("@message", "That's the way you are.");
+        msg = unit.run();
+        assertEquals("message: That's the way you are.", JavaEmbedUtils.rubyToJava(msg));
+        //System.out.println(JavaEmbedUtils.rubyToJava(msg));
+    }
+
 }
