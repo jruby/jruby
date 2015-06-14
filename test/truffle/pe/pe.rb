@@ -56,9 +56,12 @@ require_relative 'macro/pushing_pixels_pe.rb'
 
 tested = 0
 failed = 0
-tagged = 0
+errored = 0
+timedout = 0
 
 EXAMPLES.each do |code, expected_constant, tagged|
+  next if tagged
+  
   finished = false
 
   test_thread = Thread.new do
@@ -66,17 +69,25 @@ EXAMPLES.each do |code, expected_constant, tagged|
       tested += 1
       eval "loop { Truffle::Primitive.assert_constant #{code}; Truffle::Primitive.assert_not_compiled; Thread.pass }"
     rescue RubyTruffleError => e
-      constant = e.message.include? 'Truffle::Primitive.assert_not_compiled'
-      if expected_constant
-        unless constant
-          puts "FAILURE: #{code} wasn't constant"
-          failed += 1
-        end
+      if e.message.include? 'Truffle::Primitive.assert_not_compiled'
+        constant = true
+      elsif e.message.include? 'Truffle::Primitive.assert_constant'
+        constant = false
       else
-        if constant
-          if tagged
-            puts "QUERY: #{code} was tagged but it still passed"
-          else
+        constant = nil
+      end
+
+      if constant.nil?
+        puts "ERROR: #{code} errored in some unexpected way: #{e.message}"
+        errored += 1
+      else
+        if expected_constant
+          unless constant
+            puts "FAILURE: #{code} wasn't constant"
+            failed += 1
+          end
+        else
+          if constant
             puts "QUERY: #{code} wasn't supposed to be constant but it was"
             failed += 1
           end
@@ -91,9 +102,10 @@ EXAMPLES.each do |code, expected_constant, tagged|
 
   unless finished
     puts "TIMEOUT: #{code} didn't compile in time so I don't know if it's constant or not"
+    timedout += 1
   end
 end
 
-puts "Tested #{tested}, #{EXAMPLES.select{|c,e,t| t}.size} tagged, #{failed} failed"
+puts "Tested #{tested}, #{EXAMPLES.select{|c,e,t| t}.size} tagged, #{failed} failed, #{errored} errored, #{timedout} timed out"
 
-exit 1 unless failed.zero?
+exit 1 unless failed.zero? && errored.zero? && timedout.zero?
