@@ -1534,7 +1534,7 @@ public class PopenExecutor {
                     else
                         intFlags = flags.convertToInteger().getIntValue();
                     flags = runtime.newFixnum(intFlags);
-                    perm = ((RubyArray)val).eltOk(2);
+                    perm = ((RubyArray)val).entry(2);
                     perm = perm.isNil() ? runtime.newFixnum(0644) : perm.convertToInteger();
                     param = runtime.newArray(((RubyString)path).strDup(runtime).export(context),
                             flags, perm);
