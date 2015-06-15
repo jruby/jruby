@@ -2,8 +2,15 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "ENV.keep_if" do
-  it "deletes pairs if the block returns false" do
+  before :each do
     ENV["foo"] = "bar"
+  end
+
+  after :each do
+    ENV.delete "foo"
+  end
+
+  it "deletes pairs if the block returns false" do
     ENV.keep_if { |k, v| k != "foo" }
     ENV["foo"].should == nil
   end
@@ -17,7 +24,6 @@ describe "ENV.keep_if" do
   end
 
   it "deletes pairs through enumerator" do
-    ENV["foo"] = "bar"
     enum = ENV.keep_if
     enum.each { |k, v| k != "foo" }
     ENV["foo"].should == nil

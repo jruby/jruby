@@ -30,6 +30,6 @@ describe "String#[] with String" do
   it_behaves_like :string_slice_string, :[]
 end
 
-describe "String#[] with String" do
+describe "String#[] with Symbol" do
   it_behaves_like :string_slice_symbol, :[]
 end

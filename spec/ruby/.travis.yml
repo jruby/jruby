@@ -7,9 +7,12 @@ rvm:
   - 2.1.5
   - 2.2.2
   - ruby-head
+install:
+  - git clone https://github.com/ruby/mspec.git ../mspec
 script:
-  - bundle exec mspec -fd -t ruby
+  - ../mspec/bin/mspec
 matrix:
   allow_failures:
+    - rvm: 2.0.0-p598
     - os: osx
       rvm: ruby-head

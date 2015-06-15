@@ -2,11 +2,11 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 with_feature :encoding do
   describe "Encoding.default_external" do
-    before :all do
+    before :each do
       @original_encoding = Encoding.default_external
     end
 
-    after :all do
+    after :each do
       Encoding.default_external = @original_encoding
     end
 
@@ -47,11 +47,11 @@ with_feature :encoding do
   end
 
   describe "Encoding.default_external=" do
-    before :all do
+    before :each do
       @original_encoding = Encoding.default_external
     end
 
-    after :all do
+    after :each do
       Encoding.default_external = @original_encoding
     end
 

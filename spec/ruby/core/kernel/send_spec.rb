@@ -14,10 +14,10 @@ describe "Kernel#send" do
 
   it "invokes the named alias of a public method" do
     class KernelSpecs::Foo
-      alias :aka :bar
       def bar
         'done'
       end
+      alias :aka :bar
     end
     KernelSpecs::Foo.new.send(:aka).should == 'done'
   end
@@ -44,22 +44,22 @@ describe "Kernel#send" do
 
   it "invokes the named alias of a private method" do
     class KernelSpecs::Foo
-      alias :aka :bar
       private
       def bar
         'done2'
       end
+      alias :aka :bar
     end
     KernelSpecs::Foo.new.send(:aka).should == 'done2'
   end
 
   it "invokes the named alias of a protected method" do
     class KernelSpecs::Foo
-      alias :aka :bar
       protected
       def bar
         'done2'
       end
+      alias :aka :bar
     end
     KernelSpecs::Foo.new.send(:aka).should == 'done2'
   end

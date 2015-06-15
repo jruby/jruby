@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
 require 'tempfile'
 
 describe "Tempfile#open" do
@@ -9,7 +8,7 @@ describe "Tempfile#open" do
   end
 
   after :each do
-    TempfileSpecs.cleanup @tempfile
+    @tempfile.close!
   end
 
   it "reopens self" do
@@ -29,7 +28,7 @@ end
 
 describe "Tempfile.open" do
   after :each do
-    TempfileSpecs.cleanup @tempfile
+    @tempfile.close! if @tempfile
   end
 
   it "returns a new, open Tempfile instance" do
@@ -50,7 +49,8 @@ describe "Tempfile.open when passed a block" do
   end
 
   after :each do
-    TempfileSpecs.cleanup @tempfile
+    # Tempfile.open with block does not unlink
+    @tempfile.close! if @tempfile
   end
 
   it "yields a new, open Tempfile instance to the block" do
@@ -68,6 +68,7 @@ describe "Tempfile.open when passed a block" do
 
   it "returns the value of the block" do
     value = Tempfile.open("specs") do |tempfile|
+      @tempfile = tempfile
       "return"
     end
     value.should == "return"

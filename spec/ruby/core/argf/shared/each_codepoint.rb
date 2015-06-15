@@ -8,52 +8,48 @@ describe :argf_each_codepoint, :shared => true do
     @codepoints.concat File.read(file2_name).codepoints
   end
 
-  after :each do
-    ARGF.close unless ARGF.closed?
-  end
-
   it "is a public method" do
-    argv @filenames do
-      ARGF.public_methods(false).should include(@method)
+    argf @filenames do
+      @argf.public_methods(false).should include(@method)
     end
   end
 
   it "does not require arguments" do
-    argv @filenames do
-      ARGF.method(@method).arity.should == 0
+    argf @filenames do
+      @argf.method(@method).arity.should == 0
     end
   end
 
   it "returns self when passed a block" do
-    argv @filenames do
-      ARGF.send(@method) {}.should equal(ARGF)
+    argf @filenames do
+      @argf.send(@method) {}.should equal(@argf)
     end
   end
 
   it "returns an Enumerator when passed no block" do
-    argv @filenames do
-      ARGF.send(@method).should be_an_instance_of(enumerator_class)
+    argf @filenames do
+      @argf.send(@method).should be_an_instance_of(enumerator_class)
     end
   end
 
   it "yields each codepoint of all streams" do
-    argv @filenames do
-      ARGF.send(@method).to_a.should == @codepoints
+    argf @filenames do
+      @argf.send(@method).to_a.should == @codepoints
     end
   end
 
   describe "when no block is given" do
     it "returns an Enumerator" do
-      argv @filenames do
-        ARGF.send(@method).should be_an_instance_of(enumerator_class)
+      argf @filenames do
+        @argf.send(@method).should be_an_instance_of(enumerator_class)
       end
     end
 
     describe "returned Enumerator" do
       describe "size" do
         it "should return nil" do
-          argv @filenames do
-            ARGF.send(@method).size.should == nil
+          argf @filenames do
+            @argf.send(@method).size.should == nil
           end
         end
       end

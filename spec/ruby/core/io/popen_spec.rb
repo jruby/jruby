@@ -122,19 +122,19 @@ describe "IO.popen" do
 
   with_feature :encoding do
     it "has the given external encoding" do
-      io = IO.popen("#{RUBY_EXE} -e exit", :external_encoding => Encoding::EUC_JP)
-      io.external_encoding.should == Encoding::EUC_JP
+      @io = IO.popen("#{RUBY_EXE} -e exit", :external_encoding => Encoding::EUC_JP)
+      @io.external_encoding.should == Encoding::EUC_JP
     end
 
     it "has the given internal encoding" do
-      io = IO.popen("#{RUBY_EXE} -e exit", :internal_encoding => Encoding::EUC_JP)
-      io.internal_encoding.should == Encoding::EUC_JP
+      @io = IO.popen("#{RUBY_EXE} -e exit", :internal_encoding => Encoding::EUC_JP)
+      @io.internal_encoding.should == Encoding::EUC_JP
     end
 
     it "sets the internal encoding to nil if it's the same as the external encoding" do
-      io = IO.popen("#{RUBY_EXE} -e exit", :external_encoding => Encoding::EUC_JP,
+      @io = IO.popen("#{RUBY_EXE} -e exit", :external_encoding => Encoding::EUC_JP,
                             :internal_encoding => Encoding::EUC_JP)
-      io.internal_encoding.should be_nil
+      @io.internal_encoding.should be_nil
     end
   end
 

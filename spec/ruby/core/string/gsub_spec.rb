@@ -553,8 +553,10 @@ describe "String#gsub with pattern and block" do
     s.gsub(/ë/) { |bar| "Русский".force_encoding("iso-8859-5") }.encoding.should == Encoding::ISO_8859_5
   end
 
-  it "raises an ArgumentError if encoding is not valid" do
-    lambda { "a\x92b".gsub(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
+  not_supported_on :opal do
+    it "raises an ArgumentError if encoding is not valid" do
+      lambda { "a\x92b".gsub(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
+    end
   end
 end
 
@@ -669,8 +671,10 @@ describe "String#gsub! with pattern and block" do
     s.gsub!(/ë/) { |bar| "Русский".force_encoding("iso-8859-5") }.encoding.should == Encoding::ISO_8859_5
   end
 
-  it "raises an ArgumentError if encoding is not valid" do
-    lambda { "a\x92b".gsub!(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
+  not_supported_on :opal do
+    it "raises an ArgumentError if encoding is not valid" do
+      lambda { "a\x92b".gsub!(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
+    end
   end
 end
 

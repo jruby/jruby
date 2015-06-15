@@ -4,7 +4,9 @@ require File.expand_path('../../fixtures/classes', __FILE__)
 describe :string_equal_value, :shared => true do
   it "returns false if obj does not respond to to_str" do
     'hello'.send(@method, 5).should be_false
-    'hello'.send(@method, :hello).should be_false
+    not_supported_on :opal do
+      'hello'.send(@method, :hello).should be_false
+    end
     'hello'.send(@method, mock('x')).should be_false
   end
 

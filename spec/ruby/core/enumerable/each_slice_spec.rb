@@ -92,8 +92,7 @@ describe "Enumerable#each_slice" do
     describe "Enumerable with no size" do
       before :all do
         @object = EnumerableSpecs::Numerous.new(1, 2, 3, 4)
-        @method = :each_slice
-        @method_args = [8]
+        @method = [:each_slice, 8]
       end
       it_should_behave_like :enumeratorized_with_unknown_size
     end

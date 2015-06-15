@@ -17,6 +17,7 @@ describe "ENV.delete" do
   end
 
   it "yields the name to the given block if the named environment variable does not exist" do
+    ENV.delete("foo")
     ENV.delete("foo") { |name| ScratchPad.record name }
     ScratchPad.recorded.should == "foo"
   end

@@ -20,6 +20,7 @@ describe "Thread#raise on a sleeping thread" do
 
   after :each do
     @thr.kill
+    @thr.join
   end
 
   it "raises a RuntimeError if no exception class is given" do
@@ -81,6 +82,7 @@ describe "Thread#raise on a running thread" do
 
   after :each do
     @thr.kill
+    @thr.join
   end
 
   it "raises a RuntimeError if no exception class is given" do

@@ -48,11 +48,11 @@ with_feature :encoding do
   end
 
   describe "Encoding.default_internal=" do
-    before :all do
+    before :each do
       @original_encoding = Encoding.default_internal
     end
 
-    after :all do
+    after :each do
       Encoding.default_internal = @original_encoding
     end
 

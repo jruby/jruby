@@ -23,7 +23,11 @@ describe "CApiGlobalSpecs" do
   it "correctly sets global values" do
     @f.sb_gv_get("$BLAH").should == nil
     @f.sb_gv_set("$BLAH", 10)
-    @f.sb_gv_get("$BLAH").should == 10
+    begin
+      @f.sb_gv_get("$BLAH").should == 10
+    ensure
+      @f.sb_gv_set("$BLAH", nil)
+    end
   end
 
   it "lists all global variables" do

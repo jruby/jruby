@@ -14,10 +14,10 @@ describe "Kernel#public_send" do
 
   it "invokes the named alias of a public method" do
     class KernelSpecs::Foo
-      alias :aka :bar
       def bar
         'done'
       end
+      alias :aka :bar
     end
     KernelSpecs::Foo.new.public_send(:aka).should == 'done'
   end
@@ -46,11 +46,11 @@ describe "Kernel#public_send" do
 
   it "raises a NoMethodError if the named method is an alias of a private method" do
     class KernelSpecs::Foo
-      alias :aka :bar
       private
       def bar
         'done2'
       end
+      alias :aka :bar
     end
     lambda {
       KernelSpecs::Foo.new.public_send(:aka)
@@ -59,11 +59,11 @@ describe "Kernel#public_send" do
 
   it "raises a NoMethodError if the named method is an alias of a protected method" do
     class KernelSpecs::Foo
-      alias :aka :bar
       protected
       def bar
         'done2'
       end
+      alias :aka :bar
     end
     lambda {
       KernelSpecs::Foo.new.public_send(:aka)

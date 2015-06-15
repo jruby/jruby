@@ -86,8 +86,7 @@ describe "Enumerable#each_cons" do
     describe "Enumerable with no size" do
       before :all do
         @object = EnumerableSpecs::Numerous.new(1, 2, 3, 4)
-        @method = :each_cons
-        @method_args = [8]
+        @method = [:each_cons, 8]
       end
       it_should_behave_like :enumeratorized_with_unknown_size
     end

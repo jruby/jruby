@@ -65,4 +65,20 @@ describe "Array#bsearch" do
       [1, 2].should include(result)
     end
   end
+
+  context "with a block that calls break" do
+    it "returns nil if break is called without a value" do
+      ['a', 'b', 'c'].bsearch { |v| break }.should be_nil
+    end
+
+    it "returns nil if break is called with a nil value" do
+      ['a', 'b', 'c'].bsearch { |v| break nil }.should be_nil
+    end
+
+    it "returns object if break is called with an object" do
+      ['a', 'b', 'c'].bsearch { |v| break 1234 }.should == 1234
+      ['a', 'b', 'c'].bsearch { |v| break 'hi' }.should == 'hi'
+      ['a', 'b', 'c'].bsearch { |v| break [42] }.should == [42]
+    end
+  end
 end

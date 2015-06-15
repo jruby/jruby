@@ -1,18 +1,12 @@
 describe :net_ftp_request_head, :shared => true do
-  before :all do
-    NetHTTPSpecs.start_server
-  end
-
-  after :all do
-    NetHTTPSpecs.stop_server
-  end
-
   before :each do
+    NetHTTPSpecs.start_server
     @http = Net::HTTP.start("localhost", 3333)
   end
 
   after :each do
     @http.finish if @http.started?
+    NetHTTPSpecs.stop_server
   end
 
   describe "when passed no block" do

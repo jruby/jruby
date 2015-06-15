@@ -11,6 +11,7 @@ describe "Thread#initialize" do
 
     after do
       @t.kill
+      @t.join
     end
 
     it "raises a ThreadError" do

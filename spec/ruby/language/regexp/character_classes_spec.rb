@@ -96,9 +96,11 @@ describe "Regexp with character classes" do
     "\x7F".match(/[[:ascii:]]/).to_a.should == ["\x7F"]
   end
 
-  it "doesn't match non-ASCII characters with [[:ascii:]]" do
-    /[[:ascii:]]/.match("\u{80}").should be_nil
-    /[[:ascii:]]/.match("\u{9898}").should be_nil
+  not_supported_on :opal do
+    it "doesn't match non-ASCII characters with [[:ascii:]]" do
+      /[[:ascii:]]/.match("\u{80}").should be_nil
+      /[[:ascii:]]/.match("\u{9898}").should be_nil
+    end
   end
 
   it "matches Unicode letter characters with [[:alnum:]]" do
