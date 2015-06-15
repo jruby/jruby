@@ -28,7 +28,7 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 })
 public abstract class CallMethodNode extends RubyNode {
 
-    public static int getCacheLimit() {
+    protected static int getCacheLimit() {
         return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
     }
 
