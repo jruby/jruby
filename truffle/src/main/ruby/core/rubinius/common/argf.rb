@@ -37,6 +37,7 @@ module Rubinius
   #
   class ARGFClass
     include Enumerable
+    attr_reader :argv # Truffle
 
     # :internal:
     #
@@ -46,7 +47,9 @@ module Rubinius
     #
     # @see  #advance!
     #
-    def initialize
+    # Truffle: adapted to take argv as input
+    def initialize(argv = ARGV, *others)
+      @argv = argv.equal?(ARGV) ? ARGV : [argv, *others]
       @lineno = 0
       @advance = true
       @init = false
@@ -512,12 +515,13 @@ module Rubinius
     # there are further file names in ARGV, tries to open
     # the next one as the current stream.
     #
+    # Truffle: adapted to take argv as input
     def advance!
       return true unless @advance
 
       unless @init
 
-        if ARGV.empty?
+        if @argv.empty?
           @advance = false
           @stream = STDIN
           @filename = "-"
@@ -529,11 +533,11 @@ module Rubinius
 
       File.unlink(@backup_filename) if @backup_filename && $-i == ""
 
-      return false if @use_stdin_only || ARGV.empty?
+      return false if @use_stdin_only || @argv.empty?
 
       @advance = false
 
-      file = ARGV.shift
+      file = @argv.shift
       @stream = stream(file)
       @filename = file
 
@@ -555,4 +559,4 @@ end
 # The virtual concatenation file of the files given on command line (or
 # from $stdin if no files were given.) Usable like an IO.
 #
-ARGF = Rubinius::ARGFClass.new
+ARGF = Rubinius::ARGFClass.new(ARGV) # Truffle

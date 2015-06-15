@@ -14,9 +14,6 @@ class MSpecScript
   core = [
     "spec/ruby/core",
 
-    # Specs are incompatible with the current implementation
-    "^spec/ruby/core/argf",
-
     # Can't load these - so tags aren't enough to exclude them. The problem is
     # either fixtures or syntax. Some of them are probably easy fixes.
 
