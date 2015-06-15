@@ -146,9 +146,8 @@ for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     JRUBY_ALREADY_ADDED=true
 done
 
-# The Truffle jar always needs to be on the boot classpath so that the VM can
-# substitute classes. We add it even if the jar isn't necessarily available,
-# but this doesn't cause any problems.
+# The Truffle jar always needs to be on the boot classpath, if it exists, so
+# that the VM can substitute classes.
 if [ -e "$JRUBY_HOME/lib/jruby-truffle.jar" ]; then
   JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
 fi
