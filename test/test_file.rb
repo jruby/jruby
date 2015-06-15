@@ -308,6 +308,33 @@ class TestFile < Test::Unit::TestCase
     assert_equal("/", File.dirname("/"))
   end
 
+  def test_dirname_file_protocol
+    assert_equal("file:/a", File.dirname("file:/a/b"))
+    assert_equal("file:/", File.dirname("file:/a"))
+    assert_equal("file:/", File.dirname("file:/"))
+    assert_equal("uri:file:/a", File.dirname("uri:file:/a/b"))
+    assert_equal("uri:file:/", File.dirname("uri:file:/a"))
+    assert_equal("uri:file:/", File.dirname("uri:file:/"))
+  end
+
+  def test_dirname_uri_classloader_protocol
+    assert_equal("uri:classloader:/a", File.dirname("uri:classloader:/a/b"))
+    assert_equal("uri:classloader:/", File.dirname("uri:classloader:/a"))
+    assert_equal("uri:classloader:/", File.dirname("uri:classloader:/"))
+  end
+
+  def test_dirname_jar_protocol
+    assert_equal("/my.jar!/a", File.dirname("/my.jar!/a/b"))
+    assert_equal("/my.jar!/", File.dirname("/my.jar!/a"))
+    assert_equal("/my.jar!/", File.dirname("/my.jar!/"))
+    assert_equal("file:/my.jar!/a", File.dirname("file:/my.jar!/a/b"))
+    assert_equal("file:/my.jar!/", File.dirname("file:/my.jar!/a"))
+    assert_equal("file:/my.jar!/", File.dirname("file:/my.jar!/"))
+    assert_equal("jar:file:/my.jar!/a", File.dirname("jar:file:/my.jar!/a/b"))
+    assert_equal("jar:file:/my.jar!/", File.dirname("jar:file:/my.jar!/a"))
+    assert_equal("jar:file:/my.jar!/", File.dirname("jar:file:/my.jar!/"))
+  end
+
   def test_extname
     assert_equal("", File.extname(""))
     assert_equal("", File.extname("abc"))
