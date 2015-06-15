@@ -194,11 +194,13 @@ describe "String#index with Regexp" do
 
     "blablabla".index(/lab|b/).should == 0
 
-    "blablabla".index(/\A/).should == 0
-    "blablabla".index(/\Z/).should == 9
-    "blablabla".index(/\z/).should == 9
-    "blablabla\n".index(/\Z/).should == 9
-    "blablabla\n".index(/\z/).should == 10
+    not_supported_on :opal do
+      "blablabla".index(/\A/).should == 0
+      "blablabla".index(/\Z/).should == 9
+      "blablabla".index(/\z/).should == 9
+      "blablabla\n".index(/\Z/).should == 9
+      "blablabla\n".index(/\z/).should == 10
+    end
 
     "blablabla".index(/^/).should == 0
     "\nblablabla".index(/^/).should == 0
@@ -238,7 +240,9 @@ describe "String#index with Regexp" do
     "xblaxbla".index(/x./, 1).should == 4
     "xblaxbla".index(/x./, 2).should == 4
 
-    "blablabla\n".index(/\Z/, 9).should == 9
+    not_supported_on :opal do
+      "blablabla\n".index(/\Z/, 9).should == 9
+    end
   end
 
   it "starts the search at offset + self.length if offset is negative" do

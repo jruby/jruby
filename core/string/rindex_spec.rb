@@ -5,7 +5,9 @@ require File.expand_path('../fixtures/utf-8-encoding.rb', __FILE__)
 
 describe "String#rindex with object" do
   it "raises a TypeError if obj isn't a String, Fixnum or Regexp" do
-    lambda { "hello".rindex(:sym)      }.should raise_error(TypeError)
+    not_supported_on :opal do
+      lambda { "hello".rindex(:sym) }.should raise_error(TypeError)
+    end
     lambda { "hello".rindex(mock('x')) }.should raise_error(TypeError)
   end
 
@@ -229,15 +231,19 @@ describe "String#rindex with Regexp" do
 
     "blablabla".rindex(/bla|a/).should == 8
 
-    "blablabla".rindex(/\A/).should == 0
-    "blablabla".rindex(/\Z/).should == 9
-    "blablabla".rindex(/\z/).should == 9
-    "blablabla\n".rindex(/\Z/).should == 10
-    "blablabla\n".rindex(/\z/).should == 10
+    not_supported_on :opal do
+      "blablabla".rindex(/\A/).should == 0
+      "blablabla".rindex(/\Z/).should == 9
+      "blablabla".rindex(/\z/).should == 9
+      "blablabla\n".rindex(/\Z/).should == 10
+      "blablabla\n".rindex(/\z/).should == 10
+    end
 
     "blablabla".rindex(/^/).should == 0
-    "\nblablabla".rindex(/^/).should == 1
-    "b\nlablabla".rindex(/^/).should == 2
+    not_supported_on :opal do
+      "\nblablabla".rindex(/^/).should == 1
+      "b\nlablabla".rindex(/^/).should == 2
+    end
     "blablabla".rindex(/$/).should == 9
 
     "blablabla".rindex(/.l./).should == 6
@@ -278,7 +284,9 @@ describe "String#rindex with Regexp" do
     "blablablax".rindex(/..x/, 8).should == 7
     "blablablax".rindex(/..x/, 7).should == 7
 
-    "blablabla\n".rindex(/\Z/, 9).should == 9
+    not_supported_on :opal do
+      "blablabla\n".rindex(/\Z/, 9).should == 9
+    end
   end
 
   it "starts the search at offset + self.length if offset is negative" do
@@ -303,24 +311,26 @@ describe "String#rindex with Regexp" do
     "blablabla\n".rindex(/\z/, 9).should == nil
   end
 
-  it "supports \\G which matches at the given start offset" do
-    "helloYOU.".rindex(/YOU\G/, 8).should == 5
-    "helloYOU.".rindex(/YOU\G/).should == nil
+  not_supported_on :opal do
+    it "supports \\G which matches at the given start offset" do
+      "helloYOU.".rindex(/YOU\G/, 8).should == 5
+      "helloYOU.".rindex(/YOU\G/).should == nil
 
-    idx = "helloYOUall!".index("YOU")
-    re = /YOU.+\G.+/
-    # The # marks where \G will match.
-    [
-      ["helloYOU#all.", nil],
-      ["helloYOUa#ll.", idx],
-      ["helloYOUal#l.", idx],
-      ["helloYOUall#.", idx],
-      ["helloYOUall.#", nil]
-    ].each do |i|
-      start = i[0].index("#")
-      str = i[0].delete("#")
+      idx = "helloYOUall!".index("YOU")
+      re = /YOU.+\G.+/
+      # The # marks where \G will match.
+      [
+        ["helloYOU#all.", nil],
+        ["helloYOUa#ll.", idx],
+        ["helloYOUal#l.", idx],
+        ["helloYOUall#.", idx],
+        ["helloYOUall.#", nil]
+      ].each do |i|
+        start = i[0].index("#")
+        str = i[0].delete("#")
 
-      str.rindex(re, start).should == i[1]
+        str.rindex(re, start).should == i[1]
+      end
     end
   end
 

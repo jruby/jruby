@@ -5,11 +5,6 @@ describe "ARGF.binmode" do
     @file1    = fixture __FILE__, "file1.txt"
     @file2    = fixture __FILE__, "file2.txt"
     @bin_file = fixture __FILE__, "bin_file.txt"
-    argv []
-  end
-
-  after :each do
-    ARGF.close unless ARGF.closed?
   end
 
   it "returns self" do
@@ -18,20 +13,20 @@ describe "ARGF.binmode" do
 
   platform_is :windows do
     it "puts reading into binmode" do
-      argv [@bin_file, @bin_file] do
-        ARGF.gets.should == "test\n"
-        ARGF.binmode
-        ARGF.gets.should == "test\r\n"
+      argf [@bin_file, @bin_file] do
+        @argf.gets.should == "test\n"
+        @argf.binmode
+        @argf.gets.should == "test\r\n"
       end
     end
 
     it "puts alls subsequent stream reading through ARGF into binmode" do
-      argv [@bin_file, @bin_file, @bin_file, @bin_file] do
-        ARGF.gets.should == "test\n"
-        ARGF.binmode
-        ARGF.gets.should == "test\r\n"
-        ARGF.gets.should == "test\r\n"
-        ARGF.gets.should == "test\r\n"
+      argf [@bin_file, @bin_file, @bin_file, @bin_file] do
+        @argf.gets.should == "test\n"
+        @argf.binmode
+        @argf.gets.should == "test\r\n"
+        @argf.gets.should == "test\r\n"
+        @argf.gets.should == "test\r\n"
       end
     end
   end

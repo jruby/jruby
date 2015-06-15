@@ -13,7 +13,7 @@ describe "Etc.getlogin" do
       if Etc.getlogin
         # Etc.getlogin returns the same result of logname(2)
         # if it returns non NULL
-        Etc.getlogin.should == `logname`.chomp
+        Etc.getlogin.should == `id -un`.chomp
       else
         # Etc.getlogin may return nil if the login name is not set
         # because of chroot or sudo or something.

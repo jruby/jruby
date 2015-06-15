@@ -7,20 +7,16 @@ describe :argf_readlines, :shared => true do
     @lines += File.readlines(@file2)
   end
 
-  after :each do
-    ARGF.close unless ARGF.closed?
-  end
-
   it "reads all lines of all files" do
-    argv [@file1, @file2] do
-      ARGF.send(@method).should == @lines
+    argf [@file1, @file2] do
+      @argf.send(@method).should == @lines
     end
   end
 
   it "returns an empty Array when end of stream reached" do
-    argv [@file1, @file2] do
-      ARGF.read
-      ARGF.send(@method).should == []
+    argf [@file1, @file2] do
+      @argf.read
+      @argf.send(@method).should == []
     end
   end
 end

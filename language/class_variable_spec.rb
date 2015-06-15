@@ -2,6 +2,10 @@ require File.expand_path('../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/class_variables', __FILE__)
 
 describe "A class variable" do
+  after :each do
+    ClassVariablesSpec::ClassA.new.cvar_a = :cvar_a
+  end
+
   it "can be accessed from a subclass" do
     ClassVariablesSpec::ClassB.new.cvar_a.should == :cvar_a
   end
@@ -16,6 +20,11 @@ describe "A class variable" do
 end
 
 describe "A class variable defined in a module" do
+  after :each do
+    ClassVariablesSpec::ClassC.cvar_m = :value
+    ClassVariablesSpec::ClassC.remove_class_variable(:@@cvar) if ClassVariablesSpec::ClassC.cvar_defined?
+  end
+
   it "can be accessed from classes that extend the module" do
     ClassVariablesSpec::ClassC.cvar_m.should == :value
   end
@@ -38,8 +47,7 @@ describe "A class variable defined in a module" do
 
   it "can be accessed inside the class using the module methods" do
     ClassVariablesSpec::ClassC.cvar_c = "new value"
-
-    ClassVariablesSpec::ClassC.cvar_m.should == "new value"
+    ClassVariablesSpec::ClassC.cvar_m.should == :value
   end
 
   it "can be accessed from modules that extend the module" do

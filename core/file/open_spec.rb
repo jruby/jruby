@@ -146,12 +146,14 @@ describe "File.open" do
 
   it "opens the file when call with fd" do
     fh_orig = File.open(@file)
-    @fh = File.open(fh_orig.fileno)
-    (@fh.autoclose = false) rescue nil
-    @fh.should be_kind_of(File)
-    File.exist?(@file).should == true
-    # don't close fh_orig here to adjust closing cycle between fh_orig and @fh
-    # see also c02c78b3899fcf769084a88777c63de0fcebb48d
+    begin
+      @fh = File.open(fh_orig.fileno)
+      (@fh.autoclose = false) rescue nil
+      @fh.should be_kind_of(File)
+      File.exist?(@file).should == true
+    ensure
+      fh_orig.close
+    end
   end
 
   it "opens a file with a file descriptor d and a block" do
@@ -559,19 +561,25 @@ describe "File.open" do
         file_w, file_r, read_bytes, written_length = nil
 
         # open in threads, due to blocking open and writes
-        Thread.new do
+        writer = Thread.new do
           file_w = File.open(@fifo, 'w')
           written_length = file_w.syswrite('hello')
         end
-        Thread.new do
+        reader = Thread.new do
           file_r = File.open(@fifo, 'r')
           read_bytes = file_r.sysread(5)
         end
 
-        Thread.pass until read_bytes && written_length
+        begin
+          writer.join
+          reader.join
 
-        written_length.should == 5
-        read_bytes.should == 'hello'
+          written_length.should == 5
+          read_bytes.should == 'hello'
+        ensure
+          file_w.close if file_w
+          file_r.close if file_r
+        end
       end
     end
   end

@@ -9,20 +9,16 @@ describe :argf_gets, :shared => true do
     @stdin = File.read @stdin_name
   end
 
-  after :each do
-    ARGF.close unless ARGF.closed?
-  end
-
   it "reads one line of a file" do
-    argv [@file1_name] do
-      ARGF.send(@method).should == @file1.first
+    argf [@file1_name] do
+      @argf.send(@method).should == @file1.first
     end
   end
 
   it "reads all lines of a file" do
-    argv [@file1_name] do
+    argf [@file1_name] do
       lines = []
-      @file1.size.times { lines << ARGF.send(@method) }
+      @file1.size.times { lines << @argf.send(@method) }
       lines.should == @file1
     end
   end
@@ -36,19 +32,19 @@ describe :argf_gets, :shared => true do
   end
 
   it "reads all lines of two files" do
-    argv [@file1_name, @file2_name] do
+    argf [@file1_name, @file2_name] do
       total = @file1.size + @file2.size
       lines = []
-      total.times { lines << ARGF.send(@method) }
+      total.times { lines << @argf.send(@method) }
       lines.should == @file1 + @file2
     end
   end
 
   it "sets $_ global variable with each line read" do
-    argv [@file1_name, @file2_name] do
+    argf [@file1_name, @file2_name] do
       total = @file1.size + @file2.size
       total.times do
-        line = ARGF.send(@method)
+        line = @argf.send(@method)
         $_.should == line
       end
     end

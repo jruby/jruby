@@ -1,9 +1,9 @@
 describe :dir_delete, :shared => true do
-  before :all do
-    DirSpecs.rmdir_dirs
+  before :each do
+    DirSpecs.rmdir_dirs true
   end
 
-  after :all do
+  after :each do
     DirSpecs.rmdir_dirs false
   end
 
@@ -12,7 +12,6 @@ describe :dir_delete, :shared => true do
   end
 
   it "calls #to_path on non-String arguments" do
-    DirSpecs.rmdir_dirs
     p = mock('path')
     p.should_receive(:to_path).and_return(DirSpecs.mock_rmdir("empty"))
     Dir.send(@method, p)

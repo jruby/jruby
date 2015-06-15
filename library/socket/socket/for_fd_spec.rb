@@ -9,10 +9,9 @@ describe "Socket.for_fd" do
   end
 
   after :each do
-    @socket.shutdown Socket::SHUT_RD if @socket
-    @client.shutdown Socket::SHUT_WR
-
-    @host.close if @host
+    @socket.close
+    @client.close
+    @host.close
     @server.close
   end
 

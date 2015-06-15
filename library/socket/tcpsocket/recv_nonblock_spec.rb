@@ -2,13 +2,9 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
 describe "TCPSocket#recv_nonblock" do
-  before :all do
-    SocketSpecs::SpecTCPServer.start
-  end
-
   before :each do
-    @hostname = SocketSpecs::SpecTCPServer.get.hostname
-    @socket = nil
+    @server = SocketSpecs::SpecTCPServer.new
+    @hostname = @server.hostname
   end
 
   after :each do
@@ -16,6 +12,7 @@ describe "TCPSocket#recv_nonblock" do
       @socket.write "QUIT"
       @socket.close
     end
+    @server.shutdown
   end
 
   it "returns a String read from the socket" do

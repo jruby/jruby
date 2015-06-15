@@ -58,24 +58,10 @@ module SocketSpecs
     tmp("unix_server_spec.socket", false)
   end
 
-  # TCPServer that does not block waiting for connections. Each
-  # connection is serviced in a separate thread. The data read
-  # from the socket is echoed back. The server is shutdown when
-  # the spec process exits.
+  # TCPServer echo server accepting one connection
   class SpecTCPServer
     def self.start(host=nil, port=nil, logger=nil)
-      return if @server
-
-      @server = new host, port, logger
-      @server.start
-
-      at_exit do
-        @server.shutdown
-      end
-    end
-
-    def self.get
-      @server
+      new(host, port, logger).start
     end
 
     attr_accessor :hostname, :port, :logger
@@ -84,75 +70,41 @@ module SocketSpecs
       @hostname = host || SocketSpecs.hostname
       @port = port || SocketSpecs.port
       @logger = logger
-      @shutdown = false
-      @accepted = false
-      @main = nil
-      @server = nil
-      @threads = []
-    end
 
-    def accept
-      wait_for @server do
-        @server.accept
-      end
+      start
     end
 
     def start
-      @main = Thread.new do
-        log "SpecTCPServer starting on #{@hostname}:#{@port}"
-        @server = TCPServer.new @hostname, @port
+      log "SpecTCPServer starting on #{@hostname}:#{@port}"
+      @server = TCPServer.new @hostname, @port
 
-        wait_for @server do
-          socket = @server.accept
-          log "SpecTCPServer accepted connection: #{socket}"
-          service socket
-
-          @accepted = true
-        end
+      @thread = Thread.new do
+        socket = @server.accept
+        log "SpecTCPServer accepted connection: #{socket}"
+        service socket
       end
-
-      Thread.pass until @server
+      self
     end
 
     def service(socket)
-      thr = Thread.new do
-        begin
-          wait_for socket do
-            data = socket.recv(1024)
-            break if data.empty?
-            log "SpecTCPServer received: #{data.inspect}"
+      begin
+        data = socket.recv(1024)
 
-            break if data == "QUIT"
+        return if data.empty?
+        log "SpecTCPServer received: #{data.inspect}"
 
-            socket.send data, 0
-          end
-        ensure
-          socket.close
-        end
+        return if data == "QUIT"
+
+        socket.send data, 0
+      ensure
+        socket.close
       end
-
-      @threads << thr
-    end
-
-    def wait_for(io)
-      loop do
-        read, _, _ = IO.select([io], [], [], 0.25)
-        return false if shutdown?
-        yield if read
-      end
-    end
-
-    def shutdown?
-      @shutdown
     end
 
     def shutdown
-      @shutdown = true
       log "SpecTCPServer shutting down"
-
-      @threads.each { |thr| thr.join }
-      @main.join
-      @server.close if @accepted
+      @thread.join
+      @server.close
     end
 
     def log(message)

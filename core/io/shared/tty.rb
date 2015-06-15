@@ -4,7 +4,7 @@ describe :io_tty, :shared => true do
   with_tty do
     begin
       # check to enabled tty
-      File.open('/dev/tty')
+      File.open('/dev/tty') {}
 
       # Yeah, this will probably break.
       it "returns true if this stream is a terminal device (TTY)" do

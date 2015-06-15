@@ -120,11 +120,14 @@ describe "IO.write" do
 
       it "writes correctly" do
         thr = Thread.new do
-          sleep 0.5
           IO.read(@fifo)
         end
-        string = "hi"
-        IO.write(@fifo, string).should == string.length
+        begin
+          string = "hi"
+          IO.write(@fifo, string).should == string.length
+        ensure
+          thr.join
+        end
       end
     end
   end

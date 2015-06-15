@@ -9,7 +9,7 @@ describe "Symbol.all_symbols" do
   it "increases size of the return array when new symbol comes" do
     symbols = Symbol.all_symbols
     sym = [eval(":aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
-    Symbol.all_symbols.size.should == symbols.size + 1
+    Symbol.all_symbols.size.should > symbols.size
     sym.clear
   end
 end

@@ -6,9 +6,16 @@ describe "Module#private_class_method" do
     # This is not in classes.rb because after marking a class method private it
     # will stay private.
     class << ModuleSpecs::Parent
+      public
       def private_method_1; end
       def private_method_2; end
-      def private_method_3; end
+    end
+  end
+
+  after :each do
+    class << ModuleSpecs::Parent
+      remove_method :private_method_1
+      remove_method :private_method_2
     end
   end
 
@@ -23,6 +30,7 @@ describe "Module#private_class_method" do
   end
 
   it "makes an existing class method private up the inheritance tree" do
+    ModuleSpecs::Child.public_class_method :private_method_1
     ModuleSpecs::Child.private_method_1.should == nil
     ModuleSpecs::Child.private_class_method :private_method_1
 
@@ -33,13 +41,11 @@ describe "Module#private_class_method" do
   it "accepts more than one method at a time" do
     ModuleSpecs::Parent.private_method_1.should == nil
     ModuleSpecs::Parent.private_method_2.should == nil
-    ModuleSpecs::Parent.private_method_3.should == nil
 
-    ModuleSpecs::Child.private_class_method :private_method_1, :private_method_2, :private_method_3
+    ModuleSpecs::Child.private_class_method :private_method_1, :private_method_2
 
     lambda { ModuleSpecs::Child.private_method_1 }.should raise_error(NoMethodError)
     lambda { ModuleSpecs::Child.private_method_2 }.should raise_error(NoMethodError)
-    lambda { ModuleSpecs::Child.private_method_3 }.should raise_error(NoMethodError)
   end
 
   it "raises a NameError if class method doesn't exist" do

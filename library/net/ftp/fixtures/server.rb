@@ -14,8 +14,11 @@ module NetFTPSpecs
     def serve_once
       @thread = Thread.new do
         @socket = @server.accept
-        handle_request
-        @socket.close
+        begin
+          handle_request
+        ensure
+          @socket.close
+        end
       end
     end
 

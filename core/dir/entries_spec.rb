@@ -6,12 +6,18 @@ require File.expand_path('../fixtures/common', __FILE__)
 describe "Dir.entries" do
   before :all do
     DirSpecs.create_mock_dirs
+  end
+
+  before :each do
     @internal = Encoding.default_internal
   end
 
   after :all do
-    Encoding.default_internal = @internal
     DirSpecs.delete_mock_dirs
+  end
+
+  after :each do
+    Encoding.default_internal = @internal
   end
 
   it "returns an Array of filenames in an existing directory including dotfiles" do

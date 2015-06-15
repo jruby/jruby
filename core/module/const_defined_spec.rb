@@ -2,6 +2,7 @@
 
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../../../fixtures/constants', __FILE__)
+require File.expand_path('../fixtures/constant_unicode', __FILE__)
 
 describe "Module#const_defined?" do
   it "returns true if the given Symbol names a constant defined in the receiver" do
@@ -47,7 +48,7 @@ describe "Module#const_defined?" do
   end
 
   it "returns true when passed a constant name with unicode characters" do
-    ConstantSpecs.const_defined?("CS_CONSTλ").should be_true
+    ConstantUnicodeSpecs.const_defined?("CS_CONSTλ").should be_true
   end
 
   it "returns true when passed a constant name with EUC-JP characters" do
@@ -130,7 +131,7 @@ describe "Module#const_defined?" do
 
   ruby_version_is "2.1" do
     it "returns true or false for the nested name" do
-      ConstantSpecs.const_defined?("A::Name").should == false
+      ConstantSpecs.const_defined?("NotExist::Name").should == false
       ConstantSpecs.const_defined?("::Name").should == false
       ConstantSpecs.const_defined?("::Object").should == true
       ConstantSpecs.const_defined?("ClassA::CS_CONST10").should == true

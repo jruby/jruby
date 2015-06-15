@@ -18,20 +18,15 @@ describe "ARGF.gets" do
     @file2 = File.readlines @file2_name
   end
 
-  after :each do
-    ARGF.close unless ARGF.closed?
-  end
-
   it "returns nil when reaching end of files" do
-    argv [@file1_name, @file2_name] do
+    argf [@file1_name, @file2_name] do
       total = @file1.size + @file2.size
-      total.times { ARGF.gets }
-      ARGF.gets.should == nil
+      total.times { @argf.gets }
+      @argf.gets.should == nil
     end
   end
 
   with_feature :encoding do
-
     before :each do
       @external = Encoding.default_external
       @internal = Encoding.default_internal
@@ -47,8 +42,8 @@ describe "ARGF.gets" do
 
     it "reads the contents of the file with default encoding" do
       Encoding.default_external = Encoding::US_ASCII
-      argv [@file1_name, @file2_name] do
-        ARGF.gets.encoding.should == Encoding::US_ASCII
+      argf [@file1_name, @file2_name] do
+        @argf.gets.encoding.should == Encoding::US_ASCII
       end
     end
   end

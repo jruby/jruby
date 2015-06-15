@@ -4,19 +4,15 @@ describe :argf_filename, :shared => true do
     @file2 = fixture __FILE__, "file2.txt"
   end
 
-  after :each do
-    ARGF.close unless ARGF.closed?
-  end
-
   # NOTE: this test assumes that fixtures files have two lines each
   it "returns the current file name on each file" do
-    argv [@file1, @file2] do
+    argf [@file1, @file2] do
       result = []
       # returns first current file even when not yet open
-      result << ARGF.send(@method)
-      result << ARGF.send(@method) while ARGF.gets
+      result << @argf.send(@method)
+      result << @argf.send(@method) while @argf.gets
       # returns last current file even when closed
-      result << ARGF.send(@method)
+      result << @argf.send(@method)
 
       result.map! { |f| File.expand_path(f) }
       result.should == [@file1, @file1, @file1, @file2, @file2, @file2]
@@ -25,13 +21,8 @@ describe :argf_filename, :shared => true do
 
   # NOTE: this test assumes that fixtures files have two lines each
   it "sets the $FILENAME global variable with the current file name on each file" do
-    argv [@file1, @file2] do
-      result = []
-      result << $FILENAME while ARGF.gets
-      # returns last current file even when closed
-      result << $FILENAME
-      result.map! { |f| File.expand_path(f) }
-      result.should == [@file1, @file1, @file2, @file2, @file2]
-    end
+    script = fixture __FILE__, "filename.rb"
+    out = ruby_exe(script, args: [@file1, @file2])
+    out.should == "#{@file1}\n#{@file1}\n#{@file2}\n#{@file2}\n#{@file2}\n"
   end
 end

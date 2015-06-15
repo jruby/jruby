@@ -11,7 +11,9 @@ describe "Kernel#equal?" do
     (nil.equal? nil).should == true
     (o1.equal?  nil).should== false
     (nil.equal?  o2).should== false
-    ('stuff'.equal? 'stuff').should == false
+    not_supported_on :opal do
+      ('stuff'.equal? 'stuff').should == false
+    end
     (true.equal? true).should == true
     (false.equal? false).should == true
   end

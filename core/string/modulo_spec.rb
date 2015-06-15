@@ -302,8 +302,10 @@ describe "String#%" do
     ("%.10b" % -5).should == "..11111011"
     ("% b" % -5).should == "-101"
     ("%+b" % -5).should == "-101"
-    ("%b" % -(2 ** 64 + 5)).should ==
-    "..101111111111111111111111111111111111111111111111111111111111111011"
+    not_supported_on :opal do
+      ("%b" % -(2 ** 64 + 5)).should ==
+        "..101111111111111111111111111111111111111111111111111111111111111011"
+    end
   end
 
   it "supports binary formats using %B with same behaviour as %b except for using 0B instead of 0b for #" do
@@ -323,7 +325,9 @@ describe "String#%" do
     ("%.10B" % -5).should == ("%.10b" % -5)
     ("% B" % -5).should == ("% b" % -5)
     ("%+B" % -5).should == ("%+b" % -5)
-    ("%B" % -(2 ** 64 + 5)).should == ("%b" % -(2 ** 64 + 5))
+    not_supported_on :opal do
+      ("%B" % -(2 ** 64 + 5)).should == ("%b" % -(2 ** 64 + 5))
+    end
 
     ("%#B" % 10).should == "0B1010"
   end
@@ -511,7 +515,9 @@ describe "String#%" do
 
     ("% o" % -26).should == "-32"
     ("%+o" % -26).should == "-32"
-    ("%o" % -(2 ** 64 + 5)).should == "..75777777777777777777773"
+    not_supported_on :opal do
+      ("%o" % -(2 ** 64 + 5)).should == "..75777777777777777777773"
+    end
   end
 
   it "supports inspect formats using %p" do
@@ -627,7 +633,9 @@ describe "String#%" do
     ("%.10x" % -5).should == "..fffffffb"
     ("% x" % -26).should == "-1a"
     ("%+x" % -26).should == "-1a"
-    ("%x" % -(2 ** 64 + 5)).should == "..fefffffffffffffffb"
+    not_supported_on :opal do
+      ("%x" % -(2 ** 64 + 5)).should == "..fefffffffffffffffb"
+    end
   end
 
   it "supports hex formats using %X for positive numbers" do
@@ -650,7 +658,9 @@ describe "String#%" do
     ("%.10X" % -5).should == "..FFFFFFFB"
     ("% X" % -26).should == "-1A"
     ("%+X" % -26).should == "-1A"
-    ("%X" % -(2 ** 64 + 5)).should == "..FEFFFFFFFFFFFFFFFB"
+    not_supported_on :opal do
+      ("%X" % -(2 ** 64 + 5)).should == "..FEFFFFFFFFFFFFFFFB"
+    end
   end
 
   it "formats zero without prefix using %#x" do

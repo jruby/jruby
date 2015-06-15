@@ -6,7 +6,7 @@ describe :hash_key_p, :shared => true do
     h.send(@method, 2).should == false
     h.send(@method, 4).should == true
 
-    not_compliant_on :opal do
+    not_supported_on :opal do
       h.send(@method, 'b').should == false
       h.send(@method, 4.0).should == false
     end

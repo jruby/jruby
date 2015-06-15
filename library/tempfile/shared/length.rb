@@ -4,7 +4,7 @@ describe :tempfile_length, :shared => true do
   end
 
   after :each do
-    TempfileSpecs.cleanup @tempfile
+    @tempfile.close!
   end
 
   it "returns the size of self" do

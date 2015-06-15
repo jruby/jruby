@@ -50,6 +50,7 @@ describe :string_succ, :shared => true do
     "9Z99z99Z".send(@method).should == "10A00a00A"
 
     "ZZZ9999".send(@method).should == "AAAA0000"
+    "/[]9999".send(@method).should == "/[]10000"
     "/[]ZZZ9999".send(@method).should == "/[]AAAA0000"
     "Z/[]ZZZ9999".send(@method).should == "AA/[]AAA0000"
 

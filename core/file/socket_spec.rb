@@ -23,9 +23,11 @@ describe "File.socket?" do
   it "returns true if the file is a socket" do
     filename = tmp("i_am_a_socket")
     server = UNIXServer.new filename
-
-    File.socket?(filename).should == true
-
-    rm_r filename
+    begin
+      File.socket?(filename).should == true
+    ensure
+      server.close
+      rm_r filename
+    end
   end
 end

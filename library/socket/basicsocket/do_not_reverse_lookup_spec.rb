@@ -3,6 +3,7 @@ require File.expand_path('../../fixtures/classes', __FILE__)
 
 describe "BasicSocket.do_not_reverse_lookup" do
   before :each do
+    @do_not_reverse_lookup = BasicSocket.do_not_reverse_lookup
     @server = TCPServer.new('127.0.0.1', SocketSpecs.port)
     @socket = TCPSocket.new('127.0.0.1', SocketSpecs.port)
   end
@@ -10,6 +11,7 @@ describe "BasicSocket.do_not_reverse_lookup" do
   after :each do
     @server.close unless @server.closed?
     @socket.close unless @socket.closed?
+    BasicSocket.do_not_reverse_lookup = @do_not_reverse_lookup
   end
 
   it "defaults to true" do

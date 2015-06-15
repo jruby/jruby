@@ -72,8 +72,9 @@ describe :kernel_load, :shared => true do
   end
 
   it "does not add the loaded path to $LOADED_FEATURES" do
+    saved_loaded_features = $LOADED_FEATURES.dup
     @object.load(@path).should be_true
-    $LOADED_FEATURES.should == []
+    $LOADED_FEATURES.should == saved_loaded_features
   end
 
   it "raises a LoadError if passed a non-extensioned path that does not exist but a .rb extensioned path does exist" do
@@ -118,12 +119,12 @@ describe :kernel_load, :shared => true do
   end
 
   describe "(shell expansion)" do
-    before :all do
+    before :each do
       @env_home = ENV["HOME"]
       ENV["HOME"] = CODE_LOADING_DIR
     end
 
-    after :all do
+    after :each do
       ENV["HOME"] = @env_home
     end
 

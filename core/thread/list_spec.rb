@@ -9,9 +9,13 @@ describe "Thread.list" do
 
   it "includes threads of non-default thread groups" do
     t = Thread.new { sleep }
-    ThreadGroup.new.add(t)
-    Thread.list.should include(t)
-    t.kill
+    begin
+      ThreadGroup.new.add(t)
+      Thread.list.should include(t)
+    ensure
+      t.kill
+      t.join
+    end
   end
 
   it "does not include deceased threads" do
