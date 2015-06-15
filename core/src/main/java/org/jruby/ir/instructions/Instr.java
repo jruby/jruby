@@ -51,7 +51,7 @@ public abstract class Instr {
         this.operands = operands;
     }
 
-    private String[] EMPTY_STRINGS = new String[0];
+    private static String[] EMPTY_STRINGS = new String[0];
     public String[] toStringNonOperandArgs() {
         return EMPTY_STRINGS;
     }
