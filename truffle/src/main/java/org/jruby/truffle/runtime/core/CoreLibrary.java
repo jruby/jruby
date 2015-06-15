@@ -220,9 +220,6 @@ public class CoreLibrary {
         // Exception
         exceptionClass = defineClass("Exception", new RubyException.ExceptionAllocator());
 
-        // FiberError
-        fiberErrorClass = defineClass(exceptionClass, "FiberError");
-
         // NoMemoryError
         defineClass(exceptionClass, "NoMemoryError");
 
@@ -233,6 +230,7 @@ public class CoreLibrary {
         standardErrorClass = defineClass(exceptionClass, "StandardError");
         argumentErrorClass = defineClass(standardErrorClass, "ArgumentError");
         encodingErrorClass = defineClass(standardErrorClass, "EncodingError");
+        fiberErrorClass = defineClass(standardErrorClass, "FiberError");
         ioErrorClass = defineClass(standardErrorClass, "IOError");
         localJumpErrorClass = defineClass(standardErrorClass, "LocalJumpError");
         regexpErrorClass = defineClass(standardErrorClass, "RegexpError");
