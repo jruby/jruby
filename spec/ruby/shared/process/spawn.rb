@@ -355,6 +355,11 @@ describe :process_spawn, :shared => true do
     @name.should have_data("glark")
   end
 
+  it "redirects STDOUT to the given file if :out => [String name, String mode]" do
+    Process.wait @object.spawn(ruby_cmd("print :glark"), :out => [@name, 'w'])
+    @name.should have_data("glark")
+  end
+
   it "redirects STDERR to the given file descriptior if :err => Fixnum" do
     File.open(@name, 'w') do |file|
       lambda do
