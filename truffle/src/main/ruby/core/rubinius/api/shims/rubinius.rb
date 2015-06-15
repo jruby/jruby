@@ -47,5 +47,5 @@ module Rubinius
 
 end
 
-class PrimitiveFailure < StandardError
+class PrimitiveFailure < Exception
 end
