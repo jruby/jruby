@@ -483,7 +483,15 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return getc();
     }
 
-    @JRubyMethod(name = "getc")
+    @JRubyMethod(name = "readbyte")
+    public IRubyObject readbyte() {
+        IRubyObject dst = getbyte();
+        if (dst.isNil()) {
+            throw getRuntime().newEOFError();
+        }
+        return dst;
+    }
+    
     public IRubyObject getc_19() {
         try {
             int value = bufferedStream.read();
