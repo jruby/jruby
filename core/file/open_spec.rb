@@ -147,12 +147,13 @@ describe "File.open" do
   it "opens the file when call with fd" do
     fh_orig = File.open(@file)
     begin
-      @fh = File.open(fh_orig.fileno)
-      (@fh.autoclose = false) rescue nil
-      @fh.should be_kind_of(File)
+      fh = File.open(fh_orig.fileno)
+      fh.should be_kind_of(File)
       File.exist?(@file).should == true
     ensure
       fh_orig.close
+      # Will raise but we need it to set the internal close flag
+      fh.close rescue nil
     end
   end
 
