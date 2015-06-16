@@ -1605,6 +1605,16 @@ public class BodyTranslator extends Translator {
             }
         }
 
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/range.rb")) {
+            if (name.equals("@begin")) {
+                return RangeNodesFactory.InternalSetBeginNodeGen.create(context, sourceSection, self, rhs);
+            } else if (name.equals("@end")) {
+                return RangeNodesFactory.InternalSetEndNodeGen.create(context, sourceSection, self, rhs);
+            } else if (name.equals("@excl")) {
+                return RangeNodesFactory.InternalSetExcludeEndNodeGen.create(context, sourceSection, self, rhs);
+            }
+        }
+
 
         return new WriteInstanceVariableNode(context, sourceSection, name, self, rhs, false);
     }
