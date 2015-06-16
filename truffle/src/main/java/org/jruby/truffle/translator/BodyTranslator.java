@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
@@ -67,6 +68,7 @@ import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.truffle.runtime.core.RubyRegexp;
@@ -2213,7 +2215,11 @@ public class BodyTranslator extends Translator {
     public RubyNode visitNextNode(org.jruby.ast.NextNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        RubyNode resultNode;
+        if (!environment.isBlock() && !translatingWhile) {
+            throw new RaiseException(context.getCoreLibrary().syntaxError("Invalid next", currentNode));
+        }
+
+        final RubyNode resultNode;
 
         final boolean t = translatingNextExpression;
         translatingNextExpression = true;
@@ -2458,6 +2464,10 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitRedoNode(org.jruby.ast.RedoNode node) {
+        if (!environment.isBlock() && !translatingWhile) {
+            throw new RaiseException(context.getCoreLibrary().syntaxError("Invalid redo", currentNode));
+        }
+
         return new RedoNode(context, translate(node.getPosition()));
     }
 
