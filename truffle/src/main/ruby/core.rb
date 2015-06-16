@@ -16,6 +16,7 @@ require_relative 'core/rubinius/api/kernel/common/type'
 
 # Patch rubinius-core-api to make it work for us
 
+require_relative 'core/rubinius/api/shims/mirror'
 require_relative 'core/rubinius/api/shims/lookuptable'
 require_relative 'core/rubinius/api/shims/array'
 require_relative 'core/rubinius/api/shims/rubinius'

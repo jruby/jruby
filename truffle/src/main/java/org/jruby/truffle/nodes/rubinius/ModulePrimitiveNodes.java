@@ -9,49 +9,33 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.runtime.RubyConstant;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
-
 
 public abstract class ModulePrimitiveNodes {
 
     @RubiniusPrimitive(name = "module_mirror")
     public abstract static class ModuleMirrorPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private CallDispatchHeadNode moduleMirrorNode;
+
         public ModuleMirrorPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "logicalClass == object.getLogicalClass()")
-        public Object moduleMirrorCached(RubyBasicObject object,
-                                             @Cached("object.getLogicalClass()") RubyClass logicalClass,
-                                             @Cached("lookupMirror(object)") Object mirror) {
-            return mirror;
-        }
-
         @Specialization
-        public Object moduleMirrorUncached(RubyBasicObject object) {
-            return lookupMirror(object);
-        }
-
-        @TruffleBoundary
-        protected Object lookupMirror(RubyBasicObject object) {
-            final RubyModule rubinius = (RubyModule) getContext().getCoreLibrary().getObjectClass().getConstants().get("Rubinius").getValue();
-            final RubyModule mirror = (RubyModule) rubinius.getConstants().get("Mirror").getValue();
-            final RubyConstant objectMirrorConstant = mirror.getConstants().get(object.getLogicalClass().getName());
-
-            if (objectMirrorConstant == null) {
-                return nil();
+        public Object moduleMirrorCached(VirtualFrame frame, Object reflectee) {
+            if (moduleMirrorNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                moduleMirrorNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), null));
             }
 
-            return objectMirrorConstant.getValue();
+            return moduleMirrorNode.call(frame, getContext().getCoreLibrary().getRubiniusMirror(), "module_mirror", null, reflectee);
         }
 
     }
