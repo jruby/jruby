@@ -337,6 +337,27 @@ public abstract class FloatNodes {
         }
     }
 
+    @CoreMethod(names = "eql?", required = 1)
+    public abstract static class EqlNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private CallDispatchHeadNode fallbackCallNode;
+
+        public EqlNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean eql(double a, double b) {
+            return a == b;
+        }
+
+        @Specialization(guards = { "!isDouble(b)" })
+        public boolean eqlGeneral(double a, Object b) {
+            return false;
+        }
+    }
+
+
     @CoreMethod(names = { "==", "===" }, required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
