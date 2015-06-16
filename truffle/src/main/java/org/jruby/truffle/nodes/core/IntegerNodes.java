@@ -10,9 +10,11 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
@@ -86,8 +88,6 @@ public abstract class IntegerNodes {
 
         // TODO CS 2-May-15 we badly need OSR in this node
 
-        @Child private FixnumOrBignumNode fixnumOrBignum;
-
         public TimesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -147,14 +147,11 @@ public abstract class IntegerNodes {
         }
 
         @Specialization(guards = "isRubyBignum(n)")
-        public Object times(VirtualFrame frame, RubyBasicObject n, RubyProc block) {
-            if (fixnumOrBignum == null) {
-                CompilerDirectives.transferToInterpreter();
-                fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
-            }
+        public Object times(VirtualFrame frame, RubyBasicObject n, RubyProc block,
+                @Cached("create(getContext(), getSourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
 
             for (BigInteger i = BigInteger.ZERO; i.compareTo(BignumNodes.getBigIntegerValue(n)) < 0; i = i.add(BigInteger.ONE)) {
-                yield(frame, block, fixnumOrBignum.fixnumOrBignum(i));
+                yield(frame, block, fixnumOrBignumNode.fixnumOrBignum(i));
             }
 
             return n;
