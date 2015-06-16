@@ -44,9 +44,7 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -1487,9 +1485,6 @@ public abstract class ArrayNodes {
 
         @Child private CallDispatchHeadNode toEnumNode;
 
-        private final BranchProfile nextProfile = BranchProfile.create();
-        private final BranchProfile redoProfile = BranchProfile.create();
-
         private final RubyBasicObject eachSymbol;
 
         public EachNode(RubyContext context, SourceSection sourceSection) {
@@ -1519,23 +1514,12 @@ public abstract class ArrayNodes {
             int count = 0;
 
             try {
-                outer:
                 for (int n = 0; n < getSize(array); n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, store[n]);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, store[n]);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1553,23 +1537,12 @@ public abstract class ArrayNodes {
             int count = 0;
 
             try {
-                outer:
                 for (int n = 0; n < getSize(array); n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, store[n]);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, store[n]);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1587,23 +1560,12 @@ public abstract class ArrayNodes {
             int count = 0;
 
             try {
-                outer:
                 for (int n = 0; n < getSize(array); n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, store[n]);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, store[n]);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1621,23 +1583,12 @@ public abstract class ArrayNodes {
             int count = 0;
 
             try {
-                outer:
                 for (int n = 0; n < getSize(array); n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, store[n]);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, store[n]);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1653,9 +1604,6 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "each_with_index", needsBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
-
-        private final BranchProfile nextProfile = BranchProfile.create();
-        private final BranchProfile redoProfile = BranchProfile.create();
 
         public EachWithIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1673,23 +1621,12 @@ public abstract class ArrayNodes {
             int count = 0;
 
             try {
-                outer:
                 for (int n = 0; n < getSize(array); n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, store[n], n);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, store[n], n);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1707,23 +1644,12 @@ public abstract class ArrayNodes {
             int count = 0;
 
             try {
-                outer:
                 for (int n = 0; n < getSize(array); n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, store[n], n);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, store[n], n);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1741,23 +1667,12 @@ public abstract class ArrayNodes {
             int count = 0;
 
             try {
-                outer:
                 for (int n = 0; n < getSize(array); n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, store[n], n);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, store[n], n);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1775,23 +1690,12 @@ public abstract class ArrayNodes {
             int count = 0;
 
             try {
-                outer:
                 for (int n = 0; n < getSize(array); n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, store[n], n);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, store[n], n);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2408,9 +2312,6 @@ public abstract class ArrayNodes {
 
         @Child private ArrayBuilderNode arrayBuilder;
 
-        private final BranchProfile nextProfile = BranchProfile.create();
-        private final BranchProfile redoProfile = BranchProfile.create();
-
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
@@ -2429,23 +2330,12 @@ public abstract class ArrayNodes {
 
             int count = 0;
             try {
-                outer:
                 for (int n = 0; n < getSize(array); n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2464,23 +2354,12 @@ public abstract class ArrayNodes {
 
             int count = 0;
             try {
-                outer:
                 for (int n = 0; n < getSize(array); n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2499,23 +2378,12 @@ public abstract class ArrayNodes {
 
             int count = 0;
             try {
-                outer:
                 for (int n = 0; n < getSize(array); n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2534,23 +2402,12 @@ public abstract class ArrayNodes {
 
             int count = 0;
             try {
-                outer:
                 for (int n = 0; n < getSize(array); n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2567,9 +2424,6 @@ public abstract class ArrayNodes {
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
         @Child private ArrayWriteDenormalizedNode writeNode;
-
-        private final BranchProfile nextProfile = BranchProfile.create();
-        private final BranchProfile redoProfile = BranchProfile.create();
 
         public MapInPlaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2592,23 +2446,12 @@ public abstract class ArrayNodes {
             int count = 0;
 
             try {
-                outer:
                 for (int n = 0; n < getSize(array); n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2632,23 +2475,12 @@ public abstract class ArrayNodes {
             int count = 0;
 
             try {
-                outer:
                 for (int n = 0; n < getSize(array); n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {

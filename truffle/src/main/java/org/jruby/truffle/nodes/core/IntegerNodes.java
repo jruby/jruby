@@ -13,12 +13,9 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.NextException;
-import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 
@@ -30,9 +27,6 @@ public abstract class IntegerNodes {
     @CoreMethod(names = "downto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class DownToNode extends YieldingCoreMethodNode {
 
-        private final BranchProfile nextProfile = BranchProfile.create();
-        private final BranchProfile redoProfile = BranchProfile.create();
-
         public DownToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -42,23 +36,12 @@ public abstract class IntegerNodes {
             int count = 0;
 
             try {
-                outer:
                 for (int i = from; i >= to; i--) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, i);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, i);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -70,38 +53,17 @@ public abstract class IntegerNodes {
         }
 
         @Specialization
-        public Object downto(VirtualFrame frame, long from, int to, RubyProc block) {
-            return downto(frame, from, (long) to, block);
-        }
-
-        @Specialization
-        public Object downto(VirtualFrame frame, int from, long to, RubyProc block) {
-            return downto(frame, (long) from, to, block);
-        }
-
-        @Specialization
         public Object downto(VirtualFrame frame, long from, long to, RubyProc block) {
             // TODO BJF 22-Apr-2015 how to handle reportLoopCount(long)
             int count = 0;
 
             try {
-                outer:
                 for (long i = from; i >= to; i--) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, i);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, i);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -126,15 +88,13 @@ public abstract class IntegerNodes {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
-        private final BranchProfile nextProfile = BranchProfile.create();
-        private final BranchProfile redoProfile = BranchProfile.create();
-
         public TimesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
         public RubyBasicObject times(VirtualFrame frame, int n, NotProvided block) {
+            // TODO (eregon, 16 June 2015): this should return an enumerator
             final int[] array = new int[n];
 
             for (int i = 0; i < n; i++) {
@@ -149,22 +109,12 @@ public abstract class IntegerNodes {
             int count = 0;
 
             try {
-                outer: for (int i = 0; i < n; i++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, i);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                for (int i = 0; i < n; i++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, i);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -180,22 +130,12 @@ public abstract class IntegerNodes {
             int count = 0;
 
             try {
-                outer: for (long i = 0; i < n; i++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, i);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                for (long i = 0; i < n; i++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, i);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -213,18 +153,8 @@ public abstract class IntegerNodes {
                 fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
             }
 
-            outer: for (BigInteger i = BigInteger.ZERO; i.compareTo(BignumNodes.getBigIntegerValue(n)) < 0; i = i.add(BigInteger.ONE)) {
-                while (true) {
-                    try {
-                        yield(frame, block, fixnumOrBignum.fixnumOrBignum(i));
-                        continue outer;
-                    } catch (NextException e) {
-                        nextProfile.enter();
-                        continue outer;
-                    } catch (RedoException e) {
-                        redoProfile.enter();
-                    }
-                }
+            for (BigInteger i = BigInteger.ZERO; i.compareTo(BignumNodes.getBigIntegerValue(n)) < 0; i = i.add(BigInteger.ONE)) {
+                yield(frame, block, fixnumOrBignum.fixnumOrBignum(i));
             }
 
             return n;
@@ -259,9 +189,6 @@ public abstract class IntegerNodes {
     @CoreMethod(names = "upto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class UpToNode extends YieldingCoreMethodNode {
 
-        private final BranchProfile nextProfile = BranchProfile.create();
-        private final BranchProfile redoProfile = BranchProfile.create();
-
         public UpToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -271,23 +198,12 @@ public abstract class IntegerNodes {
             int count = 0;
 
             try {
-                outer:
                 for (int i = from; i <= to; i++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, i);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, i);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -308,23 +224,12 @@ public abstract class IntegerNodes {
             int count = 0;
 
             try {
-                outer:
                 for (long i = from; i <= to; i++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, i);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, i);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {

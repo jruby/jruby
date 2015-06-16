@@ -30,7 +30,6 @@ public class RedoableNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         while (true) {
-
             try {
                 return body.execute(frame);
             } catch (RedoException e) {
