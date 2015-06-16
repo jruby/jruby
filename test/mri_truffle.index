@@ -886,13 +886,13 @@ testunit/test_assertion.rb
 # testunit/test_sorting.rb
 thread/test_cv.rb
 # thread/test_sync.rb
-# uri/test_common.rb
-# uri/test_ftp.rb
-# uri/test_generic.rb
-# uri/test_http.rb
-# uri/test_ldap.rb
-# uri/test_mailto.rb
-# uri/test_parser.rb
+uri/test_common.rb
+uri/test_ftp.rb
+uri/test_generic.rb
+uri/test_http.rb
+uri/test_ldap.rb
+uri/test_mailto.rb
+uri/test_parser.rb
 # webrick/test_cgi.rb
 # webrick/test_cookie.rb
 # webrick/test_filehandler.rb
