@@ -16,11 +16,14 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
+
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.ext.ffi.Platform;
+import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -511,6 +514,10 @@ public class CoreLibrary {
 
         processModule.setConstant(node, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
         processModule.setConstant(node, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
+
+        if (Platform.getPlatform().getOS() == OS_TYPE.LINUX) {
+            processModule.setConstant(node, "CLOCK_THREAD_CPUTIME_ID", ProcessNodes.CLOCK_THREAD_CPUTIME_ID);
+        }
 
         encodingConverterClass.setConstant(node, "INVALID_MASK", EConvFlags.INVALID_MASK);
         encodingConverterClass.setConstant(node, "INVALID_REPLACE", EConvFlags.INVALID_REPLACE);
