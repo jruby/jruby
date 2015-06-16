@@ -534,10 +534,10 @@ public class ArgumentProcessor {
 
     private String resolve(String path, String scriptName) {
         if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
-            config.getError().println("trying path: " + path);
+            config.getError().println("Trying path: " + path);
         }
         try {
-            FileResource fullName = JRubyFile.createResource(null, path, scriptName);
+            FileResource fullName = JRubyFile.createRestrictedResource(path, scriptName);
             if (fullName.exists() && fullName.isFile()) {
                 if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
                     config.getError().println("Found: " + fullName.absolutePath());

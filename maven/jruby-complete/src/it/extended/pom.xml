@@ -40,6 +40,23 @@
         <version>1.2</version>
         <executions>
           <execution>
+            <id>gem help</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <arguments>
+                <argument>-Djruby.debug.scriptResolution=true</argument>
+                <argument>-jar</argument>
+                <argument>${project.build.directory}/dependency/jruby-complete-${jruby.version}.jar</argument>
+                <argument>-S</argument>
+                <argument>gem</argument>
+                <argument>help</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
             <id>rake -T</id>
             <phase>package</phase>
             <goals>
@@ -75,6 +92,7 @@
         <configuration>
           <executable>java</executable>
           <environmentVariables>
+            <PATH>${project.basedir}/bin${path.separator}${env.PATH}</PATH>
             <GEM_PATH>${jruby.home}/lib/ruby/gems/shared</GEM_PATH>
             <GEM_HOME>${jruby.home}/lib/ruby/gems/shared</GEM_HOME>
           </environmentVariables>

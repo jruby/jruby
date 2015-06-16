@@ -414,7 +414,7 @@ public class RubyInstanceConfig {
                 return getInput();
             } else {
                 final String script = getScriptFileName();
-                FileResource resource =JRubyFile.createResource(null, getCurrentDirectory(), getScriptFileName());
+                FileResource resource = JRubyFile.createRestrictedResource(getCurrentDirectory(), getScriptFileName());
                 if (resource != null && resource.exists()) {
                     if (resource.isFile() || resource.isSymLink()) {
                         if (isXFlag()) {
