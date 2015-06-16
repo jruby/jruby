@@ -42,12 +42,16 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Sysconf;
 import jnr.posix.Passwd;
 import jnr.posix.Times;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
@@ -63,6 +67,7 @@ import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.util.io.PosixShim;
+
 import sun.misc.Signal;
 
 import java.lang.management.ManagementFactory;
@@ -207,68 +212,16 @@ public abstract class VMPrimitiveNodes {
     @RubiniusPrimitive(name = "vm_object_equal", needsSelf = false)
     public static abstract class VMObjectEqualPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child ReferenceEqualNode referenceEqualNode;
+
         public VMObjectEqualPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            referenceEqualNode = ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
         }
 
         @Specialization
-        public boolean vmObjectEqual(boolean a, boolean b) {
-            return a == b;
-        }
-
-        @Specialization(guards = "!isBoolean(b)")
-        public boolean vmObjectEqual(boolean a, Object b) {
-            return false;
-        }
-
-        @Specialization
-        public boolean vmObjectEqual(int a, int b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean vmObjectEqual(int a, long b) {
-            return a == b;
-        }
-
-        @Specialization(guards = { "!isInteger(b)", "!isLong(b)" })
-        public boolean vmObjectEqual(int a, Object b) {
-            return false;
-        }
-
-        @Specialization
-        public boolean vmObjectEqual(long a, int b) {
-            return a == b;
-        }
-
-        @Specialization
-        public boolean vmObjectEqual(long a, long b) {
-            return a == b;
-        }
-
-        @Specialization(guards = { "!isInteger(b)", "!isLong(b)" })
-        public boolean vmObjectEqual(long a, Object b) {
-            return false;
-        }
-
-        @Specialization
-        public boolean vmObjectEqual(double a, double b) {
-            return a == b;
-        }
-
-        @Specialization(guards = "!isDouble(b)")
-        public boolean vmObjectEqual(double a, Object b) {
-            return false;
-        }
-
-        @Specialization
-        public boolean vmObjectEqual(RubyBasicObject a, RubyBasicObject b) {
-            return a == b;
-        }
-
-        @Specialization(guards = "!isRubyBasicObject(b)")
-        public boolean vmObjectEqual(RubyBasicObject a, Object b) {
-            return false;
+        public boolean vmObjectEqual(VirtualFrame frame, Object a, Object b) {
+            return referenceEqualNode.executeReferenceEqual(frame, a, b);
         }
 
     }
