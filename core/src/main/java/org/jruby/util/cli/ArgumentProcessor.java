@@ -34,6 +34,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.FileResource;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 
@@ -531,59 +532,48 @@ public class ArgumentProcessor {
         endOfArguments = true;
     }
 
+    private String resolve(String path, String scriptName) {
+        if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
+            config.getError().println("trying path: " + path);
+        }
+        try {
+            FileResource fullName = JRubyFile.createResource(null, path, scriptName);
+            if (fullName.exists() && fullName.isFile()) {
+                if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
+                    config.getError().println("Found: " + fullName.absolutePath());
+                }
+                return fullName.absolutePath();
+            }
+        } catch (Exception e) {
+            // keep going
+        }
+        return null;
+    }
+
     private String resolveScript(String scriptName) {
         // These try/catches are to allow failing over to the "commands" logic
         // when running from within a jruby-complete jar file, which has
         // jruby.home = a jar file URL that does not resolve correctly with
         // JRubyFile.create.
-        File fullName = null;
-        try {
-            // try cwd first
-            fullName = JRubyFile.create(config.getCurrentDirectory(), scriptName);
-            if (fullName.exists() && fullName.isFile()) {
-                if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
-                    config.getError().println("Found: " + fullName.getAbsolutePath());
-                }
-                return scriptName;
+        String result = resolve(config.getCurrentDirectory(), scriptName);
+        if (result != null) return result;
+        result = resolve(config.getJRubyHome() + "/bin", scriptName);
+        if (result != null) return result;
+        result = resolve("uri:classloader:/bin", scriptName);
+        if (result != null) return result;
+
+        String path = config.getEnvironment().get("PATH").toString();
+        if (path != null) {
+            String[] paths = path.split(System.getProperty("path.separator"));
+            for (int i = 0; i < paths.length; i++) {
+                result = resolve(paths[i], scriptName);
+                if (result != null) return result;
             }
-        } catch (Exception e) {
-            // keep going, try bin/#{scriptName}
-        }
-        try {
-            fullName = JRubyFile.create(config.getJRubyHome(), "bin/" + scriptName);
-            if (fullName.exists() && fullName.isFile()) {
-                if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
-                    config.getError().println("Found: " + fullName.getAbsolutePath());
-                }
-                return fullName.getAbsolutePath();
-            }
-        } catch (Exception e) {
-            // keep going, try PATH
-        }
-        if(Ruby.getClassLoader().getResourceAsStream("bin/" + scriptName) != null){
-            return "classpath:bin/" + scriptName;
-        }
-        try {
-            Object pathObj = config.getEnvironment().get("PATH");
-            String path = pathObj.toString();
-            if (path != null) {
-                String[] paths = path.split(System.getProperty("path.separator"));
-                for (int i = 0; i < paths.length; i++) {
-                    fullName = JRubyFile.create(new File(paths[i]).getAbsolutePath(), scriptName);
-                    if (fullName.exists() && fullName.isFile()) {
-                        if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
-                            config.getError().println("Found: " + fullName.getAbsolutePath());
-                        }
-                        return fullName.getAbsolutePath();
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // will fall back to JRuby::Commands
         }
         if (config.isDebug()) {
-            config.getError().println("warning: could not resolve -S script on filesystem: " + scriptName);
+            config.getError().println("warning: could not resolve -S script: " + scriptName);
         }
+        // fall back to JRuby::Commands
         return null;
     }
 
