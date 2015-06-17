@@ -38,6 +38,7 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Helpers;
 
 /**
  * Represents the argument declarations of a method.  The fields:
@@ -225,16 +226,11 @@ public class ArgsNode extends Node {
         if (keywords == null) return 0;
 
         int count = 0;
-        for (Node keyWordNode :getKeywords().childNodes()) {
+        for (Node keyWordNode : getKeywords().children()) {
             for (Node asgnNode : keyWordNode.childNodes()) {
-                if (isRequiredKeywordArgumentValueNode(asgnNode)) count++;
+                if (Helpers.isRequiredKeywordArgumentValueNode(asgnNode)) count++;
             }
         }
         return count;
     }
-
-    private boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
-        return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueNode;
-    }
-
 }

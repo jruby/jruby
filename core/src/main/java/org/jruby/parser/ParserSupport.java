@@ -948,8 +948,10 @@ public class ParserSupport {
         	
         } else if (tail instanceof DStrNode) {
             if (head instanceof StrNode){
-                ((DStrNode)tail).prepend(head);
-                return tail;
+                DStrNode newDStr = new DStrNode(head.getPosition(), ((DStrNode) tail).getEncoding());
+                newDStr.add(head);
+                newDStr.addAll(tail);
+                return newDStr;
             } 
 
             return ((ListNode) head).addAll(tail);
@@ -1345,9 +1347,10 @@ public class ParserSupport {
                 }
             }
             
-            dStrNode.prepend(new StrNode(contents.getPosition(), createMaster(options)));
-
-            return new DRegexpNode(position, options, encoding).addAll(dStrNode);
+            DRegexpNode dRegexpNode = new DRegexpNode(position, options, encoding);
+            dRegexpNode.add(new StrNode(contents.getPosition(), createMaster(options)));
+            dRegexpNode.addAll(dStrNode);
+            return dRegexpNode;
         }
 
         // EvStrNode: #{val}: no fragment check, but at least set encoding

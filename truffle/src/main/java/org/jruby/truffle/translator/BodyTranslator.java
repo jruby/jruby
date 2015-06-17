@@ -206,12 +206,12 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitArrayNode(org.jruby.ast.ArrayNode node) {
-        final List<org.jruby.ast.Node> values = node.childNodes();
+        final org.jruby.ast.Node[] values = node.children();
 
-        final RubyNode[] translatedValues = new RubyNode[values.size()];
+        final RubyNode[] translatedValues = new RubyNode[values.length];
 
-        for (int n = 0; n < values.size(); n++) {
-            translatedValues[n] = values.get(n).accept(this);
+        for (int n = 0; n < values.length; n++) {
+            translatedValues[n] = values[n].accept(this);
         }
 
         return new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, translate(node.getPosition()), translatedValues);
@@ -295,7 +295,7 @@ public class BodyTranslator extends Translator {
                 throw new UnsupportedOperationException();
             }
 
-            fixedArgsNode = new org.jruby.ast.ArgsPushNode(newArgsNode.getPosition(), newArgsNode.childNodes().get(0), newArgsNode.childNodes().get(1));
+            fixedArgsNode = new org.jruby.ast.ArgsPushNode(newArgsNode.getPosition(), newArgsNode.children()[0], newArgsNode.children()[1]);
         } else {
             fixedArgsNode = newArgsNode;
         }
@@ -336,7 +336,7 @@ public class BodyTranslator extends Translator {
 
         final List<RubyNode> translatedChildren = new ArrayList<>();
 
-        for (org.jruby.ast.Node child : node.childNodes()) {
+        for (org.jruby.ast.Node child : node.children()) {
             if (child.getPosition() == InvalidSourcePosition.INSTANCE) {
                 parentSourceSection.push(sourceSection);
             }
@@ -1000,7 +1000,7 @@ public class BodyTranslator extends Translator {
 
         final List<RubyNode> children = new ArrayList<>();
 
-        for (org.jruby.ast.Node child : node.childNodes()) {
+        for (org.jruby.ast.Node child : node.children()) {
             children.add(child.accept(this));
         }
 
@@ -1015,26 +1015,26 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitDStrNode(org.jruby.ast.DStrNode node) {
-        return translateInterpolatedString(translate(node.getPosition()), node.childNodes());
+        return translateInterpolatedString(translate(node.getPosition()), node.children());
     }
 
     @Override
     public RubyNode visitDSymbolNode(org.jruby.ast.DSymbolNode node) {
         SourceSection sourceSection = translate(node.getPosition());
 
-        final RubyNode stringNode = translateInterpolatedString(sourceSection, node.childNodes());
+        final RubyNode stringNode = translateInterpolatedString(sourceSection, node.children());
 
         return StringToSymbolNodeGen.create(context, sourceSection, stringNode);
     }
 
-    private RubyNode translateInterpolatedString(SourceSection sourceSection, List<org.jruby.ast.Node> childNodes) {
-        final List<ToSNode> children = new ArrayList<>();
+    private RubyNode translateInterpolatedString(SourceSection sourceSection, org.jruby.ast.Node[] childNodes) {
+        final ToSNode[] children = new ToSNode[childNodes.length];
 
-        for (org.jruby.ast.Node child : childNodes) {
-            children.add(ToSNodeGen.create(context, sourceSection, child.accept(this)));
+        for (int i = 0; i < childNodes.length; i++) {
+            children[i] = ToSNodeGen.create(context, sourceSection, childNodes[i].accept(this));
         }
 
-        return new InterpolatedStringNode(context, sourceSection, children.toArray(new ToSNode[children.size()]));
+        return new InterpolatedStringNode(context, sourceSection, children);
     }
 
     @Override
@@ -1067,7 +1067,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitDXStrNode(org.jruby.ast.DXStrNode node) {
         final org.jruby.ast.DStrNode string = new org.jruby.ast.DStrNode(node.getPosition(), node.getEncoding());
-        string.childNodes().addAll(node.childNodes());
+        string.addAll(node);
         final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), string);
         final org.jruby.ast.Node callNode = new FCallNode(node.getPosition(), "`", argsNode, null);
         return callNode.accept(this);
@@ -2541,12 +2541,12 @@ public class BodyTranslator extends Translator {
         while (rescueBody != null) {
             if (rescueBody.getExceptionNodes() != null) {
                 if (rescueBody.getExceptionNodes() instanceof org.jruby.ast.ArrayNode) {
-                    final List<org.jruby.ast.Node> exceptionNodes = ((org.jruby.ast.ArrayNode) rescueBody.getExceptionNodes()).childNodes();
+                    final org.jruby.ast.Node[] exceptionNodes = ((org.jruby.ast.ArrayNode) rescueBody.getExceptionNodes()).children();
 
-                    final RubyNode[] handlingClasses = new RubyNode[exceptionNodes.size()];
+                    final RubyNode[] handlingClasses = new RubyNode[exceptionNodes.length];
 
                     for (int n = 0; n < handlingClasses.length; n++) {
-                        handlingClasses[n] = exceptionNodes.get(n).accept(this);
+                        handlingClasses[n] = exceptionNodes[n].accept(this);
                     }
 
                     RubyNode translatedBody;
