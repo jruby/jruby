@@ -119,10 +119,12 @@ public class LoadArgumentsTranslator extends Translator {
 
         if (node.getPost() != null) {
             state = State.POST;
+            index = -1;
             org.jruby.ast.Node[] children = node.getPost().children();
-            for (index = children.length - 1; index >= 0; index--) {
-                sequence.add(children[index].accept(this));
+            for (int i = children.length - 1; i >= 0; i--) {
+                sequence.add(children[i].accept(this));
                 required++;
+                index--;
             }
         }
 
@@ -371,9 +373,11 @@ public class LoadArgumentsTranslator extends Translator {
 
         if (node.getPost() != null) {
             org.jruby.ast.Node[] children = node.getPost().children();
-            for (index = children.length - 1; index >= 0; index--) {
-                notNilSequence.add(children[index].accept(this));
+            index = -1;
+            for (int i = children.length - 1; i >= 0; i--) {
+                notNilSequence.add(children[i].accept(this));
                 required++;
+                index--;
             }
         }
 
