@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.Encoding;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -32,6 +33,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.methods.Arity;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 import java.io.IOException;
@@ -123,9 +125,18 @@ public class TranslatorDriver {
 
     public RubyRootNode parse(Node currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, org.jruby.ast.RootNode rootNode, NodeWrapper wrapper) {
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
-        // The important thing here is to reset the lexical scope.
+
+        final LexicalScope lexicalScope;
+        final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame.getArguments());
+        if (parentMethod != null && parentMethod.getSharedMethodInfo().getLexicalScope() != null) {
+            lexicalScope = parentMethod.getSharedMethodInfo().getLexicalScope();
+        } else {
+            lexicalScope = context.getRootLexicalScope();
+        }
+        parseEnvironment.resetLexicalScope(lexicalScope);
+
         // TODO (10 Feb. 2015): name should be "<top (required)> for the require-d/load-ed files.
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "<main>", false, rootNode, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, parseEnvironment.getLexicalScope(), Arity.NO_ARGUMENTS, "<main>", false, rootNode, false);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame),
                 parseEnvironment, parseEnvironment.allocateReturnID(), ownScopeForAssignments, false, sharedMethodInfo, sharedMethodInfo.getName(), false, null);
