@@ -661,6 +661,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newString(dirname(context, jfilename)).infectBy(filename);
     }
 
+    private static Pattern PROTOCOL_PATTERN = Pattern.compile("^[a-z:]{2,}:/");
     public static String dirname(ThreadContext context, String jfilename) {
         String name = jfilename.replace('\\', '/');
         int minPathLength = 1;
@@ -673,7 +674,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         // address all the url like paths first
-        if (name.contains(":/") || name.contains("!/")) {
+        if (PROTOCOL_PATTERN.matcher(name).matches() || name.contains("!/")) {
             int start = Math.max(name.indexOf(":/"), name.indexOf("!/")) + 2;
             String path = dirname(context, name.substring(start));
             if (path.equals(".") || path.equals("/")) path = "";
