@@ -45,7 +45,7 @@ VALUE mutex_spec_rb_mutex_sleep(VALUE self, VALUE mutex, VALUE timeout) {
 
 VALUE mutex_spec_rb_mutex_callback(VALUE arg) {
   return rb_funcall(arg, rb_intern("call"), 0);
-} 
+}
 
 VALUE mutex_spec_rb_mutex_synchronize(VALUE self, VALUE mutex, VALUE value) {
   return rb_mutex_synchronize(mutex, mutex_spec_rb_mutex_callback, value);

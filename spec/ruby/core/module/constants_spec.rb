@@ -38,8 +38,7 @@ describe "Module.constants" do
 end
 
 describe "Module#constants" do
-  it "returns an array of Symbol names of all constants defined in the module" \
-     "and all included modules" do
+  it "returns an array of Symbol names of all constants defined in the module and all included modules" do
     ConstantSpecs::ContainerA.constants.sort.should == [
       :CS_CONST10, :CS_CONST23, :CS_CONST24, :CS_CONST5, :ChildA
     ]
@@ -57,11 +56,6 @@ describe "Module#constants" do
     ]
   end
 
-  it "includes names of constants defined after a module is included" do
-    ConstantSpecs::ModuleM::CS_CONST251 = :const251
-    ConstantSpecs::ContainerA.constants.should include(:CS_CONST251)
-  end
-
   it "doesn't returns inherited constants when passed false" do
     ConstantSpecs::ContainerA.constants(false).sort.should == [
       :CS_CONST10, :CS_CONST23, :CS_CONST5, :ChildA
@@ -76,5 +70,19 @@ describe "Module#constants" do
 
   it "returns only public constants" do
     ModuleSpecs::PrivConstModule.constants.should == [:PUBLIC_CONSTANT]
+  end
+end
+
+describe "Module#constants" do
+  before :each do
+    ConstantSpecs::ModuleM::CS_CONST251 = :const251
+  end
+
+  after :each do
+    ConstantSpecs::ModuleM.send(:remove_const, :CS_CONST251)
+  end
+
+  it "includes names of constants defined after a module is included" do
+    ConstantSpecs::ContainerA.constants.should include(:CS_CONST251)
   end
 end

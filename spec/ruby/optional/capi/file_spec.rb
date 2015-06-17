@@ -32,7 +32,6 @@ end
 describe "C-API File function" do
   before :each do
     @s = CApiFileSpecs.new
-
     @name = tmp("rb_file_open")
   end
 
@@ -53,13 +52,13 @@ describe "C-API File function" do
     it "calls #to_path to convert on object to a path" do
       path = mock("rb_file_open_str to_path")
       path.should_receive(:to_path).and_return(@name)
-      @s.rb_file_open_str(path, "w")
+      @file = @s.rb_file_open_str(path, "w")
     end
 
     it "calls #to_str to convert an object to a path if #to_path isn't defined" do
       path = mock("rb_file_open_str to_str")
       path.should_receive(:to_str).and_return(@name)
-      @s.rb_file_open_str(path, "w")
+      @file = @s.rb_file_open_str(path, "w")
     end
   end
 

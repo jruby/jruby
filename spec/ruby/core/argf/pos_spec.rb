@@ -14,29 +14,25 @@ describe "ARGF.pos=" do
     @file2 = File.readlines @file2_name
   end
 
-  after :each do
-    ARGF.close unless ARGF.closed?
-  end
-
   # NOTE: this test assumes that fixtures files have two lines each
   it "sets the correct position in files" do
-    argv [@file1_name, @file2_name] do
-      ARGF.pos = @file1.first.size
-      ARGF.gets.should == @file1.last
-      ARGF.pos = 0
-      ARGF.gets.should == @file1.first
+    argf [@file1_name, @file2_name] do
+      @argf.pos = @file1.first.size
+      @argf.gets.should == @file1.last
+      @argf.pos = 0
+      @argf.gets.should == @file1.first
 
       # finish reading file1
-      ARGF.gets
+      @argf.gets
 
-      ARGF.gets
-      ARGF.pos = 1
-      ARGF.gets.should == @file2.first[1..-1]
+      @argf.gets
+      @argf.pos = 1
+      @argf.gets.should == @file2.first[1..-1]
 
-      ARGF.pos = @file2.first.size + @file2.last.size - 1
-      ARGF.gets.should == @file2.last[-1,1]
-      ARGF.pos = 1000
-      ARGF.read.should == ""
+      @argf.pos = @file2.first.size + @file2.last.size - 1
+      @argf.gets.should == @file2.last[-1,1]
+      @argf.pos = 1000
+      @argf.read.should == ""
     end
   end
 end

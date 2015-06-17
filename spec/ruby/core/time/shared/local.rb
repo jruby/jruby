@@ -21,15 +21,6 @@ describe :time_local, :shared => true do
       end
     end
 
-    platform_is_not :darwin do # TZDATA seems inaccurate on Darwin for this case.
-      it "correctly adjusts the timezone change to 'WET' on 'Europe/Lisbon'" do
-        with_timezone("Europe/Lisbon") do
-          Time.send(@method, 1912, 1, 1).to_a.should ==
-            [45, 36, 0, 1, 1, 1912, 1, 1, false, "WET"]
-        end
-      end
-    end
-
     it "correctly adjusts the timezone change to 'CEST' on 'Europe/Amsterdam'" do
       with_timezone("Europe/Amsterdam") do
         Time.send(@method, 1940, 5, 16).to_a.should ==

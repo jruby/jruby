@@ -180,8 +180,7 @@ describe "IO#reopen with a String" do
   end
 
   after :each do
-    # Do not close @io, the exception leaves MRI with an invalid
-    # IO and an Errno::EBADF will be raised on #close.
+    @io.close
     rm_r @name, @other_name
   end
 

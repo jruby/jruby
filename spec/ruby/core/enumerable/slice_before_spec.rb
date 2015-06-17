@@ -78,8 +78,5 @@ describe "Enumerable#slice_before" do
     lambda { @enum.slice_before }.should raise_error(ArgumentError)
   end
 
-  before :all do
-    @method_args = [3]
-  end
-  it_behaves_like :enumerable_enumeratorized_with_unknown_size, :slice_before
+  it_behaves_like :enumerable_enumeratorized_with_unknown_size, [:slice_before, 3]
 end

@@ -50,7 +50,7 @@ public class Arity {
         if (argsNode.hasKwargs()) {
             keywordArguments = new ArrayList<>();
             if (argsNode.getKeywords() != null) {
-                for (Node node : argsNode.getKeywords().childNodes()) {
+                for (Node node : argsNode.getKeywords().children()) {
                     final KeywordArgNode kwarg = (KeywordArgNode) node;
                     final AssignableNode assignableNode = kwarg.getAssignable();
 

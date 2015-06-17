@@ -55,4 +55,12 @@ describe "The redo statement" do
     end
     list.should == [1,10,100,1,10,100,2,20,200,3,30,300]
   end
+
+  describe "in a method" do
+    it "is invalid and raises a SyntaxError" do
+      lambda {
+        eval("def m; redo; end")
+      }.should raise_error(SyntaxError)
+    end
+  end
 end

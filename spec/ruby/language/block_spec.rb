@@ -62,7 +62,7 @@ describe "A block yielded a single" do
       result.should == [{"a" => 1}, b: 2]
     end
 
-    ruby_version_is "2.2" do
+    ruby_version_is "2.2.1" do # SEGV on MRI 2.2.0
       it "calls #to_hash on the argument but does not use the result when no keywords are present" do
         obj = mock("coerce block keyword arguments")
         obj.should_receive(:to_hash).and_return({"a" => 1, "b" => 2})

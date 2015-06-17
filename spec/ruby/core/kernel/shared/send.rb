@@ -45,6 +45,7 @@ describe :kernel_send, :shared => true do
   end
 
   it "raises an ArgumentError if no arguments are given" do
+    class KernelSpecs::Foo; end
     lambda { KernelSpecs::Foo.new.send }.should raise_error(ArgumentError)
   end
 
@@ -80,15 +81,11 @@ describe :kernel_send, :shared => true do
 
   it "succeeds when passing 1 or more arguments as a required and a splat parameter" do
     class KernelSpecs::Foo
-      def foo(first, *rest) [first, *rest] end
+      def baz(first, *rest) [first, *rest] end
     end
 
-    begin
-      KernelSpecs::Foo.new.send(@method, :baz, :quux).should == [:quux]
-      KernelSpecs::Foo.new.send(@method, :baz, :quux, :foo).should == [:quux, :foo]
-    rescue
-      fail
-    end
+    KernelSpecs::Foo.new.send(@method, :baz, :quux).should == [:quux]
+    KernelSpecs::Foo.new.send(@method, :baz, :quux, :foo).should == [:quux, :foo]
   end
 
   it "succeeds when passing 0 arguments to a method with one parameter with a default" do

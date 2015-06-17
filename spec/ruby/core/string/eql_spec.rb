@@ -7,7 +7,9 @@ describe "String#eql?" do
   describe "when given a non-String" do
     it "returns false" do
       'hello'.should_not eql(5)
-      'hello'.should_not eql(:hello)
+      not_supported_on :opal do
+        'hello'.should_not eql(:hello)
+      end
       'hello'.should_not eql(mock('x'))
     end
 

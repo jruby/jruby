@@ -578,7 +578,7 @@ public class IRBuilder {
         switch (args.getNodeType()) {
             case ARRAYNODE: {     // a[1] = 2; a[1,2,3] = 4,5,6
                 Operand last = manager.getNil();
-                for (Node n: args.childNodes()) {
+                for (Node n: ((ListNode) args).children()) {
                     last = buildWithOrder(n, containsAssignment);
                     argsList.add(last);
                 }
@@ -609,13 +609,13 @@ public class IRBuilder {
             case ARGSPUSHNODE:
                 return new Operand[] { new Splat(build(args)) };
             case ARRAYNODE: {
-                List<Node> children = args.childNodes();
-                int numberOfArgs = children.size();
+                Node[] children = ((ListNode) args).children();
+                int numberOfArgs = children.length;
                 Operand[] builtArgs = new Operand[numberOfArgs];
                 boolean hasAssignments = args.containsVariableAssignment();
 
                 for (int i = 0; i < numberOfArgs; i++) {
-                    builtArgs[i] = buildWithOrder(children.get(i), hasAssignments);
+                    builtArgs[i] = buildWithOrder(children[i], hasAssignments);
                 }
                 return builtArgs;
             }
@@ -719,7 +719,7 @@ public class IRBuilder {
             case MULTIPLEASGNNODE: {
                 ListNode sourceArray = ((MultipleAsgnNode) node).getPre();
                 int i = 0;
-                for (Node an: sourceArray.childNodes()) {
+                for (Node an: sourceArray.children()) {
                     // Use 1.8 mode version for this
                     buildBlockArgsAssignment(an, null, i, false);
                     i++;
@@ -826,10 +826,11 @@ public class IRBuilder {
     }
 
     public Operand buildArray(ArrayNode node) {
-        List<Operand> elts = new ArrayList<>();
+        Node[] nodes = node.children();
+        Operand[] elts = new Operand[nodes.length];
         boolean containsAssignments = node.containsVariableAssignment();
-        for (Node e: node.childNodes()) {
-            elts.add(buildWithOrder(e, containsAssignments));
+        for (int i = 0; i < nodes.length; i++) {
+            elts[i] = buildWithOrder(nodes[i], containsAssignments);
         }
 
         return copyAndReturnValue(new Array(elts));
@@ -885,7 +886,7 @@ public class IRBuilder {
 
     public Operand buildBlock(BlockNode node) {
         Operand retVal = null;
-        for (Node child : node.childNodes()) {
+        for (Node child : node.children()) {
             retVal = build(child);
         }
 
@@ -1049,7 +1050,7 @@ public class IRBuilder {
         Map<Label, Node> bodies = new HashMap<>();
 
         // build each "when"
-        for (Node aCase : caseNode.getCases().childNodes()) {
+        for (Node aCase : caseNode.getCases().children()) {
             WhenNode whenNode = (WhenNode)aCase;
             Label bodyLabel = getNewLabel();
 
@@ -1220,11 +1221,14 @@ public class IRBuilder {
         int n = 0;
         IRScope cvarScope = scope;
         while (cvarScope != null && !(cvarScope instanceof IREvalScript) && !cvarScope.isNonSingletonClassBody()) {
+            // For loops don't get their own static scope
+            if (!(cvarScope instanceof IRFor)) {
+                n++;
+            }
             cvarScope = cvarScope.getLexicalParent();
-            n++;
         }
 
-        if ((cvarScope != null) && cvarScope.isNonSingletonClassBody()) {
+        if (cvarScope != null && cvarScope.isNonSingletonClassBody()) {
             return ScopeModule.ModuleFor(n);
         } else {
             return addResultInstr(new GetClassVarContainerModuleInstr(createTemporaryVariable(),
@@ -1427,7 +1431,7 @@ public class IRBuilder {
             Label doneLabel = getNewLabel();
 
             Variable tmpVar = createTemporaryVariable();
-            for (Node elt: array.childNodes()) {
+            for (Node elt: array.children()) {
                 Operand result = buildGetDefinition(elt);
 
                 addInstr(BEQInstr.create(result, manager.getNil(), undefLabel));
@@ -1935,7 +1939,7 @@ public class IRBuilder {
         ListNode keywords = argsNode.getKeywords();
         int required = argsNode.getRequiredArgsCount();
         if (keywords != null) {
-            for (Node knode : keywords.childNodes()) {
+            for (Node knode : keywords.children()) {
                 KeywordArgNode kwarg = (KeywordArgNode)knode;
                 AssignableNode kasgn = kwarg.getAssignable();
                 String argName = ((INameNode) kasgn).getName();
@@ -2033,7 +2037,7 @@ public class IRBuilder {
         // Build assignments for specific named arguments
         int i = 0;
         if (masgnPre != null) {
-            for (Node an: masgnPre.childNodes()) {
+            for (Node an: masgnPre.children()) {
                 if (values == null) {
                     buildArgsMasgn(an, argsArray, false, -1, -1, i, false);
                 } else {
@@ -2062,7 +2066,7 @@ public class IRBuilder {
         final ListNode masgnPost = multipleAsgnNode.getPost();
         if (masgnPost != null) {
             int j = 0;
-            for (Node an: masgnPost.childNodes()) {
+            for (Node an: masgnPost.children()) {
                 if (values == null) {
                     buildArgsMasgn(an, argsArray, false, i, postArgsCount, j, false);
                 } else {
@@ -2129,10 +2133,10 @@ public class IRBuilder {
     }
 
     public Operand buildDRegexp(DRegexpNode node) {
-        List<Node> nodePieces = node.childNodes();
-        Operand[] pieces = new Operand[nodePieces.size()];
+        Node[] nodePieces = node.children();
+        Operand[] pieces = new Operand[nodePieces.length];
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces.get(i));
+            pieces[i] = dynamicPiece(nodePieces[i]);
         }
 
         Variable res = createTemporaryVariable();
@@ -2141,10 +2145,10 @@ public class IRBuilder {
     }
 
     public Operand buildDStr(DStrNode node) {
-        List<Node> nodePieces = node.childNodes();
-        Operand[] pieces = new Operand[nodePieces.size()];
+        Node[] nodePieces = node.children();
+        Operand[] pieces = new Operand[nodePieces.length];
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces.get(i));
+            pieces[i] = dynamicPiece(nodePieces[i]);
         }
 
         Variable res = createTemporaryVariable();
@@ -2153,10 +2157,10 @@ public class IRBuilder {
     }
 
     public Operand buildDSymbol(DSymbolNode node) {
-        List<Node> nodePieces = node.childNodes();
-        Operand[] pieces = new Operand[nodePieces.size()];
+        Node[] nodePieces = node.children();
+        Operand[] pieces = new Operand[nodePieces.length];
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces.get(i));
+            pieces[i] = dynamicPiece(nodePieces[i]);
         }
 
         Variable res = createTemporaryVariable();
@@ -2169,10 +2173,10 @@ public class IRBuilder {
     }
 
     public Operand buildDXStr(final DXStrNode dstrNode) {
-        List<Node> nodePieces = dstrNode.childNodes();
-        Operand[] pieces = new Operand[nodePieces.size()];
+        Node[] nodePieces = dstrNode.children();
+        Operand[] pieces = new Operand[nodePieces.length];
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces.get(i));
+            pieces[i] = dynamicPiece(nodePieces[i]);
         }
 
         return addResultInstr(new BacktickInstr(createTemporaryVariable(), pieces));
@@ -3133,11 +3137,12 @@ public class IRBuilder {
         Label caughtLabel = getNewLabel();
         if (exceptionList != null) {
             if (exceptionList instanceof ListNode) {
-                List<Operand> excTypes = new ArrayList<>();
-                for (Node excType : exceptionList.childNodes()) {
-                    excTypes.add(build(excType));
+                Node [] exceptionNodes = ((ListNode) exceptionList).children();
+                Operand[] exceptionTypes = new Operand[exceptionNodes.length];
+                for (int i = 0; i < exceptionNodes.length; i++) {
+                    exceptionTypes[i] = build(exceptionNodes[i]);
                 }
-                outputExceptionCheck(new Array(excTypes), exc, caughtLabel);
+                outputExceptionCheck(new Array(exceptionTypes), exc, caughtLabel);
             } else if (exceptionList instanceof SplatNode) { // splatnode, catch
                 outputExceptionCheck(build(((SplatNode)exceptionList).getValue()), exc, caughtLabel);
             } else { // argscat/argspush

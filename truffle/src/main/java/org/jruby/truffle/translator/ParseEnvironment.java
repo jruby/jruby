@@ -18,12 +18,14 @@ import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
  */
 public class ParseEnvironment {
 
-    private LexicalScope lexicalScope;
-    private long nextReturnID;
+    private LexicalScope lexicalScope = null;
+    private long nextReturnID = 0;
 
     public ParseEnvironment(RubyContext context) {
-        lexicalScope = context.getRootLexicalScope();
-        nextReturnID = 0;
+    }
+
+    public void resetLexicalScope(LexicalScope lexicalScope) {
+        this.lexicalScope = lexicalScope;
     }
 
     public LexicalScope getLexicalScope() {

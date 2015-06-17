@@ -37,8 +37,5 @@ describe "Enumerable#each_with_object" do
     array.should == [[1, 2], [3, 4, 5], [6, 7, 8, 9]]
   end
 
-  before :all do
-    @method_args = [[]]
-  end
-  it_behaves_like :enumerable_enumeratorized_with_origin_size, :each_with_object
+  it_behaves_like :enumerable_enumeratorized_with_origin_size, [:each_with_object, []]
 end

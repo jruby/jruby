@@ -692,25 +692,24 @@ public final class Ruby implements Constantizable {
     private RootNode addGetsLoop(RootNode oldRoot, boolean printing, boolean processLineEndings, boolean split) {
         ISourcePosition pos = oldRoot.getPosition();
         BlockNode newBody = new BlockNode(pos);
+        newBody.add(new GlobalAsgnNode(pos, "$/", new StrNode(pos, new ByteList(getInstanceConfig().getRecordSeparator().getBytes()))));
 
         if (processLineEndings) newBody.add(new GlobalAsgnNode(pos, "$\\", new GlobalVarNode(pos, "$/")));
 
-        BlockNode whileBody;
-        if (oldRoot.getBodyNode() instanceof BlockNode) {   // common case n stmts
-            whileBody = (BlockNode) oldRoot.getBodyNode();
-        } else {                                            // single expr script
-            whileBody = new BlockNode(pos);
-            whileBody.add(oldRoot.getBodyNode());
-        }
-
-        newBody.prepend(new GlobalAsgnNode(pos, "$/", new StrNode(pos, new ByteList(getInstanceConfig().getRecordSeparator().getBytes()))));
         GlobalVarNode dollarUnderscore = new GlobalVarNode(pos, "$_");
 
+        BlockNode whileBody = new BlockNode(pos);
         newBody.add(new WhileNode(pos, new VCallNode(pos, "gets"), whileBody));
 
-        if (printing) whileBody.prepend(new FCallNode(pos, "puts", new ArrayNode(pos, dollarUnderscore), null));
-        if (split) whileBody.prepend(new GlobalAsgnNode(pos, "$F", new CallNode(pos, dollarUnderscore, "split", null, null)));
-        if (processLineEndings) whileBody.prepend(new CallNode(pos, dollarUnderscore, "chop!", null, null));
+        if (processLineEndings) whileBody.add(new CallNode(pos, dollarUnderscore, "chop!", null, null));
+        if (split) whileBody.add(new GlobalAsgnNode(pos, "$F", new CallNode(pos, dollarUnderscore, "split", null, null)));
+        if (printing) whileBody.add(new FCallNode(pos, "puts", new ArrayNode(pos, dollarUnderscore), null));
+
+        if (oldRoot.getBodyNode() instanceof BlockNode) {   // common case n stmts
+            whileBody.addAll(oldRoot.getBodyNode());
+        } else {                                            // single expr script
+            whileBody.add(oldRoot.getBodyNode());
+        }
 
         return new RootNode(pos, oldRoot.getScope(), newBody);
     }

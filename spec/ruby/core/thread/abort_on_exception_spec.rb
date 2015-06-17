@@ -9,6 +9,7 @@ describe "Thread#abort_on_exception" do
 
   after do
     ThreadSpecs.state = :exit
+    @thread.join
   end
 
   it "is false by default" do

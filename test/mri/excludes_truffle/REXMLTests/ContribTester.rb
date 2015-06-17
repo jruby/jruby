@@ -1,0 +1,7 @@
+exclude :"test_complex_xpath_Tobias", "needs investigation"
+exclude :"test_deep_clone", "needs investigation"
+exclude :"test_element_cloning_namespace_Chris", "needs investigation"
+exclude :"test_other_xpath_Tobias", "needs investigation"
+exclude :"test_raw_Terje_Elde", "needs investigation"
+exclude :"test_xpath_03_TobiasReif", "needs investigation"
+exclude :test_various_xpath, "needs investigation"

@@ -11,14 +11,14 @@ describe "Dir.glob" do
 end
 
 describe "Dir.glob" do
-  before :all do
+  before :each do
     DirSpecs.create_mock_dirs
 
     @cwd = Dir.pwd
     Dir.chdir DirSpecs.mock_dir
   end
 
-  after :all do
+  after :each do
     Dir.chdir @cwd
 
     DirSpecs.delete_mock_dirs

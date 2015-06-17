@@ -23,6 +23,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -33,6 +34,7 @@ import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
+import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.coerce.*;
 import org.jruby.truffle.nodes.constants.GetConstantNode;
@@ -381,7 +383,7 @@ public abstract class ModuleNodes {
             final String name = nameToJavaStringNode.executeToJavaString(frame, nameObject);
 
             CompilerDirectives.transferToInterpreter();
-            final FrameInstance callerFrame = Truffle.getRuntime().getCallerFrame();
+            final FrameInstance callerFrame = RubyCallStack.getCallerFrame(getContext());
             final SourceSection sourceSection = callerFrame.getCallNode().getEncapsulatingSourceSection();
             final Visibility visibility = AddMethodNode.getVisibility(callerFrame.getFrame(FrameAccess.READ_ONLY, true));
             final Arity arity = isGetter ? Arity.NO_ARGUMENTS : Arity.ONE_REQUIRED;
@@ -587,20 +589,11 @@ public abstract class ModuleNodes {
     public abstract static class ClassEvalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldDispatchHeadNode yield;
-        @Child private BindingNode bindingNode;
         @Child private ToStrNode toStrNode;
 
         public ClassEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             yield = new YieldDispatchHeadNode(context);
-        }
-
-        protected RubyBinding getCallerBinding(VirtualFrame frame) {
-            if (bindingNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
-            }
-            return bindingNode.executeRubyBinding(frame);
         }
 
         protected RubyBasicObject toStr(VirtualFrame frame, Object object) {
@@ -637,13 +630,14 @@ public abstract class ModuleNodes {
         }
 
         private Object classEvalSource(VirtualFrame frame, RubyModule module, RubyString code, String file) {
-            RubyBinding binding = getCallerBinding(frame);
+            final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
+                    .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
             Encoding encoding = StringNodes.getByteList(code).getEncoding();
 
             CompilerDirectives.transferToInterpreter();
             Source source = Source.fromText(code.toString(), file);
 
-            return getContext().execute(source, encoding, TranslatorDriver.ParserContext.MODULE, module, binding.getFrame(), this, new NodeWrapper() {
+            return getContext().execute(source, encoding, TranslatorDriver.ParserContext.MODULE, module, callerFrame, this, new NodeWrapper() {
                 @Override
                 public RubyNode wrap(RubyNode node) {
                     return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "class_eval", node);
@@ -770,25 +764,19 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "constants", optional = 1)
-    public abstract static class ConstantsNode extends CoreMethodArrayArgumentsNode {
-
-        @Child BooleanCastNode booleanCastNode;
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "inherit")
+    })
+    public abstract static class ConstantsNode extends CoreMethodNode {
 
         public ConstantsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        private boolean booleanCast(VirtualFrame frame, Object value) {
-            if (booleanCastNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            return booleanCastNode.executeBoolean(frame, value);
-        }
-
-        @Specialization
-        public RubyBasicObject constants(RubyModule module, NotProvided inherit) {
-            return constants(module, true);
+        @CreateCast("inherit")
+        public RubyNode coerceToBoolean(RubyNode inherit) {
+            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), true, inherit);
         }
 
         @Specialization
@@ -813,11 +801,6 @@ public abstract class ModuleNodes {
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), constantsArray.toArray(new Object[constantsArray.size()]));
         }
 
-        @Specialization(guards = "wasProvided(inherit)")
-        public RubyBasicObject constants(VirtualFrame frame, RubyModule module, Object inherit) {
-            return constants(module, booleanCast(frame, inherit));
-        }
-
     }
 
     @CoreMethod(names = "const_defined?", required = 1, optional = 1)
@@ -837,9 +820,9 @@ public abstract class ModuleNodes {
             return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
-        @Specialization
-        public boolean isConstDefined(RubyModule module, String name, NotProvided inherit) {
-            return isConstDefined(module, name, true);
+        @CreateCast("inherit")
+        public RubyNode coerceToBoolean(RubyNode inherit) {
+            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), true, inherit);
         }
 
         @Specialization
@@ -871,12 +854,12 @@ public abstract class ModuleNodes {
             return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
-        // Symbol
-        @Specialization(guards = "isRubySymbol(name)")
-        public Object getConstant(VirtualFrame frame, RubyModule module, RubyBasicObject name, NotProvided inherit) {
-            return getConstant(frame, module, name, true);
+        @CreateCast("inherit")
+        public RubyNode coerceToBoolean(RubyNode inherit) {
+            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), true, inherit);
         }
 
+        // Symbol
         @Specialization(guards = {"inherit", "isRubySymbol(name)"})
         public Object getConstant(VirtualFrame frame, RubyModule module, RubyBasicObject name, boolean inherit) {
             return getConstantNode.executeGetConstant(frame, module, SymbolNodes.getString(name));
@@ -888,11 +871,6 @@ public abstract class ModuleNodes {
         }
 
         // String
-        @Specialization(guards = "!isScoped(name)")
-        public Object getConstant(VirtualFrame frame, RubyModule module, RubyString name, NotProvided inherit) {
-            return getConstant(frame, module, name, true);
-        }
-
         @Specialization(guards = { "inherit", "!isScoped(name)" })
         public Object getConstant(VirtualFrame frame, RubyModule module, RubyString name, boolean inherit) {
             return getConstantNode.executeGetConstant(frame, module, name.toString());
@@ -904,11 +882,6 @@ public abstract class ModuleNodes {
         }
 
         // Scoped String
-        @Specialization(guards = "isScoped(fullName)")
-        public Object getConstantScoped(VirtualFrame frame, RubyModule module, RubyString fullName, NotProvided inherit) {
-            return getConstantScoped(frame, module, fullName, true);
-        }
-
         @Specialization(guards = "isScoped(fullName)")
         public Object getConstantScoped(VirtualFrame frame, RubyModule module, RubyString fullName, boolean inherit) {
             return getConstantScoped(module, fullName.toString(), inherit);
@@ -1221,9 +1194,9 @@ public abstract class ModuleNodes {
             return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
-        @Specialization
-        public boolean isMethodDefined(RubyModule module, String name, NotProvided inherit) {
-            return isMethodDefined(module, name, true);
+        @CreateCast("inherit")
+        public RubyNode coerceToBoolean(RubyNode inherit) {
+            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), true, inherit);
         }
 
         @Specialization
@@ -1425,22 +1398,24 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "protected_instance_methods", optional = 1)
-    public abstract static class ProtectedInstanceMethodsNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "includeAncestors")
+    })
+    public abstract static class ProtectedInstanceMethodsNode extends CoreMethodNode {
 
         public ProtectedInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject protectedInstanceMethods(RubyModule module, NotProvided includeAncestors) {
-            return protectedInstanceMethods(module, true);
+        @CreateCast("includeAncestors")
+        public RubyNode coerceToBoolean(RubyNode includeAncestors) {
+            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), true, includeAncestors);
         }
 
         @Specialization
         public RubyBasicObject protectedInstanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
-
-
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                     module.filterMethods(includeAncestors, MethodFilter.PROTECTED).toArray());
         }
@@ -1473,15 +1448,19 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "private_instance_methods", optional = 1)
-    public abstract static class PrivateInstanceMethodsNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+        @NodeChild(type = RubyNode.class, value = "module"),
+        @NodeChild(type = RubyNode.class, value = "includeAncestors")
+    })
+    public abstract static class PrivateInstanceMethodsNode extends CoreMethodNode {
 
         public PrivateInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject privateInstanceMethods(RubyModule module, NotProvided includeAncestors) {
-            return privateInstanceMethods(module, true);
+        @CreateCast("includeAncestors")
+        public RubyNode coerceToBoolean(RubyNode includeAncestors) {
+            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), true, includeAncestors);
         }
 
         @Specialization
@@ -1530,15 +1509,19 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "public_instance_methods", optional = 1)
-    public abstract static class PublicInstanceMethodsNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "includeAncestors")
+    })
+    public abstract static class PublicInstanceMethodsNode extends CoreMethodNode {
 
         public PublicInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject publicInstanceMethods(RubyModule module, NotProvided includeAncestors) {
-            return publicInstanceMethods(module, true);
+        @CreateCast("includeAncestors")
+        public RubyNode coerceToBoolean(RubyNode includeAncestors) {
+            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), true, includeAncestors);
         }
 
         @Specialization
@@ -1577,15 +1560,19 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "instance_methods", optional = 1)
-    public abstract static class InstanceMethodsNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "includeAncestors")
+    })
+    public abstract static class InstanceMethodsNode extends CoreMethodNode {
 
         public InstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject instanceMethods(RubyModule module, NotProvided argument) {
-            return instanceMethods(module, true);
+        @CreateCast("includeAncestors")
+        public RubyNode coerceToBoolean(RubyNode includeAncestors) {
+            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), true, includeAncestors);
         }
 
         @Specialization

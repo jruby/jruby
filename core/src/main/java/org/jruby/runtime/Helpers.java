@@ -2408,7 +2408,7 @@ public class Helpers {
         ArrayList<ArgumentDescriptor> descs = new ArrayList<>();
 
         if (argsNode.getPre() != null) {
-            for (Node preNode : argsNode.getPre().childNodes()) {
+            for (Node preNode : argsNode.getPre().children()) {
                 if (preNode instanceof MultipleAsgnNode) {
                     descs.add(new ArgumentDescriptor(ArgumentType.anonreq));
                 } else {
@@ -2418,7 +2418,7 @@ public class Helpers {
         }
 
         if (argsNode.getOptArgs() != null) {
-            for (Node optNode : argsNode.getOptArgs().childNodes()) {
+            for (Node optNode : argsNode.getOptArgs().children()) {
                 ArgumentType type = ArgumentType.opt;
                 String name = null;
                 if (optNode instanceof OptArgNode) {
@@ -2444,7 +2444,7 @@ public class Helpers {
         }
 
         if (argsNode.getPost() != null) {
-            for (Node postNode : argsNode.getPost().childNodes()) {
+            for (Node postNode : argsNode.getPost().children()) {
                 if (postNode instanceof MultipleAsgnNode) {
                     descs.add(new ArgumentDescriptor(ArgumentType.anonreq));
                 } else {
@@ -2454,7 +2454,7 @@ public class Helpers {
         }
 
         if (argsNode.getKeywords() != null) {
-            for (Node keyWordNode : argsNode.getKeywords().childNodes()) {
+            for (Node keyWordNode : argsNode.getKeywords().children()) {
                 for (Node asgnNode : keyWordNode.childNodes()) {
                     if (isRequiredKeywordArgumentValueNode(asgnNode)) {
                         descs.add(new ArgumentDescriptor(ArgumentType.keyreq, ((INameNode) asgnNode).getName()));
@@ -2523,7 +2523,7 @@ public class Helpers {
         } else if (method instanceof IRMethodArgs) {
             return ((IRMethodArgs) method).getArgumentDescriptors();
         } else {
-            return new ArgumentDescriptor[]{new ArgumentDescriptor(ArgumentType.rest)};
+            return new ArgumentDescriptor[]{new ArgumentDescriptor(ArgumentType.anonrest)};
         }
     }
 
@@ -2820,7 +2820,7 @@ public class Helpers {
         return -1;
     }
 
-    private static boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
+    public static boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
         return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueNode;
     }
 

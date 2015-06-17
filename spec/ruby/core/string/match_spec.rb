@@ -3,8 +3,10 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes.rb', __FILE__)
 
 describe :string_match_escaped_literal, :shared => true do
-  it "matches a literal Regexp that uses ASCII-only UTF-8 escape sequences" do
-    "a b".match(/([\u{20}-\u{7e}])/)[0].should == "a"
+  not_supported_on :opal do
+    it "matches a literal Regexp that uses ASCII-only UTF-8 escape sequences" do
+      "a b".match(/([\u{20}-\u{7e}])/)[0].should == "a"
+    end
   end
 end
 
@@ -112,7 +114,9 @@ describe "String#match" do
 
   it "raises a TypeError if pattern is not a regexp or a string" do
     lambda { 'hello'.match(10)   }.should raise_error(TypeError)
-    lambda { 'hello'.match(:ell) }.should raise_error(TypeError)
+    not_supported_on :opal do
+      lambda { 'hello'.match(:ell) }.should raise_error(TypeError)
+    end
   end
 
   it "converts string patterns to regexps without escaping" do

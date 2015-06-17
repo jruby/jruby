@@ -3,12 +3,12 @@ require File.expand_path('../shared/new', __FILE__)
 
 describe "UNIXSocket.open" do
   it_behaves_like :unixsocket_new, :open
+end
 
+describe "UNIXSocket.open" do
   platform_is_not :windows do
     before :each do
       @path = SocketSpecs.socket_path
-      rm_r @path
-
       @server = UNIXServer.open(@path)
     end
 

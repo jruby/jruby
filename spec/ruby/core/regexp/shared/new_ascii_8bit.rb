@@ -37,36 +37,48 @@ describe :regexp_new_string_ascii_8bit, :shared => true do
     r = Regexp.send(@method, 'Hi')
     (r.options & Regexp::IGNORECASE).should     == 0
     (r.options & Regexp::MULTILINE).should      == 0
-    (r.options & Regexp::EXTENDED).should       == 0
+    not_supported_on :opal do
+      (r.options & Regexp::EXTENDED).should       == 0
+    end
   end
 
   it "does not set Regexp options if second argument is nil or false" do
     r = Regexp.send(@method, 'Hi', nil)
     (r.options & Regexp::IGNORECASE).should     == 0
     (r.options & Regexp::MULTILINE).should      == 0
-    (r.options & Regexp::EXTENDED).should       == 0
+    not_supported_on :opal do
+      (r.options & Regexp::EXTENDED).should       == 0
+    end
 
     r = Regexp.send(@method, 'Hi', false)
     (r.options & Regexp::IGNORECASE).should     == 0
     (r.options & Regexp::MULTILINE).should      == 0
-    (r.options & Regexp::EXTENDED).should       == 0
+    not_supported_on :opal do
+      (r.options & Regexp::EXTENDED).should       == 0
+    end
   end
 
   it "sets options from second argument if it is one of the Fixnum option constants" do
     r = Regexp.send(@method, 'Hi', Regexp::IGNORECASE)
     (r.options & Regexp::IGNORECASE).should_not == 0
     (r.options & Regexp::MULTILINE).should      == 0
-    (r.options & Regexp::EXTENDED).should       == 0
+    not_supported_on :opal do
+      (r.options & Regexp::EXTENDED).should     == 0
+    end
 
     r = Regexp.send(@method, 'Hi', Regexp::MULTILINE)
     (r.options & Regexp::IGNORECASE).should     == 0
     (r.options & Regexp::MULTILINE).should_not  == 0
-    (r.options & Regexp::EXTENDED).should       == 0
+    not_supported_on :opal do
+      (r.options & Regexp::EXTENDED).should     == 0
+    end
 
-    r = Regexp.send(@method, 'Hi', Regexp::EXTENDED)
-    (r.options & Regexp::IGNORECASE).should     == 0
-    (r.options & Regexp::MULTILINE).should      == 0
-    (r.options & Regexp::EXTENDED).should_not   == 1
+    not_supported_on :opal do
+      r = Regexp.send(@method, 'Hi', Regexp::EXTENDED)
+      (r.options & Regexp::IGNORECASE).should     == 0
+      (r.options & Regexp::MULTILINE).should      == 0
+      (r.options & Regexp::EXTENDED).should_not   == 1
+    end
   end
 
   it "accepts a Fixnum of two or more options ORed together as the second argument" do
@@ -80,7 +92,9 @@ describe :regexp_new_string_ascii_8bit, :shared => true do
     r = Regexp.send(@method, 'Hi', Object.new)
     (r.options & Regexp::IGNORECASE).should_not == 0
     (r.options & Regexp::MULTILINE).should      == 0
-    (r.options & Regexp::EXTENDED).should       == 0
+    not_supported_on :opal do
+      (r.options & Regexp::EXTENDED).should     == 0
+    end
   end
 
   it "ignores the third argument if it is 'e' or 'euc' (case-insensitive)" do
@@ -482,17 +496,23 @@ describe :regexp_new_regexp_ascii_8bit, :shared => true do
   it "preserves any options given in the Regexp literal" do
     (Regexp.send(@method, /Hi/i).options & Regexp::IGNORECASE).should_not == 0
     (Regexp.send(@method, /Hi/m).options & Regexp::MULTILINE).should_not == 0
-    (Regexp.send(@method, /Hi/x).options & Regexp::EXTENDED).should_not == 0
+    not_supported_on :opal do
+      (Regexp.send(@method, /Hi/x).options & Regexp::EXTENDED).should_not == 0
+    end
 
-    r = Regexp.send @method, /Hi/imx
-    (r.options & Regexp::IGNORECASE).should_not == 0
-    (r.options & Regexp::MULTILINE).should_not == 0
-    (r.options & Regexp::EXTENDED).should_not == 0
+    not_supported_on :opal do
+      r = Regexp.send @method, /Hi/imx
+      (r.options & Regexp::IGNORECASE).should_not == 0
+      (r.options & Regexp::MULTILINE).should_not == 0
+      (r.options & Regexp::EXTENDED).should_not == 0
+    end
 
     r = Regexp.send @method, /Hi/
     (r.options & Regexp::IGNORECASE).should == 0
     (r.options & Regexp::MULTILINE).should == 0
-    (r.options & Regexp::EXTENDED).should == 0
+    not_supported_on :opal do
+      (r.options & Regexp::EXTENDED).should == 0
+    end
   end
 
   it "does not honour options given as additional arguments" do
@@ -500,23 +520,25 @@ describe :regexp_new_regexp_ascii_8bit, :shared => true do
     (r.options & Regexp::IGNORECASE).should == 0
   end
 
-  it "sets the encoding to UTF-8 if the Regexp literal has the 'u' option" do
-    Regexp.send(@method, /Hi/u).encoding.should == Encoding::UTF_8
-  end
+  not_supported_on :opal do
+    it "sets the encoding to UTF-8 if the Regexp literal has the 'u' option" do
+      Regexp.send(@method, /Hi/u).encoding.should == Encoding::UTF_8
+    end
 
-  it "sets the encoding to EUC-JP if the Regexp literal has the 'e' option" do
-    Regexp.send(@method, /Hi/e).encoding.should == Encoding::EUC_JP
-  end
+    it "sets the encoding to EUC-JP if the Regexp literal has the 'e' option" do
+      Regexp.send(@method, /Hi/e).encoding.should == Encoding::EUC_JP
+    end
 
-  it "sets the encoding to Windows-31J if the Regexp literal has the 's' option" do
-    Regexp.send(@method, /Hi/s).encoding.should == Encoding::Windows_31J
-  end
+    it "sets the encoding to Windows-31J if the Regexp literal has the 's' option" do
+      Regexp.send(@method, /Hi/s).encoding.should == Encoding::Windows_31J
+    end
 
-  it "sets the encoding to US-ASCII if the Regexp literal has the 'n' option and the source String is ASCII only" do
-    Regexp.send(@method, /Hi/n).encoding.should == Encoding::US_ASCII
-  end
+    it "sets the encoding to US-ASCII if the Regexp literal has the 'n' option and the source String is ASCII only" do
+      Regexp.send(@method, /Hi/n).encoding.should == Encoding::US_ASCII
+    end
 
-  it "sets the encoding to source String's encoding if the Regexp literal has the 'n' option and the source String is not ASCII only" do
-    Regexp.send(@method, /\xff/n).encoding.should == Encoding::ASCII_8BIT
+    it "sets the encoding to source String's encoding if the Regexp literal has the 'n' option and the source String is not ASCII only" do
+      Regexp.send(@method, Regexp.new("\\xff", nil, 'n')).encoding.should == Encoding::ASCII_8BIT
+    end
   end
 end

@@ -50,14 +50,14 @@ public class ReloadArgumentsTranslator extends Translator {
 
         if (node.getPreCount() > 0 || node.getOptArgs() != null) {
             if (node.getPre() != null) {
-                for (org.jruby.ast.Node arg : node.getPre().childNodes()) {
+                for (org.jruby.ast.Node arg : node.getPre().children()) {
                     sequence.add(arg.accept(this));
                     originalArgumentIndex++;
                 }
             }
 
             if (node.getOptArgs() != null) {
-                for (org.jruby.ast.Node arg : node.getOptArgs().childNodes()) {
+                for (org.jruby.ast.Node arg : node.getOptArgs().children()) {
                     sequence.add(arg.accept(this));
                 }
             }

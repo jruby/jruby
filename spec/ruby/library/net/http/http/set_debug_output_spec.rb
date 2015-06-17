@@ -4,16 +4,14 @@ require "stringio"
 require File.expand_path('../fixtures/http_server', __FILE__)
 
 describe "Net::HTTP#set_debug_output when passed io" do
-  before :all do
-    NetHTTPSpecs.start_server
-  end
-
-  after :all do
-    NetHTTPSpecs.stop_server
-  end
-
   before :each do
+    NetHTTPSpecs.start_server
     @http = Net::HTTP.new("localhost", 3333)
+  end
+
+  after :each do
+    @http.finish if @http.started?
+    NetHTTPSpecs.stop_server
   end
 
   it "sets the passed io as output stream for debugging" do

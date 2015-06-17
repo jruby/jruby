@@ -27,13 +27,17 @@ describe "Module#remove_const" do
   end
 
   it "raises a NameError and does not call #const_missing if the constant is not defined directly in the module" do
-    ConstantSpecs::ModuleM::CS_CONST255 = :const255
-    ConstantSpecs::ContainerA::CS_CONST255.should == :const255
-    ConstantSpecs::ContainerA.should_not_receive(:const_missing)
+    begin
+      ConstantSpecs::ModuleM::CS_CONST255 = :const255
+      ConstantSpecs::ContainerA::CS_CONST255.should == :const255
+      ConstantSpecs::ContainerA.should_not_receive(:const_missing)
 
-    lambda do
-      ConstantSpecs::ContainerA.send :remove_const, :CS_CONST255
-    end.should raise_error(NameError)
+      lambda do
+        ConstantSpecs::ContainerA.send :remove_const, :CS_CONST255
+      end.should raise_error(NameError)
+    ensure
+      ConstantSpecs::ModuleM.send :remove_const, "CS_CONST255"
+    end
   end
 
   it "raises a NameError if the name does not start with a capital letter" do

@@ -48,6 +48,9 @@ class OutputToFDMatcher
     ensure
       out.close unless out.closed?
       File.delete out.path
+      if !old_to.closed? and old_to.fileno != @to.fileno # reopen might create a new fd
+        old_to.close
+      end
     end
 
     return true

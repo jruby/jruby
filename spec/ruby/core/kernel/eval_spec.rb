@@ -124,12 +124,12 @@ describe "Kernel#eval" do
 
   it "allows creating a new class in a binding" do
     bind = proc {}
-    eval("class A; end; A.name", bind.binding).should =~ /A$/
+    eval("class EvalBindingProcA; end; EvalBindingProcA.name", bind.binding).should =~ /EvalBindingProcA$/
   end
 
   it "allows creating a new class in a binding created by #eval" do
     bind = eval "binding"
-    eval("class A; end; A.name", bind).should =~ /A$/
+    eval("class EvalBindingA; end; EvalBindingA.name", bind).should =~ /EvalBindingA$/
   end
 
   it "includes file and line information in syntax error" do

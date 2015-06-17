@@ -17,11 +17,13 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.SymbolProcNode;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyEncoding;
@@ -204,7 +206,7 @@ public abstract class SymbolNodes {
         }
 
         protected RubyProc createProc(RubyBasicObject symbol) {
-            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame()
+            final SourceSection sourceSection = RubyCallStack.getCallerFrame(getContext())
                     .getCallNode().getEncapsulatingSourceSection();
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(

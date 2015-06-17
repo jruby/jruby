@@ -32,7 +32,7 @@ class Object
     if args == :restore
       ARGV.replace(@__mspec_saved_argv__ || [])
     else
-      @__mspec_saved_argv__ = ARGV
+      @__mspec_saved_argv__ = ARGV.dup
       ARGV.replace args
       if block_given?
         begin

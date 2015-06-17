@@ -163,6 +163,7 @@ class MethodTranslator extends BodyTranslator {
 
         if (isBlock) {
             body = new RedoableNode(context, sourceSection, body);
+            body = new CatchNextNode(context, sourceSection, body);
             body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
 
             body = new BehaveAsProcNode(context, sourceSection,
@@ -172,7 +173,6 @@ class MethodTranslator extends BodyTranslator {
             body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID());
         }
 
-        body = new CatchNextNode(context, sourceSection, body);
         body = new CatchRetryAsErrorNode(context, sourceSection, body);
 
         if (!isBlock) {

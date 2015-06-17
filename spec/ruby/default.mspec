@@ -10,17 +10,20 @@ class MSpecScript
   # Standard library specs
   set :library, [ 'library' ]
 
+  # Command line specs
+  set :command_line, [ 'command_line' ]
+
+  # C extension API specs
+  set :capi, [ 'optional/capi' ]
+
+  # A list of _all_ optional specs
+  set :optional, get(:capi)
+
   # An ordered list of the directories containing specs to run
-  set :files, get(:language) + get(:core) + get(:library)
+  set :files, get(:command_line) + get(:language) + get(:core) + get(:library) + get(:optional)
 
   # This set of files is run by mspec ci
   set :ci_files, get(:files)
-
-  # Optional specs
-  set :capi, 'optional/capi'
-
-  # A list of _all_ optional specs
-  set :optional, [get(:capi)]
 
   # The default implementation to run the specs.
   # TODO: this needs to be more sophisticated since the

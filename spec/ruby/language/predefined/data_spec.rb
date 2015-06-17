@@ -37,6 +37,7 @@ describe "The DATA constant" do
         data.should == "false"
       ensure
         file.flock(File::LOCK_UN) if file
+        file.close if file
       end
     end
   end

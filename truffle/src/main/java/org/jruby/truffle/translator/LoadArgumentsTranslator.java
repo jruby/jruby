@@ -93,7 +93,7 @@ public class LoadArgumentsTranslator extends Translator {
         if (node.getPre() != null) {
             state = State.PRE;
             index = 0;
-            for (org.jruby.ast.Node arg : node.getPre().childNodes()) {
+            for (org.jruby.ast.Node arg : node.getPre().children()) {
                 sequence.add(arg.accept(this));
                 ++index;
                 required++;
@@ -104,7 +104,7 @@ public class LoadArgumentsTranslator extends Translator {
             // (BlockNode 0, (OptArgNode:a 0, (LocalAsgnNode:a 0, (FixnumNode 0))), ...)
             state = State.OPT;
             index = argsNode.getPreCount();
-            for (org.jruby.ast.Node arg : node.getOptArgs().childNodes()) {
+            for (org.jruby.ast.Node arg : node.getOptArgs().children()) {
                 sequence.add(arg.accept(this));
                 ++index;
             }
@@ -120,12 +120,11 @@ public class LoadArgumentsTranslator extends Translator {
         if (node.getPost() != null) {
             state = State.POST;
             index = -1;
-            final List<org.jruby.ast.Node> children = new ArrayList<>(node.getPost().childNodes());
-            Collections.reverse(children);
-            for (org.jruby.ast.Node arg : children) {
-                sequence.add(arg.accept(this));
-                index--;
+            org.jruby.ast.Node[] children = node.getPost().children();
+            for (int i = children.length - 1; i >= 0; i--) {
+                sequence.add(children[i].accept(this));
                 required++;
+                index--;
             }
         }
 
@@ -133,7 +132,7 @@ public class LoadArgumentsTranslator extends Translator {
             kwIndex = 0;
             countKwArgs = 0;
             
-            for (org.jruby.ast.Node arg : node.getKeywords().childNodes()) {
+            for (org.jruby.ast.Node arg : node.getKeywords().children()) {
                 sequence.add(arg.accept(this));
                 kwIndex++;
                 countKwArgs++;
@@ -328,7 +327,7 @@ public class LoadArgumentsTranslator extends Translator {
     public RubyNode visitArrayNode(org.jruby.ast.ArrayNode node) {
         // (ArrayNode 0, (MultipleAsgn19Node 0, (ArrayNode 0, (LocalAsgnNode:a 0, ), (LocalAsgnNode:b 0, )), null, null)))
         if (node.size() == 1 && node.get(0) instanceof MultipleAsgnNode) {
-            return node.childNodes().get(0).accept(this);
+            return node.children()[0].accept(this);
         } else {
             return defaultVisit(node);
         }
@@ -359,7 +358,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         if (node.getPre() != null) {
             index = 0;
-            for (org.jruby.ast.Node child : node.getPre().childNodes()) {
+            for (org.jruby.ast.Node child : node.getPre().children()) {
                 notNilSequence.add(child.accept(this));
                 index++;
             }
@@ -373,11 +372,11 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         if (node.getPost() != null) {
+            org.jruby.ast.Node[] children = node.getPost().children();
             index = -1;
-            final List<org.jruby.ast.Node> children = new ArrayList<>(node.getPost().childNodes());
-            Collections.reverse(children);
-            for (org.jruby.ast.Node child : children) {
-                notNilSequence.add(child.accept(this));
+            for (int i = children.length - 1; i >= 0; i--) {
+                notNilSequence.add(children[i].accept(this));
+                required++;
                 index--;
             }
         }
@@ -391,7 +390,7 @@ public class LoadArgumentsTranslator extends Translator {
         final ParameterCollector parametersToClearCollector = new ParameterCollector();
 
         if (node.getPre() != null) {
-            for (org.jruby.ast.Node child : node.getPre().childNodes()) {
+            for (org.jruby.ast.Node child : node.getPre().children()) {
                 child.accept(parametersToClearCollector);
             }
         }
@@ -408,7 +407,7 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         if (node.getPost() != null) {
-            for (org.jruby.ast.Node child : node.getPost().childNodes()) {
+            for (org.jruby.ast.Node child : node.getPost().children()) {
                 child.accept(parametersToClearCollector);
             }
         }

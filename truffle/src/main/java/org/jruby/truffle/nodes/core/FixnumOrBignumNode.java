@@ -21,6 +21,10 @@ import java.math.BigInteger;
 
 public class FixnumOrBignumNode extends RubyNode {
 
+    public static FixnumOrBignumNode create(RubyContext context, SourceSection sourceSection) {
+        return new FixnumOrBignumNode(context, sourceSection);
+    }
+
     public FixnumOrBignumNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }

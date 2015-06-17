@@ -40,6 +40,10 @@ describe :kernel_system, :shared => true do
     end
   end
 
+  after :each do
+    ENV.delete('TEST_SH_EXPANSION')
+  end
+
   it "expands shell variables when given a single string argument" do
     lambda { @object.system("echo #{@shell_var}") }.should output_to_fd("foo\n")
   end

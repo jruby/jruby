@@ -20,9 +20,11 @@ describe "MatchData#offset" do
     match_data.offset(4).should == [6, 7]
   end
 
-  it "returns the offset for multi byte strings with unicode regexp" do
-    match_data = /(.)(.)(\d+)(\d)/u.match("TñX1138.")
-    match_data.offset(0).should == [1, 7]
-    match_data.offset(4).should == [6, 7]
+  not_supported_on :opal do
+    it "returns the offset for multi byte strings with unicode regexp" do
+      match_data = /(.)(.)(\d+)(\d)/u.match("TñX1138.")
+      match_data.offset(0).should == [1, 7]
+      match_data.offset(4).should == [6, 7]
+    end
   end
 end

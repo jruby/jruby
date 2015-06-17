@@ -5,8 +5,11 @@ require File.expand_path('../closed', __FILE__)
 describe :dir_path, :shared => true do
   it "returns the path that was supplied to .new or .open" do
     dir = Dir.open DirSpecs.mock_dir
-    dir.send(@method).should == DirSpecs.mock_dir
-    dir.close rescue nil
+    begin
+      dir.send(@method).should == DirSpecs.mock_dir
+    ensure
+      dir.close rescue nil
+    end
   end
 
   it "returns the path even when called on a closed Dir instance" do
@@ -19,7 +22,11 @@ describe :dir_path, :shared => true do
     it "returns a String with the same encoding as the argument to .open" do
       path = DirSpecs.mock_dir.force_encoding Encoding::IBM866
       dir = Dir.open path
-      dir.send(@method).encoding.should equal(Encoding::IBM866)
+      begin
+        dir.send(@method).encoding.should equal(Encoding::IBM866)
+      ensure
+        dir.close
+      end
     end
   end
 end

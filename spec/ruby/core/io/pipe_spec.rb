@@ -12,16 +12,24 @@ describe "IO.pipe" do
 
   it "returns two IO objects" do
     r,w = IO.pipe
-    r.should be_kind_of(IO)
-    w.should be_kind_of(IO)
+    begin
+      r.should be_kind_of(IO)
+      w.should be_kind_of(IO)
+    ensure
+      w.close
+      r.close
+    end
   end
 
   it "returns instances of a subclass when called on a subclass" do
     r, w = IOSpecs::SubIO.pipe
-    r.should be_an_instance_of(IOSpecs::SubIO)
-    w.should be_an_instance_of(IOSpecs::SubIO)
-    w.close
-    r.close
+    begin
+      r.should be_an_instance_of(IOSpecs::SubIO)
+      w.should be_an_instance_of(IOSpecs::SubIO)
+    ensure
+      w.close
+      r.close
+    end
   end
 
   describe "passed a block" do

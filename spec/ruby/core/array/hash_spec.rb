@@ -13,10 +13,10 @@ describe "Array#hash" do
 
   it "properly handles recursive arrays" do
     empty = ArraySpecs.empty_recursive_array
-    empty.hash.should be_kind_of(Fixnum)
+    lambda { empty.hash }.should_not raise_error
 
     array = ArraySpecs.recursive_array
-    array.hash.should be_kind_of(Fixnum)
+    lambda { empty.hash }.should_not raise_error
   end
 
   it "returns the same hash for equal recursive arrays" do
@@ -37,7 +37,7 @@ describe "Array#hash" do
   end
 
   #  Too much of an implementation detail? -rue
-  not_compliant_on :rubinius, :opal do
+  not_supported_on :rubinius, :opal do
     it "calls to_int on result of calling hash on each element" do
       ary = Array.new(5) do
         # Can't use should_receive here because it calls hash()
