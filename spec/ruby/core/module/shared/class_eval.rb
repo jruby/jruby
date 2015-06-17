@@ -17,6 +17,14 @@ describe :module_class_eval, :shared => true do
     lambda {42.foo}.should raise_error(NoMethodError)
   end
 
+  it "resolves constants in the caller scope" do
+    ModuleSpecs::ClassEvalTest.get_constant_from_scope.should == ModuleSpecs::Lookup
+  end
+
+  it "resolves constants in the caller scope ignoring send" do
+    ModuleSpecs::ClassEvalTest.get_constant_from_scope_with_send(@method).should == ModuleSpecs::Lookup
+  end
+
   it "resolves constants in the receiver's scope" do
     ModuleSpecs.send(@method, "Lookup").should == ModuleSpecs::Lookup
     ModuleSpecs.send(@method, "Lookup::LOOKIE").should == ModuleSpecs::Lookup::LOOKIE
