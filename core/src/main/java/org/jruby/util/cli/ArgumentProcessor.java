@@ -556,8 +556,8 @@ public class ArgumentProcessor {
         // jruby.home = a jar file URL that does not resolve correctly with
         // JRubyFile.create.
         String result = resolve(config.getCurrentDirectory(), scriptName);
-        if (result != null) return result;
-        result = resolve(config.getJRubyHome() + "/bin", scriptName);
+        if (result != null) return scriptName;// use relative filename
+                result = resolve(config.getJRubyHome() + "/bin", scriptName);
         if (result != null) return result;
         result = resolve("uri:classloader:/bin", scriptName);
         if (result != null) return result;
