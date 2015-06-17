@@ -17,6 +17,11 @@ describe :module_class_eval, :shared => true do
     lambda {42.foo}.should raise_error(NoMethodError)
   end
 
+  it "resolves constants in the receiver's scope" do
+    ModuleSpecs.send(@method, "Lookup").should == ModuleSpecs::Lookup
+    ModuleSpecs.send(@method, "Lookup::LOOKIE").should == ModuleSpecs::Lookup::LOOKIE
+  end
+
   it "defines constants in the receiver's scope" do
     ModuleSpecs.send(@method, "module NewEvaluatedModule;end")
     ModuleSpecs.const_defined?(:NewEvaluatedModule, false).should == true
