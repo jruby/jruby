@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.translator;
 
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
@@ -32,6 +34,7 @@ import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -126,12 +129,16 @@ public class TranslatorDriver {
     public RubyRootNode parse(Node currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, org.jruby.ast.RootNode rootNode, NodeWrapper wrapper) {
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
 
-        final LexicalScope lexicalScope;
         final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame.getArguments());
+        LexicalScope lexicalScope;
         if (parentMethod != null && parentMethod.getSharedMethodInfo().getLexicalScope() != null) {
             lexicalScope = parentMethod.getSharedMethodInfo().getLexicalScope();
         } else {
             lexicalScope = context.getRootLexicalScope();
+        }
+        if (parserContext == TranslatorDriver.ParserContext.MODULE) {
+            Object module = RubyArguments.getSelf(Truffle.getRuntime().getCurrentFrame().getFrame(FrameAccess.READ_ONLY, true).getArguments());
+            lexicalScope = new LexicalScope(lexicalScope, (RubyModule) module);
         }
         parseEnvironment.resetLexicalScope(lexicalScope);
 
