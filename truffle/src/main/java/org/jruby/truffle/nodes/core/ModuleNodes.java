@@ -382,7 +382,7 @@ public abstract class ModuleNodes {
             final String name = nameToJavaStringNode.executeToJavaString(frame, nameObject);
 
             CompilerDirectives.transferToInterpreter();
-            final FrameInstance callerFrame = Truffle.getRuntime().getCallerFrame();
+            final FrameInstance callerFrame = RubyCallStack.getCallerFrame(getContext());
             final SourceSection sourceSection = callerFrame.getCallNode().getEncapsulatingSourceSection();
             final Visibility visibility = AddMethodNode.getVisibility(callerFrame.getFrame(FrameAccess.READ_ONLY, true));
             final Arity arity = isGetter ? Arity.NO_ARGUMENTS : Arity.ONE_REQUIRED;

@@ -21,6 +21,7 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -268,7 +269,7 @@ public abstract class KernelNodes {
         public RubyBinding binding() {
             // Materialize the caller's frame - false means don't use a slow path to get it - we want to optimize it
 
-            final MaterializedFrame callerFrame = Truffle.getRuntime().getCallerFrame()
+            final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
 
             return new RubyBinding(
@@ -716,7 +717,7 @@ public abstract class KernelNodes {
 
             // Set the local variable $_ in the caller
 
-            final Frame caller = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+            final Frame caller = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
             final FrameSlot slot = caller.getFrameDescriptor().findFrameSlot("$_");
 
@@ -965,7 +966,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public RubyProc proc(NotProvided block) {
-            final Frame parentFrame = Truffle.getRuntime().getCallerFrame().getFrame(FrameAccess.READ_ONLY, true);
+            final Frame parentFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
             final RubyProc parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
 
             if (parentBlock == null) {
@@ -1033,7 +1034,7 @@ public abstract class KernelNodes {
 
             final RubyBasicObject array = createEmptyArray();
 
-            for (Object name : Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
+            for (Object name : RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
                 if (name instanceof String) {
                     ArrayNodes.slowPush(array, getSymbol((String) name));
                 }
@@ -1342,14 +1343,14 @@ public abstract class KernelNodes {
 
             // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
 
-            if (feature.toString().equals("strscan") && Truffle.getRuntime().getCallerFrame().getCallNode()
+            if (feature.toString().equals("strscan") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
                     .getEncapsulatingSourceSection().getSource().getName().endsWith("erb.rb")) {
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature.toString(), this));
             }
 
             // TODO CS 19-May-15 securerandom will use openssl if it's there, but we've only shimmed it
 
-            if (feature.toString().equals("openssl") && Truffle.getRuntime().getCallerFrame().getCallNode()
+            if (feature.toString().equals("openssl") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
                     .getEncapsulatingSourceSection().getSource().getName().endsWith("securerandom.rb")) {
                 getContext().getCoreLibrary().getObjectClass().getConstants().remove("OpenSSL");
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature.toString(), this));
@@ -1384,7 +1385,7 @@ public abstract class KernelNodes {
             if (featureManager.isAbsolutePath(featureString)) {
                 featurePath = featureString;
             } else {
-                final Source source = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource();
+                final Source source = RubyCallStack.getCallerFrame(getContext()).getCallNode().getEncapsulatingSourceSection().getSource();
                 final String sourcePath = featureManager.getSourcePath(source);
 
                 if (sourcePath == null) {
