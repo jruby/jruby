@@ -19,7 +19,7 @@ describe :module_class_eval, :shared => true do
 
   it "defines constants in the receiver's scope" do
     ModuleSpecs.send(@method, "module NewEvaluatedModule;end")
-    ModuleSpecs.const_defined?(:NewEvaluatedModule).should == true
+    ModuleSpecs.const_defined?(:NewEvaluatedModule, false).should == true
   end
 
   it "evaluates a given block in the context of self" do
