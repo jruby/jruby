@@ -604,7 +604,7 @@ public abstract class ArrayNodes {
             CompilerDirectives.transferToInterpreter();
             if (respondToToStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null, null}));
+                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
             if (respondToToStrNode.doesRespondToString(frame, object, (RubyString) createString("to_str"), false)) {
                 return ruby(frame, "join(sep.to_str)", "sep", object);
@@ -1810,7 +1810,7 @@ public abstract class ArrayNodes {
             RubyArray copy = null;
             if (respondToToAryNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null, null}));
+                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
             if (respondToToAryNode.doesRespondToString(frame, object, (RubyString) createString("to_ary"), true)) {
                 if (toAryNode == null) {

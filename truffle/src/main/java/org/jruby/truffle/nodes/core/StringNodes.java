@@ -371,7 +371,7 @@ public abstract class StringNodes {
         public boolean equal(VirtualFrame frame, RubyString a, Object b) {
             if (respondToNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                respondToNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null, null }));
+                respondToNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
             if (respondToNode.doesRespondToString(frame, b, (RubyString) StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "to_str"), false)) {
@@ -419,7 +419,7 @@ public abstract class StringNodes {
 
             if (respondToToStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null, null }));
+                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
             if (respondToToStrNode.doesRespondToString(frame, b, (RubyString) StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "to_str"), false)) {
@@ -443,7 +443,7 @@ public abstract class StringNodes {
 
             if (respondToCmpNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                respondToCmpNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null, null }));
+                respondToCmpNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
             if (respondToCmpNode.doesRespondToString(frame, b, (RubyString) StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "<=>"), false)) {
