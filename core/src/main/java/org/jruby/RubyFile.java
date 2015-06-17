@@ -674,10 +674,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         // address all the url like paths first
         if (name.contains(":/") || name.contains("!/")) {
-            int start = Math.max(name.indexOf(":/"), name.indexOf("!/"));
-            String path = dirname(context, name.substring(start + 2));
-            if (path.equals(".")) path = "";
-            return name.substring(0, start + 2) + path;
+            int start = Math.max(name.indexOf(":/"), name.indexOf("!/")) + 2;
+            String path = dirname(context, name.substring(start));
+            if (path.equals(".") || path.equals("/")) path = "";
+            if (name.contains("!/") &&
+                (path.startsWith("/") || path.equals(""))) {
+                start = start - 1;
+            }
+            return name.substring(0, start) + path;
         }
 
         while (name.length() > minPathLength && name.charAt(name.length() - 1) == '/') {

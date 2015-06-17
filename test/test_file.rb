@@ -325,14 +325,14 @@ class TestFile < Test::Unit::TestCase
 
   def test_dirname_jar_protocol
     assert_equal("/my.jar!/a", File.dirname("/my.jar!/a/b"))
-    assert_equal("/my.jar!/", File.dirname("/my.jar!/a"))
-    assert_equal("/my.jar!/", File.dirname("/my.jar!/"))
+    assert_equal("/my.jar!", File.dirname("/my.jar!/a"))
+    assert_equal("/my.jar!", File.dirname("/my.jar!/"))
     assert_equal("file:/my.jar!/a", File.dirname("file:/my.jar!/a/b"))
-    assert_equal("file:/my.jar!/", File.dirname("file:/my.jar!/a"))
-    assert_equal("file:/my.jar!/", File.dirname("file:/my.jar!/"))
+    assert_equal("file:/my.jar!", File.dirname("file:/my.jar!/a"))
+    assert_equal("file:/my.jar!", File.dirname("file:/my.jar!/"))
     assert_equal("jar:file:/my.jar!/a", File.dirname("jar:file:/my.jar!/a/b"))
-    assert_equal("jar:file:/my.jar!/", File.dirname("jar:file:/my.jar!/a"))
-    assert_equal("jar:file:/my.jar!/", File.dirname("jar:file:/my.jar!/"))
+    assert_equal("jar:file:/my.jar!", File.dirname("jar:file:/my.jar!/a"))
+    assert_equal("jar:file:/my.jar!", File.dirname("jar:file:/my.jar!/"))
   end
 
   def test_extname
