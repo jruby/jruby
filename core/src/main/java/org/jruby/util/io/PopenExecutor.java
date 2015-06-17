@@ -1080,7 +1080,7 @@ public class PopenExecutor {
         int i;
         int ret;
 
-        for (i = 0; i < ary.size();) {
+        for (i = 0; i < ary.size(); i++) {
             RubyArray elt = (RubyArray)ary.eltOk(i);
             int fd;
             RubyArray param = (RubyArray)elt.eltOk(1);
