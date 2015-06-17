@@ -12,8 +12,12 @@ project 'JRuby Truffle' do
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
-  jar 'com.oracle:truffle:0.8-SNAPSHOT'
-  jar 'com.oracle:truffle-dsl-processor:0.8-SNAPSHOT', :scope => 'provided'
+  repository( :url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/',
+              :id => 'truffle' )
+
+  truffle_version = '0.8-ef8c90391f1ec21bcfb6d5c6fb39757b860d4973-SNAPSHOT'
+  jar 'com.oracle:truffle:' + truffle_version
+  jar 'com.oracle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
 
   plugin( :compiler,
           'encoding' => 'utf-8',

@@ -24,15 +24,21 @@
     <dependency>
       <groupId>com.oracle</groupId>
       <artifactId>truffle</artifactId>
-      <version>0.8-SNAPSHOT</version>
+      <version>0.8-ef8c90391f1ec21bcfb6d5c6fb39757b860d4973-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.oracle</groupId>
       <artifactId>truffle-dsl-processor</artifactId>
-      <version>0.8-SNAPSHOT</version>
+      <version>0.8-ef8c90391f1ec21bcfb6d5c6fb39757b860d4973-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
+  <repositories>
+    <repository>
+      <id>truffle</id>
+      <url>http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/</url>
+    </repository>
+  </repositories>
   <build>
     <defaultGoal>package</defaultGoal>
     <resources>
