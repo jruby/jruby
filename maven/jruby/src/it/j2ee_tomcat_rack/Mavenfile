@@ -5,7 +5,6 @@ packaging 'war'
 
 # get jruby dependencies
 properties( 'jruby.version' => '@project.version@',
-            'jruby.home' => '../../../../../',
             'jruby.plugins.version' => '1.0.7',
             'project.build.sourceEncoding' => 'utf-8',
             'public.dir' => '${basedir}/public' )

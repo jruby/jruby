@@ -8,7 +8,6 @@
   <packaging>war</packaging>
   <name>j2ee_tomcat_rack</name>
   <properties>
-    <jruby.home>../../../../../</jruby.home>
     <jruby.version>@project.version@</jruby.version>
     <jruby.plugins.version>1.0.7</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
