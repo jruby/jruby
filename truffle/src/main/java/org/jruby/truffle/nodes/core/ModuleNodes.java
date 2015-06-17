@@ -23,6 +23,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -587,20 +588,11 @@ public abstract class ModuleNodes {
     public abstract static class ClassEvalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldDispatchHeadNode yield;
-        @Child private BindingNode bindingNode;
         @Child private ToStrNode toStrNode;
 
         public ClassEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             yield = new YieldDispatchHeadNode(context);
-        }
-
-        protected RubyBinding getCallerBinding(VirtualFrame frame) {
-            if (bindingNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
-            }
-            return bindingNode.executeRubyBinding(frame);
         }
 
         protected RubyBasicObject toStr(VirtualFrame frame, Object object) {
@@ -637,13 +629,14 @@ public abstract class ModuleNodes {
         }
 
         private Object classEvalSource(VirtualFrame frame, RubyModule module, RubyString code, String file) {
-            RubyBinding binding = getCallerBinding(frame);
+            final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
+                    .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
             Encoding encoding = StringNodes.getByteList(code).getEncoding();
 
             CompilerDirectives.transferToInterpreter();
             Source source = Source.fromText(code.toString(), file);
 
-            return getContext().execute(source, encoding, TranslatorDriver.ParserContext.MODULE, module, binding.getFrame(), this, new NodeWrapper() {
+            return getContext().execute(source, encoding, TranslatorDriver.ParserContext.MODULE, module, callerFrame, this, new NodeWrapper() {
                 @Override
                 public RubyNode wrap(RubyNode node) {
                     return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "class_eval", node);
