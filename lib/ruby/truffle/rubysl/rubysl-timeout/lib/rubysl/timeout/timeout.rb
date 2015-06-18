@@ -122,7 +122,6 @@ module Timeout
 
   # Spin up the thread up front to avoid a thread collision problem spinning
   # it up lazily.
-  puts caller
   @controller = Thread.new { watch_channel }
 
   def self.add_timeout(time, exc)
