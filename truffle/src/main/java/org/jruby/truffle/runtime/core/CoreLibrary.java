@@ -357,7 +357,7 @@ public class CoreLibrary {
 
         rubiniusFFIModule = defineModule(rubiniusModule, "FFI");
         defineModule(defineModule(rubiniusFFIModule, "Platform"), "POSIX");
-        defineClass(rubiniusFFIModule, objectClass, "Pointer", new PointerPrimitiveNodes.PointerAllocator());
+        defineClass(rubiniusFFIModule, objectClass, "Pointer", new PointerNodes.PointerAllocator());
         defineModule(rubiniusModule, "Type");
 
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");

@@ -30,49 +30,6 @@ import java.util.EnumSet;
 
 public abstract class PointerPrimitiveNodes {
 
-    public static final Pointer NULL_POINTER = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().newOpaquePointer(0);
-
-    private static final HiddenKey POINTER_IDENTIFIER = new HiddenKey("pointer");
-    private static final Property POINTER_PROPERTY;
-    private static final DynamicObjectFactory POINTER_FACTORY;
-
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        POINTER_PROPERTY = Property.create(POINTER_IDENTIFIER, allocator.locationForType(Pointer.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        POINTER_FACTORY = RubyBasicObject.EMPTY_SHAPE.addProperty(POINTER_PROPERTY).createFactory();
-    }
-
-    public static class PointerAllocator implements Allocator {
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return PointerPrimitiveNodes.createPointer(rubyClass, NULL_POINTER);
-        }
-    }
-
-    public static RubyBasicObject createPointer(RubyClass rubyClass, Pointer pointer) {
-        if (pointer == null) {
-            pointer = NULL_POINTER;
-        }
-
-        return new RubyBasicObject(rubyClass, POINTER_FACTORY.newInstance(pointer));
-    }
-
-    public static void setPointer(RubyBasicObject pointer, Pointer newPointer) {
-        assert newPointer != null;
-        assert pointer.getDynamicObject().getShape().hasProperty(POINTER_IDENTIFIER);
-
-        try {
-            POINTER_PROPERTY.set(pointer.getDynamicObject(), newPointer, pointer.getDynamicObject().getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException(e);
-        }
-    }
-
-    public static Pointer getPointer(RubyBasicObject pointer) {
-        assert pointer.getDynamicObject().getShape().hasProperty(POINTER_IDENTIFIER);
-        return (Pointer) POINTER_PROPERTY.get(pointer.getDynamicObject(), true);
-    }
-
     @RubiniusPrimitive(name = "pointer_malloc")
     public static abstract class PointerMallocPrimitiveNode extends RubiniusPrimitiveNode {
 
@@ -87,7 +44,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject malloc(RubyClass pointerClass, long size) {
-            return createPointer(pointerClass, getMemoryManager().newPointer(UnsafeHolder.U.allocateMemory(size)));
+            return PointerNodes.createPointer(pointerClass, getMemoryManager().newPointer(UnsafeHolder.U.allocateMemory(size)));
         }
 
     }
@@ -101,7 +58,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject free(RubyBasicObject pointer) {
-            UnsafeHolder.U.freeMemory(getPointer(pointer).address());
+            UnsafeHolder.U.freeMemory(PointerNodes.getPointer(pointer).address());
             return pointer;
         }
 
@@ -121,7 +78,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public long setAddress(RubyBasicObject pointer, long address) {
-            setPointer(pointer, getMemoryManager().newPointer(address));
+            PointerNodes.setPointer(pointer, getMemoryManager().newPointer(address));
             return address;
         }
 
@@ -141,7 +98,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject add(RubyBasicObject a, long b) {
-            return createPointer(a.getLogicalClass(), getMemoryManager().newPointer(getPointer(a).address() + b));
+            return PointerNodes.createPointer(a.getLogicalClass(), getMemoryManager().newPointer(PointerNodes.getPointer(a).address() + b));
         }
 
     }
@@ -155,7 +112,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization(guards = "isSigned(signed)")
         public int readInt(RubyBasicObject pointer, boolean signed) {
-            return getPointer(pointer).getInt(0);
+            return PointerNodes.getPointer(pointer).getInt(0);
         }
 
         protected boolean isSigned(boolean signed) {
@@ -174,7 +131,7 @@ public abstract class PointerPrimitiveNodes {
         @Specialization
         public RubyBasicObject readString(RubyBasicObject pointer, int length) {
             final byte[] bytes = new byte[length];
-            getPointer(pointer).get(0, bytes, 0, length);
+            PointerNodes.getPointer(pointer).get(0, bytes, 0, length);
             return createString(bytes);
         }
 
@@ -205,25 +162,25 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization(guards = "type == TYPE_INT")
         public int setAtOffsetInt(RubyBasicObject pointer, int offset, int type, int value) {
-            getPointer(pointer).putInt(offset, value);
+            PointerNodes.getPointer(pointer).putInt(offset, value);
             return value;
         }
 
         @Specialization(guards = "type == TYPE_LONG")
         public long setAtOffsetLong(RubyBasicObject pointer, int offset, int type, long value) {
-            getPointer(pointer).putLong(offset, value);
+            PointerNodes.getPointer(pointer).putLong(offset, value);
             return value;
         }
 
         @Specialization(guards = "type == TYPE_ULONG")
         public long setAtOffsetULong(RubyBasicObject pointer, int offset, int type, long value) {
-            getPointer(pointer).putLong(offset, value);
+            PointerNodes.getPointer(pointer).putLong(offset, value);
             return value;
         }
 
         @Specialization(guards = "type == TYPE_ULL")
         public long setAtOffsetULL(RubyBasicObject pointer, int offset, int type, long value) {
-            getPointer(pointer).putLongLong(offset, value);
+            PointerNodes.getPointer(pointer).putLongLong(offset, value);
             return value;
         }
 
@@ -238,7 +195,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject readPointer(RubyBasicObject pointer) {
-            return createPointer(pointer.getLogicalClass(), getPointer(pointer).getPointer(0));
+            return PointerNodes.createPointer(pointer.getLogicalClass(), PointerNodes.getPointer(pointer).getPointer(0));
         }
 
     }
@@ -252,7 +209,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public long address(RubyBasicObject pointer) {
-            return getPointer(pointer).address();
+            return PointerNodes.getPointer(pointer).address();
         }
 
     }
@@ -267,57 +224,57 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization(guards = "type == TYPE_CHAR")
         public int getAtOffsetChar(RubyBasicObject pointer, int offset, int type) {
-            return getPointer(pointer).getByte(offset);
+            return PointerNodes.getPointer(pointer).getByte(offset);
         }
 
         @Specialization(guards = "type == TYPE_UCHAR")
         public int getAtOffsetUChar(RubyBasicObject pointer, int offset, int type) {
-            return getPointer(pointer).getByte(offset);
+            return PointerNodes.getPointer(pointer).getByte(offset);
         }
 
         @Specialization(guards = "type == TYPE_INT")
         public int getAtOffsetInt(RubyBasicObject pointer, int offset, int type) {
-            return getPointer(pointer).getInt(offset);
+            return PointerNodes.getPointer(pointer).getInt(offset);
         }
 
         @Specialization(guards = "type == TYPE_SHORT")
         public int getAtOffsetShort(RubyBasicObject pointer, int offset, int type) {
-            return getPointer(pointer).getShort(offset);
+            return PointerNodes.getPointer(pointer).getShort(offset);
         }
 
         @Specialization(guards = "type == TYPE_USHORT")
         public int getAtOffsetUShort(RubyBasicObject pointer, int offset, int type) {
-            return getPointer(pointer).getShort(offset);
+            return PointerNodes.getPointer(pointer).getShort(offset);
         }
 
         @Specialization(guards = "type == TYPE_LONG")
         public long getAtOffsetLong(RubyBasicObject pointer, int offset, int type) {
-            return getPointer(pointer).getLong(offset);
+            return PointerNodes.getPointer(pointer).getLong(offset);
         }
 
         @Specialization(guards = "type == TYPE_ULONG")
         public long getAtOffsetULong(RubyBasicObject pointer, int offset, int type) {
-            return getPointer(pointer).getLong(offset);
+            return PointerNodes.getPointer(pointer).getLong(offset);
         }
 
         @Specialization(guards = "type == TYPE_ULL")
         public long getAtOffsetULL(RubyBasicObject pointer, int offset, int type) {
-            return getPointer(pointer).getLongLong(offset);
+            return PointerNodes.getPointer(pointer).getLongLong(offset);
         }
 
         @Specialization(guards = "type == TYPE_STRING")
         public RubyBasicObject getAtOffsetString(RubyBasicObject pointer, int offset, int type) {
-            return createString(getPointer(pointer).getString(offset));
+            return createString(PointerNodes.getPointer(pointer).getString(offset));
         }
 
         @Specialization(guards = "type == TYPE_PTR")
         public RubyBasicObject getAtOffsetPointer(RubyBasicObject pointer, int offset, int type) {
-            final Pointer readPointer = getPointer(pointer).getPointer(offset);
+            final Pointer readPointer = PointerNodes.getPointer(pointer).getPointer(offset);
 
             if (readPointer == null) {
                 return nil();
             } else {
-                return createPointer(pointer.getLogicalClass(), readPointer);
+                return PointerNodes.createPointer(pointer.getLogicalClass(), readPointer);
             }
         }
 
@@ -334,7 +291,7 @@ public abstract class PointerPrimitiveNodes {
         public RubyBasicObject address(RubyBasicObject pointer, RubyString string, int maxLength) {
             final ByteList bytes = StringNodes.getByteList(string);
             final int length = Math.min(bytes.length(), maxLength);
-            getPointer(pointer).put(0, bytes.unsafeBytes(), bytes.begin(), length);
+            PointerNodes.getPointer(pointer).put(0, bytes.unsafeBytes(), bytes.begin(), length);
             return pointer;
         }
 
@@ -349,7 +306,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject readStringToNull(RubyBasicObject pointer) {
-            return createString(MemoryIO.getInstance().getZeroTerminatedByteArray(getPointer(pointer).address()));
+            return createString(MemoryIO.getInstance().getZeroTerminatedByteArray(PointerNodes.getPointer(pointer).address()));
         }
 
     }
@@ -363,7 +320,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject address(RubyBasicObject pointer, int value) {
-            getPointer(pointer).putInt(0, value);
+            PointerNodes.getPointer(pointer).putInt(0, value);
             return pointer;
         }
 
