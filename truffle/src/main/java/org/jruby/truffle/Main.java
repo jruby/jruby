@@ -17,59 +17,59 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class Main {
 
-	public static void main(String[] args) {
-		final RubyInstanceConfig config = new RubyInstanceConfig();
-		config.setHardExit(true);
-		config.processArguments(args);
+    public static void main(String[] args) {
+        final RubyInstanceConfig config = new RubyInstanceConfig();
+        config.setHardExit(true);
+        config.processArguments(args);
 
-		InputStream in = config.getScriptSource();
-		String filename = config.displayedFileName();
+        InputStream in = config.getScriptSource();
+        String filename = config.displayedFileName();
 
-		final Ruby runtime = Ruby.newInstance(config);
-		final AtomicBoolean didTeardown = new AtomicBoolean();
+        final Ruby runtime = Ruby.newInstance(config);
+        final AtomicBoolean didTeardown = new AtomicBoolean();
 
-		config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
+        config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
 
-		if (config.isHardExit()) {
-			// we're the command-line JRuby, and should set a shutdown hook for
-			// teardown.
-			Runtime.getRuntime().addShutdownHook(new Thread() {
-				public void run() {
-					if (didTeardown.compareAndSet(false, true)) {
-						runtime.tearDown();
-					}
-				}
-			});
-		}
+        if (config.isHardExit()) {
+            // We're the command-line JRuby, and should set a shutdown hook for
+            // teardown.
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                public void run() {
+                    if (didTeardown.compareAndSet(false, true)) {
+                        runtime.tearDown();
+                    }
+                }
+            });
+        }
 
-		if (in == null) {
-			return;
-		} else {
+        if (in == null) {
+            return;
+        } else {
 
-			// global variables
-			IAccessor d = new ValueAccessor(runtime.newString(filename));
-			runtime.getGlobalVariables().define("$PROGRAM_NAME", d,
-					GlobalVariable.Scope.GLOBAL);
-			runtime.getGlobalVariables().define("$0", d,
-					GlobalVariable.Scope.GLOBAL);
+            // Global variables
+            IAccessor d = new ValueAccessor(runtime.newString(filename));
+            runtime.getGlobalVariables().define("$PROGRAM_NAME", d,
+                    GlobalVariable.Scope.GLOBAL);
+            runtime.getGlobalVariables().define("$0", d,
+                    GlobalVariable.Scope.GLOBAL);
 
-			for (Iterator i = config.getOptionGlobals().entrySet().iterator(); i.hasNext();) {
-				Map.Entry entry = (Map.Entry) i.next();
-				Object value = entry.getValue();
-				IRubyObject varvalue;
-				if (value != null) {
-					varvalue = runtime.newString(value.toString());
-				} else {
-					varvalue = runtime.getTrue();
-				}
-				runtime.getGlobalVariables().set(
-						"$" + entry.getKey().toString(), varvalue);
-			}
+            for (Iterator i = config.getOptionGlobals().entrySet().iterator(); i.hasNext();) {
+                Map.Entry entry = (Map.Entry) i.next();
+                Object value = entry.getValue();
+                IRubyObject varvalue;
+                if (value != null) {
+                    varvalue = runtime.newString(value.toString());
+                } else {
+                    varvalue = runtime.getTrue();
+                }
+                runtime.getGlobalVariables().set(
+                        "$" + entry.getKey().toString(), varvalue);
+            }
 
-			RootNode scriptNode = (RootNode) runtime
-					.parseFromMain(filename, in);
+            RootNode scriptNode = (RootNode) runtime
+                    .parseFromMain(filename, in);
 
-			// if no DATA, we're done with the stream, shut it down
+            // If no DATA, we're done with the stream, shut it down
 			if (runtime.fetchGlobalConstant("DATA") == null) {
 				try {
 					in.close();
