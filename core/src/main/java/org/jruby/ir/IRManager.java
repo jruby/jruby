@@ -3,6 +3,7 @@ package org.jruby.ir;
 import java.util.EnumSet;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.listeners.InstructionsListener;
 import org.jruby.ir.operands.*;
@@ -177,6 +178,33 @@ public class IRManager {
             irScopeListener = listener;
         }
     }
+
+    public LineNumberInstr newLineNumber(int line) {
+        if (line >= lineNumbers.length-1) growLineNumbersPool(line);
+
+        if (line < 0) line = 0;
+        LineNumberInstr tempVar = lineNumbers[line];
+
+        if (tempVar == null) {
+            tempVar = new LineNumberInstr(line);
+            lineNumbers[line] = tempVar;
+        }
+
+        return tempVar;
+
+    }
+
+    private LineNumberInstr[] lineNumbers = new LineNumberInstr[3000];
+
+    protected LineNumberInstr[] growLineNumbersPool(int index) {
+        int newLength = index * 2;
+        LineNumberInstr[] newPool = new LineNumberInstr[newLength];
+
+        System.arraycopy(lineNumbers, 0, newPool, 0, lineNumbers.length);
+        lineNumbers = newPool;
+        return newPool;
+    }
+
 
     public void removeListener(IRScopeListener listener) {
         if (irScopeListener.equals(listener)) irScopeListener = null;

@@ -479,7 +479,7 @@ public class IRBuilder {
                 if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
                     addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), currLineNum));
                 }
-               addInstr(new LineNumberInstr(currLineNum));
+               addInstr(manager.newLineNumber(currLineNum));
                _lastProcessedLineNum = currLineNum;
             }
         }
@@ -3256,7 +3256,7 @@ public class IRBuilder {
     }
 
     public InterpreterContext buildEvalRoot(RootNode rootNode) {
-        addInstr(new LineNumberInstr(scope.getLineNumber()));
+        addInstr(manager.newLineNumber(scope.getLineNumber()));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
