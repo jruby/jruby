@@ -124,7 +124,7 @@ public class CoreLibrary {
     private final RubyModule kernelModule;
     private final RubyModule rubiniusModule;
     private final RubyModule rubiniusFFIModule;
-    private final RubyClass rubiniusMirrorModule;
+    private final RubyClass rubiniusMirrorClass;
     private final RubyModule signalModule;
     private final RubyModule truffleModule;
     private final RubyClass bigDecimalClass;
@@ -358,7 +358,7 @@ public class CoreLibrary {
         defineModule(defineModule(rubiniusFFIModule, "Platform"), "POSIX");
         defineClass(rubiniusFFIModule, objectClass, "Pointer", new PointerPrimitiveNodes.PointerAllocator());
 
-        rubiniusMirrorModule = defineClass(rubiniusModule, objectClass, "Mirror");
+        rubiniusMirrorClass = defineClass(rubiniusModule, objectClass, "Mirror");
         defineModule(rubiniusModule, "Type");
 
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
@@ -1391,7 +1391,7 @@ public class CoreLibrary {
     }
 
     public RubyClass getRubiniusMirror() {
-        return rubiniusMirrorModule;
+        return rubiniusMirrorClass;
     }
 
     public RubyBasicObject getRubiniusUndefined() {
