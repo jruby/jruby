@@ -20,7 +20,6 @@ env:
     - TARGET='jruby-jars'
     - TARGET='complete'
     - TARGET='osgi'
-    - TARGET='j2ee'
     - TARGET='test-jruby-jars'
     - TARGET='jruby-jars-extended'
     - TARGET='main-extended'
@@ -30,6 +29,8 @@ matrix:
     # there is one integration test which uses a external jar for jdk7+
     - jdk: oraclejdk7
       env: TARGET='main'
+    - jdk: oraclejdk7
+      env: TARGET='j2ee'
     # nice to have at least some feedback on jdk 7/8
     - jdk: openjdk7
       env: TARGET='test-extended'
