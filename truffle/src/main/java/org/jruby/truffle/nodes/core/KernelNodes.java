@@ -34,6 +34,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
+import org.jruby.truffle.nodes.constants.LookupConstantNode;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFactory;
@@ -936,8 +937,11 @@ public abstract class KernelNodes {
     @CoreMethod(names = {"is_a?", "kind_of?"}, required = 1)
     public abstract static class IsANode extends CoreMethodArrayArgumentsNode {
 
+        @Child MetaClassNode metaClassNode;
+
         public IsANode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
         }
 
         public abstract boolean executeIsA(VirtualFrame frame, Object self, RubyModule rubyClass);
@@ -947,14 +951,42 @@ public abstract class KernelNodes {
             return false;
         }
 
-        @TruffleBoundary
-        @Specialization
-        public boolean isA(Object self, RubyModule rubyClass) {
-            CompilerDirectives.transferToInterpreter();
-            // TODO(CS): fast path
-            return ModuleOperations.assignableTo(getContext().getCoreLibrary().getMetaClass(self), rubyClass);
+        @Specialization(
+                limit = "getCacheLimit()",
+                guards = {"getMetaClass(frame, self) == cachedMetaClass", "module == cachedModule"},
+                assumptions = "cachedModule.getUnmodifiedAssumption()")
+        public boolean isACached(VirtualFrame frame,
+                                 Object self,
+                                 RubyModule module,
+                                 @Cached("getMetaClass(frame, self)") RubyClass cachedMetaClass,
+                                 @Cached("module") RubyModule cachedModule,
+                                 @Cached("isA(cachedMetaClass, cachedModule)") boolean result) {
+            return result;
         }
 
+        @Specialization
+        public boolean isAUncached(VirtualFrame frame, Object self, RubyModule module) {
+            return isA(getMetaClass(frame, self), module);
+        }
+
+        @Specialization(guards = "!isRubyModule(module)")
+        public boolean isATypeError(VirtualFrame frame, Object self, Object module) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().typeError("class or module required", this));
+        }
+
+        @TruffleBoundary
+        protected boolean isA(RubyClass metaClass, RubyModule module) {
+            return ModuleOperations.assignableTo(metaClass, module);
+        }
+
+        protected RubyClass getMetaClass(VirtualFrame frame, Object object) {
+            return metaClassNode.executeMetaClass(frame, object);
+        }
+
+        protected int getCacheLimit() {
+            return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
+        }
     }
 
     @CoreMethod(names = "lambda", isModuleFunction = true, needsBlock = true)

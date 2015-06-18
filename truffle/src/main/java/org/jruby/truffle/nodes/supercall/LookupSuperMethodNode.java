@@ -27,7 +27,7 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 @NodeChild("self")
 public abstract class LookupSuperMethodNode extends RubyNode {
 
-    public static int getCacheLimit() {
+    protected static int getCacheLimit() {
         return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
     }
 
