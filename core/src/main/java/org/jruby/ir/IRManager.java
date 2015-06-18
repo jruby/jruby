@@ -4,6 +4,7 @@ import java.util.EnumSet;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LineNumberInstr;
+import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.listeners.InstructionsListener;
 import org.jruby.ir.operands.*;
@@ -192,6 +193,12 @@ public class IRManager {
 
         return tempVar;
 
+    }
+
+    private ReceiveSelfInstr receiveSelfInstr = new ReceiveSelfInstr(Self.SELF);
+
+    public ReceiveSelfInstr getReceiveSelfInstr() {
+        return receiveSelfInstr;
     }
 
     private LineNumberInstr[] lineNumbers = new LineNumberInstr[3000];

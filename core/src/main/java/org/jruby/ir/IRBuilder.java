@@ -1913,7 +1913,7 @@ public class IRBuilder {
      */
     private void prepareImplicitState() {
         // Receive self
-        addInstr(new ReceiveSelfInstr(buildSelf()));
+        addInstr(manager.getReceiveSelfInstr());
 
         // used for yields; metaclass body (sclass) inherits yield var from surrounding, and accesses it as implicit
         if (scope instanceof IRMethod || scope instanceof IRMetaClassBody) {
