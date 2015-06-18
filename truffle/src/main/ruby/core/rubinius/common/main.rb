@@ -32,24 +32,21 @@ class << self
     end
   end
 
-  # Truffle: Do not define #public, #private in Ruby since they need
-  # to set the top-level frame visibility when called with no argument.
+  def public(*methods)
+    Rubinius.privately do
+      Object.public(*methods)
+    end
 
-  #def public(*methods)
-  #  Rubinius.privately do
-  #    Object.public(*methods)
-  #  end
-  #
-  #  Object
-  #end
+    Object
+  end
 
-  #def private(*methods)
-  #  Rubinius.privately do
-  #    Object.private(*methods)
-  #  end
-  #
-  #  Object
-  #end
+  def private(*methods)
+    Rubinius.privately do
+      Object.private(*methods)
+    end
+
+    Object
+  end
 
   def define_method(*args, &block)
     Rubinius.privately do
