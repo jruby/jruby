@@ -16,15 +16,12 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayBuilderNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.NextException;
-import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyRange;
@@ -74,9 +71,6 @@ public abstract class RangeNodes {
     @CoreMethod(names = "each", needsBlock = true, lowerFixnumSelf = true, returnsEnumeratorIfNoBlock = true)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
-        private final BranchProfile nextProfile = BranchProfile.create();
-        private final BranchProfile redoProfile = BranchProfile.create();
-
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -88,23 +82,12 @@ public abstract class RangeNodes {
             int count = 0;
 
             try {
-                outer:
                 for (int n = range.getBegin(); n < exclusiveEnd; n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, n);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, n);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -122,23 +105,12 @@ public abstract class RangeNodes {
             int count = 0;
 
             try {
-                outer:
                 for (long n = range.getBegin(); n < exclusiveEnd; n++) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, n);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, n);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -251,9 +223,6 @@ public abstract class RangeNodes {
     @CoreMethod(names = "step", needsBlock = true, optional = 1, returnsEnumeratorIfNoBlock = true)
     public abstract static class StepNode extends YieldingCoreMethodNode {
 
-        private final BranchProfile nextProfile = BranchProfile.create();
-        private final BranchProfile redoProfile = BranchProfile.create();
-
         public StepNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -263,23 +232,12 @@ public abstract class RangeNodes {
             int count = 0;
 
             try {
-                outer:
                 for (int n = range.getBegin(); n < range.getExclusiveEnd(); n += step) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, n);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, n);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -295,23 +253,12 @@ public abstract class RangeNodes {
             int count = 0;
 
             try {
-                outer:
                 for (long n = range.getBegin(); n < range.getExclusiveEnd(); n += step) {
-                    while (true) {
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
-                        try {
-                            yield(frame, block, n);
-                            continue outer;
-                        } catch (NextException e) {
-                            nextProfile.enter();
-                            continue outer;
-                        } catch (RedoException e) {
-                            redoProfile.enter();
-                        }
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
                     }
+
+                    yield(frame, block, n);
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {

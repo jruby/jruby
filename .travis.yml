@@ -75,8 +75,6 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: COMMAND=test/truffle/run.sh
-    - env: PHASE='-Ptruffle-mri-tests'
-
 
 branches:
   only:
@@ -85,8 +83,9 @@ branches:
     - /^test-.*$/
     - /^ha-feature/
 
-script: if [[ -v COMMAND ]]; then $COMMAND; else travis_retry ./mvnw -Pbootstrap clean install -Dinvoker.skip=false $PHASE | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]; fi
-install: /bin/true
+script: if [[ -v COMMAND ]]; then $COMMAND; else ./mvnw install -Dinvoker.skip=false $PHASE | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]; fi
+install: travis_retry ./mvnw -Pbootstrap clean install -Dinvoker.skip -Dmaven.test.skip
+
 notifications:
   irc:
     channels:

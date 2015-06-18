@@ -585,9 +585,9 @@ public abstract class IOPrimitiveNodes {
                     return nativeSockets().select(
                             max(readableFds) + 1,
                             readableSet.getPointer(),
-                            PointerPrimitiveNodes.NULL_POINTER,
-                            PointerPrimitiveNodes.NULL_POINTER,
-                            PointerPrimitiveNodes.NULL_POINTER);
+                            PointerNodes.NULL_POINTER,
+                            PointerNodes.NULL_POINTER,
+                            PointerNodes.NULL_POINTER);
                 }
             });
 

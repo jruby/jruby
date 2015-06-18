@@ -632,7 +632,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_character_byte_index", needsSelf = false)
+    @RubiniusPrimitive(name = "string_character_byte_index", needsSelf = false, lowerFixnumParameters = {2, 3})
     @ImportStatic(StringGuards.class)
     public static abstract class CharacterByteIndexNode extends RubiniusPrimitiveNode {
 

@@ -68,7 +68,6 @@ public class InterpreterContext {
         Instr[] linearizedInstrArray = instructions.toArray(new Instr[length]);
         for (int ipc = 0; ipc < length; ipc++) {
             Instr i = linearizedInstrArray[ipc];
-            i.setIPC(ipc);
 
             if (i instanceof LabelInstr) ((LabelInstr) i).getLabel().setTargetPC(ipc + 1);
         }

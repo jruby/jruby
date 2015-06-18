@@ -467,7 +467,7 @@ ruby/enc/test_utf32.rb
 # irb/test_option.rb
 # irb/test_raise_no_backtrace_exception.rb
 # logger/test_logdevice.rb
-# logger/test_severity.rb
+logger/test_severity.rb
 # minitest/test_minitest_benchmark.rb
 # minitest/test_minitest_mock.rb
 # minitest/test_minitest_spec.rb
@@ -627,54 +627,54 @@ optparse/test_autoconf.rb
 # rdoc/test_rdoc_top_level.rb
 # readline/test_readline.rb
 # readline/test_readline_history.rb
-# resolv/test_addr.rb
+resolv/test_addr.rb
 # resolv/test_dns.rb
-# rexml/parse/test_document_type_declaration.rb
-# rexml/parse/test_notation_declaration.rb
-# rexml/parser/test_sax2.rb
-# rexml/parser/test_tree.rb
-# rexml/parser/test_ultra_light.rb
-# rexml/test_attributes.rb
-# rexml/test_attributes_mixin.rb
-# rexml/test_changing_encoding.rb
-# rexml/test_comment.rb
-# rexml/test_contrib.rb
-# rexml/test_core.rb
-# rexml/test_doctype.rb
-# rexml/test_document.rb
-# rexml/test_elements.rb
-# rexml/test_encoding.rb
-# rexml/test_encoding_2.rb
-# rexml/test_entity.rb
-# rexml/test_functions.rb
-# rexml/test_functions_number.rb
-# rexml/test_jaxen.rb
-# rexml/test_light.rb
-# rexml/test_lightparser.rb
-# rexml/test_listener.rb
-# rexml/test_martin_fowler.rb
-# rexml/test_namespace.rb
-# rexml/test_order.rb
-# rexml/test_preceding_sibling.rb
-# rexml/test_pullparser.rb
-# rexml/test_rexml_issuezilla.rb
-# rexml/test_sax.rb
-# rexml/test_stream.rb
-# rexml/test_text.rb
-# rexml/test_ticket_80.rb
-# rexml/test_validation_rng.rb
-# rexml/test_xml_declaration.rb
-# rexml/test_xpath.rb
-# rexml/test_xpath_attribute_query.rb
-# rexml/test_xpath_msw.rb
-# rexml/test_xpath_pred.rb
-# rexml/test_xpathtext.rb
-# rexml/xpath/test_attribute.rb
-# rexml/xpath/test_axis_preceding_sibling.rb
-# rexml/xpath/test_base.rb
-# rexml/xpath/test_node.rb
-# rexml/xpath/test_predicate.rb
-# rexml/xpath/test_text.rb
+rexml/parse/test_document_type_declaration.rb
+rexml/parse/test_notation_declaration.rb
+rexml/parser/test_sax2.rb
+rexml/parser/test_tree.rb
+rexml/parser/test_ultra_light.rb
+rexml/test_attributes.rb
+rexml/test_attributes_mixin.rb
+rexml/test_changing_encoding.rb
+rexml/test_comment.rb
+rexml/test_contrib.rb
+rexml/test_core.rb
+rexml/test_doctype.rb
+rexml/test_document.rb
+rexml/test_elements.rb
+rexml/test_encoding.rb
+rexml/test_encoding_2.rb
+rexml/test_entity.rb
+rexml/test_functions.rb
+rexml/test_functions_number.rb
+rexml/test_jaxen.rb
+rexml/test_light.rb
+rexml/test_lightparser.rb
+rexml/test_listener.rb
+rexml/test_martin_fowler.rb
+rexml/test_namespace.rb
+rexml/test_order.rb
+rexml/test_preceding_sibling.rb
+rexml/test_pullparser.rb
+rexml/test_rexml_issuezilla.rb
+rexml/test_sax.rb
+rexml/test_stream.rb
+rexml/test_text.rb
+rexml/test_ticket_80.rb
+rexml/test_validation_rng.rb
+rexml/test_xml_declaration.rb
+rexml/test_xpath.rb
+rexml/test_xpath_attribute_query.rb
+rexml/test_xpath_msw.rb
+rexml/test_xpath_pred.rb
+rexml/test_xpathtext.rb
+rexml/xpath/test_attribute.rb
+rexml/xpath/test_axis_preceding_sibling.rb
+rexml/xpath/test_base.rb
+rexml/xpath/test_node.rb
+rexml/xpath/test_predicate.rb
+rexml/xpath/test_text.rb
 # rinda/test_rinda.rb
 # rinda/test_tuplebag.rb
 # ripper/test_sexp.rb
@@ -886,13 +886,13 @@ testunit/test_assertion.rb
 # testunit/test_sorting.rb
 thread/test_cv.rb
 # thread/test_sync.rb
-# uri/test_common.rb
-# uri/test_ftp.rb
-# uri/test_generic.rb
-# uri/test_http.rb
-# uri/test_ldap.rb
-# uri/test_mailto.rb
-# uri/test_parser.rb
+uri/test_common.rb
+uri/test_ftp.rb
+uri/test_generic.rb
+uri/test_http.rb
+uri/test_ldap.rb
+uri/test_mailto.rb
+uri/test_parser.rb
 # webrick/test_cgi.rb
 # webrick/test_cookie.rb
 # webrick/test_filehandler.rb

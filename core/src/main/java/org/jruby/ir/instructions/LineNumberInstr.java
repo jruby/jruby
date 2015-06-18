@@ -45,7 +45,7 @@ public class LineNumberInstr extends Instr implements FixedArityInstr {
     }
 
     public static LineNumberInstr decode(IRReaderDecoder d) {
-        return new LineNumberInstr(d.decodeInt());
+        return d.getCurrentScope().getManager().newLineNumber(d.decodeInt());
     }
 
     @Override

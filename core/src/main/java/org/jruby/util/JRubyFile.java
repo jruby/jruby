@@ -67,6 +67,10 @@ public class JRubyFile extends JavaSecuredFile {
         return createResource(runtime, runtime.getCurrentDirectory(), pathname, true);
     }
 
+    public static FileResource createRestrictedResource(String cwd, String pathname) {
+      return createResource(null, cwd, pathname);
+    }
+
     public static FileResource createResource(Ruby runtime, String pathname) {
         return createResource(runtime, runtime.getCurrentDirectory(), pathname, false);
     }
@@ -104,13 +108,13 @@ public class JRubyFile extends JavaSecuredFile {
             }
         }
 
-        JRubyFile f = create(cwd, pathname);
-        if (cwd != null && cwd.startsWith("uri:")){
-            return createResource(runtime, null, f.getPath());
+        if (cwd != null && (cwd.startsWith("uri:") || cwd.startsWith("file:"))) {
+            return createResource(runtime, null, cwd + "/" + pathname);
         }
 
         // If any other special resource types fail, count it as a filesystem backed resource.
-        return new RegularFileResource(runtime == null ? null : runtime.getPosix(), f);
+        JRubyFile f = create(cwd, pathname);
+        return new RegularFileResource(runtime != null ? runtime.getPosix() : null, f);
     }
 
     public static String normalizeSeps(String path) {
@@ -127,9 +131,6 @@ public class JRubyFile extends JavaSecuredFile {
         }
         if(pathname.startsWith("file:")) {
             pathname = pathname.substring(5);
-        }
-        if(pathname.startsWith("uri:")) {
-            return new JRubyFile(pathname);
         }
         File internal = new JavaSecuredFile(pathname);
         if(cwd != null && cwd.startsWith("uri:") && !pathname.startsWith("uri:") && !pathname.contains("!/") && !internal.isAbsolute()) {

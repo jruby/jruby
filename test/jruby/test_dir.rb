@@ -148,7 +148,7 @@ class TestDir < Test::Unit::TestCase
   def test_glob_inside_jar_file
     jar_file = jar_file_with_spaces
 
-    prefix = 'uri:classloader:'
+    prefix = 'uri:classloader:/'
     ["#{prefix}/abc", "#{prefix}/inside_jar.rb", "#{prefix}/second_jar.rb"].each do |f|
       assert $__glob_value.include?(f), "#{f} not found in #{$__glob_value.inspect}"
     end

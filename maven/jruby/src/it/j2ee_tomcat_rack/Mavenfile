@@ -4,13 +4,11 @@
 packaging 'war'
 
 # get jruby dependencies
-properties( 'jruby.version' => '@project.version@',
-            'jruby.home' => '../../../../../',
-            'jruby.plugins.version' => '1.0.3',
+properties( 'jruby.plugins.version' => '1.0.10',
             'project.build.sourceEncoding' => 'utf-8',
             'public.dir' => '${basedir}/public' )
 
-pom( 'org.jruby:jruby', '${jruby.version}' )
+pom( 'org.jruby:jruby', '@project.version@' )
 
 jar( 'org.jruby.rack:jruby-rack', '1.1.18',
      :exclusions => [ 'org.jruby:jruby-complete' ] )
@@ -75,7 +73,7 @@ execute 'check download', :phase => :verify do
   # TODO get rid off this over normalization
   #expected = 'uri:classloader:/gems/flickraw-0.9.7'
   # TODO find out why travis find the gem on filesystem
-  expected = 'target/classes/gems/flickraw-0.9.7'
+  expected = 'uri:classloader:/gems/flickraw-0.9.7'
   unless result.match( /#{expected}/ )
     raise "missed expected string in download: #{expected}"
   end
