@@ -661,7 +661,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newString(dirname(context, jfilename)).infectBy(filename);
     }
 
-    private static Pattern PROTOCOL_PATTERN = Pattern.compile("^[a-z:]{2,}:/");
+    private static Pattern PROTOCOL_PATTERN = Pattern.compile("^([a-z]+:)?[a-z]+:/.*");
     public static String dirname(ThreadContext context, String jfilename) {
         String name = jfilename.replace('\\', '/');
         int minPathLength = 1;
@@ -673,15 +673,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             minPathLength = 3;
         }
 
-        // address all the url like paths first
-        if (PROTOCOL_PATTERN.matcher(name).matches() || name.contains("!/")) {
-            int start = Math.max(name.indexOf(":/"), name.indexOf("!/")) + 2;
+        // jar like paths
+        if (name.contains("!/")) {
+            int start = name.indexOf("!/") + 1;
             String path = dirname(context, name.substring(start));
             if (path.equals(".") || path.equals("/")) path = "";
-            if (name.contains("!/") &&
-                (path.startsWith("/") || path.equals(""))) {
-                start = start - 1;
-            }
+            return name.substring(0, start) + path;
+        }
+        // address all the url like paths first
+        if (PROTOCOL_PATTERN.matcher(name).matches()) {
+            int start = name.indexOf(":/") + 2;
+            String path = dirname(context, name.substring(start));
+            if (path.equals(".")) path = "";
             return name.substring(0, start) + path;
         }
 
