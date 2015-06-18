@@ -54,7 +54,6 @@ public class Main {
         if (in == null) {
             return;
         } else {
-
             // Global variables
             IAccessor d = new ValueAccessor(runtime.newString(filename));
             runtime.getGlobalVariables().define("$PROGRAM_NAME", d,
@@ -79,27 +78,26 @@ public class Main {
                     .parseFromMain(filename, in);
 
             // If no DATA, we're done with the stream, shut it down
-			if (runtime.fetchGlobalConstant("DATA") == null) {
-				try {
-					in.close();
-				} catch (IOException ioe) {
-				}
-			}
-			ThreadContext context = runtime.getCurrentContext();
+            if (runtime.fetchGlobalConstant("DATA") == null) {
+                try {
+                    in.close();
+                } catch (IOException ioe) {
+                }
+            }
+            ThreadContext context = runtime.getCurrentContext();
 
-			String oldFile = context.getFile();
-			int oldLine = context.getLine();
+            String oldFile = context.getFile();
+            int oldLine = context.getLine();
 
-			try {
-				context.setFileAndLine(scriptNode.getPosition());
-				runtime.getTruffleContext().execute(scriptNode);
-			} finally {
-				context.setFileAndLine(oldFile, oldLine);
-				runtime.shutdownTruffleContextIfRunning();
-			}
+            try {
+                context.setFileAndLine(scriptNode.getPosition());
+                runtime.getTruffleContext().execute(scriptNode);
+            } finally {
+                context.setFileAndLine(oldFile, oldLine);
+                runtime.shutdownTruffleContextIfRunning();
+            }
+        }
 
-		}
-
-	}
+    }
 
 }
