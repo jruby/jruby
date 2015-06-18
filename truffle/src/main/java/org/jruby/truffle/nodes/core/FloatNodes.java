@@ -340,8 +340,6 @@ public abstract class FloatNodes {
     @CoreMethod(names = "eql?", required = 1)
     public abstract static class EqlNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode fallbackCallNode;
-
         public EqlNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
