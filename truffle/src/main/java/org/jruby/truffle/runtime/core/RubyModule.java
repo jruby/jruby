@@ -407,12 +407,15 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public String getName() {
         if (name != null) {
             return name;
-        } else if (givenBaseName != null) {
-            return lexicalParent.getName() + "::" + givenBaseName;
-        } else if (getLogicalClass() == this) { // For the case of class Class during initialization
-            return "#<cyclic>";
         } else {
-            return "#<" + getLogicalClass().getName() + ":0x" + Long.toHexString(verySlowGetObjectID()) + ">";
+            CompilerDirectives.transferToInterpreter();
+            if (givenBaseName != null) {
+                return lexicalParent.getName() + "::" + givenBaseName;
+            } else if (getLogicalClass() == this) { // For the case of class Class during initialization
+                return "#<cyclic>";
+            } else {
+                return "#<" + getLogicalClass().getName() + ":0x" + Long.toHexString(verySlowGetObjectID()) + ">";
+            }
         }
     }
 
