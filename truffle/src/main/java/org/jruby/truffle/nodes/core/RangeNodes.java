@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -17,6 +18,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayBuilderNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.NotProvided;
@@ -473,12 +475,16 @@ public abstract class RangeNodes {
     @RubiniusOnly
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
-            @NodeChild(type = RubyNode.class, value = "end")
+            @NodeChild(type = RubyNode.class, value = "excludeEnd")
     })
     public abstract static class InternalSetExcludeEndNode extends RubyNode {
 
         public InternalSetExcludeEndNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+        }
+
+        @CreateCast("excludeEnd") public RubyNode castToBoolean(RubyNode excludeEnd) {
+            return BooleanCastNodeGen.create(getContext(), getSourceSection(), excludeEnd);
         }
 
         @Specialization
@@ -487,6 +493,7 @@ public abstract class RangeNodes {
 
             return excludeEnd;
         }
+
     }
 
 }
