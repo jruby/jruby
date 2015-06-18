@@ -4,12 +4,11 @@
 packaging 'war'
 
 # get jruby dependencies
-properties( 'jruby.version' => '@project.version@',
-            'jruby.plugins.version' => '1.0.7',
+properties( 'jruby.plugins.version' => '1.0.10',
             'project.build.sourceEncoding' => 'utf-8',
             'public.dir' => '${basedir}/public' )
 
-pom( 'org.jruby:jruby', '${jruby.version}' )
+pom( 'org.jruby:jruby', '@project.version@' )
 
 jar( 'org.jruby.rack:jruby-rack', '1.1.18',
      :exclusions => [ 'org.jruby:jruby-complete' ] )

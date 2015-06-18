@@ -18,11 +18,16 @@ phase :package do
   plugin( 'org.codehaus.mojo:exec-maven-plugin:1.2',
           :executable => 'java',
           :environmentVariables => {
+            'PATH' => '${project.basedir}/bin${path.separator}${env.PATH}',
             'GEM_PATH' => '${jruby.home}/lib/ruby/gems/shared',
             'GEM_HOME' => '${jruby.home}/lib/ruby/gems/shared'
           },
           :basedir => '${jruby.home}' ) do
-    
+
+    # see if gem gets found inside the jar though it is on $PATH
+    execute_goal( :exec, :id => 'gem help',
+                  :arguments => [ '-Djruby.debug.scriptResolution=true', '-jar', '${project.build.directory}/dependency/jruby-complete-${jruby.version}.jar', '-S', 'gem', 'help' ] )
+
     execute_goal( :exec, :id => 'rake -T',
                   :arguments => [ '-jar', '${project.build.directory}/dependency/jruby-complete-${jruby.version}.jar', '-S', 'rake', '-T' ] )
 

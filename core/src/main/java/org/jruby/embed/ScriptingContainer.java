@@ -57,6 +57,7 @@ import org.jruby.embed.internal.ConcurrentLocalContextProvider;
 import org.jruby.embed.internal.EmbedRubyInterfaceAdapterImpl;
 import org.jruby.embed.internal.EmbedRubyObjectAdapterImpl;
 import org.jruby.embed.internal.EmbedRubyRuntimeAdapterImpl;
+import org.jruby.embed.internal.LocalContextProvider;
 import org.jruby.embed.internal.SingleThreadLocalContextProvider;
 import org.jruby.embed.internal.SingletonLocalContextProvider;
 import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
@@ -83,42 +84,49 @@ import org.jruby.util.cli.Options;
  * For example, a local context scope, local variable behavior, load paths are
  * per-container properties. Please see {@link PropertyName} and {@link AttributeName}
  * for more details. Be aware that the per-container properties should be set prior to
- * get Ruby runtime be instantiated; otherwise, default values are applied to.
+ * get Ruby runtime being instantiated; otherwise, default values are applied to.
+ *
  * ScriptingContainer delays Ruby runtime initialization as much as possible to
  * improve startup time. When values are put into the ScriptingContainer, or runScriptlet
- * method gets run Ruby runtime is created internally. However, the default, singleton
- * local context scope behave slightly different. If Ruby runtime has been already instantiated
- * by another ScriptingContainer, application, etc, the same runtime will be used.
+ * method gets run the runtime is created internally. However, the default, singleton
+ * local context scope behave slightly different. If a Ruby runtime has been already
+ * instantiated by another ScriptingContainer, application, etc, the same runtime
+ * will be re-used.
  *
  * Below are examples.
  *
  * The first Example is a very simple Hello World. After initializing a ScriptingContainer,
  * a Ruby script, puts "Hello World!", runs and produces "Hello World!."
- * <pre>Example 1:
- *
- *         ScriptingContainer container = new ScriptingContainer();
- *         container.runScriptlet("puts \"Hello World!\"");
- *
+ * <pre>
+ * Example 1:
+ * {@code
+ *     ScriptingContainer container = new ScriptingContainer();
+ *     container.runScriptlet("puts \"Hello World!\"");
+ * }
  * Produces:
- * Hello World!</pre>
+ * Hello World!
+ * </pre>
  *
  * The second example shows how to share variables between Java and Ruby.
- * In this example, a local variable "x" is shared. To make this happen, a local variable
- * behavior should be transient or persistent. As for JSR223 JRuby engine, set these
- * types using System property, org.jruby.embed.localvariable.behavior. If the local
- * variable behavior is one of transient or persistent,
+ * In this example, a local variable {@code "x"} is shared. To make this happen,
+ * a local variable behavior should be transient or persistent.
+ * As for JSR223 JRuby engine, set these types using a System property,
+ * <b>org.jruby.embed.localvariable.behavior</b>.
+ * If the local variable behavior is one of transient or persistent,
  * Ruby's local, instance, global variables and constants are available to share
  * between Java and Ruby. (A class variable sharing does not work on current version)
- * Thus, "x" in Java is also "x" in Ruby.
+ * Thus, {@code "x"} in Java is also {@code "x"} in Ruby.
  *
- * <pre>Example 2:
- *
- *         ScriptingContainer container = new ScriptingContainer();
- *         container.put("x", 12345);
- *         container.runScriptlet("puts x.to_s(2)");
- *
+ * <pre>
+ * Example 2:
+ * {@code
+ *     ScriptingContainer container = new ScriptingContainer();
+ *     container.put("x", 12345);
+ *     container.runScriptlet("puts x.to_s(2)");
+ * }
  * Produces:
- * 11000000111001</pre>
+ * 11000000111001
+ * </pre>
  *
  * The third examples shows how to keep local variables across multiple evaluations.
  * This feature simulates BSF engine for JRuby. In terms of Ruby semantics,
@@ -126,18 +134,19 @@ import org.jruby.util.cli.Options;
  * this behavior is optional, and users need to specify LocalVariableBehavior.PERSISTENT
  * when the container is instantiated.
  *
- * <pre>Example 3:
- *
- *         ScriptingContainer container = new ScriptingContainer(LocalVariableBehavior.PERSISTENT);
- *         container.runScriptlet("p=9.0");
- *         container.runScriptlet("q = Math.sqrt p");
- *         container.runScriptlet("puts \"square root of #{p} is #{q}\"");
- *         System.out.println("Ruby used values: p = " + container.get("p") +
- *               ", q = " + container.get("q"));
- *
+ * <pre>
+ * Example 3:
+ * {@code
+ *     ScriptingContainer container = new ScriptingContainer(LocalVariableBehavior.PERSISTENT);
+ *     container.runScriptlet("p=9.0");
+ *     container.runScriptlet("q = Math.sqrt p");
+ *     container.runScriptlet("puts \"square root of #{p} is #{q}\"");
+ *     System.out.println("Ruby used values: p = " + container.get("p") + ", q = " + container.get("q"));
+ * }
  * Produces:
  * square root of 9.0 is 3.0
- * Ruby used values: p = 9.0, q = 3.0</pre>
+ * Ruby used values: p = 9.0, q = 3.0
+ * </pre>
  *
  * Also, ScriptingContainer provides better i18n support. For example,
  * Unicode Escape Sequence can be included in Ruby scripts.
@@ -146,28 +155,31 @@ import org.jruby.util.cli.Options;
  * invoking methods defined by Ruby, and getting an instance of a specified interface
  * that has been implemented by Ruby.
  *
- * <pre>Example 4:
- *         ScriptingContainer container = new ScriptingContainer();
- *         script =
- *          "def message\n" +
- *              "\"message: #{@message}\"\n" +
- *          "end\n" +
- *          "message";
- *         container.put("@message", "What's up?");
- *         EvalUnit unit = container.parse(script);
- *         IRubyObject ret = unit.run();
- *         System.out.println(JavaEmbedUtils.rubyToJava(ret));
- *         container.put("@message", "Fabulous!");
- *         ret = unit.run();
- *         System.out.println(JavaEmbedUtils.rubyToJava(ret));
- *         container.put("@message", "That's the way you are.");
- *         ret = unit.run();
- *         System.out.println(JavaEmbedUtils.rubyToJava(ret));
- *
+ * <pre>
+ * Example 4:
+ * {@code
+ *     ScriptingContainer container = new ScriptingContainer();
+ *     String script =
+ *       "def message\n" +
+ *         "\"message: #{@message}\"\n" +
+ *       "end\n" +
+ *       "message";
+ *     container.put("@message", "What's up?");
+ *     JavaEmbedUtils.EvalUnit unit = container.parse(script);
+ *     IRubyObject msg = unit.run(); // a RubyString instance
+ *     System.out.println(JavaEmbedUtils.rubyToJava(msg));
+ *     container.put("@message", "Fabulous!");
+ *     msg = unit.run();
+ *     System.out.println(JavaEmbedUtils.rubyToJava(msg));
+ *     container.put("@message", "That's the way you are.");
+ *     msg = unit.run();
+ *     System.out.println(JavaEmbedUtils.rubyToJava(msg));
+ * }
  * Produces:
  *     message: What's up?
  *     message: Fabulous!
- *     message: That's the way you are.</pre>
+ *     message: That's the way you are.
+ * </pre>
  *
  * See more details at project's
  * {@see <a href="https://github.com/jruby/jruby/wiki/RedBridge">Wiki</a>}
