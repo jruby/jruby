@@ -1552,13 +1552,8 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         List<String> result = instance.getLoadPaths();
         assertTrue(result != null);
-<<<<<<< HEAD
         assertTrue(result.size() == 0);
         
-=======
-        assertTrue(result.size() > 0);
-
->>>>>>> jruby-1_7
         instance = null;
     }
 
