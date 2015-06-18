@@ -118,6 +118,15 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       jar 'org.codehaus.plexus:plexus-io:2.0.5'
     end
 
+    unless model.version =~ /-SNAPSHOT/
+      plugin :enforcer, '1.4' do
+        execute_goal :enforce, :rules => {
+                       :requireReleaseDeps => {
+                         :message => 'No Snapshots Allowed!'
+                       } }
+      end
+    end
+
     plugin :compiler, '3.1'
     plugin :shade, '2.1'
     plugin :surefire, '2.15'
