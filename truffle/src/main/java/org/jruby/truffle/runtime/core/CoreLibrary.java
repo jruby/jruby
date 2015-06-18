@@ -1395,7 +1395,7 @@ public class CoreLibrary {
         return rubiniusChannelClass;
     }
 
-    public RubyClass getRubiniusMirror() {
+    public RubyClass getRubiniusMirrorClass() {
         return rubiniusMirrorClass;
     }
 

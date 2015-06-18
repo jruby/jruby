@@ -35,7 +35,7 @@ public abstract class ModulePrimitiveNodes {
                 moduleMirrorNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), null));
             }
 
-            return moduleMirrorNode.call(frame, getContext().getCoreLibrary().getRubiniusMirror(), "module_mirror", null, reflectee);
+            return moduleMirrorNode.call(frame, getContext().getCoreLibrary().getRubiniusMirrorClass(), "module_mirror", null, reflectee);
         }
 
     }
