@@ -32,6 +32,17 @@
       <version>0.8-ef8c90391f1ec21bcfb6d5c6fb39757b860d4973-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>com.oracle</groupId>
+      <artifactId>truffle-tck</artifactId>
+      <version>0.8-ef8c90391f1ec21bcfb6d5c6fb39757b860d4973-SNAPSHOT</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <repositories>
     <repository>
