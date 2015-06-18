@@ -180,7 +180,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(pointer)")
         public int getGroups(int max, RubyBasicObject pointer) {
             final long[] groups = Platform.getPlatform().getGroups(null);
 
@@ -204,7 +204,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(pointer)")
         public int getrlimit(int resource, RubyBasicObject pointer) {
             final int result = posix().getrlimit(resource, PointerNodes.getPointer(pointer));
 
@@ -239,12 +239,12 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(pointer)")
         public RubyBasicObject memset(RubyBasicObject pointer, int c, int length) {
             return memset(pointer, c, (long) length);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(pointer)")
         public RubyBasicObject memset(RubyBasicObject pointer, int c, long length) {
             PointerNodes.getPointer(pointer).setMemory(0, length, (byte) c);
             return pointer;
@@ -259,7 +259,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(pointer)")
         public int readlink(RubyString path, RubyBasicObject pointer, int bufsize) {
             final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
 
@@ -325,7 +325,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(pointer)")
         public int utimes(RubyString path, RubyBasicObject pointer) {
             final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
 
@@ -467,7 +467,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(pointer)")
         public int setrlimit(int resource, RubyBasicObject pointer) {
             final int result = posix().setrlimit(resource, PointerNodes.getPointer(pointer));
 
@@ -731,8 +731,6 @@ public abstract class PosixNodes {
 
     }
 
-    // TODO CS-15-May 15 we're missing a lot of guards for things like Pointer here
-
     @CoreMethod(names = "_getaddrinfo", isModuleFunction = true, required = 4)
     public abstract static class GetAddrInfoNode extends CoreMethodArrayArgumentsNode {
 
@@ -745,7 +743,7 @@ public abstract class PosixNodes {
             return getaddrinfo((RubyString) createString("0.0.0.0"), serviceName, hintsPointer, resultsPointer);
         }
 
-        @Specialization
+        @Specialization(guards = {"isRubyPointer(hintsPointer)", "isRubyPointer(resultsPointer)"})
         public int getaddrinfo(RubyString hostName, RubyString serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
             return nativeSockets().getaddrinfo(
                     StringNodes.getByteList(hostName),
@@ -763,7 +761,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(addrInfo)")
         public RubyBasicObject freeaddrinfo(RubyBasicObject addrInfo) {
             nativeSockets().freeaddrinfo(PointerNodes.getPointer(addrInfo));
             return nil();
@@ -778,7 +776,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = {"isRubyPointer(sa)", "isRubyPointer(host)", "isRubyPointer(serv)"})
         public int getnameinfo(RubyBasicObject sa, int salen, RubyBasicObject host, int hostlen, RubyBasicObject serv, int servlen, int flags) {
             return nativeSockets().getnameinfo(
                     PointerNodes.getPointer(sa),
@@ -813,7 +811,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(optionValue)")
         public int setsockopt(int socket, int level, int optionName, RubyBasicObject optionValue, int optionLength) {
             return nativeSockets().setsockopt(socket, level, optionName, PointerNodes.getPointer(optionValue), optionLength);
         }
@@ -827,7 +825,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(address)")
         public int bind(int socket, RubyBasicObject address, int addressLength) {
             return nativeSockets().bind(socket, PointerNodes.getPointer(address), addressLength);
         }
@@ -855,7 +853,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(name)")
         public int getHostName(RubyBasicObject name, int nameLength) {
             return nativeSockets().gethostname(PointerNodes.getPointer(name), nameLength);
         }
@@ -869,7 +867,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = {"isRubyPointer(address)", "isRubyPointer(addressLength)"})
         public int getPeerName(int socket, RubyBasicObject address, RubyBasicObject addressLength) {
             return nativeSockets().getpeername(socket, PointerNodes.getPointer(address), PointerNodes.getPointer(addressLength));
         }
@@ -883,7 +881,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = {"isRubyPointer(address)", "isRubyPointer(addressLength)"})
         public int getSockName(int socket, RubyBasicObject address, RubyBasicObject addressLength) {
             return nativeSockets().getsockname(socket, PointerNodes.getPointer(address), PointerNodes.getPointer(addressLength));
         }
