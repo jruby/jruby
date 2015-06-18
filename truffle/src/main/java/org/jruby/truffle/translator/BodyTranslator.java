@@ -1887,7 +1887,7 @@ public class BodyTranslator extends Translator {
         RubyNode rhsTranslated;
 
         if (rhs == null) {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getLine(), "no RHS for multiple assignment - using nil");
+            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), "no RHS for multiple assignment - using nil");
             rhsTranslated = new DefinedWrapperNode(context, sourceSection,
                     new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                     "nil");
@@ -2124,7 +2124,7 @@ public class BodyTranslator extends Translator {
 
             result = SequenceNode.sequence(context, sourceSection, sequence);
         } else {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getLine(), node + " unknown form of multiple assignment");
+            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " unknown form of multiple assignment");
             result = new DefinedWrapperNode(context, sourceSection,
                     new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                     "nil");
@@ -2878,7 +2878,7 @@ public class BodyTranslator extends Translator {
     }
 
     protected RubyNode unimplemented(Node node) {
-        context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getLine(), node + " does nothing - translating as nil");
+        context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " does nothing - translating as nil");
         SourceSection sourceSection = translate(node.getPosition());
         return new DefinedWrapperNode(context, sourceSection,
                 new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),

@@ -39,7 +39,6 @@ import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 public class TranslatorDriver {
@@ -52,26 +51,6 @@ public class TranslatorDriver {
 
     public TranslatorDriver(RubyContext context) {
         parseEnvironment = new ParseEnvironment(context);
-    }
-
-    public RubyNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, Node currentNode) {
-        final LexicalScope lexicalScope = context.getRootLexicalScope(); // TODO(eregon): figure out how to get the lexical scope from JRuby
-        final SharedMethodInfo sharedMethod = new SharedMethodInfo(null, lexicalScope, Arity.NO_ARGUMENTS, "(unknown)", false, parseTree, false);
-
-        final TranslatorEnvironment environment = new TranslatorEnvironment(
-                context, environmentForFrame(context, null), parseEnvironment, parseEnvironment.allocateReturnID(), true, true, sharedMethod, sharedMethod.getName(), false, null);
-
-        // Translate to Ruby Truffle nodes
-
-        final MethodTranslator translator;
-
-        try {
-            translator = new MethodTranslator(currentNode, context, null, environment, false, Source.fromFileName(bodyNode.getPosition().getFile()), argsNode);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return translator.compileFunctionNode(null, "(unknown)", bodyNode, sharedMethod);
     }
 
     public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode, NodeWrapper wrapper) {
