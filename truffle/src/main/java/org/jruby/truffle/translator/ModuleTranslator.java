@@ -82,7 +82,29 @@ class ModuleTranslator extends BodyTranslator {
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition(), node.getName());
         final SelfNode classNode = new SelfNode(context, sourceSection);
-        return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode());
+
+        // If we have a method we've defined in a node, but would like to delegate some corner cases out to the
+        // Rubinius implementation for simplicity, we need a way to resolve the naming conflict.  The naive solution
+        // here is to append "_internal" to the method name, which can then be called like any other method.  This is
+        // a bit different than aliasing because normally if a Rubinius method name conflicts with an already defined
+        // method, we simply ignore the method definition.  Here we explicitly rename the method so it's always defined.
+
+        String methodName = node.getName();
+        boolean rubiniusMethodRename = false;
+
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/array.rb")) {
+            rubiniusMethodRename = methodName.equals("zip");
+        } else if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/float.rb")) {
+            rubiniusMethodRename = methodName.equals("round");
+        } else if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/range.rb")) {
+            rubiniusMethodRename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
+        }
+
+        if (rubiniusMethodRename) {
+            methodName = methodName + "_internal";
+        }
+
+        return translateMethodDefinition(sourceSection, classNode, methodName, node, node.getArgsNode(), node.getBodyNode());
     }
 
     @Override

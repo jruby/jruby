@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,6 +24,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Truffle doesn't have a class MAIN, but it's implied by `self`, so just use that here.
 class << self
   def include(*mods)
     Rubinius.privately do
@@ -33,6 +34,22 @@ class << self
 
   # Truffle: Do not define #public, #private in Ruby since they need
   # to set the top-level frame visibility when called with no argument.
+
+  #def public(*methods)
+  #  Rubinius.privately do
+  #    Object.public(*methods)
+  #  end
+  #
+  #  Object
+  #end
+
+  #def private(*methods)
+  #  Rubinius.privately do
+  #    Object.private(*methods)
+  #  end
+  #
+  #  Object
+  #end
 
   def define_method(*args, &block)
     Rubinius.privately do

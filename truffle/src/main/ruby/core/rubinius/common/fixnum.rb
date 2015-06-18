@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,26 +24,61 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' fixnum.rb
+##
+#--
+# NOTE do not define to_sym or id2name. It's been deprecated for 5 years and
+# we've decided to remove it.
+#++
 
-# Our Bignum#coerce(Fixnum).first returns a Fixnum and not a Bignum.
-# Therefore all Fixnum operations should handle Bignum (or Integer)
-# explicitly instead of using coercion.
+class Fixnum < Integer
 
-class Fixnum
+  def self.induced_from(obj)
+    case obj
+    when Fixnum
+      return obj
+    when Float, Bignum
+      value = obj.to_i
+      if value.is_a? Bignum
+        raise RangeError, "Object is out of range for a Fixnum"
+      else
+        return value
+      end
+    else
+      value = Rubinius::Type.coerce_to(obj, Integer, :to_int)
+      return self.induced_from(value)
+    end
+  end
+
+  #--
+  # see README-DEVELOPERS regarding safe math compiler plugin
+  #++
+
+  Truffle.omit(":divide is a Rubinius internal detail. We define :/ directly in Java") do
+    alias_method :/, :divide
+  end
 
   alias_method :modulo, :%
 
-  def coerce(other)
-    Rubinius.primitive :fixnum_coerce
-    super other
-  end
-
   def fdiv(n)
-    if n.kind_of?(Integer) # Truffle: Fixnum => Integer, to handle Bignum as MRI
+    if n.kind_of?(Fixnum)
       to_f / n
     else
       redo_coerced :fdiv, n
+    end
+  end
+
+  def imaginary
+    0
+  end
+
+  Truffle.omit(":divide is a Rubinius internal detail. We define :/ directly in Java") do
+    # Must be it's own method, so that super calls the correct method
+    # on Numeric
+    def div(o)
+      if o.is_a?(Float) && o == 0.0
+        raise ZeroDivisionError, "division by zero"
+      end
+      divide(o).floor
     end
   end
 
@@ -58,5 +93,4 @@ class Fixnum
 
     redo_coerced :**, o
   end
-
 end

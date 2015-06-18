@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,9 +24,13 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' numeric.rb
-
 class Numeric
+  include Comparable
+
+  # Always raises TypeError, as dup'ing Numerics is not allowed.
+  def initialize_copy(other)
+    raise TypeError, "copy of #{self.class} is not allowed"
+  end
 
   def +@
     self
@@ -36,13 +40,127 @@ class Numeric
     0 - self
   end
 
+  def divmod(other)
+    [div(other), self % other]
+  end
+
   def eql?(other)
     return false unless other.instance_of? self.class
     self == other
   end
 
-  def divmod(other)
-    [div(other), self % other]
+  def <=>(other)
+    # It's important this method NOT contain the coercion protocols!
+    # MRI doesn't and doing so breaks stuff!
+
+    return 0 if self.equal? other
+    return nil
+  end
+
+  def step(limit, step=1)
+    unless block_given?
+      return to_enum(:step, limit, step) do
+        Rubinius::Mirror::Numeric.reflect(self).step_size(limit, step)
+      end
+    end
+
+    raise ArgumentError, "step cannot be 0" if step == 0
+
+    m = Rubinius::Mirror::Numeric.reflect(self)
+    values = m.step_fetch_args(limit, step)
+    value = values[0]
+    limit = values[1]
+    step = values[2]
+    asc = values[3]
+    is_float = values[4]
+
+    if is_float
+      n = m.step_float_size(value, limit, step, asc)
+
+      if n > 0
+        if step.infinite?
+          yield value
+        else
+          i = 0
+          if asc
+            while i < n
+              d = i * step + value
+              d = limit if limit < d
+              yield d
+              i += 1
+            end
+          else
+            while i < n
+              d = i * step + value
+              d = limit if limit > d
+              yield d
+              i += 1
+            end
+          end
+        end
+      end
+    else
+      if asc
+        until value > limit
+          yield value
+          value += step
+        end
+      else
+        until value < limit
+          yield value
+          value += step
+        end
+      end
+    end
+
+    return self
+  end
+
+  def truncate
+    Float(self).truncate
+  end
+
+  # Delegate #to_int to #to_i in subclasses
+  def to_int
+    to_i
+  end
+
+  def integer?
+    false
+  end
+
+  def zero?
+    self == 0
+  end
+
+  def nonzero?
+    zero? ? nil : self
+  end
+
+  def round
+    to_f.round
+  end
+
+  def abs
+    self < 0 ? -self : self
+  end
+
+  def floor
+    FloatValue(self).floor
+  end
+
+  def ceil
+    FloatValue(self).ceil
+  end
+
+  def remainder(other)
+    mod = self % other
+
+    if mod != 0 and ((self < 0 and other > 0) or (self > 0 and other < 0))
+      mod - other
+    else
+      mod
+    end
   end
 
   #--
@@ -54,10 +172,6 @@ class Numeric
   #   a.coerce b => [Float, Float]
   #   b.coerce a => [Bignum, Bignum]
   #++
-
-  def abs
-    self < 0 ? -self : self
-  end
 
   def coerce(other)
     if other.instance_of? self.class
@@ -101,12 +215,9 @@ class Numeric
   end
   private :redo_coerced
 
-  def zero?
-    self == 0
-  end
-
-  def nonzero?
-    zero? ? nil : self
+  def redo_compare(meth, right)
+    b, a = math_coerce(right, :compare_error)
+    a.__send__ meth, b
   end
 
   def div(other)
@@ -118,47 +229,16 @@ class Numeric
     self.to_f / other
   end
 
-  alias_method :magnitude, :abs
-
-  def real?
-    true
-  end
-
-  def numerator
-    to_r.numerator
-  end
-  
-  def denominator
-    to_r.denominator
-  end
-
-  def abs2
-    self * self
-  end
-
-  def arg
-    if self < 0
-      Math::PI
-    else
-      0
+  def quo(other)
+    Rubinius.privately do
+      Rational.convert(self, 1, false) / other
     end
   end
-  
-  alias_method :angle, :arg
-  alias_method :phase, :arg
 
-  def ceil
-    FloatValue(self).ceil
+  def modulo(other)
+    self - other * self.div(other)
   end
-
-  def conjugate
-    self
-  end
-  alias_method :conj, :conjugate
-
-  def floor
-    FloatValue(self).floor
-  end
+  alias_method :%, :modulo
 
   def i
     Complex(0, self)
@@ -177,96 +257,45 @@ class Numeric
   end
   alias_method :imaginary, :imag
 
-  def rect
-    [self, 0]
+  def arg
+    if self < 0
+      Math::PI
+    else
+      0
+    end
   end
-  alias_method :rectangular, :rect
-
-  def truncate
-    Float(self).truncate
-  end
-
-  def round
-    to_f.round
-  end
+  alias_method :angle, :arg
+  alias_method :phase, :arg
 
   def polar
     return abs, arg
   end
 
-  # Delegate #to_int to #to_i in subclasses
-  def to_int
-    to_i
+  def conjugate
+    self
+  end
+  alias_method :conj, :conjugate
+
+  def rect
+    [self, 0]
+  end
+  alias_method :rectangular, :rect
+
+  def abs2
+    self * self
   end
 
-  def integer?
-    false
+  alias_method :magnitude, :abs
+
+  def numerator
+    to_r.numerator
   end
 
-  def modulo(other)
-    self - other * self.div(other)
-  end
-  alias_method :%, :modulo
-
-  def quo(other)
-    Rubinius.privately do
-      Rational.convert(self, 1, false) / other
-    end
+  def denominator
+    to_r.denominator
   end
 
-  def step(limit, step=1)
-    return to_enum(:step, limit, step) unless block_given?
-
-    raise ArgumentError, "step cannot be 0" if step == 0
-
-    value = self
-    if value.kind_of? Float or limit.kind_of? Float or step.kind_of? Float
-      # Ported from MRI
-
-      value = FloatValue(value)
-      limit = FloatValue(limit)
-      step =  FloatValue(step)
-
-      if step.infinite?
-        yield value if step > 0 ? value <= limit : value >= limit
-      else
-        err = (value.abs + limit.abs + (limit - value).abs) / step.abs * Float::EPSILON
-        if err.finite?
-          err = 0.5 if err > 0.5
-          n = ((limit - value) / step + err).floor
-          i = 0
-          if step > 0
-            while i <= n
-              d = i * step + value
-              d = limit if limit < d
-              yield d
-              i += 1
-            end
-          else
-            while i <= n
-              d = i * step + value
-              d = limit if limit > d
-              yield d
-              i += 1
-            end
-          end
-        end
-      end
-    else
-      if step > 0
-        until value > limit
-          yield value
-          value += step
-        end
-      else
-        until value < limit
-          yield value
-          value += step
-        end
-      end
-    end
-
-    return self
+  def real?
+    true
   end
-
 end

@@ -1,4 +1,4 @@
- # Copyright (c) 2007-2014, Evan Phoenix and contributors
+ # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,9 +24,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' dir.rb
-
 class Dir
+  include Enumerable
 
   # This seems silly, I know. But we do this to make Dir more resistent to people
   # screwing with ::File later (ie, fakefs)
@@ -59,6 +58,18 @@ class Dir
     end
 
     ret
+  end
+
+  def self.exist?(path)
+    PrivateFile.directory?(path)
+  end
+
+  class << self
+    alias_method :exists?, :exist?
+  end
+
+  def self.home(user=nil)
+    PrivateFile.expand_path("~#{user}")
   end
 
   def self.[](*patterns)
@@ -115,12 +126,6 @@ class Dir
     result << pattern.byteslice(start, pattern.bytesize)
   end
 
-  def self.mkdir(path, mode = 0777)
-    error = FFI::Platform::POSIX.mkdir(Rubinius::Type.coerce_to_path(path), mode)
-    Errno.handle path if error != 0
-    error
-  end
-
   def self.foreach(path)
     return to_enum(:foreach, path) unless block_given?
 
@@ -160,6 +165,12 @@ class Dir
     end
   end
 
+  def self.mkdir(path, mode = 0777)
+    error = FFI::Platform::POSIX.mkdir(Rubinius::Type.coerce_to_path(path), mode)
+    Errno.handle path if error != 0
+    error
+  end
+
   def self.rmdir(path)
     error = FFI::Platform::POSIX.rmdir(Rubinius::Type.coerce_to_path(path))
     Errno.handle path if error != 0
@@ -173,6 +184,12 @@ class Dir
     Rubinius::Type.external_string wd
   end
 
+  def self.chroot(path)
+    ret = FFI::Platform::POSIX.chroot Rubinius::Type.coerce_to_path(path)
+    Errno.handle path if ret != 0
+    ret
+  end
+
   def each
     return to_enum unless block_given?
 
@@ -182,6 +199,10 @@ class Dir
 
     self
   end
+
+  attr_reader :path
+
+  alias_method :to_path, :path
 
   SeekKind = 0
   RewindKind = 1
@@ -211,22 +232,13 @@ class Dir
     self
   end
 
+  def inspect
+    "#<#{self.class}:#{object_id.to_s(16)} @path=#{@path}>"
+  end
+
   class << self
     alias_method :pwd, :getwd
     alias_method :delete, :rmdir
     alias_method :unlink, :rmdir
   end
-
-  def self.exist?(path)
-    PrivateFile.directory?(path)
-  end
-
-  class << self
-    alias_method :exists?, :exist?
-  end
-
-  def self.home(user=nil)
-    PrivateFile.expand_path("~#{user}")
-  end
-
 end

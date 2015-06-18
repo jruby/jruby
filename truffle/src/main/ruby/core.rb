@@ -6,6 +6,14 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
+module Truffle
+  # Utility method for commenting out part of Rubinius's implementation and detailing why.  It helps clearly
+  # demarcate things we want to omit from things Rubinius has left commented out and as such, should help compare
+  # diffs when upgrading Rubinius core files.
+  def self.omit(reason)
+  end
+end
+
 require_relative 'core/pre'
 
 # Load Rubinius API
@@ -18,13 +26,11 @@ require_relative 'core/rubinius/api/kernel/common/type'
 
 require_relative 'core/rubinius/api/shims/mirror'
 require_relative 'core/rubinius/api/shims/lookuptable'
-require_relative 'core/rubinius/api/shims/array'
 require_relative 'core/rubinius/api/shims/rubinius'
 require_relative 'core/rubinius/api/shims/thread'
 require_relative 'core/rubinius/api/shims/tuple'
 require_relative 'core/rubinius/api/shims/metrics'
-require_relative 'core/rubinius/api/shims/module'
-require_relative 'core/rubinius/api/shims/fixnum'
+require_relative 'core/rubinius/api/shims/hash'
 
 # Load alpha.rb
 
@@ -108,19 +114,23 @@ require_relative 'core/rubinius/common/string_mirror'
 #require_relative 'core/rubinius/common/class'
 #require_relative 'core/rubinius/common/autoload'
 require_relative 'core/rubinius/common/module'
+require_relative 'core/rubinius/api/shims/module'
 #require_relative 'core/rubinius/common/binding'
 require_relative 'core/rubinius/common/proc'
+require_relative 'core/rubinius/common/enumerable_helper'
 require_relative 'core/rubinius/common/enumerable'
 require_relative 'core/rubinius/common/enumerator'
 require_relative 'core/rubinius/common/argf'
 #require_relative 'core/rubinius/common/tuple'
 require_relative 'core/rubinius/common/exception'
+require_relative 'core/rubinius/api/shims/exception'
 require_relative 'core/rubinius/common/undefined'
 require_relative 'core/rubinius/common/type'
 require_relative 'core/rubinius/common/hash'
 require_relative 'core/hash' # Our changes
 #require_relative 'core/rubinius/common/hash_hamt'
 require_relative 'core/rubinius/common/array'
+require_relative 'core/rubinius/api/shims/array'
 require_relative 'core/rubinius/common/kernel'
 require_relative 'core/rubinius/common/identity_map'
 #require_relative 'core/rubinius/common/loaded_features'
@@ -143,6 +153,7 @@ require_relative 'core/rubinius/common/channel'
 #require_relative 'core/rubinius/common/continuation'
 #require_relative 'core/rubinius/common/delegated_method'
 require_relative 'core/rubinius/common/fixnum'
+require_relative 'core/rubinius/api/shims/fixnum'
 require_relative 'core/rubinius/common/lru_cache'
 require_relative 'core/rubinius/api/shims/encoding'
 require_relative 'core/rubinius/common/encoding'
@@ -175,6 +186,7 @@ require_relative 'core/rubinius/common/string'
 require_relative 'core/rubinius/common/range_mirror'
 require_relative 'core/rubinius/api/shims/range_mirror'
 require_relative 'core/rubinius/common/range'
+require_relative 'core/rubinius/api/shims/range'
 require_relative 'core/rubinius/common/struct'
 require_relative 'core/rubinius/common/process'
 require_relative 'core/rubinius/common/process_mirror'

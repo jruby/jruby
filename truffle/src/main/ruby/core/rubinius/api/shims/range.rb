@@ -24,50 +24,52 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' kernel.rb
+class Range
 
-module Kernel
-  def raise(exc=undefined, msg=undefined, ctx=nil)
-    skip = false
-    if undefined.equal? exc
-      exc = $!
-      if exc
-        skip = true
-      else
-        exc = RuntimeError.new("No current exception")
-      end
-    elsif exc.respond_to? :exception
-      if undefined.equal? msg
-        exc = exc.exception
-      else
-        exc = exc.exception msg
-      end
-      raise ::TypeError, 'exception class/object expected' unless exc.kind_of?(::Exception)
-    elsif exc.kind_of? String
-      exc = ::RuntimeError.exception exc
+  def include?(value)
+    if @begin.respond_to?(:to_int) ||
+        @end.respond_to?(:to_int) ||
+        @begin.kind_of?(Numeric) ||
+        @end.kind_of?(Numeric)
+      cover? value
     else
-      raise ::TypeError, 'exception class/object expected'
+      # super # MODIFIED inlined this because of local jump error
+      each_internal { |val| return true if val == value }
+      false
     end
-
-    unless skip
-      exc.set_context ctx if ctx
-      exc.capture_backtrace!(2) unless exc.backtrace?
-    end
-
-    if $DEBUG and $VERBOSE != nil
-      if loc = exc.locations and loc[1]
-        pos = loc[1].position
-      else
-        pos = Rubinius::VM.backtrace(1)[0].position
-      end
-
-      STDERR.puts "Exception: `#{exc.class}' #{pos} - #{exc.message}"
-    end
-
-    Rubinius.raise_exception exc
   end
-  module_function :raise
 
-  alias_method :fail, :raise
-  module_function :fail
+  alias_method :member?, :include?
+
+  def to_a_internal # MODIFIED called from java to_a
+    return to_a_from_enumerable unless @begin.kind_of? Fixnum and @end.kind_of? Fixnum
+
+    fin = @end
+    fin += 1 unless @excl
+
+    size = fin - @begin
+    return [] if size <= 0
+
+    ary = Array.new(size)
+
+    i = 0
+    while i < size
+      ary[i] = @begin + i
+      i += 1
+    end
+
+    ary
+  end
+
+  def to_a_from_enumerable(*arg)
+    ary = []
+    each(*arg) do
+      o = Rubinius.single_block_arg
+      ary << o
+      nil
+    end
+    Rubinius::Type.infect ary, self
+    ary
+  end
+
 end

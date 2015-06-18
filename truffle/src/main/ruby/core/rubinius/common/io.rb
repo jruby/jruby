@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -998,17 +998,17 @@ class IO
     io.mode       = mode || cur_mode
     io.sync       = !!sync
 
+    # Truffle: STDOUT isn't defined by the time this call is made during bootstrap, so we need to guard it.
+    # if STDOUT.respond_to?(:fileno) and not STDOUT.closed?
     if defined? STDOUT and STDOUT.respond_to?(:fileno) and not STDOUT.closed?
       io.sync ||= STDOUT.fileno == fd
     end
 
+    # Truffle: STDERR isn't defined by the time this call is made during bootstrap, so we need to guard it.
+    # if STDERR.respond_to?(:fileno) and not STDERR.closed?
     if defined? STDERR and STDERR.respond_to?(:fileno) and not STDERR.closed?
       io.sync ||= STDERR.fileno == fd
     end
-  end
-
-  def self.max_open_fd
-    @max_open_fd.get
   end
 
   #
