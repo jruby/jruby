@@ -122,6 +122,7 @@ public class CoreLibrary {
     private final RubyModule errnoModule;
     private final RubyModule kernelModule;
     private final RubyModule rubiniusModule;
+    private final RubyClass rubiniusChannelClass;
     private final RubyModule rubiniusFFIModule;
     private final RubyClass rubiniusMirrorClass;
     private final RubyModule signalModule;
@@ -357,6 +358,7 @@ public class CoreLibrary {
         defineModule(defineModule(rubiniusFFIModule, "Platform"), "POSIX");
         defineClass(rubiniusFFIModule, objectClass, "Pointer", new PointerPrimitiveNodes.PointerAllocator());
 
+        rubiniusChannelClass = defineClass(rubiniusModule, objectClass, "Channel");
         rubiniusMirrorClass = defineClass(rubiniusModule, objectClass, "Mirror");
         defineModule(rubiniusModule, "Type");
 
@@ -1387,6 +1389,10 @@ public class CoreLibrary {
 
     public RubyClass getTupleClass() {
         return tupleClass;
+    }
+
+    public RubyClass getRubiniusChannelClass() {
+        return rubiniusChannelClass;
     }
 
     public RubyClass getRubiniusMirror() {

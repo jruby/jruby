@@ -25,7 +25,7 @@ public abstract class ChannelPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject channelNew() {
-            return new RubyBasicObject(getContext().getCoreLibrary().getObjectClass());
+            return new RubyBasicObject(getContext().getCoreLibrary().getRubiniusChannelClass());
         }
 
     }
