@@ -1,5 +1,4 @@
 fails:Time#utc? returns true if time represents a time in UTC (GMT)
-fails:Time.utc handles string arguments
 fails:Time.utc handles microseconds
 fails:Time.utc handles fractional microseconds as a Float
 fails:Time.utc handles fractional microseconds as a Rational

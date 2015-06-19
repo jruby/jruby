@@ -1,3 +1,0 @@
-fails:Array#cycle when no block is given returned Enumerator size should be the result of multiplying the enumerable size by the argument passed
-fails:Array#cycle when no block is given returned Enumerator size should be zero when the argument passed is 0 or less
-fails:Array#cycle when no block is given returned Enumerator size should be Float::INFINITY when no argument is passed

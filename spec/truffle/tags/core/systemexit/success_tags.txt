@@ -1,2 +1,0 @@
-fails:SystemExit#success? returns true when the status is 0
-fails:SystemExit#success? returns false when the status is not 0

@@ -1,2 +1,0 @@
-fails:#enum_for uses the passed block's value to calculate the size of the enumerator
-fails:#enum_for defers the evaluation of the passed block until #size is called

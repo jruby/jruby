@@ -14,8 +14,6 @@ fails:Proc#curry with arity argument accepts an optional Integer argument for th
 fails:Proc#curry with arity argument returns a Proc when called on a proc
 fails:Proc#curry with arity argument returns a Proc when called on a lambda
 fails:Proc#curry with arity argument retains the lambda-ness of the Proc on which its called
-fails:Proc#curry with arity argument raises an ArgumentError if called on a lambda that requires more than _arity_ arguments
-fails:Proc#curry with arity argument raises an ArgumentError if called on a lambda that requires fewer than _arity_ arguments
 fails:Proc#curry with arity argument calls the curried proc with the arguments if _arity_ arguments have been given
 fails:Proc#curry with arity argument returns a Proc that consumes the remainder of the arguments when fewer than _arity_ arguments are given
 fails:Proc#curry with arity argument can be specified multiple times on the same Proc
