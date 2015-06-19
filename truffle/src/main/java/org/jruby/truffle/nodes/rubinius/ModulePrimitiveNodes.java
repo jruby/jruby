@@ -10,34 +10,32 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyString;
 
 public abstract class ModulePrimitiveNodes {
 
     @RubiniusPrimitive(name = "module_mirror")
     public abstract static class ModuleMirrorPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @CompilationFinal RubyModule stringMirror;
-        
+        @Child private CallDispatchHeadNode moduleMirrorNode;
+
         public ModuleMirrorPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
-        public RubyModule moduleMirror(RubyString string) {
-            if (stringMirror == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                final RubyModule rubinius = (RubyModule) getContext().getCoreLibrary().getObjectClass().getConstants().get("Rubinius").getValue();
-                final RubyModule mirror = (RubyModule) rubinius.getConstants().get("Mirror").getValue();
-                stringMirror = (RubyModule) mirror.getConstants().get("String").getValue();
+        public Object moduleMirrorCached(VirtualFrame frame, Object reflectee) {
+            if (moduleMirrorNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                moduleMirrorNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), null));
             }
-            
-            return stringMirror;
+
+            return moduleMirrorNode.call(frame, getContext().getCoreLibrary().getRubiniusMirrorClass(), "module_mirror", null, reflectee);
         }
 
     }

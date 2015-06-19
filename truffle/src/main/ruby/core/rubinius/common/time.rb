@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -113,7 +113,7 @@ class Time
     else
       str = strftime("%Y-%m-%d %H:%M:%S %z")
     end
-  
+
     str.force_encoding Encoding::US_ASCII
   end
 
@@ -174,11 +174,12 @@ class Time
 
   def to_f
     seconds + nsec * 0.000000001 # Truffle: optimized
+    #to_r.to_f
   end
 
   def +(other)
     raise TypeError, 'time + time?' if other.kind_of?(Time)
-  
+
     case other = Rubinius::Type.coerce_to_exact_num(other)
     when Integer
       other_sec = other
@@ -187,7 +188,7 @@ class Time
       other_sec, nsec_frac = other.divmod(1)
       other_nsec = (nsec_frac * 1_000_000_000).to_i
     end
-  
+
     # Don't use self.class, MRI doesn't honor subclasses here
     Time.specific(seconds + other_sec, nsec + other_nsec, @is_gmt, @offset)
   end
@@ -196,7 +197,7 @@ class Time
     if other.kind_of?(Time)
       return (seconds - other.seconds) + ((nsec - other.nsec) * 0.000000001)
     end
-  
+
     case other = Rubinius::Type.coerce_to_exact_num(other)
     when Integer
       other_sec = other
@@ -205,7 +206,7 @@ class Time
       other_sec, nsec_frac = other.divmod(1)
       other_nsec = (nsec_frac * 1_000_000_000 + 0.5).to_i
     end
-  
+
     # Don't use self.class, MRI doesn't honor subclasses here
     Time.specific(seconds - other_sec, nsec - other_nsec, @is_gmt, @offset)
   end
@@ -340,10 +341,22 @@ class Time
         raise ArgumentError, "wrong number of arguments (9 for 1..8)"
       end
 
-      y, m, d, hr, min, sec, usec = p1, p2, p3, p4, p5, p6, p7
+      y = p1
+      m = p2
+      d = p3
+      hr = p4
+      min = p5
+      sec = p6
+      usec = p7
       is_dst = -1
     else
-      y, m, d, hr, min, sec, usec = p6, p5, p4, p3, p2, p1, 0
+      y = p6
+      m = p5
+      d = p4
+      hr = p3
+      min = p2
+      sec = p1
+      usec = 0
       is_dst = is_dst ? 1 : 0
     end
 

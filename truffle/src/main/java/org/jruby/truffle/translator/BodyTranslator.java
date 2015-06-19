@@ -415,6 +415,13 @@ public class BodyTranslator extends Translator {
                 && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getName().equals("Primitive")
                 && node.getName().equals("assert_not_compiled")) {
             return AssertNotCompiledNodeGen.create(context, sourceSection);
+        } else if (node.getReceiverNode() instanceof org.jruby.ast.ConstNode
+                && ((ConstNode) node.getReceiverNode()).getName().equals("Truffle")) {
+            if (node.getName().equals("omit")) {
+                // We're never going to run the omitted code and it's never used as the RHS for anything, so just
+                // replace the call with nil.
+                return new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+            }
         }
 
         return visitCallNodeExtraArgument(node, null, false, false);
@@ -1607,6 +1614,16 @@ public class BodyTranslator extends Translator {
             }
         }
 
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/range.rb")) {
+            if (name.equals("@begin")) {
+                return RangeNodesFactory.InternalSetBeginNodeGen.create(context, sourceSection, self, rhs);
+            } else if (name.equals("@end")) {
+                return RangeNodesFactory.InternalSetEndNodeGen.create(context, sourceSection, self, rhs);
+            } else if (name.equals("@excl")) {
+                return RangeNodesFactory.InternalSetExcludeEndNodeGen.create(context, sourceSection, self, rhs);
+            }
+        }
+
 
         return new WriteInstanceVariableNode(context, sourceSection, name, self, rhs, false);
     }
@@ -1625,7 +1642,9 @@ public class BodyTranslator extends Translator {
          * self, and @start to be 0.
          */
 
-        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/array.rb")) {
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/array.rb") ||
+                sourceSection.getSource().getPath().equals("core:/core/rubinius/api/shims/array.rb")) {
+
             if (name.equals("@total")) {
                 return new RubyCallNode(context, sourceSection, "size", self, null, false);
             } else if (name.equals("@tuple")) {
@@ -1679,7 +1698,9 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/range.rb")) {
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/range.rb") ||
+                sourceSection.getSource().getPath().equals("core:/core/rubinius/api/shims/range.rb")) {
+
             if (name.equals("@begin")) {
                 return RangeNodesFactory.BeginNodeFactory.create(context, sourceSection, new RubyNode[] { self });
             } else if (name.equals("@end")) {

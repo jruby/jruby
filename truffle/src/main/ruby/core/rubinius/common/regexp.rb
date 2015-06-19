@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -103,31 +103,31 @@ class Regexp
 
   def self.union(*patterns)
     case patterns.size
-      when 0
-        return %r/(?!)/
-      when 1
-        pat = patterns.first
-        case pat
-          when Array
-            return union(*pat)
-          when Regexp
-            return pat
-          else
-            return Regexp.new(Regexp.quote(StringValue(pat)))
-        end
+    when 0
+      return %r/(?!)/
+    when 1
+      pat = patterns.first
+      case pat
+      when Array
+        return union(*pat)
+      when Regexp
+        return pat
       else
-        compatible?(*patterns)
-        enc = convert(patterns.first).encoding
+        return Regexp.new(Regexp.quote(StringValue(pat)))
+      end
+    else
+      compatible?(*patterns)
+      enc = convert(patterns.first).encoding
     end
 
     str = "".encode(enc)
     sep = "|".encode(enc)
-    patterns.each_with_index do |pattern, idx|
+    patterns.each_with_index do |pat, idx|
       str << sep if idx != 0
-      if pattern.kind_of? Regexp
-        str << pattern.to_s
+      if pat.kind_of? Regexp
+        str << pat.to_s
       else
-        str << Regexp.quote(StringValue(pattern))
+        str << Regexp.quote(StringValue(pat))
       end
     end
 
@@ -154,6 +154,8 @@ class Regexp
     if pattern.kind_of?(Regexp)
       opts = pattern.options
       pattern = pattern.source
+    elsif pattern.kind_of?(Fixnum) or pattern.kind_of?(Float)
+      raise TypeError, "can't convert Fixnum into String"
     elsif opts.kind_of?(Fixnum)
       opts = opts & (OPTION_MASK | KCODE_MASK) if opts > 0
     elsif opts
@@ -300,9 +302,9 @@ class Regexp
   class SourceParser
     class Part
       OPTIONS_MAP = {
-          'm' => Regexp::MULTILINE,
-          'i' => Regexp::IGNORECASE,
-          'x' => Regexp::EXTENDED
+        'm' => Regexp::MULTILINE,
+        'i' => Regexp::IGNORECASE,
+        'x' => Regexp::EXTENDED
       }
 
       attr_accessor :options
@@ -402,15 +404,15 @@ class Regexp
       return unless @index < @source.size
       char =  @source[@index].chr
       case char
-        when '('
-          idx = @index + 1
-          if idx < @source.size and @source[idx].chr == '?'
-            process_group
-          else
-            push_current_character!
-          end
+      when '('
+        idx = @index + 1
+        if idx < @source.size and @source[idx].chr == '?'
+          process_group
         else
           push_current_character!
+        end
+      else
+        push_current_character!
       end
       create_parts
     end
@@ -459,14 +461,14 @@ class Regexp
     def process_group_options
       @parts.last.has_options!
       case @source[@index].chr
-        when ')'
-          return
-        when ':'
-          @index += 1
-          return
-        else
-          push_option!
-          process_group_options
+      when ')'
+        return
+      when ':'
+        @index += 1
+        return
+      else
+        push_option!
+        process_group_options
       end
     end
 
@@ -628,35 +630,35 @@ class MatchData
     return to_a[idx, len] if len
 
     case idx
-      when Fixnum
-        if idx <= 0
-          return matched_area() if idx == 0
-          return to_a[idx]
-        elsif idx <= @region.size
-          tup = @region[idx - 1]
+    when Fixnum
+      if idx <= 0
+        return matched_area() if idx == 0
+        return to_a[idx]
+      elsif idx <= @region.size
+        tup = @region[idx - 1]
 
-          x = tup.at(0)
-          return nil if x == -1
+        x = tup.at(0)
+        return nil if x == -1
 
-          y = tup.at(1)
-          return @source.byteslice(x, y-x)
-        end
-      when String
-        if @regexp.name_table
-          return self[idx.to_sym]
-        end
-        raise IndexError, "Unknown named group '#{idx}'"
-      when Symbol
-        if @regexp.name_table
-          if nums = @regexp.name_table[idx]
-            nums.reverse_each do |num|
-              val = self[num]
-              return val if val
-            end
-            return nil
+        y = tup.at(1)
+        return @source.byteslice(x, y-x)
+      end
+    when String
+      if @regexp.name_table
+        return self[idx.to_sym]
+      end
+      raise IndexError, "Unknown named group '#{idx}'"
+    when Symbol
+      if @regexp.name_table
+        if nums = @regexp.name_table[idx]
+          nums.reverse_each do |num|
+            val = self[num]
+            return val if val
           end
+          return nil
         end
-        raise IndexError, "Unknown named group '#{idx}'"
+      end
+      raise IndexError, "Unknown named group '#{idx}'"
     end
 
     return to_a[idx]
@@ -666,9 +668,9 @@ class MatchData
 
   def ==(other)
     other.kind_of?(MatchData) &&
-        string == other.string  &&
-        regexp == other.regexp  &&
-        captures == other.captures
+      string == other.string  &&
+      regexp == other.regexp  &&
+      captures == other.captures
   end
   alias_method :eql?, :==
 

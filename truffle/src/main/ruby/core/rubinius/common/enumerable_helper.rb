@@ -24,50 +24,16 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' kernel.rb
-
-module Kernel
-  def raise(exc=undefined, msg=undefined, ctx=nil)
-    skip = false
-    if undefined.equal? exc
-      exc = $!
-      if exc
-        skip = true
+module Rubinius
+  module EnumerableHelper
+    def self.cycle_size(enum_size, many)
+      if many
+        many = Rubinius::Type.coerce_to_collection_index many
+        many = 0 if many < 0
+        (_size = enum_size).nil? ? nil : _size * many
       else
-        exc = RuntimeError.new("No current exception")
+        enum_size.nil? ? nil : Float::INFINITY
       end
-    elsif exc.respond_to? :exception
-      if undefined.equal? msg
-        exc = exc.exception
-      else
-        exc = exc.exception msg
-      end
-      raise ::TypeError, 'exception class/object expected' unless exc.kind_of?(::Exception)
-    elsif exc.kind_of? String
-      exc = ::RuntimeError.exception exc
-    else
-      raise ::TypeError, 'exception class/object expected'
     end
-
-    unless skip
-      exc.set_context ctx if ctx
-      exc.capture_backtrace!(2) unless exc.backtrace?
-    end
-
-    if $DEBUG and $VERBOSE != nil
-      if loc = exc.locations and loc[1]
-        pos = loc[1].position
-      else
-        pos = Rubinius::VM.backtrace(1)[0].position
-      end
-
-      STDERR.puts "Exception: `#{exc.class}' #{pos} - #{exc.message}"
-    end
-
-    Rubinius.raise_exception exc
   end
-  module_function :raise
-
-  alias_method :fail, :raise
-  module_function :fail
 end

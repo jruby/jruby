@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,16 @@ class Module
       mod.included self
     end
     self
+  end
+
+end
+
+module Kernel
+
+  # Rubinius defines this method differently, using the :object_class primitive.  The two primitives are very similar,
+  # so rather than introduce the new one, we'll just delegate to the existing one.
+  def __class__
+    Rubinius.invoke_primitive :vm_object_class, self
   end
 
 end

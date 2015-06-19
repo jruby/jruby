@@ -123,7 +123,9 @@ public class CoreLibrary {
     private final RubyModule errnoModule;
     private final RubyModule kernelModule;
     private final RubyModule rubiniusModule;
+    private final RubyClass rubiniusChannelClass;
     private final RubyModule rubiniusFFIModule;
+    private final RubyClass rubiniusMirrorClass;
     private final RubyModule signalModule;
     private final RubyModule truffleModule;
     private final RubyClass bigDecimalClass;
@@ -220,9 +222,6 @@ public class CoreLibrary {
         // Exception
         exceptionClass = defineClass("Exception", new RubyException.ExceptionAllocator());
 
-        // FiberError
-        fiberErrorClass = defineClass(exceptionClass, "FiberError");
-
         // NoMemoryError
         defineClass(exceptionClass, "NoMemoryError");
 
@@ -233,6 +232,7 @@ public class CoreLibrary {
         standardErrorClass = defineClass(exceptionClass, "StandardError");
         argumentErrorClass = defineClass(standardErrorClass, "ArgumentError");
         encodingErrorClass = defineClass(standardErrorClass, "EncodingError");
+        fiberErrorClass = defineClass(standardErrorClass, "FiberError");
         ioErrorClass = defineClass(standardErrorClass, "IOError");
         localJumpErrorClass = defineClass(standardErrorClass, "LocalJumpError");
         regexpErrorClass = defineClass(standardErrorClass, "RegexpError");
@@ -358,6 +358,9 @@ public class CoreLibrary {
         rubiniusFFIModule = defineModule(rubiniusModule, "FFI");
         defineModule(defineModule(rubiniusFFIModule, "Platform"), "POSIX");
         defineClass(rubiniusFFIModule, objectClass, "Pointer", new PointerNodes.PointerAllocator());
+        
+        rubiniusChannelClass = defineClass(rubiniusModule, objectClass, "Channel");
+        rubiniusMirrorClass = defineClass(rubiniusModule, objectClass, "Mirror");
         defineModule(rubiniusModule, "Type");
 
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
@@ -1387,6 +1390,14 @@ public class CoreLibrary {
 
     public RubyClass getTupleClass() {
         return tupleClass;
+    }
+
+    public RubyClass getRubiniusChannelClass() {
+        return rubiniusChannelClass;
+    }
+
+    public RubyClass getRubiniusMirrorClass() {
+        return rubiniusMirrorClass;
     }
 
     public RubyBasicObject getRubiniusUndefined() {

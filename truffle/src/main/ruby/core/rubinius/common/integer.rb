@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,52 +24,38 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' kernel.rb
-
 class Integer < Numeric
-
-  def gcd(other)
-    raise TypeError, "Expected Integer but got #{other.class}" unless other.kind_of?(Integer)
-    min = self.abs
-    max = other.abs
-    while min > 0
-      tmp = min
-      min = max % min
-      max = tmp
+  def self.induced_from(obj)
+    case obj
+    when Fixnum, Bignum
+      obj
+    when Float
+      obj.to_i
+    else
+      raise TypeError, "failed to convert #{obj.class} into Integer"
     end
-    max
   end
 
-  def to_r
-    Rational(self, 1)
+  def &(other)
+    self & Rubinius::Type.coerce_to_bitwise_operand(other)
   end
 
-  def [](index)
-    index = Rubinius::Type.coerce_to(index, Integer, :to_int)
-    return 0 if index.is_a?(Bignum)
-    index < 0 ? 0 : (self >> index) & 1
+  def |(other)
+    self | Rubinius::Type.coerce_to_bitwise_operand(other)
   end
 
-  def even?
-    self & 1 == 0
+  def ^(other)
+    self ^ Rubinius::Type.coerce_to_bitwise_operand(other)
   end
 
-  def odd?
-    self & 1 == 1
+  def to_i
+    self
   end
 
-  def pred
-    self - 1
-  end
-
-  def next
-    self + 1
-  end
-
-  alias_method :succ, :next
+  alias_method :to_int, :to_i
+  alias_method :truncate, :to_i
   alias_method :ceil, :to_i
   alias_method :floor, :to_i
-  alias_method :truncate, :to_i
 
   def chr(enc=undefined)
     if self < 0 || (self & 0xffff_ffff) != self
@@ -92,36 +78,6 @@ class Integer < Numeric
     end
 
     String.from_codepoint self, enc
-  end
-
-  def lcm(other)
-    raise TypeError, "Expected Integer but got #{other.class}" unless other.kind_of?(Integer)
-    if self.zero? or other.zero?
-      0
-    else
-      (self.div(self.gcd(other)) * other).abs
-    end
-  end
-
-  def gcdlcm(other)
-    gcd = self.gcd(other)
-    if self.zero? or other.zero?
-      [gcd, 0]
-    else
-      [gcd, (self.div(gcd) * other).abs]
-    end
-  end
-
-  def integer?
-    true
-  end
-
-  def ord
-    self
-  end
-
-  def rationalize(eps = nil)
-    Rational(self, 1)
   end
 
   def round(ndigits=undefined)
@@ -170,4 +126,124 @@ class Integer < Numeric
     end
   end
 
+  alias_method :magnitude, :abs
+
+  def gcd(other)
+    raise TypeError, "Expected Integer but got #{other.class}" unless other.kind_of?(Integer)
+    min = self.abs
+    max = other.abs
+    while min > 0
+      tmp = min
+      min = max % min
+      max = tmp
+    end
+    max
+  end
+
+  def rationalize(eps = nil)
+    Rational(self, 1)
+  end
+
+  def numerator
+    self
+  end
+
+  def denominator
+    1
+  end
+
+  def to_r
+    Rational(self, 1)
+  end
+
+  def lcm(other)
+    raise TypeError, "Expected Integer but got #{other.class}" unless other.kind_of?(Integer)
+    if self.zero? or other.zero?
+      0
+    else
+      (self.div(self.gcd(other)) * other).abs
+    end
+  end
+
+  def gcdlcm(other)
+    gcd = self.gcd(other)
+    if self.zero? or other.zero?
+      [gcd, 0]
+    else
+      [gcd, (self.div(gcd) * other).abs]
+    end
+  end
+
+  def [](index)
+    index = Rubinius::Type.coerce_to(index, Integer, :to_int)
+    return 0 if index.is_a?(Bignum)
+    index < 0 ? 0 : (self >> index) & 1
+  end
+
+  # FIXME: implement a fast way to calculate bignum exponents
+  def **(exp)
+    if exp.is_a?(Bignum)
+      raise TypeError, "Bignum exponent #{exp} too large"
+    end
+    super(exp)
+  end
+
+  def next
+    self + 1
+  end
+
+  alias_method :succ, :next
+
+  def integer?
+    true
+  end
+
+  def even?
+    self & 1 == 0
+  end
+
+  def odd?
+    self & 1 == 1
+  end
+
+  def ord
+    self
+  end
+
+  def pred
+    self - 1
+  end
+
+  def times
+    return to_enum(:times) { self } unless block_given?
+
+    i = 0
+    while i < self
+      yield i
+      i += 1
+    end
+    self
+  end
+
+  def upto(val)
+    return to_enum(:upto, val) { self <= val ? val - self + 1 : 0 } unless block_given?
+
+    i = self
+    while i <= val
+      yield i
+      i += 1
+    end
+    self
+  end
+
+  def downto(val)
+    return to_enum(:downto, val) { self >= val ? self - val + 1 : 0 } unless block_given?
+
+    i = self
+    while i >= val
+      yield i
+      i -= 1
+    end
+    self
+  end
 end

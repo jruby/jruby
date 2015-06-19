@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,6 @@ module Rubinius
   #
   class ARGFClass
     include Enumerable
-    attr_reader :argv # Truffle
 
     # :internal:
     #
@@ -47,9 +46,7 @@ module Rubinius
     #
     # @see  #advance!
     #
-    # Truffle: adapted to take argv as input
-    def initialize(argv = ARGV, *others)
-      @argv = argv.equal?(ARGV) ? ARGV : [argv, *others]
+    def initialize
       @lineno = 0
       @advance = true
       @init = false
@@ -456,7 +453,7 @@ module Rubinius
     def set_encoding(*args)
       @encoding_args = args
       if @stream and !@stream.closed?
-        @stream.set_encoding(*args)
+        @stream.set_encoding *args
       end
     end
 
@@ -477,7 +474,7 @@ module Rubinius
       stream = file == "-" ? STDIN : File.open(file, "r", :external_encoding => encoding)
 
       if @encoding_args
-        stream.set_encoding(*@encoding_args)
+        stream.set_encoding *@encoding_args
       elsif encoding
         stream.set_encoding encoding
       end
@@ -515,13 +512,12 @@ module Rubinius
     # there are further file names in ARGV, tries to open
     # the next one as the current stream.
     #
-    # Truffle: adapted to take argv as input
     def advance!
       return true unless @advance
 
       unless @init
 
-        if @argv.empty?
+        if ARGV.empty?
           @advance = false
           @stream = STDIN
           @filename = "-"
@@ -533,11 +529,11 @@ module Rubinius
 
       File.unlink(@backup_filename) if @backup_filename && $-i == ""
 
-      return false if @use_stdin_only || @argv.empty?
+      return false if @use_stdin_only || ARGV.empty?
 
       @advance = false
 
-      file = @argv.shift
+      file = ARGV.shift
       @stream = stream(file)
       @filename = file
 
@@ -559,4 +555,6 @@ end
 # The virtual concatenation file of the files given on command line (or
 # from $stdin if no files were given.) Usable like an IO.
 #
-ARGF = Rubinius::ARGFClass.new(ARGV) # Truffle
+Truffle.omit("We define this in api/shims/argf with an additional argument to the constructor") do
+  ARGF = Rubinius::ARGFClass.new
+end

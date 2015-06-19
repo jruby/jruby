@@ -180,6 +180,11 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @Specialization(guards = "isNil(pointer)")
+        public int getGroupsNil(int max, RubyBasicObject pointer) {
+            return Platform.getPlatform().getGroups(null).length;
+        }
+
         @Specialization(guards = "isRubyPointer(pointer)")
         public int getGroups(int max, RubyBasicObject pointer) {
             final long[] groups = Platform.getPlatform().getGroups(null);

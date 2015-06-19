@@ -24,50 +24,39 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' kernel.rb
 
-module Kernel
-  def raise(exc=undefined, msg=undefined, ctx=nil)
-    skip = false
-    if undefined.equal? exc
-      exc = $!
-      if exc
-        skip = true
-      else
-        exc = RuntimeError.new("No current exception")
+class Hash
+
+  # Renamed version of the Rubinius Hash#[] method
+  #def self.[](*args)
+  def self._constructor_fallback(*args)
+    if args.size == 1
+      obj = args.first
+      if hash = Rubinius::Type.check_convert_type(obj, Hash, :to_hash)
+        new_hash = allocate.replace(hash)
+        new_hash.default = nil
+        return new_hash
+      elsif associate_array = Rubinius::Type.check_convert_type(obj, Array, :to_ary)
+        return new_from_associate_array(associate_array)
       end
-    elsif exc.respond_to? :exception
-      if undefined.equal? msg
-        exc = exc.exception
-      else
-        exc = exc.exception msg
-      end
-      raise ::TypeError, 'exception class/object expected' unless exc.kind_of?(::Exception)
-    elsif exc.kind_of? String
-      exc = ::RuntimeError.exception exc
-    else
-      raise ::TypeError, 'exception class/object expected'
     end
 
-    unless skip
-      exc.set_context ctx if ctx
-      exc.capture_backtrace!(2) unless exc.backtrace?
+    return new if args.empty?
+
+    if args.size & 1 == 1
+      raise ArgumentError, "Expected an even number, got #{args.length}"
     end
 
-    if $DEBUG and $VERBOSE != nil
-      if loc = exc.locations and loc[1]
-        pos = loc[1].position
-      else
-        pos = Rubinius::VM.backtrace(1)[0].position
-      end
+    hash = new
+    i = 0
+    total = args.size
 
-      STDERR.puts "Exception: `#{exc.class}' #{pos} - #{exc.message}"
+    while i < total
+      hash[args[i]] = args[i+1]
+      i += 2
     end
 
-    Rubinius.raise_exception exc
+    hash
   end
-  module_function :raise
 
-  alias_method :fail, :raise
-  module_function :fail
 end

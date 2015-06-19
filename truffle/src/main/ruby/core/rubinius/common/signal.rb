@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,7 @@ module Signal
     if sig.kind_of?(String)
       osig = sig
 
-      if sig.start_with? "SIG" # Truffle: start_with? instead of prefix?
+      if sig.prefix? "SIG"
         sig = sig[3..-1]
       end
 
@@ -95,8 +95,14 @@ module Signal
     return old ? old : nil
   end
 
+  def self.run_handler(sig)
+    # Ignore nil handlers
+    if handler = @handlers[sig]
+      handler.call(sig)
+    end
+  end
+
   def self.list
     Names.dup
   end
-
 end

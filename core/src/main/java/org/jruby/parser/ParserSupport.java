@@ -1168,7 +1168,10 @@ public class ParserSupport {
         if (current.isBlockScope()) {
             if (current.exists(name) >= 0) yyerror("duplicated argument name");
 
-            if (warnings.isVerbose() && current.isDefined(name) >= 0 && Options.PARSER_WARN_LOCAL_SHADOWING.load()) {
+            if (warnings.isVerbose() && current.isDefined(name) >= 0 &&
+                    Options.PARSER_WARN_LOCAL_SHADOWING.load() &&
+                    !ParserSupport.skipTruffleRubiniusWarnings(lexer)) {
+
                 warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getPosition(),
                         "shadowing outer local variable - " + name);
             }
@@ -1417,5 +1420,9 @@ public class ParserSupport {
     
     public String internalId() {
         return "";
+    }
+
+    public static boolean skipTruffleRubiniusWarnings(RubyLexer lexer) {
+        return lexer.tokline.getFile().startsWith("core:/");
     }
 }

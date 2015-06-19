@@ -1025,7 +1025,7 @@ public class RubyLexer {
     }
     
     private void arg_ambiguous() {
-        if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load()) {
+        if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load() && !ParserSupport.skipTruffleRubiniusWarnings(this)) {
             warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
         }
     }
@@ -2414,7 +2414,7 @@ public class RubyLexer {
         default:
             pushback(c);
             if (isSpaceArg(c, spaceSeen)) {
-                if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
+                if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load() && !ParserSupport.skipTruffleRubiniusWarnings(this))
                     warnings.warning(ID.ARGUMENT_AS_PREFIX, getPosition(), "`*' interpreted as argument prefix");
                 c = Tokens.tSTAR;
             } else if (isBEG()) {

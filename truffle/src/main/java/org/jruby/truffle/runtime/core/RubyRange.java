@@ -116,6 +116,18 @@ public abstract class RubyRange extends RubyBasicObject {
             this.excludeEnd = excludeEnd;
         }
 
+        public void setBegin(Object begin) {
+            this.begin = begin;
+        }
+
+        public void setEnd(Object end) {
+            this.end = end;
+        }
+
+        public void setExcludeEnd(boolean excludeEnd) {
+            this.excludeEnd = excludeEnd;
+        }
+
         public Object getBegin() {
             return begin;
         }

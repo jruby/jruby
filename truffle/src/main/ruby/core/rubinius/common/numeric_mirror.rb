@@ -24,50 +24,63 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' kernel.rb
+module Rubinius
+  class Mirror
+    class Numeric < Mirror
+      self.subject = ::Numeric
 
-module Kernel
-  def raise(exc=undefined, msg=undefined, ctx=nil)
-    skip = false
-    if undefined.equal? exc
-      exc = $!
-      if exc
-        skip = true
-      else
-        exc = RuntimeError.new("No current exception")
-      end
-    elsif exc.respond_to? :exception
-      if undefined.equal? msg
-        exc = exc.exception
-      else
-        exc = exc.exception msg
-      end
-      raise ::TypeError, 'exception class/object expected' unless exc.kind_of?(::Exception)
-    elsif exc.kind_of? String
-      exc = ::RuntimeError.exception exc
-    else
-      raise ::TypeError, 'exception class/object expected'
-    end
+      def step_float_size(value, limit, step, asc)
+        if (asc && value > limit) || (!asc && value < limit)
+          return 0
+        end
 
-    unless skip
-      exc.set_context ctx if ctx
-      exc.capture_backtrace!(2) unless exc.backtrace?
-    end
-
-    if $DEBUG and $VERBOSE != nil
-      if loc = exc.locations and loc[1]
-        pos = loc[1].position
-      else
-        pos = Rubinius::VM.backtrace(1)[0].position
+        if step.infinite?
+          1
+        else
+          err = (value.abs + limit.abs + (limit - value).abs) / step.abs * Float::EPSILON
+          if err.finite?
+            err = 0.5 if err > 0.5
+            ((limit - value) / step + err).floor + 1
+          else
+            0
+          end
+        end
       end
 
-      STDERR.puts "Exception: `#{exc.class}' #{pos} - #{exc.message}"
-    end
+      def step_size(limit, step)
+        values = step_fetch_args(limit, step)
+        value = values[0]
+        limit = values[1]
+        step = values[2]
+        asc = values[3]
+        is_float = values[4]
 
-    Rubinius.raise_exception exc
+        if is_float
+          # Ported from MRI
+
+          step_float_size(value, limit, step, asc)
+
+        else
+          if (asc && value > limit) || (!asc && value < limit)
+            0
+          else
+            ((value - limit).abs + 1).fdiv(step.abs).ceil
+          end
+        end
+      end
+
+      def step_fetch_args(limit, step)
+        raise ArgumentError, "step cannot be 0" if step == 0
+
+        value = @object
+        asc = step > 0
+        if value.kind_of? Float or limit.kind_of? Float or step.kind_of? Float
+          return FloatValue(value), FloatValue(limit), FloatValue(step), asc, true
+        else
+          return value, limit, step, asc, false
+        end
+      end
+
+    end
   end
-  module_function :raise
-
-  alias_method :fail, :raise
-  module_function :fail
 end

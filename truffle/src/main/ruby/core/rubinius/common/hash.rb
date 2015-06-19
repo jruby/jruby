@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -359,7 +359,7 @@ class Hash
   end
 
   def each
-    return to_enum(:each) unless block_given?
+    return to_enum(:each) { size } unless block_given?
 
     return unless @state
 
@@ -403,7 +403,7 @@ class Hash
   end
 
   def keep_if
-    return to_enum(:keep_if) unless block_given?
+    return to_enum(:keep_if) { size } unless block_given?
 
     Rubinius.check_frozen
 
@@ -535,7 +535,7 @@ class Hash
   private :initialize_copy
 
   def select
-    return to_enum(:select) unless block_given?
+    return to_enum(:select) { size } unless block_given?
 
     selected = Hash.allocate
 
@@ -549,7 +549,7 @@ class Hash
   end
 
   def select!
-    return to_enum(:select!) unless block_given?
+    return to_enum(:select!) { size } unless block_given?
 
     Rubinius.check_frozen
 
@@ -661,7 +661,7 @@ class Hash
   end
 
   def delete_if(&block)
-    return to_enum(:delete_if) unless block_given?
+    return to_enum(:delete_if) { size } unless block_given?
 
     Rubinius.check_frozen
 
@@ -670,14 +670,14 @@ class Hash
   end
 
   def each_key
-    return to_enum(:each_key) unless block_given?
+    return to_enum(:each_key) { size } unless block_given?
 
     each_item { |item| yield item.key }
     self
   end
 
   def each_value
-    return to_enum(:each_value) unless block_given?
+    return to_enum(:each_value) { size } unless block_given?
 
     each_item { |item| yield item.value }
     self
@@ -777,7 +777,7 @@ class Hash
   end
 
   def reject(&block)
-    return to_enum(:reject) unless block_given?
+    return to_enum(:reject) { size } unless block_given?
 
     hsh = dup.delete_if(&block)
     hsh.taint if tainted?
@@ -785,7 +785,7 @@ class Hash
   end
 
   def reject!(&block)
-    return to_enum(:reject!) unless block_given?
+    return to_enum(:reject!) { size } unless block_given?
 
     Rubinius.check_frozen
 
@@ -849,40 +849,4 @@ class Hash
   alias_method :indices, :values_at
   alias_method :indexes, :values_at
 end
-end
-
-class Hash
-
-  # Renamed version of the Rubinius Hash#[] method
-  #def self.[](*args)
-  def self._constructor_fallback(*args)
-    if args.size == 1
-      obj = args.first
-      if hash = Rubinius::Type.check_convert_type(obj, Hash, :to_hash)
-        new_hash = allocate.replace(hash)
-        new_hash.default = nil
-        return new_hash
-      elsif associate_array = Rubinius::Type.check_convert_type(obj, Array, :to_ary)
-        return new_from_associate_array(associate_array)
-      end
-    end
-
-    return new if args.empty?
-
-    if args.size & 1 == 1
-      raise ArgumentError, "Expected an even number, got #{args.length}"
-    end
-
-    hash = new
-    i = 0
-    total = args.size
-
-    while i < total
-      hash[args[i]] = args[i+1]
-      i += 2
-    end
-
-    hash
-  end
-
 end

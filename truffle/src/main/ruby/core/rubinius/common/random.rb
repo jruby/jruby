@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,9 +24,13 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' random.rb
-
 class Rubinius::Randomizer
+  Truffle.omit("We do our own allocation in Java") do
+    def self.allocate
+      Rubinius.primitive :randomizer_allocate
+      raise PrimitiveFailure, "Randomizer.allocate primitive failed"
+    end
+  end
 
   def initialize
     self.seed = generate_seed

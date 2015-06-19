@@ -99,6 +99,12 @@ class MSpecScript
 
     # LoadError for `load "prime.rb"`
     "^spec/ruby/library/prime/each_spec.rb",
+
+    # Loads 'timeout', which doesn't work yet and results in a message printed to console about Rubinius::Channel#receive
+    # not being implemented.
+    "^spec/ruby/library/net",
+    "^spec/ruby/library/resolv",
+    "^spec/ruby/library/timeout"
   ]
 
   set :truffle, [

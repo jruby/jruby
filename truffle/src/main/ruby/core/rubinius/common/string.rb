@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,14 +24,31 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' string.rb
-
 # Default Ruby Record Separator
 # Used in this file and by various methods that need to ignore $/
 DEFAULT_RECORD_SEPARATOR = "\n"
 
 class String
   include Comparable
+
+  Truffle.omit("We do our own allocation in Java") do
+    def self.__allocate__
+      Rubinius.primitive :string_allocate
+      raise PrimitiveFailure, "String.allocate primitive failed"
+    end
+
+    def self.allocate
+      str = __allocate__
+      str.__data__ = Rubinius::ByteArray.allocate_sized(1)
+      str.num_bytes = 0
+      str
+    end
+  end
+
+  attr_accessor :data
+
+  alias_method :__data__, :data
+  alias_method :__data__=, :data=
 
   ##
   # Creates a new string from copying _count_ bytes from the
@@ -43,6 +60,14 @@ class String
 
   def self.try_convert(obj)
     Rubinius::Type.try_convert obj, String, :to_str
+  end
+
+  class << self
+    def clone
+      raise TypeError, "Unable to clone/dup String class"
+    end
+
+    alias_method :dup, :clone
   end
 
   def initialize(arg = undefined)
@@ -99,14 +124,14 @@ class String
 
   def =~(pattern)
     case pattern
-      when Regexp
-        match_data = pattern.search_region(self, 0, @num_bytes, true)
-        Regexp.last_match = match_data
-        return match_data.begin(0) if match_data
-      when String
-        raise TypeError, "type mismatch: String given"
-      else
-        pattern =~ self
+    when Regexp
+      match_data = pattern.search_region(self, 0, @num_bytes, true)
+      Regexp.last_match = match_data
+      return match_data.begin(0) if match_data
+    when String
+      raise TypeError, "type mismatch: String given"
+    else
+      pattern =~ self
     end
   end
 
@@ -128,41 +153,36 @@ class String
     end
 
     case index
-      when Regexp
-        match_data = index.search_region(self, 0, @num_bytes, true)
-        Regexp.last_match = match_data
-        if match_data
-          result = match_data.to_s
-          Rubinius::Type.infect result, index
-          return result
-        end
-      when String
-        return include?(index) ? index.dup : nil
-      when Range
-        start   = Rubinius::Type.coerce_to index.first, Fixnum, :to_int
-        length  = Rubinius::Type.coerce_to index.last,  Fixnum, :to_int
+    when Regexp
+      match_data = index.search_region(self, 0, @num_bytes, true)
+      Regexp.last_match = match_data
+      if match_data
+        result = match_data.to_s
+        Rubinius::Type.infect result, index
+        return result
+      end
+    when String
+      return include?(index) ? index.dup : nil
+    when Range
+      start   = Rubinius::Type.coerce_to index.first, Fixnum, :to_int
+      length  = Rubinius::Type.coerce_to index.last,  Fixnum, :to_int
 
-        start += size if start < 0
+      start += size if start < 0
 
-        length += size if length < 0
-        length += 1 unless index.exclude_end?
+      length += size if length < 0
+      length += 1 unless index.exclude_end?
 
-        return "" if start == size
-        return nil if start < 0 || start > size
+      return "" if start == size
+      return nil if start < 0 || start > size
 
-        length = size if length > size
-        length = length - start
-        length = 0 if length < 0
+      length = size if length > size
+      length = length - start
+      length = 0 if length < 0
 
-        return substring(start, length)
-      # A really stupid case hit for rails. Either we define this or we define
-      # Symbol#to_int. We removed Symbol#to_int in late 2007 because it's evil,
-      # and do not want to re add it.
-      when Symbol
-        return nil
-      else
-        index = Rubinius::Type.coerce_to index, Fixnum, :to_int
-        return self[index]
+      return substring(start, length)
+    else
+      index = Rubinius::Type.coerce_to index, Fixnum, :to_int
+      return self[index]
     end
   end
   alias_method :slice, :[]
@@ -266,7 +286,9 @@ class String
 
     self.modify!
 
-    i, j = 0, -1
+    i = 0
+    j = -1
+
     while i < @num_bytes
       c = @data[i]
       unless table[c] == 1
@@ -303,7 +325,7 @@ class String
   end
 
   def each_char
-    return to_enum :each_char unless block_given?
+    return to_enum(:each_char) { size } unless block_given?
 
     bytes = 0
     while bytes < @num_bytes
@@ -316,7 +338,7 @@ class String
   end
 
   def each_byte
-    return to_enum :each_byte unless block_given?
+    return to_enum(:each_byte) { bytesize } unless block_given?
     i = 0
     while i < @num_bytes do
       yield @data.get_byte(i)
@@ -359,14 +381,7 @@ class String
   end
 
   def include?(needle)
-    if needle.kind_of? Fixnum
-      needle = needle % 256
-      str_needle = needle.chr
-    else
-      str_needle = StringValue(needle)
-    end
-
-    !!find_string(str_needle, 0)
+    !!find_string(StringValue(needle), 0)
   end
 
   ControlCharacters = [10, 9, 7, 11, 12, 13, 27, 8]
@@ -522,7 +537,10 @@ class String
     table = count_table(*strings).__data__
     self.modify!
 
-    i, j, last = 1, 0, @data[0]
+    i = 1
+    j = 0
+    last = @data[0]
+
     while i < @num_bytes
       c = @data[i]
       unless c == last and table[c] == 1
@@ -696,40 +714,40 @@ class String
       cap = @data[index]
 
       additional = case cap
-                     when 38   # ?&
-                       match[0]
-                     when 96   # ?`
-                       match.pre_match
-                     when 39   # ?'
-                       match.post_match
-                     when 43   # ?+
-                       match.captures.compact[-1].to_s
-                     when 48..57   # ?0..?9
-                       match[cap - 48].to_s
-                     when 92 # ?\\ escaped backslash
-                       '\\'
-                     when 107 # \k named capture
-                       if @data[index + 1] == 60
-                         name = ""
-                         i = index + 2
-                         while i < @data.size && @data[i] != 62
-                           name << @data[i]
-                           i += 1
-                         end
-                         if i >= @data.size
-                           '\\'.append(cap.chr)
-                           index += 1
-                           next
-                         end
-                         index = i
-                         name.force_encoding result.encoding
-                         match[name]
-                       else
-                         '\\'.append(cap.chr)
-                       end
-                     else     # unknown escape
-                       '\\'.append(cap.chr)
-                   end
+                when 38   # ?&
+                  match[0]
+                when 96   # ?`
+                  match.pre_match
+                when 39   # ?'
+                  match.post_match
+                when 43   # ?+
+                  match.captures.compact[-1].to_s
+                when 48..57   # ?0..?9
+                  match[cap - 48].to_s
+                when 92 # ?\\ escaped backslash
+                  '\\'
+                when 107 # \k named capture
+                  if @data[index + 1] == 60
+                    name = ""
+                    i = index + 2
+                    while i < @data.size && @data[i] != 62
+                      name << @data[i]
+                      i += 1
+                    end
+                    if i >= @data.size
+                      '\\'.append(cap.chr)
+                      index += 1
+                      next
+                    end
+                    index = i
+                    name.force_encoding result.encoding
+                    match[name]
+                  else
+                    '\\'.append(cap.chr)
+                  end
+                else     # unknown escape
+                  '\\'.append(cap.chr)
+                end
       result.append(additional)
       index += 1
     end
@@ -841,7 +859,7 @@ class String
   end
 
   def each_codepoint
-    return to_enum :each_codepoint unless block_given?
+    return to_enum(:each_codepoint) { size } unless block_given?
 
     each_char { |c| yield c.ord }
     self
@@ -885,42 +903,42 @@ class String
     Rubinius.check_frozen
 
     case to
-      when Encoding
-        to_enc = to
-      when Hash
-        options = to
-        to_enc = Encoding.default_internal
-      when undefined
-        to_enc = Encoding.default_internal
-        return self unless to_enc
-      else
-        opts = Rubinius::Type::check_convert_type to, Hash, :to_hash
+    when Encoding
+      to_enc = to
+    when Hash
+      options = to
+      to_enc = Encoding.default_internal
+    when undefined
+      to_enc = Encoding.default_internal
+      return self unless to_enc
+    else
+      opts = Rubinius::Type::check_convert_type to, Hash, :to_hash
 
-        if opts
-          options = opts
-          to_enc = Encoding.default_internal
-        else
-          to_enc = Rubinius::Type.try_convert_to_encoding to
-        end
+      if opts
+        options = opts
+        to_enc = Encoding.default_internal
+      else
+        to_enc = Rubinius::Type.try_convert_to_encoding to
+      end
     end
 
     case from
-      when undefined
-        from_enc = encoding
-      when Encoding
-        from_enc = from
-      when Hash
-        options = from
+    when undefined
+      from_enc = encoding
+    when Encoding
+      from_enc = from
+    when Hash
+      options = from
+      from_enc = encoding
+    else
+      opts = Rubinius::Type::check_convert_type from, Hash, :to_hash
+
+      if opts
+        options = opts
         from_enc = encoding
       else
-        opts = Rubinius::Type::check_convert_type from, Hash, :to_hash
-
-        if opts
-          options = opts
-          from_enc = encoding
-        else
-          from_enc = Rubinius::Type.coerce_to_encoding from
-        end
+        from_enc = Rubinius::Type.coerce_to_encoding from
+      end
     end
 
     if undefined.equal? from_enc or undefined.equal? to_enc
@@ -928,12 +946,12 @@ class String
     end
 
     case options
-      when undefined
-        options = 0
-      when Hash
-        # do nothing
-      else
-        options = Rubinius::Type.coerce_to options, Hash, :to_hash
+    when undefined
+      options = 0
+    when Hash
+      # do nothing
+    else
+      options = Rubinius::Type.coerce_to options, Hash, :to_hash
     end
 
     if ascii_only? and from_enc.ascii_compatible? and to_enc and to_enc.ascii_compatible?
@@ -949,16 +967,16 @@ class String
     # TODO: replace this hack with transcoders
     if options.kind_of? Hash
       case xml = options[:xml]
-        when :text
-          gsub!(/[&><]/, '&' => '&amp;', '>' => '&gt;', '<' => '&lt;')
-        when :attr
-          gsub!(/[&><"]/, '&' => '&amp;', '>' => '&gt;', '<' => '&lt;', '"' => '&quot;')
-          insert(0, '"')
-          insert(-1, '"')
-        when nil
-          # nothing
-        else
-          raise ArgumentError, "unexpected value for xml option: #{xml.inspect}"
+      when :text
+        gsub!(/[&><]/, '&' => '&amp;', '>' => '&gt;', '<' => '&lt;')
+      when :attr
+        gsub!(/[&><"]/, '&' => '&amp;', '>' => '&gt;', '<' => '&lt;', '"' => '&quot;')
+        insert(0, '"')
+        insert(-1, '"')
+      when nil
+        # nothing
+      else
+        raise ArgumentError, "unexpected value for xml option: #{xml.inspect}"
       end
 
       if options[:universal_newline]
@@ -1052,37 +1070,37 @@ class String
           byte = getbyte(index)
           if byte >= 7 and byte <= 92
             case byte
-              when 7  # \a
-                escaped = '\a'
-              when 8  # \b
-                escaped = '\b'
-              when 9  # \t
-                escaped = '\t'
-              when 10 # \n
-                escaped = '\n'
-              when 11 # \v
-                escaped = '\v'
-              when 12 # \f
-                escaped = '\f'
-              when 13 # \r
-                escaped = '\r'
-              when 27 # \e
-                escaped = '\e'
-              when 34 # \"
-                escaped = '\"'
-              when 35 # #
-                case getbyte(index += 1)
-                  when 36   # $
-                    escaped = '\#$'
-                  when 64   # @
-                    escaped = '\#@'
-                  when 123  # {
-                    escaped = '\#{'
-                  else
-                    index -= 1
-                end
-              when 92 # \\
-                escaped = '\\\\'
+            when 7  # \a
+              escaped = '\a'
+            when 8  # \b
+              escaped = '\b'
+            when 9  # \t
+              escaped = '\t'
+            when 10 # \n
+              escaped = '\n'
+            when 11 # \v
+              escaped = '\v'
+            when 12 # \f
+              escaped = '\f'
+            when 13 # \r
+              escaped = '\r'
+            when 27 # \e
+              escaped = '\e'
+            when 34 # \"
+              escaped = '\"'
+            when 35 # #
+              case getbyte(index += 1)
+              when 36   # $
+                escaped = '\#$'
+              when 64   # @
+                escaped = '\#@'
+              when 123  # {
+                escaped = '\#{'
+              else
+                index -= 1
+              end
+            when 92 # \\
+              escaped = '\\\\'
             end
 
             if escaped
@@ -1179,7 +1197,7 @@ class String
 
     if undefined.equal? replacement
       unless block_given?
-        return to_enum(:sub, pattern, replacement)
+        raise ArgumentError, "method '#{__method__}': given 1, expected 2"
       end
       use_yield = true
       tainted = false
@@ -1246,7 +1264,7 @@ class String
 
     if undefined.equal? replacement
       unless block_given?
-        return to_enum(:sub, pattern, replacement)
+        raise ArgumentError, "method '#{__method__}': given 1, expected 2"
       end
       Rubinius.check_frozen
       use_yield = true
@@ -1353,8 +1371,8 @@ class String
       if ctype.isalnum(s)
         carry = 0
         if (48 <= s && s < 57) ||
-            (97 <= s && s < 122) ||
-            (65 <= s && s < 90)
+           (97 <= s && s < 122) ||
+           (65 <= s && s < 90)
           @data[start] += 1
         elsif s == 57
           @data[start] = 48
@@ -1491,18 +1509,18 @@ class String
       return unless chr.ascii?
 
       case chr.ord
-        when 13
-          # do nothing
-        when 10
-          if j = m.previous_byte_index(bytes)
-            chr = chr_at j
+      when 13
+        # do nothing
+      when 10
+        if j = m.previous_byte_index(bytes)
+          chr = chr_at j
 
-            if chr.ord == 13 and chr.ascii?
-              bytes = j
-            end
+          if chr.ord == 13 and chr.ascii?
+            bytes = j
           end
-        else
-          return
+        end
+      else
+        return
       end
     elsif sep.size == 0
       return if @num_bytes == 0
@@ -1560,6 +1578,7 @@ class String
     @hash_value = nil
     force_encoding(other.encoding)
     @valid_encoding = other.valid_encoding?
+    @ascii_only = nil
 
     Rubinius::Type.infect(self, other)
   end
@@ -1900,12 +1919,12 @@ class String
     pattern = Rubinius::Type.coerce_to_regexp(pattern) unless pattern.kind_of? Regexp
 
     result = if block_given?
-               pattern.match self, pos do |match|
-                 yield match
-               end
-             else
-               pattern.match self, pos
-             end
+      pattern.match self, pos do |match|
+        yield match
+      end
+    else
+      pattern.match self, pos
+    end
     Regexp.propagate_last_match
     result
   end
@@ -1919,21 +1938,21 @@ class String
     # (U+FFFD).
     if !replace and !block_given?
       replace = "\xEF\xBF\xBD".force_encoding("UTF-8")
-      .encode(self.encoding, :undef => :replace, :replace => '?')
+        .encode(self.encoding, :undef => :replace, :replace => '?')
     end
 
     if replace
       unless replace.is_a?(String)
         raise(
-            TypeError,
-            "no implicit conversion of #{replace.class} into String"
+          TypeError,
+          "no implicit conversion of #{replace.class} into String"
         )
       end
 
       unless replace.valid_encoding?
         raise(
-            ArgumentError,
-            "replacement must be a valid byte sequence '#{replace.inspect}'"
+          ArgumentError,
+          "replacement must be a valid byte sequence '#{replace.inspect}'"
         )
       end
 
@@ -1987,113 +2006,113 @@ class String
     m = Rubinius::Mirror.reflect self
 
     case index
-      when Fixnum
-        index += size if index < 0
+    when Fixnum
+      index += size if index < 0
 
-        if index < 0 or index > size
-          raise IndexError, "index #{index} out of string"
+      if index < 0 or index > size
+        raise IndexError, "index #{index} out of string"
+      end
+
+      unless bi = m.byte_index(index)
+        raise IndexError, "unable to find character at: #{index}"
+      end
+
+      if count
+        count = Rubinius::Type.coerce_to count, Fixnum, :to_int
+
+        if count < 0
+          raise IndexError, "count is negative"
         end
 
-        unless bi = m.byte_index(index)
-          raise IndexError, "unable to find character at: #{index}"
-        end
-
-        if count
-          count = Rubinius::Type.coerce_to count, Fixnum, :to_int
-
-          if count < 0
-            raise IndexError, "count is negative"
-          end
-
-          total = index + count
-          if total >= size
-            bs = bytesize - bi
-          else
-            bs = m.byte_index(total) - bi
-          end
-        else
-          bs = index == size ? 0 : m.byte_index(index + 1) - bi
-        end
-
-        replacement = StringValue replacement
-        enc = Rubinius::Type.compatible_encoding self, replacement
-
-        m.splice bi, bs, replacement
-      when String
-        unless start = m.byte_index(index)
-          raise IndexError, "string not matched"
-        end
-
-        replacement = StringValue replacement
-        enc = Rubinius::Type.compatible_encoding self, replacement
-
-        m.splice start, index.bytesize, replacement
-      when Range
-        start = Rubinius::Type.coerce_to index.first, Fixnum, :to_int
-
-        start += size if start < 0
-
-        if start < 0 or start > size
-          raise RangeError, "#{index.first} is out of range"
-        end
-
-        unless bi = m.byte_index(start)
-          raise IndexError, "unable to find character at: #{start}"
-        end
-
-        stop = Rubinius::Type.coerce_to index.last, Fixnum, :to_int
-        stop += size if stop < 0
-        stop -= 1 if index.exclude_end?
-
-        if stop < start
-          bs = 0
-        elsif stop >= size
+        total = index + count
+        if total >= size
           bs = bytesize - bi
         else
-          bs = m.byte_index(stop + 1) - bi
+          bs = m.byte_index(total) - bi
         end
-
-        replacement = StringValue replacement
-        enc = Rubinius::Type.compatible_encoding self, replacement
-
-        m.splice bi, bs, replacement
-      when Regexp
-        if count
-          count = Rubinius::Type.coerce_to count, Fixnum, :to_int
-        else
-          count = 0
-        end
-
-        if match = index.match(self)
-          ms = match.size
-        else
-          raise IndexError, "regexp does not match"
-        end
-
-        count += ms if count < 0 and -count < ms
-        unless count < ms and count >= 0
-          raise IndexError, "index #{count} out of match bounds"
-        end
-
-        unless match[count]
-          raise IndexError, "regexp group #{count} not matched"
-        end
-
-        replacement = StringValue replacement
-        enc = Rubinius::Type.compatible_encoding self, replacement
-
-        bi = m.byte_index match.begin(count)
-        bs = m.byte_index(match.end(count)) - bi
-
-        m.splice bi, bs, replacement
       else
-        index = Rubinius::Type.coerce_to index, Fixnum, :to_int
+        bs = index == size ? 0 : m.byte_index(index + 1) - bi
+      end
 
-        if count
-          return self[index, count] = replacement
-        else
-          return self[index] = replacement
-        end
+      replacement = StringValue replacement
+      enc = Rubinius::Type.compatible_encoding self, replacement
+
+      m.splice bi, bs, replacement
+    when String
+      unless start = m.byte_index(index)
+        raise IndexError, "string not matched"
+      end
+
+      replacement = StringValue replacement
+      enc = Rubinius::Type.compatible_encoding self, replacement
+
+      m.splice start, index.bytesize, replacement
+    when Range
+      start = Rubinius::Type.coerce_to index.first, Fixnum, :to_int
+
+      start += size if start < 0
+
+      if start < 0 or start > size
+        raise RangeError, "#{index.first} is out of range"
+      end
+
+      unless bi = m.byte_index(start)
+        raise IndexError, "unable to find character at: #{start}"
+      end
+
+      stop = Rubinius::Type.coerce_to index.last, Fixnum, :to_int
+      stop += size if stop < 0
+      stop -= 1 if index.exclude_end?
+
+      if stop < start
+        bs = 0
+      elsif stop >= size
+        bs = bytesize - bi
+      else
+        bs = m.byte_index(stop + 1) - bi
+      end
+
+      replacement = StringValue replacement
+      enc = Rubinius::Type.compatible_encoding self, replacement
+
+      m.splice bi, bs, replacement
+    when Regexp
+      if count
+        count = Rubinius::Type.coerce_to count, Fixnum, :to_int
+      else
+        count = 0
+      end
+
+      if match = index.match(self)
+        ms = match.size
+      else
+        raise IndexError, "regexp does not match"
+      end
+
+      count += ms if count < 0 and -count < ms
+      unless count < ms and count >= 0
+        raise IndexError, "index #{count} out of match bounds"
+      end
+
+      unless match[count]
+        raise IndexError, "regexp group #{count} not matched"
+      end
+
+      replacement = StringValue replacement
+      enc = Rubinius::Type.compatible_encoding self, replacement
+
+      bi = m.byte_index match.begin(count)
+      bs = m.byte_index(match.end(count)) - bi
+
+      m.splice bi, bs, replacement
+    else
+      index = Rubinius::Type.coerce_to index, Fixnum, :to_int
+
+      if count
+        return self[index, count] = replacement
+      else
+        return self[index] = replacement
+      end
     end
 
     Rubinius::Type.infect self, replacement
@@ -2285,43 +2304,43 @@ class String
     byte_finish = m.character_to_byte_index finish
 
     case sub
-      when Fixnum
-        if finish == size
-          return nil if finish == 0
-          finish -= 1
-        end
+    when Fixnum
+      if finish == size
+        return nil if finish == 0
+        finish -= 1
+      end
 
-        begin
-          str = sub.chr
-        rescue RangeError
-          return nil
-        end
+      begin
+        str = sub.chr
+      rescue RangeError
+        return nil
+      end
 
-        if byte_index = find_string_reverse(str, byte_finish)
-          return m.byte_to_character_index byte_index
-        end
+      if byte_index = find_string_reverse(str, byte_finish)
+        return m.byte_to_character_index byte_index
+      end
 
-      when Regexp
-        Rubinius::Type.compatible_encoding self, sub
+    when Regexp
+      Rubinius::Type.compatible_encoding self, sub
 
-        match_data = sub.search_region(self, 0, byte_finish, false)
-        Regexp.last_match = match_data
-        return match_data.begin(0) if match_data
+      match_data = sub.search_region(self, 0, byte_finish, false)
+      Regexp.last_match = match_data
+      return match_data.begin(0) if match_data
 
-      else
-        needle = StringValue(sub)
-        needle_size = needle.size
+    else
+      needle = StringValue(sub)
+      needle_size = needle.size
 
-        # needle is bigger that haystack
-        return nil if size < needle_size
+      # needle is bigger that haystack
+      return nil if size < needle_size
 
-        # Boundary case
-        return finish if needle_size == 0
+      # Boundary case
+      return finish if needle_size == 0
 
-        Rubinius::Type.compatible_encoding self, needle
-        if byte_index = find_string_reverse(needle, byte_finish)
-          return m.byte_to_character_index byte_index
-        end
+      Rubinius::Type.compatible_encoding self, needle
+      if byte_index = find_string_reverse(needle, byte_finish)
+        return m.byte_to_character_index byte_index
+      end
     end
 
     return nil
