@@ -491,14 +491,14 @@ public final class Ruby implements Constantizable {
     public IRubyObject executeScript(String script, String filename) {
         byte[] bytes = script.getBytes();
 
-        Node node = parseInline(new ByteArrayInputStream(bytes), filename, null);
+        RootNode root = (RootNode) parseInline(new ByteArrayInputStream(bytes), filename, null);
         ThreadContext context = getCurrentContext();
 
         String oldFile = context.getFile();
         int oldLine = context.getLine();
         try {
-            context.setFileAndLine(node.getPosition());
-            return runInterpreter(node);
+            context.setFileAndLine(root.getFile(), root.getLine());
+            return runInterpreter(root);
         } finally {
             context.setFileAndLine(oldFile, oldLine);
         }
@@ -564,7 +564,7 @@ public final class Ruby implements Constantizable {
             String oldFile = context.getFile();
             int oldLine = context.getLine();
             try {
-                context.setFileAndLine(scriptNode.getPosition());
+                context.setFileAndLine(scriptNode.getFile(), scriptNode.getLine());
 
                 if (config.isAssumePrinting() || config.isAssumeLoop()) {
                     runWithGetsLoop(scriptNode, config.isAssumePrinting(), config.isProcessLineEnds(),

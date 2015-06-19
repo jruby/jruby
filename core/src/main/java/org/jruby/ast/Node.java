@@ -72,6 +72,10 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
         return position;
     }
 
+    public int getLine() {
+        return position.getLine();
+    }
+
     public void setPosition(ISourcePosition position) {
         this.position = position;
     }
