@@ -18,6 +18,8 @@ project 'JRuby Truffle' do
   truffle_version = '0.8-ef8c90391f1ec21bcfb6d5c6fb39757b860d4973-SNAPSHOT'
   jar 'com.oracle:truffle:' + truffle_version
   jar 'com.oracle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
+  jar 'com.oracle:truffle-tck:' + truffle_version, :scope => 'test'
+  jar 'junit:junit', :scope => 'test'
 
   plugin( :compiler,
           'encoding' => 'utf-8',
