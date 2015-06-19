@@ -37,7 +37,6 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
@@ -60,7 +59,8 @@ import java.util.Arrays;
 public class RubyProc extends RubyObject implements DataType {
     private Block block = Block.NULL_BLOCK;
     private Block.Type type;
-    private ISourcePosition sourcePosition;
+    private String file = null;
+    private int line = -1;
 
     protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type) {
         super(runtime, rubyClass);
@@ -68,13 +68,16 @@ public class RubyProc extends RubyObject implements DataType {
         this.type = type;
     }
 
+    @Deprecated
     protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, ISourcePosition sourcePosition) {
-        this(runtime, rubyClass, type);
-        this.sourcePosition = sourcePosition;
+        this(runtime, rubyClass, type, sourcePosition.getFile(), sourcePosition.getLine());
     }
 
     protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, String file, int line) {
-        this(runtime, rubyClass, type, new SimpleSourcePosition(file, line));
+        this(runtime, rubyClass, type);
+
+        this.file = file;
+        this.line = line;
     }
 
     public static RubyClass createProcClass(Ruby runtime) {
@@ -101,9 +104,13 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type) {
-        return newProc(runtime, block, type, null);
+        RubyProc proc = new RubyProc(runtime, runtime.getProc(), type);
+        proc.setup(block);
+
+        return proc;
     }
 
+    @Deprecated
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, ISourcePosition sourcePosition) {
         RubyProc proc = new RubyProc(runtime, runtime.getProc(), type, sourcePosition);
         proc.setup(block);
@@ -186,7 +193,7 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "clone")
     @Override
     public IRubyObject rbClone() {
-    	RubyProc newProc = newProc(getRuntime(), block, type, sourcePosition);
+    	RubyProc newProc = newProc(getRuntime(), block, type, file, line);
     	// TODO: CLONE_SETUP here
     	return newProc;
     }
@@ -194,7 +201,7 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "dup")
     @Override
     public IRubyObject dup() {
-        return newProc(getRuntime(), block, type, sourcePosition);
+        return newProc(getRuntime(), block, type, file, line);
     }
     
     @Override
@@ -335,10 +342,9 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod
     public IRubyObject source_location(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (sourcePosition != null) {
-            return runtime.newArray(runtime.newString(sourcePosition.getFile()),
-                    runtime.newFixnum(sourcePosition.getLine() + 1 /*zero-based*/));
-        } else if (block != null) {
+        if (file != null) return runtime.newArray(runtime.newString(file), runtime.newFixnum(line + 1 /*zero-based*/));
+
+        if (block != null) {
             Binding binding = block.getBinding();
             return runtime.newArray(runtime.newString(binding.getFile()),
                     runtime.newFixnum(binding.getLine() + 1 /*zero-based*/));
