@@ -101,13 +101,13 @@ public class ParserSupport {
     }
     
     public void pushBlockScope() {
-        currentScope = configuration.getRuntime().getStaticScopeFactory().newBlockScope(currentScope);
+        currentScope = configuration.getRuntime().getStaticScopeFactory().newBlockScope(currentScope, lexer.getFile());
         currentScope.setCommandArgumentStack(lexer.getCmdArgumentState().getStack());
         lexer.getCmdArgumentState().reset(0);
     }
     
     public void pushLocalScope() {
-        currentScope = configuration.getRuntime().getStaticScopeFactory().newLocalScope(currentScope);
+        currentScope = configuration.getRuntime().getStaticScopeFactory().newLocalScope(currentScope, lexer.getFile());
         currentScope.setCommandArgumentStack(lexer.getCmdArgumentState().getStack());
         lexer.getCmdArgumentState().reset(0);
     }
@@ -193,7 +193,7 @@ public class ParserSupport {
                 position = topOfAST.getPosition();
             }
             
-            return new RootNode(position, result.getScope(), topOfAST);
+            return new RootNode(position, result.getScope(), topOfAST, lexer.getFile());
         }
 
         ISourcePosition position = topOfAST != null ? topOfAST.getPosition() : result.getBeginNodes().get(0).getPosition();
@@ -205,7 +205,7 @@ public class ParserSupport {
         // Add real top to new top (unless this top is empty [only begin/end nodes or truly empty])
         if (topOfAST != null) newTopOfAST.add(topOfAST);
         
-        return new RootNode(position, result.getScope(), newTopOfAST);
+        return new RootNode(position, result.getScope(), newTopOfAST, lexer.getFile());
     }
     
     /* MRI: block_append */
@@ -848,7 +848,7 @@ public class ParserSupport {
     *  Description of the RubyMethod
     */
     public void initTopLocalVariables() {
-        DynamicScope scope = configuration.getScope(); 
+        DynamicScope scope = configuration.getScope(lexer.getFile());
         currentScope = scope.getStaticScope(); 
         
         result.setScope(scope);

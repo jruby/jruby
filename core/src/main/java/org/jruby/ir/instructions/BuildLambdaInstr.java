@@ -8,8 +8,6 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -20,21 +18,22 @@ import org.jruby.ir.IRFlags;
 
 public class BuildLambdaInstr extends ResultBaseInstr implements FixedArityInstr, ClosureAcceptingInstr {
     /** The position for the block */
-    private final ISourcePosition position;
+    private final String file;
+    private final int line;
 
-    public BuildLambdaInstr(Variable result, Operand lambdaBody, ISourcePosition position) {
+    public BuildLambdaInstr(Variable result, Operand lambdaBody, String file, int line) {
         super(Operation.LAMBDA, result, new Operand[] { lambdaBody });
 
-        this.position = position;
+        this.file = file;
+        this.line = line;
     }
 
-    public String getLambdaBodyName() {
-        // SSS FIXME: this requires a fix 
-        return ""; // getLambdaBody().getClosure().getName();
+    public String getFile() {
+        return file;
     }
 
-    public ISourcePosition getPosition() {
-        return position;
+    public int getLine() {
+        return line;
     }
 
     @Override
@@ -45,7 +44,8 @@ public class BuildLambdaInstr extends ResultBaseInstr implements FixedArityInstr
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new BuildLambdaInstr(ii.getRenamedVariable(getResult()), getLambdaBody().cloneForInlining(ii), position);
+        return new BuildLambdaInstr(ii.getRenamedVariable(getResult()), getLambdaBody().cloneForInlining(ii),
+                getFile(), getLine());
     }
 
     public Operand getLambdaBody() {
@@ -60,13 +60,12 @@ public class BuildLambdaInstr extends ResultBaseInstr implements FixedArityInstr
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getLambdaBody());
-        e.encode(getPosition().getFile());
-        e.encode(getPosition().getLine());
+        e.encode(getFile());
+        e.encode(getLine());
     }
 
     public static BuildLambdaInstr decode(IRReaderDecoder d) {
-        return new BuildLambdaInstr(d.decodeVariable(), d.decodeOperand(),
-                new SimpleSourcePosition(d.decodeString(), d.decodeInt()));
+        return new BuildLambdaInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.decodeInt());
     }
 
     @Override
@@ -82,7 +81,7 @@ public class BuildLambdaInstr extends ResultBaseInstr implements FixedArityInstr
         Block block = (Block)getLambdaBody().retrieve(context, self, currScope, currDynScope, temp);
         // ENEBO: Now can live nil be passed as block reference?
         // SSS FIXME: Should we do the same %self retrieval as in the case of WrappedIRClosure? Or are lambdas special??
-        return RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA, position.getFile(), position.getLine());
+        return RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA, getFile(), getLine());
     }
 
     @Override

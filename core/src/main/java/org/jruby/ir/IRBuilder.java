@@ -527,7 +527,7 @@ public class IRBuilder {
 
         Variable lambda = createTemporaryVariable();
         WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
-        addInstr(new BuildLambdaInstr(lambda, lambdaBody, node.getPosition()));
+        addInstr(new BuildLambdaInstr(lambda, lambdaBody, scope.getFileName(), node.getPosition().getLine()));
         return lambda;
     }
 
@@ -3268,7 +3268,7 @@ public class IRBuilder {
     }
 
     public static InterpreterContext buildRoot(IRManager manager, RootNode rootNode) {
-        IRScriptBody script = new IRScriptBody(manager, rootNode.getPosition().getFile(), rootNode.getStaticScope());
+        IRScriptBody script = new IRScriptBody(manager, rootNode.getFile(), rootNode.getStaticScope());
 
         return topIRBuilder(manager, script).buildRootInner(rootNode);
     }
