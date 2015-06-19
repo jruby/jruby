@@ -4683,7 +4683,7 @@ states[519] = new ParserState() {
 };
 states[520] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new FileNode(lexer.getPosition(), new ByteList(lexer.getPosition().getFile().getBytes(),
+                    yyVal = new FileNode(lexer.getPosition(), new ByteList(lexer.getFile().getBytes(),
                     support.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
     return yyVal;
   }

@@ -2126,7 +2126,7 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new FalseNode(lexer.getPosition());
                 }
                 | k__FILE__ {
-                    $$ = new FileNode(lexer.getPosition(), new ByteList(lexer.getPosition().getFile().getBytes(),
+                    $$ = new FileNode(lexer.getPosition(), new ByteList(lexer.getFile().getBytes(),
                     support.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
                 }
                 | k__LINE__ {

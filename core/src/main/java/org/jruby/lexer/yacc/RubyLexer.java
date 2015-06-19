@@ -604,6 +604,10 @@ public class RubyLexer {
         return new SimpleSourcePosition(src.getFilename(), ruby_sourceline);
     }
 
+    public String getFile() {
+        return src.getFilename();
+    }
+
     public String getCurrentLine() {
         return lex_lastline.toString();
     }

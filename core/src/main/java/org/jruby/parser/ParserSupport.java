@@ -1274,7 +1274,7 @@ public class ParserSupport {
     public void compile_error(String message) { // mri: rb_compile_error_with_enc
         String line = lexer.getCurrentLine();
         ISourcePosition position = lexer.getPosition();
-        String errorMessage = position.getFile() + ":" + position.getLine() + ": ";
+        String errorMessage = lexer.getFile() + ":" + position.getLine() + ": ";
 
         if (line != null && line.length() > 5) {
             boolean addNewline = message != null && ! message.endsWith("\n");
@@ -1423,6 +1423,6 @@ public class ParserSupport {
     }
 
     public static boolean skipTruffleRubiniusWarnings(RubyLexer lexer) {
-        return lexer.tokline.getFile().startsWith("core:/");
+        return lexer.getFile().startsWith("core:/");
     }
 }
