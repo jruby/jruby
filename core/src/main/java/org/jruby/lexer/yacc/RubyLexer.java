@@ -516,7 +516,12 @@ public class RubyLexer {
     }
 
     public void compile_error(String message) {
-        throw new SyntaxException(PID.BAD_HEX_NUMBER, getPosition(), lexb.toString(), message);
+        throw new SyntaxException(PID.BAD_HEX_NUMBER, getFile(), ruby_sourceline, lexb.toString(), message);
+    }
+
+    // FIXME: How does lexb.toString() vs getCurrentLine() differ.
+    public void compile_error(PID pid, String message) {
+        throw new SyntaxException(pid, getFile(), ruby_sourceline, getCurrentLine(), message);
     }
 
     // FIXME: This is our main lexer code mangled into here...
@@ -786,7 +791,7 @@ public class RubyLexer {
                 yaccValue = new RationalNode(getPosition(), numerator.longValueExact(), denominator.longValueExact());
             } catch (ArithmeticException ae) {
                 // FIXME: Rational supports Bignum numerator and denominator
-                throw new SyntaxException(PID.RATIONAL_OUT_OF_RANGE, getPosition(), getCurrentLine(), "Rational (" + numerator + "/" + denominator + ") out of range.");
+                compile_error(PID.RATIONAL_OUT_OF_RANGE, "Rational (" + numerator + "/" + denominator + ") out of range.");
             }
             return considerComplex(Tokens.tRATIONAL, suffix);
         }
@@ -883,14 +888,10 @@ public class RubyLexer {
         } else {
             shortHand = false;
             begin = nextc();
-            if (Character.isLetterOrDigit(begin) /* no mb || ismbchar(term)*/) {
-                throw new SyntaxException(PID.STRING_UNKNOWN_TYPE, getPosition(), getCurrentLine(), "unknown type of %string");
-            }
+            if (Character.isLetterOrDigit(begin) /* no mb || ismbchar(term)*/) compile_error(PID.STRING_UNKNOWN_TYPE, "unknown type of %string");
         }
-        if (c == EOF || begin == EOF) {
-            throw new SyntaxException(PID.STRING_HITS_EOF, getPosition(), getCurrentLine(), "unterminated quoted string meets end of file");
-        }
-        
+        if (c == EOF || begin == EOF) compile_error(PID.STRING_HITS_EOF, "unterminated quoted string meets end of file");
+
         // Figure end-char.  '\0' is special to indicate begin=end and that no nesting?
         switch(begin) {
         case '(': end = ')'; break;
@@ -956,9 +957,9 @@ public class RubyLexer {
             yaccValue = "%" + c + begin;
             return Tokens.tQSYMBOLS_BEG;
         default:
-            throw new SyntaxException(PID.STRING_UNKNOWN_TYPE, 
-                        getPosition(), getCurrentLine(), "unknown type of %string");
+            compile_error(PID.STRING_UNKNOWN_TYPE, "unknown type of %string");
         }
+        return -1; // not-reached
     }
     
     private int hereDocumentIdentifier() throws IOException {
@@ -1575,11 +1576,9 @@ public class RubyLexer {
         if (c != EOF && (Character.isDigit(c) || !isIdentifierChar(c))) {
             pushback(c);
             if ((lex_p - tokp) == 1) {
-                throw new SyntaxException(PID.IVAR_BAD_NAME, getPosition(), getCurrentLine(),
-                        "`@" + ((char) c) + "' is not allowed as an instance variable name");
+                compile_error(PID.IVAR_BAD_NAME, "`@" + ((char) c) + "' is not allowed as an instance variable name");
             }
-            throw new SyntaxException(PID.CVAR_BAD_NAME, getPosition(), getCurrentLine(),
-                    "`@@" + ((char) c) + "' is not allowed as a class variable name");
+            compile_error(PID.CVAR_BAD_NAME, "`@@" + ((char) c) + "' is not allowed as a class variable name");
         }
 
         if (!tokadd_ident(c)) return EOF;
@@ -1802,7 +1801,7 @@ public class RubyLexer {
         default:
             if (!isIdentifierChar(c)) {
                 pushback(c);
-                throw new SyntaxException(PID.CVAR_BAD_NAME, getPosition(), lex_lastline.toString(), "`$" + ((char) c) + "' is not allowed as a global variable name");
+                compile_error(PID.CVAR_BAD_NAME, "`$" + ((char) c) + "' is not allowed as a global variable name");
             }
         
             last_state = lex_state;
@@ -1842,11 +1841,8 @@ public class RubyLexer {
         }
         
         pushback(c);
-        if (Character.isDigit(c)) {
-            throw new SyntaxException(PID.FLOAT_MISSING_ZERO, getPosition(), getCurrentLine(),
-                    "no .<digit> floating literal anymore; put 0 before dot");
-        }
-        
+        if (Character.isDigit(c)) compile_error(PID.FLOAT_MISSING_ZERO, "no .<digit> floating literal anymore; put 0 before dot");
+
         setState(LexState.EXPR_DOT);
         yaccValue = ".";
         return Tokens.tDOT;
@@ -1889,8 +1885,7 @@ public class RubyLexer {
     private int identifier(int c, boolean commandState) throws IOException {
         if (!isIdentifierChar(c)) {
             String badChar = "\\" + Integer.toOctalString(c & 0xff);
-            throw new SyntaxException(PID.CHARACTER_BAD, getPosition(), getCurrentLine(),
-                    "Invalid char `" + badChar + "' ('" + (char) c + "') in expression", badChar);
+            compile_error(PID.CHARACTER_BAD, "Invalid char `" + badChar + "' ('" + (char) c + "') in expression");
         }
 
         newtok(true);
@@ -2243,8 +2238,7 @@ public class RubyLexer {
         }
         
         c = nextc();
-        if (c == EOF) throw new SyntaxException(PID.INCOMPLETE_CHAR_SYNTAX, getPosition(), 
-                getCurrentLine(), "incomplete character syntax");
+        if (c == EOF) compile_error(PID.INCOMPLETE_CHAR_SYNTAX, "incomplete character syntax");
 
         if (Character.isWhitespace(c)){
             if (!isARG()) {
@@ -2494,11 +2488,9 @@ public class RubyLexer {
                     pushback(c);
 
                     if (numberBuffer.length() == startLen) {
-                        throw new SyntaxException(PID.BAD_HEX_NUMBER, getPosition(), 
-                                getCurrentLine(), "Hexadecimal number without hex-digits.");
+                        compile_error(PID.BAD_HEX_NUMBER, "Hexadecimal number without hex-digits.");
                     } else if (nondigit != '\0') {
-                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER,
-                                getPosition(), getCurrentLine(), "Trailing '_' in number.");
+                        compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
                     }
                     return getIntegerToken(numberBuffer.toString(), 16, numberLiteralSuffix(SUFFIX_ALL));
                 case 'b' :
@@ -2520,11 +2512,9 @@ public class RubyLexer {
                     pushback(c);
 
                     if (numberBuffer.length() == startLen) {
-                        throw new SyntaxException(PID.EMPTY_BINARY_NUMBER, getPosition(),
-                                getCurrentLine(), "Binary number without digits.");
+                        compile_error(PID.EMPTY_BINARY_NUMBER, "Binary number without digits.");
                     } else if (nondigit != '\0') {
-                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER,
-                                getPosition(), getCurrentLine(), "Trailing '_' in number.");
+                        compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
                     }
                     return getIntegerToken(numberBuffer.toString(), 2, numberLiteralSuffix(SUFFIX_ALL));
                 case 'd' :
@@ -2546,11 +2536,9 @@ public class RubyLexer {
                     pushback(c);
 
                     if (numberBuffer.length() == startLen) {
-                        throw new SyntaxException(PID.EMPTY_BINARY_NUMBER, getPosition(), 
-                                getCurrentLine(), "Binary number without digits.");
+                        compile_error(PID.EMPTY_BINARY_NUMBER, "Binary number without digits.");
                     } else if (nondigit != '\0') {
-                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(),
-                                getCurrentLine(), "Trailing '_' in number.");
+                        compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
                     }
                     return getIntegerToken(numberBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
                 case 'o':
@@ -2573,17 +2561,13 @@ public class RubyLexer {
                     if (numberBuffer.length() > startLen) {
                         pushback(c);
 
-                        if (nondigit != '\0') {
-                            throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, 
-                                    getPosition(), getCurrentLine(), "Trailing '_' in number.");
-                        }
+                        if (nondigit != '\0') compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
 
                         return getIntegerToken(numberBuffer.toString(), 8, numberLiteralSuffix(SUFFIX_ALL));
                     }
                 case '8' :
                 case '9' :
-                    throw new SyntaxException(PID.BAD_OCTAL_DIGIT, getPosition(),
-                            getCurrentLine(), "Illegal octal digit.");
+                    compile_error(PID.BAD_OCTAL_DIGIT, "Illegal octal digit.");
                 case '.' :
                 case 'e' :
                 case 'E' :
@@ -2617,8 +2601,7 @@ public class RubyLexer {
                 case '.' :
                     if (nondigit != '\0') {
                         pushback(c);
-                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(),
-                                getCurrentLine(), "Trailing '_' in number.");
+                        compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
                     } else if (seen_point || seen_e) {
                         pushback(c);
                         return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);
@@ -2644,8 +2627,7 @@ public class RubyLexer {
                 case 'e' :
                 case 'E' :
                     if (nondigit != '\0') {
-                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(),
-                                getCurrentLine(), "Trailing '_' in number.");
+                        compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
                     } else if (seen_e) {
                         pushback(c);
                         return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);
@@ -2663,10 +2645,7 @@ public class RubyLexer {
                     }
                     break;
                 case '_' : //  '_' in number just ignored
-                    if (nondigit != '\0') {
-                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(),
-                                getCurrentLine(), "Trailing '_' in number.");
-                    }
+                    if (nondigit != '\0') compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
                     nondigit = c;
                     break;
                 default :
@@ -2679,8 +2658,7 @@ public class RubyLexer {
     private int getNumberToken(String number, boolean seen_e, boolean seen_point, int nondigit) throws IOException {
         boolean isFloat = seen_e || seen_point;
         if (nondigit != '\0') {
-            throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(),
-                    getCurrentLine(), "Trailing '_' in number.");
+            compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
         } else if (isFloat) {
             int suffix = numberLiteralSuffix(seen_e ? SUFFIX_I : SUFFIX_ALL);
             return getFloatToken(number, suffix);
@@ -2698,16 +2676,13 @@ public class RubyLexer {
             do {
                 buffer.append(nextc());
                 if (scanHexLiteral(buffer, 6, false, "invalid Unicode escape") > 0x10ffff) {
-                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
-                            getCurrentLine(), "invalid Unicode codepoint (too large)");
+                    compile_error(PID.INVALID_ESCAPE_SYNTAX, "invalid Unicode codepoint (too large)");
                 }
             } while (peek(' ') || peek('\t'));
 
             int c = nextc();
-            if (c != '}') {
-                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
-                        getCurrentLine(), "unterminated Unicode escape");
-            }
+            if (c != '}') compile_error(PID.INVALID_ESCAPE_SYNTAX,  "unterminated Unicode escape");
+
             buffer.append((char) c);
         } else { // handle \\uxxxx
             scanHexLiteral(buffer, 4, true, "Invalid Unicode escape");
@@ -2728,10 +2703,7 @@ public class RubyLexer {
     public boolean tokadd_mbchar(int first_byte) {
         int length = precise_mbclen();
 
-        if (length <= 0) {
-            compile_error("invalid multibyte char (" + current_enc + ")");
-            return false;
-        }
+        if (length <= 0) compile_error("invalid multibyte char (" + current_enc + ")");
 
         lex_p += length - 1;  // we already read first byte so advance pointer for remainder
 
@@ -2745,10 +2717,7 @@ public class RubyLexer {
     public boolean tokadd_mbchar(int first_byte, ByteList buffer) {
         int length = precise_mbclen();
 
-        if (length <= 0) {
-            compile_error("invalid multibyte char (" + current_enc + ")");
-            return false;
-        }
+        if (length <= 0) compile_error("invalid multibyte char (" + current_enc + ")");
 
         tokAdd(first_byte, buffer);                  // add first byte since we have it.
         lex_p += length - 1;                         // we already read first byte so advance pointer for remainder
@@ -2806,16 +2775,14 @@ public class RubyLexer {
                 nextc(); // Eat curly or whitespace
                 codepoint = scanHex(6, false, "invalid Unicode escape");
                 if (codepoint > 0x10ffff) {
-                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
-                            getCurrentLine(), "invalid Unicode codepoint (too large)");
+                    compile_error(PID.INVALID_ESCAPE_SYNTAX,  "invalid Unicode codepoint (too large)");
                 }
                 if (buffer != null) readUTF8EscapeIntoBuffer(codepoint, buffer, stringLiteral);
             } while (peek(' ') || peek('\t'));
 
             c = nextc();
             if (c != '}') {
-                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
-                        getCurrentLine(), "unterminated Unicode escape");
+                compile_error(PID.INVALID_ESCAPE_SYNTAX, "unterminated Unicode escape");
             }
         } else { // handle \\uxxxx
             codepoint = scanHex(4, true, "Invalid Unicode escape");
@@ -2867,19 +2834,16 @@ public class RubyLexer {
                 return ' ';
             case 'M' :
                 if ((c = nextc()) != '-') {
-                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
-                            getCurrentLine(), "Invalid escape character syntax");
+                    compile_error(PID.INVALID_ESCAPE_SYNTAX, "Invalid escape character syntax");
                 } else if ((c = nextc()) == '\\') {
                     return (char) (readEscape() | 0x80);
                 } else if (c == EOF) {
-                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
-                            getCurrentLine(), "Invalid escape character syntax");
+                    compile_error(PID.INVALID_ESCAPE_SYNTAX, "Invalid escape character syntax");
                 } 
                 return (char) ((c & 0xff) | 0x80);
             case 'C' :
                 if (nextc() != '-') {
-                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
-                            getCurrentLine(), "Invalid escape character syntax");
+                    compile_error(PID.INVALID_ESCAPE_SYNTAX, "Invalid escape character syntax");
                 }
             case 'c' :
                 if ((c = nextc()) == '\\') {
@@ -2887,13 +2851,11 @@ public class RubyLexer {
                 } else if (c == '?') {
                     return '\177';
                 } else if (c == EOF) {
-                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
-                            getCurrentLine(), "Invalid escape character syntax");
+                    compile_error(PID.INVALID_ESCAPE_SYNTAX, "Invalid escape character syntax");
                 }
                 return (char) (c & 0x9f);
             case EOF :
-                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
-                        getCurrentLine(), "Invalid escape character syntax");
+                compile_error(PID.INVALID_ESCAPE_SYNTAX, "Invalid escape character syntax");
             default :
                 return c;
         }
@@ -2926,8 +2888,7 @@ public class RubyLexer {
 
         // No hex value after the 'x'.
         if (i == 0 || strict && count != i) {
-            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
-                    getCurrentLine(), errorMessage);
+            compile_error(PID.INVALID_ESCAPE_SYNTAX, errorMessage);
         }
 
         return hexValue;
@@ -2954,10 +2915,7 @@ public class RubyLexer {
         }
 
         // No hex value after the 'x'.
-        if (i == 0 || (strict && count != i)) {
-            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
-                    getCurrentLine(), errorMessage);
-        }
+        if (i == 0 || (strict && count != i)) compile_error(PID.INVALID_ESCAPE_SYNTAX, errorMessage);
 
         return hexValue;
     }
