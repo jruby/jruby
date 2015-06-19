@@ -40,8 +40,7 @@ public class Main {
         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
 
         if (config.isHardExit()) {
-            // We're the command-line JRuby, and should set a shutdown hook for
-            // teardown.
+            // We're the command-line JRuby, and should set a shutdown hook for teardown.
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 public void run() {
                     if (didTeardown.compareAndSet(false, true)) {
@@ -55,27 +54,24 @@ public class Main {
             return;
         } else {
             // Global variables
-            IAccessor d = new ValueAccessor(runtime.newString(filename));
-            runtime.getGlobalVariables().define("$PROGRAM_NAME", d,
-                    GlobalVariable.Scope.GLOBAL);
-            runtime.getGlobalVariables().define("$0", d,
-                    GlobalVariable.Scope.GLOBAL);
+            IAccessor programName = new ValueAccessor(runtime.newString(filename));
+            runtime.getGlobalVariables().define("$PROGRAM_NAME", programName, GlobalVariable.Scope.GLOBAL);
+            runtime.getGlobalVariables().define("$0", programName, GlobalVariable.Scope.GLOBAL);
 
             for (Iterator i = config.getOptionGlobals().entrySet().iterator(); i.hasNext();) {
                 Map.Entry entry = (Map.Entry) i.next();
                 Object value = entry.getValue();
-                IRubyObject varvalue;
+
+                final IRubyObject varvalue;
                 if (value != null) {
                     varvalue = runtime.newString(value.toString());
                 } else {
                     varvalue = runtime.getTrue();
                 }
-                runtime.getGlobalVariables().set(
-                        "$" + entry.getKey().toString(), varvalue);
+                runtime.getGlobalVariables().set("$" + entry.getKey(), varvalue);
             }
 
-            RootNode scriptNode = (RootNode) runtime
-                    .parseFromMain(filename, in);
+            RootNode scriptNode = (RootNode) runtime.parseFromMain(filename, in);
 
             // If no DATA, we're done with the stream, shut it down
             if (runtime.fetchGlobalConstant("DATA") == null) {
