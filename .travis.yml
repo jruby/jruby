@@ -75,6 +75,8 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: COMMAND=test/truffle/run.sh
+    - env: PHASE='-Ptruffle-mri-tests'
+
 
 branches:
   only:
