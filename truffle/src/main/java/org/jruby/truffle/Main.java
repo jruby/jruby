@@ -58,16 +58,14 @@ public class Main {
             runtime.getGlobalVariables().define("$PROGRAM_NAME", programName, GlobalVariable.Scope.GLOBAL);
             runtime.getGlobalVariables().define("$0", programName, GlobalVariable.Scope.GLOBAL);
 
-            for (Iterator i = config.getOptionGlobals().entrySet().iterator(); i.hasNext();) {
-                Map.Entry entry = (Map.Entry) i.next();
-                Object value = entry.getValue();
-
+            for (Map.Entry<String, String> entry : config.getOptionGlobals().entrySet()) {
                 final IRubyObject varvalue;
-                if (value != null) {
-                    varvalue = runtime.newString(value.toString());
+                if (entry.getValue() != null) {
+                    varvalue = runtime.newString(entry.getValue());
                 } else {
                     varvalue = runtime.getTrue();
                 }
+
                 runtime.getGlobalVariables().set("$" + entry.getKey(), varvalue);
             }
 
