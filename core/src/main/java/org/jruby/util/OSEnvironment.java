@@ -46,18 +46,17 @@ public class OSEnvironment {
      *
      * @param runtime
      */
-    public Map getEnvironmentVariableMap(Ruby runtime) {
-        Map envs = null;
-
+    public Map<RubyString, RubyString> getEnvironmentVariableMap(Ruby runtime) {
         if (runtime.getInstanceConfig().getEnvironment() != null) {
             return getAsMapOfRubyStrings(runtime, runtime.getInstanceConfig().getEnvironment());
         }
 
+        final Map<RubyString, RubyString> envs;
         // fall back on empty env when security disallows environment var access (like in an applet)
         if (Ruby.isSecurityRestricted()) {
-            envs = new HashMap();
+            envs = new HashMap<RubyString, RubyString>();
         } else {
-            Map variables = System.getenv();
+            Map<String, String> variables = System.getenv();
             envs = getAsMapOfRubyStrings(runtime, variables);
         }
 
@@ -70,9 +69,9 @@ public class OSEnvironment {
      * @param runtime
      * @return the java system properties as a Map<RubyString,RubyString>.
      */
-    public Map getSystemPropertiesMap(Ruby runtime) {
+    public Map<RubyString, RubyString> getSystemPropertiesMap(Ruby runtime) {
         if (Ruby.isSecurityRestricted()) {
-            return new HashMap();
+            return new HashMap<RubyString, RubyString>();
         } else {
             return getAsMapOfRubyStrings(runtime, propertiesToStringMap(System.getProperties()));
         }
@@ -88,8 +87,8 @@ public class OSEnvironment {
         return map;
     }
 
-    private static Map getAsMapOfRubyStrings(Ruby runtime, Map<String, String> map) {
-        Map envs = new HashMap();
+    private static Map<RubyString, RubyString> getAsMapOfRubyStrings(Ruby runtime, Map<String, String> map) {
+        Map<RubyString, RubyString> envs = new HashMap<RubyString, RubyString>();
         Encoding encoding = runtime.getEncodingService().getLocaleEncoding();
 
         // On Windows, map doesn't have corresponding keys for these
@@ -118,7 +117,7 @@ public class OSEnvironment {
         return envs;
     }
     
-    private static void addRubyKeyValuePair(Ruby runtime, Map map, String key, String value, Encoding encoding) {
+    private static void addRubyKeyValuePair(Ruby runtime, Map<RubyString, RubyString> map, String key, String value, Encoding encoding) {
         ByteList keyBytes = new ByteList(key.getBytes(), encoding);
         ByteList valueBytes = new ByteList(value.getBytes(), encoding);
         

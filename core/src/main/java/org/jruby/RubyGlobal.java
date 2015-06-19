@@ -38,6 +38,7 @@ package org.jruby;
 
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.POSIX;
+
 import org.jcodings.Encoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -296,14 +297,8 @@ public class RubyGlobal {
     }
 
     private static void defineGlobalEnvConstants(Ruby runtime) {
-    	Map environmentVariableMap = null;
     	OSEnvironment environment = new OSEnvironment();
-        environmentVariableMap = environment.getEnvironmentVariableMap(runtime);
-		
-    	if (environmentVariableMap == null) {
-            // if the environment variables can't be obtained, define an empty ENV
-    		environmentVariableMap = new HashMap();
-    	}
+        Map<RubyString, RubyString> environmentVariableMap = environment.getEnvironmentVariableMap(runtime);
 
     	CaseInsensitiveStringOnlyRubyHash env = new CaseInsensitiveStringOnlyRubyHash(runtime,
                                                        environmentVariableMap, 
@@ -315,9 +310,8 @@ public class RubyGlobal {
         runtime.setENV(env);
 
         // Define System.getProperties() in ENV_JAVA
-        Map systemProps = environment.getSystemPropertiesMap(runtime);
-        RubyHash systemPropsHash = new ReadOnlySystemPropertiesHash(
-                runtime, systemProps, runtime.getNil());
+        Map<RubyString, RubyString> systemProps = environment.getSystemPropertiesMap(runtime);
+        RubyHash systemPropsHash = new ReadOnlySystemPropertiesHash(runtime, systemProps, runtime.getNil());
         systemPropsHash.setFrozen(true);
         runtime.defineGlobalConstant("ENV_JAVA", systemPropsHash);
     }
