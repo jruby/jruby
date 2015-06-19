@@ -244,6 +244,62 @@ class TestFile < Test::Unit::TestCase
       assert_equal "file:/bar", File.expand_path("file:/foo/../bar")
       assert_equal "file:/foo/bar/baz", File.expand_path("baz", "file:/foo/bar")
       assert_equal "file:/foo/bar", File.expand_path("file:/foo/bar", "file:/baz/quux")
+      assert_equal "file:/foo/bar", File.expand_path("../../foo/bar", "file:/baz/quux")
+      assert_equal "file:/foo/bar", File.expand_path("../../../foo/bar", "file:/baz/quux")
+    end
+    
+    def test_expand_path_with_jar_prefix
+      jruby_specific_test
+      assert_equal "file:/my.jar!/foo/bar", File.expand_path("file:/my.jar!/foo/bar")
+      assert_equal "file:/my.jar!/bar", File.expand_path("file:/my.jar!/foo/../bar")
+      assert_equal "file:/my.jar!/foo/bar/baz", File.expand_path("baz", "file:/my.jar!/foo/bar")
+      assert_equal "file:/my.jar!/foo/bar", File.expand_path("file:/my.jar!/foo/bar", "file:/my.jar!/baz/quux")
+      assert_equal "file:/my.jar!/foo/bar", File.expand_path("../../foo/bar", "file:/my.jar!/baz/quux")
+      #assert_equal "file:/my.jar!/foo/bar", File.expand_path("../../../foo/bar", "file:/my.jar!/baz/quux")
+    end
+    
+    def test_expand_path_with_jar_file_prefix
+      jruby_specific_test
+      assert_equal "jar:file:/my.jar!/foo/bar", File.expand_path("jar:file:/my.jar!/foo/bar")
+      assert_equal "jar:file:/my.jar!/bar", File.expand_path("jar:file:/my.jar!/foo/../bar")
+      assert_equal "jar:file:/my.jar!/foo/bar/baz", File.expand_path("baz", "jar:file:/my.jar!/foo/bar")
+      assert_equal "jar:file:/my.jar!/foo/bar", File.expand_path("jar:file:/my.jar!/foo/bar", "file:/my.jar!/baz/quux")
+      assert_equal "jar:file:/my.jar!/foo/bar", File.expand_path("../../foo/bar", "jar:file:/my.jar!/baz/quux")
+      #assert_equal "jar:file:/my.jar!/foo/bar", File.expand_path("../../../foo/bar", "jar:file:/my.jar!/baz/quux")
+    end
+
+    def test_expand_path_with_uri_file_prefix
+      jruby_specific_test
+      assert_equal "uri:file:/foo/bar", File.expand_path("uri:file:/foo/bar")
+      #assert_equal "uri:file:/bar", File.expand_path("uri:file:/foo/../bar")
+      # TODO why uri:file:// ?
+      assert_equal "uri:file://foo/bar/baz", File.expand_path("baz", "uri:file:/foo/bar")
+      assert_equal "uri:file:/foo/bar", File.expand_path("uri:file:/foo/bar", "uri:file:/baz/quux")
+      # TODO why uri:file:// ?
+      assert_equal "uri:file://foo/bar", File.expand_path("../../foo/bar", "uri:file:/baz/quux")
+      assert_equal "uri:file:/foo/bar", File.expand_path("../../../foo/bar", "uri:file:/baz/quux")
+    end
+
+    def test_expand_path_with_uri_classloader_prefix
+      jruby_specific_test
+      assert_equal "uri:classloader:/foo/bar", File.expand_path("uri:classloader:/foo/bar")
+      #assert_equal "uri:classloader:/bar", File.expand_path("uri:classloader:/foo/../bar")
+      # TODO why uri:classloader:// ?
+      assert_equal "uri:classloader://foo/bar/baz", File.expand_path("baz", "uri:classloader:/foo/bar")
+      assert_equal "uri:classloader:/foo/bar", File.expand_path("uri:classloader:/foo/bar", "uri:classloader:/baz/quux")
+      # TODO why uri:classloader:// ?
+      assert_equal "uri:classloader://foo/bar", File.expand_path("../../foo/bar", "uri:classloader:/baz/quux")
+      assert_equal "uri:classloader:/foo/bar", File.expand_path("../../../foo/bar", "uri:classloader:/baz/quux")
+    end
+
+    def test_expand_path_with_classpath_prefix
+      jruby_specific_test
+      assert_equal "classpath:/foo/bar", File.expand_path("classpath:/foo/bar")
+      #assert_equal "classpath:/bar", File.expand_path("classpath:/foo/../bar")
+      assert_equal "classpath:/foo/bar/baz", File.expand_path("baz", "classpath:/foo/bar")
+      assert_equal "classpath:/foo/bar", File.expand_path("classpath:/foo/bar", "classpath:/baz/quux")
+      assert_equal "classpath:/foo/bar", File.expand_path("../../foo/bar", "classpath:/baz/quux")
+      assert_equal "classpath:/foo/bar", File.expand_path("../../../foo/bar", "classpath:/baz/quux")
     end
 
     def test_expand_path_with_file_url_relative_path
