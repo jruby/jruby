@@ -171,7 +171,8 @@ public class URLResource extends AbstractFileResource {
         if (!pathname.startsWith(URI)) {
             return null;
         }
-        pathname = pathname.substring(URI.length());
+        // GH-2005 needs the replace
+        pathname = pathname.substring(URI.length()).replace("\\", "/");
         if (pathname.startsWith(CLASSLOADER)) {
             return createClassloaderURI(runtime, pathname.substring(CLASSLOADER.length()), isFile);
         }
