@@ -91,9 +91,6 @@ class Rational
   alias :__slash__ :/
 end
 
-ENV['TZ'] = 'UTC'
-
-
 # Wrapper class for Rubinius's exposure of @data within String.
 #
 # We can't use Array directly because we don't currently guarantee that we'll always return the same
