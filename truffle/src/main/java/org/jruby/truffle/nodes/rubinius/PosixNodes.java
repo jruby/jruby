@@ -20,12 +20,14 @@ import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 @CoreClass(name = "Rubinius::FFI::Platform::POSIX")
 public abstract class PosixNodes {
@@ -87,6 +89,19 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "environ", isModuleFunction = true)
+    public abstract static class EnvironNode extends CoreMethodArrayArgumentsNode {
+
+        public EnvironNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject environ() {
+            return PointerNodes.createPointer(getContext().getCoreLibrary().getRubiniusFFIPointerClass(), posix().environ());
+        }
+    }
+
     @CoreMethod(names = "fchmod", isModuleFunction = true, required = 2)
     public abstract static class FchmodNode extends CoreMethodArrayArgumentsNode {
 
@@ -143,6 +158,27 @@ public abstract class PosixNodes {
             return posix().getegid();
         }
 
+    }
+
+    @CoreMethod(names = "getenv", isModuleFunction = true, required = 1)
+    public abstract static class GetenvNode extends CoreMethodArrayArgumentsNode {
+
+        public GetenvNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyString(name)")
+        public RubyBasicObject getenv(RubyBasicObject name) {
+            final String nameString = RubyEncoding.decodeUTF8(StringNodes.getByteList(name).getUnsafeBytes(), StringNodes.getByteList(name).getBegin(), StringNodes.getByteList(name).getRealSize());
+
+            Object result = posix().getenv(nameString);
+
+            if (result == null) {
+                return nil();
+            }
+
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), (String) result);
+        }
     }
 
     @CoreMethod(names = "geteuid", isModuleFunction = true)
@@ -257,6 +293,20 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "putenv", isModuleFunction = true, required = 1)
+    public abstract static class PutenvNode extends CoreMethodArrayArgumentsNode {
+
+        public PutenvNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyString(nameValuePair)")
+        public int putenv(RubyBasicObject nameValuePair) {
+            throw new UnsupportedOperationException("Not yet implemented in jnr-posix");
+        }
+
+    }
+
     @CoreMethod(names = "readlink", isModuleFunction = true, required = 3)
     public abstract static class ReadlinkNode extends CoreMethodArrayArgumentsNode {
 
@@ -275,6 +325,23 @@ public abstract class PosixNodes {
             }
 
             return result;
+        }
+
+    }
+
+    @CoreMethod(names = "setenv", isModuleFunction = true, required = 3)
+    public abstract static class SetenvNode extends CoreMethodArrayArgumentsNode {
+
+        public SetenvNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = { "isRubyString(name)", "isRubyString(value)" })
+        public int setenv(RubyBasicObject name, RubyBasicObject value, int overwrite) {
+            final String nameString = RubyEncoding.decodeUTF8(StringNodes.getByteList(name).getUnsafeBytes(), StringNodes.getByteList(name).getBegin(), StringNodes.getByteList(name).getRealSize());
+            final String valueString = RubyEncoding.decodeUTF8(StringNodes.getByteList(value).getUnsafeBytes(), StringNodes.getByteList(value).getBegin(), StringNodes.getByteList(value).getRealSize());
+
+            return posix().setenv(nameString, valueString, overwrite);
         }
 
     }
@@ -319,6 +386,22 @@ public abstract class PosixNodes {
         @Specialization
         public int umask(int mask) {
             return posix().umask(mask);
+        }
+
+    }
+
+    @CoreMethod(names = "unsetenv", isModuleFunction = true, required = 1)
+    public abstract static class UnsetenvNode extends CoreMethodArrayArgumentsNode {
+
+        public UnsetenvNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyString(name)")
+        public int unsetenv(RubyBasicObject name) {
+            final String nameString = RubyEncoding.decodeUTF8(StringNodes.getByteList(name).getUnsafeBytes(), StringNodes.getByteList(name).getBegin(), StringNodes.getByteList(name).getRealSize());
+
+            return posix().unsetenv(nameString);
         }
 
     }
