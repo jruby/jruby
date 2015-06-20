@@ -1,3 +1,0 @@
-fails:ENV.rassoc returns an array of the key and value of the environment variable with the given value
-fails:ENV.rassoc returns nil if no environment variable with the given value exists
-fails:ENV.rassoc returns the value element coerced with #to_str

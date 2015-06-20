@@ -1,3 +1,0 @@
-fails:ENV.fetch raises a TypeError if the key is not a String
-fails:ENV.fetch warns on block and default parameter given
-fails:ENV.fetch uses the locale encoding

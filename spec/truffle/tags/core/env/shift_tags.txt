@@ -1,4 +1,3 @@
-fails:ENV.shift returns a pair and deletes it
 fails:ENV.shift returns nil if ENV.empty?
 fails:ENV.shift uses the locale encoding if Encoding.default_internal is nil
 fails:ENV.shift transcodes from the locale encoding to Encoding.default_internal if set
