@@ -543,7 +543,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object require(VirtualFrame frame, Object[] args) {
+        public Object exec(VirtualFrame frame, Object[] args) {
             if (toHashNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
