@@ -1956,41 +1956,28 @@ public abstract class KernelNodes {
     @CoreMethod(names = "untaint")
     public abstract static class UntaintNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private IsFrozenNode isFrozenNode;
+        @Child private IsTaintedNode isTaintedNode;
         @Child private WriteHeadObjectFieldNode writeTaintNode;
 
         public UntaintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
+            isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
             writeTaintNode = new WriteHeadObjectFieldNode(RubyBasicObject.TAINTED_IDENTIFIER);
         }
 
         @Specialization
-        public Object taint(boolean object) {
-            return frozen(object);
-        }
-
-        @Specialization
-        public Object taint(int object) {
-            return frozen(object);
-        }
-
-        @Specialization
-        public Object taint(long object) {
-            return frozen(object);
-        }
-
-        @Specialization
-        public Object taint(double object) {
-            return frozen(object);
-        }
-
-        private Object frozen(Object object) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
-        }
-
-
-        @Specialization
         public Object taint(RubyBasicObject object) {
+            if (!isTaintedNode.executeIsTainted(object)) {
+                return object;
+            }
+
+            if (isFrozenNode.executeIsFrozen(object)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
+            }
+
             writeTaintNode.execute(object, false);
             return object;
         }
