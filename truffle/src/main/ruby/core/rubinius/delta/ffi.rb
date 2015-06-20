@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2015 Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,18 +24,23 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' kernel.rb
+module Rubinius
+  module FFI
 
-module Kernel
-  
-  alias_method :eql?, :equal?
+    module Library
+      # Once the kernel is loaded, we want to raise an error if attempting to
+      # attach to a non-existent function.
+      def ffi_function_missing(name, *args)
+        raise FFI::NotFoundError, "Unable to find foreign function '#{name}'"
+      end
+    end
 
-  # Truffle: no extra indirection for Kernel#send.
-  alias_method :send, :__send__ # from BasicObject
+    # We can only add Enumerable here since it needs everything else setup
+    class Struct
+      class InlineArray
+        include Enumerable
+      end
+    end
 
-  def extend(mod)
-    Rubinius::Type.object_singleton_class(self).include(mod)
-    self
   end
-
 end

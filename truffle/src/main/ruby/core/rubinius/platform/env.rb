@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2015 Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,18 +24,14 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' kernel.rb
+module Rubinius
+  module EnvironmentAccess
+    extend FFI::Library
 
-module Kernel
-  
-  alias_method :eql?, :equal?
-
-  # Truffle: no extra indirection for Kernel#send.
-  alias_method :send, :__send__ # from BasicObject
-
-  def extend(mod)
-    Rubinius::Type.object_singleton_class(self).include(mod)
-    self
+    attach_function :getenv,   [:string], :string
+    attach_function :putenv,   [:string], :int
+    attach_function :setenv,   [:string,  :string, :int], :int
+    attach_function :unsetenv, [:string], :int
+    attach_function :environ,  'ffi_environ', [], :pointer
   end
-
 end

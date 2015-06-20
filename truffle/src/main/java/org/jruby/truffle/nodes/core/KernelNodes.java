@@ -76,24 +76,32 @@ public abstract class KernelNodes {
     @CoreMethod(names = "`", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class BacktickNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private CallDispatchHeadNode toHashNode;
+
         public BacktickNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
-        public RubyBasicObject backtick(RubyString command) {
+        public RubyBasicObject backtick(VirtualFrame frame, RubyString command) {
             // Command is lexically a string interoplation, so variables will already have been expanded
+
+            if (toHashNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
 
             CompilerDirectives.transferToInterpreter();
 
             final RubyContext context = getContext();
 
             final RubyBasicObject env = context.getCoreLibrary().getENV();
+            final RubyBasicObject envAsHash = (RubyBasicObject) toHashNode.call(frame, env, "to_hash", null);
 
             final List<String> envp = new ArrayList<>();
 
             // TODO(CS): cast
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(env)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(envAsHash)) {
                 envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
             }
 
@@ -528,12 +536,19 @@ public abstract class KernelNodes {
     @CoreMethod(names = "exec", isModuleFunction = true, required = 1, argumentsAsArray = true)
     public abstract static class ExecNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private CallDispatchHeadNode toHashNode;
+
         public ExecNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
-        public Object require(Object[] args) {
+        public Object require(VirtualFrame frame, Object[] args) {
+            if (toHashNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
             CompilerDirectives.transferToInterpreter();
 
             final String[] commandLine = new String[args.length];
@@ -542,19 +557,20 @@ public abstract class KernelNodes {
                 commandLine[n] = args[n].toString();
             }
 
-            exec(getContext(), commandLine);
+            final RubyBasicObject env = getContext().getCoreLibrary().getENV();
+            final RubyBasicObject envAsHash = (RubyBasicObject) toHashNode.call(frame, env, "to_hash", null);
+
+            exec(getContext(), envAsHash, commandLine);
 
             return null;
         }
 
         @TruffleBoundary
-        private static void exec(RubyContext context, String[] commandLine) {
+        private static void exec(RubyContext context, RubyBasicObject envAsHash, String[] commandLine) {
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
 
-            final RubyBasicObject env = context.getCoreLibrary().getENV();
-
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(env)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(envAsHash)) {
                 builder.environment().put(keyValue.getKey().toString(), keyValue.getValue().toString());
             }
 
@@ -1804,22 +1820,30 @@ public abstract class KernelNodes {
     @CoreMethod(names = "system", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class SystemNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private CallDispatchHeadNode toHashNode;
+
         public SystemNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
-        public boolean system(RubyString command) {
+        public boolean system(VirtualFrame frame, RubyString command) {
+            if (toHashNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
             CompilerDirectives.transferToInterpreter();
 
             // TODO(CS 5-JAN-15): very simplistic implementation
 
             final RubyBasicObject env = getContext().getCoreLibrary().getENV();
+            final RubyBasicObject envAsHash = (RubyBasicObject) toHashNode.call(frame, env, "to_hash", null);
 
             final List<String> envp = new ArrayList<>();
 
             // TODO(CS): cast
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(env)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(envAsHash)) {
                 envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
             }
 
