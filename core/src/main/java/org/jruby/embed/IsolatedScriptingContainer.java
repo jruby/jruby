@@ -5,11 +5,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.FrameworkUtil;
-import org.osgi.framework.wiring.BundleWiring;
-
 /**
  * the IsolatedScriptingContainer does set GEM_HOME and GEM_PATH and JARS_HOME
  * in such a way that it uses only resources which can be reached with classloader.
@@ -75,10 +70,10 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
         }
     }
 
-    private Bundle toBundle(String symbolicName) {
-        BundleContext context = FrameworkUtil.getBundle(getClass()).getBundleContext();
-        Bundle bundle = null;
-        for (Bundle b : context.getBundles()) {
+    private org.osgi.framework.Bundle toBundle(String symbolicName) {
+        org.osgi.framework.BundleContext context = org.osgi.framework.FrameworkUtil.getBundle(getClass()).getBundleContext();
+        org.osgi.framework.Bundle bundle = null;
+        for (org.osgi.framework.Bundle b : context.getBundles()) {
             if (b.getSymbolicName().equals(symbolicName)) {
                 bundle = b;
                 break;
@@ -90,7 +85,7 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
         return bundle;
     }
 
-    private String createUri(Bundle cl, String ref) {
+    private String createUri(org.osgi.framework.Bundle cl, String ref) {
         URL url = cl.getResource( ref );
         if ( url == null && ref.startsWith( "/" ) ) {
             url = cl.getResource( ref.substring( 1 ) );
@@ -98,14 +93,13 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
         if ( url == null ) {
             throw new RuntimeException( "reference " + ref + " not found on classloader " + cl );
         }
-        System.err.println("=---" + url.toString().replaceFirst( ref + "$", "" ));
         return "uri:" + url.toString().replaceFirst( ref + "$", "" );
     }
     /**
      * add the classloader from the given bundle to the LOAD_PATH
      * @param bundle
      */
-    public void addBundleToLoadPath(Bundle bundle) {
+    public void addBundleToLoadPath(org.osgi.framework.Bundle bundle) {
         addLoadPath(createUri(bundle, "/.jrubydir"));
     }
 
@@ -123,7 +117,7 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
      * add the classloader from the given bundle to the GEM_PATH
      * @param bundle
      */
-    public void addBundleToGemPath(Bundle bundle) {
+    public void addBundleToGemPath(org.osgi.framework.Bundle bundle) {
         addGemPath(createUri(bundle, "/specifications/.jrubydir"));
     }
  

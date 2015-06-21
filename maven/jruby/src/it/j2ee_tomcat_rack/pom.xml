@@ -8,9 +8,7 @@
   <packaging>war</packaging>
   <name>j2ee_tomcat_rack</name>
   <properties>
-    <jruby.home>../../../../../</jruby.home>
-    <jruby.version>@project.version@</jruby.version>
-    <jruby.plugins.version>1.0.3</jruby.plugins.version>
+    <jruby.plugins.version>1.0.10</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <public.dir>${basedir}/public</public.dir>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
@@ -20,7 +18,7 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby</artifactId>
-      <version>${jruby.version}</version>
+      <version>@project.version@</version>
       <type>pom</type>
     </dependency>
     <dependency>
@@ -72,6 +70,7 @@
         <configuration>
           <includeRubygemsInResources>true</includeRubygemsInResources>
           <includeLibDirectoryInResources>true</includeLibDirectoryInResources>
+          <jrubyVersion>1.7.19</jrubyVersion>
         </configuration>
       </plugin>
       <plugin>

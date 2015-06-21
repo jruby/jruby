@@ -1,1 +1,0 @@
-fails:Array#slice! returns nil if length is negative

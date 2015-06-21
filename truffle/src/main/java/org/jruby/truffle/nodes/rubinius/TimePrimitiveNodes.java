@@ -150,13 +150,16 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_decompose")
     public static abstract class TimeDecomposePrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private ReadTimeZoneNode readTimeZoneNode;
+
         public TimeDecomposePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
-        public RubyBasicObject timeDecompose(RubyTime time) {
+        public RubyBasicObject timeDecompose(VirtualFrame frame, RubyTime time) {
+            CompilerDirectives.transferToInterpreter();
             final DateTime dateTime = time.getDateTime();
             final int sec = dateTime.getSecondOfMinute();
             final int min = dateTime.getMinuteOfHour();
@@ -174,8 +177,7 @@ public abstract class TimePrimitiveNodes {
             final int yday = dateTime.getDayOfYear();
             final boolean isdst = false;
 
-            // TODO CS 14-Feb-15 uses debug send
-            final String envTimeZoneString = DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, createString("TZ")).toString();
+            final String envTimeZoneString = readTimeZoneNode.executeRubyString(frame).toString();
             String zoneString = org.jruby.RubyTime.zoneHelper(envTimeZoneString, dateTime, false);
             Object zone;
             if (zoneString.matches(".*-\\d+")) {
@@ -210,8 +212,11 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_s_from_array", needsSelf = true, lowerFixnumParameters = { 0 /*sec*/, 6 /*nsec*/, 7 /*isdst*/})
     public static abstract class TimeSFromArrayPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child ReadTimeZoneNode readTimeZoneNode;
+
         public TimeSFromArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
         @Specialization
@@ -242,7 +247,7 @@ public abstract class TimePrimitiveNodes {
             if (fromutc) {
                 zone = DateTimeZone.UTC;
             } else if (utcoffset == nil()) {
-                String tz = DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, createString("TZ")).toString();
+                String tz = readTimeZoneNode.executeRubyString(frame).toString();
                 zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(), tz);
             } else if (utcoffset instanceof Integer) {
                 zone = DateTimeZone.forOffsetMillis(((int) utcoffset) * 1_000);

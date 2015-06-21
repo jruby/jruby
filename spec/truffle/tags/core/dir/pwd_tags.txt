@@ -1,2 +1,1 @@
-fails:Dir.pwd returns the current working directory
 fails:Dir.pwd correctly displays dirs with unicode characters in them

@@ -17,14 +17,14 @@ public class TemporaryLocalVariable extends TemporaryVariable {
     public static final String PREFIX = "%v_";
     public final int offset;
 
-    public TemporaryLocalVariable(String name, int offset) {
-        super(name);
+    public TemporaryLocalVariable(int offset) {
+        super();
 
         this.offset = offset;
     }
 
-    public TemporaryLocalVariable(int offset) {
-        this(PREFIX + offset, offset);
+    public String getName() {
+        return getPrefix() + offset;
     }
 
     public int getOffset() {

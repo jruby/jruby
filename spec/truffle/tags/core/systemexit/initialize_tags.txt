@@ -1,4 +1,1 @@
 fails:SystemExit#initialize accepts a status
-fails:SystemExit#initialize accepts a message
-fails:SystemExit#initialize accepts a status and message
-fails:SystemExit#initialize sets the status to 0 by default

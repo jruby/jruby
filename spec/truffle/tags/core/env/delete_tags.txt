@@ -1,1 +1,0 @@
-fails:ENV.delete yields the name to the given block if the named environment variable does not exist

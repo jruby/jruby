@@ -9,27 +9,38 @@
  */
 package org.jruby.truffle.nodes.ext;
 
+import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.IntegerCastNode;
 import org.jruby.truffle.nodes.cast.IntegerCastNodeGen;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
+import org.jruby.truffle.nodes.constants.GetConstantNode;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.constants.GetConstantNodeGen;
+import org.jruby.truffle.nodes.constants.LookupConstantNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 
 import java.math.BigDecimal;
@@ -43,7 +54,6 @@ public abstract class BigDecimalNodes {
     public static final BigDecimalType BIG_DECIMAL_TYPE = new BigDecimalType();
     public static final Property VALUE_PROPERTY;
     public static final Property TYPE_PROPERTY;
-    // TODO (pitr 22-May-2015): would it make sense to have two shapes, special(type) and normal(type, value)?
     private static final HiddenKey VALUE_IDENTIFIER = new HiddenKey("value");
     private static final HiddenKey TYPE_IDENTIFIER = new HiddenKey("type");
     private static final DynamicObjectFactory BIG_DECIMAL_FACTORY;
@@ -635,7 +645,8 @@ public abstract class BigDecimalNodes {
                             return createRubyBigDecimal(Type.POSITIVE_INFINITY);
                     }
             }
-            throw new RuntimeException();
+            CompilerAsserts.neverPartOfCompilation();
+            throw new UnsupportedOperationException();
         }
 
         @Specialization(guards = {
@@ -660,7 +671,8 @@ public abstract class BigDecimalNodes {
             if (aType == Type.NEGATIVE_INFINITY)
                 return bType == Type.POSITIVE_INFINITY ? a : createRubyBigDecimal(Type.POSITIVE_INFINITY);
 
-            throw new RuntimeException();
+            CompilerAsserts.neverPartOfCompilation();
+            throw new UnsupportedOperationException();
         }
 
     }
@@ -723,7 +735,8 @@ public abstract class BigDecimalNodes {
                     case -1:
                         return createRubyBigDecimal(Type.NEGATIVE_INFINITY);
                     default:
-                        throw new RuntimeException();
+                        CompilerAsserts.neverPartOfCompilation();
+                        throw new UnsupportedOperationException();
                 }
             } else {
                 final int sumOfPrecisions = getBigDecimalValue(a).precision() + b.precision();
@@ -789,7 +802,8 @@ public abstract class BigDecimalNodes {
                             return createRubyBigDecimal(BigDecimal.ZERO);
                     }
             }
-            throw new RuntimeException();
+            CompilerAsserts.neverPartOfCompilation();
+            throw new UnsupportedOperationException();
         }
 
 
@@ -844,7 +858,8 @@ public abstract class BigDecimalNodes {
                             return createRubyBigDecimal(Type.POSITIVE_INFINITY);
                     }
             }
-            throw new RuntimeException();
+            CompilerAsserts.neverPartOfCompilation();
+            throw new UnsupportedOperationException();
         }
 
         @Specialization(guards = {
@@ -993,45 +1008,94 @@ public abstract class BigDecimalNodes {
                     return false;
             }
         }
+    }
 
+    @NodeChildren({
+            @NodeChild(value = "name", type = RubyNode.class),
+            @NodeChild(value = "module", type = RubyNode.class),
+            @NodeChild(value = "getConst", type = GetConstantNode.class, executeWith = {"module", "name"}),
+            @NodeChild(value = "coerce", type = ToIntNode.class, executeWith = "getConst"),
+            @NodeChild(value = "cast", type = IntegerCastNode.class, executeWith = "coerce")
+    })
+    public abstract static class GetIntegerConstantNode extends RubyNode {
+
+        public GetIntegerConstantNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public static GetIntegerConstantNode create(RubyContext context, SourceSection sourceSection) {
+            return create(context, sourceSection, null);
+        }
+
+        public static GetIntegerConstantNode create(RubyContext context, SourceSection sourceSection, RubyNode module) {
+            return BigDecimalNodesFactory.GetIntegerConstantNodeGen.create(
+                    context, sourceSection, null, module,
+                    GetConstantNodeGen.create(context, sourceSection, null, null,
+                            LookupConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, null, null)),
+                    ToIntNodeGen.create(context, sourceSection, null),
+                    IntegerCastNodeGen.create(context, sourceSection, null));
+        }
+
+        public abstract IntegerCastNode getCast();
+
+        public abstract int executeGetIntegerConstant(VirtualFrame frame, String name, RubyModule module);
+
+        public abstract int executeGetIntegerConstant(VirtualFrame frame, String name);
+
+        @Specialization
+        public int doInteger(String name,
+                             RubyModule module,
+                             Object constValue,
+                             Object coercedConstValue,
+                             int castedValue) {
+            return castedValue;
+        }
     }
 
     @CoreMethod(names = "sign")
     public abstract static class SignNode extends BigDecimalCoreMethodNode {
 
+        final private ConditionProfile positive = ConditionProfile.createBinaryProfile();
+        @Child private GetIntegerConstantNode sign;
+
         public SignNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            sign = BigDecimalNodesFactory.GetIntegerConstantNodeGen.create(context, sourceSection,
+                    new LiteralNode(context, sourceSection, getContext().getCoreLibrary().getBigDecimalClass()));
         }
 
         @Specialization(guards = {
                 "isNormal(value)",
                 "isNormalZero(value)"})
-        public int signNormalZero(RubyBasicObject value) {
-            return 1;
+        public int signNormalZero(VirtualFrame frame, RubyBasicObject value) {
+            return sign.executeGetIntegerConstant(frame, "SIGN_POSITIVE_ZERO");
         }
 
         @Specialization(guards = {
                 "isNormal(value)",
                 "!isNormalZero(value)"})
-        public int signNormal(RubyBasicObject value) {
-            return getBigDecimalValue(value).signum() * 2;
+        public int signNormal(VirtualFrame frame, RubyBasicObject value) {
+            if (positive.profile(getBigDecimalValue(value).signum() > 0)) {
+                return sign.executeGetIntegerConstant(frame, "SIGN_POSITIVE_FINITE");
+            } else {
+                return sign.executeGetIntegerConstant(frame, "SIGN_NEGATIVE_FINITE");
+            }
         }
 
         @Specialization(guards = "!isNormal(value)")
-        public int signSpecial(RubyBasicObject value) {
-            // TODO (pitr 26-May-2015): should be using const look up nodes to use values of BigDecimal::SIGN_* constants
+        public int signSpecial(VirtualFrame frame, RubyBasicObject value) {
             switch (getBigDecimalType(value)) {
                 case NEGATIVE_INFINITY:
-                    return -3;
+                    return sign.executeGetIntegerConstant(frame, "SIGN_NEGATIVE_INFINITE");
                 case POSITIVE_INFINITY:
-                    return 3;
+                    return sign.executeGetIntegerConstant(frame, "SIGN_POSITIVE_INFINITE");
                 case NEGATIVE_ZERO:
-                    return -1;
+                    return sign.executeGetIntegerConstant(frame, "SIGN_NEGATIVE_ZERO");
                 case NAN:
-                    return 0;
+                    return sign.executeGetIntegerConstant(frame, "SIGN_NaN");
             }
-            // TODO (pitr 28-may-2015): is it ok to throw exception in unreachable branch?
-            throw new RuntimeException();
+            CompilerAsserts.neverPartOfCompilation();
+            throw new UnsupportedOperationException();
         }
 
     }
@@ -1109,7 +1173,8 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return value;
                 default:
-                    throw new RuntimeException();
+                    CompilerAsserts.neverPartOfCompilation();
+                    throw new UnsupportedOperationException();
             }
         }
 
@@ -1178,7 +1243,6 @@ public abstract class BigDecimalNodes {
         @Specialization(guards = "isNormal(value)")
         public RubyBasicObject precsNormal(RubyBasicObject value) {
             final BigDecimal bigDecimalValue = getBigDecimalValue(value).abs();
-            // TODO (pitr 26-May-2015): replace with ArrayBuilder node
             return createArray(
                     new int[]{
                             bigDecimalValue.stripTrailingZeros().unscaledValue().toString().length(),
@@ -1188,7 +1252,6 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = "!isNormal(value)")
         public Object precsSpecial(RubyBasicObject value) {
-            // TODO (pitr 26-May-2015): replace with ArrayBuilder node
             return createArray(new int[]{1, 1}, 2);
         }
 
@@ -1245,55 +1308,33 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return Double.NaN;
                 default:
-                    throw new RuntimeException();
+                    CompilerAsserts.neverPartOfCompilation();
+                    throw new UnsupportedOperationException();
             }
         }
 
     }
 
-    @CoreMethod(names = "split")
-    public abstract static class SplitNode extends BigDecimalCoreMethodNode {
+    @RubiniusOnly
+    @CoreMethod(names = "unscaled", visibility = Visibility.PRIVATE)
+    public abstract static class UnscaledNode extends BigDecimalCoreMethodNode {
 
-        final private ConditionProfile wasNormal;
-        @Child private CallDispatchHeadNode signCall;
-        @Child private CallDispatchHeadNode exponentCall;
-        @Child private ToIntNode signToInt;
-        @Child private ToIntNode exponentToInt;
-        @Child private IntegerCastNode signIntegerCast;
-
-        public SplitNode(RubyContext context, SourceSection sourceSection) {
+        public UnscaledNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            wasNormal = ConditionProfile.createBinaryProfile();
-            signCall = DispatchHeadNodeFactory.createMethodCall(context);
-            exponentCall = DispatchHeadNodeFactory.createMethodCall(context);
-            signToInt = ToIntNodeGen.create(context, sourceSection, null);
-            exponentToInt = ToIntNodeGen.create(context, sourceSection, null);
-            signIntegerCast = IntegerCastNodeGen.create(context, sourceSection, null);
-        }
-
-        @Specialization
-        public RubyBasicObject split(VirtualFrame frame, RubyBasicObject value) {
-            final String digits;
-
-            if (wasNormal.profile(isNormal(value))) {
-                digits = getNormalDigits(value);
-            } else {
-                final String type = getBigDecimalType(value).getRepresentation();
-                digits = type.startsWith("-") ? type.substring(1) : type;
-            }
-
-            final int sign = Integer.signum(signIntegerCast.executeInteger(frame,
-                    signToInt.executeIntOrLong(frame, signCall.call(frame, value, "sign", null))));
-            final Object exponent =
-                    exponentToInt.executeIntOrLong(frame, this.exponentCall.call(frame, value, "exponent", null));
-
-            return createArray(new Object[]{sign, createString(digits), 10, exponent}, 4);
         }
 
         @TruffleBoundary
-        private String getNormalDigits(RubyBasicObject value) {
-            return getBigDecimalValue(value).abs().stripTrailingZeros().unscaledValue().toString();
+        @Specialization(guards = "isNormal(value)")
+        public RubyBasicObject unscaled(RubyBasicObject value) {
+            return createString(getBigDecimalValue(value).abs().stripTrailingZeros().unscaledValue().toString());
         }
+
+        @Specialization(guards = "!isNormal(value)")
+        public RubyBasicObject unscaledSpecial(RubyBasicObject value) {
+            final String type = getBigDecimalType(value).getRepresentation();
+            return createString(type.startsWith("-") ? type.substring(1) : type);
+        }
+
     }
 
     @CoreMethod(names = {"to_i", "to_int"})
@@ -1317,18 +1358,22 @@ public abstract class BigDecimalNodes {
             final Type type = getBigDecimalType(value);
             switch (type) {
                 case NEGATIVE_INFINITY:
+                    CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().
                             floatDomainError(type.getRepresentation(), this));
                 case POSITIVE_INFINITY:
+                    CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().
                             floatDomainError(type.getRepresentation(), this));
                 case NAN:
+                    CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().
                             floatDomainError(type.getRepresentation(), this));
                 case NEGATIVE_ZERO:
                     return 0;
                 default:
-                    throw new RuntimeException();
+                    CompilerAsserts.neverPartOfCompilation();
+                    throw new UnsupportedOperationException();
             }
 
         }

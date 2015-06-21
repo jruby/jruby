@@ -2,7 +2,6 @@ fails:Marshal.dump dumps an extended_object
 fails:Marshal.dump dumps an object that has had an ivar added and removed as though the ivar never was set
 fails:Marshal.dump with a Float dumps a Float
 fails:Marshal.dump with a String dumps a String extended with a Module
-fails:Marshal.dump with a String dumps a String with instance variables
 fails:Marshal.dump with a Regexp dumps a Regexp
 fails:Marshal.dump with a Regexp dumps a Regexp with flags
 fails:Marshal.dump with a Regexp dumps a Regexp with instance variables
@@ -10,10 +9,8 @@ fails:Marshal.dump with a Regexp dumps an extended Regexp
 fails:Marshal.dump with a Regexp dumps a Regexp subclass
 fails:Marshal.dump with a Regexp dumps a UTF-8 Regexp
 fails:Marshal.dump with a Regexp dumps a Regexp in another encoding
-fails:Marshal.dump with an Array dumps an Array with instance variables
 fails:Marshal.dump with an Array dumps an extended Array
 fails:Marshal.dump with a Hash dumps an extended Hash
-fails:Marshal.dump with a Hash dumps an Hash subclass with a parameter to initialize
 fails:Marshal.dump with a Struct dumps an extended Struct
 fails:Marshal.dump with an Object dumps an extended Object
 fails:Marshal.dump with an Object dumps a BasicObject subclass if it defines respond_to?

@@ -1,1 +1,0 @@
-fails:Dir.getwd returns the current working directory

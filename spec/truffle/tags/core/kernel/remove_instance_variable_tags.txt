@@ -5,3 +5,5 @@ fails:Kernel#remove_instance_variable when passed a String removes the instance 
 fails:Kernel#remove_instance_variable when passed a Symbol returns the instance variable's value
 fails:Kernel#remove_instance_variable when passed a Symbol removes the instance variable
 fails:Kernel#remove_instance_variable when passed an Object calls #to_str to convert the argument
+fails:Kernel#remove_instance_variable raises a NameError if the instance variable is not defined
+fails:Kernel#remove_instance_variable raises a NameError if the argument is not a valid instance variable name

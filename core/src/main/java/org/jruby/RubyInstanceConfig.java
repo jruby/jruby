@@ -29,6 +29,7 @@
 package org.jruby;
 
 import jnr.posix.util.Platform;
+
 import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
@@ -391,7 +392,7 @@ public class RubyInstanceConfig {
                 return getInput();
             } else {
                 final String script = getScriptFileName();
-                FileResource resource = JRubyFile.createResource(null, getCurrentDirectory(), getScriptFileName());
+                FileResource resource = JRubyFile.createRestrictedResource(getCurrentDirectory(), getScriptFileName());
                 if (resource != null && resource.exists()) {
                     if (resource.isFile() || resource.isSymLink()) {
                         if (isXFlag()) {
@@ -661,7 +662,7 @@ public class RubyInstanceConfig {
         return siphashEnabled;
     }
 
-    public void setEnvironment(Map newEnvironment) {
+    public void setEnvironment(Map<String, String> newEnvironment) {
         environment = new HashMap<String, String>();
         if (newEnvironment != null) {
             environment.putAll(newEnvironment);
@@ -677,7 +678,7 @@ public class RubyInstanceConfig {
         }
     }
 
-    public Map getEnvironment() {
+    public Map<String, String> getEnvironment() {
         return environment;
     }
 
@@ -1055,7 +1056,7 @@ public class RubyInstanceConfig {
         return inPlaceBackupExtension;
     }
 
-    public Map getOptionGlobals() {
+    public Map<String, String> getOptionGlobals() {
         return optionGlobals;
     }
 
@@ -1063,7 +1064,7 @@ public class RubyInstanceConfig {
         return managementEnabled;
     }
 
-    public Set getExcludedMethods() {
+    public Set<String> getExcludedMethods() {
         return excludedMethods;
     }
 
@@ -1465,7 +1466,7 @@ public class RubyInstanceConfig {
     private boolean argvGlobalsOn = false;
     private boolean assumeLoop = Options.CLI_ASSUME_LOOP.load();
     private boolean assumePrinting = Options.CLI_ASSUME_PRINT.load();
-    private Map optionGlobals = new HashMap();
+    private Map<String, String> optionGlobals = new HashMap<String, String>();
     private boolean processLineEnds = Options.CLI_PROCESS_LINE_ENDS.load();
     private boolean split = Options.CLI_AUTOSPLIT.load();
     private Verbosity verbosity = Options.CLI_WARNING_LEVEL.load();

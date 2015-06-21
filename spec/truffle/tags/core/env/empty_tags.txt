@@ -1,2 +1,0 @@
-fails:ENV.empty? returns true if the Environment is empty
-fails:ENV.empty? returns false if not empty

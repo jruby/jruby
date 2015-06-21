@@ -44,7 +44,7 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jnr-enxio:0.9'
   jar 'com.github.jnr:jnr-x86asm:1.0.2'
   jar 'com.github.jnr:jnr-unixsocket:0.8'
-  jar 'com.github.jnr:jnr-posix:3.0.14'
+  jar 'com.github.jnr:jnr-posix:3.0.15-SNAPSHOT'
   jar 'com.github.jnr:jnr-constants:0.8.8'
   jar 'com.github.jnr:jnr-ffi:2.0.3'
   jar 'com.github.jnr:jffi:${jffi.version}'

@@ -1,75 +1,32 @@
-fails:Marshal.load raises an ArgumentError when the dumped class is missing
 fails:Marshal.load returns the value of the proc when called with a proc
 fails:Marshal.load calls the proc for recursively visited data
 fails:Marshal.load loads an array containing objects having _dump method, and with proc
 fails:Marshal.load loads an array containing objects having marshal_dump method, and with proc
 fails:Marshal.load loads an Array with proc
-fails:Marshal.load assigns classes to nested subclasses of Array correctly
-fails:Marshal.load loads subclasses of Array with overridden << and push correctly
-fails:Marshal.load raises EOFError on loading an empty file
-fails:Marshal.load returns an untainted object if source is untainted
-fails:Marshal.load preserves taintedness of nested structure
-fails:Marshal.load returns a trusted object if source is trusted
-fails:Marshal.load returns an untrusted object if source is untrusted
 fails:Marshal.load loads a 1..2
 fails:Marshal.load loads a 1...2
 fails:Marshal.load loads a 'a'..'b'
-fails:Marshal.load loads a Struct
-fails:Marshal.load loads a String extended
-fails:Marshal.load loads a String subclass
-fails:Marshal.load loads a String subclass extended
 fails:Marshal.load loads a Fixnum -2**24
 fails:Marshal.load loads a Fixnum -4516727
 fails:Marshal.load loads a Fixnum -2**16
 fails:Marshal.load loads a Fixnum -2**8
 fails:Marshal.load loads a Fixnum -123
 fails:Marshal.load loads a Fixnum -124
-fails:Marshal.load loads a Class String
-fails:Marshal.load loads a Module Marshal
-fails:Marshal.load loads a Module nested
-fails:Marshal.load loads a _dump object
-fails:Marshal.load loads a _dump object extended
-fails:Marshal.load loads a marshal_dump object
 fails:Marshal.load loads a Random
-fails:Marshal.load raises an ArgumentError with full constant name when the dumped constant is missing
-fails:Marshal.load when source is tainted returns a tainted object
 fails:Marshal.load for an Array loads an array containing the same objects
-fails:Marshal.load for a Hash loads an extended_user_hash with a parameter to initialize
-fails:Marshal.load for a Hash preserves hash ivars when hash contains a string having ivar
-fails:Marshal.load for a String loads a String subclass with custom constructor
-fails:Marshal.load for a Struct loads a extended_struct having fields with same objects
-fails:Marshal.load for a Struct loads a struct having ivar
-fails:Marshal.load for a Struct loads a struct having fields
-fails:Marshal.load for a Struct does not call initialize on the unmarshaled struct
 fails:Marshal.load for an Exception loads a marshalled exception with no message
 fails:Marshal.load for an Exception loads a marshalled exception with a message
 fails:Marshal.load for an Exception loads a marshalled exception with a backtrace
-fails:Marshal.load for a user Class loads a user-marshaled extended object
-fails:Marshal.load for a user Class loads a user_object
-fails:Marshal.load for a user Class loads an object
 fails:Marshal.load for a user Class raises ArgumentError if the object from an 'o' stream is not dumpable as 'o' type user class
-fails:Marshal.load for a user Class loads an extended Object
-fails:Marshal.load for a user Class loads an object having ivar
 fails:Marshal.load for a user Class that extends a core type other than Object or BasicObject raises ArgumentError if the resulting class does not extend the same type
-fails:Marshal.load for a Regexp loads an extended Regexp
-fails:Marshal.load for a Regexp loads a extended_user_regexp having ivar
 fails:Marshal.load for a Integer loads and Integer -8
 fails:Marshal.load for a Integer loads an Integer 1234
 fails:Marshal.load for a Integer loads an Integer -1234
-fails:Marshal.load for a Rational loads
-fails:Marshal.load for a Complex loads
 fails:Marshal.load for a Time loads
 fails:Marshal.load for a Time loads serialized instance variables
 fails:Marshal.load for a Time loads Time objects stored as links
 fails:Marshal.load for a Time loads the zone
 fails:Marshal.load for a Time loads nanoseconds
-fails:Marshal.load for a Class loads
-fails:Marshal.load for a Class raises ArgumentError if given the name of a non-Module
-fails:Marshal.load for a Class raises ArgumentError if given a nonexistent class
-fails:Marshal.load for a Module loads a module
-fails:Marshal.load for a Module raises ArgumentError if given the name of a non-Class
-fails:Marshal.load for a Module loads an old module
 fails:Marshal.load for a wrapped C pointer loads
-fails:Marshal.load for a wrapped C pointer raises TypeError when the local class is missing _data_load
 fails:Marshal.load for a wrapped C pointer raises ArgumentError when the local class is a regular object
 fails:Marshal.load when a class with the same name as the dumped one exists outside the namespace invokes Module#const_missing

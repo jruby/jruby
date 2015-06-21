@@ -467,7 +467,7 @@ ruby/enc/test_utf32.rb
 # irb/test_option.rb
 # irb/test_raise_no_backtrace_exception.rb
 # logger/test_logdevice.rb
-# logger/test_severity.rb
+logger/test_severity.rb
 # minitest/test_minitest_benchmark.rb
 # minitest/test_minitest_mock.rb
 # minitest/test_minitest_spec.rb
@@ -627,7 +627,7 @@ optparse/test_autoconf.rb
 # rdoc/test_rdoc_top_level.rb
 # readline/test_readline.rb
 # readline/test_readline_history.rb
-# resolv/test_addr.rb
+resolv/test_addr.rb
 # resolv/test_dns.rb
 rexml/parse/test_document_type_declaration.rb
 rexml/parse/test_notation_declaration.rb

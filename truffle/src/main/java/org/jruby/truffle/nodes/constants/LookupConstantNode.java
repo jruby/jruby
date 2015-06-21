@@ -30,7 +30,7 @@ import org.jruby.truffle.runtime.core.RubyModule;
 @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
 public abstract class LookupConstantNode extends RubyNode {
 
-    public static int getCacheLimit() {
+    protected static int getCacheLimit() {
         return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
     }
 

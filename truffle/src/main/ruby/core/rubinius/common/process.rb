@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -23,8 +23,6 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-# Only part of Rubinius' process.rb
 
 module Process
   module Constants
@@ -68,6 +66,19 @@ module Process
     config "rbx.platform.rlimit", :rlim_cur, :rlim_max
   end
 
+  ##
+  # Sets the process title. Calling this method does not affect the value of
+  # `$0` as per MRI behaviour. This method returns the title set.
+  #
+  # @param [String] title
+  # @return [Title]
+  #
+  def self.setproctitle(title)
+    val = Rubinius::Type.coerce_to(title, String, :to_str)
+
+    Rubinius.invoke_primitive(:vm_set_process_title, val)
+  end
+
   def self.setrlimit(resource, cur_limit, max_limit=undefined)
     resource =  coerce_rlimit_resource(resource)
     cur_limit = Rubinius::Type.coerce_to cur_limit, Integer, :to_int
@@ -84,7 +95,6 @@ module Process
     Errno.handle if ret == -1
     nil
   end
-
 
   def self.getrlimit(resource)
     resource = coerce_rlimit_resource(resource)
@@ -103,14 +113,103 @@ module Process
     pgid
   end
 
+  def self.fork
+    pid = Rubinius::Mirror::Process.fork
+
+    if block_given? and pid.nil?
+      begin
+        yield nil
+        status = 0
+      rescue SystemExit => e
+        status = e.status
+      rescue Exception => e
+        e.render "An exception occurred in a forked block"
+        status = 1
+      end
+
+      until Rubinius::AtExit.empty?
+        begin
+          Rubinius::AtExit.shift.call
+        rescue SystemExit => e
+          status = e.status
+        end
+      end
+
+      ObjectSpace.run_finalizers
+
+      # Do not use Kernel.exit. This raises a SystemExit exception, which
+      # will run ensure blocks. This is not what MRI does and causes bugs
+      # in programs. See issue http://github.com/rubinius/rubinius/issues#issue/289 for
+      # an example
+
+      Kernel.exit! status
+    end
+    pid
+  end
+
   def self.times
     Struct::Tms.new(*cpu_times)
+  end
+
+  def self.kill(signal, *pids)
+    raise ArgumentError, "PID argument required" if pids.length == 0
+
+    use_process_group = false
+    signal = signal.to_s if signal.kind_of?(Symbol)
+
+    if signal.kind_of?(String)
+      if signal[0] == ?-
+        signal = signal[1..-1]
+        use_process_group = true
+      end
+
+      if signal[0..2] == "SIG"
+        signal = signal[3..-1]
+      end
+
+      signal = Signal::Names[signal]
+    end
+
+    raise ArgumentError unless signal.kind_of? Fixnum
+
+    if signal < 0
+      signal = -signal
+      use_process_group = true
+    end
+
+    pids.each do |pid|
+      pid = Rubinius::Type.coerce_to_pid pid
+
+      pid = -pid if use_process_group
+      result = FFI::Platform::POSIX.kill(pid, signal)
+
+      Errno.handle if result == -1
+    end
+
+    return pids.length
+  end
+
+  def self.abort(msg=nil)
+    if msg
+      msg = StringValue(msg)
+      $stderr.puts(msg)
+    end
+    raise SystemExit.new(1, msg)
   end
 
   def self.getpgid(pid)
     pid = Rubinius::Type.coerce_to pid, Integer, :to_int
 
     ret = FFI::Platform::POSIX.getpgid(pid)
+    Errno.handle if ret == -1
+    ret
+  end
+
+  def self.setpgid(pid, int)
+    pid = Rubinius::Type.coerce_to pid, Integer, :to_int
+    int = Rubinius::Type.coerce_to int, Integer, :to_int
+
+    ret = FFI::Platform::POSIX.setpgid(pid, int)
     Errno.handle if ret == -1
     ret
   end
@@ -123,8 +222,17 @@ module Process
     end
   end
 
+  def self.setpgrp
+    setpgid(0, 0)
+  end
   def self.getpgrp
     ret = FFI::Platform::POSIX.getpgrp
+    Errno.handle if ret == -1
+    ret
+  end
+
+  def self.pid
+    ret = FFI::Platform::POSIX.getpid
     Errno.handle if ret == -1
     ret
   end
@@ -196,6 +304,11 @@ module Process
     uid
   end
 
+  def self.egid=(gid)
+    gid = Rubinius::Type.coerce_to gid, Integer, :to_int
+    Process::Sys.setegid gid
+  end
+
   def self.uid
     ret = FFI::Platform::POSIX.getuid
     Errno.handle if ret == -1
@@ -242,37 +355,33 @@ module Process
 
   def self.groups
     g = []
-    FFI::MemoryPointer.new(:int, @maxgroups) { |p|
-      num_groups = FFI::Platform::POSIX.getgroups(@maxgroups, p)
+    count = Rubinius::FFI::Platform::POSIX.getgroups(0, nil)
+    FFI::MemoryPointer.new(:int, count) { |p|
+      num_groups = FFI::Platform::POSIX.getgroups(count, p)
       Errno.handle if num_groups == -1
       g = p.read_array_of_int(num_groups)
     }
     g
   end
 
-  #
-  # Wait for all child processes.
-  #
-  # Blocks until all child processes have exited, and returns
-  # an Array of [pid, Process::Status] results, one for each
-  # child.
-  #
-  # Be mindful of the effects of creating new processes while
-  # .waitall has been called (usually in a different thread.)
-  # The .waitall call does not in any way check that it is only
-  # waiting for children that existed at the time it was called.
-  #
-  def self.waitall
-    statuses = []
+  def self.groups=(g)
+    @maxgroups = g.length if g.length > @maxgroups
+    FFI::MemoryPointer.new(:int, @maxgroups) { |p|
+      p.write_array_of_int(g)
+      Errno.handle if FFI::Platform::POSIX.setgroups(g.length, p) == -1
+    }
+    g
+  end
 
-    begin
-      while true
-        statuses << Process.wait2
-      end
-    rescue Errno::ECHILD
+  def self.initgroups(username, gid)
+    username = StringValue(username)
+    gid = Rubinius::Type.coerce_to gid, Integer, :to_int
+
+    if FFI::Platform::POSIX.initgroups(username, gid) == -1
+      Errno.handle
     end
 
-    statuses
+    Process.groups
   end
 
   #
@@ -327,18 +436,101 @@ module Process
     [pid, status]
   end
 
+  #
+  # Wait for all child processes.
+  #
+  # Blocks until all child processes have exited, and returns
+  # an Array of [pid, Process::Status] results, one for each
+  # child.
+  #
+  # Be mindful of the effects of creating new processes while
+  # .waitall has been called (usually in a different thread.)
+  # The .waitall call does not in any way check that it is only
+  # waiting for children that existed at the time it was called.
+  #
+  def self.waitall
+    statuses = []
+
+    begin
+      while true
+        statuses << Process.wait2
+      end
+    rescue Errno::ECHILD
+    end
+
+    statuses
+  end
+
+  def self.wait(pid=-1, flags=nil)
+    pid, status = Process.wait2(pid, flags)
+    return pid
+  end
+
+  class << self
+    alias_method :waitpid, :wait
+    alias_method :waitpid2, :wait2
+  end
+
+  Rubinius::Globals.read_only :$?
+  Rubinius::Globals.set_hook(:$?) { Thread.current[:$?] }
+
+  def self.daemon(stay_in_dir=false, keep_stdio_open=false)
+    # Do not run at_exit handlers in the parent
+    exit!(0) if fork
+
+    Process.setsid
+
+    exit!(0) if fork
+
+    Dir.chdir("/") unless stay_in_dir
+
+    unless keep_stdio_open
+      io = File.open "/dev/null", File::RDWR, 0
+      $stdin.reopen io
+      $stdout.reopen io
+      $stderr.reopen io
+    end
+
+    return 0
+  end
+
+  def self.exec(*args)
+    Rubinius::Mirror::Process.exec(*args)
+  end
+
+  def self.spawn(*args)
+    Rubinius::Mirror::Process.spawn(*args)
+  end
+
+  # TODO: Should an error be raised on ECHILD? --rue
+  #
+  # TODO: This operates on the assumption that waiting on
+  #       the event consumes very little resources. If this
+  #       is not the case, the check should be made WNOHANG
+  #       and called periodically.
+  #
+  def self.detach(pid)
+    raise ArgumentError, "Only positive pids may be detached" unless pid > 0
+
+    thread = Thread.new { Process.wait pid; $? }
+    thread[:pid] = pid
+    def thread.pid; self[:pid] end
+
+    thread
+  end
+
   def self.coerce_rlimit_resource(resource)
     case resource
-      when Integer
-        return resource
-      when Symbol, String
-        # do nothing
-      else
-        unless r = Rubinius::Type.check_convert_type(resource, String, :to_str)
-          return Rubinius::Type.coerce_to resource, Integer, :to_int
-        end
+    when Integer
+      return resource
+    when Symbol, String
+      # do nothing
+    else
+      unless r = Rubinius::Type.check_convert_type(resource, String, :to_str)
+        return Rubinius::Type.coerce_to resource, Integer, :to_int
+      end
 
-        resource = r
+      resource = r
     end
 
     constant = "RLIMIT_#{resource}"
@@ -357,36 +549,39 @@ module Process
 
   class Status
 
-    attr_reader :exitstatus
     attr_reader :termsig
     attr_reader :stopsig
 
-    def initialize(pid, exitstatus, termsig=nil, stopsig=nil)
+    def initialize(pid=nil, status=nil, termsig=nil, stopsig=nil)
       @pid = pid
-      @exitstatus = exitstatus
+      @status = status
       @termsig = termsig
       @stopsig = stopsig
     end
 
+    def exitstatus
+      @status
+    end
+
     def to_i
-      @exitstatus
+      @status
     end
 
     def to_s
-      @exitstatus.to_s
+      @status.to_s
     end
 
     def &(num)
-      @exitstatus & num
+      @status & num
     end
 
     def ==(other)
       other = other.to_i if other.kind_of? Process::Status
-      @exitstatus == other
+      @status == other
     end
 
     def >>(num)
-      @exitstatus >> num
+      @status >> num
     end
 
     def coredump?
@@ -394,7 +589,7 @@ module Process
     end
 
     def exited?
-      @exitstatus != nil
+      @status != nil
     end
 
     def pid
@@ -411,7 +606,7 @@ module Process
 
     def success?
       if exited?
-        @exitstatus == 0
+        @status == 0
       else
         nil
       end
@@ -653,5 +848,4 @@ module Process
 
     end
   end
-
 end

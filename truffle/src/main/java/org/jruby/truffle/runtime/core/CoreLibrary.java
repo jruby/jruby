@@ -20,6 +20,7 @@ import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConvFlags;
+import org.jruby.ext.ffi.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadServiceResource;
@@ -37,6 +38,8 @@ import org.jruby.truffle.nodes.ext.DigestNodesFactory;
 import org.jruby.truffle.nodes.ext.ZlibNodesFactory;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.rubinius.*;
+import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -123,7 +126,10 @@ public class CoreLibrary {
     private final RubyModule errnoModule;
     private final RubyModule kernelModule;
     private final RubyModule rubiniusModule;
+    private final RubyClass rubiniusChannelClass;
     private final RubyModule rubiniusFFIModule;
+    private final RubyClass rubiniusFFIPointerClass;
+    private final RubyClass rubiniusMirrorClass;
     private final RubyModule signalModule;
     private final RubyModule truffleModule;
     private final RubyClass bigDecimalClass;
@@ -147,8 +153,6 @@ public class CoreLibrary {
 
     private final RubyClass rubyInternalMethod;
     private final Map<Errno, RubyClass> errnoClasses = new HashMap<>();
-
-    @CompilationFinal private RubyBasicObject envHash;
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
 
@@ -220,9 +224,6 @@ public class CoreLibrary {
         // Exception
         exceptionClass = defineClass("Exception", new RubyException.ExceptionAllocator());
 
-        // FiberError
-        fiberErrorClass = defineClass(exceptionClass, "FiberError");
-
         // NoMemoryError
         defineClass(exceptionClass, "NoMemoryError");
 
@@ -233,6 +234,7 @@ public class CoreLibrary {
         standardErrorClass = defineClass(exceptionClass, "StandardError");
         argumentErrorClass = defineClass(standardErrorClass, "ArgumentError");
         encodingErrorClass = defineClass(standardErrorClass, "EncodingError");
+        fiberErrorClass = defineClass(standardErrorClass, "FiberError");
         ioErrorClass = defineClass(standardErrorClass, "IOError");
         localJumpErrorClass = defineClass(standardErrorClass, "LocalJumpError");
         regexpErrorClass = defineClass(standardErrorClass, "RegexpError");
@@ -357,7 +359,10 @@ public class CoreLibrary {
 
         rubiniusFFIModule = defineModule(rubiniusModule, "FFI");
         defineModule(defineModule(rubiniusFFIModule, "Platform"), "POSIX");
-        defineClass(rubiniusFFIModule, objectClass, "Pointer", new PointerPrimitiveNodes.PointerAllocator());
+        rubiniusFFIPointerClass = defineClass(rubiniusFFIModule, objectClass, "Pointer", new PointerNodes.PointerAllocator());
+        
+        rubiniusChannelClass = defineClass(rubiniusModule, objectClass, "Channel");
+        rubiniusMirrorClass = defineClass(rubiniusModule, objectClass, "Mirror");
         defineModule(rubiniusModule, "Type");
 
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
@@ -504,6 +509,7 @@ public class CoreLibrary {
         objectClass.setConstant(node, "ARGV", argv);
 
         rubiniusModule.setConstant(node, "UNDEFINED", rubiniusUndefined);
+        rubiniusModule.setConstant(node, "LIBC", Platform.LIBC);
 
         processModule.setConstant(node, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
         processModule.setConstant(node, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
@@ -569,11 +575,6 @@ public class CoreLibrary {
 
     public void initializeAfterMethodsAdded() {
         initializeRubiniusFFI();
-
-        // ENV is supposed to be an object that actually updates the environment, and sees any updates
-
-        envHash = getSystemEnv();
-        objectClass.setConstant(node, "ENV", envHash);
 
         // Load Ruby core
 
@@ -1322,19 +1323,7 @@ public class CoreLibrary {
     }
 
     public RubyBasicObject getENV() {
-        return envHash;
-    }
-
-    private RubyBasicObject getSystemEnv() {
-        final Map<Object, Object> entries = new HashMap<>();
-
-        for (Map.Entry<String, String> variable : System.getenv().entrySet()) {
-            entries.put(
-                    StringNodes.createString(context.getCoreLibrary().getStringClass(), variable.getKey()),
-                    StringNodes.createString(context.getCoreLibrary().getStringClass(), variable.getValue()));
-        }
-
-        return BucketsStrategy.create(context.getCoreLibrary().getHashClass(), entries.entrySet(), false);
+        return (RubyBasicObject) objectClass.getConstants().get("ENV").getValue();
     }
 
     public ArrayNodes.MinBlock getArrayMinBlock() {
@@ -1387,6 +1376,18 @@ public class CoreLibrary {
 
     public RubyClass getTupleClass() {
         return tupleClass;
+    }
+
+    public RubyClass getRubiniusChannelClass() {
+        return rubiniusChannelClass;
+    }
+
+    public RubyClass getRubiniusFFIPointerClass() {
+        return rubiniusFFIPointerClass;
+    }
+
+    public RubyClass getRubiniusMirrorClass() {
+        return rubiniusMirrorClass;
     }
 
     public RubyBasicObject getRubiniusUndefined() {

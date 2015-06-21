@@ -30,12 +30,14 @@ package org.jruby.util;
 
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
+
 import jnr.posix.util.Platform;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.Set;
+
 import org.jruby.RubyString;
 
 public class OSEnvironment {
@@ -44,19 +46,18 @@ public class OSEnvironment {
      *
      * @param runtime
      */
-    public Map getEnvironmentVariableMap(Ruby runtime) {
-        Map envs = null;
-
+    public Map<RubyString, RubyString> getEnvironmentVariableMap(Ruby runtime) {
         if (runtime.getInstanceConfig().getEnvironment() != null) {
-            return getAsMapOfRubyStrings(runtime, runtime.getInstanceConfig().getEnvironment().entrySet());
+            return getAsMapOfRubyStrings(runtime, runtime.getInstanceConfig().getEnvironment());
         }
 
+        final Map<RubyString, RubyString> envs;
         // fall back on empty env when security disallows environment var access (like in an applet)
         if (Ruby.isSecurityRestricted()) {
-            envs = new HashMap();
+            envs = new HashMap<RubyString, RubyString>();
         } else {
-            Map variables = System.getenv();
-            envs = getAsMapOfRubyStrings(runtime, variables.entrySet());
+            Map<String, String> variables = System.getenv();
+            envs = getAsMapOfRubyStrings(runtime, variables);
         }
 
         return envs;
@@ -68,19 +69,29 @@ public class OSEnvironment {
      * @param runtime
      * @return the java system properties as a Map<RubyString,RubyString>.
      */
-    public Map getSystemPropertiesMap(Ruby runtime) {
+    public Map<RubyString, RubyString> getSystemPropertiesMap(Ruby runtime) {
         if (Ruby.isSecurityRestricted()) {
-            return new HashMap();
+            return new HashMap<RubyString, RubyString>();
         } else {
-            return getAsMapOfRubyStrings(runtime, ((Properties)System.getProperties().clone()).entrySet());
+            return getAsMapOfRubyStrings(runtime, propertiesToStringMap(System.getProperties()));
         }
     }
 
-    private static Map getAsMapOfRubyStrings(Ruby runtime, Set<Map.Entry<Object, Object>> entrySet) {
-        Map envs = new HashMap();
+    public static Map<String, String> propertiesToStringMap(Properties properties) {
+        Map<String, String> map = new HashMap<String, String>();
+        for (Entry<Object, Object> entry : properties.entrySet()) {
+            if (entry.getKey() instanceof String && entry.getValue() instanceof String) {
+                map.put((String) entry.getKey(), (String) entry.getValue());
+            }
+        }
+        return map;
+    }
+
+    private static Map<RubyString, RubyString> getAsMapOfRubyStrings(Ruby runtime, Map<String, String> map) {
+        Map<RubyString, RubyString> envs = new HashMap<RubyString, RubyString>();
         Encoding encoding = runtime.getEncodingService().getLocaleEncoding();
 
-        // On Windows, entrySet doesn't have corresponding keys for these
+        // On Windows, map doesn't have corresponding keys for these
         if (Platform.IS_WINDOWS) {
             // these may be null when in a restricted environment (JRUBY-6514)
             String home = SafePropertyAccessor.getProperty("user.home");
@@ -89,7 +100,7 @@ public class OSEnvironment {
             addRubyKeyValuePair(runtime, envs, "USER", user == null ? "" : user, encoding);
         }
 
-        for (Map.Entry<Object, Object> entry : entrySet) {
+        for (Entry<String, String> entry : map.entrySet()) {
             Object tmp = entry.getKey();
             
             if (!(tmp instanceof String)) continue; // Java devs can stuff non-string objects into env
@@ -106,7 +117,7 @@ public class OSEnvironment {
         return envs;
     }
     
-    private static void addRubyKeyValuePair(Ruby runtime, Map map, String key, String value, Encoding encoding) {
+    private static void addRubyKeyValuePair(Ruby runtime, Map<RubyString, RubyString> map, String key, String value, Encoding encoding) {
         ByteList keyBytes = new ByteList(key.getBytes(), encoding);
         ByteList valueBytes = new ByteList(value.getBytes(), encoding);
         

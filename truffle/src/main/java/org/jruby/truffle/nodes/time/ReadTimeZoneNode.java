@@ -11,9 +11,13 @@ package org.jruby.truffle.nodes.time;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.constants.ReadConstantNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.literal.LiteralNode;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -21,18 +25,22 @@ import org.jruby.truffle.runtime.core.RubyString;
 public class ReadTimeZoneNode extends RubyNode {
     
     @Child private CallDispatchHeadNode hashNode;
+    @Child private ReadConstantNode envNode;
     
     private final RubyBasicObject TZ;
     
     public ReadTimeZoneNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         hashNode = DispatchHeadNodeFactory.createMethodCall(context);
+        envNode = new ReadConstantNode(context, sourceSection, "ENV",
+                new LiteralNode(context, sourceSection, getContext().getCoreLibrary().getObjectClass()),
+                LexicalScope.NONE);
         TZ = createString("TZ");
     }
 
     @Override
     public RubyString executeRubyString(VirtualFrame frame) {
-        final Object tz = hashNode.call(frame, getContext().getCoreLibrary().getENV(), "[]", null, TZ);
+        final Object tz = hashNode.call(frame, envNode.execute(frame), "[]", null, TZ);
 
         // TODO CS 4-May-15 not sure how TZ ends up being nil
 

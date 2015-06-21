@@ -479,7 +479,7 @@ public class IRBuilder {
                 if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
                     addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), currLineNum));
                 }
-               addInstr(new LineNumberInstr(currLineNum));
+               addInstr(manager.newLineNumber(currLineNum));
                _lastProcessedLineNum = currLineNum;
             }
         }
@@ -1913,7 +1913,7 @@ public class IRBuilder {
      */
     private void prepareImplicitState() {
         // Receive self
-        addInstr(new ReceiveSelfInstr(buildSelf()));
+        addInstr(manager.getReceiveSelfInstr());
 
         // used for yields; metaclass body (sclass) inherits yield var from surrounding, and accesses it as implicit
         if (scope instanceof IRMethod || scope instanceof IRMetaClassBody) {
@@ -3256,7 +3256,7 @@ public class IRBuilder {
     }
 
     public InterpreterContext buildEvalRoot(RootNode rootNode) {
-        addInstr(new LineNumberInstr(scope.getLineNumber()));
+        addInstr(manager.newLineNumber(scope.getLineNumber()));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module

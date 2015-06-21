@@ -38,6 +38,7 @@ package org.jruby;
 
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.POSIX;
+
 import org.jcodings.Encoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -56,21 +57,16 @@ import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
-import org.jruby.util.ShellLauncher;
 import org.jruby.util.cli.OutputStrings;
-import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
-import java.util.HashMap;
 import java.util.Map;
 
 /** This class initializes global variables and constants.
@@ -296,14 +292,8 @@ public class RubyGlobal {
     }
 
     private static void defineGlobalEnvConstants(Ruby runtime) {
-    	Map environmentVariableMap = null;
     	OSEnvironment environment = new OSEnvironment();
-        environmentVariableMap = environment.getEnvironmentVariableMap(runtime);
-		
-    	if (environmentVariableMap == null) {
-            // if the environment variables can't be obtained, define an empty ENV
-    		environmentVariableMap = new HashMap();
-    	}
+        Map<RubyString, RubyString> environmentVariableMap = environment.getEnvironmentVariableMap(runtime);
 
     	CaseInsensitiveStringOnlyRubyHash env = new CaseInsensitiveStringOnlyRubyHash(runtime,
                                                        environmentVariableMap, 
@@ -315,9 +305,8 @@ public class RubyGlobal {
         runtime.setENV(env);
 
         // Define System.getProperties() in ENV_JAVA
-        Map systemProps = environment.getSystemPropertiesMap(runtime);
-        RubyHash systemPropsHash = new ReadOnlySystemPropertiesHash(
-                runtime, systemProps, runtime.getNil());
+        Map<RubyString, RubyString> systemProps = environment.getSystemPropertiesMap(runtime);
+        RubyHash systemPropsHash = new ReadOnlySystemPropertiesHash(runtime, systemProps, runtime.getNil());
         systemPropsHash.setFrozen(true);
         runtime.defineGlobalConstant("ENV_JAVA", systemPropsHash);
     }
@@ -329,7 +318,7 @@ public class RubyGlobal {
      */
     public static class CaseInsensitiveStringOnlyRubyHash extends StringOnlyRubyHash {
 
-        public CaseInsensitiveStringOnlyRubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue, boolean updateRealENV) {
+        public CaseInsensitiveStringOnlyRubyHash(Ruby runtime, Map<RubyString, RubyString> valueMap, IRubyObject defaultValue, boolean updateRealENV) {
             super(runtime, valueMap, defaultValue, updateRealENV);
         }
 
@@ -363,12 +352,12 @@ public class RubyGlobal {
         // the op_aset to also update the real ENV map via setenv/unsetenv.
         private boolean updateRealENV;
 
-        public StringOnlyRubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue, boolean updateRealENV) {
+        public StringOnlyRubyHash(Ruby runtime, Map<RubyString, RubyString> valueMap, IRubyObject defaultValue, boolean updateRealENV) {
             super(runtime, valueMap, defaultValue);
             this.updateRealENV = updateRealENV;
         }
 
-        public StringOnlyRubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
+        public StringOnlyRubyHash(Ruby runtime, Map<RubyString, RubyString> valueMap, IRubyObject defaultValue) {
             this(runtime, valueMap, defaultValue, false);
         }
 
@@ -470,11 +459,11 @@ public class RubyGlobal {
     }
 
     private static class ReadOnlySystemPropertiesHash extends StringOnlyRubyHash {
-        public ReadOnlySystemPropertiesHash(Ruby runtime, Map valueMap, IRubyObject defaultValue, boolean updateRealENV) {
+        public ReadOnlySystemPropertiesHash(Ruby runtime, Map<RubyString, RubyString> valueMap, IRubyObject defaultValue, boolean updateRealENV) {
             super(runtime, valueMap, defaultValue, updateRealENV);
         }
 
-        public ReadOnlySystemPropertiesHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
+        public ReadOnlySystemPropertiesHash(Ruby runtime, Map<RubyString, RubyString> valueMap, IRubyObject defaultValue) {
             this(runtime, valueMap, defaultValue, false);
         }
 

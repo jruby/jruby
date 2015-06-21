@@ -34,6 +34,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
+import org.jruby.truffle.nodes.constants.LookupConstantNode;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFactory;
@@ -75,24 +76,32 @@ public abstract class KernelNodes {
     @CoreMethod(names = "`", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class BacktickNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private CallDispatchHeadNode toHashNode;
+
         public BacktickNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
-        public RubyBasicObject backtick(RubyString command) {
+        public RubyBasicObject backtick(VirtualFrame frame, RubyString command) {
             // Command is lexically a string interoplation, so variables will already have been expanded
+
+            if (toHashNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
 
             CompilerDirectives.transferToInterpreter();
 
             final RubyContext context = getContext();
 
             final RubyBasicObject env = context.getCoreLibrary().getENV();
+            final RubyBasicObject envAsHash = (RubyBasicObject) toHashNode.call(frame, env, "to_hash", null);
 
             final List<String> envp = new ArrayList<>();
 
             // TODO(CS): cast
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(env)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(envAsHash)) {
                 envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
             }
 
@@ -527,12 +536,19 @@ public abstract class KernelNodes {
     @CoreMethod(names = "exec", isModuleFunction = true, required = 1, argumentsAsArray = true)
     public abstract static class ExecNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private CallDispatchHeadNode toHashNode;
+
         public ExecNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
-        public Object require(Object[] args) {
+        public Object exec(VirtualFrame frame, Object[] args) {
+            if (toHashNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
             CompilerDirectives.transferToInterpreter();
 
             final String[] commandLine = new String[args.length];
@@ -541,19 +557,20 @@ public abstract class KernelNodes {
                 commandLine[n] = args[n].toString();
             }
 
-            exec(getContext(), commandLine);
+            final RubyBasicObject env = getContext().getCoreLibrary().getENV();
+            final RubyBasicObject envAsHash = (RubyBasicObject) toHashNode.call(frame, env, "to_hash", null);
+
+            exec(getContext(), envAsHash, commandLine);
 
             return null;
         }
 
         @TruffleBoundary
-        private static void exec(RubyContext context, String[] commandLine) {
+        private static void exec(RubyContext context, RubyBasicObject envAsHash, String[] commandLine) {
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
 
-            final RubyBasicObject env = context.getCoreLibrary().getENV();
-
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(env)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(envAsHash)) {
                 builder.environment().put(keyValue.getKey().toString(), keyValue.getValue().toString());
             }
 
@@ -936,8 +953,11 @@ public abstract class KernelNodes {
     @CoreMethod(names = {"is_a?", "kind_of?"}, required = 1)
     public abstract static class IsANode extends CoreMethodArrayArgumentsNode {
 
+        @Child MetaClassNode metaClassNode;
+
         public IsANode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
         }
 
         public abstract boolean executeIsA(VirtualFrame frame, Object self, RubyModule rubyClass);
@@ -947,14 +967,42 @@ public abstract class KernelNodes {
             return false;
         }
 
-        @TruffleBoundary
-        @Specialization
-        public boolean isA(Object self, RubyModule rubyClass) {
-            CompilerDirectives.transferToInterpreter();
-            // TODO(CS): fast path
-            return ModuleOperations.assignableTo(getContext().getCoreLibrary().getMetaClass(self), rubyClass);
+        @Specialization(
+                limit = "getCacheLimit()",
+                guards = {"getMetaClass(frame, self) == cachedMetaClass", "module == cachedModule"},
+                assumptions = "cachedModule.getUnmodifiedAssumption()")
+        public boolean isACached(VirtualFrame frame,
+                                 Object self,
+                                 RubyModule module,
+                                 @Cached("getMetaClass(frame, self)") RubyClass cachedMetaClass,
+                                 @Cached("module") RubyModule cachedModule,
+                                 @Cached("isA(cachedMetaClass, cachedModule)") boolean result) {
+            return result;
         }
 
+        @Specialization
+        public boolean isAUncached(VirtualFrame frame, Object self, RubyModule module) {
+            return isA(getMetaClass(frame, self), module);
+        }
+
+        @Specialization(guards = "!isRubyModule(module)")
+        public boolean isATypeError(VirtualFrame frame, Object self, Object module) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().typeError("class or module required", this));
+        }
+
+        @TruffleBoundary
+        protected boolean isA(RubyClass metaClass, RubyModule module) {
+            return ModuleOperations.assignableTo(metaClass, module);
+        }
+
+        protected RubyClass getMetaClass(VirtualFrame frame, Object object) {
+            return metaClassNode.executeMetaClass(frame, object);
+        }
+
+        protected int getCacheLimit() {
+            return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
+        }
     }
 
     @CoreMethod(names = "lambda", isModuleFunction = true, needsBlock = true)
@@ -1772,22 +1820,30 @@ public abstract class KernelNodes {
     @CoreMethod(names = "system", isModuleFunction = true, needsSelf = false, required = 1)
     public abstract static class SystemNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private CallDispatchHeadNode toHashNode;
+
         public SystemNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
-        public boolean system(RubyString command) {
+        public boolean system(VirtualFrame frame, RubyString command) {
+            if (toHashNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
             CompilerDirectives.transferToInterpreter();
 
             // TODO(CS 5-JAN-15): very simplistic implementation
 
             final RubyBasicObject env = getContext().getCoreLibrary().getENV();
+            final RubyBasicObject envAsHash = (RubyBasicObject) toHashNode.call(frame, env, "to_hash", null);
 
             final List<String> envp = new ArrayList<>();
 
             // TODO(CS): cast
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(env)) {
+            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(envAsHash)) {
                 envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
             }
 
@@ -1900,41 +1956,28 @@ public abstract class KernelNodes {
     @CoreMethod(names = "untaint")
     public abstract static class UntaintNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private IsFrozenNode isFrozenNode;
+        @Child private IsTaintedNode isTaintedNode;
         @Child private WriteHeadObjectFieldNode writeTaintNode;
 
         public UntaintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
+            isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
             writeTaintNode = new WriteHeadObjectFieldNode(RubyBasicObject.TAINTED_IDENTIFIER);
         }
 
         @Specialization
-        public Object taint(boolean object) {
-            return frozen(object);
-        }
-
-        @Specialization
-        public Object taint(int object) {
-            return frozen(object);
-        }
-
-        @Specialization
-        public Object taint(long object) {
-            return frozen(object);
-        }
-
-        @Specialization
-        public Object taint(double object) {
-            return frozen(object);
-        }
-
-        private Object frozen(Object object) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
-        }
-
-
-        @Specialization
         public Object taint(RubyBasicObject object) {
+            if (!isTaintedNode.executeIsTainted(object)) {
+                return object;
+            }
+
+            if (isFrozenNode.executeIsFrozen(object)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
+            }
+
             writeTaintNode.execute(object, false);
             return object;
         }

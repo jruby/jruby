@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,11 +38,9 @@ class Range
       end
     end
 
-    # MODIFIED to use internal initialization method
-    initialize_internal(first, last, !!exclude_end)
-    #@begin = first
-    #@end = last
-    #@excl = exclude_end
+    @begin = first
+    @end = last
+    @excl = exclude_end
   end
   private :initialize
 
@@ -50,18 +48,17 @@ class Range
     return true if equal? other
 
     other.kind_of?(Range) and
-        self.first == other.first and
-        self.last == other.last and
-        self.exclude_end? == other.exclude_end?
+      self.first == other.first and
+      self.last == other.last and
+      self.exclude_end? == other.exclude_end?
   end
 
   alias_method :eql?, :==
 
-  # MODIFIED Implemented in BodyTranslator and RangeNodes
-  # attr_reader_specific :excl, :exclude_end?
+  attr_reader_specific :excl, :exclude_end?
 
-  # attr_reader :begin
-  # attr_reader :end
+  attr_reader :begin
+  attr_reader :end
 
   def bsearch
     return to_enum :bsearch unless block_given?
@@ -94,19 +91,19 @@ class Range
       return value if x == 0
 
       case x
-        when Numeric
-          if x > 0
-            min = value + 1
-          else
-            max = value
-          end
-        when true
-          last_true = value
-          max = value
-        when false, nil
+      when Numeric
+        if x > 0
           min = value + 1
         else
-          raise TypeError, "Range#bsearch block must return Numeric or boolean"
+          max = value
+        end
+      when true
+        last_true = value
+        max = value
+      when false, nil
+        min = value + 1
+      else
+        raise TypeError, "Range#bsearch block must return Numeric or boolean"
       end
 
       if max < 0 and min < 0
@@ -131,8 +128,8 @@ class Range
     nil
   end
 
-  def each_internal
-    return to_enum unless block_given?
+  def each
+    return to_enum { size } unless block_given?
     first, last = @begin, @end
 
     unless first.respond_to?(:succ) && !first.kind_of?(Time)
@@ -140,36 +137,36 @@ class Range
     end
 
     case first
-      when Fixnum
-        last -= 1 if @excl
+    when Fixnum
+      last -= 1 if @excl
 
-        i = first
-        while i <= last
-          yield i
-          i += 1
-        end
-      when String
-        first.upto(last, @excl) do |str|
-          yield str
-        end
-      when Symbol
-        first.to_s.upto(last.to_s, @excl) do |str|
-          yield str.to_sym
+      i = first
+      while i <= last
+        yield i
+        i += 1
+      end
+    when String
+      first.upto(last, @excl) do |str|
+        yield str
+      end
+    when Symbol
+      first.to_s.upto(last.to_s, @excl) do |str|
+        yield str.to_sym
+      end
+    else
+      current = first
+      if @excl
+        while (current <=> last) < 0
+          yield current
+          current = current.succ
         end
       else
-        current = first
-        if @excl
-          while (current <=> last) < 0
-            yield current
-            current = current.succ
-          end
-        else
-          while (c = current <=> last) && c <= 0
-            yield current
-            break if c == 0
-            current = current.succ
-          end
+        while (c = current <=> last) && c <= 0
+          yield current
+          break if c == 0
+          current = current.succ
         end
+      end
     end
 
     self
@@ -193,14 +190,12 @@ class Range
 
   def include?(value)
     if @begin.respond_to?(:to_int) ||
-        @end.respond_to?(:to_int) ||
-        @begin.kind_of?(Numeric) ||
-        @end.kind_of?(Numeric)
+       @end.respond_to?(:to_int) ||
+       @begin.kind_of?(Numeric) ||
+       @end.kind_of?(Numeric)
       cover? value
     else
-      # super # MODIFIED inlined this becuase of local jump error
-      each_internal { |val| return true if val == value }
-      false
+      super
     end
   end
 
@@ -243,67 +238,43 @@ class Range
     @begin
   end
 
-  def step_internal(step_size=1) # :yields: object
-    return to_enum(:step, step_size) unless block_given?
+  def step(step_size=1) # :yields: object
+    return to_enum(:step, step_size) do
+      m = Rubinius::Mirror::Range.reflect(self)
+      m.step_iterations_size(*m.validate_step_size(@begin, @end, step_size))
+    end unless block_given?
 
-    first = @begin
-    last = @end
-
-    if step_size.kind_of? Float or first.kind_of? Float or last.kind_of? Float
-      # if any are floats they all must be
-      begin
-        step_size = Float(from = step_size)
-        first     = Float(from = first)
-        last      = Float(from = last)
-      rescue ArgumentError
-        raise TypeError, "no implicit conversion to float from #{from.class}"
-      end
-    else
-      step_size = Integer(from = step_size)
-
-      unless step_size.kind_of? Integer
-        raise TypeError, "can't convert #{from.class} to Integer (#{from.class}#to_int gives #{step_size.class})"
-      end
-    end
-
-    if step_size <= 0
-      raise ArgumentError, "step can't be negative" if step_size < 0
-      raise ArgumentError, "step can't be 0"
-    end
+    m = Rubinius::Mirror::Range.reflect(self)
+    values = m.validate_step_size(@begin, @end, step_size)
+    first = values[0]
+    last = values[1]
+    step_size = values[2]
 
     case first
-      when Float
-        err = (first.abs + last.abs + (last - first).abs) / step_size.abs * Float::EPSILON
-        err = 0.5 if err > 0.5
+    when Float
+      iterations = m.step_float_iterations_size(first, last, step_size)
 
-        if @excl
-          iterations = ((last - first) / step_size - err).floor
-          iterations += 1 if iterations * step_size + first < last
-        else
-          iterations = ((last - first) / step_size + err).floor + 1
-        end
+      i = 0
+      while i < iterations
+        curr = i * step_size + first
+        curr = last if last < curr
+        yield curr
+        i += 1
+      end
+    when Numeric
+      curr = first
+      last -= 1 if @excl
 
-        i = 0
-        while i < iterations
-          curr = i * step_size + first
-          curr = last if last < curr
-          yield curr
-          i += 1
-        end
-      when Numeric
-        curr = first
-        last -= 1 if @excl
-
-        while curr <= last
-          yield curr
-          curr += step_size
-        end
-      else
-        i = 0
-        each_internal do |cur| # MODIFIED due to shadowing warning
-          yield cur if i % step_size == 0
-          i += 1
-        end
+      while curr <= last
+        yield curr
+        curr += step_size
+      end
+    else
+      i = 0
+      each do |curr|
+        yield curr if i % step_size == 0
+        i += 1
+      end
     end
 
     self
@@ -313,8 +284,8 @@ class Range
     "#{@begin}#{@excl ? "..." : ".."}#{@end}"
   end
 
-  def to_a_internal # MODIFIED called from java to_a
-    return to_a_from_enumerable unless @begin.kind_of? Fixnum and @end.kind_of? Fixnum
+  def to_a
+    return super unless @begin.kind_of? Fixnum and @end.kind_of? Fixnum
 
     fin = @end
     fin += 1 unless @excl
@@ -332,19 +303,6 @@ class Range
 
     ary
   end
-
-  # MODIFIED added from enumerable because to_a renamed
-  def to_a_from_enumerable(*arg)
-    ary = []
-    each(*arg) do
-      o = Rubinius.single_block_arg
-      ary << o
-      nil
-    end
-    Rubinius::Type.infect ary, self
-    ary
-  end
-
 
   def cover?(value)
     # MRI uses <=> to compare, so must we.

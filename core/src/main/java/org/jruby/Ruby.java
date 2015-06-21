@@ -528,16 +528,14 @@ public final class Ruby implements Constantizable {
         getGlobalVariables().define("$PROGRAM_NAME", d, GLOBAL);
         getGlobalVariables().define("$0", d, GLOBAL);
 
-        for (Iterator i = config.getOptionGlobals().entrySet().iterator(); i.hasNext();) {
-            Map.Entry entry = (Map.Entry) i.next();
-            Object value = entry.getValue();
-            IRubyObject varvalue;
-            if (value != null) {
-                varvalue = newString(value.toString());
+        for (Map.Entry<String, String> entry : config.getOptionGlobals().entrySet()) {
+            final IRubyObject varvalue;
+            if (entry.getValue() != null) {
+                varvalue = newString(entry.getValue());
             } else {
                 varvalue = getTrue();
             }
-            getGlobalVariables().set("$" + entry.getKey().toString(), varvalue);
+            getGlobalVariables().set("$" + entry.getKey(), varvalue);
         }
 
         if (filename.endsWith(".class")) {

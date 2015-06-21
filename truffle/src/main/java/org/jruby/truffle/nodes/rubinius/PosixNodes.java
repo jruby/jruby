@@ -20,12 +20,14 @@ import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 @CoreClass(name = "Rubinius::FFI::Platform::POSIX")
 public abstract class PosixNodes {
@@ -87,6 +89,19 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "environ", isModuleFunction = true)
+    public abstract static class EnvironNode extends CoreMethodArrayArgumentsNode {
+
+        public EnvironNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject environ() {
+            return PointerNodes.createPointer(getContext().getCoreLibrary().getRubiniusFFIPointerClass(), posix().environ());
+        }
+    }
+
     @CoreMethod(names = "fchmod", isModuleFunction = true, required = 2)
     public abstract static class FchmodNode extends CoreMethodArrayArgumentsNode {
 
@@ -145,6 +160,27 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "getenv", isModuleFunction = true, required = 1)
+    public abstract static class GetenvNode extends CoreMethodArrayArgumentsNode {
+
+        public GetenvNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyString(name)")
+        public RubyBasicObject getenv(RubyBasicObject name) {
+            final String nameString = RubyEncoding.decodeUTF8(StringNodes.getByteList(name).getUnsafeBytes(), StringNodes.getByteList(name).getBegin(), StringNodes.getByteList(name).getRealSize());
+
+            Object result = posix().getenv(nameString);
+
+            if (result == null) {
+                return nil();
+            }
+
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), (String) result);
+        }
+    }
+
     @CoreMethod(names = "geteuid", isModuleFunction = true)
     public abstract static class GetEUIDNode extends CoreMethodArrayArgumentsNode {
 
@@ -180,11 +216,16 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isNil(pointer)")
+        public int getGroupsNil(int max, RubyBasicObject pointer) {
+            return Platform.getPlatform().getGroups(null).length;
+        }
+
+        @Specialization(guards = "isRubyPointer(pointer)")
         public int getGroups(int max, RubyBasicObject pointer) {
             final long[] groups = Platform.getPlatform().getGroups(null);
 
-            final Pointer pointerValue = PointerPrimitiveNodes.getPointer(pointer);
+            final Pointer pointerValue = PointerNodes.getPointer(pointer);
 
             for (int n = 0; n < groups.length && n < max; n++) {
                 // TODO CS 16-May-15 this is platform dependent
@@ -204,9 +245,9 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(pointer)")
         public int getrlimit(int resource, RubyBasicObject pointer) {
-            final int result = posix().getrlimit(resource, PointerPrimitiveNodes.getPointer(pointer));
+            final int result = posix().getrlimit(resource, PointerNodes.getPointer(pointer));
 
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
@@ -239,15 +280,29 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(pointer)")
         public RubyBasicObject memset(RubyBasicObject pointer, int c, int length) {
             return memset(pointer, c, (long) length);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(pointer)")
         public RubyBasicObject memset(RubyBasicObject pointer, int c, long length) {
-            PointerPrimitiveNodes.getPointer(pointer).setMemory(0, length, (byte) c);
+            PointerNodes.getPointer(pointer).setMemory(0, length, (byte) c);
             return pointer;
+        }
+
+    }
+
+    @CoreMethod(names = "putenv", isModuleFunction = true, required = 1)
+    public abstract static class PutenvNode extends CoreMethodArrayArgumentsNode {
+
+        public PutenvNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyString(nameValuePair)")
+        public int putenv(RubyBasicObject nameValuePair) {
+            throw new UnsupportedOperationException("Not yet implemented in jnr-posix");
         }
 
     }
@@ -259,17 +314,34 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(pointer)")
         public int readlink(RubyString path, RubyBasicObject pointer, int bufsize) {
             final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
 
-            final int result = posix().readlink(pathString, PointerPrimitiveNodes.getPointer(pointer), bufsize);
+            final int result = posix().readlink(pathString, PointerNodes.getPointer(pointer), bufsize);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
 
             return result;
+        }
+
+    }
+
+    @CoreMethod(names = "setenv", isModuleFunction = true, required = 3)
+    public abstract static class SetenvNode extends CoreMethodArrayArgumentsNode {
+
+        public SetenvNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = { "isRubyString(name)", "isRubyString(value)" })
+        public int setenv(RubyBasicObject name, RubyBasicObject value, int overwrite) {
+            final String nameString = RubyEncoding.decodeUTF8(StringNodes.getByteList(name).getUnsafeBytes(), StringNodes.getByteList(name).getBegin(), StringNodes.getByteList(name).getRealSize());
+            final String valueString = RubyEncoding.decodeUTF8(StringNodes.getByteList(value).getUnsafeBytes(), StringNodes.getByteList(value).getBegin(), StringNodes.getByteList(value).getRealSize());
+
+            return posix().setenv(nameString, valueString, overwrite);
         }
 
     }
@@ -318,6 +390,22 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "unsetenv", isModuleFunction = true, required = 1)
+    public abstract static class UnsetenvNode extends CoreMethodArrayArgumentsNode {
+
+        public UnsetenvNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyString(name)")
+        public int unsetenv(RubyBasicObject name) {
+            final String nameString = RubyEncoding.decodeUTF8(StringNodes.getByteList(name).getUnsafeBytes(), StringNodes.getByteList(name).getBegin(), StringNodes.getByteList(name).getRealSize());
+
+            return posix().unsetenv(nameString);
+        }
+
+    }
+
     @CoreMethod(names = "utimes", isModuleFunction = true, required = 2)
     public abstract static class UtimesNode extends CoreMethodArrayArgumentsNode {
 
@@ -325,11 +413,11 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(pointer)")
         public int utimes(RubyString path, RubyBasicObject pointer) {
             final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
 
-            final int result = posix().utimes(pathString, PointerPrimitiveNodes.getPointer(pointer));
+            final int result = posix().utimes(pathString, PointerNodes.getPointer(pointer));
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
@@ -467,9 +555,9 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(pointer)")
         public int setrlimit(int resource, RubyBasicObject pointer) {
-            final int result = posix().setrlimit(resource, PointerPrimitiveNodes.getPointer(pointer));
+            final int result = posix().setrlimit(resource, PointerNodes.getPointer(pointer));
 
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
@@ -731,8 +819,6 @@ public abstract class PosixNodes {
 
     }
 
-    // TODO CS-15-May 15 we're missing a lot of guards for things like Pointer here
-
     @CoreMethod(names = "_getaddrinfo", isModuleFunction = true, required = 4)
     public abstract static class GetAddrInfoNode extends CoreMethodArrayArgumentsNode {
 
@@ -745,13 +831,13 @@ public abstract class PosixNodes {
             return getaddrinfo((RubyString) createString("0.0.0.0"), serviceName, hintsPointer, resultsPointer);
         }
 
-        @Specialization
+        @Specialization(guards = {"isRubyPointer(hintsPointer)", "isRubyPointer(resultsPointer)"})
         public int getaddrinfo(RubyString hostName, RubyString serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
             return nativeSockets().getaddrinfo(
                     StringNodes.getByteList(hostName),
                     StringNodes.getByteList(serviceName),
-                    PointerPrimitiveNodes.getPointer(hintsPointer),
-                    PointerPrimitiveNodes.getPointer(resultsPointer));
+                    PointerNodes.getPointer(hintsPointer),
+                    PointerNodes.getPointer(resultsPointer));
         }
 
     }
@@ -763,9 +849,9 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(addrInfo)")
         public RubyBasicObject freeaddrinfo(RubyBasicObject addrInfo) {
-            nativeSockets().freeaddrinfo(PointerPrimitiveNodes.getPointer(addrInfo));
+            nativeSockets().freeaddrinfo(PointerNodes.getPointer(addrInfo));
             return nil();
         }
 
@@ -778,14 +864,14 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = {"isRubyPointer(sa)", "isRubyPointer(host)", "isRubyPointer(serv)"})
         public int getnameinfo(RubyBasicObject sa, int salen, RubyBasicObject host, int hostlen, RubyBasicObject serv, int servlen, int flags) {
             return nativeSockets().getnameinfo(
-                    PointerPrimitiveNodes.getPointer(sa),
+                    PointerNodes.getPointer(sa),
                     salen,
-                    PointerPrimitiveNodes.getPointer(host),
+                    PointerNodes.getPointer(host),
                     hostlen,
-                    PointerPrimitiveNodes.getPointer(serv),
+                    PointerNodes.getPointer(serv),
                     servlen,
                     flags);
         }
@@ -813,9 +899,9 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(optionValue)")
         public int setsockopt(int socket, int level, int optionName, RubyBasicObject optionValue, int optionLength) {
-            return nativeSockets().setsockopt(socket, level, optionName, PointerPrimitiveNodes.getPointer(optionValue), optionLength);
+            return nativeSockets().setsockopt(socket, level, optionName, PointerNodes.getPointer(optionValue), optionLength);
         }
 
     }
@@ -827,9 +913,9 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(address)")
         public int bind(int socket, RubyBasicObject address, int addressLength) {
-            return nativeSockets().bind(socket, PointerPrimitiveNodes.getPointer(address), addressLength);
+            return nativeSockets().bind(socket, PointerNodes.getPointer(address), addressLength);
         }
 
     }
@@ -855,9 +941,9 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyPointer(name)")
         public int getHostName(RubyBasicObject name, int nameLength) {
-            return nativeSockets().gethostname(PointerPrimitiveNodes.getPointer(name), nameLength);
+            return nativeSockets().gethostname(PointerNodes.getPointer(name), nameLength);
         }
 
     }
@@ -869,9 +955,9 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = {"isRubyPointer(address)", "isRubyPointer(addressLength)"})
         public int getPeerName(int socket, RubyBasicObject address, RubyBasicObject addressLength) {
-            return nativeSockets().getpeername(socket, PointerPrimitiveNodes.getPointer(address), PointerPrimitiveNodes.getPointer(addressLength));
+            return nativeSockets().getpeername(socket, PointerNodes.getPointer(address), PointerNodes.getPointer(addressLength));
         }
 
     }
@@ -883,9 +969,9 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = {"isRubyPointer(address)", "isRubyPointer(addressLength)"})
         public int getSockName(int socket, RubyBasicObject address, RubyBasicObject addressLength) {
-            return nativeSockets().getsockname(socket, PointerPrimitiveNodes.getPointer(address), PointerPrimitiveNodes.getPointer(addressLength));
+            return nativeSockets().getsockname(socket, PointerNodes.getPointer(address), PointerNodes.getPointer(addressLength));
         }
 
     }
