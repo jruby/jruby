@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.core.RubyModule;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,7 +54,6 @@ public class RubiniusPrimitiveManager {
         nodeFactories.addAll(EncodingPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(EncodingConverterPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(RegexpPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(ModulePrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(RandomPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(ArrayPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(StatPrimitiveNodesFactory.getFactories());
@@ -74,10 +74,13 @@ public class RubiniusPrimitiveManager {
             final GeneratedBy generatedBy = nodeFactory.getClass().getAnnotation(GeneratedBy.class);
             final Class<?> nodeClass = generatedBy.value();
             final RubiniusPrimitive annotation = nodeClass.getAnnotation(RubiniusPrimitive.class);
-            primitives.put(annotation.name(), new RubiniusPrimitiveConstructor(annotation, nodeFactory));
+            primitives.put(annotation.name(), new RubiniusPrimitiveNodeConstructor(annotation, nodeFactory));
         }
 
         return new RubiniusPrimitiveManager(primitives);
     }
 
+    public void installPrimitive(RubyModule module, String method) {
+        primitives.put(method, new RubiniusPrimitiveCallConstructor(module, method));
+    }
 }

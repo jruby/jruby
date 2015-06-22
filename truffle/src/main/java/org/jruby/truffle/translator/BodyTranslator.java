@@ -25,6 +25,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.ThreadLocalObjectNode;
 import org.jruby.truffle.nodes.arguments.IsRubiniusUndefinedNode;
 import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.nodes.arguments.ReadAllArgumentsNode;
 import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.cast.LambdaNode;
@@ -459,28 +460,54 @@ public class BodyTranslator extends Translator {
 
         final RubiniusPrimitiveConstructor primitive = context.getRubiniusPrimitiveManager().getPrimitive(primitiveName);
 
-        final List<RubyNode> arguments = new ArrayList<>();
+        if (primitive instanceof RubiniusPrimitiveNodeConstructor) {
+            final RubiniusPrimitiveNodeConstructor nodeConstructor = (RubiniusPrimitiveNodeConstructor) primitive;
 
-        int argumentsCount = primitive.getFactory().getExecutionSignature().size();
+            final List<RubyNode> arguments = new ArrayList<>();
 
-        if (primitive.getAnnotation().needsSelf()) {
-            arguments.add(new SelfNode(context, sourceSection));
-            argumentsCount--;
-        }
+            int argumentsCount = nodeConstructor.getFactory().getExecutionSignature().size();
 
-        for (int n = 0; n < argumentsCount; n++) {
-            RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
-
-            if (ArrayUtils.contains(primitive.getAnnotation().lowerFixnumParameters(), n)) {
-                readArgumentNode = new FixnumLowerNode(readArgumentNode);
+            if (nodeConstructor.getAnnotation().needsSelf()) {
+                arguments.add(new SelfNode(context, sourceSection));
+                argumentsCount--;
             }
 
-            arguments.add(readArgumentNode);
-        }
+            for (int n = 0; n < argumentsCount; n++) {
+                RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
 
-        return new CallRubiniusPrimitiveNode(context, sourceSection,
-                primitive.getFactory().createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])),
-                environment.getReturnID());
+                if (ArrayUtils.contains(nodeConstructor.getAnnotation().lowerFixnumParameters(), n)) {
+                    readArgumentNode = new FixnumLowerNode(readArgumentNode);
+                }
+
+                arguments.add(readArgumentNode);
+            }
+
+            return new CallRubiniusPrimitiveNode(context, sourceSection,
+                    nodeConstructor.getFactory().createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])),
+                    environment.getReturnID());
+        } else if (primitive instanceof RubiniusPrimitiveCallConstructor) {
+            final RubiniusPrimitiveCallConstructor callConstructor = (RubiniusPrimitiveCallConstructor) primitive;
+
+            final List<RubyNode> arguments = new ArrayList<>();
+
+            final int argumentsCount = callConstructor.getModule().getMethods().get(callConstructor.getMethod()).getSharedMethodInfo().getArity().getRequired();
+
+            for (int n = 0; n < argumentsCount; n++) {
+                RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
+                arguments.add(readArgumentNode);
+            }
+
+            return new RubyCallNode(
+                    context,
+                    sourceSection,
+                    callConstructor.getMethod(),
+                    new LiteralNode(context, sourceSection, callConstructor.getModule()),
+                    null,
+                    false,
+                    arguments.toArray(new RubyNode[arguments.size()]));
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private RubyNode translateRubiniusInvokePrimitive(SourceSection sourceSection, CallNode node) {
@@ -502,21 +529,46 @@ public class BodyTranslator extends Translator {
 
         final RubiniusPrimitiveConstructor primitive = context.getRubiniusPrimitiveManager().getPrimitive(primitiveName);
 
-        final List<RubyNode> arguments = new ArrayList<>();
+        if (primitive instanceof RubiniusPrimitiveNodeConstructor) {
+            final RubiniusPrimitiveNodeConstructor nodeConstructor = (RubiniusPrimitiveNodeConstructor) primitive;
 
-        // The first argument was the symbol so we ignore it
-        for (int n = 1; n < node.getArgsNode().childNodes().size(); n++) {
-            RubyNode readArgumentNode = node.getArgsNode().childNodes().get(n).accept(this);
+            final List<RubyNode> arguments = new ArrayList<>();
 
-            if (ArrayUtils.contains(primitive.getAnnotation().lowerFixnumParameters(), n)) {
-                readArgumentNode = new FixnumLowerNode(readArgumentNode);
+            // The first argument was the symbol so we ignore it
+            for (int n = 1; n < node.getArgsNode().childNodes().size(); n++) {
+                RubyNode readArgumentNode = node.getArgsNode().childNodes().get(n).accept(this);
+
+                if (ArrayUtils.contains(nodeConstructor.getAnnotation().lowerFixnumParameters(), n)) {
+                    readArgumentNode = new FixnumLowerNode(readArgumentNode);
+                }
+
+                arguments.add(readArgumentNode);
             }
 
-            arguments.add(readArgumentNode);
+            return new InvokeRubiniusPrimitiveNode(context, sourceSection,
+                    nodeConstructor.getFactory().createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])));
+        } else if (primitive instanceof RubiniusPrimitiveCallConstructor) {
+            final RubiniusPrimitiveCallConstructor callConstructor = (RubiniusPrimitiveCallConstructor) primitive;
+
+            final List<RubyNode> arguments = new ArrayList<>();
+
+            // The first argument was the symbol so we ignore it
+            for (int n = 1; n < node.getArgsNode().childNodes().size(); n++) {
+                RubyNode readArgumentNode = node.getArgsNode().childNodes().get(n).accept(this);
+                arguments.add(readArgumentNode);
+            }
+
+            return new RubyCallNode(
+                    context,
+                    sourceSection,
+                    callConstructor.getMethod(),
+                    new LiteralNode(context, sourceSection, callConstructor.getModule()),
+                    null,
+                    false,
+                    arguments.toArray(new RubyNode[arguments.size()]));
+        } else {
+            throw new UnsupportedOperationException();
         }
-        
-        return new InvokeRubiniusPrimitiveNode(context, sourceSection,
-                primitive.getFactory().createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])));
     }
 
     private RubyNode translateRubiniusPrivately(SourceSection sourceSection, CallNode node) {

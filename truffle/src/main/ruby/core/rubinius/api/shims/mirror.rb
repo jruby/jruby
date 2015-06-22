@@ -9,7 +9,6 @@
 module Rubinius
   class Mirror
 
-    # Implementation of the :module_mirror Rubinius primitive.
     def self.module_mirror(obj)
       if obj.is_a?(::Numeric)
         Rubinius::Mirror::Numeric
@@ -31,6 +30,7 @@ module Rubinius
         end
       end
     end
+    Truffle::Primitive.install_rubinius_primitive self, :module_mirror
 
   end
 end

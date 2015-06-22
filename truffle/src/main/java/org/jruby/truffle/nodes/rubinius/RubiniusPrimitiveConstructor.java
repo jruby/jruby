@@ -9,28 +9,6 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.dsl.NodeFactory;
-import org.jruby.truffle.nodes.RubyNode;
-
-/**
- * Packages up the original {@link RubiniusPrimitive annotation} with the {@link NodeFactory}.
- */
-public class RubiniusPrimitiveConstructor {
-
-    private final RubiniusPrimitive annotation;
-    private final NodeFactory<? extends RubyNode> factory;
-
-    public RubiniusPrimitiveConstructor(RubiniusPrimitive annotation, NodeFactory<? extends RubyNode> factory) {
-        this.annotation = annotation;
-        this.factory = factory;
-    }
-
-    public RubiniusPrimitive getAnnotation() {
-        return annotation;
-    }
-
-    public NodeFactory<? extends RubyNode> getFactory() {
-        return factory;
-    }
+public interface RubiniusPrimitiveConstructor {
 
 }
