@@ -1392,6 +1392,60 @@ public abstract class BigDecimalNodes {
 
     }
 
+    @CoreMethod(names = "round", optional = 2)
+    public abstract static class RoundNode extends BigDecimalCoreMethodArrayArgumentsNode {
+
+        public RoundNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        private BigDecimal round(RubyBasicObject value, int digit, RoundingMode roundingMode) {
+            final BigDecimal valueBigDecimal = getBigDecimalValue(value);
+            final int end = -valueBigDecimal.scale();
+            final int start = valueBigDecimal.precision() + end;
+            final int newPrecision = start - digit;
+            return valueBigDecimal.round(new MathContext(newPrecision, roundingMode));
+        }
+
+        @Specialization(guards = "isNormal(value)")
+        public RubyBasicObject round(VirtualFrame frame, RubyBasicObject value, NotProvided digit, NotProvided roundingMode) {
+            return createBigDecimal(frame, round(value, 0, getRoundMode(frame)));
+        }
+
+        @Specialization(guards = "isNormal(value)")
+        public RubyBasicObject round(VirtualFrame frame, RubyBasicObject value, int digit, NotProvided roundingMode) {
+            return createBigDecimal(frame, round(value, digit, getRoundMode(frame)));
+        }
+
+        @Specialization(guards = "isNormal(value)")
+        public RubyBasicObject round(VirtualFrame frame, RubyBasicObject value, int digit, int roundingMode) {
+            return createBigDecimal(frame, round(value, digit, toRoundingMode(roundingMode)));
+        }
+
+        @Specialization(guards = "!isNormal(value)")
+        public RubyBasicObject roundSpecial(VirtualFrame frame, RubyBasicObject value, Object precision, Object roundingMode) {
+            switch (getBigDecimalType(value)) {
+                case NEGATIVE_INFINITY:
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().
+                            floatDomainError("Computation results to '-Infinity'", this));
+                case POSITIVE_INFINITY:
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().
+                            floatDomainError("Computation results to 'Infinity'", this));
+                case NEGATIVE_ZERO:
+                    return value;
+                case NAN:
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().
+                            floatDomainError("Computation results to 'NaN'(Not a Number)", this));
+            }
+            CompilerAsserts.neverPartOfCompilation();
+            throw new UnsupportedOperationException();
+        }
+    }
+
     @CoreMethod(names = "finite?")
     public abstract static class FiniteNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
