@@ -1,1 +1,0 @@
-fails:Logger::LogDevice#new creates a File if the IO object does not exist
