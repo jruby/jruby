@@ -108,7 +108,8 @@ public class JRubyFile extends JavaSecuredFile {
             }
         }
 
-        if (cwd != null && (cwd.startsWith("uri:") || cwd.startsWith("file:"))) {
+        File internal = new JavaSecuredFile(pathname);
+        if (cwd != null && !internal.isAbsolute() && (cwd.startsWith("uri:") || cwd.startsWith("file:"))) {
             return createResource(runtime, null, cwd + "/" + pathname);
         }
 
@@ -133,14 +134,15 @@ public class JRubyFile extends JavaSecuredFile {
             pathname = pathname.substring(5);
         }
         File internal = new JavaSecuredFile(pathname);
-        if(cwd != null && cwd.startsWith("uri:") && !pathname.startsWith("uri:") && !pathname.contains("!/") && !internal.isAbsolute()) {
+        if (internal.isAbsolute()) {
+            return new JRubyFile(internal);
+        }
+        if(cwd != null && cwd.startsWith("uri:") && !pathname.startsWith("uri:") && !pathname.contains("!/")) {
             return new JRubyFile(cwd + "/" + pathname);
         }
+        internal = new JavaSecuredFile(cwd, pathname);
         if(!internal.isAbsolute()) {
-            internal = new JavaSecuredFile(cwd, pathname);
-            if(!internal.isAbsolute()) {
-                throw new IllegalArgumentException("Neither current working directory ("+cwd+") nor pathname ("+pathname+") led to an absolute path");
-            }
+            throw new IllegalArgumentException("Neither current working directory ("+cwd+") nor pathname ("+pathname+") led to an absolute path");
         }
         return new JRubyFile(internal);
     }
