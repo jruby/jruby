@@ -75,6 +75,7 @@ import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.methods.Arity;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
 import org.jruby.util.ByteList;
@@ -490,7 +491,8 @@ public class BodyTranslator extends Translator {
 
             final List<RubyNode> arguments = new ArrayList<>();
 
-            final int argumentsCount = callConstructor.getModule().getMethods().get(callConstructor.getMethod()).getSharedMethodInfo().getArity().getRequired();
+            final InternalMethod method = callConstructor.getModule().getMethods().get(callConstructor.getMethod());
+            final int argumentsCount = method.getSharedMethodInfo().getArity().getRequired();
 
             for (int n = 0; n < argumentsCount; n++) {
                 RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
