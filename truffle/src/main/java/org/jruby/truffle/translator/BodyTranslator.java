@@ -531,34 +531,27 @@ public class BodyTranslator extends Translator {
 
         final RubiniusPrimitiveConstructor primitive = context.getRubiniusPrimitiveManager().getPrimitive(primitiveName);
 
+        final List<RubyNode> arguments = new ArrayList<>();
+
+        // The first argument was the symbol so we ignore it
+        for (int n = 1; n < node.getArgsNode().childNodes().size(); n++) {
+            RubyNode readArgumentNode = node.getArgsNode().childNodes().get(n).accept(this);
+            arguments.add(readArgumentNode);
+        }
+
         if (primitive instanceof RubiniusPrimitiveNodeConstructor) {
             final RubiniusPrimitiveNodeConstructor nodeConstructor = (RubiniusPrimitiveNodeConstructor) primitive;
 
-            final List<RubyNode> arguments = new ArrayList<>();
-
-            // The first argument was the symbol so we ignore it
-            for (int n = 1; n < node.getArgsNode().childNodes().size(); n++) {
-                RubyNode readArgumentNode = node.getArgsNode().childNodes().get(n).accept(this);
-
+            for (int n = 1; n < arguments.size(); n++) {
                 if (ArrayUtils.contains(nodeConstructor.getAnnotation().lowerFixnumParameters(), n)) {
-                    readArgumentNode = new FixnumLowerNode(readArgumentNode);
+                    arguments.set(n, new FixnumLowerNode(arguments.get(n)));
                 }
-
-                arguments.add(readArgumentNode);
             }
 
             return new InvokeRubiniusPrimitiveNode(context, sourceSection,
                     nodeConstructor.getFactory().createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])));
         } else if (primitive instanceof RubiniusPrimitiveCallConstructor) {
             final RubiniusPrimitiveCallConstructor callConstructor = (RubiniusPrimitiveCallConstructor) primitive;
-
-            final List<RubyNode> arguments = new ArrayList<>();
-
-            // The first argument was the symbol so we ignore it
-            for (int n = 1; n < node.getArgsNode().childNodes().size(); n++) {
-                RubyNode readArgumentNode = node.getArgsNode().childNodes().get(n).accept(this);
-                arguments.add(readArgumentNode);
-            }
 
             return new RubyCallNode(
                     context,
