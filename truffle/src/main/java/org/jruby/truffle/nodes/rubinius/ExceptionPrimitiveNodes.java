@@ -33,9 +33,10 @@ public abstract class ExceptionPrimitiveNodes {
         protected final static int EACCES = Errno.EACCES.intValue();
         protected final static int EFAULT = Errno.EFAULT.intValue();
         protected final static int ENOTDIR = Errno.ENOTDIR.intValue();
+        protected final static int EINVAL = Errno.EINVAL.intValue();
 
         public static boolean isExceptionSupported(int errno) {
-            return errno == EPERM || errno == ENOENT || errno == EBADF || errno == EEXIST || errno == EACCES || errno == EFAULT || errno == ENOTDIR;
+            return errno == EPERM || errno == ENOENT || errno == EBADF || errno == EEXIST || errno == EACCES || errno == EFAULT || errno == ENOTDIR || errno == EINVAL;
         }
 
         public ExceptionErrnoErrorPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -100,6 +101,11 @@ public abstract class ExceptionPrimitiveNodes {
         @Specialization(guards = "errno == ENOTDIR")
         public RubyException enotdir(RubyString message, int errno) {
             return getContext().getCoreLibrary().notDirectoryError(message.toString(), this);
+        }
+
+        @Specialization(guards = "errno == EINVAL")
+        public RubyException einval(RubyString message, int errno) {
+            return getContext().getCoreLibrary().errnoError(errno, this);
         }
 
         @TruffleBoundary
