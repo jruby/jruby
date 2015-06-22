@@ -27,22 +27,25 @@ public @interface CoreMethod {
 
     /**
      * Defines the method on the singleton class.
-     * {@link needsSelf} is always false.
+     * {@link #needsSelf() needsSelf} is always false.
+     * See {@link #constructor() constructor} if you need self.
      * */
     boolean onSingleton() default false;
 
     /**
-     * Like {@link #onSingleton()} but with {@link #needsSelf()} always true.
+     * Like {@link #onSingleton() onSingleton} but with {@link #needsSelf() needsSelf} always true.
      */
     boolean constructor() default false;
 
     /**
      * Defines the method as public on the singleton class
      * and as a private instance method.
-     * {@link needsSelf} is always false.
+     * {@link #needsSelf() needsSelf} is always false
+     * as it could be either a module or any receiver.
      */
     boolean isModuleFunction() default false;
 
+    /** Whether <code>self</code> is passed as first argument to specializations. */
     boolean needsSelf() default true;
 
     int required() default 0;
