@@ -970,6 +970,26 @@ class TestFile < Test::Unit::TestCase
     end
   end
 
+  def test_file_with_absolute_path_and_uri_path_as_cwd
+    filename = File.expand_path( 'test_absolute_path_and_uri_path_as_cwd' )
+
+    Dir.chdir('uri:classloader:/') do
+      begin
+        f = File.new(filename, File::CREAT)
+        assert_equal(nil, f.read(1))
+
+        assert File.file?(filename)
+        assert File.exist?(filename)
+      ensure
+        f.close
+        File.delete(filename)
+
+        assert !File.file?(filename)
+        assert !File.exist?(filename)
+      end
+    end
+  end
+
   def test_file_create
     filename = '2nnever'
     f = File.new(filename, File::CREAT)
