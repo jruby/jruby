@@ -1,0 +1,1 @@
+fails:StringScanner#peep raises a RangeError when the passed argument is a Bignum
