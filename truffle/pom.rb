@@ -15,7 +15,7 @@ project 'JRuby Truffle' do
   repository( :url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/',
               :id => 'truffle' )
 
-  truffle_version = '0.8-ef8c90391f1ec21bcfb6d5c6fb39757b860d4973-SNAPSHOT'
+  truffle_version = '0.8-ff6f34159b8a2d7149e384b67b0bb007e79c8a75-SNAPSHOT'
   jar 'com.oracle:truffle:' + truffle_version
   jar 'com.oracle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
   jar 'com.oracle:truffle-tck:' + truffle_version, :scope => 'test'
