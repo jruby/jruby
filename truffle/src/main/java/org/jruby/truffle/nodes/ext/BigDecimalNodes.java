@@ -1481,11 +1481,10 @@ public abstract class BigDecimalNodes {
         @TruffleBoundary
         private BigDecimal round(RubyBasicObject value, int digit, RoundingMode roundingMode) {
             final BigDecimal valueBigDecimal = getBigDecimalValue(value);
-            final int end = -valueBigDecimal.scale();
-            final int start = valueBigDecimal.precision() + end;
-            final int newPrecision = start - digit;
-
-            return valueBigDecimal.round(new MathContext(newPrecision, roundingMode));
+            return valueBigDecimal.
+                    movePointRight(digit).
+                    setScale(0, roundingMode).
+                    movePointLeft(digit);
         }
 
         @Specialization(guards = "isNormal(value)")
