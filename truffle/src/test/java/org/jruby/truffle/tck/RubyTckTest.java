@@ -25,43 +25,41 @@ public class RubyTckTest extends TruffleTCK {
 
     @Override
     protected TruffleVM prepareVM() throws Exception {
-        // @formatter:off
-        TruffleVM jsVM = TruffleVM.newVM().build();
-        jsVM.eval("application/x-ruby",
-            "def sum a, b\n"
-          + " return a + b\n"
+        TruffleVM vm = TruffleVM.newVM().build();
+        vm.eval("application/x-ruby",
+            "def sum(a, b)\n"
+          + " a + b\n"
           + "end\n"
-          + "def fourtyTwo\n"
-          + " return 42\n"
+          + "def fourty_two\n"
+          + " 42\n"
           + "end\n"
-          + "def retNil\n"
-          + " return nil\n"
+          + "def ret_nil\n"
+          + " nil\n"
           + "end\n"
-          + "def applyNumbers(f)\n"
-          + " return f.call(18, 32) + 10\n"
+          + "def apply_numbers(f)\n"
+          + " f.call(18, 32) + 10\n"
           + "end\n"
-          + "Truffle::Interop.export(\"sumInts\", method(:sum))\n"
-          + "Truffle::Interop.export(\"fourtyTwo\", method(:fourtyTwo))\n"
-          + "Truffle::Interop.export(\"retNil\", method(:retNil))\n"
-          + "Truffle::Interop.export(\"applyNumbers\", method(:applyNumbers))\n"
+          + "Truffle::Interop.export(\"sum_ints\", method(:sum))\n"
+          + "Truffle::Interop.export(\"fourty_two\", method(:fourty_two))\n"
+          + "Truffle::Interop.export(\"ret_nil\", method(:ret_nil))\n"
+          + "Truffle::Interop.export(\"apply_numbers\", method(:apply_numbers))\n"
         );
-        // @formatter:on
-        return jsVM;
+        return vm;
     }
 
     @Override
     protected String plusInt() {
-        return "sumInts";
+        return "sum_ints";
     }
 
     @Override
     protected String applyNumbers() {
-        return "applyNumbers";
+        return "apply_numbers";
     }
 
     @Override
     protected String fourtyTwo() {
-        return "fourtyTwo";
+        return "fourty_two";
     }
 
     @Override
@@ -71,7 +69,7 @@ public class RubyTckTest extends TruffleTCK {
 
     @Override
     protected String returnsNull() {
-        return "retNil";
+        return "ret_nil";
     }
 
     @Override
