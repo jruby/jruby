@@ -147,6 +147,22 @@ class Truffle::BigDecimal < Numeric
       return rounded == integer ? integer : rounded
     end
   end
+
+  def fix
+    if finite?
+      round 0, ROUND_DOWN
+    else
+      self
+    end
+  end
+
+  def frac
+    if finite?
+      self - fix
+    else
+      self
+    end
+  end
 end
 
 BigDecimal = Truffle::BigDecimal
