@@ -127,6 +127,26 @@ class Truffle::BigDecimal < Numeric
     sign = -1 if sign < -1
     [sign, unscaled, 10, exponent]
   end
+
+  def floor(digit = nil)
+    if digit
+      round digit, ROUND_FLOOR
+    else
+      rounded = round 0, ROUND_FLOOR
+      integer = rounded.to_i
+      return rounded == integer ? integer : rounded
+    end
+  end
+
+  def ceil(digit = nil)
+    if digit
+      round digit, ROUND_CEILING
+    else
+      rounded = round 0, ROUND_CEILING
+      integer = rounded.to_i
+      return rounded == integer ? integer : rounded
+    end
+  end
 end
 
 BigDecimal = Truffle::BigDecimal
