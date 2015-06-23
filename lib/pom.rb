@@ -21,10 +21,7 @@ class ImportedGem
     end
   end
 end
-require 'rexml/document'
-require 'rexml/xpath'
 
-# the versions are declared in ../pom.xml
 default_gems =
   [
    ImportedGem.new( 'jruby-openssl', '0.9.7', true ),
