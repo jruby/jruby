@@ -16,6 +16,21 @@ module Rubinius
         @object.exclude_end?
       end
 
+      # Local fix until Rubinius is fixed upstream.
+      def step_float_iterations_size(first, last, step_size)
+        err = (first.abs + last.abs + (last - first).abs) / step_size.abs * Float::EPSILON
+        err = 0.5 if err > 0.5
+
+        if excl
+          iterations = ((last - first) / step_size - err).floor
+          iterations += 1 if iterations * step_size + first < last
+        else
+          iterations = ((last - first) / step_size + err).floor + 1
+        end
+
+        iterations
+      end
+
     end
   end
 end
