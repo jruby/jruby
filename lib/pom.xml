@@ -144,7 +144,7 @@
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jar-dependencies</artifactId>
-      <version>0.1.14</version>
+      <version>0.1.15</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
