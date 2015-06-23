@@ -7,7 +7,7 @@
 # GNU Lesser General Public License version 2.1
 
 module Rubinius
-  class Mirror
+  module RubyPrimitives
 
     def self.module_mirror(obj)
       if obj.is_a?(::Numeric)
@@ -30,6 +30,7 @@ module Rubinius
         end
       end
     end
+
     Truffle::Primitive.install_rubinius_primitive self, :module_mirror
 
   end

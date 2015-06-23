@@ -15,7 +15,7 @@ Charles Nutter, et al.
 
 https://github.com/rubinius/rubinius-core-api
 
-`api/shims` is our own code.
+`api/shims` and `primitives.rb` is our own code.
 
 We try not to modify files from Rubinius, so that they can easily be merged from
 upstream in the future. In some cases there are shims that patch up Rubinius
