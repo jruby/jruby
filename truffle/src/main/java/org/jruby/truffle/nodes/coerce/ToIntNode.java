@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.FloatNodes;
 import org.jruby.truffle.nodes.core.FloatNodesFactory;
@@ -42,6 +43,11 @@ public abstract class ToIntNode extends RubyNode {
             return (int) integerObject;
         }
 
+        if (RubyGuards.isRubyBignum(object)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().rangeError("bignum too big to convert into `long'", this));
+        }
+
         CompilerDirectives.transferToInterpreter();
         throw new UnsupportedOperationException();
     }
@@ -60,7 +66,8 @@ public abstract class ToIntNode extends RubyNode {
 
     @Specialization(guards = "isRubyBignum(value)")
     public RubyBasicObject coerceRubyBignum(RubyBasicObject value) {
-        return value;
+        CompilerDirectives.transferToInterpreter();
+        throw new RaiseException(getContext().getCoreLibrary().rangeError("bignum too big to convert into `long'", this));
     }
 
     @Specialization
