@@ -138,6 +138,24 @@ class Truffle::BigDecimal < Numeric
     end
   end
 
+  def truncate(digit = nil)
+    if finite?
+      if digit
+        round digit, ROUND_DOWN
+      else
+        rounded = round 0, ROUND_DOWN
+        integer = rounded.to_i
+        return rounded == integer ? integer : rounded
+      end
+    else
+      if digit
+        self
+      else
+        raise FloatDomainError
+      end
+    end
+  end
+
   def ceil(digit = nil)
     if digit
       round digit, ROUND_CEILING
