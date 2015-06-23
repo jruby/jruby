@@ -62,12 +62,14 @@ class String
     Rubinius::Type.try_convert obj, String, :to_str
   end
 
-  class << self
-    def clone
-      raise TypeError, "Unable to clone/dup String class"
-    end
+  Truffle.omit("Rubinius prevents cloning String, but MRI expects to be able to to run its test suite") do
+    class << self
+      def clone
+        raise TypeError, "Unable to clone/dup String class"
+      end
 
-    alias_method :dup, :clone
+      alias_method :dup, :clone
+    end
   end
 
   def initialize(arg = undefined)

@@ -29,7 +29,7 @@ default_gems =
    ImportedGem.new( 'power_assert', 'power_assert.version', true ),
    ImportedGem.new( 'psych', '2.0.14.pre1', true ),
    ImportedGem.new( 'json', 'json.version', true ),
-   ImportedGem.new( 'jar-dependencies', '0.1.14', true )
+   ImportedGem.new( 'jar-dependencies', '0.1.15', true )
   ]
 
 project 'JRuby Lib Setup' do

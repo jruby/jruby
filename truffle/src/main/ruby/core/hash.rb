@@ -61,7 +61,7 @@ class Hash
   # Rubinius' Hash#reject taints but we don't want this
 
   def reject(&block)
-    return to_enum(:reject) unless block_given?
+    return to_enum(:reject) { size } unless block_given?
     copy = dup
     copy.untaint
     copy.delete_if(&block)

@@ -1,4 +1,3 @@
-fails:BigDecimal#ceil returns an Integer, if n is unspecified
 fails:BigDecimal#ceil returns a BigDecimal, if n is specified
 fails:BigDecimal#ceil returns the smallest integer greater or equal to self, if n is unspecified
 fails:BigDecimal#ceil raise exception, if self is special value

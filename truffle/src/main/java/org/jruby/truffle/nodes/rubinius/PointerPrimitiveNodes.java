@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.Pointer;
+import org.jruby.truffle.nodes.core.PointerGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
@@ -298,13 +299,19 @@ public abstract class PointerPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "pointer_read_string_to_null")
+    @ImportStatic(PointerGuards.class)
     public static abstract class PointerReadStringToNullPrimitiveNode extends RubiniusPrimitiveNode {
 
         public PointerReadStringToNullPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isNullPointer(pointer)")
+        public RubyBasicObject readNullPointer(RubyBasicObject pointer) {
+            return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
+        }
+
+        @Specialization(guards = "!isNullPointer(pointer)")
         public RubyBasicObject readStringToNull(RubyBasicObject pointer) {
             return createString(MemoryIO.getInstance().getZeroTerminatedByteArray(PointerNodes.getPointer(pointer).address()));
         }
