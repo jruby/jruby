@@ -821,7 +821,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "<<", required = 1)
+    @CoreMethod(names = "<<", required = 1, lowerFixnumParameters = 0)
     public abstract static class LeftShiftNode extends BignumNodes.BignumCoreMethodNode {
 
         @Child private CallDispatchHeadNode fallbackCallNode;
@@ -920,7 +920,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = ">>", required = 1)
+    @CoreMethod(names = ">>", required = 1, lowerFixnumParameters = 0)
     public abstract static class RightShiftNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode fallbackCallNode;
