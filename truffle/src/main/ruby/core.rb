@@ -135,6 +135,7 @@ require_relative 'core/hash' # Our changes
 require_relative 'core/rubinius/common/array'
 require_relative 'core/rubinius/api/shims/array'
 require_relative 'core/rubinius/common/kernel'
+require_relative 'core/rubinius/api/shims/kernel'
 require_relative 'core/rubinius/common/identity_map'
 #require_relative 'core/rubinius/common/loaded_features'
 #require_relative 'core/rubinius/common/global'
