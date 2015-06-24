@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.ext;
 
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.*;
@@ -1141,6 +1140,86 @@ public abstract class BigDecimalNodes {
         public Object divSpecialSpecial(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b, int precision) {
             return super.divSpecialSpecial(frame, a, b, precision);
         }
+    }
+
+    @CoreMethod(names = { "**", "power" }, required = 1, optional = 1)
+    @NodeChildren({
+            @NodeChild(value = "self", type = RubyNode.class),
+            @NodeChild(value = "exponent", type = RubyNode.class),
+            @NodeChild(value = "precision", type = RubyNode.class),
+    })
+    public abstract static class PowerNode extends BigDecimalCoreMethodNode {
+
+        private final ConditionProfile positiveExponentProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile zeroExponentProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile zeroProfile = ConditionProfile.createBinaryProfile();
+
+        public PowerNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        private BigDecimal power(BigDecimal value, int exponent, MathContext mathContext) {
+            return value.pow(exponent, mathContext);
+        }
+
+        @Specialization(guards = "isNormal(a)")
+        public Object power(VirtualFrame frame, RubyBasicObject a, int exponent, NotProvided precision) {
+            return power(frame, a, exponent, getLimit(frame));
+        }
+
+        @Specialization(guards = { "isNormal(a)" })
+        public Object power(VirtualFrame frame, RubyBasicObject a, int exponent, int precision) {
+            final BigDecimal aBigDecimal = getBigDecimalValue(a);
+            final boolean positiveExponent = positiveExponentProfile.profile(exponent >= 0);
+
+            if (zeroProfile.profile(aBigDecimal.compareTo(BigDecimal.ZERO) == 0)) {
+                if (positiveExponent) {
+                    if (zeroExponentProfile.profile(exponent == 0)) {
+                        return createBigDecimal(frame, BigDecimal.ONE);
+                    } else {
+                        return createBigDecimal(frame, BigDecimal.ZERO);
+                    }
+                } else {
+                    return createBigDecimal(frame, Type.POSITIVE_INFINITY);
+                }
+            } else {
+                final int newPrecision;
+
+                if (positiveExponent) {
+                    newPrecision = precision;
+                } else {
+                    newPrecision = (-exponent + 4) * (getDigits(aBigDecimal) + 4);
+                }
+
+                return createBigDecimal(frame,
+                        power(getBigDecimalValue(a), exponent,
+                                new MathContext(newPrecision, getRoundMode(frame))));
+            }
+        }
+
+        @TruffleBoundary
+        private int getDigits(BigDecimal value) {
+            return value.abs().unscaledValue().toString().length();
+        }
+
+        @Specialization(guards = "!isNormal(a)")
+        public Object power(VirtualFrame frame, RubyBasicObject a, int exponent, Object precision) {
+            switch (getBigDecimalType(a)) {
+                case NAN:
+                    return createBigDecimal(frame, Type.NAN);
+                case POSITIVE_INFINITY:
+                    return createBigDecimal(frame, exponent >= 0 ? Type.POSITIVE_INFINITY : BigDecimal.ZERO);
+                case NEGATIVE_INFINITY:
+                    return createBigDecimal(frame,
+                            Integer.signum(exponent) == 1 ? (exponent % 2 == 0 ? Type.POSITIVE_INFINITY : Type.NEGATIVE_INFINITY) : BigDecimal.ZERO);
+                case NEGATIVE_ZERO:
+                    return createBigDecimal(frame, Integer.signum(exponent) == 1 ? BigDecimal.ZERO : Type.NAN);
+                default:
+                    throw new UnsupportedOperationException();
+            }
+        }
+
     }
 
     @CoreMethod(names = "<=>", required = 1)
