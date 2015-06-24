@@ -2548,7 +2548,7 @@ public abstract class ArrayNodes {
 
             final Object current = maximum.get();
 
-            if (current == null || (int) compareNode.call(frame, value, "<=>", null, current) < 0) {
+            if (current == null || (int) compareNode.call(frame, value, "<=>", null, current) > 0) {
                 maximum.set(value);
             }
 
