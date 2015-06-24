@@ -149,10 +149,9 @@ public abstract class BigDecimalNodes {
                 return RoundingMode.FLOOR;
             case 7:
                 return RoundingMode.HALF_EVEN;
+            default:
+                throw new UnsupportedOperationException();
         }
-
-        CompilerAsserts.neverPartOfCompilation();
-        throw new UnsupportedOperationException();
     }
 
     private static int nearestBiggerMultipleOf4(int value) {
@@ -759,9 +758,9 @@ public abstract class BigDecimalNodes {
                     return createBigDecimal(frame, BigDecimal.ZERO);
                 case NAN:
                     return value;
+                default:
+                    throw new UnsupportedOperationException();
             }
-            CompilerAsserts.neverPartOfCompilation();
-            throw new UnsupportedOperationException();
         }
 
     }
@@ -827,9 +826,9 @@ public abstract class BigDecimalNodes {
                         case -1:
                             return createBigDecimal(frame, Type.POSITIVE_INFINITY);
                     }
+                default:
+                    throw new UnsupportedOperationException();
             }
-            CompilerAsserts.neverPartOfCompilation();
-            throw new UnsupportedOperationException();
         }
 
         protected Object multSpecial(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b, int precision) {
@@ -855,10 +854,8 @@ public abstract class BigDecimalNodes {
                 return bType == Type.POSITIVE_INFINITY ? a : createBigDecimal(frame, (Type.POSITIVE_INFINITY));
             }
 
-            CompilerAsserts.neverPartOfCompilation();
             throw new UnsupportedOperationException();
         }
-
     }
 
     @CoreMethod(names = "*", required = 1)
@@ -954,7 +951,6 @@ public abstract class BigDecimalNodes {
                     case -1:
                         return Type.NEGATIVE_INFINITY;
                     default:
-                        CompilerAsserts.neverPartOfCompilation();
                         throw new UnsupportedOperationException();
                 }
             } else {
@@ -1000,9 +996,9 @@ public abstract class BigDecimalNodes {
                         case -1:
                             return createBigDecimal(frame, BigDecimal.ZERO);
                     }
+                default:
+                    throw new UnsupportedOperationException();
             }
-            CompilerAsserts.neverPartOfCompilation();
-            throw new UnsupportedOperationException();
         }
 
         protected Object divSpecialNormal(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b, int precision) {
@@ -1036,9 +1032,9 @@ public abstract class BigDecimalNodes {
                         case -1:
                             return createBigDecimal(frame, Type.POSITIVE_INFINITY);
                     }
+                default:
+                    throw new UnsupportedOperationException();
             }
-            CompilerAsserts.neverPartOfCompilation();
-            throw new UnsupportedOperationException();
         }
 
         protected Object divSpecialSpecial(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b, int precision) {
@@ -1366,9 +1362,9 @@ public abstract class BigDecimalNodes {
                     return sign.executeGetIntegerConstant(frame, "SIGN_NEGATIVE_ZERO");
                 case NAN:
                     return sign.executeGetIntegerConstant(frame, "SIGN_NaN");
+                default:
+                    throw new UnsupportedOperationException();
             }
-            CompilerAsserts.neverPartOfCompilation();
-            throw new UnsupportedOperationException();
         }
 
     }
@@ -1451,7 +1447,6 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return createBigDecimal(frame, type);
                 default:
-                    CompilerAsserts.neverPartOfCompilation();
                     throw new UnsupportedOperationException();
             }
         }
@@ -1506,9 +1501,10 @@ public abstract class BigDecimalNodes {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().
                             floatDomainError("Computation results to 'NaN'(Not a Number)", this));
+                default:
+                    throw new UnsupportedOperationException();
+
             }
-            CompilerAsserts.neverPartOfCompilation();
-            throw new UnsupportedOperationException();
         }
     }
 
@@ -1640,7 +1636,6 @@ public abstract class BigDecimalNodes {
                 case NAN:
                     return Double.NaN;
                 default:
-                    CompilerAsserts.neverPartOfCompilation();
                     throw new UnsupportedOperationException();
             }
         }
@@ -1704,12 +1699,9 @@ public abstract class BigDecimalNodes {
                 case NEGATIVE_ZERO:
                     return 0;
                 default:
-                    CompilerAsserts.neverPartOfCompilation();
                     throw new UnsupportedOperationException();
             }
-
         }
-
     }
 
     /**
