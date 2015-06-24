@@ -240,7 +240,7 @@ public class RubyArgsFile extends RubyObject {
 
     @JRubyMethod(name = "argv")
     public static IRubyObject argv(ThreadContext context, IRubyObject recv) {
-        return getData(context, recv, "no stream").argv;
+        return ArgsFileData.getDataFrom(recv).argv;
     }
 
     @JRubyMethod(name = {"fileno", "to_i"})
