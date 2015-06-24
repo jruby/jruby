@@ -91,6 +91,7 @@
             <configuration>
               <includeBinStubs>true</includeBinStubs>
               <includeRubyResources>
+                <includeRubyResource>.rspec</includeRubyResource>
                 <includeRubyResource>config.ru</includeRubyResource>
                 <includeRubyResource>*file</includeRubyResource>
                 <includeRubyResource>*file.lock</includeRubyResource>
@@ -202,21 +203,6 @@
             </configuration>
           </execution>
           <execution>
-            <id>rspec</id>
-            <phase>package</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <arguments>
-                <argument>-jar</argument>
-                <argument>runnable.jar</argument>
-                <argument>-S</argument>
-                <argument>rspec</argument>
-              </arguments>
-            </configuration>
-          </execution>
-          <execution>
             <id>rake spec</id>
             <phase>package</phase>
             <goals>
@@ -229,6 +215,21 @@
                 <argument>-S</argument>
                 <argument>rake</argument>
                 <argument>spec</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>rspec</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <arguments>
+                <argument>-jar</argument>
+                <argument>runnable.jar</argument>
+                <argument>-S</argument>
+                <argument>rspec</argument>
               </arguments>
             </configuration>
           </execution>
@@ -256,7 +257,7 @@
         <dependency>
           <groupId>rubygems</groupId>
           <artifactId>rspec</artifactId>
-          <version>[2.14,2.99999]</version>
+          <version>[3.0,3.99999]</version>
           <type>gem</type>
         </dependency>
         <dependency>
@@ -302,12 +303,13 @@
                 <configuration>
                   <scope>compile</scope>
                   <gems>
-                    <rspec>2.99.0</rspec>
-                    <rspec-core>2.99.2</rspec-core>
-                    <rspec-expectations>2.99.2</rspec-expectations>
+                    <rspec>3.3.0</rspec>
+                    <rspec-core>3.3.1</rspec-core>
+                    <rspec-support>3.3.0</rspec-support>
+                    <rspec-expectations>3.3.0</rspec-expectations>
                     <diff-lcs>1.2.5</diff-lcs>
-                    <rspec-mocks>2.99.3</rspec-mocks>
-                    <rake>10.4.2</rake>
+                    <rspec-mocks>3.3.1</rspec-mocks>
+                    <rake>10.3.2</rake>
                     <jbundler>0.7.1</jbundler>
                     <jar-dependencies>0.1.13</jar-dependencies>
                     <maven-tools>1.0.8</maven-tools>

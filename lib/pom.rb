@@ -17,7 +17,6 @@ class ImportedGem
   end
 end
 
-# the versions are declared in ../pom.xml
 default_gems =
   [
    ImportedGem.new( 'jruby-openssl', '0.9.7', true ),

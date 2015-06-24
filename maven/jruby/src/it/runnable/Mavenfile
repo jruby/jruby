@@ -17,7 +17,7 @@ build do
   directory 'pkg'
 end
 
-files = [ 'config.ru', '*file', '*file.lock', '.jbundler/classpath.rb',
+files = [ '.rspec', 'config.ru', '*file', '*file.lock', '.jbundler/classpath.rb',
           'lib/**', 'app/**', 'config/**', 'vendor/**', 'spec/**' ]
 jruby_plugin!( :gem,
                # need a jruby-complete from maven central here
@@ -26,6 +26,11 @@ jruby_plugin!( :gem,
                :includeRubygemsInResources => true ) do
   execute_goals( 'generate-resources', 'process-resources', :includeBinStubs => true, :includeRubyResources => files )
 end
+
+plugin :jar, '2.4', :outputDirectory => '.', :finalName => 'runnable' do
+  execute_goal :jar, :phase => :'prepare-package'
+end
+plugin :clean, '2.4', :filesets => [ { :directory => '.', :includes => ['runnable.jar', '*/**/*.jar'] } ]
 
 if File.file?('Jarfile.lock')
   phase 'generate-resources' do
