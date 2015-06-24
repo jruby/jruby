@@ -393,6 +393,7 @@ public class BodyTranslator extends Translator {
         final Node receiver = node.getReceiverNode();
         final String methodName = node.getName();
 
+        // Rubinius.<method>
         if (receiver instanceof org.jruby.ast.ConstNode
                 && ((ConstNode) receiver).getName().equals("Rubinius")) {
             if (methodName.equals("primitive")) {
@@ -406,26 +407,23 @@ public class BodyTranslator extends Translator {
             } else if (methodName.equals("check_frozen")) {
                 return translateRubiniusCheckFrozen(sourceSection);
             }
-        } else if (receiver instanceof org.jruby.ast.Colon2ConstNode
+        } else if (receiver instanceof org.jruby.ast.Colon2ConstNode // Truffle::Primitive.<method>
                 && ((org.jruby.ast.Colon2ConstNode) receiver).getLeftNode() instanceof org.jruby.ast.ConstNode
                 && ((org.jruby.ast.ConstNode) ((org.jruby.ast.Colon2ConstNode) receiver).getLeftNode()).getName().equals("Truffle")
-                && ((org.jruby.ast.Colon2ConstNode) receiver).getName().equals("Primitive")
-                && methodName.equals("assert_constant")) {
-            return AssertConstantNodeGen.create(context, sourceSection, node.getArgsNode().childNodes().get(0).accept(this));
-        } else if (receiver instanceof org.jruby.ast.Colon2ConstNode
-                && ((org.jruby.ast.Colon2ConstNode) receiver).getLeftNode() instanceof org.jruby.ast.ConstNode
-                && ((org.jruby.ast.ConstNode) ((org.jruby.ast.Colon2ConstNode) receiver).getLeftNode()).getName().equals("Truffle")
-                && ((org.jruby.ast.Colon2ConstNode) receiver).getName().equals("Primitive")
-                && methodName.equals("assert_not_compiled")) {
-            return AssertNotCompiledNodeGen.create(context, sourceSection);
-        } else if (receiver instanceof org.jruby.ast.ConstNode
+                && ((org.jruby.ast.Colon2ConstNode) receiver).getName().equals("Primitive")) {
+            if (methodName.equals("assert_constant")) {
+                return AssertConstantNodeGen.create(context, sourceSection, node.getArgsNode().childNodes().get(0).accept(this));
+            } else if (methodName.equals("assert_not_compiled")) {
+                return AssertNotCompiledNodeGen.create(context, sourceSection);
+            }
+        } else if (receiver instanceof org.jruby.ast.ConstNode // Truffle.omit
                 && ((ConstNode) receiver).getName().equals("Truffle")) {
             if (methodName.equals("omit")) {
                 // We're never going to run the omitted code and it's never used as the RHS for anything, so just
                 // replace the call with nil.
                 return new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
             }
-        } else if (receiver instanceof VCallNode
+        } else if (receiver instanceof VCallNode // undefined.equal?(obj)
                 && ((VCallNode) receiver).getName().equals("undefined")
                 && sourceSection.getSource().getPath().startsWith("core:/core/")
                 && methodName.equals("equal?")) {
