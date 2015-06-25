@@ -71,7 +71,6 @@ public abstract class SplatCastNode extends RubyNode {
                 return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());
 
             default: {
-                CompilerAsserts.neverPartOfCompilation();
                 throw new UnsupportedOperationException();
             }
         }

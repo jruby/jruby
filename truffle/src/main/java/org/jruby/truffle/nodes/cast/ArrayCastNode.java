@@ -91,7 +91,6 @@ public abstract class ArrayCastNode extends RubyNode {
                 return nil;
 
             default: {
-                CompilerAsserts.neverPartOfCompilation();
                 throw new UnsupportedOperationException();
             }
         }

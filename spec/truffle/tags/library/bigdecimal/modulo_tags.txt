@@ -10,3 +10,5 @@ fails:BigDecimal#modulo returns NaN if NaN is involved
 fails:BigDecimal#modulo returns NaN if the dividend is Infinity
 fails:BigDecimal#modulo returns the dividend if the divisor is Infinity
 fails:BigDecimal#modulo raises TypeError if the argument cannot be coerced to BigDecimal
+fails:BigDecimal#% raises ZeroDivisionError if other is zero
+fails:BigDecimal#modulo raises ZeroDivisionError if other is zero
