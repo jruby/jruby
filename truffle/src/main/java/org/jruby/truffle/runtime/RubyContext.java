@@ -162,7 +162,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         threadManager = new ThreadManager(this);
         threadManager.initialize();
 
-        rubiniusPrimitiveManager = RubiniusPrimitiveManager.create();
+        rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
+        rubiniusPrimitiveManager.addAnnotatedPrimitives();
 
         if (INSTRUMENTATION_SERVER_PORT != 0) {
             instrumentationServerManager = new InstrumentationServerManager(this, INSTRUMENTATION_SERVER_PORT);
