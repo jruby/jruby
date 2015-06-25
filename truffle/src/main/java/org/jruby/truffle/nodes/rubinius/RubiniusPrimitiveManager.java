@@ -13,7 +13,9 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
 
 import java.util.ArrayList;
@@ -82,7 +84,8 @@ public class RubiniusPrimitiveManager {
     }
 
     @TruffleBoundary
-    public void installPrimitive(RubyModule module, String method) {
-        addPrimitive(method, new RubiniusPrimitiveCallConstructor(module, method));
+    public void installPrimitive(String name, RubyBasicObject method) {
+        assert RubyGuards.isRubyMethod(method);
+        addPrimitive(name, new RubiniusPrimitiveCallConstructor(method));
     }
 }

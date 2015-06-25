@@ -9,6 +9,15 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-public interface RubiniusPrimitiveConstructor {
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
 
+import com.oracle.truffle.api.source.SourceSection;
+
+public interface RubiniusPrimitiveConstructor {
+    public int getPrimitiveArity();
+
+    public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, long returnID);
+
+    public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments);
 }

@@ -482,9 +482,8 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization(guards = "isRubyMethod(rubyMethod)")
         public Object installRubiniusPrimitive(RubyBasicObject rubyMethod) {
-            InternalMethod method = MethodNodes.getMethod(rubyMethod);
-            RubyModule module = (RubyModule) MethodNodes.getReceiver(rubyMethod);
-            getContext().getRubiniusPrimitiveManager().installPrimitive(module, method.getName());
+            String name = MethodNodes.getMethod(rubyMethod).getName();
+            getContext().getRubiniusPrimitiveManager().installPrimitive(name, rubyMethod);
             return nil();
         }
     }

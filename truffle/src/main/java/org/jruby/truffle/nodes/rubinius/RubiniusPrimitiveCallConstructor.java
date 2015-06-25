@@ -9,23 +9,50 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.arguments.NodeArrayToObjectArrayNode;
+import org.jruby.truffle.nodes.arguments.ReadAllArgumentsNode;
+import org.jruby.truffle.nodes.arguments.ReadBlockNode;
+import org.jruby.truffle.nodes.core.MethodNodes;
+import org.jruby.truffle.nodes.core.MethodNodesFactory.CallNodeFactory;
+import org.jruby.truffle.nodes.literal.LiteralNode;
+import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+
+import com.oracle.truffle.api.source.SourceSection;
 
 public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstructor {
 
-    private final RubyModule module;
-    private final String method;
+    private final RubyBasicObject method;
 
-    public RubiniusPrimitiveCallConstructor(RubyModule module, String method) {
-        this.module = module;
+    public RubiniusPrimitiveCallConstructor(RubyBasicObject method) {
+        assert RubyGuards.isRubyMethod(method);
         this.method = method;
     }
 
-    public RubyModule getModule() {
-        return module;
+    @Override
+    public int getPrimitiveArity() {
+        return MethodNodes.getMethod(method).getSharedMethodInfo().getArity().getRequired();
     }
 
-    public String getMethod() {
-        return method;
+    @Override
+    public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, long returnID) {
+        return CallNodeFactory.create(context, sourceSection, new RubyNode[] {
+                new LiteralNode(context, sourceSection, method),
+                new ReadAllArgumentsNode(context, sourceSection),
+                new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE)
+        });
     }
+
+    @Override
+    public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments) {
+        return CallNodeFactory.create(context, sourceSection, new RubyNode[] {
+                new LiteralNode(context, sourceSection, method),
+                new NodeArrayToObjectArrayNode(context, sourceSection, arguments),
+                new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE)
+        });
+    }
+
 }
