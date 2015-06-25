@@ -40,8 +40,8 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
 
     @Override
     public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, long returnID) {
-        final List<RubyNode> arguments = new ArrayList<>();
         int argumentsCount = getPrimitiveArity();
+        final List<RubyNode> arguments = new ArrayList<>(argumentsCount);
 
         if (annotation.needsSelf()) {
             arguments.add(new SelfNode(context, sourceSection));
@@ -50,10 +50,7 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
 
         for (int n = 0; n < argumentsCount; n++) {
             RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
-            if (ArrayUtils.contains(annotation.lowerFixnumParameters(), n)) {
-                readArgumentNode = new FixnumLowerNode(readArgumentNode);
-            }
-            arguments.add(readArgumentNode);
+            arguments.add(transformArgument(readArgumentNode, n));
         }
 
         return new CallRubiniusPrimitiveNode(context, sourceSection,
@@ -62,13 +59,19 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
 
     public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments) {
         for (int n = 1; n < arguments.length; n++) {
-            if (ArrayUtils.contains(annotation.lowerFixnumParameters(), n)) {
-                arguments[n] = new FixnumLowerNode(arguments[n]);
-            }
+            arguments[n] = transformArgument(arguments[n], n);
         }
 
         return new InvokeRubiniusPrimitiveNode(context, sourceSection,
                 factory.createNode(context, sourceSection, arguments));
+    }
+
+    private RubyNode transformArgument(RubyNode argument, int n) {
+        if (ArrayUtils.contains(annotation.lowerFixnumParameters(), n)) {
+            return new FixnumLowerNode(argument);
+        } else {
+            return argument;
+        }
     }
 
 
