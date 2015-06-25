@@ -1219,7 +1219,6 @@ public abstract class BigDecimalNodes {
                     throw new UnsupportedOperationException();
             }
         }
-
     }
 
     @CoreMethod(names = "<=>", required = 1)
@@ -1542,10 +1541,16 @@ public abstract class BigDecimalNodes {
         @TruffleBoundary
         private BigDecimal round(RubyBasicObject value, int digit, RoundingMode roundingMode) {
             final BigDecimal valueBigDecimal = getBigDecimalValue(value);
-            return valueBigDecimal.
-                    movePointRight(digit).
-                    setScale(0, roundingMode).
-                    movePointLeft(digit);
+
+            if (digit <= valueBigDecimal.scale()) {
+                return valueBigDecimal.
+                        movePointRight(digit).
+                        setScale(0, roundingMode).
+                        movePointLeft(digit);
+            } else {
+                // do not perform rounding when not required;
+                return valueBigDecimal;
+            }
         }
 
         @Specialization(guards = "isNormal(value)")
