@@ -1,6 +1,7 @@
 fails:BigDecimal#div with precision set to 0 returns a / b
 fails:BigDecimal#div returns a / b with optional precision
 fails:BigDecimal#div raises FloatDomainError if NaN is involved
+fails:BigDecimal#div raises ZeroDivisionError if divided by zero and no precision given
 fails:BigDecimal#div returns 0 if divided by Infinity and no precision given
 fails:BigDecimal#div returns 0 if divided by Infinity with given precision
 fails:BigDecimal#div returns NaN if zero is divided by zero
