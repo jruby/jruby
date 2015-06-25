@@ -17,6 +17,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -1215,6 +1216,63 @@ public abstract class BigDecimalNodes {
                             Integer.signum(exponent) == 1 ? (exponent % 2 == 0 ? Type.POSITIVE_INFINITY : Type.NEGATIVE_INFINITY) : BigDecimal.ZERO);
                 case NEGATIVE_ZERO:
                     return createBigDecimal(frame, Integer.signum(exponent) == 1 ? BigDecimal.ZERO : Type.NAN);
+                default:
+                    throw new UnsupportedOperationException();
+            }
+        }
+    }
+
+    @CoreMethod(names = "sqrt", required = 1)
+    @NodeChildren({
+            @NodeChild(value = "self", type = RubyNode.class),
+            @NodeChild(value = "precision", type = RubyNode.class),
+    })
+    public abstract static class SqrtNode extends BigDecimalCoreMethodNode {
+
+        private final ConditionProfile positiveValueProfile = ConditionProfile.createBinaryProfile();
+
+        public SqrtNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public abstract Object executeSqrt(VirtualFrame frame, RubyBasicObject value, int precision);
+
+        @TruffleBoundary
+        private BigDecimal sqrt(BigDecimal value, MathContext mathContext) {
+            return RubyBigDecimal.bigSqrt(value, mathContext);
+        }
+
+        @Specialization(guards = { "precision < 0" })
+        public Object sqrtNegativePrecision(VirtualFrame frame, RubyBasicObject a, int precision) {
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("precision must be positive", this));
+        }
+
+        @Specialization(guards = { "precision == 0" })
+        public Object sqrtZeroPrecision(VirtualFrame frame, RubyBasicObject a, int precision) {
+            return executeSqrt(frame, a, 1);
+        }
+
+        @Specialization(guards = { "isNormal(a)", "precision > 0" })
+        public Object sqrt(VirtualFrame frame, RubyBasicObject a, int precision) {
+            final BigDecimal valueBigDecimal = getBigDecimalValue(a);
+            if (positiveValueProfile.profile(valueBigDecimal.signum() >= 0)) {
+                return createBigDecimal(frame, sqrt(valueBigDecimal, new MathContext(precision, getRoundMode(frame))));
+            } else {
+                throw new RaiseException(getContext().getCoreLibrary().floatDomainError("(VpSqrt) SQRT(negative value)", this));
+            }
+        }
+
+        @Specialization(guards = { "!isNormal(a)", "precision > 0" })
+        public Object sqrtSpecial(VirtualFrame frame, RubyBasicObject a, int precision) {
+            switch (getBigDecimalType(a)) {
+                case NAN:
+                    throw new RaiseException(getContext().getCoreLibrary().floatDomainError("(VpSqrt) SQRT(NaN value)", this));
+                case POSITIVE_INFINITY:
+                    return createBigDecimal(frame, Type.POSITIVE_INFINITY);
+                case NEGATIVE_INFINITY:
+                    throw new RaiseException(getContext().getCoreLibrary().floatDomainError("(VpSqrt) SQRT(negative value)", this));
+                case NEGATIVE_ZERO:
+                    return createBigDecimal(frame, sqrt(BigDecimal.ZERO, new MathContext(precision, getRoundMode(frame))));
                 default:
                     throw new UnsupportedOperationException();
             }
