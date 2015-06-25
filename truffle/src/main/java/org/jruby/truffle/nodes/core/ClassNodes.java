@@ -80,9 +80,18 @@ public abstract class ClassNodes {
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ModuleNodes.InitializeNode moduleInitializeNode;
+        @Child private CallDispatchHeadNode inheritedNode;
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+        }
+
+        void triggerInheritedHook(VirtualFrame frame, RubyClass subClass, RubyClass superClass) {
+            if (inheritedNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+            }
+            inheritedNode.call(frame, superClass, "inherited", null, subClass);
         }
 
         void moduleInitialize(VirtualFrame frame, RubyClass rubyClass, RubyProc block) {
@@ -94,25 +103,37 @@ public abstract class ClassNodes {
         }
 
         @Specialization
-        public RubyClass initialize(RubyClass rubyClass, NotProvided superclass, NotProvided block) {
-            return initialize(rubyClass, getContext().getCoreLibrary().getObjectClass(), block);
+        public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, NotProvided superclass, NotProvided block) {
+            return initializeGeneralWithoutBlock(frame, rubyClass, getContext().getCoreLibrary().getObjectClass(), null);
         }
 
         @Specialization
-        public RubyClass initialize(RubyClass rubyClass, RubyClass superclass, NotProvided block) {
-            rubyClass.initialize(superclass);
-            return rubyClass;
+        public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, NotProvided block) {
+            return initializeGeneralWithoutBlock(frame, rubyClass, superclass, null);
         }
 
         @Specialization
         public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, NotProvided superclass, RubyProc block) {
-            return initialize(frame, rubyClass, getContext().getCoreLibrary().getObjectClass(), block);
+            return initializeGeneralWithBlock(frame, rubyClass, getContext().getCoreLibrary().getObjectClass(), block);
         }
 
         @Specialization
         public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, RubyProc block) {
+            return initializeGeneralWithBlock(frame, rubyClass, superclass, block);
+        }
+
+        private RubyClass initializeGeneralWithoutBlock(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, RubyProc block) {
             rubyClass.initialize(superclass);
+            triggerInheritedHook(frame, rubyClass, superclass);
+
+            return rubyClass;
+        }
+
+        private RubyClass initializeGeneralWithBlock(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, RubyProc block) {
+            rubyClass.initialize(superclass);
+            triggerInheritedHook(frame, rubyClass, superclass);
             moduleInitialize(frame, rubyClass, block);
+
             return rubyClass;
         }
 
