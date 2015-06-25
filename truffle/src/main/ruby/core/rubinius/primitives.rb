@@ -31,7 +31,7 @@ module Rubinius
       end
     end
 
-    Truffle::Primitive.install_rubinius_primitive self, :module_mirror
+    Truffle::Primitive.install_rubinius_primitive method(:module_mirror)
 
   end
 end

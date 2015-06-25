@@ -473,17 +473,18 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(names = "install_rubinius_primitive", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "install_rubinius_primitive", isModuleFunction = true, required = 1)
     public abstract static class InstallRubiniusPrimitiveNode extends CoreMethodArrayArgumentsNode {
 
         public InstallRubiniusPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(name)")
-        public Object installRubiniusPrimitive(RubyModule module, RubyBasicObject name) {
-            getContext().getRubiniusPrimitiveManager().installPrimitive(module, SymbolNodes.getString(name));
+        @Specialization(guards = "isRubyMethod(rubyMethod)")
+        public Object installRubiniusPrimitive(RubyBasicObject rubyMethod) {
+            InternalMethod method = MethodNodes.getMethod(rubyMethod);
+            RubyModule module = (RubyModule) MethodNodes.getReceiver(rubyMethod);
+            getContext().getRubiniusPrimitiveManager().installPrimitive(module, method.getName());
             return nil();
         }
     }

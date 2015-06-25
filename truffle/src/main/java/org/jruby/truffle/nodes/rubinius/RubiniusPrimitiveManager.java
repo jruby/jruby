@@ -9,8 +9,10 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.core.RubyModule;
 
@@ -80,6 +82,7 @@ public class RubiniusPrimitiveManager {
         return new RubiniusPrimitiveManager(primitives);
     }
 
+    @TruffleBoundary
     public void installPrimitive(RubyModule module, String method) {
         primitives.put(method, new RubiniusPrimitiveCallConstructor(module, method));
     }
