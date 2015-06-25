@@ -1017,7 +1017,6 @@ public abstract class BigDecimalNodes {
                 case POSITIVE_INFINITY:
                     switch (getBigDecimalValue(b).signum()) {
                         case 1:
-                            return createBigDecimal(frame, Type.POSITIVE_INFINITY);
                         case 0:
                             return createBigDecimal(frame, Type.POSITIVE_INFINITY);
                         case -1:
@@ -1026,7 +1025,6 @@ public abstract class BigDecimalNodes {
                 case NEGATIVE_INFINITY:
                     switch (getBigDecimalValue(b).signum()) {
                         case 1:
-                            return createBigDecimal(frame, Type.NEGATIVE_INFINITY);
                         case 0:
                             return createBigDecimal(frame, Type.NEGATIVE_INFINITY);
                         case -1:
