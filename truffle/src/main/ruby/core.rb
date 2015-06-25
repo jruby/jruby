@@ -24,13 +24,16 @@ require_relative 'core/rubinius/api/kernel/common/type'
 
 # Patch rubinius-core-api to make it work for us
 
-require_relative 'core/rubinius/api/shims/mirror'
 require_relative 'core/rubinius/api/shims/lookuptable'
 require_relative 'core/rubinius/api/shims/rubinius'
 require_relative 'core/rubinius/api/shims/thread'
 require_relative 'core/rubinius/api/shims/tuple'
 require_relative 'core/rubinius/api/shims/metrics'
 require_relative 'core/rubinius/api/shims/hash'
+
+# Rubinius primitives written in Ruby
+
+require_relative 'core/rubinius/primitives'
 
 # Load alpha.rb
 

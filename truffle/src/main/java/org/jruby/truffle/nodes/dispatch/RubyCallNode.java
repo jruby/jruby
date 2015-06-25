@@ -194,7 +194,7 @@ public class RubyCallNode extends RubyNode {
 
         if (!(argument instanceof RubyArray)) {
             CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException(argument.toString());
+            throw new UnsupportedOperationException(argument.getClass().toString());
         }
 
         final RubyArray array = (RubyArray) argument;
