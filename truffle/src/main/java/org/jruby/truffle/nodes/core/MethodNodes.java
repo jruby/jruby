@@ -9,20 +9,30 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
+import org.jruby.truffle.nodes.coerce.NameToJavaStringNodeGen;
 import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
@@ -124,31 +134,43 @@ public abstract class MethodNodes {
     @CoreMethod(names = "call", needsBlock = true, argumentsAsArray = true)
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private IndirectCallNode callNode;
+        @Child ProcOrNullNode procOrNullNode;
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            callNode = Truffle.getRuntime().createIndirectCallNode();
+            procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
+        }
+
+        @Specialization(guards = "getCalltarget(method) == cachedCallTarget", limit = "getCacheLimit()")
+        public Object callCached(VirtualFrame frame, RubyBasicObject method, Object[] arguments, Object block,
+                @Cached("getCalltarget(method)") CallTarget cachedCallTarget,
+                @Cached("create(cachedCallTarget)") DirectCallNode callNode) {
+            return callNode.call(frame, packArguments(method, arguments, block));
         }
 
         @Specialization
-        public Object call(VirtualFrame frame, RubyBasicObject method, Object[] arguments, NotProvided block) {
-            return doCall(frame, method, arguments, null);
+        protected Object doCall(VirtualFrame frame, RubyBasicObject method, Object[] arguments, Object block,
+                @Cached("create()") IndirectCallNode callNode) {
+            return callNode.call(frame, getCalltarget(method), packArguments(method, arguments, block));
         }
 
-        @Specialization
-        public Object doCall(VirtualFrame frame, RubyBasicObject method, Object[] arguments, RubyProc block) {
-            // TODO(CS 11-Jan-15) should use a cache and DirectCallNode here so that we can inline - but it's
-            // incompatible with our current dispatch chain.
-
+        private Object[] packArguments(RubyBasicObject method, Object[] arguments, Object block) {
             final InternalMethod internalMethod = getMethod(method);
 
-            return callNode.call(frame, getMethod(method).getCallTarget(), RubyArguments.pack(
+            return RubyArguments.pack(
                     internalMethod,
                     internalMethod.getDeclarationFrame(),
                     getReceiver(method),
-                    block,
-                    arguments));
+                    procOrNullNode.executeProcOrNull(block),
+                    arguments);
+        }
+
+        protected CallTarget getCalltarget(RubyBasicObject method) {
+            return getMethod(method).getCallTarget();
+        }
+
+        protected static int getCacheLimit() {
+            return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
         }
 
     }

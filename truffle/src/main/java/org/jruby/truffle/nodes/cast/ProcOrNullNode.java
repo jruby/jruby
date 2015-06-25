@@ -13,7 +13,9 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 
@@ -24,23 +26,26 @@ public abstract class ProcOrNullNode extends RubyNode {
         super(context, sourceSection);
     }
 
+    public abstract RubyProc executeProcOrNull(Object proc);
+
+    @Specialization
+    public RubyProc doNotProvided(NotProvided proc) {
+        return null;
+    }
+
     @Specialization(guards = "isNil(nil)")
-    public Object doNil(Object nil) {
+    public RubyProc doNil(Object nil) {
         return null;
     }
 
     @Specialization
-    public Object doProc(RubyProc proc) {
+    public RubyProc doProc(RubyProc proc) {
         return proc;
     }
 
     @Override
     public final RubyProc executeRubyProc(VirtualFrame frame) {
-        final Object proc = execute(frame);
-
-        assert proc == null || proc instanceof RubyProc;
-
-        return (RubyProc) proc;
+        return (RubyProc) execute(frame);
     }
 
 }
