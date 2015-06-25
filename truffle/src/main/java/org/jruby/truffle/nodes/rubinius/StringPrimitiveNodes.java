@@ -232,12 +232,12 @@ public abstract class StringPrimitiveNodes {
                 rangeEnd = bytes.length();
             }
 
-            if (normalizedIndex < bytes.getBegin()) {
+            if (normalizedIndex + bytes.begin() < bytes.begin()) {
                 return nil();
             }
 
-            final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), normalizedIndex, rangeEnd);
-            final RubyBasicObject result = StringNodes.createString(string.getLogicalClass(), new ByteList(copiedBytes, StringNodes.getByteList(string).getEncoding()));
+            final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), normalizedIndex + bytes.begin(), rangeEnd + bytes.begin());
+            final RubyBasicObject result = StringNodes.createString(string.getLogicalClass(), new ByteList(copiedBytes, bytes.getEncoding()));
 
             return taintResultNode.maybeTaint(string, result);
         }
