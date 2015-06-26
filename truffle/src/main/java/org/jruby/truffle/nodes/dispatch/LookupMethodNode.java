@@ -40,11 +40,15 @@ public abstract class LookupMethodNode extends RubyNode {
     public abstract InternalMethod executeLookupMethod(VirtualFrame frame, Object self, String name);
 
     @Specialization(
-            guards = "metaClass(frame, self) == selfMetaClass",
+            guards = {
+                    "metaClass(frame, self) == selfMetaClass",
+                    "name == cachedName"
+            },
             assumptions = "selfMetaClass.getUnmodifiedAssumption()",
             limit = "getCacheLimit()")
     protected InternalMethod lookupMethodCached(VirtualFrame frame, Object self, String name,
             @Cached("metaClass(frame, self)") RubyClass selfMetaClass,
+            @Cached("name") String cachedName,
             @Cached("doLookup(selfMetaClass, name)") InternalMethod method) {
         return method;
     }
