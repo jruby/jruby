@@ -73,6 +73,10 @@ class Truffle::BigDecimal < Numeric
     20
   end
 
+  def self.ver
+    '1.1.0'
+  end
+
   def ==(o)
     (self <=> o) == 0 rescue false
   end
