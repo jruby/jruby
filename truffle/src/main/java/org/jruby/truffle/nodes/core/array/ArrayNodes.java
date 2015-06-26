@@ -43,6 +43,7 @@ import org.jruby.truffle.pack.runtime.exceptions.*;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.array.ArrayMirror;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -2152,27 +2153,29 @@ public abstract class ArrayNodes {
             return nil();
         }
 
-        @Specialization(guards = "isRubySymbol(symbol)")
-        public Object inject(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
+        @Specialization(guards = { "isRubySymbol(symbol)", "isEmptyArray(array)" })
+        public Object injectSymbolEmptyArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided block) {
+            return nil();
+        }
 
-            final Object[] store = slowToArray(array);
+        @Specialization(guards = { "isRubySymbol(symbol)", "isIntArray(array)", "!isEmptyArray(array)" })
+        public Object injectSymbolIntArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided block) {
+            return injectSymbolHelper(frame, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)), symbol);
+        }
 
-            if (store.length < 2) {
-                if (store.length == 1) {
-                    return store[0];
-                } else {
-                    return getContext().getCoreLibrary().getNilObject();
-                }
-            }
+        @Specialization(guards = { "isRubySymbol(symbol)", "isLongArray(array)", "!isEmptyArray(array)" })
+        public Object injectSymbolLongArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided block) {
+            return injectSymbolHelper(frame, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)), symbol);
+        }
 
-            Object accumulator = dispatch.call(frame, store[0], symbol, null, store[1]);
+        @Specialization(guards = { "isRubySymbol(symbol)", "isDoubleArray(array)", "!isEmptyArray(array)" })
+        public Object injectSymbolDoubleArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided block) {
+            return injectSymbolHelper(frame, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)), symbol);
+        }
 
-            for (int n = 2; n < getSize(array); n++) {
-                accumulator = dispatch.call(frame, accumulator, symbol, null, store[n]);
-            }
-
-            return accumulator;
+        @Specialization(guards = { "isRubySymbol(symbol)", "isObjectArray(array)", "!isEmptyArray(array)" })
+        public Object injectSymbolObjectArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided block) {
+            return injectSymbolHelper(frame, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)), symbol);
         }
 
         private Object injectIntegerFixnumHelper(VirtualFrame frame, RubyArray array, Object initial, RubyProc block, int startIndex) {
@@ -2261,6 +2264,28 @@ public abstract class ArrayNodes {
                     }
 
                     accumulator = yield(frame, block, accumulator, store[n]);
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return accumulator;
+        }
+
+        private Object injectSymbolHelper(VirtualFrame frame, ArrayMirror mirror, RubyBasicObject symbol) {
+            int count = 0;
+
+            Object accumulator = mirror.get(0);
+
+            try {
+                for (int n = 1; n < mirror.getLength(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    accumulator = dispatch.call(frame, accumulator, symbol, null, mirror.get(n));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
