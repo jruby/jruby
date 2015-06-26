@@ -2153,7 +2153,7 @@ public abstract class ArrayNodes {
             return nil();
         }
 
-        @Specialization(guards = { "isRubySymbol(symbol)", "isEmptyArray(array)" })
+        @Specialization(guards = { "isRubySymbol(symbol)", "isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectSymbolEmptyArray(VirtualFrame frame, RubyArray array, Object initial, RubyBasicObject symbol, NotProvided block) {
             return initial;
         }
@@ -2163,7 +2163,7 @@ public abstract class ArrayNodes {
             return nil();
         }
 
-        @Specialization(guards = { "isRubySymbol(symbol)", "isIntArray(array)", "!isEmptyArray(array)" })
+        @Specialization(guards = { "isRubySymbol(symbol)", "isIntArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectSymbolIntArray(VirtualFrame frame, RubyArray array, Object initial, RubyBasicObject symbol, NotProvided block) {
             return injectSymbolHelper(frame, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)), array, initial, symbol, 0);
         }
@@ -2175,7 +2175,7 @@ public abstract class ArrayNodes {
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
         }
 
-        @Specialization(guards = { "isRubySymbol(symbol)", "isLongArray(array)", "!isEmptyArray(array)" })
+        @Specialization(guards = { "isRubySymbol(symbol)", "isLongArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectSymbolLongArray(VirtualFrame frame, RubyArray array, Object initial, RubyBasicObject symbol, NotProvided block) {
             return injectSymbolHelper(frame, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)), array, initial, symbol, 0);
         }
@@ -2187,7 +2187,7 @@ public abstract class ArrayNodes {
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
         }
 
-        @Specialization(guards = { "isRubySymbol(symbol)", "isDoubleArray(array)", "!isEmptyArray(array)" })
+        @Specialization(guards = { "isRubySymbol(symbol)", "isDoubleArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectSymbolDoubleArray(VirtualFrame frame, RubyArray array, Object initial, RubyBasicObject symbol, NotProvided block) {
             return injectSymbolHelper(frame, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)), array, initial, symbol, 0);
         }
@@ -2199,7 +2199,7 @@ public abstract class ArrayNodes {
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
         }
 
-        @Specialization(guards = { "isRubySymbol(symbol)", "isObjectArray(array)", "!isEmptyArray(array)" })
+        @Specialization(guards = { "isRubySymbol(symbol)", "isObjectArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectSymbolObjectArray(VirtualFrame frame, RubyArray array, Object initial, RubyBasicObject symbol, NotProvided block) {
             return injectSymbolHelper(frame, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)), array, initial, symbol, 0);
         }
