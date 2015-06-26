@@ -2090,8 +2090,8 @@ public abstract class ArrayNodes {
             return initial;
         }
 
-        @Specialization(guards = { "isEmptyArray(array)", "wasNotProvided(initial)" })
-        public Object injectEmptyArrayNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = "isEmptyArray(array)")
+        public Object injectEmptyArrayNoInitial(VirtualFrame frame, RubyArray array, NotProvided initial, NotProvided unused, RubyProc block) {
             return nil();
         }
 
@@ -2100,8 +2100,8 @@ public abstract class ArrayNodes {
             return injectHelper(frame, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)), array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "wasNotProvided(initial)" })
-        public Object injectIntegerFixnumNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)" })
+        public Object injectIntegerFixnumNoInitial(VirtualFrame frame, RubyArray array, NotProvided initial, NotProvided unused, RubyProc block) {
             final ArrayMirror mirror = ArrayMirror.reflect((int[]) ArrayNodes.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
@@ -2112,8 +2112,8 @@ public abstract class ArrayNodes {
             return injectHelper(frame, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)), array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "wasNotProvided(initial)" })
-        public Object injectLongFixnumNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)" })
+        public Object injectLongFixnumNoInitial(VirtualFrame frame, RubyArray array, NotProvided initial, NotProvided unused, RubyProc block) {
             final ArrayMirror mirror = ArrayMirror.reflect((long[]) ArrayNodes.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
@@ -2124,8 +2124,8 @@ public abstract class ArrayNodes {
             return injectHelper(frame, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)), array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "wasNotProvided(initial)" })
-        public Object injectFloatNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)" })
+        public Object injectFloatNoInitial(VirtualFrame frame, RubyArray array, NotProvided initial, NotProvided unused, RubyProc block) {
             final ArrayMirror mirror = ArrayMirror.reflect((double[]) ArrayNodes.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
@@ -2136,8 +2136,8 @@ public abstract class ArrayNodes {
             return injectHelper(frame, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)), array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "wasNotProvided(initial)" })
-        public Object injectObjectNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)" })
+        public Object injectObjectNoInitial(VirtualFrame frame, RubyArray array, NotProvided initial, NotProvided unused, RubyProc block) {
             final ArrayMirror mirror = ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
@@ -2148,8 +2148,8 @@ public abstract class ArrayNodes {
             return initial;
         }
 
-        @Specialization(guards = { "isNullArray(array)", "wasNotProvided(initial)" })
-        public Object injectNullNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = "isNullArray(array)")
+        public Object injectNullNoInitial(VirtualFrame frame, RubyArray array, NotProvided initial, NotProvided unused, RubyProc block) {
             return nil();
         }
 
