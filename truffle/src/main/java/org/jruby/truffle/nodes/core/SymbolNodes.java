@@ -9,14 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Cached;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.FrameDescriptor;
-import com.oracle.truffle.api.object.*;
-import com.oracle.truffle.api.source.SourceSection;
+import java.util.EnumSet;
 
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -34,7 +27,21 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.util.ByteList;
 
-import java.util.EnumSet;
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.FinalLocationException;
+import com.oracle.truffle.api.object.HiddenKey;
+import com.oracle.truffle.api.object.IncompatibleLocationException;
+import com.oracle.truffle.api.object.LocationModifier;
+import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.object.Shape;
+import com.oracle.truffle.api.source.SourceSection;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
@@ -153,6 +160,25 @@ public abstract class SymbolNodes {
         @Specialization
         public RubyBasicObject allSymbols() {
             return createArray(getContext().getSymbolTable().allSymbols().toArray());
+        }
+
+    }
+
+    @CoreMethod(names = { "==", "eql?" }, required = 1)
+    public abstract static class EqualNode extends BinaryCoreMethodNode {
+
+        public EqualNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubySymbol(b)")
+        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
+            return a == b;
+        }
+
+        @Specialization(guards = "!isRubySymbol(b)")
+        public boolean equal(VirtualFrame frame, RubyBasicObject a, Object b) {
+            return false;
         }
 
     }

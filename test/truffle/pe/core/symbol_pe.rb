@@ -8,6 +8,4 @@
 
 example ":foo"
 example ":foo == :foo"
-
-# Fails because Comparable#== slow path is too complex
-tagged_example ":foo != :bar"
+example ":foo != :bar"
