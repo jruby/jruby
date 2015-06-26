@@ -1725,32 +1725,6 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(names = { "to_s", "inspect" })
-    public abstract static class ToSNode extends BigDecimalCoreMethodArrayArgumentsNode {
-
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isNormal(value)")
-        public RubyBasicObject toSNormal(RubyBasicObject value) {
-            final BigDecimal bigDecimal = getBigDecimalValue(value);
-            final boolean negative = bigDecimal.signum() == -1;
-
-            return createString((negative ? "-" : "") + "0." +
-                    (negative ? bigDecimal.unscaledValue().toString().substring(1) : bigDecimal.unscaledValue()) +
-                    "E" + (bigDecimal.precision() - bigDecimal.scale()));
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "!isNormal(value)")
-        public RubyBasicObject toSSpecial(RubyBasicObject value) {
-            return createString(getBigDecimalType(value).getRepresentation());
-        }
-
-    }
-
     @CoreMethod(names = "to_f")
     public abstract static class ToFNode extends BigDecimalCoreMethodArrayArgumentsNode {
 

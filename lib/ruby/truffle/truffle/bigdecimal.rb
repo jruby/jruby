@@ -189,6 +189,70 @@ class Truffle::BigDecimal < Numeric
       self
     end
   end
+
+  def to_s(format = 'E')
+    if finite?
+      spaces       = format.to_i
+      prefix       = case
+                     when self > 0
+                       if [' ', '+'].include? format[0]
+                         format[0]
+                       else
+                         ''
+                       end
+                     when self < 0
+                       '-'
+                     when self == 0
+                       ''
+                     end
+      float_format = format[-1] == 'F'
+
+      unscaled_value = unscaled
+      exponent_value = self.exponent
+
+      if float_format
+        before_dot, after_dot = case
+                                when exponent_value > unscaled_value.size
+                                  [unscaled_value + '0' * (exponent_value - unscaled_value.size),
+                                   '0']
+                                when exponent_value <= 0
+                                  ['0',
+                                   '0' * exponent_value.abs + unscaled_value]
+                                else
+                                  after_dot = unscaled_value[exponent_value..-1]
+
+                                  [unscaled_value[0...exponent_value],
+                                   after_dot.empty? ? '0' : after_dot]
+                                end
+
+        prefix << add_spaces_to_s(before_dot, true, spaces) << '.' << add_spaces_to_s(after_dot, false, spaces)
+      else
+        prefix << '0.' << add_spaces_to_s(unscaled_value, false, spaces) << 'E' << exponent_value.to_s
+      end
+    else
+      (sign < 0 ? '-' : '') + unscaled
+    end
+  end
+
+  private
+
+  def add_spaces_to_s(string, reverse, digits)
+    return string if digits == 0
+
+    remainder = string.size % digits
+    shift     = reverse ? remainder : 0
+    pieces    = (string.size / digits).times.map { |i| string[digits*i + shift, digits] }
+
+    if remainder > 0
+      if reverse
+        pieces.unshift string[0...remainder]
+      else
+        pieces.push string[-remainder..-1]
+      end
+    end
+
+    pieces.join ' '
+  end
 end
 
 BigDecimal = Truffle::BigDecimal
