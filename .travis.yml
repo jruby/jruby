@@ -70,6 +70,8 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=tool/truffle-findbugs.sh
       jdk: oraclejdk8
+    - env: COMMAND=ruby tool/jt.rb check_ambiguous_arguments
+      jdk: oraclejdk8
     - env: COMMAND=test/truffle/run.sh
       jdk: oraclejdk8
   fast_finish: true
