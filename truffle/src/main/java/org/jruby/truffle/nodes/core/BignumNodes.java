@@ -327,7 +327,7 @@ public abstract class BignumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object equal(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
+        public boolean equal(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
             if (booleanCastNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
