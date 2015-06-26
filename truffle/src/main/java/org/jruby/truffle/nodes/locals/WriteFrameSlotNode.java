@@ -54,8 +54,9 @@ public abstract class WriteFrameSlotNode extends Node {
         return value;
     }
 
-    @Specialization(guards = { "isObjectKind(frame)", "wasProvided(value)" })
+    @Specialization(guards = "isObjectKind(frame)")
     public Object writeObject(Frame frame, Object value) {
+        assert RubyGuards.wasProvided(value); // Useful debug aid to catch a running-away NotProvided
         frame.setObject(frameSlot, value);
         return value;
     }
