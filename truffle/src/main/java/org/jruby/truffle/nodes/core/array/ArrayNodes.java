@@ -2084,109 +2084,78 @@ public abstract class ArrayNodes {
             dispatch = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.CALL_METHOD_MISSING);
         }
 
-        @Specialization(guards = "isIntArray(array)")
+        @Specialization(guards = { "isIntArray(array)", "wasProvided(initial)" })
         public Object injectIntegerFixnum(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
-            int count = 0;
-
-            final int[] store = (int[]) getStore(array);
-
-            Object accumulator = initial;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    accumulator = yield(frame, block, accumulator, store[n]);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
-                }
-            }
-
-            return accumulator;
+            return injectIntegerFixnumHelper(frame, array, initial, block, 0);
         }
 
-        @Specialization(guards = "isLongArray(array)")
+        @Specialization(guards = { "isIntArray(array)", "wasNotProvided(initial)" })
+        public Object injectIntegerFixnumNoInitial(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+            if (getSize(array) > 0) {
+                final int[] store = (int[]) getStore(array);
+
+                return injectIntegerFixnumHelper(frame, array, store[0], block, 1);
+            }
+
+            return nil();
+        }
+
+        @Specialization(guards = { "isLongArray(array)", "wasProvided(initial)" })
         public Object injectLongFixnum(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
-            int count = 0;
-
-            final long[] store = (long[]) getStore(array);
-
-            Object accumulator = initial;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    accumulator = yield(frame, block, accumulator, store[n]);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
-                }
-            }
-
-            return accumulator;
+            return injectLongFixnumHelper(frame, array, initial, block, 0);
         }
 
-        @Specialization(guards = "isDoubleArray(array)")
+        @Specialization(guards = { "isLongArray(array)", "wasNotProvided(initial)" })
+        public Object injectLongFixnumNoInitial(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+            if (getSize(array) > 0) {
+                final long[] store = (long[]) getStore(array);
+
+                return injectLongFixnumHelper(frame, array, store[0], block, 1);
+            }
+
+            return nil();
+        }
+
+        @Specialization(guards = { "isDoubleArray(array)", "wasProvided(initial)" })
         public Object injectFloat(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
-            int count = 0;
-
-            final double[] store = (double[]) getStore(array);
-
-            Object accumulator = initial;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    accumulator = yield(frame, block, accumulator, store[n]);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
-                }
-            }
-
-            return accumulator;
+            return injectFloatHelper(frame, array, initial, block, 0);
         }
 
-        @Specialization(guards = "isObjectArray(array)")
+        @Specialization(guards = { "isDoubleArray(array)", "wasNotProvided(initial)" })
+        public Object injectFloatNoInitial(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+            if (getSize(array) > 0) {
+                final double[] store = (double[]) getStore(array);
+
+                return injectFloatHelper(frame, array, store[0], block, 1);
+            }
+
+            return nil();
+        }
+
+        @Specialization(guards = { "isObjectArray(array)", "wasProvided(initial)" })
         public Object injectObject(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
-            int count = 0;
-
-            final Object[] store = (Object[]) getStore(array);
-
-            Object accumulator = initial;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    accumulator = yield(frame, block, accumulator, store[n]);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
-                }
-            }
-
-            return accumulator;
+            return injectObjectHelper(frame, array, initial, block, 0);
         }
 
-        @Specialization(guards = "isNullArray(array)")
+        @Specialization(guards = { "isObjectArray(array)", "wasNotProvided(initial)" })
+        public Object injectObjectNoInitial(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+            if (getSize(array) > 0) {
+                final Object[] store = (Object[]) getStore(array);
+
+                return injectObjectHelper(frame, array, store[0], block, 1);
+            }
+
+            return nil();
+        }
+
+        @Specialization(guards = { "isNullArray(array)", "wasProvided(initial)" })
         public Object injectNull(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
             return initial;
+        }
+
+        @Specialization(guards = { "isNullArray(array)", "wasNotProvided(initial)" })
+        public Object injectNullNoInitial(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+            return nil();
         }
 
         @Specialization(guards = "isRubySymbol(symbol)")
@@ -2207,6 +2176,102 @@ public abstract class ArrayNodes {
 
             for (int n = 2; n < getSize(array); n++) {
                 accumulator = dispatch.call(frame, accumulator, symbol, null, store[n]);
+            }
+
+            return accumulator;
+        }
+
+        private Object injectIntegerFixnumHelper(VirtualFrame frame, RubyArray array, Object initial, RubyProc block, int startIndex) {
+            int count = 0;
+
+            final int[] store = (int[]) getStore(array);
+
+            Object accumulator = initial;
+
+            try {
+                for (int n = startIndex; n < getSize(array); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    accumulator = yield(frame, block, accumulator, store[n]);
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return accumulator;
+        }
+
+        private Object injectLongFixnumHelper(VirtualFrame frame, RubyArray array, Object initial, RubyProc block, int startIndex) {
+            int count = 0;
+
+            final long[] store = (long[]) getStore(array);
+
+            Object accumulator = initial;
+
+            try {
+                for (int n = startIndex; n < getSize(array); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    accumulator = yield(frame, block, accumulator, store[n]);
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return accumulator;
+        }
+
+        private Object injectFloatHelper(VirtualFrame frame, RubyArray array, Object initial, RubyProc block, int startIndex) {
+            int count = 0;
+
+            final double[] store = (double[]) getStore(array);
+
+            Object accumulator = initial;
+
+            try {
+                for (int n = startIndex; n < getSize(array); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    accumulator = yield(frame, block, accumulator, store[n]);
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return accumulator;
+        }
+
+        private Object injectObjectHelper(VirtualFrame frame, RubyArray array, Object initial, RubyProc block, int startIndex) {
+            int count = 0;
+
+            final Object[] store = (Object[]) getStore(array);
+
+            Object accumulator = initial;
+
+            try {
+                for (int n = startIndex; n < getSize(array); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    accumulator = yield(frame, block, accumulator, store[n]);
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
             }
 
             return accumulator;
