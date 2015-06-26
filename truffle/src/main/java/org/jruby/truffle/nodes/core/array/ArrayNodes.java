@@ -2160,22 +2160,22 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isIntArray(array)", "!isEmptyArray(array)" })
         public Object injectSymbolIntArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)), symbol);
+            return injectSymbolHelper(frame, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)), array, symbol);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isLongArray(array)", "!isEmptyArray(array)" })
         public Object injectSymbolLongArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)), symbol);
+            return injectSymbolHelper(frame, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)), array, symbol);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isDoubleArray(array)", "!isEmptyArray(array)" })
         public Object injectSymbolDoubleArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)), symbol);
+            return injectSymbolHelper(frame, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)), array, symbol);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isObjectArray(array)", "!isEmptyArray(array)" })
         public Object injectSymbolObjectArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)), symbol);
+            return injectSymbolHelper(frame, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)), array, symbol);
         }
 
         private Object injectHelper(VirtualFrame frame, ArrayMirror mirror, RubyArray array, Object initial, RubyProc block, int startIndex) {
@@ -2201,13 +2201,13 @@ public abstract class ArrayNodes {
         }
 
 
-        private Object injectSymbolHelper(VirtualFrame frame, ArrayMirror mirror, RubyBasicObject symbol) {
+        private Object injectSymbolHelper(VirtualFrame frame, ArrayMirror mirror, RubyArray array, RubyBasicObject symbol) {
             int count = 0;
 
             Object accumulator = mirror.get(0);
 
             try {
-                for (int n = 1; n < mirror.getLength(); n++) {
+                for (int n = 1; n < getSize(array); n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
