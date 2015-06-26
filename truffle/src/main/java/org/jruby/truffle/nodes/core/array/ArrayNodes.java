@@ -2084,68 +2084,62 @@ public abstract class ArrayNodes {
             dispatch = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.CALL_METHOD_MISSING);
         }
 
-        @Specialization(guards = { "isIntArray(array)", "wasProvided(initial)" })
+        @Specialization(guards = { "isEmptyArray(array)", "wasProvided(initial)" })
+        public Object injectEmptyArray(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+            return initial;
+        }
+
+        @Specialization(guards = { "isEmptyArray(array)", "wasNotProvided(initial)" })
+        public Object injectEmptyArrayNoInitial(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+            return nil();
+        }
+
+        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectIntegerFixnum(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
             return injectIntegerFixnumHelper(frame, array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isIntArray(array)", "wasNotProvided(initial)" })
+        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "wasNotProvided(initial)" })
         public Object injectIntegerFixnumNoInitial(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
-            if (getSize(array) > 0) {
-                final int[] store = (int[]) getStore(array);
+            final int[] store = (int[]) getStore(array);
 
-                return injectIntegerFixnumHelper(frame, array, store[0], block, 1);
-            }
-
-            return nil();
+            return injectIntegerFixnumHelper(frame, array, store[0], block, 1);
         }
 
-        @Specialization(guards = { "isLongArray(array)", "wasProvided(initial)" })
+        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectLongFixnum(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
             return injectLongFixnumHelper(frame, array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isLongArray(array)", "wasNotProvided(initial)" })
+        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "wasNotProvided(initial)" })
         public Object injectLongFixnumNoInitial(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
-            if (getSize(array) > 0) {
-                final long[] store = (long[]) getStore(array);
+            final long[] store = (long[]) getStore(array);
 
-                return injectLongFixnumHelper(frame, array, store[0], block, 1);
-            }
-
-            return nil();
+            return injectLongFixnumHelper(frame, array, store[0], block, 1);
         }
 
-        @Specialization(guards = { "isDoubleArray(array)", "wasProvided(initial)" })
+        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectFloat(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
             return injectFloatHelper(frame, array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isDoubleArray(array)", "wasNotProvided(initial)" })
+        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "wasNotProvided(initial)" })
         public Object injectFloatNoInitial(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
-            if (getSize(array) > 0) {
-                final double[] store = (double[]) getStore(array);
+            final double[] store = (double[]) getStore(array);
 
-                return injectFloatHelper(frame, array, store[0], block, 1);
-            }
-
-            return nil();
+            return injectFloatHelper(frame, array, store[0], block, 1);
         }
 
-        @Specialization(guards = { "isObjectArray(array)", "wasProvided(initial)" })
+        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectObject(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
             return injectObjectHelper(frame, array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isObjectArray(array)", "wasNotProvided(initial)" })
+        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "wasNotProvided(initial)" })
         public Object injectObjectNoInitial(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
-            if (getSize(array) > 0) {
-                final Object[] store = (Object[]) getStore(array);
+            final Object[] store = (Object[]) getStore(array);
 
-                return injectObjectHelper(frame, array, store[0], block, 1);
-            }
-
-            return nil();
+            return injectObjectHelper(frame, array, store[0], block, 1);
         }
 
         @Specialization(guards = { "isNullArray(array)", "wasProvided(initial)" })
