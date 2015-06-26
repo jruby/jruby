@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.methods;
 
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -53,10 +52,6 @@ public abstract class CanBindMethodToModuleNode extends RubyNode {
 
     protected boolean canBindMethodTo(RubyModule declaringModule, RubyModule module) {
         return ModuleOperations.canBindMethodTo(declaringModule, module);
-    }
-
-    protected static int getCacheLimit() {
-        return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
     }
 
 }

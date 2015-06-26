@@ -19,11 +19,14 @@ import com.oracle.truffle.api.instrument.ProbeNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
+
 import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -301,6 +304,10 @@ public abstract class RubyNode extends Node {
 
     protected NativeSockets nativeSockets() {
         return getContext().getNativeSockets();
+    }
+
+    protected static int getCacheLimit() {
+        return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
     }
 
     // Instrumentation

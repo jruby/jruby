@@ -15,7 +15,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -26,10 +25,6 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @NodeChild("self")
 public abstract class LookupSuperMethodNode extends RubyNode {
-
-    protected static int getCacheLimit() {
-        return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
-    }
 
     @Child MetaClassNode metaClassNode;
 

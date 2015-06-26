@@ -30,10 +30,6 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 })
 public abstract class LookupMethodNode extends RubyNode {
 
-    protected static int getCacheLimit() {
-        return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
-    }
-
     @Child MetaClassNode metaClassNode;
 
     public LookupMethodNode(RubyContext context, SourceSection sourceSection) {

@@ -18,7 +18,6 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
@@ -27,10 +26,6 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
         @NodeChild(value = "arguments", type = RubyNode[].class)
 })
 public abstract class CallMethodNode extends RubyNode {
-
-    protected static int getCacheLimit() {
-        return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
-    }
 
     public CallMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);

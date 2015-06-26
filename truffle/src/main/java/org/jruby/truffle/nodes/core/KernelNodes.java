@@ -28,14 +28,11 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyThread.Status;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeGen;
 import org.jruby.truffle.nodes.coerce.NameToJavaStringNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
-import org.jruby.truffle.nodes.constants.LookupConstantNode;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFactory;
@@ -1001,9 +998,6 @@ public abstract class KernelNodes {
             return metaClassNode.executeMetaClass(frame, object);
         }
 
-        protected static int getCacheLimit() {
-            return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
-        }
     }
 
     @CoreMethod(names = "lambda", isModuleFunction = true, needsBlock = true)
