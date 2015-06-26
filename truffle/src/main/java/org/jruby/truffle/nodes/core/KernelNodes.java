@@ -1118,8 +1118,11 @@ public abstract class KernelNodes {
     })
     public abstract static class MethodNode extends CoreMethodNode {
 
+        @Child LookupMethodNode lookupMethodNode;
+
         public MethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, null, null);
         }
 
         @CreateCast("name")
@@ -1128,24 +1131,16 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyBasicObject method(Object object, String name) {
-            return lookupMethod(object, name.toString());
-        }
-
-        private RubyBasicObject lookupMethod(Object object, String name) {
-            CompilerDirectives.transferToInterpreter();
-
-            // TODO(CS, 11-Jan-15) cache this lookup
-
-            final InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(object), name);
+        public RubyBasicObject methodCached(VirtualFrame frame, Object self, String name) {
+            InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, name);
 
             if (method == null) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(
-                        name, getContext().getCoreLibrary().getLogicalClass(object), this));
+                        name, getContext().getCoreLibrary().getLogicalClass(self), this));
             }
 
-            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, method);
+            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), self, method);
         }
 
     }
