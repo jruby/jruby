@@ -2086,70 +2086,70 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectEmptyArray(VirtualFrame frame, RubyArray array, Object initial, NotProvided ignored, RubyProc block) {
+        public Object injectEmptyArray(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
             return initial;
         }
 
         @Specialization(guards = { "isEmptyArray(array)", "wasNotProvided(initial)" })
-        public Object injectEmptyArrayNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided ignored, RubyProc block) {
+        public Object injectEmptyArrayNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
             return nil();
         }
 
         @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectIntegerFixnum(VirtualFrame frame, RubyArray array, Object initial, NotProvided ignored, RubyProc block) {
+        public Object injectIntegerFixnum(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
             return injectHelper(frame, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)), array, initial, block, 0);
         }
 
         @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "wasNotProvided(initial)" })
-        public Object injectIntegerFixnumNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided ignored, RubyProc block) {
+        public Object injectIntegerFixnumNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
             final ArrayMirror mirror = ArrayMirror.reflect((int[]) ArrayNodes.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
         @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectLongFixnum(VirtualFrame frame, RubyArray array, Object initial, NotProvided ignored, RubyProc block) {
+        public Object injectLongFixnum(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
             return injectHelper(frame, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)), array, initial, block, 0);
         }
 
         @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "wasNotProvided(initial)" })
-        public Object injectLongFixnumNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided ignored, RubyProc block) {
+        public Object injectLongFixnumNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
             final ArrayMirror mirror = ArrayMirror.reflect((long[]) ArrayNodes.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
         @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectFloat(VirtualFrame frame, RubyArray array, Object initial, NotProvided ignored, RubyProc block) {
+        public Object injectFloat(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
             return injectHelper(frame, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)), array, initial, block, 0);
         }
 
         @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "wasNotProvided(initial)" })
-        public Object injectFloatNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided ignored, RubyProc block) {
+        public Object injectFloatNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
             final ArrayMirror mirror = ArrayMirror.reflect((double[]) ArrayNodes.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
         @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectObject(VirtualFrame frame, RubyArray array, Object initial, NotProvided ignored, RubyProc block) {
+        public Object injectObject(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
             return injectHelper(frame, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)), array, initial, block, 0);
         }
 
         @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "wasNotProvided(initial)" })
-        public Object injectObjectNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided ignored, RubyProc block) {
+        public Object injectObjectNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
             final ArrayMirror mirror = ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
         @Specialization(guards = { "isNullArray(array)", "wasProvided(initial)" })
-        public Object injectNull(VirtualFrame frame, RubyArray array, Object initial, NotProvided ignored, RubyProc block) {
+        public Object injectNull(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
             return initial;
         }
 
         @Specialization(guards = { "isNullArray(array)", "wasNotProvided(initial)" })
-        public Object injectNullNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided ignored, RubyProc block) {
+        public Object injectNullNoInitial(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
             return nil();
         }
 
@@ -2159,7 +2159,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isEmptyArray(array)" })
-        public Object injectSymbolEmptyArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided ignored, NotProvided block) {
+        public Object injectSymbolEmptyArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided unused, NotProvided block) {
             return nil();
         }
 
@@ -2169,7 +2169,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isIntArray(array)", "!isEmptyArray(array)" })
-        public Object injectSymbolIntArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided ignored, NotProvided block) {
+        public Object injectSymbolIntArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided unused, NotProvided block) {
             final ArrayMirror mirror = ArrayMirror.reflect((int[]) ArrayNodes.getStore(array));
 
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
@@ -2181,7 +2181,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isLongArray(array)", "!isEmptyArray(array)" })
-        public Object injectSymbolLongArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided ignored, NotProvided block) {
+        public Object injectSymbolLongArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided unused, NotProvided block) {
             final ArrayMirror mirror = ArrayMirror.reflect((long[]) ArrayNodes.getStore(array));
 
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
@@ -2193,7 +2193,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isDoubleArray(array)", "!isEmptyArray(array)" })
-        public Object injectSymbolDoubleArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided ignored, NotProvided block) {
+        public Object injectSymbolDoubleArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided unused, NotProvided block) {
             final ArrayMirror mirror = ArrayMirror.reflect((double[]) ArrayNodes.getStore(array));
 
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
@@ -2205,7 +2205,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isObjectArray(array)", "!isEmptyArray(array)" })
-        public Object injectSymbolObjectArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided ignored, NotProvided block) {
+        public Object injectSymbolObjectArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided unused, NotProvided block) {
             final ArrayMirror mirror = ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array));
 
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
