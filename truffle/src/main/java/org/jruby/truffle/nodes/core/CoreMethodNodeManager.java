@@ -316,7 +316,7 @@ public class CoreMethodNodeManager {
 
                 for (int i = 1; i <= opt; i++) {
                     boolean unguardedObjectArgument = false;
-                    String errors = "";
+                    StringBuilder errors = new StringBuilder();
                     for (Method method : node.getDeclaredMethods()) {
                         if (method.isAnnotationPresent(Specialization.class)) {
                             // count from the end to ignore optional VirtualFrame in front.
@@ -337,7 +337,7 @@ public class CoreMethodNodeManager {
                                 String[] guards = method.getAnnotation(Specialization.class).guards();
                                 if (!isGuarded(name, guards)) {
                                     unguardedObjectArgument = true;
-                                    errors += "\"" + name + "\" in " + methodToString(method, parameterTypes, parameters) + "\n";
+                                    errors.append("\"").append(name).append("\" in ").append(methodToString(method, parameterTypes, parameters)).append("\n");
                                 }
                             }
                         }

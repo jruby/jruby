@@ -29,6 +29,10 @@
     <Class name="org.jruby.truffle.nodes.exceptions.TopLevelRaiseHandler" />
     <Bug pattern="DM_EXIT" />
   </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.CoreMethodNodeManager$AmbiguousOptionalArgumentChecker" />
+    <Bug pattern="DM_EXIT" />
+  </Match>
 
   <!-- Sometimes we really do want to run GC -->
 
