@@ -33,6 +33,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeGen;
+import org.jruby.truffle.nodes.coerce.NameToJavaStringNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.constants.LookupConstantNode;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
@@ -1111,23 +1112,27 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "method", required = 1)
-    public abstract static class MethodNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "object"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class MethodNode extends CoreMethodNode {
 
         public MethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyString(name)")
-        public RubyBasicObject methodString(Object object, RubyBasicObject name) {
-            return method(object, name.toString());
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
-        @Specialization(guards = "isRubySymbol(name)")
-        public RubyBasicObject methodSymbol(Object object, RubyBasicObject name) {
-            return method(object, SymbolNodes.getString(name));
+        @Specialization
+        public RubyBasicObject method(Object object, String name) {
+            return lookupMethod(object, name.toString());
         }
 
-        private RubyBasicObject method(Object object, String name) {
+        private RubyBasicObject lookupMethod(Object object, String name) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO(CS, 11-Jan-15) cache this lookup
@@ -1135,8 +1140,8 @@ public abstract class KernelNodes {
             final InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(object), name);
 
             if (method == null) {
-                throw new RaiseException(
-                    getContext().getCoreLibrary().nameErrorUndefinedMethod(
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(
                         name, getContext().getCoreLibrary().getLogicalClass(object), this));
             }
 
