@@ -1203,7 +1203,7 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization(guards = "!isNormal(a)")
-        public Object power(VirtualFrame frame, RubyBasicObject a, int exponent, Object precision) {
+        public Object power(VirtualFrame frame, RubyBasicObject a, int exponent, Object unusedPrecision) {
             switch (getBigDecimalType(a)) {
                 case NAN:
                     return createBigDecimal(frame, Type.NAN);
@@ -1625,7 +1625,7 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization(guards = "!isNormal(value)")
-        public RubyBasicObject roundSpecial(VirtualFrame frame, RubyBasicObject value, Object precision, Object roundingMode) {
+        public RubyBasicObject roundSpecial(VirtualFrame frame, RubyBasicObject value, Object unusedPrecision, Object unusedRoundingMode) {
             switch (getBigDecimalType(value)) {
                 case NEGATIVE_INFINITY:
                     CompilerDirectives.transferToInterpreter();

@@ -44,7 +44,7 @@ public abstract class EncodingConverterNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject initialize(RubyEncodingConverter self, Object source, Object destination, Object options) {
+        public RubyBasicObject initialize(RubyEncodingConverter self, Object source, Object destination, Object unusedOptions) {
             // Adapted from RubyConverter - see attribution there
 
             Ruby runtime = getContext().getRuntime();

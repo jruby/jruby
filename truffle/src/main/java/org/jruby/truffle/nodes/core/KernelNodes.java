@@ -1498,12 +1498,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization(guards = "isRubyString(name)")
-        public boolean doesRespondToMissingString(Object object, RubyBasicObject name, Object includeAll) {
+        public boolean doesRespondToMissingString(Object object, RubyBasicObject name, Object unusedIncludeAll) {
             return false;
         }
 
         @Specialization(guards = "isRubySymbol(name)")
-        public boolean doesRespondToMissingSymbol(Object object, RubyBasicObject name, Object includeAll) {
+        public boolean doesRespondToMissingSymbol(Object object, RubyBasicObject name, Object unusedIncludeAll) {
             return false;
         }
 
