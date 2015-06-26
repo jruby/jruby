@@ -42,7 +42,7 @@ import javax.inject.Inject;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.ScriptingContainer;
-import org.jruby.embed.IsolatedScriptingContainer;
+import org.jruby.embed.osgi.OSGiIsolatedScriptingContainer;
 import org.junit.Test;
 import org.junit.Ignore;
 import org.junit.runner.RunWith;
@@ -80,8 +80,8 @@ public class JRubyOsgiEmbedTest {
 	// System.setProperty( "jruby.debug.loadService", "true" );
 	//System.setProperty( "jruby.native.enabled", "true" );
 
-	IsolatedScriptingContainer jruby = new IsolatedScriptingContainer();
-	jruby.addLoadPath( Scripts.class.getClassLoader() );
+	OSGiIsolatedScriptingContainer jruby = new OSGiIsolatedScriptingContainer();
+	jruby.addBundleToLoadPath( "org.jruby.osgi.scripts-bundle" );
 	jruby.addBundleToGemPath( FrameworkUtil.getBundle( Gems.class ) );
 	
         // run a script from LOAD_PATH

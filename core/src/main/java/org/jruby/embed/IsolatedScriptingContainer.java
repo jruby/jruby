@@ -2,8 +2,8 @@ package org.jruby.embed;
 
 import java.net.URL;
 import java.util.Arrays;
-
-import org.osgi.framework.Bundle;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * the IsolatedScriptingContainer detects the whether it is used with
@@ -16,7 +16,7 @@ import org.osgi.framework.Bundle;
  *
  * the root of the "main" classloader is add to LOAD_PATH and GEM_PATH.
  *
- * in the OSGi case there are helper methods to add ClassLoaders to the LOAD_PATH or GEM_PATH
+ * in the OSGi case see the OSGiIsolatedScriptingContainer
  * 
  * a typical setup for the ContextClassLoader case and OSGi case looks likes this:
  * <li>LOAD_PATH == [ "uri:classloader:/META-INF/jruby.home/lib/ruby/1.9/site_ruby", 
@@ -79,6 +79,24 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
                 + "Gem::Specification.reset;"
                 + "Gem::Specification.add_dir 'uri:classloader:" + JRUBY_HOME + "/lib/ruby/gems/shared';"
                 + "Gem::Specification.add_dir 'uri:classloader:';");
+
+        // setup the isolated GEM_PATH, i.e. without $HOME/.gem/**
+        setEnvironment(null);
+    }
+
+    @Override
+    public void setEnvironment(Map environment) {
+        if (environment == null || !environment.containsKey("GEM_PATH")
+                || !environment.containsKey("GEM_HOME")|| !environment.containsKey("JARS_HOME")) {
+            Map<String,String> env = environment == null ? new HashMap<String,String>() : new HashMap<String,String>(environment);
+            if (!env.containsKey("GEM_PATH")) env.put("GEM_PATH", "uri:classloader://");
+            if (!env.containsKey("GEM_HOME")) env.put("GEM_HOME", "uri:classloader://");
+            if (!env.containsKey("JARS_HOME")) env.put("JARS_HOME", "uri:classloader://jars");
+            super.setEnvironment(env);
+        }
+        else {
+            super.setEnvironment(environment);
+        }
     }
 
     public void addLoadPath( ClassLoader cl ) {
@@ -89,35 +107,8 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
         addLoadPath(createUri(cl, ref));
     }
 
-    public void addBundleToLoadPath( Bundle cl ) {
-        addBundleToLoadPath( cl, JRUBYDIR );
-    }
-
-    public void addBundleToLoadPath( Bundle cl, String ref ) {
-        addLoadPath(createUriFromBundle(cl, ref));
-    }
-
-    private String createUriFromBundle( Bundle cl, String ref) {
-        URL url = cl.getResource( ref );
-        if ( url == null && ref.startsWith( "/" ) ) {
-            url = cl.getResource( ref.substring( 1 ) );
-        }
-        if ( url == null ) {
-            throw new RuntimeException( "reference " + ref + " not found on bundle " + cl );
-        }
-        return "uri:" + url.toString().replaceFirst( ref + "$", "" );
-    }
-
-    private void addLoadPath(String uri) {
+    protected void addLoadPath(String uri) {
         runScriptlet( "$LOAD_PATH << '" + uri + "' unless $LOAD_PATH.member?( '" + uri + "' )" );
-    }
-
-    public void addBundleToGemPath( Bundle cl ) {
-        addBundleToGemPath( cl, "/specifications" + JRUBYDIR );
-    }
-
-    public void addBundleToGemPath( Bundle cl, String ref ) {
-        addGemPath(createUriFromBundle(cl, ref));
     }
 
     public void addGemPath( ClassLoader cl ) {
@@ -139,7 +130,7 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
         return "uri:" + url.toString().replaceFirst( ref + "$", "" );
     }
 
-    private void addGemPath(String uri) {
+    protected void addGemPath(String uri) {
         runScriptlet( "Gem::Specification.add_dir '" + uri + "' unless Gem::Specification.dirs.member?( '" + uri + "' )" );
     }
 }
