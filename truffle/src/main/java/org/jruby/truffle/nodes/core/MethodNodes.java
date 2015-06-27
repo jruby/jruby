@@ -18,6 +18,8 @@ import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.methods.CallMethodNode;
+import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -137,38 +139,29 @@ public abstract class MethodNodes {
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
         @Child ProcOrNullNode procOrNullNode;
+        @Child CallMethodNode callMethodNode;
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
-        }
-
-        @Specialization(guards = "getCalltarget(method) == cachedCallTarget", limit = "getCacheLimit()")
-        public Object callCached(VirtualFrame frame, RubyBasicObject method, Object[] arguments, Object block,
-                @Cached("getCalltarget(method)") CallTarget cachedCallTarget,
-                @Cached("create(cachedCallTarget)") DirectCallNode callNode) {
-            return callNode.call(frame, packArguments(method, arguments, block));
+            callMethodNode = CallMethodNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
-        protected Object doCall(VirtualFrame frame, RubyBasicObject method, Object[] arguments, Object block,
-                @Cached("create()") IndirectCallNode callNode) {
-            return callNode.call(frame, getCalltarget(method), packArguments(method, arguments, block));
+        protected Object call(VirtualFrame frame, RubyBasicObject method, Object[] arguments, Object block) {
+            final InternalMethod internalMethod = getMethod(method);
+            final Object[] frameArguments = packArguments(method, internalMethod, arguments, block);
+
+            return callMethodNode.executeCallMethod(frame, internalMethod, frameArguments);
         }
 
-        private Object[] packArguments(RubyBasicObject method, Object[] arguments, Object block) {
-            final InternalMethod internalMethod = getMethod(method);
-
+        private Object[] packArguments(RubyBasicObject method, InternalMethod internalMethod, Object[] arguments, Object block) {
             return RubyArguments.pack(
                     internalMethod,
                     internalMethod.getDeclarationFrame(),
                     getReceiver(method),
                     procOrNullNode.executeProcOrNull(block),
                     arguments);
-        }
-
-        protected CallTarget getCalltarget(RubyBasicObject method) {
-            return getMethod(method).getCallTarget();
         }
 
     }
