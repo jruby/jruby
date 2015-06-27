@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.dispatch;
+package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -24,6 +24,9 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
+/**
+ * A cache for {@link ModuleOperations#lookupMethod(RubyModule, String)}.
+ */
 @NodeChildren({
         @NodeChild("self"),
         @NodeChild("name")

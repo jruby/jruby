@@ -39,6 +39,8 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFacto
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.methods.LookupMethodNode;
+import org.jruby.truffle.nodes.methods.LookupMethodNodeGen;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
