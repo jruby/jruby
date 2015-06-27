@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.supercall;
+package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -31,22 +31,22 @@ public abstract class CallMethodNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executeCallMethod(VirtualFrame frame, InternalMethod method, Object[] arguments);
+    public abstract Object executeCallMethod(VirtualFrame frame, InternalMethod method, Object[] frameArguments);
 
     @Specialization(
             guards = "method == cachedMethod",
             // TODO(eregon, 12 June 2015) we should maybe check an Assumption here to remove the cache entry when the lookup changes (redefined method, hierarchy changes)
             limit = "getCacheLimit()")
-    protected Object callMethodCached(VirtualFrame frame, InternalMethod method, Object[] arguments,
+    protected Object callMethodCached(VirtualFrame frame, InternalMethod method, Object[] frameArguments,
             @Cached("method") InternalMethod cachedMethod,
             @Cached("create(cachedMethod.getCallTarget())") DirectCallNode callNode) {
-        return callNode.call(frame, arguments);
+        return callNode.call(frame, frameArguments);
     }
 
     @Specialization
-    protected Object callMethodUncached(VirtualFrame frame, InternalMethod method, Object[] arguments,
+    protected Object callMethodUncached(VirtualFrame frame, InternalMethod method, Object[] frameArguments,
             @Cached("create()") IndirectCallNode indirectCallNode) {
-        return indirectCallNode.call(frame, method.getCallTarget(), arguments);
+        return indirectCallNode.call(frame, method.getCallTarget(), frameArguments);
     }
 
 }
