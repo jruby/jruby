@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.methods;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -17,6 +18,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -34,12 +36,12 @@ public abstract class CallMethodNode extends RubyNode {
     public abstract Object executeCallMethod(VirtualFrame frame, InternalMethod method, Object[] frameArguments);
 
     @Specialization(
-            guards = "method == cachedMethod",
+            guards = "method.getCallTarget() == cachedCallTarget",
             // TODO(eregon, 12 June 2015) we should maybe check an Assumption here to remove the cache entry when the lookup changes (redefined method, hierarchy changes)
             limit = "getCacheLimit()")
     protected Object callMethodCached(VirtualFrame frame, InternalMethod method, Object[] frameArguments,
-            @Cached("method") InternalMethod cachedMethod,
-            @Cached("create(cachedMethod.getCallTarget())") DirectCallNode callNode) {
+            @Cached("method.getCallTarget()") CallTarget cachedCallTarget,
+            @Cached("create(cachedCallTarget)") DirectCallNode callNode) {
         return callNode.call(frame, frameArguments);
     }
 
