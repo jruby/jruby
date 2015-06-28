@@ -10,7 +10,6 @@
 
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.source.SourceSection;
 
