@@ -124,6 +124,14 @@ class TestDateArith < Test::Unit::TestCase
     assert_equal([1998, 11, 30], [d.year, d.mon, d.mday])
   end
 
+  def test_next_month__with_calendar_reform
+    calendar_reform_italy = [1582, 10, 4]
+    d = Date.new(1582, 9, 9) >> 1
+    assert_equal(calendar_reform_italy, [d.year, d.mon, d.mday])
+    d = Date.new(1582, 9, 10) >> 1
+    assert_equal(calendar_reform_italy, [d.year, d.mon, d.mday])
+  end
+
   def test_prev_year
     d = Date.new(2000,1,31).prev_year(-1)
     assert_equal([2001, 1, 31], [d.year, d.mon, d.mday])
@@ -133,6 +141,14 @@ class TestDateArith < Test::Unit::TestCase
     assert_equal([1990, 1, 31], [d.year, d.mon, d.mday])
     d = Date.new(2000,1,31).prev_year(100)
     assert_equal([1900, 1, 31], [d.year, d.mon, d.mday])
+  end
+
+  def test_prev_year__with_calendar_reform
+    calendar_reform_italy = [1582, 10, 4]
+    d = Date.new(1583, 10, 9).prev_year
+    assert_equal(calendar_reform_italy, [d.year, d.mon, d.mday])
+    d = Date.new(1583, 10, 10).prev_year
+    assert_equal(calendar_reform_italy, [d.year, d.mon, d.mday])
   end
 
   def test_next
@@ -199,6 +215,14 @@ class TestDateArith < Test::Unit::TestCase
     assert_equal([2010, 1, 31], [d.year, d.mon, d.mday])
     d = Date.new(2000,1,31).next_year(100)
     assert_equal([2100, 1, 31], [d.year, d.mon, d.mday])
+  end
+
+  def test_next_year__with_calendar_reform
+    calendar_reform_italy = [1582, 10, 4]
+    d = Date.new(1581, 10, 9).next_year
+    assert_equal(calendar_reform_italy, [d.year, d.mon, d.mday])
+    d = Date.new(1581, 10, 10).next_year
+    assert_equal(calendar_reform_italy, [d.year, d.mon, d.mday])
   end
 
   def test_downto
