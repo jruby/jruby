@@ -164,7 +164,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>ruby-maven</artifactId>
-      <version>3.3.2</version>
+      <version>3.3.3</version>
       <type>gem</type>
       <scope>provided</scope>
     </dependency>
