@@ -13,9 +13,9 @@ describe "IO#puts" do
   end
 
   after :each do
-    $/ = @before_separator
-    @io.close unless @io.closed?
+    @io.close if @io
     rm_r @name
+    $/ = @before_separator
   end
 
   it "writes just a newline when given no args" do

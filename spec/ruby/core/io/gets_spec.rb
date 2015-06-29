@@ -14,7 +14,7 @@ describe "IO#gets" do
   end
 
   after :each do
-    @io.close unless @io.closed?
+    @io.close if @io
   end
 
   it "assigns the returned line to $_" do
@@ -166,8 +166,8 @@ describe "IO#gets" do
   end
 
   after :each do
+    @io.close if @io
     rm_r @name
-    @io.close
   end
 
   it "calls #to_int to convert a single object argument to an Integer limit" do
@@ -227,17 +227,17 @@ describe "IO#gets" do
     @io = new_io @name, fmode("r:utf-8")
   end
 
+  after :each do
+    @io.close if @io
+    rm_r @name
+  end
+
   it "reads limit bytes and extra bytes when limit is reached not at character boundary" do
     [@io.gets(1), @io.gets(1)].should == ["朝", "日"]
   end
 
   it "read limit bytes and extra bytes with maximum of 16" do
     @io.gets(7).should == "朝日\xE3" + "\x81\xE3" * 8
-  end
-
-  after :each do
-    rm_r @name
-    @io.close
   end
 end
 
@@ -255,7 +255,7 @@ describe "IO#gets" do
 
   after :each do
     rm_r @name
-    @io.close
+    @io.close if @io
     Encoding.default_external = @external
     Encoding.default_internal = @internal
   end

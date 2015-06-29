@@ -3,12 +3,12 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "IO#each_byte" do
   before :each do
-    @io = IOSpecs.io_fixture "lines.txt"
     ScratchPad.record []
+    @io = IOSpecs.io_fixture "lines.txt"
   end
 
   after :each do
-    @io.close unless @io.closed?
+    @io.close if @io
   end
 
   it "raises IOError on closed stream" do

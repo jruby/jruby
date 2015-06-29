@@ -123,23 +123,24 @@ describe :process_exec, :shared => true do
     describe "with Integer option keys" do
       before :each do
         @name = tmp("exec_fd_map.txt")
-        @io = tmp("exec_fd_map_parent.txt")
+        @child_fd_file = tmp("child_fd_file.txt")
       end
 
       after :each do
-        rm_r @name, @io
+        rm_r @name, @child_fd_file
       end
 
       it "maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value" do
+        map_fd_fixture = fixture __FILE__, "map_fd.rb"
         cmd = <<-EOC
-          f = File.open "#{@name}", "w+"
+          f = File.open("#{@name}", "w+")
           child_fd = f.fileno + 1
-          File.open("#{@io}", "w") { |io| io.print child_fd }
-          exec "#{RUBY_EXE}", "#{fixture __FILE__, "map_fd.rb"}", child_fd.to_s, { child_fd => f }
+          File.open("#{@child_fd_file}", "w") { |io| io.print child_fd }
+          exec "#{RUBY_EXE}", "#{map_fd_fixture}", child_fd.to_s, { child_fd => f }
           EOC
 
         ruby_exe(cmd, :escape => true)
-        child_fd = IO.read(@io).to_i
+        child_fd = IO.read(@child_fd_file).to_i
         child_fd.to_i.should > STDERR.fileno
 
         @name.should have_data("writing to fd: #{child_fd}")

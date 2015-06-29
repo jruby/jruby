@@ -8,7 +8,7 @@ describe "IO#lines" do
   end
 
   after :each do
-    @io.close unless @io.closed?
+    @io.close if @io
   end
 
   it "returns an Enumerator" do

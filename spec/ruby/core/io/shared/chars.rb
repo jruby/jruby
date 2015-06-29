@@ -60,7 +60,7 @@ describe :io_chars_empty, :shared => true do
   before :each do
     @kcode, $KCODE = $KCODE, "utf-8"
     @name = tmp("io_each_char")
-    @io = IOSpecs.io_fixture @name, "w+:utf-8"
+    @io = new_io @name, "w+:utf-8"
     ScratchPad.record []
   end
 

@@ -267,6 +267,25 @@ end
 
 # TODO: rewrite all specs above this
 
+describe "Ruby String literals" do
+  def str_concat
+    "foo" "bar" "baz"
+  end
+
+  def long_string_literals
+    "Beautiful is better than ugly." \
+    "Explicit is better than implicit."
+  end
+
+  it "on a single line with spaces in between are concatenated together" do
+    str_concat.should == "foobarbaz"
+  end
+
+  it "on multiple lines with newlines and backslash in between are concatenated together" do
+    long_string_literals.should == "Beautiful is better than ugly.Explicit is better than implicit."
+  end
+end
+
 with_feature :encoding do
   describe "Ruby String interpolation" do
     it "creates a String having an Encoding compatible with all components" do

@@ -9,7 +9,7 @@ describe "IO#printf" do
   end
 
   after :each do
-    @io.close unless @io.closed?
+    @io.close if @io
     rm_r @name
   end
 

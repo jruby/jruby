@@ -7,7 +7,7 @@ describe "IO#lineno" do
   end
 
   after :each do
-    @io.close unless @io.closed?
+    @io.close if @io
   end
 
   it "raises an IOError on a closed stream" do
@@ -33,7 +33,7 @@ describe "IO#lineno=" do
   end
 
   after :each do
-    @io.close unless @io.closed?
+    @io.close if @io
   end
 
   it "raises an IOError on a closed stream" do

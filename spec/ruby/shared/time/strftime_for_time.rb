@@ -28,7 +28,7 @@ describe :strftime_time, :shared => true do
   end
 
   describe "with %L" do
-    it "formats the milliseconds of of the second" do
+    it "formats the milliseconds of the second" do
       @new_time[2009, 1, 1, 0, 0, Rational(100, 1000)].strftime("%L").should == "100"
       @new_time[2009, 1, 1, 0, 0, Rational(10, 1000)].strftime("%L").should == "010"
       @new_time[2009, 1, 1, 0, 0, Rational(1, 1000)].strftime("%L").should == "001"

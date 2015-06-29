@@ -1,7 +1,7 @@
 # -*- encoding: ascii-8bit -*-
 describe :io_putc, :shared => true do
   after :each do
-    @io.close unless @io.closed?
+    @io.close if @io && !@io.closed?
     @io_object = nil
     rm_r @name
   end

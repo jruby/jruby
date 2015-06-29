@@ -12,8 +12,8 @@ describe :io_write, :shared => true do
   end
 
   after :each do
-    @file.close
-    @readonly_file.close
+    @readonly_file.close if @readonly_file
+    @file.close if @file
     rm_r @filename
   end
 

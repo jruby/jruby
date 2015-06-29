@@ -6,6 +6,7 @@ describe :io_new, :shared => true do
   before :each do
     @name = tmp("io_new.txt")
     @fd = new_fd @name
+    @io = nil
   end
 
   after :each do
@@ -353,7 +354,7 @@ describe :io_new_errors, :shared => true do
   end
 
   after :each do
-    IO.new(@fd, "w").close
+    IO.new(@fd, "w").close if @fd
     rm_r @name
   end
 
