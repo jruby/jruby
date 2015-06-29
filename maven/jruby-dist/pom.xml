@@ -11,10 +11,12 @@
   <packaging>pom</packaging>
   <name>JRuby Dist</name>
   <properties>
+    <ruby.maven.libs.version>3.3.3</ruby.maven.libs.version>
     <jruby.home>${basedir}/../..</jruby.home>
     <tesla.dump.readOnly>true</tesla.dump.readOnly>
-    <jruby.plugins.version>1.0.3</jruby.plugins.version>
+    <jruby.plugins.version>1.0.8</jruby.plugins.version>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <ruby.maven.version>3.3.3</ruby.maven.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <tesla.version>0.1.1</tesla.version>
   </properties>
@@ -22,7 +24,7 @@
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>ruby-maven</artifactId>
-      <version>3.1.1.0.8</version>
+      <version>${ruby.maven.version}</version>
       <type>gem</type>
       <scope>provided</scope>
     </dependency>
@@ -78,7 +80,7 @@
           </execution>
         </executions>
         <configuration>
-          <finalName>jruby-dist-1.7.21-SNAPSHOT</finalName>
+          <finalName>jruby-dist-1.7.21</finalName>
           <tarLongFileMode>gnu</tarLongFileMode>
           <descriptors>
             <descriptor>src/main/assembly/jruby.xml</descriptor>
@@ -112,6 +114,17 @@
             </goals>
             <configuration>
               <taskId>fix_permissions</taskId>
+              <nativePom>pom.rb</nativePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>dump_full_specs_of_ruby_maven</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <taskId>dump_full_specs_of_ruby_maven</taskId>
               <nativePom>pom.rb</nativePom>
             </configuration>
           </execution>

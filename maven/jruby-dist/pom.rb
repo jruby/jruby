@@ -1,3 +1,5 @@
+require 'rubygems/package'
+require 'fileutils'
 project 'JRuby Dist' do
 
   version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
@@ -10,10 +12,12 @@ project 'JRuby Dist' do
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readOnly' => true,
               'jruby.home' => '${basedir}/../..',
-              'main.basedir' => '${project.parent.parent.basedir}' )
+              'main.basedir' => '${project.parent.parent.basedir}',
+              'ruby.maven.version' => '3.3.3',
+              'ruby.maven.libs.version' => '3.3.3' )
 
   # pre-installed gems - not default gems !
-  gem 'ruby-maven', '3.1.1.0.8', :scope => 'provided'
+  gem 'ruby-maven', '${ruby.maven.version}', :scope => 'provided'
 
   # add torquebox repo only when building from filesystem
   # not when using the pom as "dependency" in some other projects
@@ -61,6 +65,19 @@ project 'JRuby Dist' do
       gems = File.join( ctx.project.build.directory.to_pathname, 'rubygems-provided' )
       ( Dir[ File.join( gems, '**/*' ) ] + Dir[ File.join( gems, '**/.*' ) ] ).each do |f|
         File.chmod( 0644, f ) rescue nil if File.file?( f )
+      end
+    end
+
+    execute :dump_full_specs_of_ruby_maven do |ctx|
+      rubygems =  File.join( ctx.project.build.directory.to_pathname, 'rubygems-provided' )
+      gems =  File.join( rubygems, 'cache/*gem' )
+      default_specs = File.join( rubygems, 'specifications/default' )
+      FileUtils.mkdir_p( default_specs )
+      Dir[gems].each do |gem|
+        spec = Gem::Package.new( gem ).spec
+        File.open( File.join( default_specs, File.basename( gem ) + 'spec' ), 'w' ) do |f|
+          f.print( spec.to_ruby )
+        end
       end
     end
   end
