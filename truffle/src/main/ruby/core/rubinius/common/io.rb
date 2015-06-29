@@ -994,6 +994,9 @@ class IO
       end
     end
 
+    # Truffle: close old descriptor if there was already one associated
+    io.close if io.descriptor
+
     io.descriptor = fd
     io.mode       = mode || cur_mode
     io.sync       = !!sync
