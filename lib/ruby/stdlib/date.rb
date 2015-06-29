@@ -1454,7 +1454,14 @@ class Date
   # of the returned Date will be the last day of the target month.
   def >> (n)
     n = n.to_int rescue raise(TypeError, "n must be a Fixnum")
-    self.class.new!(@dt.plusMonths(n), @of, @sg, @sub_millis)
+    y, m = ((year * 12) + (mon - 1) + n).divmod(12)
+    m, = (m + 1).divmod(1)
+    d = mday
+    until cd = _valid_civil?(y, m, d, start)
+      d -= 1
+      raise ArgumentError, "invalid date" unless d > 0
+    end
+    self + (cd - jd)
   end
 
   # Return a new Date object that is +n+ months earlier than
@@ -1469,7 +1476,7 @@ class Date
   def prev_month(n=1) self << n end
 
   def next_year(n=1)
-    self.class.new!(@dt.plusYears(n.to_i), @of, @sg, @sub_millis)
+    self >> (n * 12)
   end
 
   def prev_year(n=1)
