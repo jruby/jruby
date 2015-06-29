@@ -8,23 +8,23 @@ import org.jruby.RubyArray;
  */
 public enum ArgumentType {
 
-    key("key", "k", false),
-    keyreq("keyreq", "K", false),
-    keyrest("keyrest", "e", false),
-    block("block", "b", false),
-    opt("opt", "o", false),
-    rest("rest", "r", false),
-    req("req", "q", false),
-    anonreq("req", "n", true),
-    anonopt("opt", "O", true),
-    anonrest("rest", "R", true),
-    anonkeyrest("keyrest", "N", true);
+    key("key", 'k', false),
+    keyreq("keyreq", 'K', false),
+    keyrest("keyrest", 'e', false),
+    block("block", 'b', false),
+    opt("opt", 'o', false),
+    rest("rest", 'r', false),
+    req("req", 'q', false),
+    anonreq("req", 'n', true),
+    anonopt("opt", 'O', true),
+    anonrest("rest", 'R', true),
+    anonkeyrest("keyrest", 'N', true);
 
-    public static final String ANONOPT = anonopt.prefix;
-    public static final String ANONREST = anonrest.prefix;
-    public static final String REQ = req.prefix;
+    public static final String ANONOPT = Character.toString( anonopt.prefix );
+    public static final String ANONREST = Character.toString( anonrest.prefix );
+    public static final String REQ = Character.toString( req.prefix );
 
-    private ArgumentType(String symbolicName, String prefix, boolean anonymous) {
+    private ArgumentType(String symbolicName, char prefix, boolean anonymous) {
         this.symbolicName = symbolicName;
         this.prefix = prefix;
         this.anonymous = anonymous;
@@ -56,6 +56,6 @@ public enum ArgumentType {
     }
 
     public final String symbolicName;
-    public final String prefix;
+    private final char prefix;
     public final boolean anonymous;
 }
