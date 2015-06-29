@@ -1,6 +1,7 @@
 require 'mspec/expectations/expectations'
 require 'mspec/runner/actions/timer'
 require 'mspec/runner/actions/tally'
+require 'mspec/runner/actions/leakchecker' if ENV['CHECK_LEAKS']
 
 class DottedFormatter
   attr_reader :exceptions, :timer, :tally
@@ -24,6 +25,7 @@ class DottedFormatter
   def register
     (@timer = TimerAction.new).register
     (@tally = TallyAction.new).register
+    LeakCheckerAction.new.register if ENV['CHECK_LEAKS']
     @counter = @tally.counter
 
     MSpec.register :exception, self
