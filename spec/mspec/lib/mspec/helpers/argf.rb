@@ -31,7 +31,6 @@ class Object
       file2.close if !file2.closed? and file2 != STDIN
       @argf = nil
       @__mspec_saved_argf_file__ = nil
-      @__mspec_saved_argf_caller__ = nil
     end
   end
 end
