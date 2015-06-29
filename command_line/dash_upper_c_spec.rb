@@ -8,13 +8,11 @@ describe 'The -C command line option' do
 
   it 'changes the PWD when using a file' do
     output = ruby_exe(@script, :options => "-C #{@tempdir}")
-
     output.should == @tempdir
   end
 
   it 'changes the PWD when using -e' do
     output = ruby_exe(nil, :options => "-C #{@tempdir} -e 'print Dir.pwd'")
-
     output.should == @tempdir
   end
 end

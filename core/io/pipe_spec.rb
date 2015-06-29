@@ -2,36 +2,32 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "IO.pipe" do
+  after :each do
+    @r.close if @r && !@r.closed?
+    @w.close if @w && !@w.closed?
+  end
+
   it "creates a two-ended pipe" do
-    r, w = IO.pipe
-    w.puts "test_create_pipe\\n"
-    w.close
-    r.read(16).should == "test_create_pipe"
-    r.close
+    @r, @w = IO.pipe
+    @w.puts "test_create_pipe\\n"
+    @w.close
+    @r.read(16).should == "test_create_pipe"
   end
 
   it "returns two IO objects" do
-    r,w = IO.pipe
-    begin
-      r.should be_kind_of(IO)
-      w.should be_kind_of(IO)
-    ensure
-      w.close
-      r.close
-    end
+    @r, @w = IO.pipe
+    @r.should be_kind_of(IO)
+    @w.should be_kind_of(IO)
   end
 
   it "returns instances of a subclass when called on a subclass" do
-    r, w = IOSpecs::SubIO.pipe
-    begin
-      r.should be_an_instance_of(IOSpecs::SubIO)
-      w.should be_an_instance_of(IOSpecs::SubIO)
-    ensure
-      w.close
-      r.close
-    end
+    @r, @w = IOSpecs::SubIO.pipe
+    @r.should be_an_instance_of(IOSpecs::SubIO)
+    @w.should be_an_instance_of(IOSpecs::SubIO)
   end
+end
 
+describe "IO.pipe" do
   describe "passed a block" do
     it "yields two IO objects" do
       IO.pipe do |r, w|

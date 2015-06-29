@@ -15,7 +15,7 @@ describe :process_abort, :shared => true do
     lambda { @object.abort "message" }.should raise_error { |e| e.message.should == "message" }
   end
 
-  it "sets the exception status code of of 1" do
+  it "sets the exception status code of 1" do
     lambda { @object.abort }.should raise_error { |e| e.status.should == 1 }
   end
 

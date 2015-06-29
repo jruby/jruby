@@ -145,16 +145,11 @@ describe "File.open" do
   end
 
   it "opens the file when call with fd" do
-    fh_orig = File.open(@file)
-    begin
-      fh = File.open(fh_orig.fileno)
-      fh.should be_kind_of(File)
-      File.exist?(@file).should == true
-    ensure
-      fh_orig.close
-      # Will raise but we need it to set the internal close flag
-      fh.close rescue nil
-    end
+    @fh = File.open(@file)
+    fh_copy = File.open(@fh.fileno)
+    fh_copy.autoclose = false
+    fh_copy.should be_kind_of(File)
+    File.exist?(@file).should == true
   end
 
   it "opens a file with a file descriptor d and a block" do
@@ -167,7 +162,7 @@ describe "File.open" do
         @fh.close
       end
     }.should raise_error(Errno::EBADF)
-    lambda { File.open(@fd) }.should raise_error(SystemCallError)
+    lambda { File.open(@fd) }.should raise_error(Errno::EBADF)
 
     File.exist?(@file).should == true
   end
@@ -601,9 +596,7 @@ describe "File.open when passed a file descriptor" do
   end
 
   it "opens a file" do
-    # This leaks one file descriptor. Do NOT write this spec to
-    # call IO.new with the fd of an existing IO instance.
-    @file = File.open @fd
+    @file = File.open(@fd)
     @file.should be_an_instance_of(File)
     @file.fileno.should equal(@fd)
     @file.write @content

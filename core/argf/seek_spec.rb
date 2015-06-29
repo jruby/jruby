@@ -51,8 +51,12 @@ describe "ARGF.seek" do
 end
 
 describe "ARGF.seek" do
+  before :each do
+    @file1_name = fixture __FILE__, "file1.txt"
+  end
+
   it "takes at least one argument (offset)" do
-    argf([@file1_name]) do
+    argf [@file1_name] do
       lambda { @argf.seek }.should raise_error(ArgumentError)
     end
   end

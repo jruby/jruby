@@ -355,6 +355,11 @@ describe :process_spawn, :shared => true do
     @name.should have_data("glark")
   end
 
+  it "redirects STDOUT to the given file if :out => [String name, String mode]" do
+    Process.wait @object.spawn(ruby_cmd("print :glark"), :out => [@name, 'w'])
+    @name.should have_data("glark")
+  end
+
   it "redirects STDERR to the given file descriptior if :err => Fixnum" do
     File.open(@name, 'w') do |file|
       lambda do
@@ -557,8 +562,8 @@ describe :process_spawn, :shared => true do
 
     it "maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value" do
       child_fd = @io.fileno + 1
-      args = [RUBY_EXE, fixture(__FILE__, "map_fd.rb"), child_fd.to_s]
-      pid = @object.spawn *args, { child_fd => @io }
+      args = ruby_cmd(fixture(__FILE__, "map_fd.rb"), :args => [child_fd.to_s])
+      pid = @object.spawn(*args, { child_fd => @io })
       Process.waitpid pid
       @io.rewind
 

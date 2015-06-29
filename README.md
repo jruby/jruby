@@ -1,6 +1,6 @@
 # RubySpec
 
-[![Build Status](https://travis-ci.org/ruby/rubyspec.png)](https://travis-ci.org/ruby/rubyspec)
+[![Build Status](https://travis-ci.org/ruby/rubyspec.svg)](https://travis-ci.org/ruby/rubyspec)
 
 RubySpec is an executable specification for the Ruby programming language.  
 The specs describe the Ruby language syntax as well as the core and standard library classes.
@@ -11,26 +11,20 @@ For more information, see the [MSpec](http://github.com/ruby/mspec) project.
 
 ### Running the specs
 
-The easiest way to run the RubySpec suite is to use Bundler.  
-If you do not have Bundler yet, you can install it with:
+First, clone this repository:
 
-    $ gem install bundler
+    $ git clone https://github.com/ruby/rubyspec.git
 
-Then, to install the MSpec dependency, just do:
+Then move to it:
 
-    $ cd path/to/rubyspec
-    $ bundle install
-
-To run the RubySpec suite:
-
-    $ bundle exec mspec
-
-Alternatively, you can clone [MSpec](http://github.com/ruby/mspec) and run the specs with:
-
-    $ cd path/to/rubyspec
-    $ cd ..
-    $ git clone https://github.com/ruby/mspec.git
     $ cd rubyspec
+
+Clone [MSpec](http://github.com/ruby/mspec):
+
+    $ git clone https://github.com/ruby/mspec.git ../mspec
+
+And run the RubySpec suite:
+
     $ ../mspec/bin/mspec
 
 This will execute all the RubySpec specs using the executable named `ruby` on your current PATH.
@@ -40,28 +34,28 @@ This will execute all the RubySpec specs using the executable named `ruby` on yo
 Use the `-t` option to specify the Ruby implementation with which to run the specs.  
 The argument may be a full path to the Ruby binary.
 
-    $ mspec -t /path/to/some/bin/ruby
+    $ ../mspec/bin/mspec -t /path/to/some/bin/ruby
 
 ### Running Selected Specs
 
 To run a single spec file, pass the filename to `mspec`:
 
-    $ mspec core/kernel/kind_of_spec.rb
+    $ ../mspec/bin/mspec core/kernel/kind_of_spec.rb
 
 You can also pass a directory, in which case all specs in that directories will be run:
 
-    $ mspec core/kernel
+    $ ../mspec/bin/mspec core/kernel
 
 Finally, you can also run them per group as defined in `default.mspec`.  
 The following command will run all language specs:
 
-    $ mspec :language
+    $ ../mspec/bin/mspec :language
 
 In similar fashion, the following commands run the respective specs:
 
-    $ mspec :core
-    $ mspec :library
-    $ mspec :capi
+    $ ../mspec/bin/mspec :core
+    $ ../mspec/bin/mspec :library
+    $ ../mspec/bin/mspec :capi
 
 ### Contributing
 

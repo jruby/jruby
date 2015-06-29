@@ -8,7 +8,7 @@ describe :io_each, :shared => true do
   end
 
   after :each do
-    @io.close
+    @io.close if @io
   end
 
   describe "with no separator" do
@@ -115,7 +115,7 @@ describe :io_each_default_separator, :shared => true do
   end
 
   after :each do
-    @io.close
+    @io.close if @io
     $/ = @sep
   end
 

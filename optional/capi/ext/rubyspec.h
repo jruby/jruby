@@ -498,10 +498,6 @@
 #define HAVE_RB_REG_OPTIONS                1
 #define HAVE_RB_REG_REGCOMP                1
 
-/* Safe */
-#define HAVE_RB_SAFE_LEVEL                 1
-#define HAVE_RB_SECURE                     1
-
 /* String */
 #define HAVE_RB_CSTR2INUM                  1
 #define HAVE_RB_CSTR_TO_INUM               1

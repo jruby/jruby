@@ -1,11 +1,15 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
+ruby_exe = RUBY_EXE.split
+
 describe "IO.popen" do
-  ruby_exe = RUBY_EXE.split
+  before :each do
+    @io = nil
+  end
 
   after :each do
-    @io.close if @io and !@io.closed?
+    @io.close if @io
   end
 
   it "returns an open IO" do
@@ -22,12 +26,16 @@ describe "IO.popen" do
     @io = IO.popen("#{RUBY_EXE} -e 'puts \"foo\"'", "r")
     lambda { @io.write('foo') }.should raise_error(IOError)
   end
+end
 
+describe "IO.popen" do
   before :each do
     @fname = tmp("IO_popen_spec")
+    @io = nil
   end
 
   after :each do
+    @io.close if @io and !@io.closed?
     rm_r @fname
   end
 
@@ -77,10 +85,20 @@ describe "IO.popen" do
     mode.should_receive(:to_str).and_return("r")
     @io = IO.popen("true", mode)
   end
+end
+
+describe "IO.popen" do
+  before :each do
+    @io = nil
+  end
+
+  after :each do
+    @io.close if @io
+  end
 
   describe "with a block" do
     it "yields an open IO to the block" do
-      @io = IO.popen("#{RUBY_EXE} -e exit", "r") do |io|
+      IO.popen("#{RUBY_EXE} -e exit", "r") do |io|
         io.closed?.should be_false
       end
     end
@@ -92,13 +110,13 @@ describe "IO.popen" do
     end
 
     it "closes the IO after yielding" do
-      @io = IO.popen("#{RUBY_EXE} -e exit", "r") { |io| io }
-      @io.closed?.should be_true
+      io = IO.popen("#{RUBY_EXE} -e exit", "r") { |io| io }
+      io.closed?.should be_true
     end
 
     it "allows the IO to be closed inside the block" do
-      @io = IO.popen("#{RUBY_EXE} -e exit", 'r') { |io| io.close; io }
-      @io.closed?.should be_true
+      io = IO.popen("#{RUBY_EXE} -e exit", 'r') { |io| io.close; io }
+      io.closed?.should be_true
     end
 
     it "returns the value of the block" do
@@ -111,8 +129,11 @@ describe "IO.popen" do
       io = IO.popen("-")
 
       if io # parent
-        io.gets.should == "hello from child\n"
-        io.close
+        begin
+          io.gets.should == "hello from child\n"
+        ensure
+          io.close
+        end
       else # child
         puts "hello from child"
         exit!
@@ -195,8 +216,6 @@ describe "IO.popen" do
   end
 
   context "with a leading Array argument" do
-    ruby_exe = RUBY_EXE.split
-
     it "uses the Array as command plus args for the child process" do
       IO.popen([*ruby_exe, "-e", "puts 'hello'"]) do |io|
         io.read.should == "hello\n"

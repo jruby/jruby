@@ -1,23 +1,19 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "IO#inspect" do
+  after :each do
+    @r.close if @r && !@r.closed?
+    @w.close if @w && !@w.closed?
+  end
+
   it "contains the file descriptor number" do
-    begin
-      i, o = IO.pipe
-      i.inspect["fd #{i.fileno}"].should_not == nil
-    ensure
-      i.close
-      o.close
-    end
+    @r, @w = IO.pipe
+    @r.inspect.should include("fd #{@r.fileno}")
   end
 
   it "contains \"(closed)\" if the stream is closed" do
-    begin
-      i, o = IO.pipe
-      i.close
-      i.inspect["(closed)"].should_not == nil
-    ensure
-      o.close
-    end
+    @r, @w = IO.pipe
+    @r.close
+    @r.inspect.should include("(closed)")
   end
 end
