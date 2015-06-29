@@ -7,7 +7,6 @@ import java.nio.charset.Charset;
 
 import jnr.constants.platform.Errno;
 import org.jruby.*;
-import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.DAsgnNode;
@@ -2508,11 +2507,13 @@ public class Helpers {
     public static RubyArray argumentDescriptorsToParameters(Ruby runtime, ArgumentDescriptor[] argsDesc, boolean isLambda) {
         if (argsDesc == null) Thread.dumpStack();
 
-        RubyArray parms = RubyArray.newArray(runtime, argsDesc.length);
+        final RubyArray params = RubyArray.newArray(runtime, argsDesc.length);
 
-        for (ArgumentDescriptor param : argsDesc) parms.add(param.toArrayForm(runtime, isLambda));
+        for (ArgumentDescriptor param : argsDesc) {
+            params.append( param.toArrayForm(runtime, isLambda) );
+        }
 
-        return parms;
+        return params;
     }
 
     public static ArgumentDescriptor[] methodToArgumentDescriptors(DynamicMethod method) {

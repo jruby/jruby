@@ -7,6 +7,7 @@ import org.jruby.RubyArray;
  * Created by headius on 5/8/15.
  */
 public enum ArgumentType {
+
     key("key", "k", false),
     keyreq("keyreq", "K", false),
     keyrest("keyrest", "e", false),
@@ -23,7 +24,7 @@ public enum ArgumentType {
     public static final String ANONREST = anonrest.prefix;
     public static final String REQ = req.prefix;
 
-    ArgumentType(String symbolicName, String prefix, boolean anonymous) {
+    private ArgumentType(String symbolicName, String prefix, boolean anonymous) {
         this.symbolicName = symbolicName;
         this.prefix = prefix;
         this.anonymous = anonymous;
@@ -38,9 +39,10 @@ public enum ArgumentType {
             case 'o': return opt;
             case 'r': return rest;
             case 'q': return req;
-            case 'R': return anonrest;
             case 'n': return anonreq;
             case 'O': return anonopt;
+            case 'R': return anonrest;
+            case 'N': return anonkeyrest;
             default: return null;
         }
     }
