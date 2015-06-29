@@ -1239,7 +1239,8 @@ call_args       : command {
                 }
 
 command_args    : /* none */ {
-                    $$ = Long.valueOf(lexer.getCmdArgumentState().begin());
+                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
+                    lexer.getCmdArgumentState().begin();
                 } call_args {
                     lexer.getCmdArgumentState().reset($<Long>1.longValue());
                     $$ = $2;
