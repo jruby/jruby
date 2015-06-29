@@ -1001,7 +1001,7 @@ public class RubyEnumerable {
         final Ruby runtime = context.runtime;
         RubyEnumerable.callEach(runtime, context, self, Signature.OPTIONAL, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                return block.call(ctx, new IRubyObject[]{runtime.newArray(packEnumValues(ctx, largs), arg)});
+                return block.call(ctx, packEnumValues(ctx, largs), arg);
             }
         });
         return arg;
