@@ -434,11 +434,8 @@ public abstract class BigDecimalNodes {
             ZERO_PATTERN = Pattern.compile("^[+-]?0*\\.?0*" + exponent);
         }
 
-        @Child private CreateBigDecimalNode createBigDecimal;
-
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            createBigDecimal = CreateBigDecimalNodeFactory.create(context, sourceSection, null, null);
         }
 
         @Specialization
