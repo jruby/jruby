@@ -28,27 +28,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.util.List;
-
-import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.anno.JavaMethodDescriptor;
-import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.ReflectionMethodFactory;
 import org.jruby.internal.runtime.methods.InvocationMethodFactory;
 import org.jruby.internal.runtime.methods.InvokeDynamicMethodFactory;
-import org.jruby.internal.runtime.methods.MethodNodes;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.util.List;
 
 /**
  * MethodFactory is used to generate "invokers" or "method handles" given a target
@@ -57,51 +46,6 @@ import org.jruby.util.log.LoggerFactory;
  * objects. Implementers of this class provide that functionality.
  */
 public abstract class MethodFactory {
-    private static final Logger LOG = LoggerFactory.getLogger("MethodFactory");
-
-    /**
-     * A Class[] representing the signature of compiled Ruby method.
-     */
-    public final static Class[] COMPILED_METHOD_PARAMS = new Class[] {ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class};
-
-    /**
-     * A test to see if we can load bytecode dynamically, so we know whether InvocationMethodFactory will work.
-     */
-    public final static boolean CAN_LOAD_BYTECODE;
-    static {
-        // any exception or error will cause us to consider bytecode-loading impossible
-        boolean can = false;
-        try {
-            InputStream unloaderStream = Ruby.getClassLoader().getResourceAsStream("org/jruby/util/JDBCDriverUnloader.class");
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buf = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = unloaderStream.read(buf)) != -1) {
-                baos.write(buf, 0, bytesRead);
-            }
-
-            ClassDefiningJRubyClassLoader oscl = new ClassDefiningJRubyClassLoader(Ruby.getClassLoader());
-            Class<?> unloaderClass = oscl.defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
-            unloaderClass.newInstance();
-            can = true;
-            oscl.close();
-        } catch (Throwable t) {
-            LOG.debug("MethodFactory: failed to load bytecode at runtime, falling back on reflection", t);
-        }
-        CAN_LOAD_BYTECODE = can;
-    }
-
-    /**
-     * For batched method construction, the logic necessary to bind resulting
-     * method objects into a target module/class must be provided as a callback.
-     * This interface should be implemented by code calling any batched methods
-     * on this MethodFactory.
-     */
-    @Deprecated
-    public interface MethodDefiningCallback {
-        public void define(RubyModule targetMetaClass, JavaMethodDescriptor desc, DynamicMethod dynamicMethod);
-    }
-
     /**
      * Based on optional properties, create a new MethodFactory. By default,
      * this will create a code-generation-based InvocationMethodFactory. If
@@ -114,9 +58,6 @@ public abstract class MethodFactory {
      * @return A new MethodFactory.
      */
     public static MethodFactory createFactory(ClassLoader classLoader) {
-        // if reflection is forced or we've determined that we can't load bytecode, use reflection
-        if (reflection || !CAN_LOAD_BYTECODE) return new ReflectionMethodFactory();
-
         // otherwise, generate invokers at runtime
         if (Options.COMPILE_INVOKEDYNAMIC.load() && Options.INVOKEDYNAMIC_HANDLES.load()) {
             return new InvokeDynamicMethodFactory(classLoader);
@@ -124,75 +65,6 @@ public abstract class MethodFactory {
             return new InvocationMethodFactory(classLoader);
         }
     }
-
-    /**
-     * Get a new method handle based on the target JRuby-compiled method.
-     * Because compiled Ruby methods have additional requirements and
-     * characteristics not typically found in Java-based methods, this is
-     * provided as a separate way to define such method handles.
-     *
-     * @param implementationClass The class to which the method will be bound.
-     * @param rubyName The Ruby method name to which the method will bind
-     * @param javaName The name of the method
-     * @param visibility The method's visibility on the target type.
-     * @param scope The methods static scoping information.
-     * @param scriptObject An instace of the target compiled method class.
-     * @param callConfig The call configuration to use for this method.
-     * @param position The position to use when generating traceable handles.
-     * @return A new method handle for the target compiled method.
-     */
-    public abstract DynamicMethod getCompiledMethod(
-            RubyModule implementationClass, String rubyName, String javaName,
-            Visibility visibility, StaticScope scope,
-            Object scriptObject, CallConfiguration callConfig,
-            ISourcePosition position, String parameterDesc,
-            MethodNodes methodNodes);
-
-    /**
-     * Like getCompiledMethod, but produces the actual bytes for the compiled
-     * method handle rather than loading and constructing it. This can be used
-     * to generate all the handles ahead of time, as when doing a full system
-     * precompile.
-     *
-     * @param rubyName The Ruby method name to which the method will bind
-     * @param javaName The name of the method
-     * @param classPath The path-like (with / instead of .) name of the class
-     * @param invokerPath The path-line name of the invoker to generate
-     * @param scope The methods static scoping information.
-     * @param callConfig The call configuration to use for this method.
-     * @param filename The position to use when generating traceable handles.
-     * @param line The position to use when generating traceable handles.
-     * @return
-     */
-    public byte[] getCompiledMethodOffline(
-            String rubyName, String javaName, String classPath, String invokerPath,
-            StaticScope scope,
-            CallConfiguration callConfig, String filename, int line,
-            MethodNodes methodNodes) {
-        return null;
-    }
-
-    /**
-     * Like getCompiledMethod, but postpones any heavy lifting involved in
-     * creating the method until first invocation. This helps reduce the cost
-     * of starting up AOT-compiled code, by spreading out the heavy lifting
-     * across the run rather than causing all method handles to be immediately
-     * instantiated.
-     *
-     * @param implementationClass The class to which the method will be bound.
-     * @param rubyName The Ruby method name to which the method will bind
-     * @param javaName The name of the method
-     * @param visibility The method's visibility on the target type.
-     * @param scope The methods static scoping information.
-     * @param scriptObject An instace of the target compiled method class.
-     * @param callConfig The call configuration to use for this method.
-     * @return A new method handle for the target compiled method.
-     */
-    public abstract DynamicMethod getCompiledMethodLazily(
-            RubyModule implementationClass, String rubyName, String javaName,
-            Visibility visibility, StaticScope scope,
-            Object scriptObject, CallConfiguration callConfig,
-            ISourcePosition position, String parameterDesc, MethodNodes methodNodes);
 
     /**
      * Based on a list of annotated Java methods, generate a method handle using
@@ -219,21 +91,4 @@ public abstract class MethodFactory {
      * @return A method handle for the target object.
      */
     public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc);
-
-    /**
-     * Use the reflection-based factory.
-     */
-    private static final boolean reflection;
-
-    static {
-        boolean reflection_ = false, dumping_ = false;
-        String dumpingPath_ = null;
-        // initialize the static settings to determine which factory to use
-        if (Ruby.isSecurityRestricted()) {
-            reflection_ = true;
-        } else {
-            reflection_ = RubyInstanceConfig.REFLECTED_HANDLES;
-        }
-        reflection = reflection_;
-    }
 }
