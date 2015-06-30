@@ -9,19 +9,12 @@
  */
 package org.jruby.truffle.pack.nodes.type;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.truffle.nodes.coerce.ToFNode;
-import org.jruby.truffle.nodes.coerce.ToFNodeGen;
 import org.jruby.truffle.pack.nodes.PackNode;
-import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * Convert a value to a {@code double}.
@@ -30,8 +23,6 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
         @NodeChild(value = "value", type = PackNode.class),
 })
 public abstract class ToDoubleNode extends PackNode {
-
-    @Child private ToFNode toFNode;
 
     public ToDoubleNode(RubyContext context) {
         super(context);
@@ -54,14 +45,4 @@ public abstract class ToDoubleNode extends PackNode {
         return value;
     }
 
-    @Specialization
-    public Object toDouble(RubyBasicObject value) {
-        if (toFNode == null) {
-            CompilerDirectives.transferToInterpreter();
-            toFNode = insert(ToFNodeGen.create(getContext(), getSourceSection(), null));
-        }
-
-        final VirtualFrame frame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, null, value, null, new Object[]{}), new FrameDescriptor());
-        return toFNode.doDouble(frame, value);
-    }
 }
