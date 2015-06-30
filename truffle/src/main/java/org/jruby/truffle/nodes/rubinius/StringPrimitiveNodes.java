@@ -74,7 +74,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
@@ -1269,10 +1268,10 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject stringFromByteArray(RubiniusByteArray bytes, int start, int count) {
+        @Specialization(guards = "isRubiniusByteArray(bytes)")
+        public RubyBasicObject stringFromByteArray(RubyBasicObject bytes, int start, int count) {
             // Data is copied here - can we do something COW?
-            return createString(Arrays.copyOfRange(bytes.getBytes().unsafeBytes(), bytes.getBytes().begin() + start, bytes.getBytes().begin() + start + count));
+            return createString(Arrays.copyOfRange(ByteArrayNodes.getBytes(bytes).unsafeBytes(), ByteArrayNodes.getBytes(bytes).begin() + start, ByteArrayNodes.getBytes(bytes).begin() + start + count));
         }
 
     }

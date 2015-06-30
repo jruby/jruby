@@ -13,6 +13,7 @@ import com.oracle.truffle.api.interop.TruffleObject;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.ext.BigDecimalNodes;
+import org.jruby.truffle.nodes.rubinius.ByteArrayNodes;
 import org.jruby.truffle.nodes.rubinius.PointerNodes;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.ThreadLocalObject;
@@ -143,6 +144,14 @@ public abstract class RubyGuards {
 
     public static boolean isRubyPointer(RubyBasicObject value) {
         return value.getDynamicObject().getShape().getObjectType() == PointerNodes.POINTER_TYPE;
+    }
+
+    public static boolean isRubiniusByteArray(Object value) {
+        return (value instanceof RubyBasicObject) && isRubiniusByteArray((RubyBasicObject) value);
+    }
+
+    public static boolean isRubiniusByteArray(RubyBasicObject value) {
+        return value.getDynamicObject().getShape().getObjectType() == ByteArrayNodes.BYTE_ARRAY_TYPE;
     }
 
     // Internal types

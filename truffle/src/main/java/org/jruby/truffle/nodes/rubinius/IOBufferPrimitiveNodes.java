@@ -50,7 +50,6 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
 
 import java.util.EnumSet;
@@ -81,7 +80,7 @@ public abstract class IOBufferPrimitiveNodes {
         final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
 
         WRITE_SYNCED_PROPERTY = Property.create(WRITE_SYNCED_IDENTIFIER, allocator.locationForType(Boolean.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        STORAGE_PROPERTY = Property.create(STORAGE_IDENTIFIER, allocator.locationForType(RubiniusByteArray.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        STORAGE_PROPERTY = Property.create(STORAGE_IDENTIFIER, allocator.locationForType(RubyBasicObject.class, EnumSet.of(LocationModifier.NonNull)), 0);
         USED_PROPERTY = Property.create(USED_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
         START_PROPERTY = Property.create(START_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
         TOTAL_PROPERTY = Property.create(TOTAL_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
@@ -105,9 +104,9 @@ public abstract class IOBufferPrimitiveNodes {
         }
     }
 
-    private static RubiniusByteArray getStorage(RubyBasicObject io) {
+    private static RubyBasicObject getStorage(RubyBasicObject io) {
         assert io.getDynamicObject().getShape().hasProperty(STORAGE_IDENTIFIER);
-        return (RubiniusByteArray) STORAGE_PROPERTY.get(io.getDynamicObject(), true);
+        return (RubyBasicObject) STORAGE_PROPERTY.get(io.getDynamicObject(), true);
     }
 
     private static int getUsed(RubyBasicObject io) {
@@ -141,7 +140,7 @@ public abstract class IOBufferPrimitiveNodes {
         public RubyBasicObject allocate(VirtualFrame frame, RubyClass classToAllocate) {
             return new RubyBasicObject(classToAllocate, IO_BUFFER_FACTORY.newInstance(
                     true,
-                    new RubiniusByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
+                    ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
                     0,
                     0,
                     IOBUFFER_SIZE));
@@ -168,7 +167,7 @@ public abstract class IOBufferPrimitiveNodes {
                 stringSize = availableSpace;
             }
 
-            ByteList storage = getStorage(ioBuffer).getBytes();
+            ByteList storage = ByteArrayNodes.getBytes(getStorage(ioBuffer));
 
             // Data is copied here - can we do something COW?
             System.arraycopy(StringNodes.getByteList(string).unsafeBytes(), startPosition, storage.getUnsafeBytes(), usedSpace, stringSize);
@@ -234,7 +233,7 @@ public abstract class IOBufferPrimitiveNodes {
                     throw new RaiseException(getContext().getCoreLibrary().internalError("IO buffer overrun", this));
                 }
                 final int used = getUsed(ioBuffer);
-                final ByteList storage = getStorage(ioBuffer).getBytes();
+                final ByteList storage = ByteArrayNodes.getBytes(getStorage(ioBuffer));
                 System.arraycopy(readBuffer, 0, storage.getUnsafeBytes(), storage.getBegin() + used, bytesRead);
                 storage.setRealSize(used + bytesRead);
                 setUsed(ioBuffer, used + bytesRead);
