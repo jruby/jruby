@@ -18,16 +18,6 @@ public class OptimizeDelegationPass extends CompilerPass {
 
     @Override
     public Object execute(IRScope s, Object... data) {
-        /**
-         * SSS FIXME: too late at night to think straight if this
-         * is required to run on all nested scopes or not. Doesn't
-         * look like it, but leaving behind in case it is.
-         *
-        for (IRClosure c: s.getClosures()) {
-            run(c, false, true);
-        }
-         **/
-
         if (s.getFlags().contains(IRFlags.BINDING_HAS_ESCAPED)) return null;
         if (!s.getFlags().contains(IRFlags.RECEIVES_CLOSURE_ARG)) return null;
 
@@ -42,9 +32,7 @@ public class OptimizeDelegationPass extends CompilerPass {
         return false;
     }
 
-    private static void optimizeDelegatedVars(IRScope s) {
-        Map<Operand, Operand> unusedExplicitBlocks = new HashMap<>();
-
+    private static void calculateBlockUsage(IRScope s, Map<Operand, Operand> unusedExplicitBlocks) {
         for (BasicBlock bb: s.getCFG().getBasicBlocks()) {
             for (Instr i: bb.getInstrs()) {
                 if (i instanceof ReifyClosureInstr) {
@@ -62,6 +50,12 @@ public class OptimizeDelegationPass extends CompilerPass {
             }
         }
 
+        for (IRScope child: s.getClosures()) {
+            calculateBlockUsage(child, unusedExplicitBlocks);
+        }
+    }
+
+    private static void replaceBlockUsage(IRScope s, Map<Operand, Operand> unusedExplicitBlocks) {
         for (BasicBlock bb: s.getCFG().getBasicBlocks()) {
             ListIterator<Instr> instrs = bb.getInstrs().listIterator();
             while (instrs.hasNext()) {
@@ -78,6 +72,16 @@ public class OptimizeDelegationPass extends CompilerPass {
                 }
             }
         }
+
+        for (IRScope child: s.getClosures()) {
+            replaceBlockUsage(child, unusedExplicitBlocks);
+        }
+    }
+    private static void optimizeDelegatedVars(IRScope s) {
+        Map<Operand, Operand> unusedExplicitBlocks = new HashMap<>();
+
+        calculateBlockUsage(s, unusedExplicitBlocks);
+        replaceBlockUsage(s, unusedExplicitBlocks);
     }
 
     private static boolean usesVariableAsNonClosureArg(Instr i, Variable v) {
