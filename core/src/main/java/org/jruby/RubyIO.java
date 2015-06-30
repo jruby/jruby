@@ -4493,15 +4493,21 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     private static void cleanupPOpen(POpenTuple tuple) {
-        if (tuple.input.openFile.isOpen()) {
-            tuple.input.close();
-        }
-        if (tuple.output.openFile.isOpen()) {
-            tuple.output.close();
-        }
-        if (tuple.error.openFile.isOpen()) {
-            tuple.error.close();
-        }
+        try {
+             if (tuple.input.openFile.isOpen()) {
+                 tuple.input.close();
+             }
+        } catch (RaiseException e) {}
+        try {
+             if (tuple.output.openFile.isOpen()) {
+                 tuple.output.close();
+             }
+        } catch (RaiseException e) {}
+        try {
+             if (tuple.error.openFile.isOpen()) {
+                 tuple.error.close();
+             }
+        } catch (RaiseException e) {}
     }
 
     private static class POpenTuple {
