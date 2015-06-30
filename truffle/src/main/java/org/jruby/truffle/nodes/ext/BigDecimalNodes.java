@@ -158,6 +158,15 @@ public abstract class BigDecimalNodes {
         return ((value / 4) + 1) * 4;
     }
 
+    public static int defaultDivisionPrecision(int precisionA, int precisionB, int limit) {
+        final int combination = nearestBiggerMultipleOf4(precisionA + precisionB) * 2;
+        return (limit > 0 && limit < combination) ? limit : combination;
+    }
+
+    public static int defaultDivisionPrecision(BigDecimal a, BigDecimal b, int limit) {
+        return defaultDivisionPrecision(a.precision(), b.precision(), limit);
+    }
+
     public enum Type {
         NEGATIVE_INFINITY("-Infinity"),
         POSITIVE_INFINITY("Infinity"),
@@ -420,6 +429,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
+    // TODO (pitr 21-Jun-2015): Check for missing coerce on OpNodess
 
     // TODO (pitr 30-may-2015): handle digits argument also for other types than just String
     @CoreMethod(names = "initialize", required = 1, optional = 1)
@@ -527,8 +537,6 @@ public abstract class BigDecimalNodes {
             }
         }
     }
-
-    // TODO (pitr 21-Jun-2015): Check for missing coerce on OpNodess
 
     @NodeChildren({
             @NodeChild(value = "a", type = RubyNode.class),
@@ -721,7 +729,6 @@ public abstract class BigDecimalNodes {
             return super.subSpecial(frame, a, b, precision);
         }
     }
-
 
     @CoreMethod(names = "-@")
     public abstract static class NegNode extends BigDecimalCoreMethodArrayArgumentsNode {
@@ -1073,10 +1080,8 @@ public abstract class BigDecimalNodes {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)" })
         public Object div(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
-            final int sumOfPrecisions = getBigDecimalValue(a).precision() + getBigDecimalValue(b).precision();
-            final int defaultPrecision = nearestBiggerMultipleOf4(sumOfPrecisions) * 2;
-            final int limit = getLimit(frame);
-            return div(frame, a, b, (limit > 0 && limit < defaultPrecision) ? limit : defaultPrecision);
+            final int precision = defaultDivisionPrecision(getBigDecimalValue(a), getBigDecimalValue(b), getLimit(frame));
+            return div(frame, a, b, precision);
         }
 
         @Specialization(guards = {
@@ -1105,15 +1110,58 @@ public abstract class BigDecimalNodes {
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class DivNode extends AbstractDivNode {
 
+        @Child private CallDispatchHeadNode floorCall;
+        private final ConditionProfile zeroPrecisionProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile bZeroProfile = ConditionProfile.createBinaryProfile();
+
         public DivNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+        }
+
+        private void setupFloorCall() {
+            if (floorCall == null) {
+                CompilerDirectives.transferToInterpreter();
+                floorCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+        }
+
+        @Specialization(guards = {
+                "isNormal(a)",
+                "isNormalRubyBigDecimal(b)" })
+        public Object div(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b, NotProvided precision) {
+            setupFloorCall();
+            if (bZeroProfile.profile(isNormalZero(b))) {
+                throw new RaiseException(getContext().getCoreLibrary().zeroDivisionError(this));
+            } else {
+                final Object result = div(frame, a, b, 0);
+                return floorCall.call(frame, result, "floor", null);
+            }
         }
 
         @Specialization(guards = {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)" })
         public Object div(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b, int precision) {
-            return super.div(frame, a, b, precision);
+            final int newPrecision;
+            if (zeroPrecisionProfile.profile(precision == 0)) {
+                newPrecision = defaultDivisionPrecision(getBigDecimalValue(a), getBigDecimalValue(b), getLimit(frame));
+            } else {
+                newPrecision = precision;
+            }
+            return super.div(frame, a, b, newPrecision);
+        }
+
+        @Specialization(guards = {
+                "isNormal(a)",
+                "isSpecialRubyBigDecimal(b)" })
+        public Object divNormalSpecial(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b, NotProvided precision) {
+            if (getBigDecimalType(b) == Type.NEGATIVE_ZERO) {
+                throw new RaiseException(getContext().getCoreLibrary().zeroDivisionError(this));
+            } else if (getBigDecimalType(b) == Type.NAN) {
+                throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
+            } else {
+                return divNormalSpecial(frame, a, b, 0);
+            }
         }
 
         @Specialization(guards = {
@@ -1126,8 +1174,36 @@ public abstract class BigDecimalNodes {
         @Specialization(guards = {
                 "!isNormal(a)",
                 "isNormalRubyBigDecimal(b)" })
+        public Object divSpecialNormal(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b, NotProvided precision) {
+            if (isNormalZero(b)) {
+                throw new RaiseException(getContext().getCoreLibrary().zeroDivisionError(this));
+            } else if (getBigDecimalType(a) == Type.NAN) {
+                throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
+            } else if (getBigDecimalType(a) == Type.POSITIVE_INFINITY || getBigDecimalType(a) == Type.NEGATIVE_INFINITY ) {
+                throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Computation results to 'Infinity'", this));
+            } else {
+                return divSpecialNormal(frame, a, b, 0);
+            }
+        }
+
+        @Specialization(guards = {
+                "!isNormal(a)",
+                "isNormalRubyBigDecimal(b)" })
         public Object divSpecialNormal(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b, int precision) {
             return super.divSpecialNormal(frame, a, b, precision);
+        }
+
+        @Specialization(guards = {
+                "!isNormal(a)",
+                "isSpecialRubyBigDecimal(b)" })
+        public Object divSpecialSpecial(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b, NotProvided precision) {
+            if (getBigDecimalType(b) == Type.NEGATIVE_ZERO) {
+                throw new RaiseException(getContext().getCoreLibrary().zeroDivisionError(this));
+            } else if (getBigDecimalType(a) == Type.NAN || getBigDecimalType(b) == Type.NAN) {
+                throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
+            } else {
+                return divSpecialSpecial(frame, a, b, 0);
+            }
         }
 
         @Specialization(guards = {
