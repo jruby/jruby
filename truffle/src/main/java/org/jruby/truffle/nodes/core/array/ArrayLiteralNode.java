@@ -17,7 +17,6 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.Arrays;
@@ -50,7 +49,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
     }
 
     @Override
-    public abstract RubyArray executeRubyArray(VirtualFrame frame);
+    public abstract Object execute(VirtualFrame frame);
 
     @ExplodeLoop
     @Override
@@ -58,11 +57,6 @@ public abstract class ArrayLiteralNode extends RubyNode {
         for (RubyNode value : values) {
             value.executeVoid(frame);
         }
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        return executeRubyArray(frame);
     }
 
     @ExplodeLoop
@@ -89,8 +83,8 @@ public abstract class ArrayLiteralNode extends RubyNode {
         }
 
         @Override
-        public RubyArray executeRubyArray(VirtualFrame frame) {
-            return (RubyArray) createEmptyArray();
+        public Object execute(VirtualFrame frame) {
+            return createEmptyArray();
         }
 
     }
@@ -103,18 +97,18 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @ExplodeLoop
         @Override
-        public RubyArray executeRubyArray(VirtualFrame frame) {
+        public Object execute(VirtualFrame frame) {
             final double[] executedValues = new double[values.length];
 
             for (int n = 0; n < values.length; n++) {
                 try {
                     executedValues[n] = values[n].executeDouble(frame);
                 } catch (UnexpectedResultException e) {
-                    return (RubyArray) makeGeneric(frame, executedValues, n);
+                    return makeGeneric(frame, executedValues, n);
                 }
             }
 
-            return (RubyArray) createArray(executedValues, values.length);
+            return createArray(executedValues, values.length);
         }
 
         private RubyBasicObject makeGeneric(VirtualFrame frame,
@@ -138,18 +132,18 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @ExplodeLoop
         @Override
-        public RubyArray executeRubyArray(VirtualFrame frame) {
+        public Object execute(VirtualFrame frame) {
             final int[] executedValues = new int[values.length];
 
             for (int n = 0; n < values.length; n++) {
                 try {
                     executedValues[n] = values[n].executeInteger(frame);
                 } catch (UnexpectedResultException e) {
-                    return (RubyArray) makeGeneric(frame, executedValues, n);
+                    return makeGeneric(frame, executedValues, n);
                 }
             }
 
-            return (RubyArray) createArray(executedValues, values.length);
+            return createArray(executedValues, values.length);
         }
 
         private RubyBasicObject makeGeneric(VirtualFrame frame,
@@ -173,18 +167,18 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @ExplodeLoop
         @Override
-        public RubyArray executeRubyArray(VirtualFrame frame) {
+        public Object execute(VirtualFrame frame) {
             final long[] executedValues = new long[values.length];
 
             for (int n = 0; n < values.length; n++) {
                 try {
                     executedValues[n] = values[n].executeLong(frame);
                 } catch (UnexpectedResultException e) {
-                    return (RubyArray) makeGeneric(frame, executedValues, n);
+                    return makeGeneric(frame, executedValues, n);
                 }
             }
 
-            return (RubyArray) createArray(executedValues, values.length);
+            return createArray(executedValues, values.length);
         }
 
         private RubyBasicObject makeGeneric(VirtualFrame frame,
@@ -208,14 +202,14 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @ExplodeLoop
         @Override
-        public RubyArray executeRubyArray(VirtualFrame frame) {
+        public Object execute(VirtualFrame frame) {
             final Object[] executedValues = new Object[values.length];
 
             for (int n = 0; n < values.length; n++) {
                 executedValues[n] = values[n].execute(frame);
             }
 
-            return (RubyArray) createArray(executedValues, values.length);
+            return createArray(executedValues, values.length);
         }
 
     }
@@ -228,7 +222,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @ExplodeLoop
         @Override
-        public RubyArray executeRubyArray(VirtualFrame frame) {
+        public Object execute(VirtualFrame frame) {
             CompilerDirectives.transferToInterpreter();
 
             final Object[] executedValues = new Object[values.length];
@@ -252,7 +246,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 replace(new ObjectArrayLiteralNode(getContext(), getSourceSection(), values));
             }
 
-            return (RubyArray) array;
+            return array;
         }
 
     }

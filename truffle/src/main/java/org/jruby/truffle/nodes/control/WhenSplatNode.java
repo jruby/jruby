@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -42,9 +43,14 @@ public class WhenSplatNode extends RubyNode {
         final RubyBasicObject array;
 
         try {
-            array = splat.executeRubyArray(frame);
+            array = splat.executeRubyBasicObject(frame);
         } catch (UnexpectedResultException e) {
-            throw new UnsupportedOperationException(e);
+            throw new UnsupportedOperationException();
+        }
+
+        if (!RubyGuards.isRubyArray(array)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException();
         }
 
         for (Object value : ArrayNodes.slowToArray(array)) {

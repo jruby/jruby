@@ -79,25 +79,6 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
     }
 
     @Override
-    public RubyArray executeRubyArray(VirtualFrame frame) throws UnexpectedResultException {
-        probeNode.enter(child, frame);
-
-        RubyBasicObject result;
-
-        try {
-            result = child.executeRubyArray(frame);
-            probeNode.returnValue(child, frame, result);
-        } catch (KillException e) {
-            throw e;
-        } catch (Exception e) {
-            probeNode.returnExceptional(child, frame, e);
-            throw e;
-        }
-
-        return (RubyArray) result;
-    }
-
-    @Override
     public boolean executeBoolean(VirtualFrame frame) throws UnexpectedResultException {
         probeNode.enter(child, frame);
 

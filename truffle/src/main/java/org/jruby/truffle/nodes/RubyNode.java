@@ -150,18 +150,6 @@ public abstract class RubyNode extends Node {
         }
     }
 
-    // If you try to make this RubyBasicObject things break in the DSL
-
-    public RubyArray executeRubyArray(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (RubyGuards.isRubyArray(value)) {
-            return (RubyArray) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
     public RubyRegexp executeRubyRegexp(VirtualFrame frame) throws UnexpectedResultException {
         final Object value = execute(frame);
 
