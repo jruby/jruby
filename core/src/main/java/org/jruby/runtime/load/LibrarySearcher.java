@@ -238,15 +238,15 @@ class LibrarySearcher {
 
         @Override
         public void load(Ruby runtime, boolean wrap) {
-            InputStream is = null;
+            InputStream ris = null;
             try {
-                is = new LoadServiceResourceInputStream(resource.inputStream());
-                runtime.loadFile(scriptName, is, wrap);
+                ris = resource.inputStream();
+                runtime.loadFile(scriptName, new LoadServiceResourceInputStream(ris), wrap);
             } catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
             } finally {
                 try {
-                    if (is != null) is.close();
+                    if (ris != null) ris.close();
                 } catch (IOException ioE) { /* At least we tried.... */}
             }
         }
