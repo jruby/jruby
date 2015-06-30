@@ -3,11 +3,9 @@ package org.jruby.ir.interpreter;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
-import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.Unrescuable;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
@@ -118,13 +116,12 @@ public class InterpreterEngine {
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        IRScope scope = currScope.getIRScope();
         boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
         boolean profile = IRRuntimeHelpers.inProfileMode();
-        Integer scopeVersion = profile ? Profiler.initProfiling(scope) : 0;
+        Integer scopeVersion = profile ? Profiler.initProfiling(interpreterContext.getScope()) : 0;
 
         // Enter the looooop!
         while (ipc < n) {
@@ -153,7 +150,7 @@ public class InterpreterEngine {
                         receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, block);
                         break;
                     case CALL_OP:
-                        if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
+                        if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
                         processCall(context, instr, operation, currDynScope, currScope, temp, self);
                         break;
                     case RET_OP:
@@ -185,7 +182,7 @@ public class InterpreterEngine {
                 ipc = instr.getRPC();
 
                 if (debug) {
-                    Interpreter.LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                    Interpreter.LOG.info("in : " + interpreterContext.getScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                     Interpreter.LOG.info("ipc for rescuer: " + ipc);
                 }
 
