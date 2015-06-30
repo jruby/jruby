@@ -14,7 +14,6 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.util.cli.Options;
@@ -39,8 +38,8 @@ public abstract class ArrayBuilderNode extends Node {
     public abstract Object start();
     public abstract Object start(int length);
     public abstract Object ensure(Object store, int length);
-    public abstract Object append(Object store, int index, RubyArray array);
-    public abstract Object append(Object store, int index, Object value);
+    public abstract Object appendArray(Object store, int index, RubyBasicObject array);
+    public abstract Object appendValue(Object store, int index, Object value);
     public abstract Object finish(Object store, int length);
 
     public RubyBasicObject finishAndCreate(RubyClass arrayClass, Object store, int length) {
@@ -86,11 +85,11 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object append(Object store, int index, RubyArray array) {
+        public Object appendArray(Object store, int index, RubyBasicObject array) {
             CompilerDirectives.transferToInterpreter();
 
             for (Object value : ArrayNodes.slowToArray(array)) {
-                store = append(store, index, value);
+                store = appendValue(store, index, value);
                 index++;
             }
 
@@ -98,7 +97,7 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object append(Object store, int index, Object value) {
+        public Object appendValue(Object store, int index, Object value) {
             CompilerDirectives.transferToInterpreter();
 
             screen(value);
@@ -194,7 +193,7 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object append(Object store, int index, RubyArray array) {
+        public Object appendArray(Object store, int index, RubyBasicObject array) {
             Object otherStore = ArrayNodes.getStore(array);
 
             if (otherStore == null) {
@@ -224,7 +223,7 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object append(Object store, int index, Object value) {
+        public Object appendValue(Object store, int index, Object value) {
             // TODO(CS): inject probability
             if (store instanceof int[] && value instanceof Integer) {
                 ((int[]) store)[index] = (int) value;
@@ -291,12 +290,12 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object append(Object store, int index, RubyArray array) {
+        public Object appendArray(Object store, int index, RubyBasicObject array) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Object append(Object store, int index, Object value) {
+        public Object appendValue(Object store, int index, Object value) {
             // TODO(CS): inject probability
             if (store instanceof long[] && value instanceof Long) {
                 ((long[]) store)[index] = (long) value;
@@ -355,13 +354,13 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object append(Object store, int index, RubyArray array) {
+        public Object appendArray(Object store, int index, RubyBasicObject array) {
             CompilerDirectives.transferToInterpreter();
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Object append(Object store, int index, Object value) {
+        public Object appendValue(Object store, int index, Object value) {
             // TODO(CS): inject probability
             if (store instanceof double[] && value instanceof Double) {
                 ((double[]) store)[index] = (double) value;
@@ -428,7 +427,7 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object append(Object store, int index, RubyArray array) {
+        public Object appendArray(Object store, int index, RubyBasicObject array) {
             Object otherStore = ArrayNodes.getStore(array);
 
             if (otherStore == null) {
@@ -488,7 +487,7 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object append(Object store, int index, Object value) {
+        public Object appendValue(Object store, int index, Object value) {
             if (index >= ((Object[]) store).length) {
                 new Exception().printStackTrace();
             }

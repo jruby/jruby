@@ -17,7 +17,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeChildren({
@@ -30,38 +29,38 @@ public abstract class PopOneNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executePopOne(RubyArray array);
+    public abstract Object executePopOne(RubyBasicObject array);
 
     // Pop from an empty array
 
-    @Specialization(guards = "isEmptyArray(array)")
-    public RubyBasicObject popOneEmpty(RubyArray array) {
+    @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
+    public RubyBasicObject popOneEmpty(RubyBasicObject array) {
         return nil();
     }
 
     // Pop from a non-empty array
 
-    @Specialization(guards = {"!isEmptyArray(array)", "isIntArray(array)"})
-    public Object popOneInteger(RubyArray array) {
+    @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isIntArray(array)"})
+    public Object popOneInteger(RubyBasicObject array) {
         return popOneGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)));
     }
 
-    @Specialization(guards = {"!isEmptyArray(array)", "isLongArray(array)"})
-    public Object popOneLong(RubyArray array) {
+    @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isLongArray(array)"})
+    public Object popOneLong(RubyBasicObject array) {
         return popOneGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)));
     }
 
-    @Specialization(guards = {"!isEmptyArray(array)", "isDoubleArray(array)"})
-    public Object popOneDouble(RubyArray array) {
+    @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isDoubleArray(array)"})
+    public Object popOneDouble(RubyBasicObject array) {
         return popOneGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)));
     }
 
-    @Specialization(guards = {"!isEmptyArray(array)", "isObjectArray(array)"})
-    public Object popOneObject(RubyArray array) {
+    @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isObjectArray(array)"})
+    public Object popOneObject(RubyBasicObject array) {
         return popOneGeneric(array, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)));
     }
 
-    private Object popOneGeneric(RubyArray array, ArrayMirror storeMirror) {
+    private Object popOneGeneric(RubyBasicObject array, ArrayMirror storeMirror) {
         final int size = ArrayNodes.getSize(array);
         final Object value = storeMirror.get(size - 1);
         ArrayNodes.setSize(array, size - 1);

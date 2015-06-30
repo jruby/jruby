@@ -655,7 +655,7 @@ public abstract class ArrayNodes {
                 readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
             }
 
-            return readNode.executeRead(frame, (RubyArray) array, index);
+            return readNode.executeRead(frame, (RubyBasicObject) array, index);
         }
 
         @Specialization
@@ -669,7 +669,7 @@ public abstract class ArrayNodes {
                 readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            return readSliceNode.executeReadSlice(frame, (RubyArray) array, start, length);
+            return readSliceNode.executeReadSlice(frame, (RubyBasicObject) array, start, length);
         }
 
         @Specialization
@@ -693,7 +693,7 @@ public abstract class ArrayNodes {
                     readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                 }
 
-                return readNormalizedSliceNode.executeReadSlice(frame, (RubyArray) array, normalizedIndex, length);
+                return readNormalizedSliceNode.executeReadSlice(frame, (RubyBasicObject) array, normalizedIndex, length);
             }
         }
 
@@ -756,7 +756,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
-            return writeNode.executeWrite(frame, (RubyArray) array, index, value);
+            return writeNode.executeWrite(frame, (RubyBasicObject) array, index, value);
         }
 
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(lengthObject)" })
@@ -815,28 +815,28 @@ public abstract class ArrayNodes {
                     writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                 }
 
-                return writeNode.executeWrite(frame, (RubyArray) array, begin, value);
+                return writeNode.executeWrite(frame, (RubyBasicObject) array, begin, value);
             } else {
                 if (getSize(array) > (begin + length)) { // there is a tail, else other values discarded
                     if (readSliceNode == null) {
                         CompilerDirectives.transferToInterpreter();
                         readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                     }
-                    RubyBasicObject endValues = (RubyBasicObject) readSliceNode.executeReadSlice(frame, (RubyArray) array, (begin + length), (getSize(array) - begin - length));
+                    RubyBasicObject endValues = (RubyBasicObject) readSliceNode.executeReadSlice(frame, (RubyBasicObject) array, (begin + length), (getSize(array) - begin - length));
                     if (writeNode == null) {
                         CompilerDirectives.transferToInterpreter();
                         writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                     }
-                    writeNode.executeWrite(frame, (RubyArray) array, begin, value);
+                    writeNode.executeWrite(frame, (RubyBasicObject) array, begin, value);
                     Object[] endValuesStore = ArrayUtils.box(getStore(endValues));
 
                     int i = begin + 1;
                     for (Object obj : endValuesStore) {
-                        writeNode.executeWrite(frame, (RubyArray) array, i, obj);
+                        writeNode.executeWrite(frame, (RubyBasicObject) array, i, obj);
                         i += 1;
                     }
                 } else {
-                    writeNode.executeWrite(frame, (RubyArray) array, begin, value);
+                    writeNode.executeWrite(frame, (RubyBasicObject) array, begin, value);
                 }
                 if (popOneNode == null) {
                     CompilerDirectives.transferToInterpreter();
@@ -844,7 +844,7 @@ public abstract class ArrayNodes {
                 }
                 int popLength = length - 1 < getSize(array) ? length - 1 : getSize(array) - 1;
                 for (int i = 0; i < popLength; i++) { // TODO 3-15-2015 BF update when pop can pop multiple
-                    popOneNode.executePopOne((RubyArray) array);
+                    popOneNode.executePopOne(array);
                 }
                 return value;
             }
@@ -926,7 +926,7 @@ public abstract class ArrayNodes {
                 if (getSize(value) == length || (begin + length + 1) > getSize(array)) {
                     int i = begin;
                     for (Object obj : values) {
-                        writeNode.executeWrite(frame, (RubyArray) array, i, obj);
+                        writeNode.executeWrite(frame, array, i, obj);
                         i += 1;
                     }
                 } else {
@@ -944,25 +944,25 @@ public abstract class ArrayNodes {
                             popOneNode = insert(PopOneNodeGen.create(getContext(), getSourceSection(), null));
                         }
                         for (int i = 0; i < popNum; i++) { // TODO 3-28-2015 BF update to pop multiple
-                            popOneNode.executePopOne((RubyArray) array);
+                            popOneNode.executePopOne(array);
                         }
                     }
 
                     final int readLen = newLength - values.length - begin;
                     RubyBasicObject endValues = null;
                     if (readLen > 0) {
-                        endValues = (RubyArray) readSliceNode.executeReadSlice(frame, (RubyArray) array, getSize(array) - readLen, readLen);
+                        endValues = (RubyBasicObject) readSliceNode.executeReadSlice(frame, array, getSize(array) - readLen, readLen);
                     }
 
                     int i = begin;
                     for (Object obj : values) {
-                        writeNode.executeWrite(frame, (RubyArray) array, i, obj);
+                        writeNode.executeWrite(frame, array, i, obj);
                         i += 1;
                     }
                     if (readLen > 0) {
                         final Object[] endValuesStore = ArrayUtils.box(getStore(endValues));
                         for (Object obj : endValuesStore) {
-                            writeNode.executeWrite(frame, (RubyArray) array, i, obj);
+                            writeNode.executeWrite(frame, array, i, obj);
                             i += 1;
                         }
                     }
@@ -1053,7 +1053,7 @@ public abstract class ArrayNodes {
                 readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
             }
 
-            return readNode.executeRead(frame, (RubyArray) array, index);
+            return readNode.executeRead(frame, (RubyBasicObject) array, index);
         }
 
     }
@@ -1186,7 +1186,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isRubyArray(other)", "!isNullArray(other)"})
         public RubyBasicObject concat(RubyBasicObject array, RubyBasicObject other) {
-            appendManyNode.executeAppendMany((RubyArray) array, getSize(other), getStore(other));
+            appendManyNode.executeAppendMany((RubyBasicObject) array, getSize(other), getStore(other));
             return array;
         }
 
@@ -1826,7 +1826,7 @@ public abstract class ArrayNodes {
             }
 
             if (copy != null) {
-                return initialize(array, (RubyArray) copy, NotProvided.INSTANCE, NotProvided.INSTANCE);
+                return initialize(array, copy, NotProvided.INSTANCE, NotProvided.INSTANCE);
             } else {
                 if (toIntNode == null) {
                     CompilerDirectives.transferToInterpreter();
@@ -1974,7 +1974,7 @@ public abstract class ArrayNodes {
                     }
 
                     arrayBuilder.ensure(store, n + 1);
-                    store = arrayBuilder.append(store, n, yield(frame, block, n));
+                    store = arrayBuilder.appendValue(store, n, yield(frame, block, n));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2379,7 +2379,7 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                    mappedStore = arrayBuilder.appendValue(mappedStore, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2403,7 +2403,7 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                    mappedStore = arrayBuilder.appendValue(mappedStore, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2427,7 +2427,7 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                    mappedStore = arrayBuilder.appendValue(mappedStore, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2451,7 +2451,7 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                    mappedStore = arrayBuilder.appendValue(mappedStore, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2495,7 +2495,7 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    writeNode.executeWrite(frame, (RubyArray) array, n, yield(frame, block, store[n]));
+                    writeNode.executeWrite(frame, (RubyBasicObject) array, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2524,7 +2524,7 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    writeNode.executeWrite(frame, (RubyArray) array, n, yield(frame, block, store[n]));
+                    writeNode.executeWrite(frame, (RubyBasicObject) array, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2901,7 +2901,7 @@ public abstract class ArrayNodes {
                 popOneNode = insert(PopOneNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
             }
 
-            return popOneNode.executePopOne((RubyArray) array);
+            return popOneNode.executePopOne((RubyBasicObject) array);
         }
 
         @Specialization(guards = { "isEmptyArray(array)", "wasProvided(object)" })
@@ -3233,7 +3233,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyBasicObject leftShift(RubyBasicObject array, Object value) {
-            return appendOneNode.executeAppendOne((RubyArray) array, value);
+            return appendOneNode.executeAppendOne(array, value);
         }
 
     }
@@ -3496,7 +3496,7 @@ public abstract class ArrayNodes {
                     CompilerDirectives.transferToInterpreter();
 
                     if (! yieldIsTruthy(frame, block,  new Object[]{value})) {
-                        selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
+                        selectedStore = arrayBuilder.appendValue(selectedStore, selectedSize, value);
                         selectedSize++;
                     }
                 }
@@ -3529,7 +3529,7 @@ public abstract class ArrayNodes {
                     CompilerDirectives.transferToInterpreter();
 
                     if (! yieldIsTruthy(frame, block, value)) {
-                        selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
+                        selectedStore = arrayBuilder.appendValue(selectedStore, selectedSize, value);
                         selectedSize++;
                     }
                 }
@@ -3875,7 +3875,7 @@ public abstract class ArrayNodes {
                     final Object value = store[n];
 
                     if (yieldIsTruthy(frame, block,  new Object[]{value})) {
-                        selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
+                        selectedStore = arrayBuilder.appendValue(selectedStore, selectedSize, value);
                         selectedSize++;
                     }
                 }
@@ -3906,7 +3906,7 @@ public abstract class ArrayNodes {
                     final Object value = store[n];
 
                     if (yieldIsTruthy(frame, block, value)) {
-                        selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
+                        selectedStore = arrayBuilder.appendValue(selectedStore, selectedSize, value);
                         selectedSize++;
                     }
                 }
@@ -4626,11 +4626,11 @@ public abstract class ArrayNodes {
         }
 
         protected static boolean isSingleIntegerFixnumArray(Object[] others) {
-            return others.length == 1 && RubyGuards.isRubyArray(others[0]) && ArrayNodes.getStore(((RubyArray) others[0])) instanceof int[];
+            return others.length == 1 && RubyGuards.isRubyArray(others[0]) && ArrayNodes.getStore(((RubyBasicObject) others[0])) instanceof int[];
         }
 
         protected static boolean isSingleObjectArray(Object[] others) {
-            return others.length == 1 && RubyGuards.isRubyArray(others[0]) && ArrayNodes.getStore(((RubyArray) others[0])) instanceof Object[];
+            return others.length == 1 && RubyGuards.isRubyArray(others[0]) && ArrayNodes.getStore(((RubyBasicObject) others[0])) instanceof Object[];
         }
 
     }

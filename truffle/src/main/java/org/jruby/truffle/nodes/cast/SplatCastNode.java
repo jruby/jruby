@@ -25,7 +25,6 @@ import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
@@ -99,7 +98,7 @@ public abstract class SplatCastNode extends RubyNode {
             final Object array = toA.call(frame, object, method, null);
 
             if (RubyGuards.isRubyArray(array)) {
-                return (RubyArray) array;
+                return (RubyBasicObject) array;
             } else if (array == nil() || array == DispatchNode.MISSING) {
                 CompilerDirectives.transferToInterpreter();
                 return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), object);

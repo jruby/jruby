@@ -26,7 +26,6 @@ import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.util.ByteList;
 
-import java.math.BigInteger;
 import java.util.EnumSet;
 
 @CoreClass(name = "Rubinius::ByteArray")

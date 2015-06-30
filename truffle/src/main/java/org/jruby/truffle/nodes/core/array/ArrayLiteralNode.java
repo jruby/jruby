@@ -31,7 +31,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
         this.values = values;
     }
 
-    protected RubyArray makeGeneric(VirtualFrame frame, Object[] alreadyExecuted) {
+    protected RubyBasicObject makeGeneric(VirtualFrame frame, Object[] alreadyExecuted) {
         CompilerAsserts.neverPartOfCompilation();
 
         replace(new ObjectArrayLiteralNode(getContext(), getSourceSection(), values));
@@ -46,7 +46,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
             }
         }
 
-        return (RubyArray) ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
+        return (RubyBasicObject) ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
     }
 
     @Override
@@ -110,14 +110,14 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 try {
                     executedValues[n] = values[n].executeDouble(frame);
                 } catch (UnexpectedResultException e) {
-                    return makeGeneric(frame, executedValues, n);
+                    return (RubyArray) makeGeneric(frame, executedValues, n);
                 }
             }
 
             return (RubyArray) createArray(executedValues, values.length);
         }
 
-        private RubyArray makeGeneric(VirtualFrame frame,
+        private RubyBasicObject makeGeneric(VirtualFrame frame,
                 final double[] executedValues, int n) {
             final Object[] executedObjects = new Object[n];
 
@@ -145,14 +145,14 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 try {
                     executedValues[n] = values[n].executeInteger(frame);
                 } catch (UnexpectedResultException e) {
-                    return makeGeneric(frame, executedValues, n);
+                    return (RubyArray) makeGeneric(frame, executedValues, n);
                 }
             }
 
             return (RubyArray) createArray(executedValues, values.length);
         }
 
-        private RubyArray makeGeneric(VirtualFrame frame,
+        private RubyBasicObject makeGeneric(VirtualFrame frame,
                 final int[] executedValues, int n) {
             final Object[] executedObjects = new Object[n];
 
@@ -180,14 +180,14 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 try {
                     executedValues[n] = values[n].executeLong(frame);
                 } catch (UnexpectedResultException e) {
-                    return makeGeneric(frame, executedValues, n);
+                    return (RubyArray) makeGeneric(frame, executedValues, n);
                 }
             }
 
             return (RubyArray) createArray(executedValues, values.length);
         }
 
-        private RubyArray makeGeneric(VirtualFrame frame,
+        private RubyBasicObject makeGeneric(VirtualFrame frame,
                 final long[] executedValues, int n) {
             final Object[] executedObjects = new Object[n];
 

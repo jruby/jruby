@@ -25,7 +25,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.util.cli.Options;

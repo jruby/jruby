@@ -9,8 +9,15 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.util.EnumSet;
-
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.*;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
@@ -27,21 +34,7 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.util.ByteList;
 
-import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Cached;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.FrameDescriptor;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
-import com.oracle.truffle.api.object.FinalLocationException;
-import com.oracle.truffle.api.object.HiddenKey;
-import com.oracle.truffle.api.object.IncompatibleLocationException;
-import com.oracle.truffle.api.object.LocationModifier;
-import com.oracle.truffle.api.object.Property;
-import com.oracle.truffle.api.object.Shape;
-import com.oracle.truffle.api.source.SourceSection;
+import java.util.EnumSet;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {

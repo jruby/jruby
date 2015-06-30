@@ -20,7 +20,7 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 
 /**
@@ -67,7 +67,7 @@ public class YieldNode extends RubyNode {
         // TOOD(CS): what is the error behaviour here?
         assert argumentsObjects.length == 1;
         assert RubyGuards.isRubyArray(argumentsObjects[0]);
-        return ArrayNodes.slowToArray(((RubyArray) argumentsObjects[0]));
+        return ArrayNodes.slowToArray(((RubyBasicObject) argumentsObjects[0]));
     }
 
     @Override

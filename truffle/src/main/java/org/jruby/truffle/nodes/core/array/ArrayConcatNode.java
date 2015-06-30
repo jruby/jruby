@@ -16,7 +16,6 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
@@ -53,14 +52,14 @@ public final class ArrayConcatNode extends RubyNode {
         final Object childObject = children[0].execute(frame);
         if (RubyGuards.isRubyArray(childObject)) {
             appendArrayProfile.enter();
-            final RubyArray childArray = (RubyArray) childObject;
+            final RubyBasicObject childArray = (RubyBasicObject) childObject;
             store = arrayBuilderNode.ensure(store, length + ArrayNodes.getSize(childArray));
-            store = arrayBuilderNode.append(store, length, childArray);
+            store = arrayBuilderNode.appendArray(store, length, childArray);
             length += ArrayNodes.getSize(childArray);
         } else {
             appendObjectProfile.enter();
             store = arrayBuilderNode.ensure(store, length + 1);
-            store = arrayBuilderNode.append(store, length, childObject);
+            store = arrayBuilderNode.appendValue(store, length, childObject);
             length++;
         }
         return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilderNode.finish(store, length), length);
@@ -73,14 +72,14 @@ public final class ArrayConcatNode extends RubyNode {
 
             if (RubyGuards.isRubyArray(childObject)) {
                 appendArrayProfile.enter();
-                final RubyArray childArray = (RubyArray) childObject;
+                final RubyBasicObject childArray = (RubyBasicObject) childObject;
                 store = arrayBuilderNode.ensure(store, length + ArrayNodes.getSize(childArray));
-                store = arrayBuilderNode.append(store, length, childArray);
+                store = arrayBuilderNode.appendArray(store, length, childArray);
                 length += ArrayNodes.getSize(childArray);
             } else {
                 appendObjectProfile.enter();
                 store = arrayBuilderNode.ensure(store, length + 1);
-                store = arrayBuilderNode.append(store, length, childObject);
+                store = arrayBuilderNode.appendValue(store, length, childObject);
                 length++;
             }
         }

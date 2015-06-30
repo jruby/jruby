@@ -199,7 +199,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         // Set the load path
 
-        final RubyArray loadPath = (RubyArray) coreLibrary.getGlobalVariablesObject().getInstanceVariable("$:");
+        final RubyBasicObject loadPath = (RubyBasicObject) coreLibrary.getGlobalVariablesObject().getInstanceVariable("$:");
 
         final String home = runtime.getInstanceConfig().getJRubyHome();
 

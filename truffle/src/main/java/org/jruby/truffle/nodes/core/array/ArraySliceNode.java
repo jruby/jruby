@@ -18,7 +18,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
@@ -36,15 +35,15 @@ public abstract class ArraySliceNode extends RubyNode {
         this.to = to;
     }
 
-    @Specialization(guards = "isNullArray(array)")
-    public RubyBasicObject sliceNull(RubyArray array) {
+    @Specialization(guards = {"isRubyArray(array)", "isNullArray(array)"})
+    public RubyBasicObject sliceNull(RubyBasicObject array) {
         CompilerDirectives.transferToInterpreter();
 
         return createEmptyArray();
     }
 
-    @Specialization(guards = "isIntArray(array)")
-    public RubyBasicObject sliceIntegerFixnum(RubyArray array) {
+    @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
+    public RubyBasicObject sliceIntegerFixnum(RubyBasicObject array) {
         CompilerDirectives.transferToInterpreter();
         final int to = ArrayNodes.getSize(array) + this.to;
 
@@ -55,8 +54,8 @@ public abstract class ArraySliceNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isLongArray(array)")
-    public RubyBasicObject sliceLongFixnum(RubyArray array) {
+    @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
+    public RubyBasicObject sliceLongFixnum(RubyBasicObject array) {
         CompilerDirectives.transferToInterpreter();
         final int to = ArrayNodes.getSize(array) + this.to;
 
@@ -67,8 +66,8 @@ public abstract class ArraySliceNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isDoubleArray(array)")
-    public RubyBasicObject sliceFloat(RubyArray array) {
+    @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
+    public RubyBasicObject sliceFloat(RubyBasicObject array) {
         CompilerDirectives.transferToInterpreter();
         final int to = ArrayNodes.getSize(array) + this.to;
 
@@ -79,8 +78,8 @@ public abstract class ArraySliceNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isObjectArray(array)")
-    public RubyBasicObject sliceObject(RubyArray array) {
+    @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
+    public RubyBasicObject sliceObject(RubyBasicObject array) {
         CompilerDirectives.transferToInterpreter();
         final int to = ArrayNodes.getSize(array) + this.to;
 

@@ -16,7 +16,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyException;
 
@@ -38,7 +38,7 @@ public class RescueSplatNode extends RescueNode {
     public boolean canHandle(VirtualFrame frame, RubyException exception) {
         CompilerDirectives.transferToInterpreter();
 
-        final RubyArray handlingClasses = (RubyArray) handlingClassesArray.execute(frame);
+        final RubyBasicObject handlingClasses = (RubyBasicObject) handlingClassesArray.execute(frame);
 
         final RubyClass exceptionRubyClass = exception.getLogicalClass();
 

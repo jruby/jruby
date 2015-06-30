@@ -18,7 +18,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
@@ -32,15 +31,15 @@ public abstract class ArrayGetTailNode extends RubyNode {
         this.index = index;
     }
 
-    @Specialization(guards = "isNullArray(array)")
-    public RubyBasicObject getTailNull(RubyArray array) {
+    @Specialization(guards = {"isRubyArray(array)", "isNullArray(array)"})
+    public RubyBasicObject getTailNull(RubyBasicObject array) {
         CompilerDirectives.transferToInterpreter();
 
         return createEmptyArray();
     }
 
-    @Specialization(guards = "isIntArray(array)")
-    public RubyBasicObject getTailIntegerFixnum(RubyArray array) {
+    @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
+    public RubyBasicObject getTailIntegerFixnum(RubyBasicObject array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {
@@ -50,8 +49,8 @@ public abstract class ArrayGetTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isLongArray(array)")
-    public RubyBasicObject getTailLongFixnum(RubyArray array) {
+    @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
+    public RubyBasicObject getTailLongFixnum(RubyBasicObject array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {
@@ -61,8 +60,8 @@ public abstract class ArrayGetTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isDoubleArray(array)")
-    public RubyBasicObject getTailFloat(RubyArray array) {
+    @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
+    public RubyBasicObject getTailFloat(RubyBasicObject array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {
@@ -72,8 +71,8 @@ public abstract class ArrayGetTailNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isObjectArray(array)")
-    public RubyBasicObject getTailObject(RubyArray array) {
+    @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
+    public RubyBasicObject getTailObject(RubyBasicObject array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {

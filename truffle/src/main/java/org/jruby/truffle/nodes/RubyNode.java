@@ -19,10 +19,8 @@ import com.oracle.truffle.api.instrument.ProbeNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
-
 import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;

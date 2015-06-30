@@ -9,12 +9,8 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
@@ -22,6 +18,9 @@ import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstructor {
 

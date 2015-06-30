@@ -38,7 +38,10 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.HashLookupResult;
@@ -309,7 +312,7 @@ public abstract class HashNodes {
         @ExplodeLoop
         @Specialization(guards = "isSmallArrayOfPairs(args)")
         public Object construct(VirtualFrame frame, RubyClass hashClass, Object[] args) {
-            final RubyArray array = (RubyArray) args[0];
+            final RubyBasicObject array = (RubyBasicObject) args[0];
 
             final Object[] store = (Object[]) ArrayNodes.getStore(array);
 
@@ -926,7 +929,7 @@ public abstract class HashNodes {
                     if (n < length) {
                         final Object key = PackedArrayStrategy.getKey(store, n);
                         final Object value = PackedArrayStrategy.getValue(store, n);
-                        resultStore = arrayBuilderNode.append(resultStore, n, yield(frame, block, key, value));
+                        resultStore = arrayBuilderNode.appendValue(resultStore, n, yield(frame, block, key, value));
                     }
                 }
             } finally {
@@ -954,7 +957,7 @@ public abstract class HashNodes {
 
             try {
                 for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(getFirstInSequence(hash))) {
-                    arrayBuilderNode.append(store, index, yield(frame, block, keyValue.getKey(), keyValue.getValue()));
+                    arrayBuilderNode.appendValue(store, index, yield(frame, block, keyValue.getKey(), keyValue.getValue()));
                     index++;
                 }
             } finally {

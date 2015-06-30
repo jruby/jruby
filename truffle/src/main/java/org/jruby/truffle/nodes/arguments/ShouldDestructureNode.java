@@ -17,7 +17,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.RespondToNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.methods.Arity;
 
 /**

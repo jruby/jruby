@@ -10,8 +10,6 @@
 package org.jruby.truffle.pack.nodes;
 
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyString;
 
 import java.math.BigInteger;
 
