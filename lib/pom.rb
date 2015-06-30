@@ -129,8 +129,8 @@ project 'JRuby Lib Setup' do
       ghome = a.scope == 'compile' ? gem_home : jruby_gems
       if Dir[ File.join( ghome, 'cache', File.basename( a.file.to_pathname ).sub( /.gem/, '*.gem' ) ) ].empty?
         puts a.file.to_pathname
-        # do not set bin_dir since its create absolute symbolic links
         installer = Gem::Installer.new( a.file.to_pathname,
+                                        :wrappers => true,
                                         :ignore_dependencies => true,
                                         :install_dir => ghome )
         installer.install
