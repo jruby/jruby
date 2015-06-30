@@ -24,5 +24,9 @@ module BindingSpecs
     def get_file_of_binding
       __FILE__
     end
+
+    def get_empty_binding
+      binding
+    end
   end
 end
