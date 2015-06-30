@@ -116,8 +116,8 @@ public class ExceptionTranslatingNode extends RubyNode {
                 builder.append(value.getClass().getName());
                 builder.append(")");
 
-                if (value instanceof RubyArray) {
-                    final RubyArray array = (RubyArray) value;
+                if (RubyGuards.isRubyArray(value)) {
+                    final RubyBasicObject array = (RubyBasicObject) value;
                     builder.append("[");
 
                     if (ArrayNodes.getStore(array) == null) {

@@ -42,11 +42,11 @@ public class PackGuards {
     }
 
     public static boolean isRubyString(Object object) {
-        return object instanceof RubyString;
+        return RubyGuards.isRubyString(object);
     }
 
     public static boolean isRubyArray(Object object) {
-        return object instanceof RubyArray;
+        return RubyGuards.isRubyArray(object);
     }
 
 }

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayDupNode;
 import org.jruby.truffle.nodes.core.array.ArrayDupNodeGen;
@@ -97,7 +98,7 @@ public abstract class SplatCastNode extends RubyNode {
         if (respondToResult != DispatchNode.MISSING && respondToCast.executeBoolean(frame, respondToResult)) {
             final Object array = toA.call(frame, object, method, null);
 
-            if (array instanceof RubyArray) {
+            if (RubyGuards.isRubyArray(array)) {
                 return (RubyArray) array;
             } else if (array == nil() || array == DispatchNode.MISSING) {
                 CompilerDirectives.transferToInterpreter();

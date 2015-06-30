@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -50,7 +51,7 @@ public final class ArrayConcatNode extends RubyNode {
     @ExplodeLoop
     private RubyBasicObject executeSingle(VirtualFrame frame, Object store, int length) {
         final Object childObject = children[0].execute(frame);
-        if (childObject instanceof RubyArray) {
+        if (RubyGuards.isRubyArray(childObject)) {
             appendArrayProfile.enter();
             final RubyArray childArray = (RubyArray) childObject;
             store = arrayBuilderNode.ensure(store, length + ArrayNodes.getSize(childArray));
@@ -70,7 +71,7 @@ public final class ArrayConcatNode extends RubyNode {
         for (int n = 0; n < children.length; n++) {
             final Object childObject = children[n].execute(frame);
 
-            if (childObject instanceof RubyArray) {
+            if (RubyGuards.isRubyArray(childObject)) {
                 appendArrayProfile.enter();
                 final RubyArray childArray = (RubyArray) childObject;
                 store = arrayBuilderNode.ensure(store, length + ArrayNodes.getSize(childArray));

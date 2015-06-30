@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core.array;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -33,9 +34,9 @@ public class ArrayPushNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         final Object arrayObject = array.execute(frame);
-        assert arrayObject instanceof RubyArray : getSourceSection();
+        assert RubyGuards.isRubyArray(arrayObject);
 
-        final RubyArray originalArray = (RubyArray) arrayObject;
+        final RubyBasicObject originalArray = (RubyBasicObject) arrayObject;
 
         final RubyBasicObject newArray = createArray(ArrayNodes.slowToArray(originalArray), ArrayNodes.getSize(originalArray));
         ArrayNodes.slowPush(newArray, pushed.execute(frame));

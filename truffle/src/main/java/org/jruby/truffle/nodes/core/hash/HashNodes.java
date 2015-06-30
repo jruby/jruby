@@ -320,11 +320,11 @@ public abstract class HashNodes {
                 if (n < size) {
                     final Object pair = store[n];
 
-                    if (!(pair instanceof RubyArray)) {
+                    if (!RubyGuards.isRubyArray(pair)) {
                         return constructFallback(frame, hashClass, args);
                     }
 
-                    final RubyArray pairArray = (RubyArray) pair;
+                    final RubyBasicObject pairArray = (RubyBasicObject) pair;
 
                     if (!(ArrayNodes.getStore(pairArray) instanceof Object[])) {
                         return constructFallback(frame, hashClass, args);
@@ -356,11 +356,11 @@ public abstract class HashNodes {
 
             final Object arg = args[0];
 
-            if (!(arg instanceof RubyArray)) {
+            if (!RubyGuards.isRubyArray(arg)) {
                 return false;
             }
 
-            final RubyArray array = (RubyArray) arg;
+            final RubyBasicObject array = (RubyBasicObject) arg;
 
             if (!(ArrayNodes.getStore(array) instanceof Object[])) {
                 return false;

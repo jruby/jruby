@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
 
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.methods.CallMethodNode;
@@ -73,7 +74,7 @@ public class GeneralSuperReCallNode extends RubyNode {
         if (isSplatted) {
             CompilerDirectives.transferToInterpreter();
             assert superArguments.length == 1;
-            assert superArguments[0] instanceof RubyArray;
+            assert RubyGuards.isRubyArray(superArguments[0]);
             superArguments = ArrayNodes.slowToArray(((RubyArray) superArguments[0]));
         }
 

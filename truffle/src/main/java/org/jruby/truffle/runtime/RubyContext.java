@@ -35,6 +35,7 @@ import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
@@ -400,7 +401,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             return runtime.newFloat((double) object);
         } else if (object instanceof RubyString) {
             return toJRuby((RubyString) object);
-        } else if (object instanceof RubyArray) {
+        } else if (RubyGuards.isRubyArray(object)) {
             return toJRuby((RubyArray) object);
         } else if (object instanceof RubyEncoding) {
             return toJRuby((RubyEncoding) object);

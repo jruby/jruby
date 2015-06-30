@@ -1819,8 +1819,8 @@ public abstract class ArrayNodes {
                     toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
                 }
                 Object toAryResult = toAryNode.call(frame, object, "to_ary", null);
-                if (toAryResult instanceof RubyArray) {
-                    copy = (RubyArray) toAryResult;
+                if (RubyGuards.isRubyArray(toAryResult)) {
+                    copy = (RubyBasicObject) toAryResult;
                 }
 
             }

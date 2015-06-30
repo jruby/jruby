@@ -33,6 +33,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
@@ -192,12 +193,12 @@ public class RubyCallNode extends RubyNode {
 
         // TODO(CS): what happens if isn't just one argument, or it isn't an Array?
 
-        if (!(argument instanceof RubyArray)) {
+        if (!RubyGuards.isRubyArray(argument)) {
             CompilerDirectives.transferToInterpreter();
             throw new UnsupportedOperationException(argument.getClass().toString());
         }
 
-        final RubyArray array = (RubyArray) argument;
+        final RubyBasicObject array = (RubyBasicObject) argument;
         final int size = ArrayNodes.getSize(array);
         final Object store = ArrayNodes.getStore(array);
 
