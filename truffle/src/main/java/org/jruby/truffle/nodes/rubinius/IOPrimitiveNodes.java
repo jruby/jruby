@@ -48,6 +48,7 @@ import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.byref.IntByReference;
 import org.jruby.RubyEncoding;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -568,8 +569,8 @@ public abstract class IOPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = {"isNil(writables)", "isNil(errorables)"})
-        public Object select(RubyArray readables, RubyBasicObject writables, RubyBasicObject errorables, int timeout) {
+        @Specialization(guards = {"isRubyArray(readables)", "isNil(writables)", "isNil(errorables)"})
+        public Object select(RubyBasicObject readables, RubyBasicObject writables, RubyBasicObject errorables, int timeout) {
             final Object[] readableObjects = ArrayNodes.slowToArray(readables);
             final int[] readableFds = getFileDescriptors(readables);
 
@@ -601,7 +602,9 @@ public abstract class IOPrimitiveNodes {
                     ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()));
         }
 
-        private int[] getFileDescriptors(RubyArray fileDescriptorArray) {
+        private int[] getFileDescriptors(RubyBasicObject fileDescriptorArray) {
+            assert RubyGuards.isRubyArray(fileDescriptorArray);
+
             final Object[] objects = ArrayNodes.slowToArray(fileDescriptorArray);
 
             final int[] fileDescriptors = new int[objects.length];

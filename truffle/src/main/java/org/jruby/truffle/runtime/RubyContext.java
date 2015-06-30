@@ -19,7 +19,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.tools.CoverageTracker;
@@ -402,7 +401,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         } else if (object instanceof RubyString) {
             return toJRuby((RubyString) object);
         } else if (RubyGuards.isRubyArray(object)) {
-            return toJRuby((RubyArray) object);
+            return toJRubyArray((RubyBasicObject) object);
         } else if (object instanceof RubyEncoding) {
             return toJRuby((RubyEncoding) object);
         } else {
@@ -420,7 +419,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return store;
     }
 
-    public org.jruby.RubyArray toJRuby(RubyArray array) {
+    public org.jruby.RubyArray toJRubyArray(RubyBasicObject array) {
+        assert RubyGuards.isRubyArray(array);
         return runtime.newArray(toJRuby(ArrayNodes.slowToArray(array)));
     }
 

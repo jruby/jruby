@@ -362,8 +362,8 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public boolean cExtLoad(RubyArray initFunctions, RubyArray cFlags, RubyArray files) {
+        @Specialization(guards = {"isRubyArray(initFunctions)", "isRubyArray(cFlags)", "isRubyArray(files)"})
+        public boolean cExtLoad(RubyBasicObject initFunctions, RubyBasicObject cFlags, RubyBasicObject files) {
             final CExtSubsystem subsystem = CExtManager.getSubsystem();
 
             if (subsystem == null) {
@@ -375,7 +375,9 @@ public abstract class TrufflePrimitiveNodes {
             return true;
         }
 
-        private String[] toStrings(RubyArray array) {
+        private String[] toStrings(RubyBasicObject array) {
+            assert RubyGuards.isRubyArray(array);
+
             final String[] strings = new String[ArrayNodes.getSize(array)];
 
             int n = 0;
