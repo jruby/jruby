@@ -29,7 +29,6 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
     @Child private RubyNode superClass;
     @Child private CallDispatchHeadNode inheritedNode;
-    @Child private KernelNodes.RequireNode requireNode;
 
     public DefineOrGetClassNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent, RubyNode superClass) {
         super(context, sourceSection, name, lexicalParent);

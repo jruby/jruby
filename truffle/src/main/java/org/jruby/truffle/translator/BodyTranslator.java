@@ -23,8 +23,7 @@ import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.ThreadLocalObjectNode;
-import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
-import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.nodes.arguments.IsRubiniusUndefinedNode;
 import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.cast.LambdaNode;
 import org.jruby.truffle.nodes.constants.ReadConstantNode;
@@ -42,7 +41,6 @@ import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.*;
 import org.jruby.truffle.nodes.core.fixnum.FixnumLiteralNode;
-import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNode;
 import org.jruby.truffle.nodes.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.nodes.core.hash.HashLiteralNode;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
@@ -67,7 +65,6 @@ import org.jruby.truffle.nodes.rubinius.*;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.RubyEncoding;
@@ -389,39 +386,45 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitCallNode(CallNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
+        final Node receiver = node.getReceiverNode();
+        final String methodName = node.getName();
 
-        if (node.getReceiverNode() instanceof org.jruby.ast.ConstNode
-                && ((ConstNode) node.getReceiverNode()).getName().equals("Rubinius")) {
-            if (node.getName().equals("primitive")) {
+        // Rubinius.<method>
+        if (receiver instanceof org.jruby.ast.ConstNode
+                && ((ConstNode) receiver).getName().equals("Rubinius")) {
+            if (methodName.equals("primitive")) {
                 return translateRubiniusPrimitive(sourceSection, node);
-            } else if (node.getName().equals("invoke_primitive")) {
+            } else if (methodName.equals("invoke_primitive")) {
                 return translateRubiniusInvokePrimitive(sourceSection, node);
-            } else if (node.getName().equals("privately")) {
+            } else if (methodName.equals("privately")) {
                 return translateRubiniusPrivately(sourceSection, node);
-            } else if (node.getName().equals("single_block_arg")) {
+            } else if (methodName.equals("single_block_arg")) {
                 return translateRubiniusSingleBlockArg(sourceSection, node);
-            } else if (node.getName().equals("check_frozen")) {
+            } else if (methodName.equals("check_frozen")) {
                 return translateRubiniusCheckFrozen(sourceSection);
             }
-        } else if (node.getReceiverNode() instanceof org.jruby.ast.Colon2ConstNode
-                && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getLeftNode() instanceof org.jruby.ast.ConstNode
-                && ((org.jruby.ast.ConstNode) ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getLeftNode()).getName().equals("Truffle")
-                && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getName().equals("Primitive")
-                && node.getName().equals("assert_constant")) {
-            return AssertConstantNodeGen.create(context, sourceSection, node.getArgsNode().childNodes().get(0).accept(this));
-        } else if (node.getReceiverNode() instanceof org.jruby.ast.Colon2ConstNode
-                && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getLeftNode() instanceof org.jruby.ast.ConstNode
-                && ((org.jruby.ast.ConstNode) ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getLeftNode()).getName().equals("Truffle")
-                && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getName().equals("Primitive")
-                && node.getName().equals("assert_not_compiled")) {
-            return AssertNotCompiledNodeGen.create(context, sourceSection);
-        } else if (node.getReceiverNode() instanceof org.jruby.ast.ConstNode
-                && ((ConstNode) node.getReceiverNode()).getName().equals("Truffle")) {
-            if (node.getName().equals("omit")) {
+        } else if (receiver instanceof org.jruby.ast.Colon2ConstNode // Truffle::Primitive.<method>
+                && ((org.jruby.ast.Colon2ConstNode) receiver).getLeftNode() instanceof org.jruby.ast.ConstNode
+                && ((org.jruby.ast.ConstNode) ((org.jruby.ast.Colon2ConstNode) receiver).getLeftNode()).getName().equals("Truffle")
+                && ((org.jruby.ast.Colon2ConstNode) receiver).getName().equals("Primitive")) {
+            if (methodName.equals("assert_constant")) {
+                return AssertConstantNodeGen.create(context, sourceSection, node.getArgsNode().childNodes().get(0).accept(this));
+            } else if (methodName.equals("assert_not_compiled")) {
+                return AssertNotCompiledNodeGen.create(context, sourceSection);
+            }
+        } else if (receiver instanceof org.jruby.ast.ConstNode // Truffle.omit
+                && ((ConstNode) receiver).getName().equals("Truffle")) {
+            if (methodName.equals("omit")) {
                 // We're never going to run the omitted code and it's never used as the RHS for anything, so just
                 // replace the call with nil.
                 return new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
             }
+        } else if (receiver instanceof VCallNode // undefined.equal?(obj)
+                && ((VCallNode) receiver).getName().equals("undefined")
+                && sourceSection.getSource().getPath().startsWith("core:/core/")
+                && methodName.equals("equal?")) {
+            RubyNode argument = translateArgumentsAndBlock(sourceSection, null, node.getArgsNode(), null, methodName).getArguments()[0];
+            return new IsRubiniusUndefinedNode(context, sourceSection, argument);
         }
 
         return visitCallNodeExtraArgument(node, null, false, false);
@@ -439,6 +442,10 @@ public class BodyTranslator extends Translator {
          *
          *   CallRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
          *
+         * or
+         *
+         *   (<#Method ModuleDefinedIn#foo>).call(arg1, arg2, ..., argN)
+         *
          * Where the arguments are the same arguments as the method. It looks like this is only exercised with simple
          * arguments so we're not worrying too much about what happens when they're more complicated (rest,
          * keywords etc).
@@ -451,29 +458,8 @@ public class BodyTranslator extends Translator {
         final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
 
         final RubiniusPrimitiveConstructor primitive = context.getRubiniusPrimitiveManager().getPrimitive(primitiveName);
-
-        final List<RubyNode> arguments = new ArrayList<>();
-
-        int argumentsCount = primitive.getFactory().getExecutionSignature().size();
-
-        if (primitive.getAnnotation().needsSelf()) {
-            arguments.add(new SelfNode(context, sourceSection));
-            argumentsCount--;
-        }
-
-        for (int n = 0; n < argumentsCount; n++) {
-            RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
-
-            if (ArrayUtils.contains(primitive.getAnnotation().lowerFixnumParameters(), n)) {
-                readArgumentNode = new FixnumLowerNode(readArgumentNode);
-            }
-
-            arguments.add(readArgumentNode);
-        }
-
-        return new CallRubiniusPrimitiveNode(context, sourceSection,
-                primitive.getFactory().createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])),
-                environment.getReturnID());
+        final long returnID = environment.getReturnID();
+        return primitive.createCallPrimitiveNode(context, sourceSection, returnID);
     }
 
     private RubyNode translateRubiniusInvokePrimitive(SourceSection sourceSection, CallNode node) {
@@ -485,6 +471,10 @@ public class BodyTranslator extends Translator {
          * into
          *
          *   InvokeRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         *
+         * or
+         *
+         *   (<#Method ModuleDefinedIn#foo>).call(arg1, arg2, ..., argN)
          */
 
         if (node.getArgsNode().childNodes().size() < 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
@@ -500,16 +490,10 @@ public class BodyTranslator extends Translator {
         // The first argument was the symbol so we ignore it
         for (int n = 1; n < node.getArgsNode().childNodes().size(); n++) {
             RubyNode readArgumentNode = node.getArgsNode().childNodes().get(n).accept(this);
-
-            if (ArrayUtils.contains(primitive.getAnnotation().lowerFixnumParameters(), n)) {
-                readArgumentNode = new FixnumLowerNode(readArgumentNode);
-            }
-
             arguments.add(readArgumentNode);
         }
-        
-        return new InvokeRubiniusPrimitiveNode(context, sourceSection,
-                primitive.getFactory().createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])));
+
+        return primitive.createInvokePrimitiveNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()]));
     }
 
     private RubyNode translateRubiniusPrivately(SourceSection sourceSection, CallNode node) {

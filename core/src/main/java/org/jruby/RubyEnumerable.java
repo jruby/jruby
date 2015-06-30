@@ -1001,7 +1001,7 @@ public class RubyEnumerable {
         final Ruby runtime = context.runtime;
         RubyEnumerable.callEach(runtime, context, self, Signature.OPTIONAL, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                return block.call(ctx, new IRubyObject[]{runtime.newArray(packEnumValues(ctx, largs), arg)});
+                return block.call(ctx, packEnumValues(ctx, largs), arg);
             }
         });
         return arg;
@@ -1016,7 +1016,7 @@ public class RubyEnumerable {
         return block.isGiven() ? each_with_indexCommon19(context, self, block, args) : enumeratorizeWithSize(context, self, "each_with_index", args, enumSizeFn(context, self));
     }
 
-    @JRubyMethod
+    @JRubyMethod(required = 1)
     public static IRubyObject each_with_object(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
         return block.isGiven() ? each_with_objectCommon19(context, self, block, arg) : enumeratorizeWithSize(context, self, "each_with_object", new IRubyObject[] { arg }, enumSizeFn(context, self));
     }

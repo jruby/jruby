@@ -7,8 +7,8 @@ describe "IO#read_nonblock" do
   end
 
   after :each do
-    @read.close rescue nil
-    @write.close rescue nil
+    @read.close if @read && !@read.closed?
+    @write.close if @write && !@write.closed?
   end
 
   it "raises EAGAIN when there is no data" do

@@ -24,9 +24,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# IO#setup modified to not refer to STDOUT and STDERR if they aren't defined,
-# as we create those as files using normal File.new.
-
 class IO
   FFI = Rubinius::FFI
 
@@ -979,35 +976,33 @@ class IO
   #
   # The +sync+ attribute will also be set.
   #
-  def self.setup(io, fd, mode=nil, sync=false)
-    cur_mode = FFI::Platform::POSIX.fcntl(fd, F_GETFL, 0)
-    Errno.handle if cur_mode < 0
+  Truffle.omit("This method is completely redefined in api/shims/io.rb. A simple override doesn't work due to bootstrapping issues, so the method must be omitted here.") do
+    def self.setup(io, fd, mode=nil, sync=false)
+      cur_mode = FFI::Platform::POSIX.fcntl(fd, F_GETFL, 0)
+      Errno.handle if cur_mode < 0
 
-    cur_mode &= ACCMODE
+      cur_mode &= ACCMODE
 
-    if mode
-      mode = parse_mode(mode)
-      mode &= ACCMODE
+      if mode
+        mode = parse_mode(mode)
+        mode &= ACCMODE
 
-      if (cur_mode == RDONLY or cur_mode == WRONLY) and mode != cur_mode
-        raise Errno::EINVAL, "Invalid new mode for existing descriptor #{fd}"
+        if (cur_mode == RDONLY or cur_mode == WRONLY) and mode != cur_mode
+          raise Errno::EINVAL, "Invalid new mode for existing descriptor #{fd}"
+        end
       end
-    end
 
-    io.descriptor = fd
-    io.mode       = mode || cur_mode
-    io.sync       = !!sync
+      io.descriptor = fd
+      io.mode       = mode || cur_mode
+      io.sync       = !!sync
 
-    # Truffle: STDOUT isn't defined by the time this call is made during bootstrap, so we need to guard it.
-    # if STDOUT.respond_to?(:fileno) and not STDOUT.closed?
-    if defined? STDOUT and STDOUT.respond_to?(:fileno) and not STDOUT.closed?
-      io.sync ||= STDOUT.fileno == fd
-    end
+      if STDOUT.respond_to?(:fileno) and not STDOUT.closed?
+        io.sync ||= STDOUT.fileno == fd
+      end
 
-    # Truffle: STDERR isn't defined by the time this call is made during bootstrap, so we need to guard it.
-    # if STDERR.respond_to?(:fileno) and not STDERR.closed?
-    if defined? STDERR and STDERR.respond_to?(:fileno) and not STDERR.closed?
-      io.sync ||= STDERR.fileno == fd
+      if STDERR.respond_to?(:fileno) and not STDERR.closed?
+        io.sync ||= STDERR.fileno == fd
+      end
     end
   end
 

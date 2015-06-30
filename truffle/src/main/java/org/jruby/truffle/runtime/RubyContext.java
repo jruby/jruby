@@ -64,7 +64,7 @@ import org.jruby.util.cli.Options;
 import java.io.File;
 import java.io.PrintStream;
 import java.math.BigInteger;
-import java.util.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -173,7 +173,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         threadManager = new ThreadManager(this);
         threadManager.initialize();
 
-        rubiniusPrimitiveManager = RubiniusPrimitiveManager.create();
+        rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
+        rubiniusPrimitiveManager.addAnnotatedPrimitives();
 
         if (INSTRUMENTATION_SERVER_PORT != 0) {
             instrumentationServerManager = new InstrumentationServerManager(this, INSTRUMENTATION_SERVER_PORT);
@@ -612,7 +613,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         if (inputFile.equals("-e")) {
             // Assume UTF-8 for the moment
-            source = Source.fromBytes(runtime.getInstanceConfig().inlineScript(), "-e", new BytesDecoder.UTF8BytesDecoder());
+            source = Source.fromText(new String(runtime.getInstanceConfig().inlineScript(), StandardCharsets.UTF_8), "-e");
         } else {
             source = sourceManager.forFile(inputFile);
         }

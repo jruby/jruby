@@ -78,6 +78,9 @@ public class StaticScope implements Serializable {
     // Arity of this scope if there is one
     private Signature signature;
 
+    // File name where this static scope came from or null if a native or artificial scope
+    private String file;
+
     private DynamicScope dummyScope;
 
     protected IRScopeType scopeType;
@@ -98,6 +101,15 @@ public class StaticScope implements Serializable {
         public static Type fromOrdinal(int value) {
             return value < 0 || value >= values().length ? null : values()[value];
         }
+    }
+
+    /**
+     *
+     */
+    protected StaticScope(Type type, StaticScope enclosingScope, String file) {
+        this(type, enclosingScope, NO_NAMES);
+
+        this.file = file;
     }
 
     /**
@@ -498,6 +510,10 @@ public class StaticScope implements Serializable {
 
     public Type getType() {
         return type;
+    }
+
+    public String getFile() {
+        return file;
     }
 
     public StaticScope duplicate() {

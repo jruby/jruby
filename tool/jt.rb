@@ -227,7 +227,7 @@ module Commands
   end
 
   def run(*args)
-    env_vars = {}
+    env_vars = args.first.is_a?(Hash) ? args.shift : {}
     jruby_args = %w[-X+T]
 
     { '--asm' => '--graal', '--igv' => '--graal' }.each_pair do |arg, dep|
@@ -400,6 +400,22 @@ module Commands
     else
       raise ArgumentError, report
     end
+  end
+
+  def check_ambiguous_arguments
+    pom = "#{JRUBY_DIR}/truffle/pom.rb"
+    contents = File.read(pom)
+    contents.gsub!(/^(\s+)'source'\s*=>.+'1.7'.+,\n\s+'target'\s*=>.+\s*'1.7.+,\n/) do
+      indent = $1
+      $&.gsub("1.7", "1.8") + "#{indent}'fork' => 'true',\n"
+    end
+    contents.sub!(/^(\s+)('-J-Dfile.encoding=UTF-8')(.+\n)/) do
+      "#{$1}#{$2},\n#{$1}'-parameters'#{$3}"
+    end
+    File.write pom, contents
+    FileUtils::Verbose.rm_r "#{JRUBY_DIR}/truffle/target/classes"
+    build('truffle')
+    run({ "TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS" => "true" }, '-e', 'exit')
   end
 
   def install(arg)

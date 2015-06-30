@@ -491,14 +491,14 @@ public final class Ruby implements Constantizable {
     public IRubyObject executeScript(String script, String filename) {
         byte[] bytes = script.getBytes();
 
-        Node node = parseInline(new ByteArrayInputStream(bytes), filename, null);
+        RootNode root = (RootNode) parseInline(new ByteArrayInputStream(bytes), filename, null);
         ThreadContext context = getCurrentContext();
 
         String oldFile = context.getFile();
         int oldLine = context.getLine();
         try {
-            context.setFileAndLine(node.getPosition());
-            return runInterpreter(node);
+            context.setFileAndLine(root.getFile(), root.getLine());
+            return runInterpreter(root);
         } finally {
             context.setFileAndLine(oldFile, oldLine);
         }
@@ -564,7 +564,7 @@ public final class Ruby implements Constantizable {
             String oldFile = context.getFile();
             int oldLine = context.getLine();
             try {
-                context.setFileAndLine(scriptNode.getPosition());
+                context.setFileAndLine(scriptNode.getFile(), scriptNode.getLine());
 
                 if (config.isAssumePrinting() || config.isAssumeLoop()) {
                     runWithGetsLoop(scriptNode, config.isAssumePrinting(), config.isProcessLineEnds(),
@@ -622,7 +622,7 @@ public final class Ruby implements Constantizable {
      */
     @Deprecated
     public IRubyObject runWithGetsLoop(Node scriptNode, boolean printing, boolean processLineEnds, boolean split, boolean unused) {
-        return runWithGetsLoop(scriptNode, printing, processLineEnds, split);
+        return runWithGetsLoop((RootNode) scriptNode, printing, processLineEnds, split);
     }
 
     /**
@@ -639,12 +639,12 @@ public final class Ruby implements Constantizable {
      * bytecode before executing.
      * @return The result of executing the specified script
      */
-    public IRubyObject runWithGetsLoop(Node scriptNode, boolean printing, boolean processLineEnds, boolean split) {
+    public IRubyObject runWithGetsLoop(RootNode scriptNode, boolean printing, boolean processLineEnds, boolean split) {
         ThreadContext context = getCurrentContext();
 
         // We do not want special scope types in IR so we ammend the AST tree to contain the elements representing
         // a while gets; ...your code...; end
-        scriptNode = addGetsLoop((RootNode) scriptNode, printing, processLineEnds, split);
+        scriptNode = addGetsLoop(scriptNode, printing, processLineEnds, split);
 
         Script script = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
@@ -652,11 +652,11 @@ public final class Ruby implements Constantizable {
             try {
                 script = tryCompile(scriptNode);
                 if (Options.JIT_LOGGING.load()) {
-                    LOG.info("Successfully compiled: " + scriptNode.getPosition().getFile());
+                    LOG.info("Successfully compiled: " + scriptNode.getFile());
                 }
             } catch (Throwable e) {
                 if (Options.JIT_LOGGING.load()) {
-                    LOG.error("Failed to compile: " + scriptNode.getPosition().getFile());
+                    LOG.error("Failed to compile: " + scriptNode.getFile());
                     if (Options.JIT_LOGGING_VERBOSE.load()) {
                         LOG.error(e);
                     }
@@ -709,7 +709,7 @@ public final class Ruby implements Constantizable {
             whileBody.add(oldRoot.getBodyNode());
         }
 
-        return new RootNode(pos, oldRoot.getScope(), newBody);
+        return new RootNode(pos, oldRoot.getScope(), newBody, oldRoot.getFile());
     }
 
     /**
@@ -737,7 +737,7 @@ public final class Ruby implements Constantizable {
         ScriptAndCode scriptAndCode = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile || config.isShowBytecode()) {
-            scriptAndCode = precompileCLI(scriptNode);
+            scriptAndCode = precompileCLI((RootNode) scriptNode);
         }
 
         if (scriptAndCode != null) {
@@ -757,7 +757,7 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private ScriptAndCode precompileCLI(Node scriptNode) {
+    private ScriptAndCode precompileCLI(RootNode scriptNode) {
         ScriptAndCode scriptAndCode = null;
 
         // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
@@ -765,11 +765,11 @@ public final class Ruby implements Constantizable {
         try {
             scriptAndCode = tryCompile(scriptNode, new ClassDefiningJRubyClassLoader(getJRubyClassLoader()));
             if (scriptAndCode != null && Options.JIT_LOGGING.load()) {
-                LOG.info("done compiling target script: " + scriptNode.getPosition().getFile());
+                LOG.info("done compiling target script: " + scriptNode.getFile());
             }
         } catch (Exception e) {
             if (Options.JIT_LOGGING.load()) {
-                LOG.error("failed to compile target script '" + scriptNode.getPosition().getFile() + "'");
+                LOG.error("failed to compile target script '" + scriptNode.getFile() + "'");
                 if (Options.JIT_LOGGING_VERBOSE.load()) {
                     e.printStackTrace();
                 }
@@ -787,31 +787,23 @@ public final class Ruby implements Constantizable {
      * @return an instance of the successfully-compiled Script, or null.
      */
     public Script tryCompile(Node node) {
-        return tryCompile(node, new ClassDefiningJRubyClassLoader(getJRubyClassLoader())).script();
+        return tryCompile((RootNode) node, new ClassDefiningJRubyClassLoader(getJRubyClassLoader())).script();
     }
 
-    private void failForcedCompile(Node scriptNode) throws RaiseException {
+    private void failForcedCompile(RootNode scriptNode) throws RaiseException {
         if (config.getCompileMode().shouldPrecompileAll()) {
-            throw newRuntimeError("could not compile and compile mode is 'force': " + scriptNode.getPosition().getFile());
+            throw newRuntimeError("could not compile and compile mode is 'force': " + scriptNode.getFile());
         }
     }
 
-    private void handeCompileError(Node node, Throwable t) {
-        if (config.isJitLoggingVerbose() || config.isDebug()) {
-            LOG.error("warning: could not compile: {}; full trace follows", node.getPosition().getFile());
-            LOG.error(t.getMessage(), t);
-        }
-    }
-
-    private ScriptAndCode tryCompile(Node node, ClassDefiningClassLoader classLoader) {
+    private ScriptAndCode tryCompile(RootNode root, ClassDefiningClassLoader classLoader) {
         try {
-            return Compiler.getInstance().execute(this, node, classLoader);
+            return Compiler.getInstance().execute(this, root, classLoader);
         } catch (NotCompilableException e) {
             if (Options.JIT_LOGGING.load()) {
-                LOG.error("failed to compile target script " + node.getPosition().getFile() + ": " + e.getLocalizedMessage());
-                if (Options.JIT_LOGGING_VERBOSE.load()) {
-                    LOG.error(e);
-                }
+                LOG.error("failed to compile target script " + root.getFile() + ": " + e.getLocalizedMessage());
+
+                if (Options.JIT_LOGGING_VERBOSE.load()) LOG.error(e);
             }
             return null;
         }
@@ -2984,7 +2976,7 @@ public final class Ruby implements Constantizable {
             }
 
             // script was not found in cache above, so proceed to compile
-            Node scriptNode = parseFile(readStream, filename, null);
+            RootNode scriptNode = (RootNode) parseFile(readStream, filename, null);
             if (script == null) {
                 scriptAndCode = tryCompile(scriptNode, new ClassDefiningJRubyClassLoader(jrubyClassLoader));
                 if (scriptAndCode != null) script = scriptAndCode.script();

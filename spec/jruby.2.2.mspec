@@ -21,7 +21,6 @@ class MSpecScript
   # Core library specs
   set :core, [
     SPEC_DIR + '/core',
-    '^' + SPEC_DIR + '/core/argf', # Until fixed in RubySpec
     '^' + SPEC_DIR + '/core/continuation'
   ]
 

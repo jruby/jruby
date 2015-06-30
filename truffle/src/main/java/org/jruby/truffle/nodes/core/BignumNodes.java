@@ -327,7 +327,7 @@ public abstract class BignumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object equal(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
+        public boolean equal(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
             if (booleanCastNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 booleanCastNode = insert(BooleanCastNodeGen.create(getContext(), getSourceSection(), null));
@@ -491,7 +491,7 @@ public abstract class BignumNodes {
         }
     }
 
-    @CoreMethod(names = "<<", required = 1)
+    @CoreMethod(names = "<<", required = 1, lowerFixnumParameters = 0)
     public abstract static class LeftShiftNode extends BignumCoreMethodNode {
 
         private final BranchProfile bLessThanZero = BranchProfile.create();
@@ -512,7 +512,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = ">>", required = 1)
+    @CoreMethod(names = ">>", required = 1, lowerFixnumParameters = 0)
     public abstract static class RightShiftNode extends BignumCoreMethodNode {
 
         private final BranchProfile bLessThanZero = BranchProfile.create();

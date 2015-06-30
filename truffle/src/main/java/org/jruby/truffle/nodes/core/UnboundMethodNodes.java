@@ -16,14 +16,16 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNode;
+import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
-import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -116,35 +118,35 @@ public abstract class UnboundMethodNodes {
     public abstract static class BindNode extends CoreMethodArrayArgumentsNode {
 
         @Child private MetaClassNode metaClassNode;
+        @Child private CanBindMethodToModuleNode canBindMethodToModuleNode;
 
         public BindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        private RubyClass metaClass(VirtualFrame frame, Object object) {
-            if (metaClassNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                metaClassNode = insert(MetaClassNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            return metaClassNode.executeMetaClass(frame, object);
+            metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+            canBindMethodToModuleNode = CanBindMethodToModuleNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public RubyBasicObject bind(VirtualFrame frame, RubyBasicObject unboundMethod, Object object) {
-            CompilerDirectives.transferToInterpreter();
+            final RubyClass objectMetaClass = metaClass(frame, object);
 
-            RubyModule module = getMethod(unboundMethod).getDeclaringModule();
-            // the (redundant) instanceof is to satisfy FindBugs with the following cast
-            if (module instanceof RubyClass && !ModuleOperations.canBindMethodTo(module, metaClass(frame, object))) {
+            if (!canBindMethodToModuleNode.executeCanBindMethodToModule(frame, getMethod(unboundMethod), objectMetaClass)) {
                 CompilerDirectives.transferToInterpreter();
-                if (((RubyClass) module).isSingleton()) {
-                    throw new RaiseException(getContext().getCoreLibrary().typeError("singleton method called for a different object", this));
+                final RubyModule declaringModule = getMethod(unboundMethod).getDeclaringModule();
+                if (declaringModule instanceof RubyClass && ((RubyClass) declaringModule).isSingleton()) {
+                    throw new RaiseException(getContext().getCoreLibrary().typeError(
+                            "singleton method called for a different object", this));
                 } else {
-                    throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be an instance of " + module.getName(), this));
+                    throw new RaiseException(getContext().getCoreLibrary().typeError(
+                            "bind argument must be an instance of " + declaringModule.getName(), this));
                 }
             }
 
             return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, getMethod(unboundMethod));
+        }
+
+        protected RubyClass metaClass(VirtualFrame frame, Object object) {
+            return metaClassNode.executeMetaClass(frame, object);
         }
 
     }

@@ -45,7 +45,7 @@ describe "The Parsing experience" do
     # No expect...parsing is good enough
   end
 
-  it "parser weird embexpr bug GH #1887" do
+  it "parses weird embexpr bug GH #1887" do
     Class.new do
       include Module.new{
         def a
@@ -62,6 +62,16 @@ describe "The Parsing experience" do
         1
       end
     end.new.a.should eq("1")
+  end
+
+  it "parses method with block in embedded hash/kwarg. GH #3085." do
+    Class.new do
+      def foo(r)
+        yield r
+      end
+    end.new.foo one: proc {}, two: 1 do |s|
+      s[:two].should eq(1)
+    end
   end
 end
 

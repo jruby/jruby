@@ -43,6 +43,7 @@ import org.jruby.truffle.pack.runtime.exceptions.*;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.array.ArrayMirror;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -1934,7 +1935,7 @@ public abstract class ArrayNodes {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
-        @Specialization(guards = { "!isInteger(sizeObject)", "wasProvided(defaultValue)" })
+        @Specialization(guards = { "wasProvided(sizeObject)", "!isInteger(sizeObject)", "wasProvided(defaultValue)" })
         public RubyBasicObject initialize(VirtualFrame frame, RubyArray array, Object sizeObject, Object defaultValue, NotProvided block) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -2073,7 +2074,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"inject", "reduce"}, needsBlock = true, optional = 1)
+    @CoreMethod(names = {"inject", "reduce"}, needsBlock = true, optional = 2)
     @ImportStatic(ArrayGuards.class)
     public abstract static class InjectNode extends YieldingCoreMethodNode {
 
@@ -2084,129 +2085,172 @@ public abstract class ArrayNodes {
             dispatch = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.CALL_METHOD_MISSING);
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object injectIntegerFixnum(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
-            int count = 0;
-
-            final int[] store = (int[]) getStore(array);
-
-            Object accumulator = initial;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    accumulator = yield(frame, block, accumulator, store[n]);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
-                }
-            }
-
-            return accumulator;
-        }
-
-        @Specialization(guards = "isLongArray(array)")
-        public Object injectLongFixnum(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
-            int count = 0;
-
-            final long[] store = (long[]) getStore(array);
-
-            Object accumulator = initial;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    accumulator = yield(frame, block, accumulator, store[n]);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
-                }
-            }
-
-            return accumulator;
-        }
-
-        @Specialization(guards = "isDoubleArray(array)")
-        public Object injectFloat(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
-            int count = 0;
-
-            final double[] store = (double[]) getStore(array);
-
-            Object accumulator = initial;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    accumulator = yield(frame, block, accumulator, store[n]);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
-                }
-            }
-
-            return accumulator;
-        }
-
-        @Specialization(guards = "isObjectArray(array)")
-        public Object injectObject(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
-            int count = 0;
-
-            final Object[] store = (Object[]) getStore(array);
-
-            Object accumulator = initial;
-
-            try {
-                for (int n = 0; n < getSize(array); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    accumulator = yield(frame, block, accumulator, store[n]);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
-                }
-            }
-
-            return accumulator;
-        }
-
-        @Specialization(guards = "isNullArray(array)")
-        public Object injectNull(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+        @Specialization(guards = { "isEmptyArray(array)", "wasProvided(initial)" })
+        public Object injectEmptyArray(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
             return initial;
         }
 
-        @Specialization(guards = "isRubySymbol(symbol)")
-        public Object inject(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
+        @Specialization(guards = "isEmptyArray(array)")
+        public Object injectEmptyArrayNoInitial(VirtualFrame frame, RubyArray array, NotProvided initial, NotProvided unused, RubyProc block) {
+            return nil();
+        }
 
-            final Object[] store = slowToArray(array);
+        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
+        public Object injectIntegerFixnum(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
+            return injectHelper(frame, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)), array, initial, block, 0);
+        }
 
-            if (store.length < 2) {
-                if (store.length == 1) {
-                    return store[0];
-                } else {
-                    return getContext().getCoreLibrary().getNilObject();
+        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)" })
+        public Object injectIntegerFixnumNoInitial(VirtualFrame frame, RubyArray array, NotProvided initial, NotProvided unused, RubyProc block) {
+            final ArrayMirror mirror = ArrayMirror.reflect((int[]) ArrayNodes.getStore(array));
+
+            return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
+        }
+
+        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
+        public Object injectLongFixnum(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
+            return injectHelper(frame, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)), array, initial, block, 0);
+        }
+
+        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)" })
+        public Object injectLongFixnumNoInitial(VirtualFrame frame, RubyArray array, NotProvided initial, NotProvided unused, RubyProc block) {
+            final ArrayMirror mirror = ArrayMirror.reflect((long[]) ArrayNodes.getStore(array));
+
+            return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
+        }
+
+        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
+        public Object injectFloat(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
+            return injectHelper(frame, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)), array, initial, block, 0);
+        }
+
+        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)" })
+        public Object injectFloatNoInitial(VirtualFrame frame, RubyArray array, NotProvided initial, NotProvided unused, RubyProc block) {
+            final ArrayMirror mirror = ArrayMirror.reflect((double[]) ArrayNodes.getStore(array));
+
+            return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
+        }
+
+        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
+        public Object injectObject(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
+            return injectHelper(frame, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)), array, initial, block, 0);
+        }
+
+        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)" })
+        public Object injectObjectNoInitial(VirtualFrame frame, RubyArray array, NotProvided initial, NotProvided unused, RubyProc block) {
+            final ArrayMirror mirror = ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array));
+
+            return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
+        }
+
+        @Specialization(guards = { "isNullArray(array)", "wasProvided(initial)" })
+        public Object injectNull(VirtualFrame frame, RubyArray array, Object initial, NotProvided unused, RubyProc block) {
+            return initial;
+        }
+
+        @Specialization(guards = "isNullArray(array)")
+        public Object injectNullNoInitial(VirtualFrame frame, RubyArray array, NotProvided initial, NotProvided unused, RubyProc block) {
+            return nil();
+        }
+
+        @Specialization(guards = { "isRubySymbol(symbol)", "isEmptyArray(array)", "wasProvided(initial)" })
+        public Object injectSymbolEmptyArray(VirtualFrame frame, RubyArray array, Object initial, RubyBasicObject symbol, NotProvided block) {
+            return initial;
+        }
+
+        @Specialization(guards = { "isRubySymbol(symbol)", "isEmptyArray(array)" })
+        public Object injectSymbolEmptyArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided unused, NotProvided block) {
+            return nil();
+        }
+
+        @Specialization(guards = { "isRubySymbol(symbol)", "isIntArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
+        public Object injectSymbolIntArray(VirtualFrame frame, RubyArray array, Object initial, RubyBasicObject symbol, NotProvided block) {
+            return injectSymbolHelper(frame, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)), array, initial, symbol, 0);
+        }
+
+        @Specialization(guards = { "isRubySymbol(symbol)", "isIntArray(array)", "!isEmptyArray(array)" })
+        public Object injectSymbolIntArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided unused, NotProvided block) {
+            final ArrayMirror mirror = ArrayMirror.reflect((int[]) ArrayNodes.getStore(array));
+
+            return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
+        }
+
+        @Specialization(guards = { "isRubySymbol(symbol)", "isLongArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
+        public Object injectSymbolLongArray(VirtualFrame frame, RubyArray array, Object initial, RubyBasicObject symbol, NotProvided block) {
+            return injectSymbolHelper(frame, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)), array, initial, symbol, 0);
+        }
+
+        @Specialization(guards = { "isRubySymbol(symbol)", "isLongArray(array)", "!isEmptyArray(array)" })
+        public Object injectSymbolLongArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided unused, NotProvided block) {
+            final ArrayMirror mirror = ArrayMirror.reflect((long[]) ArrayNodes.getStore(array));
+
+            return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
+        }
+
+        @Specialization(guards = { "isRubySymbol(symbol)", "isDoubleArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
+        public Object injectSymbolDoubleArray(VirtualFrame frame, RubyArray array, Object initial, RubyBasicObject symbol, NotProvided block) {
+            return injectSymbolHelper(frame, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)), array, initial, symbol, 0);
+        }
+
+        @Specialization(guards = { "isRubySymbol(symbol)", "isDoubleArray(array)", "!isEmptyArray(array)" })
+        public Object injectSymbolDoubleArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided unused, NotProvided block) {
+            final ArrayMirror mirror = ArrayMirror.reflect((double[]) ArrayNodes.getStore(array));
+
+            return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
+        }
+
+        @Specialization(guards = { "isRubySymbol(symbol)", "isObjectArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
+        public Object injectSymbolObjectArray(VirtualFrame frame, RubyArray array, Object initial, RubyBasicObject symbol, NotProvided block) {
+            return injectSymbolHelper(frame, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)), array, initial, symbol, 0);
+        }
+
+        @Specialization(guards = { "isRubySymbol(symbol)", "isObjectArray(array)", "!isEmptyArray(array)" })
+        public Object injectSymbolObjectArray(VirtualFrame frame, RubyArray array, RubyBasicObject symbol, NotProvided unused, NotProvided block) {
+            final ArrayMirror mirror = ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array));
+
+            return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
+        }
+
+        private Object injectHelper(VirtualFrame frame, ArrayMirror mirror, RubyArray array, Object initial, RubyProc block, int startIndex) {
+            int count = 0;
+
+            Object accumulator = initial;
+
+            try {
+                for (int n = startIndex; n < getSize(array); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    accumulator = yield(frame, block, accumulator, mirror.get(n));
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
-            Object accumulator = dispatch.call(frame, store[0], symbol, null, store[1]);
+            return accumulator;
+        }
 
-            for (int n = 2; n < getSize(array); n++) {
-                accumulator = dispatch.call(frame, accumulator, symbol, null, store[n]);
+
+        private Object injectSymbolHelper(VirtualFrame frame, ArrayMirror mirror, RubyArray array, Object initial, RubyBasicObject symbol, int startIndex) {
+            int count = 0;
+
+            Object accumulator = initial;
+
+            try {
+                for (int n = startIndex; n < getSize(array); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    accumulator = dispatch.call(frame, accumulator, symbol, null, mirror.get(n));
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
             }
 
             return accumulator;
@@ -2548,7 +2592,7 @@ public abstract class ArrayNodes {
 
             final Object current = maximum.get();
 
-            if (current == null || (int) compareNode.call(frame, value, "<=>", null, current) < 0) {
+            if (current == null || (int) compareNode.call(frame, value, "<=>", null, current) > 0) {
                 maximum.set(value);
             }
 

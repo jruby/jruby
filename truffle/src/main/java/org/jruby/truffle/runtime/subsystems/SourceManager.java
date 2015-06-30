@@ -17,6 +17,7 @@ import org.jruby.truffle.runtime.util.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class SourceManager {
@@ -45,7 +46,7 @@ public class SourceManager {
             final byte[] bytes = FileUtils.readAllBytesInterruptedly(context, path);
 
             // Assume UTF-8 for the moment
-            source = Source.fromBytes(bytes, path, new BytesDecoder.UTF8BytesDecoder());
+            source = Source.fromText(new String(bytes, StandardCharsets.UTF_8), path);
 
             sources.put(canonicalPath, source);
         }

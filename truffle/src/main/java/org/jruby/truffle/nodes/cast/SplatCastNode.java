@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.cast;
 
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -71,7 +70,6 @@ public abstract class SplatCastNode extends RubyNode {
                 return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());
 
             default: {
-                CompilerAsserts.neverPartOfCompilation();
                 throw new UnsupportedOperationException();
             }
         }

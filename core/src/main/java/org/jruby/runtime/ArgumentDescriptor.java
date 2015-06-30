@@ -33,11 +33,10 @@ public class ArgumentDescriptor {
         return type.renderPrefixForm(name);
     }
 
-    public RubyArray toArrayForm(Ruby runtime, boolean isLambda) {
-        if (type == ArgumentType.req && !isLambda) {
+    public final RubyArray toArrayForm(Ruby runtime, boolean isLambda) {
+        if ( type == ArgumentType.req && ! isLambda ) {
             return ArgumentType.opt.toArrayForm(runtime, name);
-        } else {
-            return type.toArrayForm(runtime, name);
         }
+        return type.toArrayForm(runtime, name);
     }
 }

@@ -9,7 +9,10 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import java.util.Arrays;
+
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -64,6 +67,12 @@ public class RubyException extends RubyBasicObject {
         }
 
         return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), array);
+    }
+
+    @Override
+    public String toString() {
+        return message + " : " + super.toString() + "\n" +
+                Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(getContext(), this, backtrace));
     }
 
     public static class ExceptionAllocator implements Allocator {

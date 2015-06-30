@@ -1,5 +1,3 @@
-fails:ObjectSpace.define_finalizer raises an ArgumentError if the action does not respond to call
-fails:ObjectSpace.define_finalizer accepts an object and a callable
 fails:ObjectSpace.define_finalizer calls finalizer on process termination
 fails:ObjectSpace.define_finalizer calls finalizer at exit even if it is self-referencing
 fails:ObjectSpace.define_finalizer raises a RuntimeError if the object is not garbage collectable

@@ -24,13 +24,16 @@ require_relative 'core/rubinius/api/kernel/common/type'
 
 # Patch rubinius-core-api to make it work for us
 
-require_relative 'core/rubinius/api/shims/mirror'
 require_relative 'core/rubinius/api/shims/lookuptable'
 require_relative 'core/rubinius/api/shims/rubinius'
 require_relative 'core/rubinius/api/shims/thread'
 require_relative 'core/rubinius/api/shims/tuple'
 require_relative 'core/rubinius/api/shims/metrics'
 require_relative 'core/rubinius/api/shims/hash'
+
+# Rubinius primitives written in Ruby
+
+require_relative 'core/rubinius/primitives'
 
 # Load alpha.rb
 
@@ -135,11 +138,13 @@ require_relative 'core/hash' # Our changes
 require_relative 'core/rubinius/common/array'
 require_relative 'core/rubinius/api/shims/array'
 require_relative 'core/rubinius/common/kernel'
+require_relative 'core/rubinius/api/shims/kernel'
 require_relative 'core/rubinius/common/identity_map'
 #require_relative 'core/rubinius/common/loaded_features'
 #require_relative 'core/rubinius/common/global'
 #require_relative 'core/rubinius/common/backtrace'
 require_relative 'core/rubinius/common/comparable'
+require_relative 'core/rubinius/api/shims/comparable'
 require_relative 'core/rubinius/common/numeric_mirror'
 require_relative 'core/rubinius/common/numeric'
 require_relative 'core/rubinius/common/ctype'
@@ -167,6 +172,7 @@ require_relative 'core/rubinius/common/errno'
 require_relative 'core/rubinius/common/false'
 #require_relative 'core/rubinius/common/fiber'
 require_relative 'core/rubinius/common/io'
+require_relative 'core/rubinius/api/shims/io'
 require_relative 'core/rubinius/common/file'
 require_relative 'core/rubinius/common/dir'
 require_relative 'core/rubinius/common/dir_glob'

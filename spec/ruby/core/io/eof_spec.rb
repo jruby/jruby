@@ -29,7 +29,7 @@ describe "IO#eof?" do
   end
 
   after :each do
-    @io.close unless @io.closed?
+    @io.close if @io && !@io.closed?
   end
 
   it "returns false when not at end of file" do
@@ -81,22 +81,27 @@ describe "IO#eof?" do
       one_byte.eof?.should == true
     }
   end
+end
+
+describe "IO#eof?" do
+  after :each do
+    @r.close if @r && !@r.closed?
+    @w.close if @w && !@w.closed?
+  end
 
   it "returns true on receiving side of Pipe when writing side is closed" do
-    r, w = IO.pipe
-    w.close
-    r.eof?.should == true
-    r.close
+    @r, @w = IO.pipe
+    @w.close
+    @r.eof?.should == true
   end
 
   it "returns false on receiving side of Pipe when writing side wrote some data" do
-    r, w = IO.pipe
-    w.puts "hello"
-    r.eof?.should == false
-    w.close
-    r.eof?.should == false
-    r.read
-    r.eof?.should == true
-    r.close
+    @r, @w = IO.pipe
+    @w.puts "hello"
+    @r.eof?.should == false
+    @w.close
+    @r.eof?.should == false
+    @r.read
+    @r.eof?.should == true
   end
 end

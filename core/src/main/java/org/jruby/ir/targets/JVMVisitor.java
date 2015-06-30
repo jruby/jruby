@@ -1883,8 +1883,8 @@ public class JVMVisitor extends IRVisitor {
         }
 
         jvmAdapter().getstatic(p(Block.Type.class), "LAMBDA", ci(Block.Type.class));
-        jvmAdapter().ldc(buildlambdainstr.getPosition().getFile());
-        jvmAdapter().pushInt(buildlambdainstr.getPosition().getLine());
+        jvmAdapter().ldc(buildlambdainstr.getFile());
+        jvmAdapter().pushInt(buildlambdainstr.getLine());
 
         jvmAdapter().invokestatic(p(RubyProc.class), "newProc", sig(RubyProc.class, Ruby.class, Block.class, Block.Type.class, String.class, int.class));
 

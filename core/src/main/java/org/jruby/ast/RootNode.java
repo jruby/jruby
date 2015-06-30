@@ -47,8 +47,9 @@ public class RootNode extends Node {
     private transient DynamicScope scope;
     private StaticScope staticScope;
     private Node bodyNode;
+    private String file;
 
-    public RootNode(ISourcePosition position, DynamicScope scope, Node bodyNode) {
+    public RootNode(ISourcePosition position, DynamicScope scope, Node bodyNode, String file) {
         super(position, bodyNode.containsVariableAssignment());
         
         assert bodyNode != null : "bodyNode is not null";
@@ -56,6 +57,7 @@ public class RootNode extends Node {
         this.scope = scope;
         this.staticScope = scope.getStaticScope();
         this.bodyNode = bodyNode;
+        this.file = file;
     }
 
     public NodeType getNodeType() {
@@ -84,6 +86,10 @@ public class RootNode extends Node {
      */
     public StaticScope getStaticScope() {
         return staticScope;
+    }
+
+    public String getFile() {
+        return file;
     }
     
     /**

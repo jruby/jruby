@@ -12,7 +12,9 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeUtil;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -32,6 +34,7 @@ import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -218,6 +221,10 @@ public class CoreMethodNodeManager {
             methodNode = nodeFactory.createNode(args);
         }
 
+        if (System.getenv("TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS") != null) {
+            AmbiguousOptionalArgumentChecker.verifyNoAmbiguousOptionalArguments(methodDetails);
+        }
+
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         RubyNode sequence = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
 
@@ -266,6 +273,114 @@ public class CoreMethodNodeManager {
 
         public String getIndicativeName() {
             return classAnnotation.name() + "#" + methodAnnotation.names()[0] + "(core)";
+        }
+    }
+
+    private static class AmbiguousOptionalArgumentChecker {
+
+        private static final Method GET_PARAMETERS = checkParametersNamesAvailable();
+
+        private static Method checkParametersNamesAvailable() {
+            try {
+                return Method.class.getMethod("getParameters");
+            } catch (NoSuchMethodException | SecurityException e) {
+                // Java 7 or could not find how to get names of method parameters
+                System.err.println("Could not find method Method.getParameters()");
+                return null;
+            }
+        }
+
+        private static void verifyNoAmbiguousOptionalArguments(MethodDetails methodDetails) {
+            if (GET_PARAMETERS == null) {
+                System.exit(1);
+            }
+
+            try {
+                verifyNoAmbiguousOptionalArgumentsWithReflection(methodDetails);
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+
+        private static void verifyNoAmbiguousOptionalArgumentsWithReflection(MethodDetails methodDetails) throws ReflectiveOperationException {
+            boolean success = true;
+
+            if (methodDetails.getMethodAnnotation().optional() > 0) {
+                int opt = methodDetails.getMethodAnnotation().optional();
+                if (methodDetails.getMethodAnnotation().needsBlock()) {
+                    opt++;
+                }
+
+                Class<?> node = methodDetails.getNodeFactory().getNodeClass();
+
+                for (int i = 1; i <= opt; i++) {
+                    boolean unguardedObjectArgument = false;
+                    StringBuilder errors = new StringBuilder();
+                    for (Method method : node.getDeclaredMethods()) {
+                        if (method.isAnnotationPresent(Specialization.class)) {
+                            // count from the end to ignore optional VirtualFrame in front.
+                            Class<?>[] parameterTypes = method.getParameterTypes();
+                            int n = parameterTypes.length - i;
+                            Class<?> parameterType = parameterTypes[n];
+                            Object[] parameters = (Object[]) GET_PARAMETERS.invoke(method);
+
+                            Object parameter = parameters[n];
+                            boolean isNamePresent = (boolean) parameter.getClass().getMethod("isNamePresent").invoke(parameter);
+                            if (!isNamePresent) {
+                                System.err.println("Method parameters names are not available for " + method);
+                                System.exit(1);
+                            }
+                            String name = (String) parameter.getClass().getMethod("getName").invoke(parameter);
+
+                            if (parameterType == Object.class && !name.startsWith("unused")) {
+                                String[] guards = method.getAnnotation(Specialization.class).guards();
+                                if (!isGuarded(name, guards)) {
+                                    unguardedObjectArgument = true;
+                                    errors.append("\"").append(name).append("\" in ").append(methodToString(method, parameterTypes, parameters)).append("\n");
+                                }
+                            }
+                        }
+                    }
+
+                    if (unguardedObjectArgument) {
+                        success = false;
+                        System.err.println("Ambiguous optional argument in " + node.getCanonicalName() + ":");
+                        System.err.println(errors);
+                    }
+                }
+            }
+
+            if (!success) {
+                System.exit(1);
+            }
+        }
+
+        private static boolean isGuarded(String name, String[] guards) {
+            for (String guard : guards) {
+                if (guard.equals("wasProvided(" + name + ")") ||
+                        guard.equals("wasNotProvided(" + name + ")") ||
+                        guard.equals("wasNotProvided(" + name + ") || isRubiniusUndefined(" + name + ")") ||
+                        guard.equals("isNil(" + name + ")")) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static String methodToString(Method method, Class<?>[] parameterTypes, Object[] parameters) throws ReflectiveOperationException {
+            StringBuilder str = new StringBuilder();
+            str.append(method.getName()).append("(");
+            for (int i = 0; i < parameters.length; i++) {
+                Object parameter = parameters[i];
+                String name = (String) parameter.getClass().getMethod("getName").invoke(parameter);
+                str.append(parameterTypes[i].getSimpleName()).append(" ").append(name);
+                if (i < parameters.length - 1) {
+                    str.append(", ");
+                }
+            }
+            str.append(")");
+            return str.toString();
         }
     }
 

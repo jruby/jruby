@@ -23,6 +23,7 @@ public class BacktraceElement {
         return new BacktraceElement(method, filename, line);
     }
 
+    @Deprecated
     public static void update(BacktraceElement backtrace, String method, ISourcePosition position) {
         backtrace.method = method;
         backtrace.filename = position.getFile();

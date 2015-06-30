@@ -1239,7 +1239,8 @@ call_args       : command {
                 }
 
 command_args    : /* none */ {
-                    $$ = Long.valueOf(lexer.getCmdArgumentState().begin());
+                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
+                    lexer.getCmdArgumentState().begin();
                 } call_args {
                     lexer.getCmdArgumentState().reset($<Long>1.longValue());
                     $$ = $2;
@@ -1410,7 +1411,7 @@ primary         : literal
                 | method_call brace_block {
                     if ($1 != null && 
                           $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
-                        throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, $1.getPosition(), lexer.getCurrentLine(), "Both block arg and actual block given.");
+                          lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
                     }
                     $$ = $<BlockAcceptingNode>1.setIterNode($2);
                     $<Node>$.setPosition($1.getPosition());
@@ -1747,10 +1748,10 @@ do_block        : kDO_BLOCK {
 block_call      : command do_block {
                     // Workaround for JRUBY-2326 (MRI does not enter this production for some reason)
                     if ($1 instanceof YieldNode) {
-                        throw new SyntaxException(PID.BLOCK_GIVEN_TO_YIELD, $1.getPosition(), lexer.getCurrentLine(), "block given to yield");
+                        lexer.compile_error(PID.BLOCK_GIVEN_TO_YIELD, "block given to yield");
                     }
                     if ($1 instanceof BlockAcceptingNode && $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
-                        throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, $1.getPosition(), lexer.getCurrentLine(), "Both block arg and actual block given.");
+                        lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
                     }
                     if ($1 instanceof NonLocalControlFlowNode) {
                         ((BlockAcceptingNode) $<NonLocalControlFlowNode>1.getValueNode()).setIterNode($2);
@@ -2126,7 +2127,7 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new FalseNode(lexer.getPosition());
                 }
                 | k__FILE__ {
-                    $$ = new FileNode(lexer.getPosition(), new ByteList(lexer.getPosition().getFile().getBytes(),
+                    $$ = new FileNode(lexer.getPosition(), new ByteList(lexer.getFile().getBytes(),
                     support.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
                 }
                 | k__LINE__ {

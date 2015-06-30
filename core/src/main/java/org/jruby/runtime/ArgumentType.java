@@ -7,23 +7,24 @@ import org.jruby.RubyArray;
  * Created by headius on 5/8/15.
  */
 public enum ArgumentType {
-    key("key", "k", false),
-    keyreq("keyreq", "K", false),
-    keyrest("keyrest", "e", false),
-    block("block", "b", false),
-    opt("opt", "o", false),
-    rest("rest", "r", false),
-    req("req", "q", false),
-    anonreq("req", "n", true),
-    anonopt("opt", "O", true),
-    anonrest("rest", "R", true),
-    anonkeyrest("keyrest", "N", true);
 
-    public static final String ANONOPT = anonopt.prefix;
-    public static final String ANONREST = anonrest.prefix;
-    public static final String REQ = req.prefix;
+    key("key", 'k', false),
+    keyreq("keyreq", 'K', false),
+    keyrest("keyrest", 'e', false),
+    block("block", 'b', false),
+    opt("opt", 'o', false),
+    rest("rest", 'r', false),
+    req("req", 'q', false),
+    anonreq("req", 'n', true),
+    anonopt("opt", 'O', true),
+    anonrest("rest", 'R', true),
+    anonkeyrest("keyrest", 'N', true);
 
-    ArgumentType(String symbolicName, String prefix, boolean anonymous) {
+    public static final String ANONOPT = Character.toString( anonopt.prefix );
+    public static final String ANONREST = Character.toString( anonrest.prefix );
+    public static final String REQ = Character.toString( req.prefix );
+
+    private ArgumentType(String symbolicName, char prefix, boolean anonymous) {
         this.symbolicName = symbolicName;
         this.prefix = prefix;
         this.anonymous = anonymous;
@@ -38,9 +39,10 @@ public enum ArgumentType {
             case 'o': return opt;
             case 'r': return rest;
             case 'q': return req;
-            case 'R': return anonrest;
             case 'n': return anonreq;
             case 'O': return anonopt;
+            case 'R': return anonrest;
+            case 'N': return anonkeyrest;
             default: return null;
         }
     }
@@ -54,6 +56,6 @@ public enum ArgumentType {
     }
 
     public final String symbolicName;
-    public final String prefix;
+    private final char prefix;
     public final boolean anonymous;
 }

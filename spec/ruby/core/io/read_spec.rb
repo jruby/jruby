@@ -289,7 +289,7 @@ platform_is :windows do
 
     after :each do
       rm_r @fname
-      @io.close if @io and !@io.closed?
+      @io.close if @io
     end
 
     it "normalizes line endings in text mode" do
@@ -312,7 +312,7 @@ describe "IO#read with $KCODE set to UTF-8" do
 
   after :each do
     $KCODE = @kcode
-    @io.close if @io and !@io.closed?
+    @io.close if @io
   end
 
   it "ignores unicode encoding" do
@@ -470,7 +470,7 @@ with_feature :encoding do
       end
 
       after :each do
-        @io.close if @io and not @io.closed?
+        @io.close if @io
         rm_r @name
       end
 
@@ -481,7 +481,7 @@ with_feature :encoding do
 
     describe "with internal encoding" do
       after :each do
-        @io.close unless @io.closed?
+        @io.close if @io
       end
 
       describe "not specified" do
@@ -551,12 +551,9 @@ describe "IO#read with large data" do
 
     @fname = tmp("io_read.txt")
     touch(@fname) { |f| f.write @data }
-
-    @io = open @fname, "r"
   end
 
   after :each do
-    @io.close
     rm_r @fname
   end
 

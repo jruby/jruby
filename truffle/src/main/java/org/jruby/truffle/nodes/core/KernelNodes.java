@@ -28,19 +28,19 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyThread.Status;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeGen;
+import org.jruby.truffle.nodes.coerce.NameToJavaStringNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
-import org.jruby.truffle.nodes.constants.LookupConstantNode;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFactory;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.methods.LookupMethodNode;
+import org.jruby.truffle.nodes.methods.LookupMethodNodeGen;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
@@ -1000,9 +1000,6 @@ public abstract class KernelNodes {
             return metaClassNode.executeMetaClass(frame, object);
         }
 
-        protected int getCacheLimit() {
-            return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
-        }
     }
 
     @CoreMethod(names = "lambda", isModuleFunction = true, needsBlock = true)
@@ -1111,36 +1108,35 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "method", required = 1)
-    public abstract static class MethodNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "object"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class MethodNode extends CoreMethodNode {
+
+        @Child LookupMethodNode lookupMethodNode;
 
         public MethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, null, null);
         }
 
-        @Specialization(guards = "isRubyString(name)")
-        public RubyBasicObject methodString(Object object, RubyBasicObject name) {
-            return method(object, name.toString());
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
-        @Specialization(guards = "isRubySymbol(name)")
-        public RubyBasicObject methodSymbol(Object object, RubyBasicObject name) {
-            return method(object, SymbolNodes.getString(name));
-        }
-
-        private RubyBasicObject method(Object object, String name) {
-            CompilerDirectives.transferToInterpreter();
-
-            // TODO(CS, 11-Jan-15) cache this lookup
-
-            final InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(object), name);
+        @Specialization
+        public RubyBasicObject methodCached(VirtualFrame frame, Object self, String name) {
+            InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, name);
 
             if (method == null) {
-                throw new RaiseException(
-                    getContext().getCoreLibrary().nameErrorUndefinedMethod(
-                        name, getContext().getCoreLibrary().getLogicalClass(object), this));
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(
+                        name, getContext().getCoreLibrary().getLogicalClass(self), this));
             }
 
-            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, method);
+            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), self, method);
         }
 
     }
@@ -1498,12 +1494,12 @@ public abstract class KernelNodes {
         }
 
         @Specialization(guards = "isRubyString(name)")
-        public boolean doesRespondToMissingString(Object object, RubyBasicObject name, Object includeAll) {
+        public boolean doesRespondToMissingString(Object object, RubyBasicObject name, Object unusedIncludeAll) {
             return false;
         }
 
         @Specialization(guards = "isRubySymbol(name)")
-        public boolean doesRespondToMissingSymbol(Object object, RubyBasicObject name, Object includeAll) {
+        public boolean doesRespondToMissingSymbol(Object object, RubyBasicObject name, Object unusedIncludeAll) {
             return false;
         }
 

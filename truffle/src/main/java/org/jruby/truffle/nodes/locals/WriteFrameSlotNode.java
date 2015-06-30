@@ -10,12 +10,15 @@
 package org.jruby.truffle.nodes.locals;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.nodes.RubyGuards;
 
+@ImportStatic(RubyGuards.class)
 public abstract class WriteFrameSlotNode extends Node {
 
     protected final FrameSlot frameSlot;
@@ -53,6 +56,7 @@ public abstract class WriteFrameSlotNode extends Node {
 
     @Specialization(guards = "isObjectKind(frame)")
     public Object writeObject(Frame frame, Object value) {
+        assert RubyGuards.wasProvided(value); // Useful debug aid to catch a running-away NotProvided
         frame.setObject(frameSlot, value);
         return value;
     }

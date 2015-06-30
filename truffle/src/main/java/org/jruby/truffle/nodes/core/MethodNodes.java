@@ -9,30 +9,40 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.IndirectCallNode;
-import com.oracle.truffle.api.object.*;
-import com.oracle.truffle.api.source.NullSourceSection;
-import com.oracle.truffle.api.source.SourceSection;
+import java.util.EnumSet;
+
 import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
+import org.jruby.truffle.nodes.cast.ProcOrNullNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.methods.CallMethodNode;
+import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
-import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 
-import java.util.EnumSet;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.HiddenKey;
+import com.oracle.truffle.api.object.LocationModifier;
+import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.object.Shape;
+import com.oracle.truffle.api.source.NullSourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 
 @CoreClass(name = "Method")
 public abstract class MethodNodes {
@@ -124,31 +134,30 @@ public abstract class MethodNodes {
     @CoreMethod(names = "call", needsBlock = true, argumentsAsArray = true)
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private IndirectCallNode callNode;
+        @Child ProcOrNullNode procOrNullNode;
+        @Child CallMethodNode callMethodNode;
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            callNode = Truffle.getRuntime().createIndirectCallNode();
+            procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
+            callMethodNode = CallMethodNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
-        public Object call(VirtualFrame frame, RubyBasicObject method, Object[] arguments, NotProvided block) {
-            return doCall(frame, method, arguments, null);
-        }
-
-        @Specialization
-        public Object doCall(VirtualFrame frame, RubyBasicObject method, Object[] arguments, RubyProc block) {
-            // TODO(CS 11-Jan-15) should use a cache and DirectCallNode here so that we can inline - but it's
-            // incompatible with our current dispatch chain.
-
+        protected Object call(VirtualFrame frame, RubyBasicObject method, Object[] arguments, Object block) {
             final InternalMethod internalMethod = getMethod(method);
+            final Object[] frameArguments = packArguments(method, internalMethod, arguments, block);
 
-            return callNode.call(frame, getMethod(method).getCallTarget(), RubyArguments.pack(
+            return callMethodNode.executeCallMethod(frame, internalMethod, frameArguments);
+        }
+
+        private Object[] packArguments(RubyBasicObject method, InternalMethod internalMethod, Object[] arguments, Object block) {
+            return RubyArguments.pack(
                     internalMethod,
                     internalMethod.getDeclarationFrame(),
                     getReceiver(method),
-                    block,
-                    arguments));
+                    procOrNullNode.executeProcOrNull(block),
+                    arguments);
         }
 
     }
@@ -253,8 +262,6 @@ public abstract class MethodNodes {
 
         @Specialization
         public RubyBasicObject unbind(VirtualFrame frame, RubyBasicObject method) {
-            CompilerDirectives.transferToInterpreter();
-
             RubyClass receiverClass = classNode.executeGetClass(frame, getReceiver(method));
             return UnboundMethodNodes.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), receiverClass, getMethod(method));
         }

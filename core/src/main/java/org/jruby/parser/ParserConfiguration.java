@@ -32,13 +32,11 @@ package org.jruby.parser;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
-import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 
 import java.util.Arrays;
@@ -84,8 +82,6 @@ public class ParserConfiguration {
         this.isDebug = config.isParserDebug();
     }
 
-    private static final ByteList USASCII = new ByteList(new byte[]{'U', 'S', '-', 'A', 'S', 'C', 'I', 'I'});
-
     public void setDefaultEncoding(Encoding encoding) {
         this.defaultEncoding = encoding;
     }
@@ -100,15 +96,6 @@ public class ParserConfiguration {
 
     public EncodingService getEncodingService() {
         return runtime.getEncodingService();
-    }
-
-    /**
-     * Set whether this is an parsing of an eval() or not.
-     * 
-     * @param isEvalParse says how we should look at it
-     */
-    public void setEvalParse(boolean isEvalParse) {
-        this.isEvalParse = isEvalParse;
     }
 
     public boolean isDebug() {
@@ -152,16 +139,16 @@ public class ParserConfiguration {
      * 
      * @return correct top scope for source to be parsed
      */
-    public DynamicScope getScope() {
+    public DynamicScope getScope(String file) {
         if (asBlock) return existingScope;
-        
+
         // FIXME: We should really not be creating the dynamic scope for the root
         // of the AST before parsing.  This makes us end up needing to readjust
         // this dynamic scope coming out of parse (and for local static scopes it
         // will always happen because of $~ and $_).
         // FIXME: Because we end up adjusting this after-the-fact, we can't use
         // any of the specific-size scopes.
-        return new ManyVarsDynamicScope(runtime.getStaticScopeFactory().newLocalScope(null), existingScope);
+        return new ManyVarsDynamicScope(runtime.getStaticScopeFactory().newLocalScope(null, file), existingScope);
     }
     
     /**

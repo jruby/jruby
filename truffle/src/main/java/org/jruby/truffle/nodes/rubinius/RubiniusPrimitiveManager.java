@@ -9,24 +9,26 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
-import org.jruby.truffle.nodes.RubyNode;
 
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Manages the available Rubinius primitive calls.
  */
 public class RubiniusPrimitiveManager {
 
-    private final Map<String, RubiniusPrimitiveConstructor> primitives; // Read-only
+    private final ConcurrentMap<String, RubiniusPrimitiveConstructor> primitives = new ConcurrentHashMap<String, RubiniusPrimitiveConstructor>();
 
-    private RubiniusPrimitiveManager(Map<String, RubiniusPrimitiveConstructor> primitives) {
-        this.primitives = primitives;
+    public RubiniusPrimitiveManager() {
     }
 
     public RubiniusPrimitiveConstructor getPrimitive(String name) {
@@ -39,7 +41,11 @@ public class RubiniusPrimitiveManager {
         return constructor;
     }
 
-    public static RubiniusPrimitiveManager create() {
+    private void addPrimitive(String name, RubiniusPrimitiveConstructor constructor) {
+        primitives.putIfAbsent(name, constructor);
+    }
+
+    public void addAnnotatedPrimitives() {
         final List<NodeFactory<? extends RubyNode>> nodeFactories = new ArrayList<>();
 
         nodeFactories.addAll(VMPrimitiveNodesFactory.getFactories());
@@ -53,7 +59,6 @@ public class RubiniusPrimitiveManager {
         nodeFactories.addAll(EncodingPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(EncodingConverterPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(RegexpPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(ModulePrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(RandomPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(ArrayPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(StatPrimitiveNodesFactory.getFactories());
@@ -68,16 +73,17 @@ public class RubiniusPrimitiveManager {
         // This comes last as a catch-all
         nodeFactories.addAll(UndefinedPrimitiveNodesFactory.getFactories());
 
-        final Map<String, RubiniusPrimitiveConstructor> primitives = new HashMap<>();
-
         for (NodeFactory<? extends RubyNode> nodeFactory : nodeFactories) {
             final GeneratedBy generatedBy = nodeFactory.getClass().getAnnotation(GeneratedBy.class);
             final Class<?> nodeClass = generatedBy.value();
             final RubiniusPrimitive annotation = nodeClass.getAnnotation(RubiniusPrimitive.class);
-            primitives.put(annotation.name(), new RubiniusPrimitiveConstructor(annotation, nodeFactory));
+            addPrimitive(annotation.name(), new RubiniusPrimitiveNodeConstructor(annotation, nodeFactory));
         }
-
-        return new RubiniusPrimitiveManager(primitives);
     }
 
+    @TruffleBoundary
+    public void installPrimitive(String name, RubyBasicObject method) {
+        assert RubyGuards.isRubyMethod(method);
+        addPrimitive(name, new RubiniusPrimitiveCallConstructor(method));
+    }
 }

@@ -33,7 +33,6 @@ describe "IO.sysopen" do
   end
 
   it "accepts a mode as second argument" do
-    @fd = 0
     lambda { @fd = IO.sysopen(@filename, "w") }.should_not raise_error
     @fd.should_not equal(0)
   end

@@ -17,7 +17,6 @@ class ImportedGem
   end
 end
 
-# the versions are declared in ../pom.xml
 default_gems =
   [
    ImportedGem.new( 'jruby-openssl', '0.9.7', true ),
@@ -88,7 +87,7 @@ project 'JRuby Lib Setup' do
     end
   end
 
-  gem 'ruby-maven', '3.3.2', :scope => :provided
+  gem 'ruby-maven', '3.3.3', :scope => :provided
 
   default_gemnames = default_gems.collect { |g| g.name }
 

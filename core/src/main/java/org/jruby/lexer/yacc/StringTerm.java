@@ -242,16 +242,14 @@ public class StringTerm extends StrTerm {
         }
         lexer.pushback(c);
         if (unknownFlags.length() != 0) {
-            throw new SyntaxException(PID.REGEXP_UNKNOWN_OPTION, lexer.getPosition(), "unknown regexp option"
-                    + (unknownFlags.length() > 1 ? "s" : "") + " - "
-                    + unknownFlags.toString(), unknownFlags.toString());
+            lexer.compile_error(PID.REGEXP_UNKNOWN_OPTION, "unknown regexp option" +
+                    (unknownFlags.length() > 1 ? "s" : "") + " - " + unknownFlags);
         }
         return options;
     }
 
     private void mixedEscape(RubyLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {
-        throw new SyntaxException(PID.MIXED_ENCODING,lexer.getPosition(), "",
-                foundEncoding + " mixed within " + parserEncoding);
+        lexer.compile_error(PID.MIXED_ENCODING, "" + foundEncoding + " mixed within " + parserEncoding);
     }
 
     // mri: parser_tokadd_string
@@ -327,8 +325,7 @@ public class StringTerm extends StrTerm {
                         }
 
                         if (!lexer.tokadd_mbchar(c, buffer)) {
-                            throw new SyntaxException(PID.INVALID_MULTIBYTE_CHAR, lexer.getPosition(),
-                                    null, "invalid multibyte char (" + enc[0] + ")");
+                            lexer.compile_error(PID.INVALID_MULTIBYTE_CHAR, "invalid multibyte char (" + enc[0] + ")");
                         }
 
                         continue;
@@ -370,8 +367,7 @@ nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
                 }
 
                 if (!lexer.tokadd_mbchar(c, buffer)) {
-                    throw new SyntaxException(PID.INVALID_MULTIBYTE_CHAR, lexer.getPosition(),
-                            null, "invalid multibyte char (" + enc[0] + ")");
+                    lexer.compile_error(PID.INVALID_MULTIBYTE_CHAR, "invalid multibyte char (" + enc[0] + ")");
                 }
 
                 continue;

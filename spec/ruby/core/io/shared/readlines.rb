@@ -19,39 +19,6 @@ describe :io_readlines, :shared => true do
   end
 end
 
-describe :io_readlines_options_18, :shared => true do
-  it "does not change $_" do
-    $_ = "test"
-    IO.send(@method, @name, &@object)
-    $_.should == "test"
-  end
-
-  describe "when passed name" do
-    it "calls #to_str to convert the name" do
-      name = mock("io readlines name")
-      name.should_receive(:to_str).and_return(@name)
-      result = IO.send(@method, name, &@object)
-      (result ? result : ScratchPad.recorded).should == IOSpecs.lines
-    end
-  end
-
-  describe "when passed name, separator" do
-    it "calls #to_str to convert the name" do
-      name = mock("io readlines name")
-      name.should_receive(:to_str).and_return(@name)
-      result = IO.send(@method, name, &@object)
-      (result ? result : ScratchPad.recorded).should == IOSpecs.lines
-    end
-
-    it "calls #to_str to convert the separator" do
-      sep = mock("io readlines separator")
-      sep.should_receive(:to_str).at_least(1).and_return(" ")
-      result = IO.send(@method, @name, sep, &@object)
-      (result ? result : ScratchPad.recorded).should == IOSpecs.lines_space_separator
-    end
-  end
-end
-
 describe :io_readlines_options_19, :shared => true do
   before :each do
     @filename = tmp("io readlines options")

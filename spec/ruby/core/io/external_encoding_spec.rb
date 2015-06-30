@@ -90,7 +90,7 @@ with_feature :encoding do
       Encoding.default_external = @external
       Encoding.default_internal = @internal
 
-      @io.close if @io and not @io.closed?
+      @io.close if @io
       rm_r @name
     end
 

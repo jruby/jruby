@@ -1,11 +1,7 @@
 describe :language___FILE__, :shared => true do
   before :each do
     CodeLoadingSpecs.spec_setup
-    if File.respond_to?(:realpath)
-      @path = File.realpath("file_fixture.rb", CODE_LOADING_DIR)
-    else
-      @path = File.expand_path("file_fixture.rb", CODE_LOADING_DIR)
-    end
+    @path = File.join(CODE_LOADING_DIR, "file_fixture.rb")
   end
 
   after :each do

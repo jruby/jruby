@@ -34,38 +34,95 @@ package org.jruby;
 
 import java.io.File;
 import java.io.IOException;
+
 import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.runtime.Visibility.PRIVATE;
 
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+
 import jnr.posix.FileStat;
 import jnr.posix.util.Platform;
+
 import org.jruby.runtime.Block;
 import org.jruby.runtime.IAccessor;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.internal.runtime.GlobalVariable;
 
-public class RubyArgsFile {
-    static final class ArgsFileData {
-        private final Ruby runtime;
-        public ArgsFileData(Ruby runtime) {
-            this.runtime = runtime;
-            this.currentFile = runtime.getNil();
+public class RubyArgsFile extends RubyObject {
+
+    public RubyArgsFile(Ruby runtime, RubyClass metaClass) {
+        super(runtime, metaClass);
+    }
+
+    public static void initArgsFile(final Ruby runtime) {
+        RubyClass argfClass = runtime.defineClass("ARGFClass", runtime.getObject(), ARGF_ALLOCATOR);
+        argfClass.includeModule(runtime.getEnumerable());
+
+        argfClass.defineAnnotatedMethods(RubyArgsFile.class);
+
+        IRubyObject argsFile = argfClass.newInstance(runtime.getCurrentContext(), new IRubyObject[] { null }, (Block) null);
+
+        runtime.setArgsFile(argsFile);
+        runtime.getGlobalVariables().defineReadonly("$<", new IAccessor() {
+            @Override
+            public IRubyObject getValue() {
+                return runtime.getArgsFile();
+            }
+
+            @Override
+            public IRubyObject setValue(IRubyObject newValue) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+        }, GlobalVariable.Scope.GLOBAL);
+        runtime.defineGlobalConstant("ARGF", argsFile);
+        runtime.defineReadonlyVariable("$FILENAME", runtime.newString("-"), GlobalVariable.Scope.GLOBAL);
+    }
+
+    private static final ObjectAllocator ARGF_ALLOCATOR = new ObjectAllocator() {
+        @Override
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyArgsFile(runtime, klass);
+        }
+    };
+
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true)
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        final RubyArray argv;
+        if (args.length == 1 && args[0] == null) {
+            argv = context.getRuntime().getObject().getConstant("ARGV").convertToArray();
+        } else {
+            argv = context.getRuntime().newArray(args);
         }
 
+        ArgsFileData data = new ArgsFileData(context.getRuntime(), argv);
+        this.dataWrapStruct(data);
+        return this;
+    }
+
+    static final class ArgsFileData {
+
+        private final Ruby runtime;
+        private final RubyArray argv;
         public IRubyObject currentFile;
         public int currentLineNumber;
         public int minLineNumber;
         private boolean inited = false;
         public int next_p = 0;
 
+        public ArgsFileData(Ruby runtime, RubyArray argv) {
+            this.runtime = runtime;
+            this.argv = argv;
+            this.currentFile = runtime.getNil();
+        }
+
         public boolean next_argv(ThreadContext context) {
-            RubyArray args = (RubyArray)runtime.getGlobalVariables().get("$*");
             if (!inited) {
-                if (args.getLength() > 0) {
+                if (argv.getLength() > 0) {
                     next_p = 1;
                 } else {
                     next_p = -1;
@@ -76,8 +133,8 @@ public class RubyArgsFile {
 
             if (next_p == 1) {
                 next_p = 0;
-                if (args.getLength() > 0) {
-                    IRubyObject arg = args.shift(context);
+                if (argv.getLength() > 0) {
+                    IRubyObject arg = argv.shift(context);
                     RubyString filename = (RubyString)((RubyObject)arg).to_s();
                     ByteList filenameBytes = filename.getByteList();
                     if (!filename.op_equal(context, (RubyString) runtime.getGlobalVariables().get("$FILENAME")).isTrue()) {
@@ -117,7 +174,7 @@ public class RubyArgsFile {
             ArgsFileData data = (ArgsFileData)recv.dataGetStruct();
 
             if (data == null) {
-                data = new ArgsFileData(recv.getRuntime());
+                data = new ArgsFileData(recv.getRuntime(), recv.getRuntime().newEmptyArray());
                 recv.dataWrapStruct(data);
             }
 
@@ -181,28 +238,9 @@ public class RubyArgsFile {
         }
     }
 
-    public static void initArgsFile(final Ruby runtime) {
-        RubyObject argsFile = new RubyObject(runtime, runtime.getObject());
-
-        runtime.getEnumerable().extend_object(argsFile);
-
-        runtime.setArgsFile(argsFile);
-        runtime.getGlobalVariables().defineReadonly("$<", new IAccessor() {
-            @Override
-            public IRubyObject getValue() {
-                return runtime.getArgsFile();
-            }
-
-            @Override
-            public IRubyObject setValue(IRubyObject newValue) {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
-        }, GlobalVariable.Scope.GLOBAL);
-        runtime.defineGlobalConstant("ARGF", argsFile);
-        
-        RubyClass argfClass = argsFile.getMetaClass();
-        argfClass.defineAnnotatedMethods(RubyArgsFile.class);
-        runtime.defineReadonlyVariable("$FILENAME", runtime.newString("-"), GlobalVariable.Scope.GLOBAL);
+    @JRubyMethod(name = "argv")
+    public static IRubyObject argv(ThreadContext context, IRubyObject recv) {
+        return ArgsFileData.getDataFrom(recv).argv;
     }
 
     @JRubyMethod(name = {"fileno", "to_i"})

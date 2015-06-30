@@ -232,12 +232,12 @@ public abstract class StringPrimitiveNodes {
                 rangeEnd = bytes.length();
             }
 
-            if (normalizedIndex < bytes.getBegin()) {
+            if (normalizedIndex + bytes.begin() < bytes.begin()) {
                 return nil();
             }
 
-            final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), normalizedIndex, rangeEnd);
-            final RubyBasicObject result = StringNodes.createString(string.getLogicalClass(), new ByteList(copiedBytes, StringNodes.getByteList(string).getEncoding()));
+            final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), normalizedIndex + bytes.begin(), rangeEnd + bytes.begin());
+            final RubyBasicObject result = StringNodes.createString(string.getLogicalClass(), new ByteList(copiedBytes, bytes.getEncoding()));
 
             return taintResultNode.maybeTaint(string, result);
         }
@@ -632,7 +632,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_character_byte_index", needsSelf = false, lowerFixnumParameters = {2, 3})
+    @RubiniusPrimitive(name = "string_character_byte_index", needsSelf = false, lowerFixnumParameters = {1, 2})
     @ImportStatic(StringGuards.class)
     public static abstract class CharacterByteIndexNode extends RubiniusPrimitiveNode {
 
@@ -706,7 +706,7 @@ public abstract class StringPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "string_character_index", needsSelf = false, lowerFixnumParameters = 3)
+    @RubiniusPrimitive(name = "string_character_index", needsSelf = false, lowerFixnumParameters = 2)
     public static abstract class StringCharacterIndexPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringCharacterIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -806,7 +806,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_byte_index", needsSelf = false, lowerFixnumParameters = {2, 3})
+    @RubiniusPrimitive(name = "string_byte_index", needsSelf = false, lowerFixnumParameters = {1, 2})
     public static abstract class StringByteIndexPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -933,7 +933,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_copy_from", needsSelf = false, lowerFixnumParameters = {3, 4, 5})
+    @RubiniusPrimitive(name = "string_copy_from", needsSelf = false, lowerFixnumParameters = {2, 3, 4})
     public static abstract class StringCopyFromPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringCopyFromPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -969,7 +969,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_resize_capacity", needsSelf = false, lowerFixnumParameters = 2)
+    @RubiniusPrimitive(name = "string_resize_capacity", needsSelf = false, lowerFixnumParameters = 1)
     public static abstract class StringResizeCapacityPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringResizeCapacityPrimitiveNode(RubyContext context, SourceSection sourceSection) {

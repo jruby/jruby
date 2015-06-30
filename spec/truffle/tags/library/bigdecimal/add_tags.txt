@@ -1,6 +1,3 @@
-fails:BigDecimal#add favors the precision specified in the second argument over the global limit
-fails:BigDecimal#add uses the current rounding mode if rounding is needed
-fails:BigDecimal#add returns NaN if NaN is involved
-fails:BigDecimal#add returns Infinity or -Infinity if these are involved
-fails:BigDecimal#add returns NaN if Infinity + (- Infinity)
+fails:BigDecimal#add raises TypeError when precision parameter is nil
+fails:BigDecimal#add raises TypeError when adds nil
 fails:BigDecimal#add raises ArgumentError when precision parameter is negative
