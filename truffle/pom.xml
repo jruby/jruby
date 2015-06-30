@@ -24,18 +24,18 @@
     <dependency>
       <groupId>com.oracle</groupId>
       <artifactId>truffle</artifactId>
-      <version>0.8-ff6f34159b8a2d7149e384b67b0bb007e79c8a75-SNAPSHOT</version>
+      <version>0.8-cf1503da2456b46677cbf0ed286614d660126a1b-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.oracle</groupId>
       <artifactId>truffle-dsl-processor</artifactId>
-      <version>0.8-ff6f34159b8a2d7149e384b67b0bb007e79c8a75-SNAPSHOT</version>
+      <version>0.8-cf1503da2456b46677cbf0ed286614d660126a1b-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.oracle</groupId>
       <artifactId>truffle-tck</artifactId>
-      <version>0.8-ff6f34159b8a2d7149e384b67b0bb007e79c8a75-SNAPSHOT</version>
+      <version>0.8-cf1503da2456b46677cbf0ed286614d660126a1b-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
     <dependency>
