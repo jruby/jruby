@@ -1350,9 +1350,23 @@ public class OpenFile implements Finalizable {
         InternalReadStruct iis = new InternalReadStruct(fptr, fd, bufBytes, buf, count);
 
         // if we can do selection and this is not a non-blocking call, do selection
+
+        /*
+            NOTE CON: We only do this selection because on the JDK, blocking calls to NIO channels can't be
+            interrupted, and we need to be able to interrupt blocking reads. In MRI, this logic is always just a
+            simple read(2) because EINTR does not damage the descriptor.
+
+            Doing selects here on ENXIO native channels caused FIFOs to block for read all the time, even when no
+            writers are connected. This may or may not be correct behavior for selects against FIFOs, but in any
+            case since MRI does not do a select here at all I believe correct logic is to skip the select when
+            working with any native descriptor.
+         */
+
         fptr.unlock();
         try {
-            if (fd.chSelect != null && !iis.fptr.nonblock) {
+            if (fd.chSelect != null
+                    && fd.chNative == null // MRI does not select for rb_read_internal on native descriptors
+                    && !iis.fptr.nonblock) {
                 context.getThread().select(fd.chSelect, fptr, SelectionKey.OP_READ);
             }
         } finally {
