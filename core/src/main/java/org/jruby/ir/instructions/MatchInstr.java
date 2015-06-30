@@ -21,6 +21,7 @@ public class MatchInstr extends CallInstr implements FixedArityInstr {
 
     @Override
     public boolean computeScopeFlags(IRScope scope) {
+        super.computeScopeFlags(scope);
         // $~ is implicitly used since Backref and NthRef operands
         // access it and $~ is not made explicit in those operands.
         scope.getFlags().add(USES_BACKREF_OR_LASTLINE);
