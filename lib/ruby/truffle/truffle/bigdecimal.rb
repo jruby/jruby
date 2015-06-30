@@ -234,6 +234,16 @@ class Truffle::BigDecimal < Numeric
     end
   end
 
+  def inspect
+    precs1, precs2 = precs
+
+    format "#<BigDecimal:%s,'%s',%d(%d)>",
+           object_id.to_s(16),
+           to_s,
+           precs1,
+           precs2
+  end
+
   private
 
   def add_spaces_to_s(string, reverse, digits)
