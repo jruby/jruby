@@ -32,40 +32,40 @@ public abstract class GeneralizeArrayNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executeGeneralize(VirtualFrame frame, RubyArray array, int requiredCapacity);
+    public abstract Object executeGeneralize(VirtualFrame frame, RubyBasicObject array, int requiredCapacity);
 
     // TODO CS 9-Feb-15 should use ArrayUtils.capacity?
 
     @Specialization(
-            guards={"isNullArray(array)"}
+            guards={"isRubyArray(array)", "isNullArray(array)"}
     )
-    public RubyBasicObject generalizeNull(RubyArray array, int requiredCapacity) {
+    public RubyBasicObject generalizeNull(RubyBasicObject array, int requiredCapacity) {
         ArrayNodes.setStore(array, new Object[requiredCapacity], ArrayNodes.getSize(array));
         return array;
     }
 
     @Specialization(
-            guards={"isIntArray(array)"}
+            guards={"isRubyArray(array)", "isIntArray(array)"}
     )
-    public RubyBasicObject generalizeInt(RubyArray array, int requiredCapacity) {
+    public RubyBasicObject generalizeInt(RubyBasicObject array, int requiredCapacity) {
         final int[] intStore = (int[]) ArrayNodes.getStore(array);
         ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
         return array;
     }
 
     @Specialization(
-            guards={"isLongArray(array)"}
+            guards={"isRubyArray(array)", "isLongArray(array)"}
     )
-    public RubyBasicObject generalizeLong(RubyArray array, int requiredCapacity) {
+    public RubyBasicObject generalizeLong(RubyBasicObject array, int requiredCapacity) {
         final long[] intStore = (long[]) ArrayNodes.getStore(array);
         ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
         return array;
     }
 
     @Specialization(
-            guards={"isDoubleArray(array)"}
+            guards={"isRubyArray(array)", "isDoubleArray(array)"}
     )
-    public RubyBasicObject generalizeDouble(RubyArray array, int requiredCapacity) {
+    public RubyBasicObject generalizeDouble(RubyBasicObject array, int requiredCapacity) {
         final double[] intStore = (double[]) ArrayNodes.getStore(array);
         ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
         return array;
