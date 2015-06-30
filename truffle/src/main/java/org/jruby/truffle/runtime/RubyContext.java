@@ -63,6 +63,7 @@ import org.jruby.util.cli.Options;
 import java.io.File;
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -618,7 +619,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         if (inputFile.equals("-e")) {
             // Assume UTF-8 for the moment
-            source = Source.fromBytes(runtime.getInstanceConfig().inlineScript(), "-e", new BytesDecoder.UTF8BytesDecoder());
+            source = Source.fromText(new String(runtime.getInstanceConfig().inlineScript(), StandardCharsets.UTF_8), "-e");
         } else {
             source = sourceManager.forFile(inputFile);
         }
