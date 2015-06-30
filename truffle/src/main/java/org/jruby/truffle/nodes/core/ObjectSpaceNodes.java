@@ -18,6 +18,7 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -128,15 +129,31 @@ public abstract class ObjectSpaceNodes {
     @CoreMethod(names = "define_finalizer", isModuleFunction = true, required = 2)
     public abstract static class DefineFinalizerNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private KernelNodes.RespondToNode respondToNode;
+
         public DefineFinalizerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
-        public RubyBasicObject defineFinalizer(Object object, RubyProc finalizer) {
+        public RubyBasicObject defineFinalizer(VirtualFrame frame, Object object, Object finalizer) {
+            if (respondToNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                respondToNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+            }
+
+            if (respondToNode.doesRespondToString(frame, finalizer, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "call"), true)) {
+                registerFinalizer(object, finalizer);
+                return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), 0, finalizer);
+            } else {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentErrorWrongArgumentType(finalizer, "callable", this));
+            }
+        }
+
+        @TruffleBoundary
+        private void registerFinalizer(Object object, Object finalizer) {
             getContext().getObjectSpaceManager().defineFinalizer((RubyBasicObject) object, finalizer);
-            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), 0, finalizer);
         }
     }
 

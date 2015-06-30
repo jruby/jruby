@@ -795,6 +795,12 @@ public class CoreLibrary {
         return argumentError("wrong number of arguments (0 for 1+)", currentNode);
     }
 
+    public RubyException argumentErrorWrongArgumentType(Object object, String expectedType, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        String badClassName = getLogicalClass(object).getName();
+        return argumentError(String.format("wrong argument type %s (expected %s)", badClassName, expectedType), currentNode);
+    }
+
     public RubyException errnoError(int errno, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
 
