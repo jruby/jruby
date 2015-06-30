@@ -39,15 +39,15 @@ class Truffle::BigDecimal < Numeric
     else
       Thread.current[:'BigDecimal.exception_mode'] ||= 0
       case value
-        when true
-          Thread.current[:'BigDecimal.exception_mode'] |= key
-          return value
-        when false
-          Thread.current[:'BigDecimal.exception_mode'] &= ~key
-          return value
-        when nil
-          # FIXME (pitr 20-Jun-2015): CRuby always returns BigDecimal.exception_mode internal value ignoring the key
-          return Thread.current[:'BigDecimal.exception_mode'] & key == key
+      when true
+        Thread.current[:'BigDecimal.exception_mode'] |= key
+        return value
+      when false
+        Thread.current[:'BigDecimal.exception_mode'] &= ~key
+        return value
+      when nil
+        # FIXME (pitr 20-Jun-2015): CRuby always returns BigDecimal.exception_mode internal value ignoring the key
+        return Thread.current[:'BigDecimal.exception_mode'] & key == key
       end
     end
   end
@@ -192,42 +192,41 @@ class Truffle::BigDecimal < Numeric
 
   def to_s(format = 'E')
     if finite?
-      spaces       = format.to_i
-      prefix       = case
-                     when self > 0
-                       if [' ', '+'].include? format[0]
-                         format[0]
-                       else
-                         ''
-                       end
-                     when self < 0
-                       '-'
-                     when self == 0
-                       ''
-                     end
-      float_format = format[-1] == 'F'
-
-      unscaled_value = unscaled
-      exponent_value = self.exponent
+      float_format    = format[-1] == 'F'
+      space_frequency = format.to_i
+      prefix          = if self > 0 && [' ', '+'].include?(format[0])
+                          format[0]
+                        elsif self < 0
+                          '-'
+                        else
+                          ''
+                        end
+      unscaled_value  = unscaled
+      exponent_value  = exponent
 
       if float_format
-        before_dot, after_dot = case
-                                when exponent_value > unscaled_value.size
-                                  [unscaled_value + '0' * (exponent_value - unscaled_value.size),
-                                   '0']
-                                when exponent_value <= 0
-                                  ['0',
-                                   '0' * exponent_value.abs + unscaled_value]
-                                else
-                                  after_dot = unscaled_value[exponent_value..-1]
+        case
+        when exponent_value > unscaled_value.size
+          before_dot = unscaled_value + '0' * (exponent_value - unscaled_value.size)
+          after_dot  = '0'
+        when exponent_value <= 0
+          before_dot = '0'
+          after_dot  = '0' * exponent_value.abs + unscaled_value
+        else
+          before_dot = unscaled_value[0...exponent_value]
+          rest       = unscaled_value[exponent_value..-1]
+          after_dot  = rest.empty? ? '0' : rest
+        end
 
-                                  [unscaled_value[0...exponent_value],
-                                   after_dot.empty? ? '0' : after_dot]
-                                end
-
-        prefix << add_spaces_to_s(before_dot, true, spaces) << '.' << add_spaces_to_s(after_dot, false, spaces)
+        format '%s%s.%s',
+               prefix,
+               add_spaces_to_s(before_dot, true, space_frequency),
+               add_spaces_to_s(after_dot, false, space_frequency)
       else
-        prefix << '0.' << add_spaces_to_s(unscaled_value, false, spaces) << 'E' << exponent_value.to_s
+        format '%s0.%sE%d',
+               prefix,
+               add_spaces_to_s(unscaled_value, false, space_frequency),
+               exponent_value
       end
     else
       (sign < 0 ? '-' : '') + unscaled
@@ -246,12 +245,12 @@ class Truffle::BigDecimal < Numeric
 
   private
 
-  def add_spaces_to_s(string, reverse, digits)
-    return string if digits == 0
+  def add_spaces_to_s(string, reverse, space_frequency)
+    return string if space_frequency == 0
 
-    remainder = string.size % digits
+    remainder = string.size % space_frequency
     shift     = reverse ? remainder : 0
-    pieces    = (string.size / digits).times.map { |i| string[digits*i + shift, digits] }
+    pieces    = (string.size / space_frequency).times.map { |i| string[space_frequency*i + shift, space_frequency] }
 
     if remainder > 0
       if reverse
