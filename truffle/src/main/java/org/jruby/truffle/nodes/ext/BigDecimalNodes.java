@@ -1323,6 +1323,49 @@ public abstract class BigDecimalNodes {
         }
     }
 
+    @CoreMethod(names = "remainder", required = 1)
+    public abstract static class RemainderNode extends OpNode {
+
+        public RemainderNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        public static BigDecimal remainderBigDecimal(BigDecimal a, BigDecimal b) {
+            return a.remainder(b);
+        }
+
+        @Specialization(guards = {
+                "isNormal(a)",
+                "isNormalRubyBigDecimal(b)",
+                "!isNormalZero(b)" })
+        public Object remainder(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
+            return createBigDecimal(frame, remainderBigDecimal(getBigDecimalValue(a), getBigDecimalValue(b)));
+        }
+
+        @Specialization(guards = {
+                "isNormal(a)",
+                "isNormalRubyBigDecimal(b)",
+                "isNormalZero(b)" })
+        public Object remainderZero(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
+            return createBigDecimal(frame, Type.NAN);
+        }
+
+        @Specialization(guards = {
+                "isRubyBigDecimal(b)",
+                "!isNormal(a) || !isNormal(b)" })
+        public Object remainderSpecial(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
+            final Type aType = getBigDecimalType(a);
+            final Type bType = getBigDecimalType(b);
+
+            if (aType == Type.NEGATIVE_ZERO && bType == Type.NORMAL) {
+                return createBigDecimal(frame, BigDecimal.ZERO);
+            }
+
+            return createBigDecimal(frame, Type.NAN);
+        }
+    }
+
     @CoreMethod(names = { "**", "power" }, required = 1, optional = 1)
     @NodeChildren({
             @NodeChild(value = "self", type = RubyNode.class),
