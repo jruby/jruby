@@ -159,7 +159,7 @@ public abstract class BigDecimalNodes {
     }
 
     public static int defaultDivisionPrecision(int precisionA, int precisionB, int limit) {
-        final int combination = nearestBiggerMultipleOf4(precisionA + precisionB) * 2;
+        final int combination = nearestBiggerMultipleOf4(precisionA + precisionB) * 4;
         return (limit > 0 && limit < combination) ? limit : combination;
     }
 
@@ -1110,9 +1110,9 @@ public abstract class BigDecimalNodes {
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class DivNode extends AbstractDivNode {
 
-        @Child private CallDispatchHeadNode floorCall;
         private final ConditionProfile zeroPrecisionProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile bZeroProfile = ConditionProfile.createBinaryProfile();
+        @Child private CallDispatchHeadNode floorCall;
 
         public DivNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1179,7 +1179,7 @@ public abstract class BigDecimalNodes {
                 throw new RaiseException(getContext().getCoreLibrary().zeroDivisionError(this));
             } else if (getBigDecimalType(a) == Type.NAN) {
                 throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Computation results to 'NaN'(Not a Number)", this));
-            } else if (getBigDecimalType(a) == Type.POSITIVE_INFINITY || getBigDecimalType(a) == Type.NEGATIVE_INFINITY ) {
+            } else if (getBigDecimalType(a) == Type.POSITIVE_INFINITY || getBigDecimalType(a) == Type.NEGATIVE_INFINITY) {
                 throw new RaiseException(getContext().getCoreLibrary().floatDomainError("Computation results to 'Infinity'", this));
             } else {
                 return divSpecialNormal(frame, a, b, 0);
@@ -1211,6 +1211,115 @@ public abstract class BigDecimalNodes {
                 "isSpecialRubyBigDecimal(b)" })
         public Object divSpecialSpecial(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b, int precision) {
             return super.divSpecialSpecial(frame, a, b, precision);
+        }
+    }
+
+    @CoreMethod(names = "divmod", required = 1)
+    public abstract static class DivModNode extends OpNode {
+
+        @Child private CallDispatchHeadNode signCall;
+        @Child private IntegerCastNode signIntegerCast;
+
+        public DivModNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        private BigDecimal[] divmodBigDecimal(BigDecimal a, BigDecimal b) {
+            final BigDecimal[] result = a.divideAndRemainder(b);
+
+            if (result[1].signum() * b.signum() < 0) {
+                result[0] = result[0].subtract(BigDecimal.ONE);
+                result[1] = result[1].add(b);
+            }
+
+            return result;
+        }
+
+        private void setupSignCall() {
+            if (signCall == null) {
+                CompilerDirectives.transferToInterpreter();
+                signCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+        }
+
+        private void setupLimitIntegerCast() {
+            if (signIntegerCast == null) {
+                CompilerDirectives.transferToInterpreter();
+                signIntegerCast = insert(IntegerCastNodeGen.create(getContext(), getSourceSection(), null));
+            }
+        }
+
+        @Specialization(guards = {
+                "isNormal(a)",
+                "isNormalRubyBigDecimal(b)",
+                "!isNormalZero(a)",
+                "!isNormalZero(b)" })
+        public Object divmod(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
+            final BigDecimal[] result = divmodBigDecimal(getBigDecimalValue(a), getBigDecimalValue(b));
+            return createArray(createBigDecimal(frame, result[0]), createBigDecimal(frame, result[1]));
+        }
+
+        @Specialization(guards = {
+                "isNormal(a)",
+                "isNormalRubyBigDecimal(b)",
+                "isNormalZero(a)",
+                "!isNormalZero(b)" })
+        public Object divmodZeroDividend(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
+            return createArray(
+                    createBigDecimal(frame, BigDecimal.ZERO),
+                    createBigDecimal(frame, BigDecimal.ZERO));
+        }
+
+        @Specialization(guards = {
+                "isNormal(a)",
+                "isNormalRubyBigDecimal(b)",
+                "isNormalZero(b)" })
+        public Object divmodZeroDivisor(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
+            throw new RaiseException(getContext().getCoreLibrary().zeroDivisionError(this));
+        }
+
+        @Specialization(guards = {
+                "isRubyBigDecimal(b)",
+                "!isNormal(a) || !isNormal(b)" })
+        public Object divmodSpecial(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
+            final Type aType = getBigDecimalType(a);
+            final Type bType = getBigDecimalType(b);
+
+            if (aType == Type.NAN || bType == Type.NAN) {
+                return createArray(createBigDecimal(frame, Type.NAN), createBigDecimal(frame, Type.NAN));
+            }
+
+            if (bType == Type.NEGATIVE_ZERO || (bType == Type.NORMAL && isNormalZero(b))) {
+                throw new RaiseException(getContext().getCoreLibrary().zeroDivisionError(this));
+            }
+
+            if (aType == Type.NEGATIVE_ZERO || (aType == Type.NORMAL && isNormalZero(a))) {
+                return createArray(
+                        createBigDecimal(frame, BigDecimal.ZERO),
+                        createBigDecimal(frame, BigDecimal.ZERO));
+            }
+
+            if (aType == Type.POSITIVE_INFINITY || aType == Type.NEGATIVE_INFINITY) {
+                setupSignCall();
+                setupLimitIntegerCast();
+
+                final int signA = aType == Type.POSITIVE_INFINITY ? 1 : -1;
+                final int signB = Integer.signum(signIntegerCast.executeInteger(frame, signCall.call(frame, b, "sign", null)));
+                final int sign = signA * signB; // is between -1 and 1, 0 when nan
+
+                final Type type = new Type[]{ Type.NEGATIVE_INFINITY, Type.NAN, Type.POSITIVE_INFINITY }[sign + 1];
+
+                return createArray(
+                        createBigDecimal(frame, type),
+                        createBigDecimal(frame, Type.NAN));
+            }
+
+            if (bType == Type.POSITIVE_INFINITY || bType == Type.NEGATIVE_INFINITY) {
+                return createArray(createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, a));
+            }
+
+            throw new UnsupportedOperationException();
         }
     }
 
