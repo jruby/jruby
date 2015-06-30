@@ -243,6 +243,15 @@ class Truffle::BigDecimal < Numeric
            precs2
   end
 
+  def _dump(level)
+    # TODO (pitr 30-jun-2015): increase density
+    to_s
+  end
+
+  def self._load(data)
+    new data
+  end
+
   private
 
   def add_spaces_to_s(string, reverse, space_frequency)
