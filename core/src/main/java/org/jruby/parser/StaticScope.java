@@ -225,7 +225,7 @@ public class StaticScope implements Serializable {
     }
 
     public int getNumberOfVariables() {
-        return irScope == null ? variableNames.length : irScope.getUsedVariablesCount();
+        return variableNames.length;
     }
 
     public void setVariables(String[] names) {
