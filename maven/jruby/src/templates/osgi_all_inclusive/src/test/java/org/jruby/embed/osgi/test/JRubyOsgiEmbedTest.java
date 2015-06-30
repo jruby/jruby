@@ -95,7 +95,7 @@ public class JRubyOsgiEmbedTest {
 
         gemPath = gemPath.replaceAll( "bundle[^:]*://[^/]*", "bundle:/" );
         // TODO fix the URLResource to produce uri:classloader:// urls only
-        assertEquals( gemPath, "[\"uri:classloader:/specifications\", \"uri:classloader://META-INF/jruby.home/lib/ruby/gems/shared/specifications\", \"uri:classloader://specifications\"]" );
+        assertEquals( gemPath, "[\"uri:classloader:/specifications\", \"uri:classloader://specifications\"]" );
 
         jruby.runScriptlet( "require 'jar-dependencies'" );
         list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
