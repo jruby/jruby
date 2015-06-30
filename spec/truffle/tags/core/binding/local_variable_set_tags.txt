@@ -1,0 +1,1 @@
+fails:Binding#local_variable_set adds nonexistent variables to the binding's eval scope
