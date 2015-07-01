@@ -42,6 +42,12 @@ module JRuby
       end
     end
 
+    # Change the current threads context classloader.  By, default call
+    # with no arguments to replace it with JRuby's class loader.
+    def set_context_class_loader(loader = JRuby.runtime.jruby_class_loader)
+      java.lang.Thread.currentThread.setContextClassLoader loader
+    end
+
     # Parse the given block or the provided content, returning a JRuby AST node.
     def parse(content = nil, filename = (default_filename = true; '-'), extra_position_info = false, lineno = 0, &block)
       if block
