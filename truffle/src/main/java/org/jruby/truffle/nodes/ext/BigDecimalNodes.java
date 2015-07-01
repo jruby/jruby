@@ -1377,6 +1377,73 @@ public abstract class BigDecimalNodes {
         }
     }
 
+    @CoreMethod(names = { "modulo", "%" }, required = 1)
+    public abstract static class ModuloNode extends OpNode {
+
+        public ModuloNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        public static BigDecimal moduloBigDecimal(BigDecimal a, BigDecimal b) {
+            final BigDecimal modulo = a.remainder(b);
+
+            if (modulo.signum() * b.signum() < 0) {
+                return modulo.add(b);
+            } else {
+                return modulo;
+            }
+        }
+
+        @Specialization(guards = {
+                "isNormal(a)",
+                "isNormalRubyBigDecimal(b)",
+                "!isNormalZero(b)" })
+        public Object modulo(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
+            return createBigDecimal(frame, moduloBigDecimal(getBigDecimalValue(a), getBigDecimalValue(b)));
+        }
+
+        @Specialization(guards = {
+                "isNormal(a)",
+                "isNormalRubyBigDecimal(b)",
+                "isNormalZero(b)" })
+        public Object moduloZero(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().zeroDivisionError(this));
+        }
+
+        @Specialization(guards = {
+                "isRubyBigDecimal(b)",
+                "!isNormal(a) || !isNormal(b)" })
+        public Object moduloSpecial(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
+            final Type aType = getBigDecimalType(a);
+            final Type bType = getBigDecimalType(b);
+
+            if (aType == Type.NAN || bType == Type.NAN) {
+                return createBigDecimal(frame, Type.NAN);
+            }
+
+            if (bType == Type.NEGATIVE_ZERO || (bType == Type.NORMAL && isNormalZero(b))) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().zeroDivisionError(this));
+            }
+
+            if (aType == Type.NEGATIVE_ZERO || (aType == Type.NORMAL && isNormalZero(a))) {
+                return createBigDecimal(frame, BigDecimal.ZERO);
+            }
+
+            if (aType == Type.POSITIVE_INFINITY || aType == Type.NEGATIVE_INFINITY) {
+                return createBigDecimal(frame, Type.NAN);
+            }
+
+            if (bType == Type.POSITIVE_INFINITY || bType == Type.NEGATIVE_INFINITY) {
+                return createBigDecimal(frame, a);
+            }
+
+            throw new UnreachableCodeBranch();
+        }
+    }
+
     @CoreMethod(names = { "**", "power" }, required = 1, optional = 1)
     @NodeChildren({
             @NodeChild(value = "self", type = RubyNode.class),
