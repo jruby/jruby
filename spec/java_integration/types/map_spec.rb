@@ -274,11 +274,13 @@ describe "a java.util.Map instance" do
     map.put(1, '1'); map.put(2, :dva); map.put(3, 3)
 
     expected = { 1 => '1', 2 => :dva, 3 => 3 }
-    expect( h = map.to_hash ).to eql expected
+    expect( h = map.to_hash ).to eql({ 1 => '1', 2 => :dva, 3 => 3 })
 
-    map[4] = 0; map[1] = 1
+    map[4] = 0.1; map[1] = 1
     expect( h[1] ).to eql '1'
     expect( h.key?(4) ).to be_false
+
+    expect( map.to_h ).to eql({ 1 => 1, 2 => :dva, 3 => 3, 4 => 0.1 })
   end
 
   private

@@ -322,7 +322,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_to_hash
      *
      */
-    @JRubyMethod(name = "to_hash")
+    @JRubyMethod(name = { "to_hash", "to_h" })
     public RubyHash to_hash() {
         return getOrCreateRubyHashMap().to_hash();
     }
