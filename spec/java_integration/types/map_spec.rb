@@ -1,29 +1,8 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-describe "A Java primitive Array of type" do
-  if {}.respond_to? :key
-    def key(hash, value)
-      hash.key(value)
-    end
-  else
-    def key(hash, value)
-      hash.index(value)
-    end
-  end
-    
-  def test_equal(a, b)
-    b.should == a
-  end
-  def test_ok(a)
-    a.should be_true
-  end
-  def test_exception(a, &b)
-    lambda {b.call}.should raise_exception(a)
-  end
-  def test_no_exception(&b)
-    lambda {b.call}.should_not raise_exception
-  end
-  it "supports Hash-like operations on java.util.Map classes" do
+describe "a java.util.Map instance" do
+
+  it "supports Hash-like operations" do
     h = java.util.HashMap.new
     test_ok(h.kind_of? java.util.Map)
     h.put(1, 2); h.put(3, 4); h.put(5, 6)
@@ -83,7 +62,7 @@ describe "A Java primitive Array of type" do
     test_equal(3, h.length)
     h.delete(1)
     test_equal(2, h.length)
-    test_ok(h.member?(3))
+    expect( h.member?(3) ).to be_true
     test_equal(Java::JavaUtil::LinkedHashMap, h.class)
 
     h1 = java.util.LinkedHashMap.new
@@ -173,13 +152,13 @@ describe "A Java primitive Array of type" do
     test_equal(nil, h[k1])
 
     h.put(1, 2); h.put(3, 4);
-    test_equal(1, key(h, 2))
-    test_equal(nil, key(h, 10))
+    test_equal(1, get_hash_key(h, 2))
+    test_equal(nil, get_hash_key(h, 10))
     test_equal(nil, h.default_proc)
     h.default = :hello
     test_equal(nil, h.default_proc)
-    test_equal(1, key(h, 2))
-    test_equal(nil, key(h, 10))
+    test_equal(1, get_hash_key(h, 2))
+    test_equal(nil, get_hash_key(h, 10))
 
 # java.util.HashMap can't have a block as an arg for its constructor
 #h = Hash.new {|h,k| h[k] = k.to_i*10 }
@@ -289,4 +268,33 @@ describe "A Java primitive Array of type" do
 
     test_no_exception { H1.new.clone }
   end
+
+  private
+
+  if {}.respond_to? :key
+    def get_hash_key(hash, value)
+      hash.key(value)
+    end
+  else
+    def get_hash_key(hash, value)
+      hash.index(value)
+    end
+  end
+
+  def test_equal(obj, exp)
+    exp.should == obj
+  end
+
+  def test_ok(obj)
+    obj.should be_true
+  end
+
+  def test_exception(exc, &block)
+    lambda { block.call }.should raise_exception(exc)
+  end
+  
+  def test_no_exception(&block)
+    lambda { block.call }.should_not raise_exception
+  end
+
 end
