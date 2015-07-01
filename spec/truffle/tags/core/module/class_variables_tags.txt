@@ -1,1 +1,0 @@
-fails:Module#class_variables returns an Array with names of class variables defined in metaclasses

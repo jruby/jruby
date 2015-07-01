@@ -1,1 +1,0 @@
-fails:Module#class_variable_defined? returns true if a class variable with the given name is defined in the metaclass
