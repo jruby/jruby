@@ -46,6 +46,7 @@ import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
+import jnr.ffi.Pointer;
 import jnr.ffi.byref.IntByReference;
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -308,6 +309,62 @@ public abstract class IOPrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().ioError("shutdown stream",this));
             }
             return nil();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "io_read_if_available")
+    public static abstract class IOReadIfAvailableNode extends RubiniusPrimitiveNode {
+
+        private static final FDSetFactory fdSetFactory = FDSetFactoryFactory.create();
+
+        public IOReadIfAvailableNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public Object readIfAvailable(RubyBasicObject file, int numberOfBytes) {
+            // Taken from Rubinius's IO::read_if_available.
+
+            if (numberOfBytes == 0) {
+                return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
+            }
+
+            final int fd = getDescriptor(file);
+
+            final FDSet fdSet = fdSetFactory.create();
+            fdSet.set(fd);
+
+            final Pointer timeout = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().allocateDirect(8 * 2); // Needs to be two longs.
+            timeout.putLong(0, 0);
+            timeout.putLong(8, 0);
+
+            final int res = nativeSockets().select(fd + 1, fdSet.getPointer(), PointerNodes.NULL_POINTER, PointerNodes.NULL_POINTER, timeout);
+
+            if (res == 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(Errno.EAGAIN.intValue(), this));
+            }
+
+            if (res < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(getContext().getPosix().errno(), this));
+            }
+
+            final byte[] bytes = new byte[numberOfBytes];
+            final int bytesRead = getContext().getPosix().read(fd, bytes, numberOfBytes);
+
+            if (bytesRead == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(getContext().getPosix().errno(), this));
+            }
+
+            if (bytesRead == 0) {
+                return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
+            }
+
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
         }
 
     }
