@@ -54,6 +54,7 @@ import static org.jruby.CompatVersion.*;
  */
 
 public class MapJavaProxy extends ConcreteJavaProxy {
+
     private RubyHashMap wrappedMap;
 
     public MapJavaProxy(Ruby runtime, RubyClass klazz) {
@@ -88,17 +89,19 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         // (JavaProxy)recv).getObject() might raise exception when
         // wrong number of args are given to the constructor.
         try {
-            wrappedMap.setSize(((Map)((JavaProxy)this).getObject()).size());
-        } catch (RaiseException e) {
+            wrappedMap.setSize( getMapObject().size() );
+        }
+        catch (RaiseException e) {
             wrappedMap.setSize(0);
         }
         return wrappedMap;
     }
 
     private static class RubyHashMap extends RubyHash {
-        private IRubyObject receiver;
 
-        public RubyHashMap(Ruby runtime, IRubyObject receiver) {
+        private final MapJavaProxy receiver;
+
+        public RubyHashMap(Ruby runtime, MapJavaProxy receiver) {
             super(runtime);
             this.receiver = receiver;
         }
@@ -107,15 +110,14 @@ public class MapJavaProxy extends ConcreteJavaProxy {
             this.size = size;
         }
 
-        private Map getMap() {
-            return (Map) ((JavaProxy)receiver).getObject();
-        }
+        private Map getMap() { return receiver.getMapObject(); }
 
         @Override
         public void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
-            Map map = getMap();
+            @SuppressWarnings("unchecked")
+            final Map<Object, Object> map = getMap();
             map.put(key.toJava(Object.class), value.toJava(Object.class));
-            size = map.size();
+            this.size = map.size();
         }
 
         @Override
@@ -141,14 +143,14 @@ public class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public RubyHashEntry internalDelete(final IRubyObject key) {
-            Map map = getMap();
+            final Map map = getMap();
             Object convertedKey = key.toJava(Object.class);
             Object value = map.get(convertedKey);
 
             if (value != null) {
                 RubyHashEntry rubyEntry = new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
                 map.remove(convertedKey);
-                size = map.size();
+                this.size = map.size();
                 return rubyEntry;
             }
 
@@ -157,12 +159,12 @@ public class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public RubyHashEntry internalDeleteEntry(final RubyHashEntry entry) {
-            Map map = getMap();
-            Object convertedKey = ((IRubyObject)entry.getKey()).toJava(Object.class);
+            final Map map = getMap();
+            Object convertedKey = ((IRubyObject) entry.getKey()).toJava(Object.class);
 
             if (map.containsKey(convertedKey)) {
                 map.remove(convertedKey);
-                size = map.size();
+                this.size = map.size();
                 return entry;
             }
 
@@ -171,18 +173,23 @@ public class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public void visitAll(Visitor visitor) {
-            Map.Entry[] entries = (Entry[]) getMap().entrySet().toArray(new Map.Entry[0]);
-            for (Map.Entry entry : entries) {
-                IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getKey());
-                IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getValue());
+            final Ruby runtime = getRuntime();
+            @SuppressWarnings("unchecked")
+            final Map<Object, Object> map = getMap();
+            final Map.Entry[] entries = map.entrySet().toArray( new Map.Entry[ map.size() ] );
+            for ( Map.Entry entry : entries ) {
+                IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
+                IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
                 visitor.visit(key, value);
             }
         }
 
         @Override
         public void op_asetForString(Ruby runtime, RubyString key, IRubyObject value) {
-            getMap().put(key.toJava(String.class), value.toJava(Object.class));
-            size = getMap().size();
+            @SuppressWarnings("unchecked")
+            final Map<Object, Object> map = getMap();
+            map.put(key.toJava(String.class), value.toJava(Object.class));
+            this.size = map.size();
         }
 
         @Override
@@ -193,8 +200,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         @Override
         public RubyHash rb_clear() {
             getMap().clear();
-            size = 0;
-
+            this.size = 0;
             return this;
         }
 
@@ -208,12 +214,14 @@ public class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public RubyHash to_hash() {
-            RubyHash hash = new RubyHash(getRuntime());
-            Set<Map.Entry> entries = ((Map) ((JavaProxy)receiver).getObject()).entrySet();
-            for (Map.Entry entry : entries) {
-                IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getKey());
-                IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getValue());
-                hash.op_aset(getRuntime().getCurrentContext(), key, value);
+            final Ruby runtime = getRuntime();
+            final RubyHash hash = new RubyHash(runtime);
+            @SuppressWarnings("unchecked")
+            Set<Map.Entry> entries = getMap().entrySet();
+            for ( Map.Entry entry : entries ) {
+                IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
+                IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
+                hash.fastASetCheckString(runtime, key, value);
             }
             return hash;
         }
@@ -664,32 +672,38 @@ public class MapJavaProxy extends ConcreteJavaProxy {
 
     @Override
     public IRubyObject dup() {
-        try {
-            MapJavaProxy proxy = new MapJavaProxy(getRuntime(), metaClass);
-            Map newMap = (Map)getObject().getClass().newInstance();
-            newMap.putAll((Map)getObject());
-            proxy.setObject(newMap);
-            return proxy;
-        } catch (InstantiationException ex) {
-            throw getRuntime().newNotImplementedError("can't dup Map of type " + getObject().getClass().getName());
-        } catch (IllegalAccessException ex) {
-            throw getRuntime().newNotImplementedError("can't dup Map of type " + getObject().getClass().getName());
-        }
+        return dupImpl("dup");
     }
 
     @Override
     public IRubyObject rbClone() {
+        return dupImpl("clone");
+    }
+
+    @SuppressWarnings("unchecked")
+    private MapJavaProxy dupImpl(final String method) {
+        final Map map = getMapObject();
         try {
+            Map newMap = (Map) map.getClass().newInstance();
+            newMap.putAll(map);
             MapJavaProxy proxy = new MapJavaProxy(getRuntime(), metaClass);
-            Map newMap = (Map)getObject().getClass().newInstance();
-            newMap.putAll((Map)getObject());
             proxy.setObject(newMap);
             return proxy;
-        } catch (InstantiationException ex) {
-            throw getRuntime().newNotImplementedError("can't clone Map of type " + getObject().getClass().getName());
-        } catch (IllegalAccessException ex) {
-            throw getRuntime().newNotImplementedError("can't clone Map of type " + getObject().getClass().getName());
         }
+        catch (InstantiationException ex) {
+            throw initCause( getRuntime().newNotImplementedError("can't "+ method +" Map of type " + getObject().getClass().getName()), ex);
+        }
+        catch (IllegalAccessException ex) {
+            throw initCause( getRuntime().newNotImplementedError("can't "+ method +" Map of type " + getObject().getClass().getName()), ex);
+        }
+    }
+
+    private static RaiseException initCause(final RaiseException re, final Exception e) {
+        re.initCause(e); return re;
+    }
+
+    final Map getMapObject() {
+        return (Map) getObject();
     }
 
     @Deprecated
