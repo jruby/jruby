@@ -838,6 +838,15 @@ public abstract class PosixNodes {
                     PointerNodes.getPointer(resultsPointer));
         }
 
+        @Specialization(guards = { "isNil(serviceName)", "isRubyPointer(hintsPointer)", "isRubyPointer(resultsPointer)" })
+        public int getaddrinfo(RubyString hostName, RubyBasicObject serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
+            return nativeSockets().getaddrinfo(
+                    StringNodes.getByteList(hostName),
+                    null,
+                    PointerNodes.getPointer(hintsPointer),
+                    PointerNodes.getPointer(resultsPointer));
+        }
+
     }
 
     @CoreMethod(names = "_connect", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 2})
