@@ -770,7 +770,8 @@ public abstract class ModuleNodes {
         public Object setClassVariable(RubyModule module, String name, Object value) {
             RubyContext.checkClassVariableName(getContext(), name, this);
 
-            module.getClassVariables().put(name, value);
+            ModuleOperations.setClassVariable(module, name, value, this);
+
             return value;
         }
 
