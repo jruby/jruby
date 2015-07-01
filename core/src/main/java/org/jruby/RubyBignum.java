@@ -574,34 +574,41 @@ public class RubyBignum extends RubyInteger {
      *
      */
     @JRubyMethod(name = {"**", "power"}, required = 1)
-    public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
-        double d;
+    public IRubyObject op_pow(final ThreadContext context, final IRubyObject other) {
         if (other instanceof RubyFixnum) {
             RubyFixnum fix = (RubyFixnum) other;
             long fixValue = fix.getLongValue();
             return op_pow(context, fixValue);
-        } else if (other instanceof RubyBignum) {
-            d = ((RubyBignum) other).getDoubleValue();
-            getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big");
+        }
+
+        final double otherValue;
+        if (other instanceof RubyBignum) {
+            otherValue = ((RubyBignum) other).getDoubleValue();
+            warnPowExponentTooBig(context);
         } else if (other instanceof RubyFloat) {
-            d = ((RubyFloat) other).getDoubleValue();
+            otherValue = ((RubyFloat) other).getDoubleValue();
         } else {
             return coerceBin(context, "**", other);
 
         }
-        return RubyFloat.newFloat(getRuntime(), Math.pow(big2dbl(this), d));
+        return RubyFloat.newFloat(context.runtime, Math.pow(big2dbl(this), otherValue));
     }
 
-    public IRubyObject op_pow(ThreadContext context, long other) {
+    public IRubyObject op_pow(final ThreadContext context, final long other) {
         // MRI issuses warning here on (RBIGNUM(x)->len * SIZEOF_BDIGITS * yy > 1024*1024)
-        if (((value.bitLength() + 7) / 8) * 4 * Math.abs(other) > 1024 * 1024) {
-            getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big");
+        if ( ((value.bitLength() + 7) / 8) * 4 * Math.abs(other) > 1024 * 1024 ) {
+            warnPowExponentTooBig(context);
         }
         if (other >= 0) {
-            return bignorm(getRuntime(), value.pow((int) other)); // num2int is also implemented
-        } else {
-            return RubyFloat.newFloat(getRuntime(), Math.pow(big2dbl(this), (double)other));
+            if ( other <= Integer.MAX_VALUE ) { // only have BigInteger#pow(int)
+                return bignorm(context.runtime, value.pow((int) other)); // num2int is also implemented
+            }
         }
+        return RubyFloat.newFloat(context.runtime, Math.pow(big2dbl(this), (double) other));
+    }
+
+    private static void warnPowExponentTooBig(final ThreadContext context) {
+        context.runtime.getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big");
     }
 
     /** rb_big_pow
