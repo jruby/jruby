@@ -111,29 +111,6 @@ public abstract class BigDecimalNodes {
         return (Type) TYPE_PROPERTY.get(bigdecimal.getDynamicObject(), true);
     }
 
-    private static void setBigDecimalValue(RubyBasicObject bigdecimal, BigDecimal value) {
-        assert RubyGuards.isRubyBigDecimal(bigdecimal);
-        assert bigdecimal.getDynamicObject().getShape().hasProperty(VALUE_IDENTIFIER);
-        VALUE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), value, null);
-        TYPE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), Type.NORMAL, null);
-    }
-
-    private static void setBigDecimalValue(RubyBasicObject bigdecimal, Type type) {
-        assert RubyGuards.isRubyBigDecimal(bigdecimal);
-        assert bigdecimal.getDynamicObject().getShape().hasProperty(TYPE_IDENTIFIER);
-        VALUE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), BigDecimal.ZERO, null);
-        TYPE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), type, null);
-    }
-
-    public static RubyBasicObject createRubyBigDecimal(RubyClass rubyClass, Type type) {
-        assert type != Type.NORMAL;
-        return new RubyBasicObject(rubyClass, BIG_DECIMAL_FACTORY.newInstance(type, BigDecimal.ZERO));
-    }
-
-    public static RubyBasicObject createRubyBigDecimal(RubyClass rubyClass, BigDecimal value) {
-        return new RubyBasicObject(rubyClass, BIG_DECIMAL_FACTORY.newInstance(Type.NORMAL, value));
-    }
-
     public static RoundingMode toRoundingMode(int constValue) {
         switch (constValue) {
             case 1:
@@ -197,7 +174,7 @@ public abstract class BigDecimalNodes {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return createRubyBigDecimal(rubyClass, BigDecimal.ZERO);
+            return new RubyBasicObject(rubyClass, BIG_DECIMAL_FACTORY.newInstance(Type.NORMAL, BigDecimal.ZERO));
         }
 
     }
@@ -300,16 +277,6 @@ public abstract class BigDecimalNodes {
                     roundModeCall.call(frame, getBigDecimalClass(), "mode", null, 256)));
         }
 
-        @Deprecated
-        protected RubyBasicObject createRubyBigDecimal(Type type) {
-            return BigDecimalNodes.createRubyBigDecimal(getBigDecimalClass(), type);
-        }
-
-        @Deprecated
-        protected RubyBasicObject createRubyBigDecimal(BigDecimal value) {
-            return BigDecimalNodes.createRubyBigDecimal(getBigDecimalClass(), value);
-        }
-
         protected RubyClass getBigDecimalClass() {
             return getContext().getCoreLibrary().getBigDecimalClass();
         }
@@ -348,6 +315,20 @@ public abstract class BigDecimalNodes {
         public CreateBigDecimalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             bigDecimalCast = BigDecimalCastNodeGen.create(context, sourceSection, null);
+        }
+
+        private void setBigDecimalValue(RubyBasicObject bigdecimal, BigDecimal value) {
+            assert RubyGuards.isRubyBigDecimal(bigdecimal);
+            assert bigdecimal.getDynamicObject().getShape().hasProperty(VALUE_IDENTIFIER);
+            VALUE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), value, null);
+            TYPE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), Type.NORMAL, null);
+        }
+
+        private void setBigDecimalValue(RubyBasicObject bigdecimal, Type type) {
+            assert RubyGuards.isRubyBigDecimal(bigdecimal);
+            assert bigdecimal.getDynamicObject().getShape().hasProperty(TYPE_IDENTIFIER);
+            VALUE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), BigDecimal.ZERO, null);
+            TYPE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), type, null);
         }
 
         public abstract RubyBasicObject executeCreate(VirtualFrame frame, Object value, RubyBasicObject alreadyAllocatedSelf, int digits);
@@ -1614,18 +1595,18 @@ public abstract class BigDecimalNodes {
         }
 
         @Specialization(guards = "!isNormal(a)")
-        public Object compareSpecial(RubyBasicObject a, long b) {
-            return compareSpecial(a, createRubyBigDecimal(getBigDecimalValue(b)));
+        public Object compareSpecial(VirtualFrame frame, RubyBasicObject a, long b) {
+            return compareSpecial(a, createBigDecimal(frame, getBigDecimalValue(b)));
         }
 
         @Specialization(guards = "!isNormal(a)")
-        public Object compareSpecial(RubyBasicObject a, double b) {
-            return compareSpecial(a, createRubyBigDecimal(getBigDecimalValue(b)));
+        public Object compareSpecial(VirtualFrame frame, RubyBasicObject a, double b) {
+            return compareSpecial(a, createBigDecimal(frame, getBigDecimalValue(b)));
         }
 
         @Specialization(guards = { "!isNormal(a)", "isRubyBignum(b)" })
-        public Object compareSpecialBignum(RubyBasicObject a, RubyBasicObject b) {
-            return compareSpecial(a, createRubyBigDecimal(getBignumBigDecimalValue(b)));
+        public Object compareSpecialBignum(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
+            return compareSpecial(a, createBigDecimal(frame, getBignumBigDecimalValue(b)));
         }
 
         @Specialization(guards = {
@@ -2208,5 +2189,4 @@ public abstract class BigDecimalNodes {
         // TODO (pitr 22-Jun-2015): deal with not-coerce-able values
 
     }
-
 }
