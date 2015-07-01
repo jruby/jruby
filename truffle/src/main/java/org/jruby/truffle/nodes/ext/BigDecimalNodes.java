@@ -406,7 +406,7 @@ public abstract class BigDecimalNodes {
 
             final int exceptionConstant = getIntegerConstant.executeGetIntegerConstant(frame, constantName);
             final boolean raise = booleanCast.executeBoolean(frame,
-                    modeCall.call(frame, getBigDecimalClass(), "mode", null, exceptionConstant));
+                    modeCall.call(frame, getBigDecimalClass(), "boolean_mode", null, exceptionConstant));
             if (raise) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().floatDomainError(errorMessage, this));
@@ -434,7 +434,7 @@ public abstract class BigDecimalNodes {
         private void setupModeCall() {
             if (modeCall == null) {
                 CompilerDirectives.transferToInterpreter();
-                modeCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                modeCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
             }
         }
 
@@ -442,8 +442,7 @@ public abstract class BigDecimalNodes {
         private Object getValueFromString(String string, int digits) {
             String strValue = string.trim();
 
-            // TODO (pitr 26-May-2015): create specialization without trims and other cleanups, use rewriteOn,
-            // string value specializations (try @Cache)
+            // TODO (pitr 26-May-2015): create specialization without trims and other cleanups, use rewriteOn
 
             switch (strValue) {
                 case "NaN":
@@ -495,7 +494,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    // TODO (pitr 21-Jun-2015): Check for missing coerce on OpNodess
+    // TODO (pitr 21-Jun-2015): Check for missing coerce on OpNodes
 
     @CoreMethod(names = "initialize", required = 1, optional = 1)
     public abstract static class InitializeNode extends BigDecimalCoreMethodArrayArgumentsNode {

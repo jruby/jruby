@@ -46,8 +46,9 @@ class Truffle::BigDecimal < Numeric
         Thread.current[:'BigDecimal.exception_mode'] &= ~key
         return value
       when nil
-        # FIXME (pitr 20-Jun-2015): CRuby always returns BigDecimal.exception_mode internal value ignoring the key
-        return Thread.current[:'BigDecimal.exception_mode'] & key == key
+        return Thread.current[:'BigDecimal.exception_mode']
+      else
+        raise ArgumentError, 'second argument must be true or false'
       end
     end
   end
@@ -271,6 +272,16 @@ class Truffle::BigDecimal < Numeric
 
     pieces.join ' '
   end
+
+  def self.boolean_mode(key, value = nil)
+    if value.nil?
+      mode(key) & key == key
+    else
+      mode key, value
+    end
+  end
+
+  private_class_method :boolean_mode
 end
 
 BigDecimal = Truffle::BigDecimal
