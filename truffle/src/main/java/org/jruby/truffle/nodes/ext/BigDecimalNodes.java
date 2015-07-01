@@ -33,7 +33,7 @@ import org.jruby.truffle.nodes.constants.LookupConstantNodeGen;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.UnreachableCodeBranch;
+import org.jruby.truffle.nodes.internal.UnreachableCodeBranch;
 import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.BigDecimalCastNodeGen;
 import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.BigDecimalCoerceNodeGen;
 import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.CreateBigDecimalNodeFactory;
