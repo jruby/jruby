@@ -28,6 +28,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.cext.CExtManager;
 import org.jruby.truffle.runtime.cext.CExtSubsystem;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -489,6 +490,34 @@ public abstract class TrufflePrimitiveNodes {
             getContext().getRubiniusPrimitiveManager().installPrimitive(name, rubyMethod);
             return nil();
         }
+    }
+
+    @CoreMethod(names = "fixnum_lower", isModuleFunction = true, required = 1)
+    public abstract static class FixnumLowerPrimitiveNode extends UnaryCoreMethodNode {
+
+        public FixnumLowerPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int lower(int value) {
+            return value;
+        }
+
+        @Specialization(guards = "canLower(value)")
+        public int lower(long value) {
+            return (int) value;
+        }
+
+        @Specialization(guards = "!canLower(value)")
+        public long lowerFails(long value) {
+            return value;
+        }
+
+        protected static boolean canLower(long value) {
+            return CoreLibrary.fitsIntoInteger(value);
+        }
+
     }
 
 }
