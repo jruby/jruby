@@ -658,6 +658,40 @@ public abstract class IOPrimitiveNodes {
                     ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()));
         }
 
+        @TruffleBoundary
+        @Specialization(guards = { "isNil(readables)", "isRubyArray(writables)", "isNil(errorables)" })
+        public Object selectNilReadables(RubyBasicObject readables, RubyBasicObject writables, RubyBasicObject errorables, int timeout) {
+            final Object[] writableObjects = ArrayNodes.slowToArray(writables);
+            final int[] writableFds = getFileDescriptors(writables);
+
+            final FDSet writableSet = fdSetFactory.create();
+
+            for (int fd : writableFds) {
+                writableSet.set(fd);
+            }
+
+            final int result = getContext().getThreadManager().runOnce(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
+                @Override
+                public Integer block() throws InterruptedException {
+                    return nativeSockets().select(
+                            max(writableFds) + 1,
+                            PointerNodes.NULL_POINTER,
+                            writableSet.getPointer(),
+                            PointerNodes.NULL_POINTER,
+                            PointerNodes.NULL_POINTER);
+                }
+            });
+
+            if (result == -1) {
+                return nil();
+            }
+
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()),
+                    getSetObjects(writableObjects, writableFds, writableSet),
+                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()));
+        }
+
         private int[] getFileDescriptors(RubyBasicObject fileDescriptorArray) {
             assert RubyGuards.isRubyArray(fileDescriptorArray);
 
