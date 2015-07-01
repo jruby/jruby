@@ -269,6 +269,18 @@ describe "a java.util.Map instance" do
     test_no_exception { H1.new.clone }
   end
 
+  it 'converts to_hash' do
+    map = java.util.HashMap.new
+    map.put(1, '1'); map.put(2, :dva); map.put(3, 3)
+
+    expected = { 1 => '1', 2 => :dva, 3 => 3 }
+    expect( h = map.to_hash ).to eql expected
+
+    map[4] = 0; map[1] = 1
+    expect( h[1] ).to eql '1'
+    expect( h.key?(4) ).to be_false
+  end
+
   private
 
   if {}.respond_to? :key
@@ -292,7 +304,7 @@ describe "a java.util.Map instance" do
   def test_exception(exc, &block)
     lambda { block.call }.should raise_exception(exc)
   end
-  
+
   def test_no_exception(&block)
     lambda { block.call }.should_not raise_exception
   end
