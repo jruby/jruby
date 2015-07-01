@@ -840,6 +840,20 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "_connect", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 2})
+    public abstract static class ConnectNode extends CoreMethodArrayArgumentsNode {
+
+        public ConnectNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyPointer(address)")
+        public int connect(int socket, RubyBasicObject address, int address_len) {
+            return nativeSockets().connect(socket, PointerNodes.getPointer(address), address_len);
+        }
+
+    }
+
     @CoreMethod(names = "freeaddrinfo", isModuleFunction = true, required = 1)
     public abstract static class FreeAddrInfoNode extends CoreMethodArrayArgumentsNode {
 
