@@ -5,26 +5,26 @@ java_import "java_integration.fixtures.ArrayReturningInterface"
 java_import "java_integration.fixtures.ArrayReturningInterfaceConsumer"
 
 describe "A Java primitive Array of type" do
-  describe "boolean" do 
-    it "should be possible to create empty array" do 
+  describe "boolean" do
+    it "should be possible to create empty array" do
       arr = Java::boolean[0].new
       arr.java_class.to_s.should == "[Z"
       arr.should be_empty
     end
-    
-    it "should be possible to create uninitialized single dimensional array" do 
+
+    it "should be possible to create uninitialized single dimensional array" do
       arr = Java::boolean[10].new
       arr.java_class.to_s.should == "[Z"
       arr.should_not be_empty
     end
-    
-    it "should be possible to create uninitialized multi dimensional array" do 
+
+    it "should be possible to create uninitialized multi dimensional array" do
       arr = Java::boolean[10,10].new
       arr.java_class.to_s.should == "[[Z"
       arr.should_not be_empty
     end
 
-    it "should be possible to create primitive array from Ruby array" do 
+    it "should be possible to create primitive array from Ruby array" do
       # Check with symbol name
       arr = [true, false].to_java :boolean
       arr.java_class.to_s.should == "[Z"
@@ -44,11 +44,11 @@ describe "A Java primitive Array of type" do
       arr[0].should be_true
       arr[1].should be_false
     end
-    
-    it "should be possible to set values in primitive array" do 
+
+    it "should be possible to set values in primitive array" do
       arr = Java::boolean[5].new
       arr[3] = true
-      
+
       arr[0].should be_false
       arr[1].should be_false
       arr[2].should be_false
@@ -56,45 +56,45 @@ describe "A Java primitive Array of type" do
       arr[4].should be_false
     end
 
-    it "should be possible to get values from primitive array" do 
+    it "should be possible to get values from primitive array" do
       arr = [false, true, false].to_java :boolean
       arr[0].should be_false
       arr[1].should be_true
       arr[2].should be_false
     end
 
-    it "should be possible to call methods that take primitive array" do 
+    it "should be possible to call methods that take primitive array" do
       arr = [false, true, false].to_java :boolean
       ret = ArrayReceiver::call_with_boolean(arr)
       ret.to_a.should == [false, true, false]
     end
-    
+
     it "inspects to show type and contents" do
       arr = [false, true, false].to_java :boolean
       arr.inspect.should =~ /^boolean\[false, true, false\]@[0-9a-f]+$/
     end
   end
 
-  describe "byte" do 
-    it "should be possible to create empty array" do 
+  describe "byte" do
+    it "should be possible to create empty array" do
       arr = Java::byte[0].new
       arr.java_class.to_s.should == "[B"
       arr.should be_empty
     end
-    
-    it "should be possible to create uninitialized single dimensional array" do 
+
+    it "should be possible to create uninitialized single dimensional array" do
       arr = Java::byte[10].new
       arr.java_class.to_s.should == "[B"
       arr.should_not be_empty
     end
-    
-    it "should be possible to create uninitialized multi dimensional array" do 
+
+    it "should be possible to create uninitialized multi dimensional array" do
       arr = Java::byte[10,10].new
       arr.java_class.to_s.should == "[[B"
       arr.should_not be_empty
     end
 
-    it "should be possible to create primitive array from Ruby array" do 
+    it "should be possible to create primitive array from Ruby array" do
       # Check with symbol name
       arr = [1,2].to_java :byte
       arr.java_class.to_s.should == "[B"
@@ -114,13 +114,13 @@ describe "A Java primitive Array of type" do
       arr[0].should == 1
       arr[1].should == 2
     end
-    
-    it "should be possible to set values in primitive array" do 
+
+    it "should be possible to set values in primitive array" do
       arr = Java::byte[5].new
       arr[0] = 12
       arr[1] = 20
       arr[2] = 42
-      
+
       arr[0].should == 12
       arr[1].should == 20
       arr[2].should == 42
@@ -128,19 +128,19 @@ describe "A Java primitive Array of type" do
       arr[4].should == 0
     end
 
-    it "should be possible to get values from primitive array" do 
+    it "should be possible to get values from primitive array" do
       arr = [13, 42, 120].to_java :byte
       arr[0].should == 13
       arr[1].should == 42
       arr[2].should == 120
     end
 
-    it "should be possible to call methods that take primitive array" do 
+    it "should be possible to call methods that take primitive array" do
       arr = [13, 42, 120].to_java :byte
       ret = ArrayReceiver::call_with_byte(arr)
       ret.to_a.should == [13, 42, 120]
     end
-    
+
     it "allows setting and getting unsigned bytes with ubyte_set and ubyte_get" do
       arr = Java::byte[1].new
       lambda do
@@ -150,7 +150,7 @@ describe "A Java primitive Array of type" do
       arr.ubyte_get(0).should == 0xFF
       arr[0].should == -1
     end
-    
+
     it "inspects to show type and contents" do
       arr = [1, 2, 3].to_java :byte
       arr.inspect.should =~ /^byte\[1, 2, 3\]@[0-9a-f]+$/
@@ -161,26 +161,26 @@ describe "A Java primitive Array of type" do
     end
   end
 
-  describe "char" do 
-    it "should be possible to create empty array" do 
+  describe "char" do
+    it "should be possible to create empty array" do
       arr = Java::char[0].new
       arr.java_class.to_s.should == "[C"
       arr.should be_empty
     end
-    
-    it "should be possible to create uninitialized single dimensional array" do 
+
+    it "should be possible to create uninitialized single dimensional array" do
       arr = Java::char[10].new
       arr.java_class.to_s.should == "[C"
       arr.should_not be_empty
     end
-    
-    it "should be possible to create uninitialized multi dimensional array" do 
+
+    it "should be possible to create uninitialized multi dimensional array" do
       arr = Java::char[10,10].new
       arr.java_class.to_s.should == "[[C"
       arr.should_not be_empty
     end
 
-    it "should be possible to create primitive array from Ruby array" do 
+    it "should be possible to create primitive array from Ruby array" do
       # Check with symbol name
       arr = [1,2].to_java :char
       arr.java_class.to_s.should == "[C"
@@ -200,13 +200,13 @@ describe "A Java primitive Array of type" do
       arr[0].should == 1
       arr[1].should == 2
     end
-    
-    it "should be possible to set values in primitive array" do 
+
+    it "should be possible to set values in primitive array" do
       arr = Java::char[5].new
       arr[0] = 12
       arr[1] = 20
       arr[2] = 42
-      
+
       arr[0].should == 12
       arr[1].should == 20
       arr[2].should == 42
@@ -214,45 +214,45 @@ describe "A Java primitive Array of type" do
       arr[4].should == 0
     end
 
-    it "should be possible to get values from primitive array" do 
+    it "should be possible to get values from primitive array" do
       arr = [13, 42, 120].to_java :char
       arr[0].should == 13
       arr[1].should == 42
       arr[2].should == 120
     end
 
-    it "should be possible to call methods that take primitive array" do 
+    it "should be possible to call methods that take primitive array" do
       arr = [13, 42, 120].to_java :char
       ret = ArrayReceiver::call_with_char(arr)
       ret.to_a.should == [13, 42, 120]
     end
-    
+
     it "inspects to show type and contents" do
       arr = [100, 101, 102].to_java :char
       arr.inspect.should =~ /^char\[d, e, f\]@[0-9a-f]+$/
     end
   end
 
-  describe "double" do 
-    it "should be possible to create empty array" do 
+  describe "double" do
+    it "should be possible to create empty array" do
       arr = Java::double[0].new
       arr.java_class.to_s.should == "[D"
       arr.should be_empty
     end
-    
-    it "should be possible to create uninitialized single dimensional array" do 
+
+    it "should be possible to create uninitialized single dimensional array" do
       arr = Java::double[10].new
       arr.java_class.to_s.should == "[D"
       arr.should_not be_empty
     end
-    
-    it "should be possible to create uninitialized multi dimensional array" do 
+
+    it "should be possible to create uninitialized multi dimensional array" do
       arr = Java::double[10,10].new
       arr.java_class.to_s.should == "[[D"
       arr.should_not be_empty
     end
 
-    it "should be possible to create primitive array from Ruby array" do 
+    it "should be possible to create primitive array from Ruby array" do
       # Check with symbol name
       arr = [1.2,2.3].to_java :double
       arr.java_class.to_s.should == "[D"
@@ -272,13 +272,13 @@ describe "A Java primitive Array of type" do
       arr[0].should == 1.2
       arr[1].should == 2.3
     end
-    
-    it "should be possible to set values in primitive array" do 
+
+    it "should be possible to set values in primitive array" do
       arr = Java::double[5].new
       arr[0] = 12.2
       arr[1] = 20.3
       arr[2] = 42.4
-      
+
       arr[0].should == 12.2
       arr[1].should == 20.3
       arr[2].should == 42.4
@@ -286,45 +286,45 @@ describe "A Java primitive Array of type" do
       arr[4].should == 0.0
     end
 
-    it "should be possible to get values from primitive array" do 
+    it "should be possible to get values from primitive array" do
       arr = [13.2, 42.3, 120.4].to_java :double
       arr[0].should == 13.2
       arr[1].should == 42.3
       arr[2].should == 120.4
     end
 
-    it "should be possible to call methods that take primitive array" do 
+    it "should be possible to call methods that take primitive array" do
       arr = [13.2, 42.3, 120.4].to_java :double
       ret = ArrayReceiver::call_with_double(arr)
       ret.to_a.should == [13.2, 42.3, 120.4]
     end
-    
+
     it "inspects to show type and contents" do
       arr = [1.0, 1.1, 1.2].to_java :double
       arr.inspect.should =~ /^double\[1\.0, 1\.1, 1\.2\]@[0-9a-f]+$/
     end
   end
 
-  describe "float" do 
-    it "should be possible to create empty array" do 
+  describe "float" do
+    it "should be possible to create empty array" do
       arr = Java::float[0].new
       arr.java_class.to_s.should == "[F"
       arr.should be_empty
     end
-    
-    it "should be possible to create uninitialized single dimensional array" do 
+
+    it "should be possible to create uninitialized single dimensional array" do
       arr = Java::float[10].new
       arr.java_class.to_s.should == "[F"
       arr.should_not be_empty
     end
-    
-    it "should be possible to create uninitialized multi dimensional array" do 
+
+    it "should be possible to create uninitialized multi dimensional array" do
       arr = Java::float[10,10].new
       arr.java_class.to_s.should == "[[F"
       arr.should_not be_empty
     end
 
-    it "should be possible to create primitive array from Ruby array" do 
+    it "should be possible to create primitive array from Ruby array" do
       # Check with symbol name
       arr = [1.2,2.3].to_java :float
       arr.java_class.to_s.should == "[F"
@@ -344,13 +344,13 @@ describe "A Java primitive Array of type" do
       arr[0].should be_within(0.00001).of(1.2)
       arr[1].should be_within(0.00001).of(2.3)
     end
-    
-    it "should be possible to set values in primitive array" do 
+
+    it "should be possible to set values in primitive array" do
       arr = Java::float[5].new
       arr[0] = 12.2
       arr[1] = 20.3
       arr[2] = 42.4
-      
+
       arr[0].should be_within(0.00001).of(12.2)
       arr[1].should be_within(0.00001).of(20.3)
       arr[2].should be_within(0.00001).of(42.4)
@@ -358,7 +358,7 @@ describe "A Java primitive Array of type" do
       arr[4].should == 0.0
     end
 
-    it "should be possible to get values from primitive array" do 
+    it "should be possible to get values from primitive array" do
       arr = [13.2, 42.3, 120.4].to_java :float
 
       arr[0].should be_within(0.00001).of(13.2)
@@ -366,7 +366,7 @@ describe "A Java primitive Array of type" do
       arr[2].should be_within(0.00001).of(120.4)
     end
 
-    it "should be possible to call methods that take primitive array" do 
+    it "should be possible to call methods that take primitive array" do
       arr = [13.2, 42.3, 120.4].to_java :float
       ret = ArrayReceiver::call_with_float(arr)
       ret.length.should == 3
@@ -374,33 +374,33 @@ describe "A Java primitive Array of type" do
       ret[1].should be_within(0.00001).of(42.3)
       ret[2].should be_within(0.00001).of(120.4)
     end
-    
+
     it "inspects to show type and contents" do
       arr = [1.0, 1.1, 1.2].to_java :float
       arr.inspect.should =~ /^float\[1\.0, 1\.1, 1\.2\]@[0-9a-f]+$/
     end
   end
 
-  describe "int" do 
-    it "should be possible to create empty array" do 
+  describe "int" do
+    it "should be possible to create empty array" do
       arr = Java::int[0].new
       arr.java_class.to_s.should == "[I"
       arr.should be_empty
     end
-    
-    it "should be possible to create uninitialized single dimensional array" do 
+
+    it "should be possible to create uninitialized single dimensional array" do
       arr = Java::int[10].new
       arr.java_class.to_s.should == "[I"
       arr.should_not be_empty
     end
-    
-    it "should be possible to create uninitialized multi dimensional array" do 
+
+    it "should be possible to create uninitialized multi dimensional array" do
       arr = Java::int[10,10].new
       arr.java_class.to_s.should == "[[I"
       arr.should_not be_empty
     end
 
-    it "should be possible to create primitive array from Ruby array" do 
+    it "should be possible to create primitive array from Ruby array" do
       # Check with symbol name
       arr = [1,2].to_java :int
       arr.java_class.to_s.should == "[I"
@@ -420,13 +420,13 @@ describe "A Java primitive Array of type" do
       arr[0].should == 1
       arr[1].should == 2
     end
-    
-    it "should be possible to set values in primitive array" do 
+
+    it "should be possible to set values in primitive array" do
       arr = Java::int[5].new
       arr[0] = 12
       arr[1] = 20
       arr[2] = 42
-      
+
       arr[0].should == 12
       arr[1].should == 20
       arr[2].should == 42
@@ -434,45 +434,45 @@ describe "A Java primitive Array of type" do
       arr[4].should == 0
     end
 
-    it "should be possible to get values from primitive array" do 
+    it "should be possible to get values from primitive array" do
       arr = [13, 42, 120].to_java :int
       arr[0].should == 13
       arr[1].should == 42
       arr[2].should == 120
     end
 
-    it "should be possible to call methods that take primitive array" do 
+    it "should be possible to call methods that take primitive array" do
       arr = [13, 42, 120].to_java :int
       ret = ArrayReceiver::call_with_int(arr)
       ret.to_a.should == [13, 42, 120]
     end
-    
+
     it "inspects to show type and contents" do
       arr = [13, 42, 120].to_java :int
       arr.inspect.should =~ /^int\[13, 42, 120\]@[0-9a-f]+$/
     end
   end
 
-  describe "long" do 
-    it "should be possible to create empty array" do 
+  describe "long" do
+    it "should be possible to create empty array" do
       arr = Java::long[0].new
       arr.java_class.to_s.should == "[J"
       arr.should be_empty
     end
-    
-    it "should be possible to create uninitialized single dimensional array" do 
+
+    it "should be possible to create uninitialized single dimensional array" do
       arr = Java::long[10].new
       arr.java_class.to_s.should == "[J"
       arr.should_not be_empty
     end
-    
-    it "should be possible to create uninitialized multi dimensional array" do 
+
+    it "should be possible to create uninitialized multi dimensional array" do
       arr = Java::long[10,10].new
       arr.java_class.to_s.should == "[[J"
       arr.should_not be_empty
     end
 
-    it "should be possible to create primitive array from Ruby array" do 
+    it "should be possible to create primitive array from Ruby array" do
       # Check with symbol name
       arr = [1,2].to_java :long
       arr.java_class.to_s.should == "[J"
@@ -492,13 +492,13 @@ describe "A Java primitive Array of type" do
       arr[0].should == 1
       arr[1].should == 2
     end
-    
-    it "should be possible to set values in primitive array" do 
+
+    it "should be possible to set values in primitive array" do
       arr = Java::long[5].new
       arr[0] = 12
       arr[1] = 20
       arr[2] = 42
-      
+
       arr[0].should == 12
       arr[1].should == 20
       arr[2].should == 42
@@ -506,45 +506,45 @@ describe "A Java primitive Array of type" do
       arr[4].should == 0
     end
 
-    it "should be possible to get values from primitive array" do 
+    it "should be possible to get values from primitive array" do
       arr = [13, 42, 120].to_java :long
       arr[0].should == 13
       arr[1].should == 42
       arr[2].should == 120
     end
 
-    it "should be possible to call methods that take primitive array" do 
+    it "should be possible to call methods that take primitive array" do
       arr = [13, 42, 120].to_java :long
       ret = ArrayReceiver::call_with_long(arr)
       ret.to_a.should == [13, 42, 120]
     end
-    
+
     it "inspects to show type and contents" do
       arr = [13, 42, 120].to_java :long
       arr.inspect.should =~ /^long\[13, 42, 120\]@[0-9a-f]+$/
     end
   end
 
-  describe "short" do 
-    it "should be possible to create empty array" do 
+  describe "short" do
+    it "should be possible to create empty array" do
       arr = Java::short[0].new
       arr.java_class.to_s.should == "[S"
       arr.should be_empty
     end
-    
-    it "should be possible to create uninitialized single dimensional array" do 
+
+    it "should be possible to create uninitialized single dimensional array" do
       arr = Java::short[10].new
       arr.java_class.to_s.should == "[S"
       arr.should_not be_empty
     end
-    
-    it "should be possible to create uninitialized multi dimensional array" do 
+
+    it "should be possible to create uninitialized multi dimensional array" do
       arr = Java::short[10,10].new
       arr.java_class.to_s.should == "[[S"
       arr.should_not be_empty
     end
 
-    it "should be possible to create primitive array from Ruby array" do 
+    it "should be possible to create primitive array from Ruby array" do
       # Check with symbol name
       arr = [1,2].to_java :short
       arr.java_class.to_s.should == "[S"
@@ -564,13 +564,13 @@ describe "A Java primitive Array of type" do
       arr[0].should == 1
       arr[1].should == 2
     end
-    
-    it "should be possible to set values in primitive array" do 
+
+    it "should be possible to set values in primitive array" do
       arr = Java::short[5].new
       arr[0] = 12
       arr[1] = 20
       arr[2] = 42
-      
+
       arr[0].should == 12
       arr[1].should == 20
       arr[2].should == 42
@@ -578,45 +578,45 @@ describe "A Java primitive Array of type" do
       arr[4].should == 0
     end
 
-    it "should be possible to get values from primitive array" do 
+    it "should be possible to get values from primitive array" do
       arr = [13, 42, 120].to_java :short
       arr[0].should == 13
       arr[1].should == 42
       arr[2].should == 120
     end
 
-    it "should be possible to call methods that take primitive array" do 
+    it "should be possible to call methods that take primitive array" do
       arr = [13, 42, 120].to_java :short
       ret = ArrayReceiver::call_with_short(arr)
       ret.to_a.should == [13, 42, 120]
     end
-    
+
     it "inspects to show type and contents" do
       arr = [13, 42, 120].to_java :short
       arr.inspect.should =~ /^short\[13, 42, 120\]@[0-9a-f]+$/
     end
   end
 
-  describe "string" do 
-    it "should be possible to create empty array" do 
+  describe "string" do
+    it "should be possible to create empty array" do
       arr = java.lang.String[0].new
       arr.java_class.to_s.should == "[Ljava.lang.String;"
       arr.should be_empty
     end
-    
-    it "should be possible to create uninitialized single dimensional array" do 
+
+    it "should be possible to create uninitialized single dimensional array" do
       arr = java.lang.String[10].new
       arr.java_class.to_s.should == "[Ljava.lang.String;"
       arr.should_not be_empty
     end
-    
-    it "should be possible to create uninitialized multi dimensional array" do 
+
+    it "should be possible to create uninitialized multi dimensional array" do
       arr = java.lang.String[10,10].new
       arr.java_class.to_s.should == "[[Ljava.lang.String;"
       arr.should_not be_empty
     end
 
-    it "should be possible to create primitive array from Ruby array" do 
+    it "should be possible to create primitive array from Ruby array" do
       # Check with symbol name
       arr = ["foo", :bar].to_java :string
       arr.java_class.to_s.should == "[Ljava.lang.String;"
@@ -636,13 +636,13 @@ describe "A Java primitive Array of type" do
       arr[0].should == "foo"
       arr[1].should == "bar"
     end
-    
-    it "should be possible to set values in primitive array" do 
+
+    it "should be possible to set values in primitive array" do
       arr = java.lang.String[5].new
       arr[0] = "12"
       arr[1] = :blah
       arr[2] = "42"
-      
+
       arr[0].should == "12"
       arr[1].should == "blah"
       arr[2].should == "42"
@@ -650,19 +650,19 @@ describe "A Java primitive Array of type" do
       arr[4].should be_nil
     end
 
-    it "should be possible to get values from primitive array" do 
+    it "should be possible to get values from primitive array" do
       arr = ["flurg", :glax, "morg"].to_java :string
       arr[0].should == "flurg"
       arr[1].should == "glax"
       arr[2].should == "morg"
     end
 
-    it "should be possible to call methods that take primitive array" do 
+    it "should be possible to call methods that take primitive array" do
       arr = ["flurg", :glax, "morg"].to_java :string
       ret = ArrayReceiver::call_with_string(arr)
       ret.to_a.should == ["flurg", "glax", "morg"]
     end
-    
+
     it "inspects to show type and contents" do
       arr = ['foo', 'bar', 'baz'].to_java :string
       arr.inspect.should =~ /^java.lang.String\[foo, bar, baz\]@[0-9a-f]+$/
@@ -670,19 +670,19 @@ describe "A Java primitive Array of type" do
   end
 
   describe "Object" do
-    it "should be possible to create empty array" do 
+    it "should be possible to create empty array" do
       arr = java.util.HashMap[0].new
       arr.java_class.to_s.should == "[Ljava.util.HashMap;"
       arr.should be_empty
     end
-    
-    it "should be possible to create uninitialized single dimensional array" do 
+
+    it "should be possible to create uninitialized single dimensional array" do
       arr = java.util.HashMap[10].new
       arr.java_class.to_s.should == "[Ljava.util.HashMap;"
       arr.should_not be_empty
     end
-    
-    it "should be possible to create uninitialized multi dimensional array" do 
+
+    it "should be possible to create uninitialized multi dimensional array" do
       arr = java.util.HashMap[10,10].new
       arr.java_class.to_s.should == "[[Ljava.util.HashMap;"
       arr.should_not be_empty
@@ -703,8 +703,8 @@ describe "A Java primitive Array of type" do
       arr[0].should be_equal(h1)
       arr[1].should be_equal(h2)
     end
-    
-    it "should be possible to set values in primitive array" do 
+
+    it "should be possible to set values in primitive array" do
       h1 = java.util.HashMap.new
       h1["foo"] = "max"
 
@@ -718,7 +718,7 @@ describe "A Java primitive Array of type" do
       arr[0] = h1
       arr[1] = h2
       arr[2] = h3
-      
+
       arr[0].should == h1
       arr[1].should == h2
       arr[2].should == h3
@@ -771,7 +771,7 @@ describe "A Java primitive Array of type" do
     it "should raise TypeError when types can't be coerced" do
       lambda { [Time.new].to_java :string }.should raise_error(TypeError)
     end
-    
+
     it "inspects to show type and contents" do
       jobject = java.lang.Object
       arr = [jobject.new, jobject.new, jobject.new].to_java :object
@@ -779,20 +779,20 @@ describe "A Java primitive Array of type" do
     end
   end
 
-  describe "Class ref" do 
-    it "should be possible to create empty array" do 
+  describe "Class ref" do
+    it "should be possible to create empty array" do
       arr = java.lang.Class[0].new
       arr.java_class.to_s.should == "[Ljava.lang.Class;"
       arr.should be_empty
     end
-    
-    it "should be possible to create uninitialized single dimensional array" do 
+
+    it "should be possible to create uninitialized single dimensional array" do
       arr = java.lang.Class[10].new
       arr.java_class.to_s.should == "[Ljava.lang.Class;"
       arr.should_not be_empty
     end
-    
-    it "should be possible to create uninitialized multi dimensional array" do 
+
+    it "should be possible to create uninitialized multi dimensional array" do
       arr = java.lang.Class[10,10].new
       arr.java_class.to_s.should == "[[Ljava.lang.Class;"
       arr.should_not be_empty
@@ -810,8 +810,8 @@ describe "A Java primitive Array of type" do
         arr[0].should == h1
         arr[1].should == h2
     end
-    
-    it "should be possible to set values in primitive array" do 
+
+    it "should be possible to set values in primitive array" do
         h1 = java.util.Set.java_class
         h2 = java.util.HashMap.java_class
         h3 = java.lang.ref.SoftReference.java_class
@@ -820,7 +820,7 @@ describe "A Java primitive Array of type" do
         arr[0] = h1
         arr[1] = h2
         arr[2] = h3
-        
+
         arr[0].should == h1
         arr[1].should == h2
         arr[2].should == h3
@@ -848,7 +848,7 @@ describe "A Java primitive Array of type" do
         ret = ArrayReceiver::call_with_object(arr)
         ret.to_a.should == [h1, h2, h3]
     end
-    
+
     it "inspects to show type and contents" do
       h1 = java.util.Set.java_class
       h2 = java.util.HashMap.java_class
@@ -930,8 +930,15 @@ describe "ArrayJavaProxy" do
   end
 
   it "to_a coerces nested Java arrays to Ruby arrays" do
-    rar = [[1],[2]].to_java(Java::byte[]).to_a
-    rar.first.should == [1]
-    rar.first.first.should be_kind_of(Fixnum)
+    arr = [[1],[2]].to_java(Java::byte[]).to_a
+    arr.first.should == [1]
+    arr.first.first.should be_kind_of(Fixnum)
+  end
+
+  it "to_a returns a new array - no sharing" do
+    j_arr = [ 1, 2 ].to_java
+    r_arr = j_arr.to_a
+    j_arr[0] = 3
+    expect( r_arr[0] ).to eql 1
   end
 end
