@@ -79,11 +79,11 @@ public abstract class IOBufferPrimitiveNodes {
     static {
         final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
 
-        WRITE_SYNCED_PROPERTY = Property.create(WRITE_SYNCED_IDENTIFIER, allocator.locationForType(Boolean.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        WRITE_SYNCED_PROPERTY = Property.create(WRITE_SYNCED_IDENTIFIER, allocator.locationForType(boolean.class), 0);
         STORAGE_PROPERTY = Property.create(STORAGE_IDENTIFIER, allocator.locationForType(RubyBasicObject.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        USED_PROPERTY = Property.create(USED_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        START_PROPERTY = Property.create(START_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        TOTAL_PROPERTY = Property.create(TOTAL_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        USED_PROPERTY = Property.create(USED_IDENTIFIER, allocator.locationForType(int.class), 0);
+        START_PROPERTY = Property.create(START_IDENTIFIER, allocator.locationForType(int.class), 0);
+        TOTAL_PROPERTY = Property.create(TOTAL_IDENTIFIER, allocator.locationForType(int.class), 0);
 
         IO_BUFFER_FACTORY = RubyBasicObject.EMPTY_SHAPE
                 .addProperty(WRITE_SYNCED_PROPERTY)

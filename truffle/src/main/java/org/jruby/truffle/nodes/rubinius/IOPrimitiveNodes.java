@@ -93,9 +93,9 @@ public abstract class IOPrimitiveNodes {
         final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
 
         IBUFFER_PROPERTY = Property.create(IBUFFER_IDENTIFIER, allocator.locationForType(RubyBasicObject.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        LINENO_PROPERTY = Property.create(LINENO_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        DESCRIPTOR_PROPERTY = Property.create(DESCRIPTOR_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        MODE_PROPERTY = Property.create(MODE_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        LINENO_PROPERTY = Property.create(LINENO_IDENTIFIER, allocator.locationForType(int.class), 0);
+        DESCRIPTOR_PROPERTY = Property.create(DESCRIPTOR_IDENTIFIER, allocator.locationForType(int.class), 0);
+        MODE_PROPERTY = Property.create(MODE_IDENTIFIER, allocator.locationForType(int.class), 0);
 
         IO_FACTORY = RubyBasicObject.EMPTY_SHAPE
                 .addProperty(IBUFFER_PROPERTY)
