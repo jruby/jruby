@@ -935,10 +935,18 @@ describe "ArrayJavaProxy" do
     arr.first.first.should be_kind_of(Fixnum)
   end
 
-  it "to_a returns a new array - no sharing" do
+  it "returns a new array from to_a" do
     j_arr = [ 1, 2 ].to_java
     r_arr = j_arr.to_a
     j_arr[0] = 3
     expect( r_arr[0] ).to eql 1
   end
+
+  it "returns a new array from to_ary" do
+    j_arr = [ 1, 2 ].to_java
+    r_arr = j_arr.to_ary
+    j_arr[0] = 3
+    expect( r_arr[0] ).to eql 1
+  end
+
 end
