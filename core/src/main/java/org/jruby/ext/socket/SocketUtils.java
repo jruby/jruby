@@ -76,12 +76,12 @@ public class SocketUtils {
         Ruby runtime = context.runtime;
 
         try {
-            return runtime.newString(InetAddress.getLocalHost().getHostName());
+            return RubyString.newInternalFromJavaExternal(context.runtime, InetAddress.getLocalHost().getHostName());
 
         } catch(UnknownHostException e) {
 
             try {
-                return runtime.newString(InetAddress.getByAddress(new byte[]{0,0,0,0}).getHostName());
+                return RubyString.newInternalFromJavaExternal(context.runtime, InetAddress.getByAddress(new byte[]{0, 0, 0, 0}).getHostName());
 
             } catch(UnknownHostException e2) {
                 throw sockerr(runtime, "gethostname: name or service not known");
@@ -510,7 +510,7 @@ public class SocketUtils {
 
     public static IRubyObject getaddress(ThreadContext context, IRubyObject hostname) {
         try {
-            return context.runtime.newString(InetAddress.getByName(hostname.convertToString().toString()).getHostAddress());
+            return RubyString.newInternalFromJavaExternal(context.runtime, InetAddress.getByName(hostname.convertToString().toString()).getHostAddress());
         } catch(UnknownHostException e) {
             throw sockerr(context.runtime, "getaddress: name or service not known");
         }
