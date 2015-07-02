@@ -1655,27 +1655,6 @@ public class InvocationLinker {
             boolean heapScoped = callConfig.scoping() != Scoping.None;
             boolean framed = callConfig.framing() != Framing.None;
 
-
-            if (framed || heapScoped) {
-                nativeTarget = catchException(
-                        nativeTarget,
-                        JumpException.ReturnJump.class,
-                        Binder
-                                .from(nativeTarget.type().insertParameterTypes(0, JumpException.ReturnJump.class))
-                            .permute(0, 1)
-                            .invokeStaticQuiet(lookup(), InvocationLinker.class, "handleReturn"));
-            }
-            if (framed) {
-                nativeTarget = catchException(
-                        nativeTarget,
-                        JumpException.RedoJump.class,
-                        Binder
-                                .from(nativeTarget.type().insertParameterTypes(0, JumpException.RedoJump.class))
-                                .permute(0, 1)
-                                .invokeStaticQuiet(lookup(), InvocationLinker.class, "handleRedo"));
-            }
-
-
             // post logic for frame
             nativeTarget = Binder
                     .from(nativeTarget.type())
@@ -1697,10 +1676,6 @@ public class InvocationLinker {
         }
 
         return nativeTarget;
-    }
-
-    public static IRubyObject handleRedo(JumpException.RedoJump rj, ThreadContext context) {
-        throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, context.runtime.getNil(), "unexpected redo");
     }
 
     public static MethodHandle getFramePre(Signature signature, CallConfiguration callConfig, RubyModule implClass, String name, StaticScope scope) {

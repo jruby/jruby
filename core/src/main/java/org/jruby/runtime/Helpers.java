@@ -239,20 +239,6 @@ public class Helpers {
         return map;
     }
 
-    /**
-     * Should be called on jumps out of blocks.  Inspects the jump, returning or rethrowing as appropriate
-     */
-    public static IRubyObject handleBlockJump(ThreadContext context, JumpException.FlowControlException jump, Block.Type type) {
-        // 'next' and Lambda 'return' are local returns from the block, ending the call or yield
-        if (jump instanceof JumpException.NextJump
-                || (jump instanceof JumpException.ReturnJump && type == Block.Type.LAMBDA)) {
-            return jump.getValue() == null ? context.runtime.getNil() : (IRubyObject)jump.getValue();
-        }
-
-        // other jumps propagate up
-        throw jump;
-    }
-
     public static boolean additionOverflowed(long original, long other, long result) {
         return (~(original ^ other) & (original ^ result) & RubyFixnum.SIGN_BIT) != 0;
     }
