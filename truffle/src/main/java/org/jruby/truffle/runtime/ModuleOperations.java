@@ -328,12 +328,12 @@ public abstract class ModuleOperations {
 
     @TruffleBoundary
     public static void setClassVariable(RubyModule module, final String name, final Object value, final Node currentNode) {
-        Boolean found = classVariableLookup(module, new Function<RubyModule, Boolean>() {
+        RubyModule found = classVariableLookup(module, new Function<RubyModule, RubyModule>() {
             @Override
-            public Boolean apply(RubyModule module) {
+            public RubyModule apply(RubyModule module) {
                 if (module.getClassVariables().containsKey(name)) {
                     module.setClassVariable(currentNode, name, value);
-                    return true;
+                    return module;
                 } else {
                     return null;
                 }
