@@ -789,7 +789,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject realdirpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return expandPathInternal(context, recv, args, false, false);
+        return expandPathInternal(context, recv, args, false, true);
     }
 
     @JRubyMethod(required = 1, optional = 1, meta = true)
