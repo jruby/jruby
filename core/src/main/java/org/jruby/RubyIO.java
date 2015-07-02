@@ -3606,7 +3606,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
         IRubyObject filename = args[0].convertToString();
 
-        RubyIO io = newFile(context, runtime.getFile(), new IRubyObject[] { filename });
+        RubyIO io = newFile(context, runtime.getFile(), new IRubyObject[]{filename});
 
         ByteListCache cache = new ByteListCache();
         if (!io.isNil()) {
@@ -3817,7 +3817,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             ((RubyArray)args).push_m19(new IRubyObject[]{path});
             ((RubyArray)args).concat19(v);
             
-            return RubyKernel.open19(context, recv, ((RubyArray)args).toJavaArray(), Block.NULL_BLOCK);
+            return RubyKernel.open19(context, recv, ((RubyArray) args).toJavaArray(), Block.NULL_BLOCK);
         }
         
         return ioOpen(context, path, context.nil, context.nil, opt);
@@ -4494,13 +4494,19 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     private static void cleanupPOpen(POpenTuple tuple) {
         if (tuple.input.openFile.isOpen()) {
-            tuple.input.close();
+            try {
+                tuple.input.close();
+            } catch (RaiseException re) {}
         }
         if (tuple.output.openFile.isOpen()) {
-            tuple.output.close();
+            try {
+                tuple.output.close();
+            } catch (RaiseException re) {}
         }
         if (tuple.error.openFile.isOpen()) {
-            tuple.error.close();
+            try {
+                tuple.error.close();
+            } catch (RaiseException re) {}
         }
     }
 
