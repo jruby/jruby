@@ -112,23 +112,34 @@ module ShellUtils
   private
 
   def raw_sh(*args)
-    puts "$ #{printable_cmd(args) * ' '}"
+    puts "$ #{printable_cmd(args)}"
     result = system(*args)
     unless result
-      $stderr.puts "FAILED (#{$?}): #{printable_cmd(args) * ' '}"
+      $stderr.puts "FAILED (#{$?}): #{printable_cmd(args)}"
       exit $?.exitstatus
     end
   end
 
   def printable_cmd(args)
-    if Hash === args[0]
-      if args[0].empty?
-        args[1..-1]
+    env = {}
+    if Hash === args.first
+      env, *args = args
+    end
+    env = env.map { |k,v| "#{k}=#{shellescape(v)}" }.join(' ')
+    args = args.map { |a| shellescape(a) }.join(' ')
+    env.empty? ? args : "#{env} #{args}"
+  end
+
+  def shellescape(str)
+    if str.include?(' ')
+      if str.include?("'")
+        require 'shellwords'
+        Shellwords.escape(str)
       else
-        [args[0].map { |k, v| "#{k}=#{v}" }.join(' '), *args[1..-1]]
+        "'#{str}'"
       end
     else
-      args
+      str
     end
   end
 
