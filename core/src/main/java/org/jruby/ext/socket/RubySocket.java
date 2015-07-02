@@ -166,12 +166,8 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    public IRubyObject initialize(ThreadContext context, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
-        return initialize(context, domain, type, protocol);
-    }
-
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject domain, IRubyObject type) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject domain, IRubyObject type) {
         Ruby runtime = context.runtime;
 
         initFieldsFromArgs(runtime, domain, type);
@@ -184,7 +180,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
         Ruby runtime = context.runtime;
 
         initFieldsFromArgs(runtime, domain, type, protocol);
@@ -217,7 +213,7 @@ public class RubySocket extends RubyBasicSocket {
     @JRubyMethod()
     public IRubyObject bind(ThreadContext context, IRubyObject arg) {
         InetSocketAddress iaddr = null;
-        
+
         if (arg instanceof Addrinfo){
             Addrinfo addr = (Addrinfo) arg;
             iaddr = new InetSocketAddress(addr.getInetAddress().getHostAddress(), addr.getPort());
@@ -264,7 +260,7 @@ public class RubySocket extends RubyBasicSocket {
     public static IRubyObject gethostname(ThreadContext context, IRubyObject recv) {
         return SocketUtils.gethostname(context);
     }
-    
+
     @JRubyMethod(meta = true)
     public static IRubyObject getifaddrs(ThreadContext context, IRubyObject recv) {
         RubyArray list = RubyArray.newArray(context.runtime);
