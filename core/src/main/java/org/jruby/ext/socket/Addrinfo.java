@@ -3,6 +3,7 @@ package org.jruby.ext.socket;
 import jnr.constants.platform.AddressFamily;
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.Sock;
+import jnr.netdb.Protocol;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -153,6 +154,8 @@ public class Addrinfo extends RubyObject {
             } else {
                 this.port = (int)port.convertToInteger().getLongValue();
             }
+
+            protocol = Protocol.getProtocolByName("tcp");
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }
@@ -209,22 +212,22 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject afamily(ThreadContext context) {
-        return context.runtime.newFixnum(pfamily.intValue());
-    }
-
-    @JRubyMethod(notImplemented = true)
-    public IRubyObject pfamily(ThreadContext context) {
         return context.runtime.newFixnum(afamily.intValue());
     }
 
-    @JRubyMethod(notImplemented = true)
+    @JRubyMethod
+    public IRubyObject pfamily(ThreadContext context) {
+        return context.runtime.newFixnum(pfamily.intValue());
+    }
+
+    @JRubyMethod
     public IRubyObject socktype(ThreadContext context) {
         return context.runtime.newFixnum(sock.intValue());
     }
 
-    @JRubyMethod(notImplemented = true)
+    @JRubyMethod
     public IRubyObject protocol(ThreadContext context) {
-        return context.runtime.newFixnum(port);
+        return context.runtime.newFixnum(protocol.getProto());
     }
 
     @JRubyMethod
@@ -391,4 +394,5 @@ public class Addrinfo extends RubyObject {
     private AddressFamily afamily;
     private Sock sock;
     private SocketType socketType;
+    private Protocol protocol = Protocol.getProtocolByNumber(0);
 }

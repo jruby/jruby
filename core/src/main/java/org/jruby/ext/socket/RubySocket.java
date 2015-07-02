@@ -37,6 +37,7 @@ import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import jnr.constants.platform.TCP;
+import jnr.netdb.Protocol;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
 import org.jruby.CompatVersion;
@@ -315,19 +316,20 @@ public class RubySocket extends RubyBasicSocket {
             // just using AF_INET since we can't tell from SocketChannel...
             soDomain = AddressFamily.AF_INET;
             soType = Sock.SOCK_STREAM;
-            soProtocol = ProtocolFamily.PF_INET;
+            soProtocolFamily = ProtocolFamily.PF_INET;
+            soProtocol = Protocol.getProtocolByName("tcp");
 
         } else if (mainChannel instanceof UnixSocketChannel) {
             soDomain = AddressFamily.AF_UNIX;
             soType = Sock.SOCK_STREAM;
-            soProtocol = ProtocolFamily.PF_UNIX;
+            soProtocolFamily = ProtocolFamily.PF_UNIX;
 
         } else if (mainChannel instanceof DatagramChannel) {
             // datagram, set accordingly
             // again, AF_INET
             soDomain = AddressFamily.AF_INET;
             soType = Sock.SOCK_DGRAM;
-            soProtocol = ProtocolFamily.PF_INET;
+            soProtocolFamily = ProtocolFamily.PF_INET;
 
         } else {
             throw runtime.newErrnoENOTSOCKError("can't Socket.new/for_fd against a non-socket");
@@ -362,15 +364,15 @@ public class RubySocket extends RubyBasicSocket {
         try {
             if(soType == Sock.SOCK_STREAM) {
 
-                if (soProtocol == ProtocolFamily.PF_UNIX ||
-                        soProtocol == ProtocolFamily.PF_LOCAL) {
+                if (soProtocolFamily == ProtocolFamily.PF_UNIX ||
+                        soProtocolFamily == ProtocolFamily.PF_LOCAL) {
                     channel = UnixSocketChannel.open();
-                } else if (soProtocol == ProtocolFamily.PF_INET ||
-                        soProtocol == ProtocolFamily.PF_INET6 ||
-                        soProtocol == ProtocolFamily.PF_UNSPEC) {
+                } else if (soProtocolFamily == ProtocolFamily.PF_INET ||
+                        soProtocolFamily == ProtocolFamily.PF_INET6 ||
+                        soProtocolFamily == ProtocolFamily.PF_UNSPEC) {
                     channel = SocketChannel.open();
                 } else {
-                    throw runtime.newArgumentError("unsupported protocol family `" + soProtocol + "'");
+                    throw runtime.newArgumentError("unsupported protocol family `" + soProtocolFamily + "'");
                 }
 
             } else if(soType == Sock.SOCK_DGRAM) {
@@ -396,13 +398,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private void initProtocol(Ruby runtime, IRubyObject protocol) {
-        ProtocolFamily protocolFamily = SocketUtils.protocolFamilyFromArg(protocol);
-
-        if (protocolFamily == null) {
-            return; // no protocol specified, ignore it
-        }
-
-        soProtocol = protocolFamily;
+        soProtocol = SocketUtils.protocolFromArg(protocol);
     }
 
     private void initType(Ruby runtime, IRubyObject type) {
@@ -423,7 +419,7 @@ public class RubySocket extends RubyBasicSocket {
         }
 
         soDomain = family;
-        soProtocol = ProtocolFamily.valueOf("PF" + soDomain.name().substring(2));
+        soProtocolFamily = ProtocolFamily.valueOf("PF" + soDomain.name().substring(2));
     }
 
     private void doConnectNonblock(ThreadContext context, Channel channel, SocketAddress addr) {
@@ -576,7 +572,7 @@ public class RubySocket extends RubyBasicSocket {
     private SocketAddress addressForChannel(ThreadContext context, IRubyObject arg) {
         if (arg instanceof Addrinfo) return Sockaddr.addressFromArg(context, arg);
 
-        switch (soProtocol) {
+        switch (soProtocolFamily) {
             case PF_UNIX:
             case PF_LOCAL:
                 return Sockaddr.addressFromSockaddr_un(context, arg);
@@ -587,7 +583,7 @@ public class RubySocket extends RubyBasicSocket {
                 return Sockaddr.addressFromSockaddr_in(context, arg);
 
             default:
-                throw context.runtime.newArgumentError("unsupported protocol family `" + soProtocol + "'");
+                throw context.runtime.newArgumentError("unsupported protocol family `" + soProtocolFamily + "'");
         }
     }
 
@@ -606,8 +602,9 @@ public class RubySocket extends RubyBasicSocket {
     public static final int MSG_WAITALL = 0x100;
 
     protected AddressFamily soDomain;
+    protected ProtocolFamily soProtocolFamily;
     protected Sock soType;
-    protected ProtocolFamily soProtocol;
+    protected Protocol soProtocol = Protocol.getProtocolByNumber(0);
 
     private static final String JRUBY_SERVER_SOCKET_ERROR =
             "use ServerSocket for servers (http://wiki.jruby.org/ServerSocket)";
