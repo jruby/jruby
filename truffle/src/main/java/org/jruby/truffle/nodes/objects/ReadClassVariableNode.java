@@ -17,6 +17,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 
@@ -48,9 +49,8 @@ public class ReadClassVariableNode extends RubyNode {
         final Object value = ModuleOperations.lookupClassVariable(module, name);
 
         if (value == null) {
-            // TODO(CS): is this right?
-            // TODO: NameError!
-            return nil();
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedClassVariable(module, name, this));
         }
 
         return value;
