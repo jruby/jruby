@@ -39,12 +39,7 @@ public class WriteClassVariableNode extends RubyNode {
 
         final Object rhsValue = rhs.execute(frame);
 
-        // MRI logic: ignore lexical scopes (cref) referring to singleton classes
-        LexicalScope scope = this.lexicalScope;
-        while ((scope.getLiveModule() instanceof RubyClass) && ((RubyClass) scope.getLiveModule()).isSingleton()) {
-            scope = scope.getParent();
-        }
-        final RubyModule module = scope.getLiveModule();
+        final RubyModule module = ReadClassVariableNode.resolveTargetModule(lexicalScope);
 
         ModuleOperations.setClassVariable(module, name, rhsValue, this);
 
