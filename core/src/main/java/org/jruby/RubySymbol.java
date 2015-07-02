@@ -967,8 +967,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
         if (length > 0) {
             byte val[] = iso8859.getUnsafeBytes();
             int begin = iso8859.begin();
-            byte copyVal[] = Arrays.copyOfRange(val, begin, begin + length);
-            h = new String(copyVal, RubyEncoding.ISO).hashCode();
+            h = new String(val, begin, length, RubyEncoding.ISO).hashCode();
         }
         return h;
     }
