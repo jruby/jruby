@@ -649,7 +649,7 @@ public abstract class StringPrimitiveNodes {
             final ByteList bytes = StringNodes.getByteList(string);
 
             return StringSupport.nth(bytes.getEncoding(), bytes.getUnsafeBytes(), bytes.getBegin() + start,
-                    bytes.getBegin() + bytes.getRealSize(), index);
+                    bytes.getBegin() + bytes.getRealSize(), index) - bytes.begin();
         }
     }
 
