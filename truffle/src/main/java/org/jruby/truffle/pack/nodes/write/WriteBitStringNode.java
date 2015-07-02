@@ -70,7 +70,7 @@ public abstract class WriteBitStringNode extends PackNode {
                     }
 
                     if ((i & 7) == 0) {
-                        writeBytes(frame, (byte) (currentByte & 0xff));
+                        writeByte(frame, (byte) (currentByte & 0xff));
                         currentByte = 0;
                         continue;
                     }
@@ -81,7 +81,7 @@ public abstract class WriteBitStringNode extends PackNode {
 
                 if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
                     currentByte >>= 7 - (occurrences & 7); //we need to pad the last byte
-                    writeBytes(frame, (byte) (currentByte & 0xff));
+                    writeByte(frame, (byte) (currentByte & 0xff));
                 }
             } break;
 
@@ -91,7 +91,7 @@ public abstract class WriteBitStringNode extends PackNode {
 
                     // we filled up current byte; append it and create next one
                     if ((i & 7) == 0) {
-                        writeBytes(frame, (byte) (currentByte & 0xff));
+                        writeByte(frame, (byte) (currentByte & 0xff));
                         currentByte = 0;
                         continue;
                     }
@@ -102,7 +102,7 @@ public abstract class WriteBitStringNode extends PackNode {
 
                 if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
                     currentByte <<= 7 - (occurrences & 7); //we need to pad the last byte
-                    writeBytes(frame, (byte) (currentByte & 0xff));
+                    writeByte(frame, (byte) (currentByte & 0xff));
                 }
             } break;
         }

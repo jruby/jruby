@@ -35,7 +35,7 @@ public abstract class WritePaddedBytesNode extends PackNode {
     @Specialization
     public Object write(VirtualFrame frame, ByteList bytes) {
         for (int n = 0; n < padding - bytes.length(); n++) {
-            writeBytes(frame, (byte) ' ');
+            writeByte(frame, (byte) ' ');
         }
 
         writeBytes(frame, bytes);

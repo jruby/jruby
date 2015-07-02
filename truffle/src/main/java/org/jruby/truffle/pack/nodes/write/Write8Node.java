@@ -27,7 +27,7 @@ public abstract class Write8Node extends PackNode {
 
     @Specialization
     public Object doWrite(VirtualFrame frame, long value) {
-        writeBytes(frame, (byte) value);
+        writeByte(frame, (byte) value);
         return null;
     }
 

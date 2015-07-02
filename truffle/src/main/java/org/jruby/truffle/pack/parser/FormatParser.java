@@ -64,7 +64,13 @@ public class FormatParser {
             final PackNode node;
 
             if (token instanceof ByteList) {
-                node = WriteBytesNodeGen.create(context, new LiteralBytesNode(context, (ByteList) token));
+                final ByteList byteList = (ByteList) token;
+
+                if (byteList.length() == 1) {
+                    node = new WriteByteNode(context, (byte) byteList.get(0));
+                } else {
+                    node = WriteBytesNodeGen.create(context, new LiteralBytesNode(context, byteList));
+                }
             } else if (token instanceof FormatDirective) {
                 final FormatDirective directive = (FormatDirective) token;
 

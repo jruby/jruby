@@ -50,7 +50,7 @@ public abstract class WriteBinaryStringNode extends PackNode {
     public Object write(VirtualFrame frame, Object nil) {
         if (padOnNil) {
             for (int n = 0; n < width; n++) {
-                writeBytes(frame, padding);
+                writeByte(frame, padding);
             }
         }
 
@@ -73,14 +73,14 @@ public abstract class WriteBinaryStringNode extends PackNode {
             writeBytes(frame, bytes.getUnsafeBytes(), bytes.begin(), lengthFromBytes);
 
             for (int n = 0; n < lengthFromPadding; n++) {
-                writeBytes(frame, padding);
+                writeByte(frame, padding);
             }
         } else {
             writeBytes(frame, bytes.getUnsafeBytes(), bytes.begin(), lengthFromBytes);
         }
 
         if (appendNull) {
-            writeBytes(frame, (byte) 0);
+            writeByte(frame, (byte) 0);
         }
 
         return null;
