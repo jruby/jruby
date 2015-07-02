@@ -135,6 +135,16 @@ public abstract class PackNode extends Node {
     }
 
     /**
+     * Write a single byte.
+     */
+    protected void writeByte(VirtualFrame frame, byte value) {
+        byte[] output = ensureCapacity(frame, 1);
+        final int outputPosition = getOutputPosition(frame);
+        output[outputPosition] = value;
+        setOutputPosition(frame, outputPosition + 1);
+    }
+
+    /**
      * Write an array of bytes to the output.
      */
     protected void writeBytes(VirtualFrame frame, byte... values) {

@@ -34,7 +34,7 @@ public abstract class WriteUTF8CharacterNode extends PackNode {
 
     @Specialization(guards = {"value >= 0", "value <= 0x7f"})
     public Object writeSingleByte(VirtualFrame frame, long value) {
-        writeBytes(frame,
+        writeByte(frame,
                 (byte) value);
         return null;
     }
