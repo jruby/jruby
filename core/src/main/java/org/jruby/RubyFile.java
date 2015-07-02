@@ -505,9 +505,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         val.append(">");
         return getRuntime().newString(val.toString());
     }
-    
+
+    private static Pattern ROOT_PATTERN = Pattern.compile("^(uri|jar|file|classpath):([^:]*:)?//?$");
+
     /* File class methods */
-    
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject basename(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
@@ -515,6 +516,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyString origString = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[0]));
         Encoding origEncoding = origString.getEncoding();
         String name = origString.toString();
+
+        // uri-like paths without parent directory
+        if (name.endsWith("!/") || ROOT_PATTERN.matcher(name).matches()) {
+            return args[0];
+        }
 
         // MRI-compatible basename handling for windows drive letter paths
         if (Platform.IS_WINDOWS) {
@@ -661,7 +667,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newString(dirname(context, jfilename)).infectBy(filename);
     }
 
-    private static Pattern PROTOCOL_PATTERN = Pattern.compile("^([a-z]+:)?[a-z]+:/.*");
+    private static Pattern PROTOCOL_PATTERN = Pattern.compile("^(uri|jar|file|classpath):([^:]*:)?//?.*");
     public static String dirname(ThreadContext context, String jfilename) {
         String name = jfilename.replace('\\', '/');
         int minPathLength = 1;

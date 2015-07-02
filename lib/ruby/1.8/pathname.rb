@@ -276,9 +276,9 @@ class Pathname
   end
 
   if File::ALT_SEPARATOR
-    SEPARATOR_PAT = /[#{Regexp.quote File::ALT_SEPARATOR}#{Regexp.quote File::SEPARATOR}]/
+    SEPARATOR_PAT = /[#{Regexp.quote File::ALT_SEPARATOR}#{Regexp.quote File::SEPARATOR}]|.+!\/|[a-z:]+:\/\/?/
   else
-    SEPARATOR_PAT = /#{Regexp.quote File::SEPARATOR}/
+    SEPARATOR_PAT = /#{Regexp.quote File::SEPARATOR}|.+!\/|[a-z:]+:\/\/?/
   end
 
   # chop_basename(path) -> [pre-basename, basename] or nil
