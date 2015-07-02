@@ -23,7 +23,9 @@ end
 
 describe "File.socket?" do
   before :each do
-    @name = tmp("i_am_a_socket")
+    # We need a really short name here.
+    # on Linux the path length is limited to 107, see unix(7).
+    @name = tmp("s")
     @server = UNIXServer.new @name
   end
 
