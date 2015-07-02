@@ -235,7 +235,7 @@ project 'JRuby Lib Setup' do
   end
 
   execute( 'fix shebang on gem bin files and add *.bat files',
-           'prepare-resources' ) do |ctx|
+           'generate-resources' ) do |ctx|
     
     puts 'fix the gem stub files'
     jruby_home = ctx.project.basedir.to_pathname + '/../'
