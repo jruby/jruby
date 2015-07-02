@@ -218,8 +218,6 @@ public class JRubyEngine extends BSFEngineImpl {
             JumpException je = (JumpException)exception;
             if (je instanceof RaiseException) {
                 runtime.printError(((RaiseException)je).getException());
-            } else if (je instanceof JumpException.BreakJump) {
-                runtime.getErrorStream().println("break without block.");
             } else if (je instanceof JumpException.ReturnJump) {
                 runtime.getErrorStream().println("return without block.");
             }

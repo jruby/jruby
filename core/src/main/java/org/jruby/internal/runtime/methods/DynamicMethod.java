@@ -601,11 +601,4 @@ public abstract class DynamicMethod {
         }
         throw rj;
     }
-
-    protected IRubyObject handleBreak(ThreadContext context, Ruby runtime, JumpException.BreakJump bj, int callNumber) {
-        if (bj.getTarget() == callNumber) {
-            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, runtime.getNil(), "unexpected break");
-        }
-        throw bj;
-    }
 }

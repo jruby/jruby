@@ -82,7 +82,6 @@ public class JumpException extends RuntimeException {
         }
     }
     
-    public static class BreakJump extends FlowControlException { public BreakJump(int t, Object v) { super(Reason.BREAK, t, v); } }
     public static class NextJump extends FlowControlException { public NextJump(Object v) { super(Reason.NEXT, 0, v); } }
     public static class RedoJump extends FlowControlException { public RedoJump() {super(Reason.REDO); } }
     public static class SpecialJump extends FlowControlException { public SpecialJump() {super(Reason.NOREASON); } }
