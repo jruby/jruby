@@ -37,6 +37,7 @@ test_integer_overflows
 test_ivar_table_integrity
 test_io
 test_load
+test_load_gem_extensions
 test_method
 test_method_cache
 test_method_override_and_caching

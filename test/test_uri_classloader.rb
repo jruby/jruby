@@ -2,7 +2,8 @@
 require 'test/unit'
 require 'test/test_helper'
 
-class TestFile < Test::Unit::TestCase
+# TODO fails with enableassertion :(
+class TestURIClassloader < Test::Unit::TestCase
   include TestHelper
 
   def setup
