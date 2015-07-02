@@ -648,8 +648,8 @@ public abstract class StringPrimitiveNodes {
         public int stringCharacterByteIndexMultiByteEncoding(RubyString string, int index, int start) {
             final ByteList bytes = StringNodes.getByteList(string);
 
-            return StringSupport.nth(bytes.getEncoding(), bytes.getUnsafeBytes(), bytes.getBegin(),
-                    bytes.getBegin() + bytes.getRealSize(), start + index);
+            return StringSupport.nth(bytes.getEncoding(), bytes.getUnsafeBytes(), bytes.getBegin() + start,
+                    bytes.getBegin() + bytes.getRealSize(), index);
         }
     }
 
