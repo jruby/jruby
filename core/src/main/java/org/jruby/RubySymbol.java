@@ -42,6 +42,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.Constantizable;
+import org.jruby.RubyEncoding;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
@@ -65,6 +66,7 @@ import org.jruby.util.SipHashInline;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.Arrays;
 
 import static org.jruby.util.StringSupport.codeLength;
 import static org.jruby.util.StringSupport.codePoint;
@@ -962,13 +964,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
     private static int javaStringHashCode(ByteList iso8859) {
         int h = 0;
         int length = iso8859.length();
-        if (h == 0 && length > 0) {
+        if (length > 0) {
             byte val[] = iso8859.getUnsafeBytes();
             int begin = iso8859.begin();
-
-            for (int i = 0; i < length; i++) {
-                h = 31 * h + val[begin + i];
-            }
+            byte copyVal[] = Arrays.copyOfRange(val, begin, begin + length);
+            h = new String(copyVal, RubyEncoding.ISO).hashCode();
         }
         return h;
     }
