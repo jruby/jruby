@@ -5,7 +5,10 @@ class MSpecScript
   end
 
   set :target, File.expand_path("../../../bin/jruby#{windows? ? '.bat' : ''}", __FILE__)
-  set :flags, %w[-X+T -J-ea -J-Xmx2G]
+
+  if ARGV[-2..-1] != %w[-t ruby] # No flags for MRI
+    set :flags, %w[-X+T -J-ea -J-Xmx2G]
+  end
 
   set :language, [
     "spec/ruby/language"
