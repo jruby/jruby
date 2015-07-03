@@ -18,9 +18,12 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.InvocationLinker;
+import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
+import org.jruby.runtime.invokedynamic.MathLinker;
 import org.jruby.runtime.invokedynamic.VariableSite;
 import org.jruby.runtime.ivars.FieldVariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessor;
+import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
@@ -34,11 +37,25 @@ import java.lang.invoke.*;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.runtime.Helpers.arrayOf;
-import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class Bootstrap {
+    public final static String BOOTSTRAP_BARE_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class);
+    public final static String BOOTSTRAP_LONG_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class, String.class, int.class);
+    public final static String BOOTSTRAP_DOUBLE_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class, String.class, int.class);
+    public static final Class[] REIFIED_OBJECT_CLASSES = {
+        RubyObjectVar0.class,
+        RubyObjectVar1.class,
+        RubyObjectVar2.class,
+        RubyObjectVar3.class,
+        RubyObjectVar4.class,
+        RubyObjectVar5.class,
+        RubyObjectVar6.class,
+        RubyObjectVar7.class,
+        RubyObjectVar8.class,
+        RubyObjectVar9.class,
+    };
     private static final Logger LOG = LoggerFactory.getLogger("Bootstrap");
     static final Lookup LOOKUP = MethodHandles.lookup();
 
@@ -521,7 +538,7 @@ public class Bootstrap {
         }
 
         // prepare test
-        MethodHandle test = findStatic(InvocationLinker.class, "testRealClass", methodType(boolean.class, int.class, IRubyObject.class));
+        MethodHandle test = findStatic(Bootstrap.class, "testRealClass", methodType(boolean.class, int.class, IRubyObject.class));
         test = insertArguments(test, 0, accessor.getClassId());
 
         getValue = guardWithTest(test, getValue, fallback);
@@ -577,7 +594,7 @@ public class Bootstrap {
         }
 
         // prepare test
-        MethodHandle test = findStatic(InvocationLinker.class, "testRealClass", methodType(boolean.class, int.class, IRubyObject.class));
+        MethodHandle test = findStatic(Bootstrap.class, "testRealClass", methodType(boolean.class, int.class, IRubyObject.class));
         test = insertArguments(test, 0, accessor.getClassId());
         test = dropArguments(test, 1, IRubyObject.class);
 
@@ -603,6 +620,10 @@ public class Bootstrap {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static boolean testRealClass(int id, IRubyObject self) {
+        return id == ((RubyBasicObject)self).getMetaClass().getRealClass().id;
     }
 
     public static boolean testType(RubyClass original, IRubyObject self) {
@@ -743,5 +764,50 @@ public class Bootstrap {
 
     private static String extractSourceInfo(VariableSite site) {
         return " (" + site.file() + ":" + site.line() + ")";
+    }
+
+    public static Handle getFixnumOperatorHandle() {
+        return getBootstrapHandle("fixnumOperatorBootstrap", MathLinker.class, BOOTSTRAP_LONG_STRING_INT_SIG);
+    }
+
+    public static Handle getFloatOperatorHandle() {
+        return getBootstrapHandle("floatOperatorBootstrap", MathLinker.class, BOOTSTRAP_DOUBLE_STRING_INT_SIG);
+    }
+
+    public static Handle checkpointHandle() {
+        return getBootstrapHandle("checkpointBootstrap", BOOTSTRAP_BARE_SIG);
+    }
+
+    public static Handle getBootstrapHandle(String name, String sig) {
+        return getBootstrapHandle(name, Bootstrap.class, sig);
+    }
+
+    public static Handle getBootstrapHandle(String name, Class type, String sig) {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(type), name, sig);
+    }
+
+    public static CallSite checkpointBootstrap(Lookup lookup, String name, MethodType type) throws Throwable {
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle handle = lookup.findStatic(Bootstrap.class, "checkpointFallback", methodType(void.class, MutableCallSite.class, ThreadContext.class));
+
+        handle = handle.bindTo(site);
+        site.setTarget(handle);
+
+        return site;
+    }
+
+    public static void checkpointFallback(MutableCallSite site, ThreadContext context) throws Throwable {
+        Ruby runtime = context.runtime;
+        Invalidator invalidator = runtime.getCheckpointInvalidator();
+
+        MethodHandle target = Binder
+                .from(void.class, ThreadContext.class)
+                .nop();
+        MethodHandle fallback = lookup().findStatic(Bootstrap.class, "checkpointFallback", methodType(void.class, MutableCallSite.class, ThreadContext.class));
+        fallback = fallback.bindTo(site);
+
+        target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
+
+        site.setTarget(target);
     }
 }
