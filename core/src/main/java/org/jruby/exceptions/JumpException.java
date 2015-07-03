@@ -84,8 +84,7 @@ public class JumpException extends RuntimeException {
     
     public static class SpecialJump extends FlowControlException { public SpecialJump() {super(Reason.NOREASON); } }
     public static final SpecialJump SPECIAL_JUMP = new SpecialJump();
-    public static class ReturnJump extends FlowControlException { public ReturnJump(int t, Object v) { super(Reason.RETURN, t, v); }}
-    
+
     /**
      * Constructor for flow-control-only JumpExceptions.
      */
