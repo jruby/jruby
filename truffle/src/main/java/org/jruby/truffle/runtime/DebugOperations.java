@@ -100,8 +100,12 @@ public abstract class DebugOperations {
         System.exit(1);
     }
 
+    public static String[] printableBacktrace(RubyContext context, Node currentNode) {
+        return Backtrace.DISPLAY_FORMATTER.format(context, null, RubyCallStack.getBacktrace(currentNode));
+    }
+
     public static void printBacktrace(RubyContext context, Node currentNode) {
-        for (String line : Backtrace.DISPLAY_FORMATTER.format(context, null, RubyCallStack.getBacktrace(currentNode))) {
+        for (String line : printableBacktrace(context, currentNode)) {
             System.err.println(line);
         }
     }
