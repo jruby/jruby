@@ -881,8 +881,8 @@ public abstract class ArrayNodes {
             return setOtherArray(frame, array, start, length, value);
         }
 
-        @Specialization(guards = "isRubyArray(value)")
-        public Object setOtherArray(VirtualFrame frame, RubyBasicObject array, int start, int length, RubyBasicObject value) {
+        @Specialization(guards = "isRubyArray(replacement)")
+        public Object setOtherArray(VirtualFrame frame, RubyBasicObject array, int start, int length, RubyBasicObject replacement) {
             CompilerDirectives.transferToInterpreter();
 
             if (length < 0) {
@@ -893,83 +893,67 @@ public abstract class ArrayNodes {
 
             final int normalizedIndex = normalizeIndex(array, start);
             if (normalizedIndex < 0) {
+                tooSmallBranch.enter();
                 CompilerDirectives.transferToInterpreter();
-                String errMessage = "index " + start + " too small for array; minimum: " + Integer.toString(-getSize(array));
-                throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
+                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", start, getSize(array), this));
             }
 
-            final int begin = normalizeIndex(array, start);
-            if (getSize(value) == 0) {
+            final int replacementLength = getSize(replacement);
+            final Object[] replacementStore = slowToArray(replacement);
 
-                final int exclusiveEnd = begin + length;
-                Object[] store = ArrayUtils.box(getStore(array));
-
-                if (begin < 0) {
-                    tooSmallBranch.enter();
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", start, getSize(array), this));
-                } else if (exclusiveEnd > getSize(array)) {
-                    throw new UnsupportedOperationException();
-                }
-
-                // TODO: This is a moving overlapping memory, should we use sth else instead?
-                System.arraycopy(store, exclusiveEnd, store, begin, getSize(array) - exclusiveEnd);
-                setStore(array, store, getSize(array) - length);
-
-                return value;
-            } else {
+            if (replacementLength == length) {
                 if (writeNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                 }
-                Object[] values = slowToArray(value);
-                if (getSize(value) == length || (begin + length + 1) > getSize(array)) {
-                    int i = begin;
-                    for (Object obj : values) {
-                        writeNode.executeWrite(frame, array, i, obj);
-                        i += 1;
+
+                for (int i = 0; i < length; i++) {
+                    writeNode.executeWrite(frame, array, start + i, replacementStore[i]);
+                }
+            } else {
+                final int arrayLength = getSize(array);
+                final int newLength;
+                final boolean mustExpandArray = normalizedIndex > arrayLength;
+                final boolean writeLastPart;
+
+                if (mustExpandArray) {
+                    newLength = normalizedIndex + replacementLength;
+                    writeLastPart = false;
+                } else {
+                    if (normalizedIndex + length > arrayLength) {
+                        newLength = normalizedIndex + replacementLength;
+                        writeLastPart = false;
+                    } else {
+                        newLength = arrayLength - length + replacementLength;
+                        writeLastPart = true;
+                    }
+                }
+
+                final Object store = slowToArray(array);
+                final Object newStore[] = new Object[newLength];
+
+
+                if (mustExpandArray) {
+                    System.arraycopy(store, 0, newStore, 0, arrayLength);
+
+                    final int nilPad = normalizedIndex - arrayLength;
+                    for (int i = 0; i < nilPad; i++) {
+                        newStore[arrayLength + i] = nil();
                     }
                 } else {
-                    if (readSliceNode == null) {
-                        CompilerDirectives.transferToInterpreter();
-                        readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
-                    }
-
-                    final int newLength = (length + begin) > getSize(array) ? begin + values.length : getSize(array) + values.length - length;
-                    final int popNum = newLength < getSize(array) ? getSize(array) - newLength : 0;
-
-                    if (popNum > 0) {
-                        if (popOneNode == null) {
-                            CompilerDirectives.transferToInterpreter();
-                            popOneNode = insert(PopOneNodeGen.create(getContext(), getSourceSection(), null));
-                        }
-                        for (int i = 0; i < popNum; i++) { // TODO 3-28-2015 BF update to pop multiple
-                            popOneNode.executePopOne(array);
-                        }
-                    }
-
-                    final int readLen = newLength - values.length - begin;
-                    RubyBasicObject endValues = null;
-                    if (readLen > 0) {
-                        endValues = (RubyBasicObject) readSliceNode.executeReadSlice(frame, array, getSize(array) - readLen, readLen);
-                    }
-
-                    int i = begin;
-                    for (Object obj : values) {
-                        writeNode.executeWrite(frame, array, i, obj);
-                        i += 1;
-                    }
-                    if (readLen > 0) {
-                        final Object[] endValuesStore = ArrayUtils.box(getStore(endValues));
-                        for (Object obj : endValuesStore) {
-                            writeNode.executeWrite(frame, array, i, obj);
-                            i += 1;
-                        }
-                    }
-
+                    System.arraycopy(store, 0, newStore, 0, normalizedIndex);
                 }
-                return value;
+
+                System.arraycopy(replacementStore, 0, newStore, normalizedIndex, replacementLength);
+
+                if (writeLastPart) {
+                    System.arraycopy(store, normalizedIndex + length, newStore, normalizedIndex + replacementLength, arrayLength - (normalizedIndex + length));
+                }
+
+                setStore(array, newStore, newLength);
             }
+
+            return replacement;
         }
 
         @Specialization(guards = "!isRubyArray(other)")
