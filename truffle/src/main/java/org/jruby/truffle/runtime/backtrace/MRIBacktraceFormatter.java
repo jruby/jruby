@@ -32,7 +32,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         assert RubyGuards.isRubyException(exception);
 
         try {
-            final List<Activation> activations = backtrace.getActivations();
+            final List<Activation> activations = backtrace == null ? new ArrayList<Activation>() : backtrace.getActivations();
 
             final ArrayList<String> lines = new ArrayList<>();
 
