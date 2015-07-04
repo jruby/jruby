@@ -19,12 +19,14 @@ class TestLoad < Test::Unit::TestCase
   end
 
   def test_require_extension_file_via_uri_protocol
+    skip 'needs jruby-home from filesystem' if JRuby.runtime.instance_config.jruby_home =~ /META-INF/
     require 'uri:file:./lib/ruby/shared/json/ext/parser'
     # just check if extension class exists
     JSON::Ext::Parser
   end
 
   def test_require_extension_file_via_uri_classloader_protocol
+    skip 'needs jruby-home from filesystem' if JRuby.runtime.instance_config.jruby_home =~ /META-INF/
     require 'uri:classloader:/lib/ruby/shared/json/ext/generator'
     # just check if extension class exists
     JSON::Ext::Generator
