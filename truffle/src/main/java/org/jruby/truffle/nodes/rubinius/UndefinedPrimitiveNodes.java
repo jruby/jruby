@@ -30,9 +30,10 @@ public abstract class UndefinedPrimitiveNodes {
         }
 
         @Specialization
-        public Object undefined(Object... args) {
+        public Object undefined(Object args) {
             throw new UnsupportedOperationException("Undefined Rubinius primitive.");
         }
+
     }
 
 }

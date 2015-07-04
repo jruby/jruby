@@ -141,8 +141,8 @@ project 'JRuby Lib Setup' do
       ghome = default_gemnames.member?( a.artifact_id ) ? gem_home : jruby_gems
       if Dir[ File.join( ghome, 'cache', File.basename( a.file.to_pathname ).sub( /.gem/, '*.gem' ) ) ].empty?
         puts a.file.to_pathname
-        # do not set bin_dir since its create absolute symbolic links
         installer = Gem::Installer.new( a.file.to_pathname,
+                                        :wrappers => true,
                                         :ignore_dependencies => true,
                                         :install_dir => ghome )
         installer.install
@@ -235,7 +235,7 @@ project 'JRuby Lib Setup' do
   end
 
   execute( 'fix shebang on gem bin files and add *.bat files',
-           'prepare-resources' ) do |ctx|
+           'generate-resources' ) do |ctx|
     
     puts 'fix the gem stub files'
     jruby_home = ctx.project.basedir.to_pathname + '/../'

@@ -28,7 +28,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -170,7 +169,7 @@ public abstract class ProcNodes {
 
             final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
 
-            return (RubyArray) getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
+            return getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
                     argsDesc, proc.getType() == RubyProc.Type.LAMBDA));
         }
 

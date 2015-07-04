@@ -17,7 +17,6 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.Ruby;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
@@ -29,7 +28,11 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.cext.CExtManager;
 import org.jruby.truffle.runtime.cext.CExtSubsystem;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.CoreLibrary;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBinding;
+import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.Memo;
@@ -362,8 +365,8 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public boolean cExtLoad(RubyArray initFunctions, RubyArray cFlags, RubyArray files) {
+        @Specialization(guards = {"isRubyArray(initFunctions)", "isRubyArray(cFlags)", "isRubyArray(files)"})
+        public boolean cExtLoad(RubyBasicObject initFunctions, RubyBasicObject cFlags, RubyBasicObject files) {
             final CExtSubsystem subsystem = CExtManager.getSubsystem();
 
             if (subsystem == null) {
@@ -375,7 +378,9 @@ public abstract class TrufflePrimitiveNodes {
             return true;
         }
 
-        private String[] toStrings(RubyArray array) {
+        private String[] toStrings(RubyBasicObject array) {
+            assert RubyGuards.isRubyArray(array);
+
             final String[] strings = new String[ArrayNodes.getSize(array)];
 
             int n = 0;
@@ -485,6 +490,34 @@ public abstract class TrufflePrimitiveNodes {
             getContext().getRubiniusPrimitiveManager().installPrimitive(name, rubyMethod);
             return nil();
         }
+    }
+
+    @CoreMethod(names = "fixnum_lower", isModuleFunction = true, required = 1)
+    public abstract static class FixnumLowerPrimitiveNode extends UnaryCoreMethodNode {
+
+        public FixnumLowerPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int lower(int value) {
+            return value;
+        }
+
+        @Specialization(guards = "canLower(value)")
+        public int lower(long value) {
+            return (int) value;
+        }
+
+        @Specialization(guards = "!canLower(value)")
+        public long lowerFails(long value) {
+            return value;
+        }
+
+        protected static boolean canLower(long value) {
+            return CoreLibrary.fitsIntoInteger(value);
+        }
+
     }
 
 }

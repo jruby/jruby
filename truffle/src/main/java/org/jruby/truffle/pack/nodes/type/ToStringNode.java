@@ -29,7 +29,7 @@ import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
@@ -102,8 +102,8 @@ public abstract class ToStringNode extends PackNode {
         return StringNodes.getByteList(string);
     }
 
-    @Specialization
-    public ByteList toString(VirtualFrame frame, RubyArray array) {
+    @Specialization(guards = "isRubyArray(array)")
+    public ByteList toString(VirtualFrame frame, RubyBasicObject array) {
         if (toSNode == null) {
             CompilerDirectives.transferToInterpreter();
             toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));

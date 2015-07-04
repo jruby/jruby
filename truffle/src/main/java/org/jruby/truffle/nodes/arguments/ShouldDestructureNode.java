@@ -12,11 +12,11 @@ package org.jruby.truffle.nodes.arguments;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.RespondToNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.methods.Arity;
 
 /**
@@ -61,7 +61,7 @@ public class ShouldDestructureNode extends RubyNode {
         // If the single argument is a RubyArray, destructure
         // TODO(CS): can we not just reply on the respondToCheck? Should experiment.
 
-        if (RubyArguments.getUserArgument(frame.getArguments(), 0) instanceof RubyArray) {
+        if (RubyGuards.isRubyArray(RubyArguments.getUserArgument(frame.getArguments(), 0))) {
             return true;
         }
 

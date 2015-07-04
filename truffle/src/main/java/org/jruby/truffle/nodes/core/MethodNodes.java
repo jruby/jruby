@@ -9,8 +9,13 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.util.EnumSet;
-
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.*;
+import com.oracle.truffle.api.source.NullSourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
@@ -24,7 +29,6 @@ import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -32,17 +36,7 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
-import com.oracle.truffle.api.object.HiddenKey;
-import com.oracle.truffle.api.object.LocationModifier;
-import com.oracle.truffle.api.object.Property;
-import com.oracle.truffle.api.object.Shape;
-import com.oracle.truffle.api.source.NullSourceSection;
-import com.oracle.truffle.api.source.SourceSection;
+import java.util.EnumSet;
 
 @CoreClass(name = "Method")
 public abstract class MethodNodes {
@@ -206,7 +200,7 @@ public abstract class MethodNodes {
 
             final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
 
-            return (RubyArray) getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
+            return getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
                     argsDesc, true));
         }
 

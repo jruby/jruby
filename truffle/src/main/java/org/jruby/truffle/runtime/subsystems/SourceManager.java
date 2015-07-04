@@ -10,7 +10,6 @@
 
 package org.jruby.truffle.runtime.subsystems;
 
-import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.util.FileUtils;

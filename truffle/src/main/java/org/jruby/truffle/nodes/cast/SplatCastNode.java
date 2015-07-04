@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayDupNode;
 import org.jruby.truffle.nodes.core.array.ArrayDupNodeGen;
@@ -24,7 +25,6 @@ import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
@@ -97,8 +97,8 @@ public abstract class SplatCastNode extends RubyNode {
         if (respondToResult != DispatchNode.MISSING && respondToCast.executeBoolean(frame, respondToResult)) {
             final Object array = toA.call(frame, object, method, null);
 
-            if (array instanceof RubyArray) {
-                return (RubyArray) array;
+            if (RubyGuards.isRubyArray(array)) {
+                return (RubyBasicObject) array;
             } else if (array == nil() || array == DispatchNode.MISSING) {
                 CompilerDirectives.transferToInterpreter();
                 return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), object);

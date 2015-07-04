@@ -23,7 +23,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -689,22 +688,29 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "class_variable_defined?", required = 1)
-    public abstract static class ClassVariableDefinedNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class ClassVariableDefinedNode extends CoreMethodNode {
 
         public ClassVariableDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(name)")
-        public boolean isClassVariableDefinedString(RubyModule module, RubyBasicObject name) {
-            return module.getClassVariables().containsKey(name.toString());
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(name)")
-        public boolean isClassVariableDefinedSymbol(RubyModule module, RubyBasicObject name) {
-            return module.getClassVariables().containsKey(SymbolNodes.getString(name));
+        @Specialization
+        public boolean isClassVariableDefinedString(RubyModule module, String name) {
+            RubyContext.checkClassVariableName(getContext(), name, this);
+
+            final Object value = ModuleOperations.lookupClassVariable(module, name);
+
+            return value != null;
         }
 
     }
@@ -726,11 +732,11 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
+        @TruffleBoundary
         public Object getClassVariable(RubyModule module, String name) {
-            CompilerDirectives.transferToInterpreter();
-
             RubyContext.checkClassVariableName(getContext(), name, this);
-            Object value = ModuleOperations.lookupClassVariable(module, name);
+
+            final Object value = ModuleOperations.lookupClassVariable(module, name);
 
             if (value == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -738,6 +744,35 @@ public abstract class ModuleNodes {
             } else {
                 return value;
             }
+        }
+
+    }
+
+    @CoreMethod(names = "class_variable_set", required = 2, raiseIfFrozenSelf = true)
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name"),
+            @NodeChild(type = RubyNode.class, value = "value")
+    })
+    public abstract static class ClassVariableSetNode extends CoreMethodNode {
+
+        public ClassVariableSetNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+        }
+
+        @Specialization
+        @TruffleBoundary
+        public Object setClassVariable(RubyModule module, String name, Object value) {
+            RubyContext.checkClassVariableName(getContext(), name, this);
+
+            ModuleOperations.setClassVariable(module, name, value, this);
+
+            return value;
         }
 
     }

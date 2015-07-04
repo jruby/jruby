@@ -18,7 +18,6 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jcodings.Encoding;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;

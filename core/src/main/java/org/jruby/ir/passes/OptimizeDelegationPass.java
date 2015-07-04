@@ -1,9 +1,11 @@
 package org.jruby.ir.passes;
 
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRFlags;
-import org.jruby.ir.instructions.*;
+import org.jruby.ir.instructions.ClosureAcceptingInstr;
+import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.ReifyClosureInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
@@ -32,7 +34,9 @@ public class OptimizeDelegationPass extends CompilerPass {
         return false;
     }
 
-    private static void calculateBlockUsage(IRScope s, Map<Operand, Operand> unusedExplicitBlocks) {
+    private static void optimizeDelegatedVars(IRScope s) {
+        Map<Operand, Operand> unusedExplicitBlocks = new HashMap<>();
+
         for (BasicBlock bb: s.getCFG().getBasicBlocks()) {
             for (Instr i: bb.getInstrs()) {
                 if (i instanceof ReifyClosureInstr) {
@@ -50,12 +54,6 @@ public class OptimizeDelegationPass extends CompilerPass {
             }
         }
 
-        for (IRScope child: s.getClosures()) {
-            calculateBlockUsage(child, unusedExplicitBlocks);
-        }
-    }
-
-    private static void replaceBlockUsage(IRScope s, Map<Operand, Operand> unusedExplicitBlocks) {
         for (BasicBlock bb: s.getCFG().getBasicBlocks()) {
             ListIterator<Instr> instrs = bb.getInstrs().listIterator();
             while (instrs.hasNext()) {
@@ -72,28 +70,13 @@ public class OptimizeDelegationPass extends CompilerPass {
                 }
             }
         }
-
-        for (IRScope child: s.getClosures()) {
-            replaceBlockUsage(child, unusedExplicitBlocks);
-        }
-    }
-    private static void optimizeDelegatedVars(IRScope s) {
-        Map<Operand, Operand> unusedExplicitBlocks = new HashMap<>();
-
-        calculateBlockUsage(s, unusedExplicitBlocks);
-        replaceBlockUsage(s, unusedExplicitBlocks);
     }
 
     private static boolean usesVariableAsNonClosureArg(Instr i, Variable v) {
         List<Variable> usedVariables = i.getUsedVariables();
-        if (usedVariables.contains(v)) {
-            if (i instanceof ClosureAcceptingInstr) {
-                return usedVariables.indexOf(v) != usedVariables.lastIndexOf(v) ||
-                    v != ((ClosureAcceptingInstr) i).getClosureArg();
-            } else {
-                return true;
-            }
-        }
-        return false;
+        return usedVariables.contains(v) &&
+                (!(i instanceof ClosureAcceptingInstr) ||
+                 usedVariables.indexOf(v) != usedVariables.lastIndexOf(v) ||
+                 v != ((ClosureAcceptingInstr) i).getClosureArg());
     }
 }

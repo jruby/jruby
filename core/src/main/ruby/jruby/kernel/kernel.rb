@@ -18,7 +18,7 @@ module Kernel
       dir = File.dirname($1)
       absolute_feature = "uri:#{dir}/#{relative_arg}"
     else
-      absolute_feature = File.expand_path(relative_arg, File.dirname(file))
+      absolute_feature = File.expand_path(relative_arg, File.dirname(File.realpath(file)))
     end
     
     require absolute_feature

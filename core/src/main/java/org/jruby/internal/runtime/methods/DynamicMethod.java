@@ -33,11 +33,7 @@ package org.jruby.internal.runtime.methods;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import org.jruby.MetaClass;
-import org.jruby.Ruby;
-import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
-import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -589,23 +585,5 @@ public abstract class DynamicMethod {
      */
     public void setNotImplemented(boolean setNotImplemented) {
         this.notImplemented = setNotImplemented;
-    }
-
-    protected IRubyObject handleRedo(Ruby runtime) throws RaiseException {
-        throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, runtime.getNil(), "unexpected redo");
-    }
-
-    protected IRubyObject handleReturn(ThreadContext context, JumpException.ReturnJump rj, int callNumber) {
-        if (rj.getTarget() == callNumber) {
-            return (IRubyObject) rj.getValue();
-        }
-        throw rj;
-    }
-
-    protected IRubyObject handleBreak(ThreadContext context, Ruby runtime, JumpException.BreakJump bj, int callNumber) {
-        if (bj.getTarget() == callNumber) {
-            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, runtime.getNil(), "unexpected break");
-        }
-        throw bj;
     }
 }

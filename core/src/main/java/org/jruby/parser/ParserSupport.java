@@ -1229,7 +1229,7 @@ public class ParserSupport {
         for (int i = 0; i < length; i++) {
             // TODO: Pass by non-local-varnamed things but make sure consistent with list we get from regexp
             
-            if (RubyLexer.getKeyword(names[i]) == null) {
+            if (RubyLexer.getKeyword(names[i]) == null && !Character.isUpperCase(names[i].charAt(0))) {
                 int slot = scope.isDefined(names[i]);
                 if (slot >= 0) {
                     locals.add(slot);

@@ -9,8 +9,15 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.util.EnumSet;
-
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.*;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
@@ -27,21 +34,7 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.util.ByteList;
 
-import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Cached;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.FrameDescriptor;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
-import com.oracle.truffle.api.object.FinalLocationException;
-import com.oracle.truffle.api.object.HiddenKey;
-import com.oracle.truffle.api.object.IncompatibleLocationException;
-import com.oracle.truffle.api.object.LocationModifier;
-import com.oracle.truffle.api.object.Property;
-import com.oracle.truffle.api.object.Shape;
-import com.oracle.truffle.api.source.SourceSection;
+import java.util.EnumSet;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
@@ -74,8 +67,8 @@ public abstract class SymbolNodes {
 
         STRING_PROPERTY = Property.create(STRING_IDENTIFIER, allocator.locationForType(String.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
         BYTE_LIST_PROPERTY = Property.create(BYTE_LIST_IDENTIFIER, allocator.locationForType(ByteList.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
-        HASH_CODE_PROPERTY = Property.create(HASH_CODE_IDENTIFIER, allocator.locationForType(int.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
-        CODE_RANGE_PROPERTY = Property.create(CODE_RANGE_IDENTIFIER, allocator.locationForType(int.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        HASH_CODE_PROPERTY = Property.create(HASH_CODE_IDENTIFIER, allocator.locationForType(int.class, EnumSet.of(LocationModifier.Final)), 0);
+        CODE_RANGE_PROPERTY = Property.create(CODE_RANGE_IDENTIFIER, allocator.locationForType(int.class), 0);
         CODE_RANGEABLE_WRAPPER_PROPERTY = Property.create(CODE_RANGEABLE_WRAPPER_IDENTIFIER, allocator.locationForType(SymbolCodeRangeableWrapper.class), 0);
 
         final Shape shape = RubyBasicObject.LAYOUT.createShape(SYMBOL_TYPE)

@@ -150,7 +150,7 @@ public class RubyBasicObject implements TruffleObject {
 
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         if (RubyGuards.isRubyArray(this)) {
-            for (Object object : ArrayNodes.slowToArray((RubyArray) this)) {
+            for (Object object : ArrayNodes.slowToArray(this)) {
                 if (object instanceof RubyBasicObject) {
                     ((RubyBasicObject) object).visitObjectGraph(visitor);
                 }

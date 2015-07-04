@@ -9,15 +9,14 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.util.Arrays;
-
 import com.oracle.truffle.api.nodes.Node;
-
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+
+import java.util.Arrays;
 
 /**
  * Represents the Ruby {@code Exception} class.

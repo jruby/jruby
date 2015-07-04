@@ -239,20 +239,6 @@ public class Helpers {
         return map;
     }
 
-    /**
-     * Should be called on jumps out of blocks.  Inspects the jump, returning or rethrowing as appropriate
-     */
-    public static IRubyObject handleBlockJump(ThreadContext context, JumpException.FlowControlException jump, Block.Type type) {
-        // 'next' and Lambda 'return' are local returns from the block, ending the call or yield
-        if (jump instanceof JumpException.NextJump
-                || (jump instanceof JumpException.ReturnJump && type == Block.Type.LAMBDA)) {
-            return jump.getValue() == null ? context.runtime.getNil() : (IRubyObject)jump.getValue();
-        }
-
-        // other jumps propagate up
-        throw jump;
-    }
-
     public static boolean additionOverflowed(long original, long other, long result) {
         return (~(original ^ other) & (original ^ result) & RubyFixnum.SIGN_BIT) != 0;
     }
@@ -1833,95 +1819,6 @@ public class Helpers {
 
     private static void callSingletonMethodHook(IRubyObject receiver, ThreadContext context, RubySymbol name) {
         receiver.callMethod(context, "singleton_method_added", name);
-    }
-
-    private static DynamicMethod constructNormalMethod(
-            MethodFactory factory,
-            String javaName,
-            String name,
-            RubyModule containingClass,
-            ISourcePosition position,
-            int arity,
-            StaticScope scope,
-            Visibility visibility,
-            Object scriptObject,
-            CallConfiguration callConfig,
-            String parameterDesc,
-            MethodNodes methodNodes) {
-
-        DynamicMethod method;
-        final Ruby runtime = containingClass.getRuntime();
-
-        if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?") || visibility == Visibility.MODULE_FUNCTION) {
-            visibility = Visibility.PRIVATE;
-        }
-
-        if (RubyInstanceConfig.LAZYHANDLES_COMPILE) {
-            method = factory.getCompiledMethodLazily(
-                    containingClass,
-                    name,
-                    javaName,
-                    visibility,
-                    scope,
-                    scriptObject,
-                    callConfig,
-                    position,
-                    parameterDesc,
-                    methodNodes);
-        } else {
-            method = factory.getCompiledMethod(
-                    containingClass,
-                    name,
-                    javaName,
-                    visibility,
-                    scope,
-                    scriptObject,
-                    callConfig,
-                    position,
-                    parameterDesc,
-                    methodNodes);
-        }
-
-        return method;
-    }
-
-    private static DynamicMethod constructSingletonMethod(
-            MethodFactory factory,
-            String rubyName,
-            String javaName,
-            RubyClass rubyClass,
-            ISourcePosition position,
-            StaticScope scope,
-            Object scriptObject,
-            CallConfiguration callConfig,
-            String parameterDesc,
-            MethodNodes methodNodes) {
-
-        if (RubyInstanceConfig.LAZYHANDLES_COMPILE) {
-            return factory.getCompiledMethodLazily(
-                    rubyClass,
-                    rubyName,
-                    javaName,
-                    Visibility.PUBLIC,
-                    scope,
-                    scriptObject,
-                    callConfig,
-                    position,
-                    parameterDesc,
-                    methodNodes);
-        } else {
-            return factory.getCompiledMethod(
-                    rubyClass,
-                    rubyName,
-                    javaName,
-                    Visibility.PUBLIC,
-                    scope,
-                    scriptObject,
-                    callConfig,
-                    position,
-                    parameterDesc,
-                    methodNodes);
-        }
     }
 
     public static String encodeScope(StaticScope scope) {

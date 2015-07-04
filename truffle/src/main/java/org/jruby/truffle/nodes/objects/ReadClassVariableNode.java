@@ -12,10 +12,13 @@ package org.jruby.truffle.nodes.objects;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 
 public class ReadClassVariableNode extends RubyNode {
@@ -29,18 +32,25 @@ public class ReadClassVariableNode extends RubyNode {
         this.lexicalScope = lexicalScope;
     }
 
+    public static RubyModule resolveTargetModule(LexicalScope lexicalScope) {
+        // MRI logic: ignore lexical scopes (cref) referring to singleton classes
+        while ((lexicalScope.getLiveModule() instanceof RubyClass) && ((RubyClass) lexicalScope.getLiveModule()).isSingleton()) {
+            lexicalScope = lexicalScope.getParent();
+        }
+        return lexicalScope.getLiveModule();
+    }
+
     @Override
     public Object execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        final RubyModule moduleObject = lexicalScope.getLiveModule();
+        final RubyModule module = resolveTargetModule(lexicalScope);
 
-        final Object value = ModuleOperations.lookupClassVariable(moduleObject, name);
+        final Object value = ModuleOperations.lookupClassVariable(module, name);
 
         if (value == null) {
-            // TODO(CS): is this right?
-            // TODO: NameError!
-            return nil();
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedClassVariable(module, name, this));
         }
 
         return value;
@@ -48,9 +58,9 @@ public class ReadClassVariableNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        final RubyModule moduleObject = lexicalScope.getLiveModule();
+        final RubyModule module = resolveTargetModule(lexicalScope);
 
-        final Object value = ModuleOperations.lookupClassVariable(moduleObject, name);
+        final Object value = ModuleOperations.lookupClassVariable(module, name);
 
         if (value == null) {
             return nil();

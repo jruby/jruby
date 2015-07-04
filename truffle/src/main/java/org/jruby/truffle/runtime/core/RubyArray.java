@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 
+@Deprecated
 public final class RubyArray extends RubyBasicObject {
 
     public Object store;

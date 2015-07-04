@@ -93,7 +93,9 @@ public class StaticScope implements Serializable {
 
     private long commandArgumentStack;
 
-    private IRScope irScope; // Method/Closure that this static scope corresponds to
+    // Method/Closure that this static scope corresponds to.  This is used to tell whether this
+    // scope refers to a method scope or to determined IRScope of the parent of a compiling eval.
+    private IRScope irScope;
 
     public enum Type {
         LOCAL, BLOCK, EVAL;
@@ -225,7 +227,7 @@ public class StaticScope implements Serializable {
     }
 
     public int getNumberOfVariables() {
-        return irScope == null ? variableNames.length : irScope.getUsedVariablesCount();
+        return variableNames.length;
     }
 
     public void setVariables(String[] names) {

@@ -19,10 +19,8 @@ import com.oracle.truffle.api.instrument.ProbeNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
-
 import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -147,18 +145,6 @@ public abstract class RubyNode extends Node {
 
         if (value instanceof RubyString) {
             return (RubyString) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
-    // If you try to make this RubyBasicObject things break in the DSL
-
-    public RubyArray executeRubyArray(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (RubyGuards.isRubyArray(value)) {
-            return (RubyArray) value;
         } else {
             throw new UnexpectedResultException(value);
         }
