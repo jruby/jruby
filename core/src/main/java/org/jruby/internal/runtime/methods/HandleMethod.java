@@ -28,9 +28,14 @@
 package org.jruby.internal.runtime.methods;
 
 import java.lang.invoke.MethodHandle;
+import java.util.Arrays;
+import java.util.concurrent.Callable;
+
 import org.jruby.RubyModule;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -48,29 +53,81 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author headius
  */
 public class HandleMethod extends DynamicMethod implements MethodArgs2 {
-    private final MethodHandle[] targets;
-    private final MethodHandle target0;
-    private final MethodHandle target1;
-    private final MethodHandle target2;
-    private final MethodHandle target3;
-    private final MethodHandle target4;
+    private final Callable<MethodHandle[]> targetsGenerator;
+    private volatile MethodHandle[] targets;
+    private MethodHandle target0;
+    private MethodHandle target1;
+    private MethodHandle target2;
+    private MethodHandle target3;
+    private MethodHandle target4;
     private final String parameterDesc;
+    private final Signature signature;
+    private final boolean builtin;
+    private final boolean notImplemented;
 
-    public HandleMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, MethodHandle[] targets, String parameterDesc) {
+    public HandleMethod(
+            RubyModule implementationClass,
+            Visibility visibility,
+            CallConfiguration callConfig,
+            Callable<MethodHandle[]> targetsGenerator,
+            Signature signature,
+            boolean builtin,
+            boolean notImplemented,
+            String parameterDesc) {
+
         super(implementationClass, visibility, callConfig);
-        this.targets = targets;
-        this.target0 = targets[0];
-        this.target1 = targets[1];
-        this.target2 = targets[2];
-        this.target3 = targets[3];
-        this.target4 = targets[4];
+        this.targetsGenerator = targetsGenerator;
         this.parameterDesc = parameterDesc;
+        this.signature = signature;
+        this.builtin = builtin;
+        this.notImplemented = notImplemented;
+    }
+
+    @Override
+    public Arity getArity() {
+        return signature.arity();
+    }
+
+    @Override
+    public boolean isBuiltin() {
+        return builtin;
+    }
+
+    @Override
+    public boolean isNotImplemented() {
+        return notImplemented;
+    }
+
+    @Override
+    public boolean isNative() {
+        return true;
+    }
+
+    private void ensureTargets() {
+        if (targets != null) return;
+        try {
+            MethodHandle[] targets = targetsGenerator.call();
+            this.target0 = targets[0];
+            this.target1 = targets[1];
+            this.target2 = targets[2];
+            this.target3 = targets[3];
+            this.target4 = targets[4];
+            this.targets = targets;
+        } catch (Exception e) {
+            e.printStackTrace();
+            // ignore
+        }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        ensureTargets();
         try {
-            return (IRubyObject) target4.invokeWithArguments(context, self, args, block);
+            return (IRubyObject) target4.invokeExact(context, self, args, block);
+        } catch (NullPointerException npe) {
+            npe.printStackTrace();
+            System.out.println("handles: " + Arrays.toString(targets));
+            throw npe;
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
@@ -79,11 +136,12 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+        ensureTargets();
         if (target0 == null) {
             return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
         }
         try {
-            return (IRubyObject) target0.invokeWithArguments(context, self, block);
+            return (IRubyObject) target0.invokeExact(context, self, block);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
@@ -92,11 +150,12 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+        ensureTargets();
         if (target1 == null) {
             return call(context, self, clazz, name, new IRubyObject[]{arg0}, block);
         }
         try {
-            return (IRubyObject) target1.invokeWithArguments(context, self, arg0, block);
+            return (IRubyObject) target1.invokeExact(context, self, arg0, block);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
@@ -105,11 +164,12 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        ensureTargets();
         if (target2 == null) {
             return call(context, self, clazz, name, new IRubyObject[]{arg0, arg1}, block);
         }
         try {
-            return (IRubyObject) target2.invokeWithArguments(context, self, arg0, arg1, block);
+            return (IRubyObject) target2.invokeExact(context, self, arg0, arg1, block);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
@@ -118,11 +178,12 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        ensureTargets();
         if (target3 == null) {
             return call(context, self, clazz, name, new IRubyObject[]{arg0, arg1, arg2}, block);
         }
         try {
-            return (IRubyObject) target3.invokeWithArguments(context, self, arg0, arg1, arg2, block);
+            return (IRubyObject) target3.invokeExact(context, self, arg0, arg1, arg2, block);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
@@ -131,7 +192,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
 
     @Override
     public DynamicMethod dup() {
-        return new HandleMethod(implementationClass, visibility, callConfig, targets, parameterDesc);
+        return new HandleMethod(implementationClass, visibility, callConfig, targetsGenerator, signature, builtin, notImplemented, parameterDesc);
     }
 
     @Override

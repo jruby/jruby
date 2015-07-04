@@ -965,23 +965,23 @@ public class RubyModule extends RubyObject {
     public void defineAnnotatedMethodsIndividually(Class clazz) {
         TypePopulator populator;
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED || RubyInstanceConfig.REFLECTED_HANDLES) {
-            // we want reflected invokers or need full traces, use default (slow) populator
-            if (DEBUG) LOG.info("trace mode, using default populator");
+//        if (RubyInstanceConfig.FULL_TRACE_ENABLED || RubyInstanceConfig.REFLECTED_HANDLES) {
+//            // we want reflected invokers or need full traces, use default (slow) populator
+//            if (DEBUG) LOG.info("trace mode, using default populator");
             populator = TypePopulator.DEFAULT;
-        } else {
-            try {
-                String qualifiedName = "org.jruby.gen." + clazz.getCanonicalName().replace('.', '$');
-
-                if (DEBUG) LOG.info("looking for " + qualifiedName + AnnotationBinder.POPULATOR_SUFFIX);
-
-                Class populatorClass = Class.forName(qualifiedName + AnnotationBinder.POPULATOR_SUFFIX);
-                populator = (TypePopulator)populatorClass.newInstance();
-            } catch (Throwable t) {
-                if (DEBUG) LOG.info("Could not find it, using default populator");
-                populator = TypePopulator.DEFAULT;
-            }
-        }
+//        } else {
+//            try {
+//                String qualifiedName = "org.jruby.gen." + clazz.getCanonicalName().replace('.', '$');
+//
+//                if (DEBUG) LOG.info("looking for " + qualifiedName + AnnotationBinder.POPULATOR_SUFFIX);
+//
+//                Class populatorClass = Class.forName(qualifiedName + AnnotationBinder.POPULATOR_SUFFIX);
+//                populator = (TypePopulator)populatorClass.newInstance();
+//            } catch (Throwable t) {
+//                if (DEBUG) LOG.info("Could not find it, using default populator");
+//                populator = TypePopulator.DEFAULT;
+//            }
+//        }
 
         populator.populate(this, clazz);
     }
@@ -4154,6 +4154,7 @@ public class RubyModule extends RubyObject {
                 singletonClass = module.getSingletonClass();
                 // module/singleton methods are all defined public
                 DynamicMethod moduleMethod = dynamicMethod.dup();
+                moduleMethod.setImplementationClass(singletonClass);
                 moduleMethod.setVisibility(PUBLIC);
 
                 if (jrubyMethod.name().length == 0) {

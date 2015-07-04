@@ -27,17 +27,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
+import com.headius.invokebinder.Binder;
 import com.headius.invokebinder.Signature;
 import com.headius.invokebinder.SmartBinder;
 import com.headius.invokebinder.SmartHandle;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.parser.StaticScope;
 import org.jruby.RubyModule;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -45,11 +42,17 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
+
 import org.jruby.Ruby;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.runtime.invokedynamic.InvocationLinker;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import static java.lang.invoke.MethodHandles.foldArguments;
+import static java.lang.invoke.MethodHandles.insertArguments;
+import static org.jruby.runtime.Helpers.arrayOf;
 
 /**
  * In order to avoid the overhead with reflection-based method handles, this
@@ -77,7 +80,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
     }
 
     @Override
-    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> descs) {
+    public DynamicMethod getAnnotatedMethod(final RubyModule implementationClass, final List<JavaMethodDescriptor> descs) {
         JavaMethodDescriptor desc1 = descs.get(0);
         
         if (desc1.anno.frame()) {
@@ -91,14 +94,60 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             LOG.warn("warning: binding non-public class {}; reflected handles won't work", desc1.declaringClassName);
         }
 
+        int min = Integer.MAX_VALUE;
+        int max = 0;
+        boolean notImplemented = false;
+
+        for (JavaMethodDescriptor desc: descs) {
+            int specificArity = -1;
+            if (desc.optional == 0 && !desc.rest) {
+                if (desc.required == 0) {
+                    if (desc.actualRequired <= 3) {
+                        specificArity = desc.actualRequired;
+                    }
+                } else if (desc.required >= 0 && desc.required <= 3) {
+                    specificArity = desc.required;
+                }
+            }
+
+            if (specificArity != -1) {
+                if (specificArity < min) min = specificArity;
+                if (specificArity > max) max = specificArity;
+            } else {
+                if (desc.required < min) min = desc.required;
+                if (desc.rest) max = Integer.MAX_VALUE;
+                if (desc.required + desc.optional > max) max = desc.required + desc.optional;
+            }
+
+            notImplemented = notImplemented || desc.anno.notImplemented();
+        }
+
         DescriptorInfo info = new DescriptorInfo(descs);
-        MethodHandle[] targets = buildAnnotatedMethodHandles(implementationClass.getRuntime(), descs, implementationClass);
+        Callable<MethodHandle[]> targetsGenerator = new Callable<MethodHandle[]>() {
+            @Override
+            public MethodHandle[] call() throws Exception {
+                return buildAnnotatedMethodHandles(implementationClass.getRuntime(), descs, implementationClass);
+            }
+        };
         
-        return new HandleMethod(implementationClass, desc1.anno.visibility(), CallConfiguration.getCallConfig(info.isFrame(), info.isScope()), targets, null);
+        return new HandleMethod(
+                implementationClass,
+                desc1.anno.visibility(),
+                CallConfiguration.getCallConfig(info.isFrame(), info.isScope()),
+                targetsGenerator,
+                (min == max) ?
+                        org.jruby.runtime.Signature.from(min, 0, 0, 0, 0, org.jruby.runtime.Signature.Rest.NONE, false) :
+                        org.jruby.runtime.Signature.OPTIONAL,
+                true,
+                notImplemented,
+                null);
     }
 
     private MethodHandle[] buildAnnotatedMethodHandles(Ruby runtime, List<JavaMethodDescriptor> descs, RubyModule implementationClass) {
         MethodHandle[] targets = new MethodHandle[5];
+
+        int min = Integer.MAX_VALUE;
+        int max = 0;
         
         for (JavaMethodDescriptor desc: descs) {
             int specificArity = -1;
@@ -106,12 +155,19 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                 if (desc.required == 0) {
                     if (desc.actualRequired <= 3) {
                         specificArity = desc.actualRequired;
-                    } else {
-                        specificArity = -1;
                     }
                 } else if (desc.required >= 0 && desc.required <= 3) {
                     specificArity = desc.required;
                 }
+            }
+
+            if (specificArity != -1) {
+                if (specificArity < min) min = specificArity;
+                if (specificArity > max) max = specificArity;
+            } else {
+                if (desc.required < min) min = desc.required;
+                if (desc.rest) max = Integer.MAX_VALUE;
+                if (desc.required + desc.optional > max) max = desc.required + desc.optional;
             }
 
             String javaMethodName = desc.name;
@@ -123,8 +179,6 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             } else {
                 rubyName = javaMethodName;
             }
-
-//            checkArity(desc.anno, method, specificArity);
 
             SmartBinder targetBinder;
             SmartHandle target;
@@ -215,21 +269,14 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                 targets[4] = target.handle();
             }
         }
-        
+
         if (targets[4] == null) {
-            // provide a variable-arity path for specific-arity target
-            Signature VARIABLE_ARITY_SIGNATURE = Signature
-                    .returning(IRubyObject.class)
-                    .appendArg("context", ThreadContext.class)
-                    .appendArg("self", IRubyObject.class)
-                    .appendArg("args", IRubyObject[].class)
-                    .appendArg("block", Block.class);
-            
-            // convert all specific-arity handles into varargs handles
+            // provide a variable-arity path for all specific-arity targets, or error path
+
             MethodHandle[] varargsTargets = new MethodHandle[4];
             for (int i = 0; i < 4; i++) {
-                // TODO arity error
-                if (targets[i] == null) continue;
+                if (targets[i] == null) continue; // will never be retrieved; arity check will error first
+
                 if (i == 0) {
                     varargsTargets[i] = MethodHandles.dropArguments(targets[i], 2, IRubyObject[].class);
                 } else {
@@ -251,7 +298,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                     .filterReturn(HANDLE_GETTER.bindTo(varargsTargets))
                     .cast(int.class, Object.class)
                     .invokeStaticQuiet(LOOKUP, Array.class, "getLength");
-            
+
             SmartHandle variableCall = SmartBinder
                     .from(VARIABLE_ARITY_SIGNATURE)
                     .fold("handle", handleLookup)
@@ -259,8 +306,18 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             
             targets[4] = variableCall.handle();
         }
-        
-        
+
+        targets[4] = SmartBinder
+                .from(VARIABLE_ARITY_SIGNATURE)
+                .foldVoid(SmartBinder
+                        .from(VARIABLE_ARITY_SIGNATURE.changeReturn(int.class))
+                        .permute("context", "args")
+                        .append(arrayOf("min", "max"), arrayOf(int.class, int.class), min, max)
+                        .invokeStaticQuiet(LOOKUP, Arity.class, "checkArgumentCount")
+                        .handle())
+                .invoke(targets[4])
+                .handle();
+
         // TODO: tracing
         
         return targets;
@@ -324,4 +381,10 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                     .permute("context", "self", "arg*", "block");
         }
     }
+
+    static final MethodHandle ARITY_ERROR_HANDLE = SmartBinder
+            .from(VARIABLE_ARITY_SIGNATURE.appendArgs(arrayOf("min", "max"), int.class, int.class))
+            .filterReturn(Binder.from(IRubyObject.class, int.class).drop(0).constant(null))
+            .permute(ARITY_CHECK_SIGNATURE)
+            .invokeStaticQuiet(LOOKUP, Arity.class, "checkArgumentCount").handle();
 }
