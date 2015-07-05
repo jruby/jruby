@@ -124,10 +124,6 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
         ensureTargets();
         try {
             return (IRubyObject) target4.invokeExact(context, self, args, block);
-        } catch (NullPointerException npe) {
-            npe.printStackTrace();
-            System.out.println("handles: " + Arrays.toString(targets));
-            throw npe;
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;

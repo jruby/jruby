@@ -140,7 +140,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                         org.jruby.runtime.Signature.OPTIONAL,
                 true,
                 notImplemented,
-                null);
+                info.getParameterDesc());
     }
 
     private MethodHandle[] buildAnnotatedMethodHandles(Ruby runtime, List<JavaMethodDescriptor> descs, RubyModule implementationClass) {
@@ -148,6 +148,16 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
 
         int min = Integer.MAX_VALUE;
         int max = 0;
+
+        JavaMethodDescriptor desc1 = descs.get(0);
+        String rubyName;
+
+        if (desc1.anno.name() != null && desc1.anno.name().length > 0) {
+            // FIXME: Using this for super may super up the wrong name
+            rubyName = desc1.anno.name()[0];
+        } else {
+            rubyName = desc1.name;
+        }
         
         for (JavaMethodDescriptor desc: descs) {
             int specificArity = -1;
@@ -171,14 +181,6 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             }
 
             String javaMethodName = desc.name;
-            String rubyName;
-            
-            if (desc.anno.name() != null && desc.anno.name().length > 0) {
-                // FIXME: Using this for super may super up the wrong name
-                rubyName = desc.anno.name()[0];
-            } else {
-                rubyName = javaMethodName;
-            }
 
             SmartBinder targetBinder;
             SmartHandle target;
@@ -312,7 +314,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                 .foldVoid(SmartBinder
                         .from(VARIABLE_ARITY_SIGNATURE.changeReturn(int.class))
                         .permute("context", "args")
-                        .append(arrayOf("min", "max"), arrayOf(int.class, int.class), min, max)
+                        .append(arrayOf("min", "max", "name"), arrayOf(int.class, int.class, String.class), min, max, rubyName)
                         .invokeStaticQuiet(LOOKUP, Arity.class, "checkArgumentCount")
                         .handle())
                 .invoke(targets[4])
