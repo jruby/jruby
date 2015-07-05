@@ -39,12 +39,27 @@ public class NNode extends PackNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        if (CompilerDirectives.inCompiledCode()
+                && CompilerDirectives.isCompilationConstant(repeats)
+                && repeats <= 4) {
+            return executeExploded(frame);
+        }
+
         for (int i = 0; i < repeats; i++) {
             child.execute(frame);
         }
 
         if (CompilerDirectives.inInterpreter()) {
             getRootNode().reportLoopCount(repeats);
+        }
+
+        return null;
+    }
+
+    @ExplodeLoop
+    public Object executeExploded(VirtualFrame frame) {
+        for (int i = 0; i < repeats; i++) {
+            child.execute(frame);
         }
 
         return null;
