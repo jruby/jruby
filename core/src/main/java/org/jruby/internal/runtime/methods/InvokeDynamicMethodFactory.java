@@ -34,6 +34,7 @@ import com.headius.invokebinder.SmartHandle;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import java.lang.invoke.MethodHandle;
@@ -47,6 +48,7 @@ import java.util.concurrent.Callable;
 import org.jruby.Ruby;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.runtime.invokedynamic.InvocationLinker;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -192,6 +194,10 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             }
             
             targetBinder = SmartBinder.from(baseSignature);
+
+            // unused by Java-based methods
+            targetBinder = targetBinder
+                    .exclude("class", "name");
             
             MethodHandle returnFilter = null;
             boolean castReturn = false;
@@ -280,13 +286,13 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                 if (targets[i] == null) continue; // will never be retrieved; arity check will error first
 
                 if (i == 0) {
-                    varargsTargets[i] = MethodHandles.dropArguments(targets[i], 2, IRubyObject[].class);
+                    varargsTargets[i] = MethodHandles.dropArguments(targets[i], 4, IRubyObject[].class);
                 } else {
                     varargsTargets[i] = SmartBinder
                             .from(VARIABLE_ARITY_SIGNATURE)
-                            .permute("context", "self", "block", "args")
+                            .permute("context", "self", "class", "name", "block", "args")
                             .spread("arg", i)
-                            .permute("context", "self", "arg*", "block")
+                            .permute("context", "self", "class", "name", "arg*", "block")
                             .invoke(targets[i]).handle();
                 }
             }
@@ -309,18 +315,44 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             targets[4] = variableCall.handle();
         }
 
+        // Add arity check of varargs path
         targets[4] = SmartBinder
                 .from(VARIABLE_ARITY_SIGNATURE)
                 .foldVoid(SmartBinder
                         .from(VARIABLE_ARITY_SIGNATURE.changeReturn(int.class))
-                        .permute("context", "args")
-                        .append(arrayOf("min", "max", "name"), arrayOf(int.class, int.class, String.class), min, max, rubyName)
+                        .permute("context", "name", "args")
+                        .append(arrayOf("min", "max"), arrayOf(int.class, int.class), min, max)
                         .invokeStaticQuiet(LOOKUP, Arity.class, "checkArgumentCount")
                         .handle())
                 .invoke(targets[4])
                 .handle();
 
-        // TODO: tracing
+        // Add tracing of "C" call/return
+        if (Options.DEBUG_FULLTRACE.load()) {
+            for (int i = 0; i < targets.length; i++) {
+                MethodHandle target = targets[i];
+
+                if (target == null) continue;
+
+                MethodHandle traceCall = Binder
+                        .from(target.type().changeReturnType(void.class))
+                        .permute(0, 3, 2) // context, name, class
+                        .insert(1, RubyEvent.C_CALL)
+                        .invokeVirtualQuiet(LOOKUP, "trace");
+
+                MethodHandle traceReturn = Binder
+                        .from(target.type().changeReturnType(void.class))
+                        .permute(0, 3, 2) // context, name, class
+                        .insert(1, RubyEvent.C_RETURN)
+                        .invokeVirtualQuiet(LOOKUP, "trace");
+
+                targets[i] = Binder
+                        .from(target.type())
+                        .foldVoid(traceCall)
+                        .tryFinally(traceReturn)
+                        .invoke(target);
+            }
+        }
         
         return targets;
     }
@@ -340,20 +372,10 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             .returning(IRubyObject.class)
             .appendArg("context", ThreadContext.class)
             .appendArg("self", IRubyObject.class)
+            .appendArg("class", RubyModule.class)
+            .appendArg("name", String.class)
             .appendArg("args", IRubyObject[].class)
             .appendArg("block", Block.class);
-    
-    public static final Signature ARITY_CHECK_FOLD = Signature
-            .returning(void.class)
-            .appendArg("context", ThreadContext.class)
-            .appendArg("args", IRubyObject[].class);
-    
-    public static final Signature ARITY_CHECK_SIGNATURE = Signature
-            .returning(int.class)
-            .appendArg("context", ThreadContext.class)
-            .appendArg("args", IRubyObject[].class)
-            .appendArg("min", int.class)
-            .appendArg("max", int.class);
     
     public static final Signature[] SPECIFIC_ARITY_SIGNATURES;
     static {
@@ -361,7 +383,9 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             Signature specific = Signature
                     .returning(IRubyObject.class)
                     .appendArg("context", ThreadContext.class)
-                    .appendArg("self", IRubyObject.class);
+                    .appendArg("self", IRubyObject.class)
+                    .appendArg("class", RubyModule.class)
+                    .appendArg("name", String.class);
             
             specifics[0] = specific.appendArg("block", Block.class);
             
@@ -383,10 +407,4 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                     .permute("context", "self", "arg*", "block");
         }
     }
-
-    static final MethodHandle ARITY_ERROR_HANDLE = SmartBinder
-            .from(VARIABLE_ARITY_SIGNATURE.appendArgs(arrayOf("min", "max"), int.class, int.class))
-            .filterReturn(Binder.from(IRubyObject.class, int.class).drop(0).constant(null))
-            .permute(ARITY_CHECK_SIGNATURE)
-            .invokeStaticQuiet(LOOKUP, Arity.class, "checkArgumentCount").handle();
 }

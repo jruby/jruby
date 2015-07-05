@@ -202,7 +202,7 @@ public final class Arity implements Serializable {
         return checkArgumentCount(context, args.length, min, max);
     }
 
-    public static int checkArgumentCount(ThreadContext context, IRubyObject[] args, int min, int max, String name) {
+    public static int checkArgumentCount(ThreadContext context, String name, IRubyObject[] args, int min, int max) {
         return checkArgumentCount(context.runtime, name, args.length, min, max);
     }
 

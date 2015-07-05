@@ -123,7 +123,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         ensureTargets();
         try {
-            return (IRubyObject) target4.invokeExact(context, self, args, block);
+            return (IRubyObject) target4.invokeExact(context, self, clazz, name, args, block);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
@@ -137,7 +137,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
             return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
         }
         try {
-            return (IRubyObject) target0.invokeExact(context, self, block);
+            return (IRubyObject) target0.invokeExact(context, self, clazz, name, block);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
@@ -151,7 +151,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
             return call(context, self, clazz, name, new IRubyObject[]{arg0}, block);
         }
         try {
-            return (IRubyObject) target1.invokeExact(context, self, arg0, block);
+            return (IRubyObject) target1.invokeExact(context, self, clazz, name, arg0, block);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
@@ -165,7 +165,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
             return call(context, self, clazz, name, new IRubyObject[]{arg0, arg1}, block);
         }
         try {
-            return (IRubyObject) target2.invokeExact(context, self, arg0, arg1, block);
+            return (IRubyObject) target2.invokeExact(context, self, clazz, name, arg0, arg1, block);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
@@ -179,7 +179,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
             return call(context, self, clazz, name, new IRubyObject[]{arg0, arg1, arg2}, block);
         }
         try {
-            return (IRubyObject) target3.invokeExact(context, self, arg0, arg1, arg2, block);
+            return (IRubyObject) target3.invokeExact(context, self, clazz, name, arg0, arg1, arg2, block);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
