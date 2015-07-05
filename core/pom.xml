@@ -404,6 +404,13 @@ DO NOT MODIFIY - GENERATED CODE
               <goal>compile</goal>
             </goals>
             <configuration>
+              <compilerArgs>
+                <compilerArg>-XDignore.symbol.file=true</compilerArg>
+                <compilerArg>-J-Duser.language=en</compilerArg>
+                <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
+                <compilerArg>-J-Xbootclasspath/p:${unsafe.jar}</compilerArg>
+                <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
+              </compilerArgs>
               <skipMain>true</skipMain>
               <includes>
                 <include>**/*.java</include>
@@ -417,7 +424,7 @@ DO NOT MODIFIY - GENERATED CODE
           <verbose>true</verbose>
           <fork>true</fork>
           <compilerArgs>
-            <arg>-J-Xmx1G</arg>
+            <arg>-J-Xbootclasspath/p:${unsafe.jar}</arg>
           </compilerArgs>
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>

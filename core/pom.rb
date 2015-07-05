@@ -157,7 +157,10 @@ project 'JRuby Core' do
           'debug' => 'true',
           'verbose' => 'true',
           'fork' => 'true',
-          'compilerArgs' => { 'arg' => '-J-Xmx1G' },
+          'compilerArgs' => {
+              'arg' => '-J-Xmx1G',
+              'arg' => '-J-Xbootclasspath/p:${unsafe.jar}'
+          },
           'showWarnings' => 'true',
           'showDeprecation' => 'true',
           'source' => [ '${base.java.version}', '1.7' ],
@@ -196,6 +199,11 @@ project 'JRuby Core' do
     execute_goals( 'compile',
                    :id => 'eclipse-hack',
                    :phase => 'process-classes',
+                   'compilerArgs' => [ '-XDignore.symbol.file=true',
+                                       '-J-Duser.language=en',
+                                       '-J-Dfile.encoding=UTF-8',
+                                       '-J-Xbootclasspath/p:${unsafe.jar}',
+                                       '-J-Xmx${jruby.compile.memory}' ],
                    'skipMain' =>  'true',
                    'includes' => [ '**/*.java' ] )
   end
