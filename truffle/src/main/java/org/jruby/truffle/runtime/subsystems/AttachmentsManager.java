@@ -63,8 +63,7 @@ public class AttachmentsManager {
             public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
                 return new AdvancedInstrumentRoot() {
 
-                    @Node.Child
-                    private DirectCallNode callNode;
+                    @Child private DirectCallNode callNode;
 
                     @Override
                     public Object executeRoot(Node node, VirtualFrame frame) {
@@ -75,7 +74,16 @@ public class AttachmentsManager {
 
                         if (callNode == null) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
+
                             callNode = insert(Truffle.getRuntime().createDirectCallNode(block.getCallTargetForBlocks()));
+
+                            if (callNode.isCallTargetCloningAllowed()) {
+                                callNode.cloneCallTarget();
+                            }
+
+                            if (callNode.isInlinable()) {
+                                callNode.forceInlining();
+                            }
                         }
 
                         callNode.call(frame, RubyArguments.pack(
@@ -84,8 +92,6 @@ public class AttachmentsManager {
                                 block.getSelfCapturedInScope(),
                                 block.getBlockCapturedInScope(),
                                 new Object[]{binding}));
-
-                        // TODO CS 7-May-15 why does this have a return value?
 
                         return null;
                     }
@@ -98,7 +104,7 @@ public class AttachmentsManager {
                 };
             }
 
-        }, Object.class, info);
+        }, null, info);
 
         final Source source = context.getSourceManager().forFileBestFuzzily(file);
 

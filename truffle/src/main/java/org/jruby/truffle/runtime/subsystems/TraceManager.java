@@ -9,35 +9,134 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
-import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.utilities.CyclicAssumption;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrument.*;
+import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyProc;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 public class TraceManager {
 
-    private final CyclicAssumption traceAssumption = new CyclicAssumption("trace-func");
-    private RubyProc traceFunc = null;
+    private final RubyContext context;
+
+    private Collection<Instrument> instruments;
     private boolean isInTraceFunc = false;
 
-    public void setTraceFunc(RubyProc traceFunc) {
-        this.traceFunc = traceFunc;
-        traceAssumption.invalidate();
+    public TraceManager(RubyContext context) {
+        this.context = context;
     }
 
-    public RubyProc getTraceFunc() {
-        return traceFunc;
-    }
+    public void setTraceFunc(final RubyProc traceFunc) {
+        if (instruments != null) {
+            for (Instrument instrument : instruments) {
+                instrument.dispose();
+            }
+        }
 
-    public Assumption getTraceAssumption() {
-        return traceAssumption.getAssumption();
-    }
+        if (traceFunc == null) {
+            instruments = null;
+            return;
+        }
 
-    public boolean isInTraceFunc() {
-        return isInTraceFunc;
-    }
+        final AdvancedInstrumentResultListener listener = new AdvancedInstrumentResultListener() {
 
-    public void setInTraceFunc(boolean isInTraceFunc) {
-        this.isInTraceFunc = isInTraceFunc;
+            @Override
+            public void notifyResult(Node node, VirtualFrame virtualFrame, Object o) {
+            }
+
+            @Override
+            public void notifyFailure(Node node, VirtualFrame virtualFrame, RuntimeException e) {
+            }
+
+        };
+
+        final AdvancedInstrumentRootFactory factory = new AdvancedInstrumentRootFactory() {
+
+            @Override
+            public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
+                final RubyBasicObject event = StringNodes.createString(context.getCoreLibrary().getStringClass(), "line");
+
+                final SourceSection sourceSection = node.getEncapsulatingSourceSection();
+
+                final RubyBasicObject file = StringNodes.createString(context.getCoreLibrary().getStringClass(), sourceSection.getSource().getName());
+                final int line = sourceSection.getStartLine();
+
+                return new AdvancedInstrumentRoot() {
+
+                    @Child private DirectCallNode callNode;
+
+                    private final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
+
+                    @Override
+                    public Object executeRoot(Node node, VirtualFrame frame) {
+                        if (!inTraceFuncProfile.profile(isInTraceFunc)) {
+                            final Object self = RubyArguments.getSelf(frame.getArguments());
+                            final int id = 0;
+                            final Object classname = self;
+
+                            final RubyBinding binding = new RubyBinding(
+                                    context.getCoreLibrary().getBindingClass(),
+                                    self,
+                                    frame.materialize());
+
+                            if (callNode == null) {
+                                CompilerDirectives.transferToInterpreterAndInvalidate();
+
+                                callNode = insert(Truffle.getRuntime().createDirectCallNode(traceFunc.getCallTargetForBlocks()));
+
+                                if (callNode.isCallTargetCloningAllowed()) {
+                                    callNode.cloneCallTarget();
+                                }
+
+                                if (callNode.isInlinable()) {
+                                    callNode.forceInlining();
+                                }
+                            }
+
+                            isInTraceFunc = true;
+
+                            callNode.call(frame, RubyArguments.pack(
+                                    traceFunc.getMethod(),
+                                    traceFunc.getDeclarationFrame(),
+                                    traceFunc.getSelfCapturedInScope(),
+                                    traceFunc.getBlockCapturedInScope(),
+                                    new Object[]{event, file, line, id, binding, classname}));
+
+                            isInTraceFunc = false;
+                        }
+
+                        return null;
+                    }
+
+                    @Override
+                    public String instrumentationInfo() {
+                        return "set_trace_func";
+                    }
+
+                };
+            }
+
+        };
+
+        instruments = new ArrayList<>();
+
+        for (Probe probe : Probe.findProbesTaggedAs(StandardSyntaxTag.STATEMENT)) {
+            final Instrument instrument = Instrument.create(listener, factory, null, "set_trace_func");
+            instruments.add(instrument);
+            probe.attach(instrument);
+        }
     }
 
 }

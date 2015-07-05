@@ -167,7 +167,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         coreLibrary.initialize();
 
         featureManager = new FeatureManager(this);
-        traceManager = new TraceManager();
+        traceManager = new TraceManager(this);
         atExitManager = new AtExitManager(this);
 
         threadManager = new ThreadManager(this);
