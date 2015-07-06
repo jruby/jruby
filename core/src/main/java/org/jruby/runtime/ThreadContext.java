@@ -128,11 +128,11 @@ public final class ThreadContext {
 
     IRubyObject lastExitStatus;
 
-    public final SecureRandom secureRandom;
+    public final SecureRandom secureRandom = getSecureRandom();
 
     private static boolean trySHA1PRNG = true;
 
-    {
+    private static SecureRandom getSecureRandom() {
         SecureRandom sr;
         try {
             sr = trySHA1PRNG ?
@@ -142,7 +142,7 @@ public final class ThreadContext {
             trySHA1PRNG = false;
             sr = new SecureRandom();
         }
-        secureRandom = sr;
+        return sr;
     }
     
     /**
