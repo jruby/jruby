@@ -77,11 +77,11 @@ import static org.jruby.util.CodegenUtils.sig;
  * better performance and more specialization per-handle than can be supported
  * via reflection. It also allows optimizing away many conditionals that can
  * be determined once ahead of time.
- * 
+ *
  * When running in secured environments, this factory may not function. When
  * this can be detected, MethodFactory will fall back on the reflection-based
  * factory instead.
- * 
+ *
  * @see org.jruby.runtime.MethodFactory
  */
 public class InvocationMethodFactory extends MethodFactory implements Opcodes {
@@ -89,77 +89,77 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private static final Logger LOG = LoggerFactory.getLogger("InvocationMethodFactory");
 
     private static final boolean DEBUG = false;
-    
+
     /** The outward call signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class));
-    
+
     /** The outward call signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_BLOCK = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
-    
+
     /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_ZERO_BLOCK = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class));
-    
+
     /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_ZERO = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
-    
+
     /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_ONE_BLOCK = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, Block.class));
-    
+
     /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_ONE = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
-    
+
     /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_TWO_BLOCK = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
-    
+
     /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_TWO = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class));
-    
+
     /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_THREE_BLOCK = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
-    
+
     /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_THREE = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
-    
+
     /** The super constructor signature for Java-based method handles. */
     private final static String JAVA_SUPER_SIG = sig(Void.TYPE, params(RubyModule.class, Visibility.class));
-    
+
     /** The lvar index of "this" */
     public static final int THIS_INDEX = 0;
-    
+
     /** The lvar index of the passed-in ThreadContext */
     public static final int THREADCONTEXT_INDEX = 1;
-    
+
     /** The lvar index of the method-receiving object */
     public static final int RECEIVER_INDEX = 2;
-    
+
     /** The lvar index of the RubyClass being invoked against */
     public static final int CLASS_INDEX = 3;
-    
+
     /** The lvar index method name being invoked */
     public static final int NAME_INDEX = 4;
-    
+
     /** The lvar index of the method args on the call */
     public static final int ARGS_INDEX = 5;
-    
+
     /** The lvar index of the passed-in Block on the call */
     public static final int BLOCK_INDEX = 6;
 
     /** The classloader to use for code loading */
     protected final ClassDefiningJRubyClassLoader classLoader;
-    
+
     /** An object to sync against when loading classes, to avoid dups */
     protected final Object syncObject;
-    
+
     /**
      * Whether this factory has seen undefined methods already. This is used to
      * detect likely method handle collisions when we expect to create a new
@@ -172,19 +172,19 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * is to avoid a flood of repetitive information.
      */
     private boolean haveWarnedUser = false;
-    
+
     /**
      * Construct a new InvocationMethodFactory using the specified classloader
      * to load code. If the target classloader is not an instance of
      * JRubyClassLoader, it will be wrapped with one.
-     * 
+     *
      * @param classLoader The classloader to use, or to wrap if it is not a
      * JRubyClassLoader instance.
      */
     public InvocationMethodFactory(ClassLoader classLoader) {
         // use the given classloader as our sync, regardless of whether we wrap it
         this.syncObject = classLoader;
-        
+
         if (classLoader instanceof ClassDefiningJRubyClassLoader) {
             this.classLoader = (ClassDefiningJRubyClassLoader)classLoader;
         } else {
@@ -195,7 +195,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     protected boolean safeFixedSignature(Signature signature) {
         return signature.isFixed() && signature.required() <= 3;
     }
-    
+
     static class DescriptorInfo {
         private int min;
         private int max;
@@ -204,9 +204,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         private boolean rest;
         private boolean block;
         private String parameterDesc;
-        
+
         private static final boolean RICH_NATIVE_METHOD_PARAMETERS = false;
-        
+
         public DescriptorInfo(List<JavaMethodDescriptor> descs) {
             min = Integer.MAX_VALUE;
             max = 0;
@@ -228,7 +228,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     }
                 }
                 lastBlock = desc.hasBlock;
-                
+
                 int specificArity = -1;
                 if (desc.hasVarArgs) {
                     if (desc.optional == 0 && !desc.rest && desc.required == 0) {
@@ -272,12 +272,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 scope |= desc.anno.scope();
                 block |= desc.hasBlock;
             }
-            
+
             // Core methods currently only show :req's for fixed-arity or a single
             // :rest if it's variable arity. I have filed a bug to improve this
             // (using the skipped logic below, when the time comes) but for now
             // we follow suit. See https://bugs.ruby-lang.org/issues/8088
-            
+
             StringBuilder descBuilder = new StringBuilder();
             if (min == max) {
                 int i = 0;
@@ -305,7 +305,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             } else {
                 descBuilder.append(ArgumentType.ANONREST);
             }
-            
+
             parameterDesc = descBuilder.toString();
         }
 
@@ -329,15 +329,15 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         public boolean isScope() {
             return scope;
         }
-        
+
         public boolean isRest() {
             return rest;
         }
-        
+
         public boolean isBlock() {
             return block;
         }
-        
+
         public String getParameterDesc() {
             return parameterDesc;
         }
@@ -346,14 +346,14 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     /**
      * Use code generation to provide a method handle based on an annotated Java
      * method.
-     * 
+     *
      * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> descs) {
         JavaMethodDescriptor desc1 = descs.get(0);
         JRubyMethod anno = desc1.anno;
         String javaMethodName = desc1.name;
-        
+
         if (DEBUG) out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
 
         try {
@@ -386,7 +386,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     /**
      * Use code generation to provide a method handle based on an annotated Java
      * method. Return the resulting generated or loaded class.
-     * 
+     *
      * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
     public Class getAnnotatedMethodClass(List<JavaMethodDescriptor> descs) throws Exception {
@@ -395,9 +395,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         if (!Modifier.isPublic(desc1.getDeclaringClass().getModifiers())) {
             LOG.warn("warning: binding non-public class {}; reflected handles won't work", desc1.declaringClassName);
         }
-        
+
         String javaMethodName = desc1.name;
-        
+
         if (DEBUG) {
             if (descs.size() > 1) {
                 out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
@@ -405,7 +405,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 out.println("Binding single: " + desc1.declaringClassName + "." + javaMethodName);
             }
         }
-        
+
         String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc1.declaringClassName, desc1.isStatic, desc1.actualRequired, desc1.optional, descs.size() > 1, desc1.anno.frame());
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // in debug mode we append _DBG to class name to force it to regenerate (or use pre-generated debug version)
@@ -426,7 +426,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     if (DEBUG) out.println("Generating " + generatedClassName + ", min: " + info.getMin() + ", max: " + info.getMax() + ", hasBlock: " + info.isBlock() + ", rest: " + info.isRest());
 
                     String superClassString = p(superclass);
-                    
+
                     ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClassString, info.getParameterDesc());
 
                     addAnnotatedMethodInvoker(cw, "call", superClassString, descs);
@@ -471,7 +471,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     /**
      * Use code generation to provide a method handle based on an annotated Java
      * method.
-     * 
+     *
      * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
@@ -503,14 +503,14 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
     /**
      * Emit code to check the arity of a call to a Java-based method.
-     * 
+     *
      * @param jrubyMethod The annotation of the called method
      * @param method The code generator for the handle being created
      */
     private void checkArity(JRubyMethod jrubyMethod, SkinnyMethodAdapter method, int specificArity) {
         Label arityError = new Label();
         Label noArityError = new Label();
-        
+
         switch (specificArity) {
         case 0:
         case 1:
@@ -585,7 +585,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.invokevirtual(p(JavaMethod.class), "setParameterDesc", sig(void.class, String.class));
         mv.voidreturn();
         mv.end();
-        
+
         return cw;
     }
 
@@ -606,9 +606,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
     private void prepareForPre(SkinnyMethodAdapter mv, int specificArity, boolean block, CallConfiguration callConfig) {
         if (callConfig.isNoop()) return;
-        
+
         mv.aloadMany(0, THREADCONTEXT_INDEX);
-        
+
         switch (callConfig.framing()) {
         case Full:
             mv.aloadMany(RECEIVER_INDEX, NAME_INDEX); // self, name
@@ -721,12 +721,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     /** load the block argument from the correct position.  Since we have fixed-
      * arity call paths we need to calculate where the last var holding the
      * block is.
-     * 
+     *
      * If we don't have a block then this does nothing.
      */
     private void loadBlock(SkinnyMethodAdapter mv, int specificArity, boolean getsBlock) {
         if (!getsBlock) return;         // No block so nothing more to do
-        
+
         switch (specificArity) {        // load block since it accepts a block
         case 0: case 1: case 2: case 3: // Fixed arities signatures
             mv.aload(BLOCK_INDEX - 1 + specificArity);
@@ -743,14 +743,14 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             if (desc.hasContext) {
                 mv.aload(THREADCONTEXT_INDEX);
             }
-            
+
             // load self object as IRubyObject, for recv param
             mv.aload(RECEIVER_INDEX);
         } else {
             // load receiver as original type for virtual invocation
             mv.aload(RECEIVER_INDEX);
             mv.checkcast(typePath);
-            
+
             if (desc.hasContext) {
                 mv.aload(THREADCONTEXT_INDEX);
             }
@@ -789,10 +789,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         cw.visitEnd();
         byte[] code = cw.toByteArray();
         if (DEBUG) CheckClassAdapter.verify(new ClassReader(code), false, new PrintWriter(System.err));
-         
+
         return classLoader.defineClass(name, code);
     }
-    
+
     private SkinnyMethodAdapter beginMethod(ClassWriter cw, String methodName, int specificArity, boolean block) {
         switch (specificArity) {
         default:
@@ -861,7 +861,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String javaMethodName = desc.name;
 
         checkArity(desc.anno, method, specificArity);
-        
+
         CallConfiguration callConfig = CallConfiguration.getCallConfigByAnno(desc.anno);
         if (!callConfig.isNoop()) {
             invokeCallConfigPre(method, superClass, specificArity, block, callConfig);
@@ -897,13 +897,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         if (!callConfig.isNoop()) {
             method.trycatch(tryBegin, tryEnd, doFinally, null);
         }
-        
+
         method.label(tryBegin);
         {
             loadReceiver(typePath, desc, method);
-            
+
             loadArguments(method, desc, specificArity);
-            
+
             loadBlock(method, specificArity, block);
 
             if (Modifier.isStatic(desc.modifiers)) {
@@ -921,13 +921,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
         }
         method.label(tryEnd);
-        
+
         // normal finally and exit
         {
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
                 invokeCReturnTrace(method, traceBoolIndex);
             }
-            
+
             if (!callConfig.isNoop()) {
                 invokeCallConfigPost(method, superClass, callConfig);
             }
@@ -935,13 +935,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             // return
             method.visitInsn(ARETURN);
         }
-        
+
         // these are only needed if we have a non-noop call config
         if (!callConfig.isNoop()) {
             // finally handling for abnormal exit
             {
                 method.label(doFinally);
-                
+
                 if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
                     invokeCReturnTrace(method, traceBoolIndex);
                 }
@@ -963,7 +963,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         method.aload(4); // invokedName
         method.invokevirtual(p(JavaMethod.class), "callTrace", sig(void.class, ThreadContext.class, boolean.class, String.class));
     }
-    
+
     private void invokeCReturnTrace(SkinnyMethodAdapter method, int traceBoolIndex) {
         method.aloadMany(0, 1); // method, threadContext
         method.iload(traceBoolIndex); // traceEnable

@@ -3109,7 +3109,9 @@ public final class Ruby implements Constantizable {
 
     public void callEventHooks(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
         if (context.isEventHooksEnabled()) {
-            for (EventHook eventHook : eventHooks) {
+            for (int i = 0; i < eventHooks.length; i++) {
+                EventHook eventHook = eventHooks[i];
+
                 if (eventHook.isInterestedInEvent(event)) {
                     eventHook.event(context, event, file, line, name, type);
                 }
