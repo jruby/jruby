@@ -48,25 +48,15 @@ public class ExternalScript implements Library {
         InputStream in = null;
         try {
             in = resource.getInputStream();
-            String name = normalizeSeps(resource.getName());
+            String name = resource.getName();
 
             if (runtime.getInstanceConfig().getCompileMode().shouldPrecompileAll()) {
                 runtime.compileAndLoadFile(name, in, wrap);
             } else {
-                java.io.File path = resource.getPath();
-
-                if(path != null && !resource.isAbsolute()) {
-                    // Note: We use RubyFile's canonicalize rather than Java's,
-                    // because Java's will follow symlinks and result in __FILE__
-                    // being set to the target of the symlink rather than the
-                    // filename provided.
-                    name = normalizeSeps(canonicalize(path.getPath()));
-                }
+                name = CompiledScriptLoader.getFilenameFromPathAndName(resource.getPath(), name, resource.isAbsolute());
 
                 runtime.loadFile(name, new LoadServiceResourceInputStream(in), wrap);
             }
-
-
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         } finally {
