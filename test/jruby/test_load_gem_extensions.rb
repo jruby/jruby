@@ -17,17 +17,20 @@ class TestLoad < Test::Unit::TestCase
     $LOAD_PATH.concat(@prev_load_path)
   end
 
-  def test_require_extension_file_via_uri_protocol
-    skip 'needs jruby-home from filesystem' if JRuby.runtime.instance_config.jruby_home =~ /META-INF/
-    require 'uri:file:./lib/ruby/stdlib/json/ext/parser'
-    # just check if extension class exists
-    JSON::Ext::Parser
-  end
+  # running this with embedded JRuby brings: NoMethodError: undefined method `skip' for #<TestLoad:0x28434905>
+  unless JRuby.runtime.instance_config.jruby_home =~ /META-INF/
+    def test_require_extension_file_via_uri_protocol
+      skip 'needs jruby-home from filesystem' if JRuby.runtime.instance_config.jruby_home =~ /META-INF/
+      require 'uri:file:./lib/ruby/stdlib/json/ext/parser'
+      # just check if extension class exists
+      JSON::Ext::Parser
+    end
 
-  def test_require_extension_file_via_uri_classloader_protocol
-    skip 'needs jruby-home from filesystem' if JRuby.runtime.instance_config.jruby_home =~ /META-INF/
-    require 'uri:classloader:/lib/ruby/stdlib/json/ext/generator'
-    # just check if extension class exists
-    JSON::Ext::Generator
+    def test_require_extension_file_via_uri_classloader_protocol
+      skip 'needs jruby-home from filesystem' if JRuby.runtime.instance_config.jruby_home =~ /META-INF/
+      require 'uri:classloader:/lib/ruby/stdlib/json/ext/generator'
+      # just check if extension class exists
+      JSON::Ext::Generator
+    end
   end
 end
