@@ -13,6 +13,19 @@ class TestBackquote < Test::Unit::TestCase
     end
   end
 
+  def test_backquote_special_commands_and_cwd_inside_classloader
+    if File.exists?("/bin/echo")
+      begin
+        cwd = Dir.pwd
+        Dir.chdir('uri:classloader:/')
+        output = `/bin/echo hello`
+        assert_equal("hello\n", output)
+      ensure
+        Dir.chdir(cwd)
+      end
+    end
+  end
+
   def test_system_special_commands
     if File.exists?("/bin/true")
       assert(system("/bin/true"))
