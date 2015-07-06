@@ -17,7 +17,7 @@ import org.jruby.util.ByteList;
  */
 public class FormatTokenizer {
 
-    private static final String TYPE_CHARS = "%sdiuxXfg";
+    private static final String TYPE_CHARS = "%sdiuxXfgGeE";
 
     private final ByteList format;
     private int position;
