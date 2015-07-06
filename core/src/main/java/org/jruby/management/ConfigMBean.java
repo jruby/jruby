@@ -33,7 +33,6 @@ public interface ConfigMBean {
     public String getOptionGlobals();
     public boolean isManagementEnabled();
     public boolean isFullTraceEnabled();
-    public boolean isLazyHandlesEnabled();
     public boolean isShowBytecode();
     public String getExcludedMethods();
 
