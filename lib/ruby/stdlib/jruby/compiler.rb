@@ -228,6 +228,24 @@ module JRuby::Compiler
           main.voidreturn
           main.end
 
+          loadIR = SkinnyMethodAdapter.new(
+              cls,
+              Opcodes::ACC_PUBLIC | Opcodes::ACC_STATIC,
+              "loadIR",
+              "(Lorg/jruby/Ruby;)Lorg/jruby/ir/IRScope;",
+              nil,
+              nil)
+          loadIR.start
+          loadIR.aload(0)
+
+          loadIR.getstatic(pathname, "script_ir", "Ljava/lang/String;")
+
+          loadIR.ldc("ISO-8859-1")
+          loadIR.invokevirtual("java/lang/String", "getBytes", "(Ljava/lang/String;)[B")
+          loadIR.invokestatic("org/jruby/ir/runtime/IRRuntimeHelpers", "decodeScopeFromBytes", "(Lorg/jruby/Ruby;[B)Lorg/jruby/ir/IRScope;")
+          loadIR.areturn
+          loadIR.end
+
           # prepare target
           class_filename = filename.sub(/(\.rb)?$/, '.class')
           target_file = File.join(options[:target], class_filename)

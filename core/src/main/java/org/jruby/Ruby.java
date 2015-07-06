@@ -52,6 +52,7 @@ import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ext.thread.ThreadLibrary;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
@@ -540,12 +541,13 @@ public final class Ruby implements Constantizable {
 
         if (filename.endsWith(".class")) {
             // we are presumably running a precompiled class; load directly
-            Script script = CompiledScriptLoader.loadScriptFromFile(this, inputStream, filename);
+            IRScope script = CompiledScriptLoader.loadScriptFromFile(this, inputStream, filename);
             if (script == null) {
                 throw new MainExitException(1, "error: .class file specified is not a compiled JRuby script");
             }
-            script.setFilename(filename);
-            runScript(script);
+            // FIXME: We need to be able to set the actual name for __FILE__ and friends to reflect it properly
+//            script.setFilename(filename);
+            runInterpreter(script);
             return;
         }
 
@@ -2899,6 +2901,27 @@ public final class Ruby implements Constantizable {
             }
 
             runInterpreter(context, parseResult, self);
+        } finally {
+            context.postNodeEval();
+            ThreadContext.popBacktrace(context);
+        }
+    }
+
+    public void loadScope(IRScope scope, boolean wrap) {
+        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, true) : getTopSelf();
+        ThreadContext context = getCurrentContext();
+        String file = context.getFile();
+
+        try {
+            ThreadContext.pushBacktrace(context, "(root)", file, 0);
+            context.preNodeEval(self);
+
+            if (wrap) {
+                // toss an anonymous module into the search path
+                scope.getStaticScope().setModule(RubyModule.newModule(this));
+            }
+
+            runInterpreter(context, scope, self);
         } finally {
             context.postNodeEval();
             ThreadContext.popBacktrace(context);

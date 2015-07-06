@@ -5,23 +5,23 @@
 
 package org.jruby.runtime.load;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
 import org.jruby.Ruby;
-import org.jruby.ast.executable.Script;
+import org.jruby.ir.IRScope;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.OneShotClassLoader;
 import org.objectweb.asm.ClassReader;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Method;
+
 /**
- *
- * @author headius
+ * Load serialized IR from the .class file requested.
  */
 public class CompiledScriptLoader {
-    public static Script loadScriptFromFile(Ruby runtime, InputStream inStream, String resourceName) {
+    public static IRScope loadScriptFromFile(Ruby runtime, InputStream inStream, String resourceName) {
         InputStream in = null;
         try {
             in = new BufferedInputStream(inStream, 8192);
@@ -40,24 +40,16 @@ public class CompiledScriptLoader {
 
             Class clazz = oscl.defineClass(className, buf);
 
-            // if it's a compiled JRuby script, instantiate and run it
-            if (Script.class.isAssignableFrom(clazz)) {
-                return (Script)clazz.newInstance();
-            } else {
-                throw runtime.newLoadError("use `java_import' to load normal Java classes: "+className);
+            try {
+                Method method = clazz.getMethod("loadIR", Ruby.class);
+                return (IRScope)method.invoke(null, runtime);
+            } catch (Exception e) {
+                // fall through
             }
+
+            throw runtime.newLoadError("use `java_import' to load normal Java classes: "+className);
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
-        } catch (InstantiationException ie) {
-            if (runtime.getDebug().isTrue()) {
-                ie.printStackTrace();
-            }
-            throw runtime.newLoadError("Error loading compiled script '" + resourceName + "': " + ie);
-        } catch (IllegalAccessException iae) {
-            if (runtime.getDebug().isTrue()) {
-                iae.printStackTrace();
-            }
-            throw runtime.newLoadError("Error loading compiled script '" + resourceName + "': " + iae);
         } catch (LinkageError le) {
             if (runtime.getDebug().isTrue()) {
                 le.printStackTrace();

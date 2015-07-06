@@ -13,6 +13,7 @@ import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
+import org.jruby.ir.IRScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService.SuffixType;
 import org.jruby.util.FileResource;
@@ -262,14 +263,15 @@ class LibrarySearcher {
             InputStream is = null;
             try {
                 is = new BufferedInputStream(resource.inputStream(), 32768);
-                Script script = CompiledScriptLoader.loadScriptFromFile(runtime, is, searchName);
+                IRScope script = CompiledScriptLoader.loadScriptFromFile(runtime, is, searchName);
 
                 // Depending on the side-effect of the load, which loads the class but does not turn it into a script.
                 // I don't like it, but until we restructure the code a bit more, we'll need to quietly let it by here.
                 if (script == null) return;
 
-                script.setFilename(scriptName);
-                runtime.loadScript(script, wrap);
+                // FIXME: We need to be able to set the actual name for __FILE__ and friends to reflect it properly (#3109)
+//                script.setFilename(scriptName);
+                runtime.loadScope(script, wrap);
             } catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
             } finally {
