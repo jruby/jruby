@@ -292,9 +292,10 @@ class LibrarySearcher {
             try {
                 URL url;
                 if (location.startsWith(URLResource.URI)) {
-                    url = null;
-                    runtime.getJRubyClassLoader().addURLNoIndex(URLResource.getResourceURL(runtime, location));
+                    url = URLResource.getResourceURL(runtime, location);
                 } else {
+                    // convert file urls with !/ into jar urls so the classloader
+                    // can handle them via protocol handler
                     File f = new File(location);
                     if (f.exists() || location.contains( "!")){
                         url = f.toURI().toURL();
@@ -305,9 +306,7 @@ class LibrarySearcher {
                         url = new URL(location);
                     }
                 }
-                if (url != null) {
-                    runtime.getJRubyClassLoader().addURL(url);
-                }
+                runtime.getJRubyClassLoader().addURL(url);
             } catch (MalformedURLException badUrl) {
                 runtime.newIOErrorFromException(badUrl);
             }

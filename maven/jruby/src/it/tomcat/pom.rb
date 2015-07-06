@@ -44,7 +44,7 @@ execute 'check download', :phase => :verify do
   unless result.match( /#{expected}/ )
     raise "missed expected string in download: #{expected}"
   end
-  expected = 'classes/gems/flickraw-0.9.7'
+  expected = 'uri:classloader:/gems/flickraw-0.9.7'
   unless result.match( /#{expected}/ )
     raise "missed expected string in download: #{expected}"
   end

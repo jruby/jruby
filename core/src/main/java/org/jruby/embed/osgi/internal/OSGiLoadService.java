@@ -63,7 +63,18 @@ public class OSGiLoadService extends LoadService {
         super(runtime);
 //        super.searchers.add(new OSGiBundlesSearcher());
     }
-
+    
+    protected Library findLibraryBySearchState(SearchState state) {
+        Library library = super.findLibraryBySearchState(state);
+        if (library == null){
+            library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
+            if (library != null) {
+                state.library = library;
+            }
+        }
+        return library;
+    }
+    
     /**
      * Support for 'bundle:/' to look for libraries in osgi bundles
      * or classes or ruby files.

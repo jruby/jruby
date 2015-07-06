@@ -46,6 +46,14 @@ class TestLoad < Test::Unit::TestCase
     assert $loaded_foo_bar
   end
 
+  def test_require_without_current_dir_in_load_path
+    $LOAD_PATH.delete '.'
+    assert_raises(LoadError) { require('test/jruby/dummy') }
+    assert require('./test/jruby/dummy')
+  ensure
+    $LOAD_PATH << '.'
+  end
+  
   # GH-2972
   def test_require_relative_via_uri_classloader_protocol
     $CLASSPATH << './test/jruby'
