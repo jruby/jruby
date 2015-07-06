@@ -398,7 +398,46 @@ DO NOT MODIFIY - GENERATED CODE
         <artifactId>maven-compiler-plugin</artifactId>
         <executions>
           <execution>
-            <id>eclipse-hack</id>
+            <id>anno</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>org/jruby/anno/FrameField.java</include>
+                <include>org/jruby/anno/AnnotationBinder.java</include>
+                <include>org/jruby/anno/JRubyMethod.java</include>
+                <include>org/jruby/anno/FrameField.java</include>
+                <include>org/jruby/CompatVersion.java</include>
+                <include>org/jruby/runtime/Visibility.java</include>
+                <include>org/jruby/util/CodegenUtils.java</include>
+                <include>org/jruby/util/SafePropertyAccessor.java</include>
+              </includes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>default-compile</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <annotationProcessors>
+                <annotationProcessor>org.jruby.anno.AnnotationBinder</annotationProcessor>
+              </annotationProcessors>
+              <generatedSourcesDirectory>target/generated-sources</generatedSourcesDirectory>
+              <compilerArgs>
+                <compilerArg>-XDignore.symbol.file=true</compilerArg>
+                <compilerArg>-J-Duser.language=en</compilerArg>
+                <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
+                <compilerArg>-J-Xbootclasspath/p:${unsafe.jar}</compilerArg>
+                <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+          <execution>
+            <id>populators</id>
             <phase>process-classes</phase>
             <goals>
               <goal>compile</goal>
@@ -411,6 +450,18 @@ DO NOT MODIFIY - GENERATED CODE
                 <compilerArg>-J-Xbootclasspath/p:${unsafe.jar}</compilerArg>
                 <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
               </compilerArgs>
+              <includes>
+                <include>org/jruby/gen/**/*.java</include>
+              </includes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>eclipse-hack</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
               <skipMain>true</skipMain>
               <includes>
                 <include>**/*.java</include>
@@ -424,7 +475,7 @@ DO NOT MODIFIY - GENERATED CODE
           <verbose>true</verbose>
           <fork>true</fork>
           <compilerArgs>
-            <arg>-J-Xbootclasspath/p:${unsafe.jar}</arg>
+            <arg>-J-Xmx1G</arg>
           </compilerArgs>
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
