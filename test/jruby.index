@@ -39,6 +39,7 @@ jruby/test_integer_overflows
 jruby/test_ivar_table_integrity
 jruby/test_io
 jruby/test_load
+jruby/test_load_gem_extensions
 jruby/test_method
 jruby/test_method_cache
 jruby/test_method_override_and_caching
@@ -55,7 +56,7 @@ jruby/test_primitive_to_java
 jruby/test_process
 jruby/test_proc_visibility
 jruby/test_parsing
-jruby/test_pathname_dup
+jruby/test_pathname
 jruby/test_random
 jruby/test_rbconfig
 jruby/test_require_once
@@ -89,6 +90,8 @@ jruby/test_jar_on_load_path
 jruby/test_jruby_core_ext
 jruby/test_thread_context_frame_dereferences_unreachable_variables
 jruby/test_context_classloader
+# fails with -j-ea on java :(
+# jruby/test_uri_classloader
 jruby/test_rexml_document
 jruby/test_openssl_stub
 jruby/test_missing_jruby_home
