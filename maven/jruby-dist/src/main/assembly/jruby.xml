@@ -30,6 +30,13 @@
       </includes>
     </fileSet>
     <fileSet>
+      <directory>${project.build.directory}/rubygems-provided/gems</directory>
+      <outputDirectory>/lib/ruby/gems/shared/gems</outputDirectory>
+      <includes>
+        <include>ruby-maven-${ruby.maven.version}/bin/*</include>
+      </includes>
+    </fileSet>
+    <fileSet>
       <directory>${project.build.directory}/rubygems-provided/gems/ruby-maven-libs-${ruby.maven.libs.version}/lib</directory>
       <outputDirectory>/lib/ruby/shared</outputDirectory>
       <includes>
