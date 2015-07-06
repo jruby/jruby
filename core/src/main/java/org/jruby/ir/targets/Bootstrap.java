@@ -296,6 +296,56 @@ public class Bootstrap {
         return IRRuntimeHelpers.dupKwargsHashAndPopulateFromArray(context, hash, pairs);
     }
 
+    static MethodHandle buildIndyHandle(InvokeSite site, DynamicMethod method, RubyModule implClass) {
+        MethodHandle mh = null;
+        Signature siteToDyncall = site.signature.insertArgs(3, arrayOf("class", "name"), arrayOf(RubyModule.class, String.class));
+
+        if (method instanceof HandleMethod) {
+            HandleMethod handleMethod = (HandleMethod)method;
+            boolean blockGiven = site.signature.lastArgType() == Block.class;
+
+            if (site.arity >= 0 && site.arity <= 3) {
+                mh = handleMethod.getHandle(site.arity);
+                if (mh != null) {
+                    if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
+                    mh = dropArguments(mh, 1, IRubyObject.class);
+                } else {
+                    mh = handleMethod.getHandle(4);
+                    if (site.arity == 0) {
+                        mh = dropArguments(mh, 1, IRubyObject.class);
+                        if (!blockGiven) {
+                            mh = insertArguments(mh, mh.type().parameterCount() - 2, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+                        } else {
+                            mh = insertArguments(mh, mh.type().parameterCount() - 2, IRubyObject.NULL_ARRAY);
+                        }
+                    } else {
+                        // bundle up varargs
+                        if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
+
+                        mh = SmartBinder.from(lookup(), siteToDyncall)
+                                .permute("context", "self", "class", "name", "block", "arg.*")
+                                .collect("args", "arg.*")
+                                .permute("context", "self", "class", "name", "args", "block")
+                                .invoke(mh)
+                                .handle();
+                    }
+                }
+            } else {
+                mh = handleMethod.getHandle(4);
+                if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
+
+                mh = SmartBinder.from(lookup(), siteToDyncall)
+                        .permute("context", "self", "class", "name", "args", "block")
+                        .invoke(mh)
+                        .handle();
+            }
+
+            mh = insertArguments(mh, 3, implClass, site.name());
+        }
+
+        return mh;
+    }
+
     static MethodHandle buildGenericHandle(InvokeSite site, DynamicMethod method, RubyClass dispatchClass) {
         SmartBinder binder;
 

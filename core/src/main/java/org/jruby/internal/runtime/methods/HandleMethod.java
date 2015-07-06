@@ -201,6 +201,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
     }
 
     public MethodHandle getHandle(int arity) {
+        ensureTargets();
         return targets[arity];
     }
     
