@@ -223,7 +223,8 @@ module JRuby::Compiler
 
           main.ldc("ISO-8859-1")
           main.invokevirtual("java/lang/String", "getBytes", "(Ljava/lang/String;)[B")
-          main.invokestatic("org/jruby/ir/runtime/IRRuntimeHelpers", "decodeScopeFromBytes", "(Lorg/jruby/Ruby;[B)Lorg/jruby/ir/IRScope;")
+          main.ldc(filename) # TODO: can we determine actual path to this class?
+          main.invokestatic("org/jruby/ir/runtime/IRRuntimeHelpers", "decodeScopeFromBytes", "(Lorg/jruby/Ruby;[BLjava/lang/String;)Lorg/jruby/ir/IRScope;")
           main.invokevirtual("org/jruby/Ruby", "runInterpreter", "(Lorg/jruby/ParseResult;)Lorg/jruby/runtime/builtin/IRubyObject;")
           main.voidreturn
           main.end
@@ -232,7 +233,7 @@ module JRuby::Compiler
               cls,
               Opcodes::ACC_PUBLIC | Opcodes::ACC_STATIC,
               "loadIR",
-              "(Lorg/jruby/Ruby;)Lorg/jruby/ir/IRScope;",
+              "(Lorg/jruby/Ruby;Ljava/lang/String;)Lorg/jruby/ir/IRScope;",
               nil,
               nil)
           loadIR.start
@@ -242,7 +243,8 @@ module JRuby::Compiler
 
           loadIR.ldc("ISO-8859-1")
           loadIR.invokevirtual("java/lang/String", "getBytes", "(Ljava/lang/String;)[B")
-          loadIR.invokestatic("org/jruby/ir/runtime/IRRuntimeHelpers", "decodeScopeFromBytes", "(Lorg/jruby/Ruby;[B)Lorg/jruby/ir/IRScope;")
+          loadIR.aload(1)
+          loadIR.invokestatic("org/jruby/ir/runtime/IRRuntimeHelpers", "decodeScopeFromBytes", "(Lorg/jruby/Ruby;[BLjava/lang/String;)Lorg/jruby/ir/IRScope;")
           loadIR.areturn
           loadIR.end
 

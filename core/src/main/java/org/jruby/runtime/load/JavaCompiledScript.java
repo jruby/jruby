@@ -41,14 +41,12 @@ public class JavaCompiledScript implements Library {
 
     public void load(Ruby runtime, boolean wrap) {
         try {
-            IRScope script = CompiledScriptLoader.loadScriptFromFile(runtime, resource.getInputStream(), resource.getName());
+            IRScope script = CompiledScriptLoader.loadScriptFromFile(runtime, resource.getInputStream(), resource.getPath(), resource.getName(), resource.isAbsolute());
             if (script == null) {
                 // we're depending on the side effect of the load, which loads the class but does not turn it into a script
                 // I don't like it, but until we restructure the code a bit more, we'll need to quietly let it by here.
                 return;
             }
-            // FIXME: We need to be able to set the actual name for __FILE__ and friends to reflect it properly (#3109)
-//            script.setFilename(resource.getName());
             runtime.loadScope(script, wrap);
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);

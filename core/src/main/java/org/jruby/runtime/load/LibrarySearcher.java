@@ -263,14 +263,12 @@ class LibrarySearcher {
             InputStream is = null;
             try {
                 is = new BufferedInputStream(resource.inputStream(), 32768);
-                IRScope script = CompiledScriptLoader.loadScriptFromFile(runtime, is, searchName);
+                IRScope script = CompiledScriptLoader.loadScriptFromFile(runtime, is, null, scriptName, false);
 
                 // Depending on the side-effect of the load, which loads the class but does not turn it into a script.
                 // I don't like it, but until we restructure the code a bit more, we'll need to quietly let it by here.
                 if (script == null) return;
 
-                // FIXME: We need to be able to set the actual name for __FILE__ and friends to reflect it properly (#3109)
-//                script.setFilename(scriptName);
                 runtime.loadScope(script, wrap);
             } catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
