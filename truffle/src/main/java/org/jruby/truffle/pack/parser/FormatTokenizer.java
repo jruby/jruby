@@ -17,7 +17,7 @@ import org.jruby.util.ByteList;
  */
 public class FormatTokenizer {
 
-    private static final String TYPE_CHARS = "%sdiuxXfgGeE";
+    private static final String TYPE_CHARS = "%-sdiuxXfgGeE";
 
     private final ByteList format;
     private int position;
@@ -66,6 +66,13 @@ public class FormatTokenizer {
 
         position++;
 
+        boolean leftJustified = false;
+
+        if (format.charAt(position) == '-') {
+            leftJustified = true;
+            position++;
+        }
+
         int spacePadding;
         int zeroPadding;
 
@@ -111,7 +118,7 @@ public class FormatTokenizer {
 
         position++;
 
-        return new FormatDirective(spacePadding, zeroPadding, precision, type);
+        return new FormatDirective(spacePadding, zeroPadding, leftJustified, precision, type);
     }
 
     private int readInt() {
