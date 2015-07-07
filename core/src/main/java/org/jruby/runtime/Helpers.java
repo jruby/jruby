@@ -2393,7 +2393,7 @@ public class Helpers {
             if (param.length() > 1) {
                 parms[i] = new ArgumentDescriptor(type, param.substring(1));
             } else {
-                parms[i] = new ArgumentDescriptor(type);
+                parms[i] = new ArgumentDescriptor(type.anonymousForm());
             }
         }
 
