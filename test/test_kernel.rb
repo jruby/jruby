@@ -110,21 +110,6 @@ class TestKernel < Test::Unit::TestCase
     assert_raises(ArgumentError) { Kernel.Float("xxxx10000000000000000000000000000000000000000000000000000") }
   end
 
-#  String
-#  URI
-#  `
-#  abort
-#  at_exit
-#  binding
-#  block_given?
-  class CheckBlockGiven; def self.go() block_given? end; end
-  def test_iterator?
-    assert !(Kernel.block_given?)
-    assert(CheckBlockGiven.go { true })
-    assert(!CheckBlockGiven.go)
-    assert(!CheckBlockGiven.go(&Proc.new))
-  end
-
 #  callcc
 #  caller
 
