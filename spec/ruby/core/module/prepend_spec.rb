@@ -127,6 +127,18 @@ describe "Module#prepend" do
     Class.new { prepend(m) }.ancestors.should_not include(m)
   end
 
+  it "adds the module in the subclass chains" do
+    parent = Class.new { def chain; [:parent]; end }
+    child = Class.new(parent) { def chain; super << :child; end }
+    mod = Module.new { def chain; super << :mod; end }
+    parent.prepend mod
+    parent.ancestors[0,2].should == [mod, parent]
+    child.ancestors[0,3].should == [child, mod, parent]
+
+    parent.new.chain.should == [:parent, :mod]
+    child.new.chain.should == [:parent, :mod, :child]
+  end
+
   it "inserts a later prepended module into the chain" do
     m1 = Module.new { def chain; super << :m1; end }
     m2 = Module.new { def chain; super << :m2; end }
