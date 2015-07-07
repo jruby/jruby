@@ -83,7 +83,7 @@ public class DefineOrGetModuleNode extends RubyNode {
         final RubyClass objectClass = getContext().getCoreLibrary().getObjectClass();
 
         if (constant == null && lexicalParent == objectClass) {
-            for (RubyModule included : objectClass.includedModules()) {
+            for (RubyModule included : objectClass.prependedAndIncludedModules()) {
                 constant = included.getConstants().get(name);
                 if (constant != null) {
                     break;
