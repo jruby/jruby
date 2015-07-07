@@ -13,4 +13,8 @@ public abstract class ReturnBase extends Instr {
     public Operand getReturnValue() {
         return operands[0];
     }
+
+    public void updateReturnValue(Operand val) {
+        operands[0] = val;
+    }
 }
