@@ -1381,6 +1381,28 @@ public abstract class ModuleNodes {
 
     }
 
+    @CoreMethod(names = "prepend_features", required = 1, visibility = Visibility.PRIVATE)
+    public abstract static class PrependFeaturesNode extends CoreMethodArrayArgumentsNode {
+
+        @Child TaintResultNode taintResultNode;
+
+        public PrependFeaturesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            taintResultNode = new TaintResultNode(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject prependFeatures(RubyModule features, RubyModule target) {
+            if (features instanceof RubyClass) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError("prepend_features must be called only on modules", this));
+            }
+            target.prepend(this, features);
+            taintResultNode.maybeTaint(features, target);
+            return nil();
+        }
+    }
+
     @CoreMethod(names = "private_class_method", argumentsAsArray = true)
     public abstract static class PrivateClassMethodNode extends CoreMethodArrayArgumentsNode {
 

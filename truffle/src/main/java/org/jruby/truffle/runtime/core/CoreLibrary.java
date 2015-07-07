@@ -160,7 +160,7 @@ public class CoreLibrary {
 
     private State state = State.INITIALIZING;
 
-    private final Allocator NO_ALLOCATOR = new Allocator() {
+    public final Allocator NO_ALLOCATOR = new Allocator() {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
             CompilerDirectives.transferToInterpreter();

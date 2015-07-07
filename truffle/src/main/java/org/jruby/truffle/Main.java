@@ -34,20 +34,8 @@ public class Main {
         String filename = config.displayedFileName();
 
         final Ruby runtime = Ruby.newInstance(config);
-        final AtomicBoolean didTeardown = new AtomicBoolean();
 
         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
-
-        if (config.isHardExit()) {
-            // We're the command-line JRuby, and should set a shutdown hook for teardown.
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                public void run() {
-                    if (didTeardown.compareAndSet(false, true)) {
-                        runtime.tearDown();
-                    }
-                }
-            });
-        }
 
         if (in == null) {
             return;

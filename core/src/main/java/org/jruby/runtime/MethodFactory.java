@@ -59,7 +59,7 @@ public abstract class MethodFactory {
      */
     public static MethodFactory createFactory(ClassLoader classLoader) {
         // otherwise, generate invokers at runtime
-        if (Options.COMPILE_INVOKEDYNAMIC.load() && Options.INVOKEDYNAMIC_HANDLES.load()) {
+        if (Options.INVOKEDYNAMIC_HANDLES.load()) {
             return new InvokeDynamicMethodFactory(classLoader);
         } else {
             return new InvocationMethodFactory(classLoader);

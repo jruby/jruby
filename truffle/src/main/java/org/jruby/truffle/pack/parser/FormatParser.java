@@ -132,6 +132,8 @@ public class FormatParser {
                     case 'f':
                     case 'g':
                     case 'G':
+                    case 'e':
+                    case 'E':
                         node = WriteBytesNodeGen.create(context,
                                 FormatFloatNodeGen.create(context, directive.getSpacePadding(),
                                         directive.getZeroPadding(), directive.getPrecision(),

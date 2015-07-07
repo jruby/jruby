@@ -417,6 +417,7 @@ public class ArgumentProcessor {
                         break FOR;
                     } else if (argument.equals("--debug")) {
                         disallowedInRubyOpts(argument);
+                        Options.DEBUG_FULLTRACE.force("true");
                         RubyInstanceConfig.FULL_TRACE_ENABLED = true;
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
                         break FOR;

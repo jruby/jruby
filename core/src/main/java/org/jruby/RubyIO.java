@@ -4871,13 +4871,19 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @Deprecated
     private static void cleanupPOpen(POpenTuple tuple) {
         if (tuple.input.openFile.isOpen()) {
-            tuple.input.close();
+            try {
+                tuple.input.close();
+            } catch (RaiseException re) {}
         }
         if (tuple.output.openFile.isOpen()) {
-            tuple.output.close();
+            try {
+                tuple.output.close();
+            } catch (RaiseException re) {}
         }
         if (tuple.error.openFile.isOpen()) {
-            tuple.error.close();
+            try {
+                tuple.error.close();
+            } catch (RaiseException re) {}
         }
     }
 

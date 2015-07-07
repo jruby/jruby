@@ -1629,13 +1629,6 @@ public class RubyInstanceConfig {
             = FASTEST_COMPILE_ENABLED || Options.COMPILE_FASTSEND.load();
 
     /**
-     * Enable lazy handles optimizations.
-     *
-     * Set with the <tt>jruby.compile.lazyHandles</tt> system property.
-     */
-    public static boolean LAZYHANDLES_COMPILE = Options.COMPILE_LAZYHANDLES.load();
-
-    /**
      * Enable fast multiple assignment optimization.
      *
      * Set with the <tt>jruby.compile.fastMasgn</tt> system property.

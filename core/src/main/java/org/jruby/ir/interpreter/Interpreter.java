@@ -7,7 +7,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ast.RootNode;
-import org.jruby.ir.IRBindingEvalScript;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
@@ -217,14 +216,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         IRScope containingIRScope = evalScope.getStaticScope().getEnclosingScope().getIRScope();
         RootNode rootNode = (RootNode) runtime.parseEval(src.convertToString().getByteList(), file, evalScope, lineNumber);
         StaticScope staticScope = evalScope.getStaticScope();
-        // Top-level script!
-        IREvalScript script;
 
-        if (evalType == EvalType.BINDING_EVAL) {
-            script = new IRBindingEvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
-        } else {
-            script = new IREvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
-        }
+        // Top-level script!
+        IREvalScript script = new IREvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
 
         // We link IRScope to StaticScope because we may add additional variables (like %block).  During execution
         // we end up growing dynamicscope potentially based on any changes made.

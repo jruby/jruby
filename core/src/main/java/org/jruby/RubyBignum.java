@@ -573,15 +573,21 @@ public class RubyBignum extends RubyInteger {
         return op_pow19(context, other);
     }
 
-    public IRubyObject op_pow(ThreadContext context, long other) {
-        // MRI issuses warning here on (RBIGNUM(x)->len * SIZEOF_BDIGITS * yy > 1024*1024)
-        if (((value.bitLength() + 7) / 8) * 4 * Math.abs(other) > 1024 * 1024) {
-            getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big");
-        }
+    public IRubyObject op_pow(final ThreadContext context, final long other) {
+        warnIfPowExponentTooBig(context, other);
+
         if (other >= 0) {
-            return bignorm(getRuntime(), value.pow((int) other)); // num2int is also implemented
-        } else {
-            return RubyFloat.newFloat(getRuntime(), Math.pow(big2dbl(this), (double)other));
+            if ( other <= Integer.MAX_VALUE ) { // only have BigInteger#pow(int)
+                return bignorm(context.runtime, value.pow((int) other)); // num2int is also implemented
+            }
+        }
+        return RubyFloat.newFloat(context.runtime, Math.pow(big2dbl(this), (double) other));
+    }
+
+    private void warnIfPowExponentTooBig(final ThreadContext context, final double other) {
+        // MRI issuses warning here on (RBIGNUM(x)->len * SIZEOF_BDIGITS * yy > 1024*1024)
+        if ( ((value.bitLength() + 7) / 8) * 4 * Math.abs(other) > 1024 * 1024 ) {
+            context.runtime.getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big");
         }
     }
 

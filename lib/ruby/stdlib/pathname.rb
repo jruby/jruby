@@ -31,10 +31,10 @@ class Pathname
 
   if File::ALT_SEPARATOR
     SEPARATOR_LIST = "#{Regexp.quote File::ALT_SEPARATOR}#{Regexp.quote File::SEPARATOR}"
-    SEPARATOR_PAT = /[#{SEPARATOR_LIST}]/
+    SEPARATOR_PAT = /[#{SEPARATOR_LIST}]|.+!\/|[a-z:]+:\/\/?/
   else
     SEPARATOR_LIST = "#{Regexp.quote File::SEPARATOR}"
-    SEPARATOR_PAT = /#{Regexp.quote File::SEPARATOR}/
+    SEPARATOR_PAT = /#{Regexp.quote File::SEPARATOR}|.+!\/|[a-z:]+:\/\/?/
   end
 
   # :startdoc:

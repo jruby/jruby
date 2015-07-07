@@ -1151,8 +1151,8 @@ public class Java implements Library {
             final IRubyObject[] newArgs;
             switch( args.length ) {
                 case 1 :  newArgs = IRubyObject.NULL_ARRAY; break;
-                case 2 :  newArgs = new IRubyObject[] { args[0] }; break;
-                case 3 :  newArgs = new IRubyObject[] { args[0], args[1] }; break;
+                case 2 :  newArgs = new IRubyObject[] { args[1] }; break;
+                case 3 :  newArgs = new IRubyObject[] { args[1], args[2] }; break;
                 default : newArgs = new IRubyObject[ args.length - 1 ];
                     System.arraycopy(args, 1, newArgs, 0, newArgs.length);
             }

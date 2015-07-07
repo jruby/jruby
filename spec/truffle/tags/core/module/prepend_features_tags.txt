@@ -1,6 +1,0 @@
-fails:Module#prepend_features is a private method
-fails:Module#prepend_features gets called when self is included in another module/class
-fails:Module#prepend_features raises an ArgumentError on a cyclic prepend
-fails:Module#prepend_features copies own tainted status to the given module
-fails:Module#prepend_features copies own untrusted status to the given module
-fails:Module#prepend_features on Class raises a TypeError if calling after rebinded to Class

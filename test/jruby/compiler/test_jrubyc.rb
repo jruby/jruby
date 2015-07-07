@@ -106,10 +106,7 @@ class TestJrubyc < Test::Unit::TestCase
     JRuby::Compiler::compile_argv(["--verbose", "--java", "--javac", "test_file2.rb"])
     output = File.read(@tempfile_stderr.path)
 
-    # Truffle is showing a warn message when run on jdk 8
-    # This is a dirty hack to make the CI green again.
-    expected_result = java.lang.System.getProperty("java.version").split(".")[1] == "7" ? "" : "warning: Supported source version 'RELEASE_7' from annotation processor 'com.oracle.truffle.dsl.processor.TruffleProcessor' less than -source '1.8'\n1 warning\n"
-    assert_equal(expected_result, output)
+    assert_equal("", output)
 
     assert_nothing_raised { require 'test_file2' }
     assert($compile_test)

@@ -1,2 +1,0 @@
-fails:Module#prepended is a private method
-fails:Module#prepended is invoked when self is prepended to another module or class

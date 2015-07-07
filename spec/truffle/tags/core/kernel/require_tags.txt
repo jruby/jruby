@@ -1,16 +1,12 @@
-fails:Kernel#require (path resolution) loads a non-canonical absolute path
 fails:Kernel#require (path resolution) calls #to_str on non-String objects
 fails:Kernel#require (path resolution) raises a TypeError if #to_str does not return a String
 fails:Kernel#require (path resolution) calls #to_path on non-String objects
 fails:Kernel#require (path resolution) calls #to_path on a String
 fails:Kernel#require (path resolution) calls #to_str on non-String objects returned by #to_path
-fails:Kernel#require (path resolution) loads a ./ relative path from the current working directory with empty $LOAD_PATH
 fails:Kernel#require (path resolution) loads a ../ relative path from the current working directory with empty $LOAD_PATH
-fails:Kernel#require (path resolution) loads a ./ relative path from the current working directory with non-empty $LOAD_PATH
 fails:Kernel#require (path resolution) loads a ../ relative path from the current working directory with non-empty $LOAD_PATH
 fails:Kernel#require (path resolution) loads a non-canonical path from the current working directory with non-empty $LOAD_PATH
 fails:Kernel#require (path resolution) does not require file twice after $LOAD_PATH change
-fails:Kernel#require (path resolution) does not resolve a ./ relative path against $LOAD_PATH entries
 fails:Kernel#require (path resolution) does not resolve a ../ relative path against $LOAD_PATH entries
 fails:Kernel#require (path resolution) loads a path with duplicate path separators
 fails:Kernel#require (path resolution) with an unreadable file raises a LoadError
@@ -27,9 +23,7 @@ fails:Kernel#require ($LOAD_FEATURES) does not load a ../ relative path that is 
 fails:Kernel#require ($LOAD_FEATURES) does not load a non-canonical path that is already stored
 fails:Kernel#require ($LOAD_FEATURES) does not load twice the same file with and without extension
 fails:Kernel#require ($LOAD_FEATURES) stores ../ relative paths as absolute paths
-fails:Kernel#require ($LOAD_FEATURES) stores ./ relative paths as absolute paths
 fails:Kernel#require ($LOAD_FEATURES) collapses duplicate path separators
-fails:Kernel#require ($LOAD_FEATURES) canonicalizes non-unique absolute paths
 fails:Kernel#require ($LOAD_FEATURES) adds the suffix of the resolved filename
 fails:Kernel#require ($LOAD_FEATURES) does not load a non-canonical path for a file already loaded
 fails:Kernel#require ($LOAD_FEATURES) does not load a ./ relative path for a file already loaded
