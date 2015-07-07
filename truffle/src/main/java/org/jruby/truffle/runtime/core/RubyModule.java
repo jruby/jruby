@@ -98,8 +98,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     // The context is stored here - objects can obtain it via their class (which is a module)
     private final RubyContext context;
 
-    /** Either {@code this} or a {@link PrependMarker} */
-    @CompilationFinal protected ModuleChain start = this;
+    protected final ModuleChain start = new PrependMarker(this);
     @CompilationFinal protected ModuleChain parentModule;
 
     private final RubyModule lexicalParent;
@@ -178,7 +177,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         this.constants.putAll(from.constants);
         this.classVariables.putAll(from.classVariables);
 
-        if (from.start instanceof PrependMarker) {
+        if (from.start.getParentModule() != from) {
             this.parentModule = from.start;
         } else {
             this.parentModule = from.parentModule;
@@ -270,12 +269,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         // If the module we want to prepend already includes us, it is cyclic
         if (ModuleOperations.includesModule(module, this)) {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("cyclic prepend detected", currentNode));
-        }
-
-        if (start == this) {
-            // Create an PrependMarker pointing to an empty module or class
-            // serving as an indirection to the first prepended module
-            start = new PrependMarker(this);
         }
 
         Stack<RubyModule> modulesToPrepend = new Stack<>();
