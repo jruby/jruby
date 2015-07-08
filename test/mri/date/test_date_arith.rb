@@ -135,14 +135,6 @@ class TestDateArith < Test::Unit::TestCase
     assert_equal([1900, 1, 31], [d.year, d.mon, d.mday])
   end
 
-  def test_prev_year__with_calendar_reform
-    calendar_reform_italy = [1582, 10, 4]
-    d = Date.new(1583, 10, 9).prev_year
-    assert_equal(calendar_reform_italy, [d.year, d.mon, d.mday])
-    d = Date.new(1583, 10, 10).prev_year
-    assert_equal(calendar_reform_italy, [d.year, d.mon, d.mday])
-  end
-
   def test_next
     d = Date.new(2000,12,31).next
     assert_equal([2001, 1, 1], [d.year, d.mon, d.mday])
