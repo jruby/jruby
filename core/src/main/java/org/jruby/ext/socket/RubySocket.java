@@ -463,8 +463,11 @@ public class RubySocket extends RubyBasicSocket {
             throw SocketUtils.sockerr(runtime, "unknown socket domain " + domain);
         }
 
+        String name = soDomain.name();
+
+        if (name.startsWith("pseudo_")) name = name.substring(7);
         soDomain = family;
-        soProtocolFamily = ProtocolFamily.valueOf("PF" + soDomain.name().substring(2));
+        soProtocolFamily = ProtocolFamily.valueOf("PF" + name.substring(2));
     }
 
     private void doConnectNonblock(ThreadContext context, Channel channel, SocketAddress addr) {
