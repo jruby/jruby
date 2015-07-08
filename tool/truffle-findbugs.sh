@@ -10,7 +10,7 @@ else
   ui_options=""
 fi
 
-mvn package || exit $?
+./mvnw package || exit $?
 
 version=3.0.0
 shasum=30bdcee2c909a0eef61a4f60f4489cd2f5a4d21c

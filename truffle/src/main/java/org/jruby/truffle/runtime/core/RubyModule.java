@@ -89,6 +89,19 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     }
 
+    public static void debugModuleChain(RubyModule module) {
+        ModuleChain chain = module;
+        while (chain != null) {
+            System.err.print(chain.getClass());
+            if (!(chain instanceof PrependMarker)) {
+                RubyModule real = chain.getActualModule();
+                System.err.print(" " + real.getName());
+            }
+            System.err.println();
+            chain = chain.getParentModule();
+        }
+    }
+
     /**
      * The slot within a module definition method frame where we store the implicit state that is
      * the current visibility for new methods.
@@ -98,8 +111,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     // The context is stored here - objects can obtain it via their class (which is a module)
     private final RubyContext context;
 
-    /** Either {@code this} or a {@link PrependMarker} */
-    @CompilationFinal protected ModuleChain start = this;
+    protected final ModuleChain start = new PrependMarker(this);
     @CompilationFinal protected ModuleChain parentModule;
 
     private final RubyModule lexicalParent;
@@ -178,8 +190,8 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         this.constants.putAll(from.constants);
         this.classVariables.putAll(from.classVariables);
 
-        if (from.start instanceof PrependMarker) {
-            this.parentModule = from.start;
+        if (from.start.getParentModule() != from) {
+            this.parentModule = from.start.getParentModule();
         } else {
             this.parentModule = from.parentModule;
         }
@@ -272,21 +284,15 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("cyclic prepend detected", currentNode));
         }
 
-        if (start == this) {
-            // Create an PrependMarker pointing to an empty module or class
-            // serving as an indirection to the first prepended module
-            start = new PrependMarker(this);
-        }
-
-        Stack<RubyModule> modulesToPrepend = new Stack<>();
-        modulesToPrepend.push(module);
-        for (RubyModule includedModule : module.prependedAndIncludedModules()) {
-            modulesToPrepend.push(includedModule);
-        }
-
-        for (RubyModule mod : modulesToPrepend) {
-            start.insertAfter(mod);
-            mod.addDependent(this);
+        ModuleChain mod = module.start;
+        ModuleChain cur = start;
+        while (mod != null && !(mod instanceof RubyClass)) {
+            if (!(mod instanceof PrependMarker)) {
+                cur.insertAfter(mod.getActualModule());
+                mod.getActualModule().addDependent(this);
+                cur = cur.getParentModule();
+            }
+            mod = mod.getParentModule();
         }
 
         newVersion();
