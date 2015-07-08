@@ -463,10 +463,9 @@ public class RubySocket extends RubyBasicSocket {
             throw SocketUtils.sockerr(runtime, "unknown socket domain " + domain);
         }
 
-        String name = soDomain.name();
-
-        if (name.startsWith("pseudo_")) name = name.substring(7);
         soDomain = family;
+        String name = soDomain.name();
+        if (name.startsWith("pseudo_")) name = name.substring(7);
         soProtocolFamily = ProtocolFamily.valueOf("PF" + name.substring(2));
     }
 
