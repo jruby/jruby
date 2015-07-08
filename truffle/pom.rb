@@ -33,7 +33,10 @@ project 'JRuby Truffle' do
     execute_goals( 'compile',
                    :id => 'default-compile',
                    :phase => 'compile',
-                   'annotationProcessors' => [ 'com.oracle.truffle.dsl.processor.TruffleProcessor' ],
+                   'annotationProcessors' => [
+                     'com.oracle.truffle.dsl.processor.TruffleProcessor',
+                     'com.oracle.truffle.dsl.processor.LanguageRegistrationProcessor'
+                    ],
                    'generatedSourcesDirectory' =>  'target/generated-sources',
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
                                        '-J-Duser.language=en',
