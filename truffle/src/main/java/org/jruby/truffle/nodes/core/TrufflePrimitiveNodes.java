@@ -433,16 +433,16 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
-    @CoreMethod(names = "home_directory", onSingleton = true)
-    public abstract static class HomeDirectoryNode extends CoreMethodNode {
+    @CoreMethod(names = "jruby_home_directory", onSingleton = true)
+    public abstract static class JRubyHomeDirectoryNode extends CoreMethodNode {
 
-        public HomeDirectoryNode(RubyContext context, SourceSection sourceSection) {
+        public JRubyHomeDirectoryNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject homeDirectory() {
+        public RubyBasicObject jrubyHomeDirectory() {
             return createString(getContext().getRuntime().getJRubyHome());
         }
 
