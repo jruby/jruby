@@ -29,20 +29,20 @@ DO NOT MODIFIY - GENERATED CODE
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.oracle</groupId>
+      <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle</artifactId>
-      <version>0.8-cf1503da2456b46677cbf0ed286614d660126a1b-SNAPSHOT</version>
+      <version>4858c5e074e9005075e89cf5b1c2347ee73a5d31-SNAPSHOT</version>
     </dependency>
     <dependency>
-      <groupId>com.oracle</groupId>
+      <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-dsl-processor</artifactId>
-      <version>0.8-cf1503da2456b46677cbf0ed286614d660126a1b-SNAPSHOT</version>
+      <version>4858c5e074e9005075e89cf5b1c2347ee73a5d31-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.oracle</groupId>
+      <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-tck</artifactId>
-      <version>0.8-cf1503da2456b46677cbf0ed286614d660126a1b-SNAPSHOT</version>
+      <version>4858c5e074e9005075e89cf5b1c2347ee73a5d31-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
     <dependency>
