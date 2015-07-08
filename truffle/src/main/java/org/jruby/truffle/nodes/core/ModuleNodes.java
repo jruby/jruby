@@ -518,6 +518,7 @@ public abstract class ModuleNodes {
         @Child private StringNodes.EmptyNode emptyNode;
         private final ConditionProfile invalidConstantName = ConditionProfile.createBinaryProfile();
         private final ConditionProfile emptyFilename = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile alreadyLoaded = ConditionProfile.createBinaryProfile();
 
         public AutoloadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -547,6 +548,10 @@ public abstract class ModuleNodes {
             if (emptyFilename.profile(emptyNode.empty(filename))) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("empty file name", this));
+            }
+
+            if (alreadyLoaded.profile(module.getConstants().get(name) != null)) {
+                return nil();
             }
 
             module.setAutoloadConstant(this, name, filename);
