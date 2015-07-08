@@ -288,9 +288,11 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         ModuleChain cur = start;
         while (mod != null && !(mod instanceof RubyClass)) {
             if (!(mod instanceof PrependMarker)) {
-                cur.insertAfter(mod.getActualModule());
-                mod.getActualModule().addDependent(this);
-                cur = cur.getParentModule();
+                if (!ModuleOperations.includesModule(this, mod.getActualModule())) {
+                    cur.insertAfter(mod.getActualModule());
+                    mod.getActualModule().addDependent(this);
+                    cur = cur.getParentModule();
+                }
             }
             mod = mod.getParentModule();
         }
