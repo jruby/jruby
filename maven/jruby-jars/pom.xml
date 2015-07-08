@@ -67,7 +67,7 @@ freezing to) a specific jruby-complete jar version.</description>
       </extension>
     </extensions>
     <directory>${basedir}/pkg</directory>
-    <finalName>${project.artifactId}-1.7.21.dev</finalName>
+    <finalName>${project.artifactId}-1.7.21</finalName>
     <plugins>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
