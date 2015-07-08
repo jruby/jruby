@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -17,6 +17,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class RubyTckTest extends TruffleTCK {
+
     @Test
     public void checkVM() {
         TruffleVM vm = TruffleVM.newVM().build();
@@ -88,4 +89,5 @@ public class RubyTckTest extends TruffleTCK {
     public void testMaxOrMinValue2() throws Exception {
         super.testMaxOrMinValue2();
     }
+    
 }
