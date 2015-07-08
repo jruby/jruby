@@ -1207,8 +1207,8 @@ public abstract class ModuleNodes {
 
             final List<RubyModule> modules = new ArrayList<>();
 
-            for (RubyModule included : module.parentAncestors()) {
-                if (included.isOnlyAModule()) {
+            for (RubyModule included : module.ancestors()) {
+                if (included.isOnlyAModule() && included != module) {
                     modules.add(included);
                 }
             }
