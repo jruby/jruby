@@ -89,6 +89,19 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     }
 
+    public static void debugModuleChain(RubyModule module) {
+        ModuleChain chain = module;
+        while (chain != null) {
+            System.err.print(chain.getClass());
+            if (!(chain instanceof PrependMarker)) {
+                RubyModule real = chain.getActualModule();
+                System.err.print(" " + real.getName());
+            }
+            System.err.println();
+            chain = chain.getParentModule();
+        }
+    }
+
     /**
      * The slot within a module definition method frame where we store the implicit state that is
      * the current visibility for new methods.
@@ -178,7 +191,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         this.classVariables.putAll(from.classVariables);
 
         if (from.start.getParentModule() != from) {
-            this.parentModule = from.start;
+            this.parentModule = from.start.getParentModule();
         } else {
             this.parentModule = from.parentModule;
         }
@@ -271,15 +284,15 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("cyclic prepend detected", currentNode));
         }
 
-        Stack<RubyModule> modulesToPrepend = new Stack<>();
-        modulesToPrepend.push(module);
-        for (RubyModule includedModule : module.prependedAndIncludedModules()) {
-            modulesToPrepend.push(includedModule);
-        }
-
-        for (RubyModule mod : modulesToPrepend) {
-            start.insertAfter(mod);
-            mod.addDependent(this);
+        ModuleChain mod = module.start;
+        ModuleChain cur = start;
+        while (mod != null && !(mod instanceof RubyClass)) {
+            if (!(mod instanceof PrependMarker)) {
+                cur.insertAfter(mod.getActualModule());
+                mod.getActualModule().addDependent(this);
+                cur = cur.getParentModule();
+            }
+            mod = mod.getParentModule();
         }
 
         newVersion();
