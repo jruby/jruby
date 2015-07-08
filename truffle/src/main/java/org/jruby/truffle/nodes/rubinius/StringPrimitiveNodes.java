@@ -306,14 +306,17 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public boolean stringCheckNullSafe(RubyString string) {
-            for (byte b : StringNodes.getByteList(string).unsafeBytes()) {
-                if (nullByteProfile.profile(b == 0)) {
-                    return false;
+        public RubyString stringCheckNullSafe(RubyString string) {
+            final ByteList byteList = StringNodes.getByteList(string);
+
+            for (int i = 0; i < byteList.length(); i++) {
+                if (nullByteProfile.profile(byteList.get(i) == 0)) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().argumentError("string contains NULL byte", this));
                 }
             }
 
-            return true;
+            return string;
         }
 
     }
