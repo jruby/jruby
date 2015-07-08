@@ -222,3 +222,8 @@ class Exception
   end
 
 end
+
+# Hack to let code run that try to invoke RubyGems directly.  We don't yet support RubyGems, but in most cases where
+# this call would be made, we've already set up the $LOAD_PATH so the call would no-op anyway.
+def gem(*args)
+end

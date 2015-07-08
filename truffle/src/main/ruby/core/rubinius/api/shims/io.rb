@@ -26,6 +26,11 @@
 
 class IO
 
+  # Truffle: redefine setter to lower
+  def mode=(value)
+    @mode = Truffle::Primitive.fixnum_lower(value)
+  end
+
   #
   # Internally associate +io+ with the given descriptor.
   #

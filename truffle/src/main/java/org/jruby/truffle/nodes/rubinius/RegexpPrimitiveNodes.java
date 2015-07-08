@@ -138,19 +138,20 @@ public abstract class RegexpPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = { "isInitialized(regexp)", "isValidEncoding(string)" })
         public Object searchRegion(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
+            final ByteList stringBl = StringNodes.getByteList(string);
             final ByteList bl = regexp.getSource();
             final Encoding enc = regexp.checkEncoding(StringNodes.getCodeRangeable(string), true);
             final ByteList preprocessed = RegexpSupport.preprocess(getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
 
             final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), regexp.getRegex().getOptions(), regexp.checkEncoding(StringNodes.getCodeRangeable(string), true));
-            final Matcher matcher = r.matcher(StringNodes.getByteList(string).bytes());
+            final Matcher matcher = r.matcher(stringBl.getUnsafeBytes(), stringBl.begin(), stringBl.begin() + stringBl.realSize());
 
             if (forward) {
                 // Search forward through the string.
-                return regexp.matchCommon(string, false, false, matcher, start, end);
+                return regexp.matchCommon(string, false, false, matcher, start + stringBl.begin(), end + stringBl.begin());
             } else {
                 // Search backward through the string.
-                return regexp.matchCommon(string, false, false, matcher, end, start);
+                return regexp.matchCommon(string, false, false, matcher, end + stringBl.begin(), start + stringBl.begin());
             }
         }
 

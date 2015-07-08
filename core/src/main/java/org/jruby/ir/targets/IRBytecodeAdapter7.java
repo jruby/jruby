@@ -21,7 +21,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
@@ -149,7 +148,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         adapter.invokedynamic(
                 "fixnumOperator:" + JavaNameMangler.mangleMethodName(name),
                 signature,
-                InvokeDynamicSupport.getFixnumOperatorHandle(),
+                Bootstrap.getFixnumOperatorHandle(),
                 fixnum,
                 "",
                 0);
@@ -161,7 +160,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         adapter.invokedynamic(
             "floatOperator:" + JavaNameMangler.mangleMethodName(name),
             signature,
-            InvokeDynamicSupport.getFloatOperatorHandle(),
+            Bootstrap.getFloatOperatorHandle(),
             flote,
             "",
             0);
@@ -295,6 +294,6 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         adapter.invokedynamic(
                 "checkpoint",
                 sig(void.class, ThreadContext.class),
-                InvokeDynamicSupport.checkpointHandle());
+                Bootstrap.checkpointHandle());
     }
 }

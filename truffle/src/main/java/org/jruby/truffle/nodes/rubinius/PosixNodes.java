@@ -838,6 +838,29 @@ public abstract class PosixNodes {
                     PointerNodes.getPointer(resultsPointer));
         }
 
+        @Specialization(guards = { "isNil(serviceName)", "isRubyPointer(hintsPointer)", "isRubyPointer(resultsPointer)" })
+        public int getaddrinfo(RubyString hostName, RubyBasicObject serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
+            return nativeSockets().getaddrinfo(
+                    StringNodes.getByteList(hostName),
+                    null,
+                    PointerNodes.getPointer(hintsPointer),
+                    PointerNodes.getPointer(resultsPointer));
+        }
+
+    }
+
+    @CoreMethod(names = "_connect", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 2})
+    public abstract static class ConnectNode extends CoreMethodArrayArgumentsNode {
+
+        public ConnectNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyPointer(address)")
+        public int connect(int socket, RubyBasicObject address, int address_len) {
+            return nativeSockets().connect(socket, PointerNodes.getPointer(address), address_len);
+        }
+
     }
 
     @CoreMethod(names = "freeaddrinfo", isModuleFunction = true, required = 1)

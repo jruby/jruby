@@ -14,7 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
-
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.methods.CallMethodNode;
@@ -22,7 +22,7 @@ import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
@@ -64,17 +64,21 @@ public class GeneralSuperReCallNode extends RubyNode {
             originalArguments = frame.getArguments();
         }
 
-        // Reload the arguments
-        Object[] superArguments = new Object[reloadNodes.length];
-        for (int n = 0; n < superArguments.length; n++) {
-            superArguments[n] = reloadNodes[n].execute(frame);
-        }
+        Object[] superArguments = RubyArguments.extractUserArguments(originalArguments);
 
-        if (isSplatted) {
-            CompilerDirectives.transferToInterpreter();
-            assert superArguments.length == 1;
-            assert superArguments[0] instanceof RubyArray;
-            superArguments = ArrayNodes.slowToArray(((RubyArray) superArguments[0]));
+        if (!inBlock) {
+            // Reload the arguments
+            superArguments = new Object[reloadNodes.length];
+            for (int n = 0; n < superArguments.length; n++) {
+                superArguments[n] = reloadNodes[n].execute(frame);
+            }
+
+            if (isSplatted) {
+                CompilerDirectives.transferToInterpreter();
+                assert superArguments.length == 1;
+                assert RubyGuards.isRubyArray(superArguments[0]);
+                superArguments = ArrayNodes.slowToArray(((RubyBasicObject) superArguments[0]));
+            }
         }
 
         // Execute or inherit the block

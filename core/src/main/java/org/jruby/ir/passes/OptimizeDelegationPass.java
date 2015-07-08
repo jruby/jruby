@@ -1,9 +1,11 @@
 package org.jruby.ir.passes;
 
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRFlags;
-import org.jruby.ir.instructions.*;
+import org.jruby.ir.instructions.ClosureAcceptingInstr;
+import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.ReifyClosureInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
@@ -18,16 +20,6 @@ public class OptimizeDelegationPass extends CompilerPass {
 
     @Override
     public Object execute(IRScope s, Object... data) {
-        /**
-         * SSS FIXME: too late at night to think straight if this
-         * is required to run on all nested scopes or not. Doesn't
-         * look like it, but leaving behind in case it is.
-         *
-        for (IRClosure c: s.getClosures()) {
-            run(c, false, true);
-        }
-         **/
-
         if (s.getFlags().contains(IRFlags.BINDING_HAS_ESCAPED)) return null;
         if (!s.getFlags().contains(IRFlags.RECEIVES_CLOSURE_ARG)) return null;
 
@@ -82,14 +74,9 @@ public class OptimizeDelegationPass extends CompilerPass {
 
     private static boolean usesVariableAsNonClosureArg(Instr i, Variable v) {
         List<Variable> usedVariables = i.getUsedVariables();
-        if (usedVariables.contains(v)) {
-            if (i instanceof ClosureAcceptingInstr) {
-                return usedVariables.indexOf(v) != usedVariables.lastIndexOf(v) ||
-                    v != ((ClosureAcceptingInstr) i).getClosureArg();
-            } else {
-                return true;
-            }
-        }
-        return false;
+        return usedVariables.contains(v) &&
+                (!(i instanceof ClosureAcceptingInstr) ||
+                 usedVariables.indexOf(v) != usedVariables.lastIndexOf(v) ||
+                 v != ((ClosureAcceptingInstr) i).getClosureArg());
     }
 }

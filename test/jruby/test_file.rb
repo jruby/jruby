@@ -48,6 +48,24 @@ class TestFile < Test::Unit::TestCase
     assert_equal("/", File.basename("/"))
   end
 
+  def test_basename_uri_like_paths
+    assert_equal('uri:classloader:/', File.basename('uri:classloader:/'))
+    assert_equal('uri:classloader://', File.basename('uri:classloader://'))
+    assert_equal('uri:file:/', File.basename('uri:file:/'))
+    assert_equal('uri:file://', File.basename('uri:file://'))
+    assert_equal('classpath:/', File.basename('classpath:/'))
+    assert_equal('classpath://', File.basename('classpath://'))
+    assert_equal('file:/', File.basename('file:/'))
+    assert_equal('file://', File.basename('file://'))
+    assert_equal('jar:file:/my.jar!/', File.basename('jar:file:/my.jar!/'))
+    assert_equal('jar:file://my.jar!/', File.basename('jar:file://my.jar!/'))
+    assert_equal('jar:/my.jar!/', File.basename('jar:/my.jar!/'))
+    assert_equal('jar://my.jar!/', File.basename('jar://my.jar!/'))
+    assert_equal('file:/my.jar!/', File.basename('file:/my.jar!/'))
+    assert_equal('file://my.jar!/', File.basename('file://my.jar!/'))
+    assert_equal('my.jar!/', File.basename('my.jar!/'))
+  end
+
   # Added to add more flexibility on windows.  Depending on subsystem (msys,
   # cygwin, cmd) environment sometimes we have mixed case drive letters.  Since
   # windows is still case insensitive, downcasing seems a simple solution.

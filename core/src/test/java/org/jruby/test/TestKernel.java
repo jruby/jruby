@@ -31,8 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
-import java.util.ArrayList;
-
+import java.io.File;
 import org.jruby.Ruby;
 import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
@@ -61,14 +60,16 @@ public class TestKernel extends TestRubyBase {
         assertEquals("load did not load the same file several times", "1", eval("load '../test/loadTest.rb'"));
     }
 
+
     public void testRequire() throws Exception {
+        char s = File.separatorChar;
         //reset the $loadTestvar
         eval("$loadTest = nil");
         assertEquals("failed to load the file test/loadTest", "0", eval("require '../test/loadTest'"));
         assertEquals("incorrectly reloaded the file test/loadTest", "", eval("require '../test/loadTest'"));
-
-        assertEquals("incorrect value for $\" variable", "true", eval("print $\"[-1].end_with?('test/loadTest.rb')"));
+        assertEquals("incorrect value for $\" variable", "true", eval("print $\"[-1].end_with?('test" + s + "loadTest.rb')"));
     }
+
 
     public void testPrintf() throws Exception {
         assertEquals("hello", eval("printf(\"%s\", \"hello\")"));

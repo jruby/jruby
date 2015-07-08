@@ -13,9 +13,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
@@ -48,38 +48,38 @@ public final class ArrayConcatNode extends RubyNode {
     }
 
     @ExplodeLoop
-    private RubyArray executeSingle(VirtualFrame frame, Object store, int length) {
+    private RubyBasicObject executeSingle(VirtualFrame frame, Object store, int length) {
         final Object childObject = children[0].execute(frame);
-        if (childObject instanceof RubyArray) {
+        if (RubyGuards.isRubyArray(childObject)) {
             appendArrayProfile.enter();
-            final RubyArray childArray = (RubyArray) childObject;
+            final RubyBasicObject childArray = (RubyBasicObject) childObject;
             store = arrayBuilderNode.ensure(store, length + ArrayNodes.getSize(childArray));
-            store = arrayBuilderNode.append(store, length, childArray);
+            store = arrayBuilderNode.appendArray(store, length, childArray);
             length += ArrayNodes.getSize(childArray);
         } else {
             appendObjectProfile.enter();
             store = arrayBuilderNode.ensure(store, length + 1);
-            store = arrayBuilderNode.append(store, length, childObject);
+            store = arrayBuilderNode.appendValue(store, length, childObject);
             length++;
         }
         return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilderNode.finish(store, length), length);
     }
 
     @ExplodeLoop
-    private RubyArray executeRubyArray(VirtualFrame frame, Object store, int length) {
+    private RubyBasicObject executeRubyArray(VirtualFrame frame, Object store, int length) {
         for (int n = 0; n < children.length; n++) {
             final Object childObject = children[n].execute(frame);
 
-            if (childObject instanceof RubyArray) {
+            if (RubyGuards.isRubyArray(childObject)) {
                 appendArrayProfile.enter();
-                final RubyArray childArray = (RubyArray) childObject;
+                final RubyBasicObject childArray = (RubyBasicObject) childObject;
                 store = arrayBuilderNode.ensure(store, length + ArrayNodes.getSize(childArray));
-                store = arrayBuilderNode.append(store, length, childArray);
+                store = arrayBuilderNode.appendArray(store, length, childArray);
                 length += ArrayNodes.getSize(childArray);
             } else {
                 appendObjectProfile.enter();
                 store = arrayBuilderNode.ensure(store, length + 1);
-                store = arrayBuilderNode.append(store, length, childObject);
+                store = arrayBuilderNode.appendValue(store, length, childObject);
                 length++;
             }
         }

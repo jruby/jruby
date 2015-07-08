@@ -117,14 +117,30 @@ describe "Module#prepend" do
     m1 = Module.new { def calc(x) x end }
     m2 = Module.new { prepend(m1) }
     c1 = Class.new { prepend(m2) }
-    c2 = Class.new { prepend(m2.dup) }
+    m2dup = m2.dup
+    m2dup.ancestors.should == [m2dup,m1,m2]
+    c2 = Class.new { prepend(m2dup) }
+    c1.ancestors[0,3].should == [m1,m2,c1]
     c1.new.should be_kind_of(m1)
+    c2.ancestors[0,4].should == [m2dup,m1,m2,c2]
     c2.new.should be_kind_of(m1)
   end
 
   it "depends on prepend_features to add the module" do
     m = Module.new { def self.prepend_features(mod) end }
     Class.new { prepend(m) }.ancestors.should_not include(m)
+  end
+
+  it "adds the module in the subclass chains" do
+    parent = Class.new { def chain; [:parent]; end }
+    child = Class.new(parent) { def chain; super << :child; end }
+    mod = Module.new { def chain; super << :mod; end }
+    parent.prepend mod
+    parent.ancestors[0,2].should == [mod, parent]
+    child.ancestors[0,3].should == [child, mod, parent]
+
+    parent.new.chain.should == [:parent, :mod]
+    child.new.chain.should == [:parent, :mod, :child]
   end
 
   it "inserts a later prepended module into the chain" do

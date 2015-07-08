@@ -46,8 +46,10 @@ import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
+import jnr.ffi.Pointer;
 import jnr.ffi.byref.IntByReference;
 import org.jruby.RubyEncoding;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -55,7 +57,6 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -92,9 +93,9 @@ public abstract class IOPrimitiveNodes {
         final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
 
         IBUFFER_PROPERTY = Property.create(IBUFFER_IDENTIFIER, allocator.locationForType(RubyBasicObject.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        LINENO_PROPERTY = Property.create(LINENO_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        DESCRIPTOR_PROPERTY = Property.create(DESCRIPTOR_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        MODE_PROPERTY = Property.create(MODE_IDENTIFIER, allocator.locationForType(Integer.class, EnumSet.of(LocationModifier.NonNull)), 0);
+        LINENO_PROPERTY = Property.create(LINENO_IDENTIFIER, allocator.locationForType(int.class), 0);
+        DESCRIPTOR_PROPERTY = Property.create(DESCRIPTOR_IDENTIFIER, allocator.locationForType(int.class), 0);
+        MODE_PROPERTY = Property.create(MODE_IDENTIFIER, allocator.locationForType(int.class), 0);
 
         IO_FACTORY = RubyBasicObject.EMPTY_SHAPE
                 .addProperty(IBUFFER_PROPERTY)
@@ -107,7 +108,7 @@ public abstract class IOPrimitiveNodes {
     public static class IOAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyBasicObject(rubyClass, IO_FACTORY.newInstance(context.getCoreLibrary().getNilObject(), 0, 0, context.getCoreLibrary().getNilObject()));
+            return new RubyBasicObject(rubyClass, IO_FACTORY.newInstance(context.getCoreLibrary().getNilObject(), 0, 0, 0));
         }
     }
 
@@ -149,7 +150,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public RubyBasicObject allocate(VirtualFrame frame, RubyClass classToAllocate) {
             final Object buffer = newBufferNode.call(frame, getContext().getCoreLibrary().getIOBufferClass(), "new", null);
-            return new RubyBasicObject(classToAllocate, IO_FACTORY.newInstance(buffer, 0, 0, nil()));
+            return new RubyBasicObject(classToAllocate, IO_FACTORY.newInstance(buffer, 0, 0, 0));
         }
 
     }
@@ -308,6 +309,62 @@ public abstract class IOPrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().ioError("shutdown stream",this));
             }
             return nil();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "io_read_if_available")
+    public static abstract class IOReadIfAvailableNode extends RubiniusPrimitiveNode {
+
+        private static final FDSetFactory fdSetFactory = FDSetFactoryFactory.create();
+
+        public IOReadIfAvailableNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public Object readIfAvailable(RubyBasicObject file, int numberOfBytes) {
+            // Taken from Rubinius's IO::read_if_available.
+
+            if (numberOfBytes == 0) {
+                return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
+            }
+
+            final int fd = getDescriptor(file);
+
+            final FDSet fdSet = fdSetFactory.create();
+            fdSet.set(fd);
+
+            final Pointer timeout = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().allocateDirect(8 * 2); // Needs to be two longs.
+            timeout.putLong(0, 0);
+            timeout.putLong(8, 0);
+
+            final int res = nativeSockets().select(fd + 1, fdSet.getPointer(), PointerNodes.NULL_POINTER, PointerNodes.NULL_POINTER, timeout);
+
+            if (res == 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(Errno.EAGAIN.intValue(), this));
+            }
+
+            if (res < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(getContext().getPosix().errno(), this));
+            }
+
+            final byte[] bytes = new byte[numberOfBytes];
+            final int bytesRead = getContext().getPosix().read(fd, bytes, numberOfBytes);
+
+            if (bytesRead == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(getContext().getPosix().errno(), this));
+            }
+
+            if (bytesRead == 0) {
+                return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
+            }
+
+            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
         }
 
     }
@@ -568,8 +625,8 @@ public abstract class IOPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = {"isNil(writables)", "isNil(errorables)"})
-        public Object select(RubyArray readables, RubyBasicObject writables, RubyBasicObject errorables, int timeout) {
+        @Specialization(guards = {"isRubyArray(readables)", "isNil(writables)", "isNil(errorables)"})
+        public Object select(RubyBasicObject readables, RubyBasicObject writables, RubyBasicObject errorables, int timeout) {
             final Object[] readableObjects = ArrayNodes.slowToArray(readables);
             final int[] readableFds = getFileDescriptors(readables);
 
@@ -601,7 +658,43 @@ public abstract class IOPrimitiveNodes {
                     ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()));
         }
 
-        private int[] getFileDescriptors(RubyArray fileDescriptorArray) {
+        @TruffleBoundary
+        @Specialization(guards = { "isNil(readables)", "isRubyArray(writables)", "isNil(errorables)" })
+        public Object selectNilReadables(RubyBasicObject readables, RubyBasicObject writables, RubyBasicObject errorables, int timeout) {
+            final Object[] writableObjects = ArrayNodes.slowToArray(writables);
+            final int[] writableFds = getFileDescriptors(writables);
+
+            final FDSet writableSet = fdSetFactory.create();
+
+            for (int fd : writableFds) {
+                writableSet.set(fd);
+            }
+
+            final int result = getContext().getThreadManager().runOnce(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
+                @Override
+                public Integer block() throws InterruptedException {
+                    return nativeSockets().select(
+                            max(writableFds) + 1,
+                            PointerNodes.NULL_POINTER,
+                            writableSet.getPointer(),
+                            PointerNodes.NULL_POINTER,
+                            PointerNodes.NULL_POINTER);
+                }
+            });
+
+            if (result == -1) {
+                return nil();
+            }
+
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()),
+                    getSetObjects(writableObjects, writableFds, writableSet),
+                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()));
+        }
+
+        private int[] getFileDescriptors(RubyBasicObject fileDescriptorArray) {
+            assert RubyGuards.isRubyArray(fileDescriptorArray);
+
             final Object[] objects = ArrayNodes.slowToArray(fileDescriptorArray);
 
             final int[] fileDescriptors = new int[objects.length];

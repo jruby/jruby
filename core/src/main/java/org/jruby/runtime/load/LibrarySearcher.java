@@ -13,6 +13,7 @@ import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
+import org.jruby.ir.IRScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService.SuffixType;
 import org.jruby.util.FileResource;
@@ -238,15 +239,15 @@ class LibrarySearcher {
 
         @Override
         public void load(Ruby runtime, boolean wrap) {
-            InputStream is = null;
+            InputStream ris = null;
             try {
-                is = new LoadServiceResourceInputStream(resource.inputStream());
-                runtime.loadFile(scriptName, is, wrap);
+                ris = resource.inputStream();
+                runtime.loadFile(scriptName, new LoadServiceResourceInputStream(ris), wrap);
             } catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
             } finally {
                 try {
-                    if (is != null) is.close();
+                    if (ris != null) ris.close();
                 } catch (IOException ioE) { /* At least we tried.... */}
             }
         }
@@ -262,14 +263,13 @@ class LibrarySearcher {
             InputStream is = null;
             try {
                 is = new BufferedInputStream(resource.inputStream(), 32768);
-                Script script = CompiledScriptLoader.loadScriptFromFile(runtime, is, searchName);
+                IRScope script = CompiledScriptLoader.loadScriptFromFile(runtime, is, null, scriptName, false);
 
                 // Depending on the side-effect of the load, which loads the class but does not turn it into a script.
                 // I don't like it, but until we restructure the code a bit more, we'll need to quietly let it by here.
                 if (script == null) return;
-
-                script.setFilename(scriptName);
-                runtime.loadScript(script, wrap);
+                
+                runtime.loadScope(script, wrap);
             } catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
             } finally {
@@ -290,9 +290,10 @@ class LibrarySearcher {
             try {
                 URL url;
                 if (location.startsWith(URLResource.URI)) {
-                    url = null;
-                    runtime.getJRubyClassLoader().addURLNoIndex(URLResource.getResourceURL(runtime, location));
+                    url = URLResource.getResourceURL(runtime, location);
                 } else {
+                    // convert file urls with !/ into jar urls so the classloader
+                    // can handle them via protocol handler
                     File f = new File(location);
                     if (f.exists() || location.contains( "!")){
                         url = f.toURI().toURL();
@@ -303,9 +304,7 @@ class LibrarySearcher {
                         url = new URL(location);
                     }
                 }
-                if (url != null) {
-                    runtime.getJRubyClassLoader().addURL(url);
-                }
+                runtime.getJRubyClassLoader().addURL(url);
             } catch (MalformedURLException badUrl) {
                 runtime.newIOErrorFromException(badUrl);
             }

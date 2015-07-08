@@ -17,7 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeChildren({
         @NodeChild(value="array", type=RubyNode.class),
@@ -31,10 +31,10 @@ public abstract class ArrayReadDenormalizedNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executeRead(VirtualFrame frame, RubyArray array, int index);
+    public abstract Object executeRead(VirtualFrame frame, RubyBasicObject array, int index);
 
-    @Specialization
-    public Object read(VirtualFrame frame, RubyArray array, int index) {
+    @Specialization(guards = "isRubyArray(array)")
+    public Object read(VirtualFrame frame, RubyBasicObject array, int index) {
         if (readNode == null) {
             CompilerDirectives.transferToInterpreter();
             readNode = insert(ArrayReadNormalizedNodeGen.create(getContext(), getSourceSection(), null, null));

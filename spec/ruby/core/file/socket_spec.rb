@@ -19,15 +19,22 @@ describe "File.socket?" do
 
     rm_r filename
   end
+end
+
+describe "File.socket?" do
+  before :each do
+    # We need a really short name here.
+    # on Linux the path length is limited to 107, see unix(7).
+    @name = tmp("s")
+    @server = UNIXServer.new @name
+  end
+
+  after :each do
+    @server.close
+    rm_r @name
+  end
 
   it "returns true if the file is a socket" do
-    filename = tmp("i_am_a_socket")
-    server = UNIXServer.new filename
-    begin
-      File.socket?(filename).should == true
-    ensure
-      server.close
-      rm_r filename
-    end
+    File.socket?(@name).should == true
   end
 end

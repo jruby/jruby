@@ -55,7 +55,7 @@ public abstract class RangeNodes {
                         count++;
                     }
 
-                    store = arrayBuilder.append(store, n, yield(frame, block, n));
+                    store = arrayBuilder.appendValue(store, n, yield(frame, block, n));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {

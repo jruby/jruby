@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -48,10 +48,7 @@ public class CallBlock extends BlockBody {
 
     @Deprecated
     public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
-        Binding binding = context.currentBinding(self, Visibility.PUBLIC);
-        BlockBody body = new CallBlock(Signature.from(arity), callback, context);
-
-        return new Block(body, binding);
+        return newCallClosure(self, imClass, Signature.from(arity), callback, context);
     }
 
     private CallBlock(Signature signature, BlockCallback callback, ThreadContext context) {
@@ -91,7 +88,7 @@ public class CallBlock extends BlockBody {
                                   Binding binding, Block.Type type) {
         return callback.call(context, args, Block.NULL_BLOCK);
     }
-    
+
     public StaticScope getStaticScope() {
         return dummyScope;
     }

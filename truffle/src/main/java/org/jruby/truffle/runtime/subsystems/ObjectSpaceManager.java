@@ -16,10 +16,10 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 
@@ -36,17 +36,17 @@ public class ObjectSpaceManager {
 
     private static class FinalizerReference extends WeakReference<RubyBasicObject> {
 
-        public List<RubyProc> finalizers = new LinkedList<>();
+        public List<Object> finalizers = new LinkedList<>();
 
         public FinalizerReference(RubyBasicObject object, ReferenceQueue<? super RubyBasicObject> queue) {
             super(object, queue);
         }
 
-        public void addFinalizer(RubyProc proc) {
-            finalizers.add(proc);
+        public void addFinalizer(Object callable) {
+            finalizers.add(callable);
         }
 
-        public List<RubyProc> getFinalizers() {
+        public List<Object> getFinalizers() {
             return finalizers;
         }
 
@@ -66,7 +66,7 @@ public class ObjectSpaceManager {
         this.context = context;
     }
 
-    public synchronized void defineFinalizer(RubyBasicObject object, RubyProc proc) {
+    public synchronized void defineFinalizer(RubyBasicObject object, Object callable) {
         // Record the finalizer against the object
 
         FinalizerReference finalizerReference = finalizerReferences.get(object);
@@ -76,7 +76,7 @@ public class ObjectSpaceManager {
             finalizerReferences.put(object, finalizerReference);
         }
 
-        finalizerReference.addFinalizer(proc);
+        finalizerReference.addFinalizer(callable);
 
         // If there is no finalizer thread, start one
 
@@ -114,14 +114,14 @@ public class ObjectSpaceManager {
                 }
             });
 
-            runFinalizers(finalizerReference);
+            runFinalizers(context, finalizerReference);
         }
     }
 
-    private static void runFinalizers(FinalizerReference finalizerReference) {
+    private static void runFinalizers(RubyContext context, FinalizerReference finalizerReference) {
         try {
-            for (RubyProc proc : finalizerReference.getFinalizers()) {
-                proc.rootCall();
+            for (Object callable : finalizerReference.getFinalizers()) {
+                DebugOperations.send(context, callable, "call", null);
             }
         } catch (RaiseException e) {
             // MRI seems to silently ignore exceptions in finalizers

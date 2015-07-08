@@ -39,7 +39,7 @@ namespace :spec do
   end
 
   permute_specs "profiler", compile_flags do |t|
-    t.ruby_opts = ["--profile"]
+    t.ruby_opts = ['-I.', "--profile"]
     t.pattern = 'spec/profiler/**/*_spec.rb'
   end
 

@@ -27,7 +27,7 @@ public class WriteByteNode extends PackNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        writeBytes(frame, value);
+        writeByte(frame, value);
         return null;
     }
 

@@ -1700,9 +1700,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 IRubyObject valueInYield = RubyArray.newArrayNoCopy(context.runtime, args);
                 return setupBlock(block, evalType).yieldArray(context, valueInYield, this);  // context.getRubyClass());
             }
-            //TODO: Should next and return also catch here?
-        } catch (JumpException.BreakJump bj) {
-            return (IRubyObject) bj.getValue();
         } finally {
             block.getBinding().setVisibility(savedVisibility);
             block.getBinding().setSelf(savedBindingSelf);
@@ -1736,9 +1733,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         try {
             return setupBlock(block, evalType).yieldNonArray(context, this, this); //, context.getRubyClass());
-            //TODO: Should next and return also catch here?
-        } catch (JumpException.BreakJump bj) {
-            return (IRubyObject) bj.getValue();
         } finally {
             block.getBinding().setVisibility(savedVisibility);
             block.getBinding().setSelf(savedBindingSelf);

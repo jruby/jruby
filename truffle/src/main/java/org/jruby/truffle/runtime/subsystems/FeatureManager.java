@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
+
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.LexicalScope;
@@ -48,6 +49,11 @@ public class FeatureManager {
 
     public boolean require(String feature, Node currentNode) throws IOException {
         final RubyConstant dataConstantBefore = ModuleOperations.lookupConstant(context, LexicalScope.NONE, context.getCoreLibrary().getObjectClass(), "DATA");
+
+        if (feature.startsWith("./")) {
+            final String cwd = context.getRuntime().getCurrentDirectory();
+            feature = cwd + "/" + feature;
+        }
 
         try {
             if (isAbsolutePath(feature)) {

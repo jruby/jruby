@@ -11,7 +11,7 @@ module RbConfig
     'exeext' => '',
     'EXEEXT' => 'rubytruffle',
     'host_os' => Truffle::Primitive.host_os,
-    'libdir' => "#{Truffle::Primitive.home_directory}/lib/ruby/truffle",
+    'libdir' => "#{Truffle::Primitive.jruby_home_directory}/lib/ruby/truffle",
     'ruby_install_name' => 'rubytruffle',
     'RUBY_INSTALL_NAME' => 'rubytruffle',
     'ruby_version' => '2.2.0',

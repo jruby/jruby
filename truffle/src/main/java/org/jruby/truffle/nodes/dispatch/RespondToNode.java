@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.dispatch;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 
 public class RespondToNode extends RubyNode {
@@ -25,12 +26,16 @@ public class RespondToNode extends RubyNode {
         super(context, sourceSection);
         this.methodName = methodName;
         this.child = child;
-        dispatch = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null);
+        dispatch = new DoesRespondDispatchHeadNode(context, true, false, MissingBehavior.RETURN_MISSING, LexicalScope.NONE);
     }
 
     public boolean executeBoolean(VirtualFrame frame) {
         // TODO(cseaton): check this is actually a static "find if there is such method" and not a dynamic call to respond_to?
         return dispatch.doesRespondTo(frame, methodName, child.execute(frame));
+    }
+
+    public boolean executeBoolean(VirtualFrame frame, Object object) {
+        return dispatch.doesRespondTo(frame, methodName, object);
     }
 
     @Override

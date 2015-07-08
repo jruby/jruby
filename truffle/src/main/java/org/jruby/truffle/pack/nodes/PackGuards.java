@@ -10,8 +10,6 @@
 package org.jruby.truffle.pack.nodes;
 
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyString;
 
 import java.math.BigInteger;
 
@@ -42,11 +40,11 @@ public class PackGuards {
     }
 
     public static boolean isRubyString(Object object) {
-        return object instanceof RubyString;
+        return RubyGuards.isRubyString(object);
     }
 
     public static boolean isRubyArray(Object object) {
-        return object instanceof RubyArray;
+        return RubyGuards.isRubyArray(object);
     }
 
 }

@@ -80,18 +80,6 @@ public abstract class TypePopulator {
             
             RubyModule.MethodClumper clumper = new RubyModule.MethodClumper();
             clumper.clump(clazz);
-
-            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAllAnnotatedMethods().entrySet()) {
-                for (JavaMethodDescriptor desc : entry.getValue()) {
-                    JRubyMethod anno = desc.anno;
-                    
-                    // check for frame field reads or writes
-                    if (anno.frame() || (anno.reads() != null && anno.reads().length >= 1) || (anno.writes() != null && anno.writes().length >= 1)) {
-                        // add all names for this annotation
-                        MethodIndex.addFrameAwareMethods(anno.name());
-                    }
-                }
-            }
             
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods().entrySet()) {
                 clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);

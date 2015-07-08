@@ -18,6 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -61,6 +62,7 @@ public abstract class BignumNodes {
     }
 
     public static BigInteger getBigIntegerValue(RubyBasicObject bignum) {
+        assert RubyGuards.isRubyBignum(bignum);
         assert bignum.getDynamicObject().getShape().hasProperty(VALUE_IDENTIFIER);
         return (BigInteger) VALUE_PROPERTY.get(bignum.getDynamicObject(), true);
     }

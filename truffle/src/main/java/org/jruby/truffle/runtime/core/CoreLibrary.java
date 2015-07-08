@@ -160,7 +160,7 @@ public class CoreLibrary {
 
     private State state = State.INITIALIZING;
 
-    private final Allocator NO_ALLOCATOR = new Allocator() {
+    public final Allocator NO_ALLOCATOR = new Allocator() {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
             CompilerDirectives.transferToInterpreter();
@@ -793,6 +793,12 @@ public class CoreLibrary {
     public RubyException argumentErrorEmptyVarargs(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return argumentError("wrong number of arguments (0 for 1+)", currentNode);
+    }
+
+    public RubyException argumentErrorWrongArgumentType(Object object, String expectedType, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        String badClassName = getLogicalClass(object).getName();
+        return argumentError(String.format("wrong argument type %s (expected %s)", badClassName, expectedType), currentNode);
     }
 
     public RubyException errnoError(int errno, Node currentNode) {

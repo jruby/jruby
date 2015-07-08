@@ -9,18 +9,17 @@
  */
 package org.jruby.truffle.nodes.methods;
 
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.methods.InternalMethod;
-
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @NodeChildren({
         @NodeChild("method"),

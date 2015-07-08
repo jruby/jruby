@@ -45,6 +45,7 @@ describe "BigDecimal#div" do
   it "raises FloatDomainError if NaN is involved" do
     lambda { @one.div(@nan) }.should raise_error(FloatDomainError)
     lambda { @nan.div(@one) }.should raise_error(FloatDomainError)
+    lambda { @nan.div(@nan) }.should raise_error(FloatDomainError)
   end
 
   it "returns 0 if divided by Infinity and no precision given" do
@@ -66,6 +67,7 @@ describe "BigDecimal#div" do
 
     lambda { @zero.div(@zero) }.should raise_error(ZeroDivisionError)
     lambda { @zero_minus.div(@zero_plus) }.should raise_error(ZeroDivisionError)
+    lambda { @zero_minus.div(@zero_minus) }.should raise_error(ZeroDivisionError)
     lambda { @zero_plus.div(@zero_minus) }.should raise_error(ZeroDivisionError)
   end
 

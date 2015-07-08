@@ -779,7 +779,7 @@ public class RubyModule extends RubyObject {
         // Make sure the module we include does not already exist
         checkForCyclicInclude(module);
 
-        if (hasModuleInHierarchy((RubyModule)arg)) {
+        if (hasModuleInHierarchy((RubyModule) arg)) {
             invalidateCacheDescendants();
             return;
         }
@@ -965,8 +965,8 @@ public class RubyModule extends RubyObject {
     public void defineAnnotatedMethodsIndividually(Class clazz) {
         TypePopulator populator;
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED || RubyInstanceConfig.REFLECTED_HANDLES) {
-            // we want reflected invokers or need full traces, use default (slow) populator
+        if (Options.DEBUG_FULLTRACE.load() || Options.REFLECTED_HANDLES.load() || Options.INVOKEDYNAMIC_HANDLES.load()) {
+            // we want non-generated invokers or need full traces, use default (slow) populator
             if (DEBUG) LOG.info("trace mode, using default populator");
             populator = TypePopulator.DEFAULT;
         } else {
@@ -4154,6 +4154,7 @@ public class RubyModule extends RubyObject {
                 singletonClass = module.getSingletonClass();
                 // module/singleton methods are all defined public
                 DynamicMethod moduleMethod = dynamicMethod.dup();
+                moduleMethod.setImplementationClass(singletonClass);
                 moduleMethod.setVisibility(PUBLIC);
 
                 if (jrubyMethod.name().length == 0) {

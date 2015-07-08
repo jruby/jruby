@@ -52,6 +52,7 @@ import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ext.thread.ThreadLibrary;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
@@ -540,12 +541,11 @@ public final class Ruby implements Constantizable {
 
         if (filename.endsWith(".class")) {
             // we are presumably running a precompiled class; load directly
-            Script script = CompiledScriptLoader.loadScriptFromFile(this, inputStream, filename);
+            IRScope script = CompiledScriptLoader.loadScriptFromFile(this, inputStream, null, filename, false);
             if (script == null) {
                 throw new MainExitException(1, "error: .class file specified is not a compiled JRuby script");
             }
-            script.setFilename(filename);
-            runScript(script);
+            runInterpreter(script);
             return;
         }
 
@@ -818,13 +818,7 @@ public final class Ruby implements Constantizable {
             throw new UnsupportedOperationException();
         }
 
-        ThreadContext context = getCurrentContext();
-
-        try {
-            return script.load(context, getTopSelf(), wrap);
-        } catch (JumpException.ReturnJump rj) {
-            return (IRubyObject) rj.getValue();
-        }
+        return script.load(getCurrentContext(), getTopSelf(), wrap);
     }
 
     /**
@@ -832,13 +826,7 @@ public final class Ruby implements Constantizable {
      * already-prepared, already-pushed scope for the script body.
      */
     public IRubyObject runScriptBody(Script script) {
-        ThreadContext context = getCurrentContext();
-
-        try {
-            return script.__file__(context, getTopSelf(), Block.NULL_BLOCK);
-        } catch (JumpException.ReturnJump rj) {
-            return (IRubyObject) rj.getValue();
-        }
+        return script.__file__(getCurrentContext(), getTopSelf(), Block.NULL_BLOCK);
     }
 
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
@@ -846,11 +834,7 @@ public final class Ruby implements Constantizable {
             throw new UnsupportedOperationException();
         }
 
-        try {
-            return Interpreter.getInstance().execute(this, parseResult, self);
-        } catch (JumpException.ReturnJump rj) {
-            return (IRubyObject) rj.getValue();
-        }
+        return Interpreter.getInstance().execute(this, parseResult, self);
    }
 
     public IRubyObject runInterpreter(ThreadContext context, Node rootNode, IRubyObject self) {
@@ -862,13 +846,7 @@ public final class Ruby implements Constantizable {
             getTruffleContext().execute((RootNode) rootNode);
             return getNil();
         } else {
-            try {
-
-                // FIXME: retrieve from IRManager unless lifus does it later
-                return Interpreter.getInstance().execute(this, rootNode, self);
-            } catch (JumpException.ReturnJump rj) {
-                return (IRubyObject) rj.getValue();
-            }
+            return Interpreter.getInstance().execute(this, rootNode, self);
         }
     }
 
@@ -2707,7 +2685,7 @@ public final class Ruby implements Constantizable {
 
         try {
             // Get IR from .ir file
-            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file)));
+            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), new ByteList(file.getBytes())));
         } catch (IOException e) {
             // FIXME: What is something actually throws IOException
             return parseFileAndGetAST(in, file, scope, lineNumber, false);
@@ -2728,7 +2706,7 @@ public final class Ruby implements Constantizable {
         if (!RubyInstanceConfig.IR_READING) return parseFileFromMainAndGetAST(in, file, scope);
 
         try {
-            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file)));
+            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), new ByteList(file.getBytes())));
         } catch (IOException e) {
             System.out.println(e);
             e.printStackTrace();
@@ -2921,8 +2899,27 @@ public final class Ruby implements Constantizable {
             }
 
             runInterpreter(context, parseResult, self);
-        } catch (JumpException.ReturnJump rj) {
-            return;
+        } finally {
+            context.postNodeEval();
+            ThreadContext.popBacktrace(context);
+        }
+    }
+
+    public void loadScope(IRScope scope, boolean wrap) {
+        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, true) : getTopSelf();
+        ThreadContext context = getCurrentContext();
+        String file = context.getFile();
+
+        try {
+            ThreadContext.pushBacktrace(context, "(root)", file, 0);
+            context.preNodeEval(self);
+
+            if (wrap) {
+                // toss an anonymous module into the search path
+                scope.getStaticScope().setModule(RubyModule.newModule(this));
+            }
+
+            runInterpreter(context, scope, self);
         } finally {
             context.postNodeEval();
             ThreadContext.popBacktrace(context);
@@ -2932,65 +2929,61 @@ public final class Ruby implements Constantizable {
     public void compileAndLoadFile(String filename, InputStream in, boolean wrap) {
         InputStream readStream = in;
 
+        Script script = null;
+        ScriptAndCode scriptAndCode = null;
+        String className = null;
+
         try {
-            Script script = null;
-            ScriptAndCode scriptAndCode = null;
-            String className = null;
+            // read full contents of file, hash it, and try to load that class first
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int num;
+            while ((num = in.read(buffer)) > -1) {
+                baos.write(buffer, 0, num);
+            }
+            buffer = baos.toByteArray();
+            String hash = JITCompiler.getHashForBytes(buffer);
+            className = JITCompiler.RUBY_JIT_PREFIX + ".FILE_" + hash;
 
+            // FIXME: duplicated from ClassCache
+            Class contents;
             try {
-                // read full contents of file, hash it, and try to load that class first
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                byte[] buffer = new byte[1024];
-                int num;
-                while ((num = in.read(buffer)) > -1) {
-                    baos.write(buffer, 0, num);
+                contents = jrubyClassLoader.loadClass(className);
+                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                    LOG.info("found jitted code for " + filename + " at class: " + className);
                 }
-                buffer = baos.toByteArray();
-                String hash = JITCompiler.getHashForBytes(buffer);
-                className = JITCompiler.RUBY_JIT_PREFIX + ".FILE_" + hash;
-
-                // FIXME: duplicated from ClassCache
-                Class contents;
-                try {
-                    contents = jrubyClassLoader.loadClass(className);
-                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        LOG.info("found jitted code for " + filename + " at class: " + className);
-                    }
-                    script = (Script)contents.newInstance();
-                    readStream = new ByteArrayInputStream(buffer);
-                } catch (ClassNotFoundException cnfe) {
-                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        LOG.info("no jitted code in classloader for file " + filename + " at class: " + className);
-                    }
-                } catch (InstantiationException ie) {
-                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
-                    }
-                } catch (IllegalAccessException iae) {
-                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
-                    }
+                script = (Script) contents.newInstance();
+                readStream = new ByteArrayInputStream(buffer);
+            } catch (ClassNotFoundException cnfe) {
+                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                    LOG.info("no jitted code in classloader for file " + filename + " at class: " + className);
                 }
-            } catch (IOException ioe) {
-                // TODO: log something?
+            } catch (InstantiationException ie) {
+                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                    LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
+                }
+            } catch (IllegalAccessException iae) {
+                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                    LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
+                }
             }
+        } catch (IOException ioe) {
+            // TODO: log something?
+        }
 
-            // script was not found in cache above, so proceed to compile
-            RootNode scriptNode = (RootNode) parseFile(readStream, filename, null);
-            if (script == null) {
-                scriptAndCode = tryCompile(scriptNode, new ClassDefiningJRubyClassLoader(jrubyClassLoader));
-                if (scriptAndCode != null) script = scriptAndCode.script();
-            }
+        // script was not found in cache above, so proceed to compile
+        RootNode scriptNode = (RootNode) parseFile(readStream, filename, null);
+        if (script == null) {
+            scriptAndCode = tryCompile(scriptNode, new ClassDefiningJRubyClassLoader(jrubyClassLoader));
+            if (scriptAndCode != null) script = scriptAndCode.script();
+        }
 
-            if (script == null) {
-                failForcedCompile(scriptNode);
+        if (script == null) {
+            failForcedCompile(scriptNode);
 
-                runInterpreter(scriptNode);
-            } else {
-                runScript(script, wrap);
-            }
-        } catch (JumpException.ReturnJump rj) {
-            return;
+            runInterpreter(scriptNode);
+        } else {
+            runScript(script, wrap);
         }
     }
 
@@ -2999,14 +2992,7 @@ public final class Ruby implements Constantizable {
     }
 
     public void loadScript(Script script, boolean wrap) {
-        IRubyObject self = getTopSelf();
-        ThreadContext context = getCurrentContext();
-
-        try {
-            script.load(context, self, wrap);
-        } catch (JumpException.ReturnJump rj) {
-            return;
-        }
+        script.load(getCurrentContext(), getTopSelf(), wrap);
     }
 
     /**
@@ -3027,8 +3013,6 @@ public final class Ruby implements Constantizable {
             extension.basicLoad(this);
         } catch (IOException ioe) {
             throw newIOErrorFromException(ioe);
-        } catch (JumpException.ReturnJump rj) {
-            return;
         } finally {
             context.postNodeEval();
         }
@@ -3146,7 +3130,9 @@ public final class Ruby implements Constantizable {
 
     public void callEventHooks(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
         if (context.isEventHooksEnabled()) {
-            for (EventHook eventHook : eventHooks) {
+            for (int i = 0; i < eventHooks.length; i++) {
+                EventHook eventHook = eventHooks[i];
+
                 if (eventHook.isInterestedInEvent(event)) {
                     eventHook.event(context, event, file, line, name, type);
                 }

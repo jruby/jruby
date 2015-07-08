@@ -20,12 +20,14 @@ public class FormatDirective {
 
     private final int spacePadding;
     private final int zeroPadding;
+    private final boolean leftJustified;
     private final int precision;
     private final char type;
 
-    public FormatDirective(int spacePadding, int zeroPadding, int precision, char type) {
+    public FormatDirective(int spacePadding, int zeroPadding, boolean leftJustified, int precision, char type) {
         this.spacePadding = spacePadding;
         this.zeroPadding = zeroPadding;
+        this.leftJustified = leftJustified;
         this.precision = precision;
         this.type = type;
     }
@@ -36,6 +38,10 @@ public class FormatDirective {
 
     public int getZeroPadding() {
         return zeroPadding;
+    }
+
+    public boolean getLeftJustified() {
+        return leftJustified;
     }
 
     public int getPrecision() {

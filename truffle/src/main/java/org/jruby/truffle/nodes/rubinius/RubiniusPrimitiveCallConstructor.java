@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.arguments.NodeArrayToObjectArrayNode;
@@ -20,8 +21,6 @@ import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-
-import com.oracle.truffle.api.source.SourceSection;
 
 public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstructor {
 

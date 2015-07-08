@@ -1,7 +1,0 @@
-fails:Module#class_variable_set sets the class variable with the given name to the given value
-fails:Module#class_variable_set sets a class variable on a metaclass
-fails:Module#class_variable_set sets the value of a class variable with the given name defined in an included module
-fails:Module#class_variable_set raises a RuntimeError when self is frozen
-fails:Module#class_variable_set converts a non string/symbol/fixnum name to string using to_str
-fails:Module#class_variable_set raises a TypeError when the given names can't be converted to strings using to_str
-fails:Module#class_variable_set raises a NameError when the given name is not allowed

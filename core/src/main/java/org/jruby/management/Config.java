@@ -144,10 +144,6 @@ public class Config implements ConfigMBean {
         return RubyInstanceConfig.FULL_TRACE_ENABLED;
     }
     
-    public boolean isLazyHandlesEnabled() {
-        return RubyInstanceConfig.LAZYHANDLES_COMPILE;
-    }
-    
     public boolean isShowBytecode() {
         return ruby.get().getInstanceConfig().isShowBytecode();
     }

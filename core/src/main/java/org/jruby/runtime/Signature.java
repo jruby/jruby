@@ -18,7 +18,7 @@ import org.jruby.util.TypeConverter;
  * A representation of a Ruby method signature (argument layout, min/max, keyword layout, rest args).
  */
 public class Signature {
-    public enum Rest { NONE, NORM, ANON, STAR }
+    public static enum Rest { NONE, NORM, ANON, STAR }
 
     public static final Signature NO_ARGUMENTS = new Signature(0, 0, 0, Rest.NONE, 0, 0, false);
     public static final Signature ONE_ARGUMENT = new Signature(1, 0, 0, Rest.NONE, 0, 0, false);
@@ -36,7 +36,7 @@ public class Signature {
     private final int kwargs;
     private final int requiredKwargs;
     private final Arity arity;
-    private boolean restKwargs;
+    private final boolean restKwargs;
 
     public Signature(int pre, int opt, int post, Rest rest, int kwargs, int requiredKwargs, boolean restKwargs) {
         this.pre = pre;

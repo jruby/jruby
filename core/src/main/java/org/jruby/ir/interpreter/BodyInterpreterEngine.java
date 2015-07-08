@@ -47,7 +47,6 @@ public class BodyInterpreterEngine extends InterpreterEngine {
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        IRScope scope = currScope.getIRScope();
 
         // Init profiling this scope
         boolean debug = IRRuntimeHelpers.isDebug();
@@ -205,7 +204,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
             } catch (Throwable t) {
                 ipc = instr.getRPC();
                 if (debug) {
-                    Interpreter.LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                    Interpreter.LOG.info("in : " + interpreterContext.getScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                     Interpreter.LOG.info("ipc for rescuer: " + ipc);
                 }
 

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.pack.nodes.format;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -38,6 +39,7 @@ public abstract class FormatFloatNode extends PackNode {
     }
 
     @Specialization
+    @CompilerDirectives.TruffleBoundary
     public ByteList format(double value) {
         // TODO CS 3-May-15 write this without building a string and formatting
 

@@ -118,13 +118,12 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       jar 'org.codehaus.plexus:plexus-io:2.0.5'
     end
 
+    rules = { :requireMavenVersion => { :version => '[3.3.0,)' } }
     unless model.version =~ /-SNAPSHOT/
-      plugin :enforcer, '1.4' do
-        execute_goal :enforce, :rules => {
-                       :requireReleaseDeps => {
-                         :message => 'No Snapshots Allowed!'
-                       } }
-      end
+       rules[:requireReleaseDeps] = { :message => 'No Snapshots Allowed!' }
+    end
+    plugin :enforcer, '1.4' do
+      execute_goal :enforce, :rules => rules
     end
 
     plugin :compiler, '3.1'

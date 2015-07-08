@@ -451,7 +451,6 @@ public class RubyLexer {
             ruby_sourceline++;
             line_count++;
             lex_pbeg = lex_p = 0;
-//            System.out.println("VLEN: " + v.length() + "V = (" + v.toString() + ")");
             lex_pend = lex_p + v.length();
             lexb = v;
             flush();
@@ -471,7 +470,6 @@ public class RubyLexer {
             }
         }
 
-//        System.out.println("C: " + (char) c + ", LEXP: " + lex_p + ", PEND: "+ lex_pend);
         return c;
     }
 
@@ -1962,6 +1960,8 @@ public class RubyLexer {
                     yaccValue = getPosition();
                 }
 
+                if (lex_state == LexState.EXPR_BEG) commandStart = true;
+
                 if (keyword.id0 == Tokens.kDO) return doKeyword(state);
 
                 if (state == LexState.EXPR_BEG || state == LexState.EXPR_VALUE || state == LexState.EXPR_LABELARG) {
@@ -2015,7 +2015,6 @@ public class RubyLexer {
     
     private int leftCurly() {
         braceNest++;
-        //System.out.println("lcurly: " + braceNest);
         if (leftParenBegin > 0 && leftParenBegin == parenNest) {
             setState(LexState.EXPR_BEG);
             leftParenBegin = 0;
@@ -2073,8 +2072,13 @@ public class RubyLexer {
             
             if (tok != 0) return tok;
         }
-        
-        determineExpressionState();
+
+        if (isAfterOperator()) {
+            setState(LexState.EXPR_ARG);
+        } else {
+            if (lex_state == LexState.EXPR_CLASS) commandStart = true;
+            setState(LexState.EXPR_BEG);
+        }
         
         switch (c) {
         case '=':
@@ -2329,7 +2333,6 @@ public class RubyLexer {
         cmdArgumentState.restart();
         setState(LexState.EXPR_ENDARG);
         yaccValue = "}";
-        //System.out.println("braceNest: " + braceNest);
         int tok = braceNest == 0 ? Tokens.tSTRING_DEND : Tokens.tRCURLY;
         braceNest--;
         return tok;

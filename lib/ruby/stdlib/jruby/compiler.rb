@@ -175,6 +175,36 @@ module JRuby::Compiler
               nil
           )
           cls.visit_source filename, nil
+
+          cls.visit_field(
+              Opcodes::ACC_PRIVATE | Opcodes::ACC_STATIC | Opcodes::ACC_FINAL,
+              "script_ir",
+              "Ljava/lang/String;",
+              nil,
+              nil
+          )
+
+          static = SkinnyMethodAdapter.new(
+              cls,
+              Opcodes::ACC_PUBLIC | Opcodes::ACC_STATIC,
+              "<clinit>",
+              "()V",
+              nil,
+              nil)
+          static.start
+
+          # put String back together
+          static.newobj("java/lang/StringBuilder")
+          static.dup
+          static.invokespecial("java/lang/StringBuilder", "<init>", "()V")
+          pieces.each do |piece|
+            static.ldc(piece)
+            static.invokevirtual("java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;")
+          end
+          static.invokevirtual("java/lang/Object", "toString", "()Ljava/lang/String;")
+          static.putstatic(pathname, "script_ir", "Ljava/lang/String;")
+          static.voidreturn
+          static.end
           
           main = SkinnyMethodAdapter.new(
               cls,
@@ -189,22 +219,34 @@ module JRuby::Compiler
           main.aload(1)
           main.aload(1)
 
-          # put String back together
-          main.newobj("java/lang/StringBuilder")
-          main.dup
-          main.invokespecial("java/lang/StringBuilder", "<init>", "()V")
-          pieces.each do |piece|
-            main.ldc(piece)
-            main.invokevirtual("java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;")
-          end
-          main.invokevirtual("java/lang/Object", "toString", "()Ljava/lang/String;")
+          main.getstatic(pathname, "script_ir", "Ljava/lang/String;")
 
           main.ldc("ISO-8859-1")
           main.invokevirtual("java/lang/String", "getBytes", "(Ljava/lang/String;)[B")
-          main.invokestatic("org/jruby/ir/runtime/IRRuntimeHelpers", "decodeScopeFromBytes", "(Lorg/jruby/Ruby;[B)Lorg/jruby/ir/IRScope;")
+          main.ldc(filename) # TODO: can we determine actual path to this class?
+          main.invokestatic("org/jruby/ir/runtime/IRRuntimeHelpers", "decodeScopeFromBytes", "(Lorg/jruby/Ruby;[BLjava/lang/String;)Lorg/jruby/ir/IRScope;")
           main.invokevirtual("org/jruby/Ruby", "runInterpreter", "(Lorg/jruby/ParseResult;)Lorg/jruby/runtime/builtin/IRubyObject;")
           main.voidreturn
           main.end
+
+          loadIR = SkinnyMethodAdapter.new(
+              cls,
+              Opcodes::ACC_PUBLIC | Opcodes::ACC_STATIC,
+              "loadIR",
+              "(Lorg/jruby/Ruby;Ljava/lang/String;)Lorg/jruby/ir/IRScope;",
+              nil,
+              nil)
+          loadIR.start
+          loadIR.aload(0)
+
+          loadIR.getstatic(pathname, "script_ir", "Ljava/lang/String;")
+
+          loadIR.ldc("ISO-8859-1")
+          loadIR.invokevirtual("java/lang/String", "getBytes", "(Ljava/lang/String;)[B")
+          loadIR.aload(1)
+          loadIR.invokestatic("org/jruby/ir/runtime/IRRuntimeHelpers", "decodeScopeFromBytes", "(Lorg/jruby/Ruby;[BLjava/lang/String;)Lorg/jruby/ir/IRScope;")
+          loadIR.areturn
+          loadIR.end
 
           # prepare target
           class_filename = filename.sub(/(\.rb)?$/, '.class')

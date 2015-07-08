@@ -25,7 +25,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.util.cli.Options;
@@ -116,8 +115,8 @@ public class ExceptionTranslatingNode extends RubyNode {
                 builder.append(value.getClass().getName());
                 builder.append(")");
 
-                if (value instanceof RubyArray) {
-                    final RubyArray array = (RubyArray) value;
+                if (RubyGuards.isRubyArray(value)) {
+                    final RubyBasicObject array = (RubyBasicObject) value;
                     builder.append("[");
 
                     if (ArrayNodes.getStore(array) == null) {

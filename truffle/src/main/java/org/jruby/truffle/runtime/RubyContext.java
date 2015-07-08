@@ -19,7 +19,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.tools.CoverageTracker;
@@ -35,6 +34,7 @@ import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
@@ -63,6 +63,7 @@ import org.jruby.util.cli.Options;
 import java.io.File;
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -198,7 +199,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         // Set the load path
 
-        final RubyArray loadPath = (RubyArray) coreLibrary.getGlobalVariablesObject().getInstanceVariable("$:");
+        final RubyBasicObject loadPath = (RubyBasicObject) coreLibrary.getGlobalVariablesObject().getInstanceVariable("$:");
 
         final String home = runtime.getInstanceConfig().getJRubyHome();
 
@@ -399,8 +400,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             return runtime.newFloat((double) object);
         } else if (object instanceof RubyString) {
             return toJRuby((RubyString) object);
-        } else if (object instanceof RubyArray) {
-            return toJRuby((RubyArray) object);
+        } else if (RubyGuards.isRubyArray(object)) {
+            return toJRubyArray((RubyBasicObject) object);
         } else if (object instanceof RubyEncoding) {
             return toJRuby((RubyEncoding) object);
         } else {
@@ -418,7 +419,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return store;
     }
 
-    public org.jruby.RubyArray toJRuby(RubyArray array) {
+    public org.jruby.RubyArray toJRubyArray(RubyBasicObject array) {
+        assert RubyGuards.isRubyArray(array);
         return runtime.newArray(toJRuby(ArrayNodes.slowToArray(array)));
     }
 
@@ -618,7 +620,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         if (inputFile.equals("-e")) {
             // Assume UTF-8 for the moment
-            source = Source.fromBytes(runtime.getInstanceConfig().inlineScript(), "-e", new BytesDecoder.UTF8BytesDecoder());
+            source = Source.fromText(new String(runtime.getInstanceConfig().inlineScript(), StandardCharsets.UTF_8), "-e");
         } else {
             source = sourceManager.forFile(inputFile);
         }

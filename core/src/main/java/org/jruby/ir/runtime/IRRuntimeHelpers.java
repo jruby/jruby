@@ -1400,9 +1400,9 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRScope decodeScopeFromBytes(Ruby runtime, byte[] scopeBytes) {
+    public static IRScope decodeScopeFromBytes(Ruby runtime, byte[] scopeBytes, String filename) {
         try {
-            return IRReader.load(runtime.getIRManager(), new IRReaderStream(runtime.getIRManager(), new ByteArrayInputStream(scopeBytes)));
+            return IRReader.load(runtime.getIRManager(), new IRReaderStream(runtime.getIRManager(), new ByteArrayInputStream(scopeBytes), new ByteList(filename.getBytes())));
         } catch (IOException ioe) {
             // should not happen for bytes
             return null;

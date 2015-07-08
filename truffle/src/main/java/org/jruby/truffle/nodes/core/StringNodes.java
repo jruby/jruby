@@ -58,6 +58,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
+import org.jruby.truffle.nodes.rubinius.ByteArrayNodes;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.runtime.NotProvided;
@@ -65,7 +66,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.object.BasicObjectType;
-import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
 
@@ -1022,8 +1022,8 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubiniusByteArray data(RubyString string) {
-            return new RubiniusByteArray(getContext().getCoreLibrary().getByteArrayClass(), getByteList(string));
+        public RubyBasicObject data(RubyString string) {
+            return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), getByteList(string));
         }
     }
 

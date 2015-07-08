@@ -313,10 +313,13 @@ module ModuleSpecs
   class CVars
     @@cls = :class
 
+    # Singleton class lexical scopes are ignored for class variables
     class << self
       def cls
+        # This looks in the parent lexical scope, class CVars
         @@cls
       end
+      # This actually adds it to the parent lexical scope, class CVars
       @@meta = :meta
     end
 

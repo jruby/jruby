@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
+import org.jruby.truffle.runtime.ConstantReplacer;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -26,9 +27,10 @@ public class ReadConstantNode extends RubyNode {
 
     public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, LexicalScope lexicalScope) {
         super(context, sourceSection);
-        this.name = name;
+
+        this.name = ConstantReplacer.replacementName(sourceSection, name);
         this.getConstantNode =
-                GetConstantNodeGen.create(context, sourceSection, receiver, new LiteralNode(context, sourceSection, name),
+                GetConstantNodeGen.create(context, sourceSection, receiver, new LiteralNode(context, sourceSection, this.name),
                         LookupConstantNodeGen.create(context, sourceSection, lexicalScope, null, null));
     }
 

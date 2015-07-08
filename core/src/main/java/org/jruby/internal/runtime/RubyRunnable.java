@@ -99,8 +99,6 @@ public class RubyRunnable implements ThreadedRunnable {
                 IRubyObject result = proc.call(context, arguments);
                 if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.THREAD_END, null, frameClass);
                 rubyThread.cleanTerminate(result);
-            } catch (JumpException.ReturnJump rj) {
-                rubyThread.exceptionRaised(rj.buildException(runtime));
             } catch (MainExitException mee) {
                 // Someone called exit!, so we need to kill the main thread
                 runtime.getThreadService().getMainThread().kill();

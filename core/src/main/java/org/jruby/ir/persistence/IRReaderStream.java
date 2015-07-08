@@ -44,14 +44,17 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     private IRManager manager;
     private final List<IRScope> scopes = new ArrayList<>();
     private IRScope currentScope = null; // FIXME: This is not thread-safe and more than a little gross
+    /** Filename to use for the script */
+    private final ByteList filename;
 
-    public IRReaderStream(IRManager manager, InputStream stream) {
+    public IRReaderStream(IRManager manager, InputStream stream, ByteList filename) {
         ByteBuffer buf = readIntoBuffer(stream);
         this.manager = manager;
         this.buf = buf;
+        this.filename = filename;
     }
 
-    public IRReaderStream(IRManager manager, File file) {
+    public IRReaderStream(IRManager manager, File file, ByteList filename) {
         this.manager = manager;
         ByteBuffer buf = null;
         try (FileInputStream fis = new FileInputStream(file)){
@@ -61,6 +64,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
         }
 
         this.buf = buf;
+        this.filename = filename;
     }
 
     private ByteBuffer readIntoBuffer(InputStream stream) {
@@ -76,6 +80,11 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             Logger.getLogger(IRReaderStream.class.getName()).log(Level.SEVERE, null, ex);
         }
         return buf;
+    }
+
+    @Override
+    public ByteList getFilename() {
+        return filename;
     }
 
     @Override
@@ -424,6 +433,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case BOOLEAN: return org.jruby.ir.operands.Boolean.decode(this);
             case CURRENT_SCOPE: return CurrentScope.decode(this);
             case DYNAMIC_SYMBOL: return DynamicSymbol.decode(this);
+            case FILENAME: return Filename.decode(this);
             case FIXNUM: return Fixnum.decode(this);
             case FLOAT: return org.jruby.ir.operands.Float.decode(this);
             case FROZEN_STRING: return FrozenString.decode(this);

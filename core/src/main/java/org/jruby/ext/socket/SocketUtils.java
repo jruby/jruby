@@ -29,6 +29,7 @@ package org.jruby.ext.socket;
 import jnr.constants.platform.AddressFamily;
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.Sock;
+import jnr.netdb.Protocol;
 import jnr.netdb.Service;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -75,12 +76,12 @@ public class SocketUtils {
         Ruby runtime = context.runtime;
 
         try {
-            return runtime.newString(InetAddress.getLocalHost().getHostName());
+            return RubyString.newInternalFromJavaExternal(context.runtime, InetAddress.getLocalHost().getHostName());
 
         } catch(UnknownHostException e) {
 
             try {
-                return runtime.newString(InetAddress.getByAddress(new byte[]{0,0,0,0}).getHostName());
+                return RubyString.newInternalFromJavaExternal(context.runtime, InetAddress.getByAddress(new byte[]{0, 0, 0, 0}).getHostName());
 
             } catch(UnknownHostException e2) {
                 throw sockerr(runtime, "gethostname: name or service not known");
@@ -509,7 +510,7 @@ public class SocketUtils {
 
     public static IRubyObject getaddress(ThreadContext context, IRubyObject hostname) {
         try {
-            return context.runtime.newString(InetAddress.getByName(hostname.convertToString().toString()).getHostAddress());
+            return RubyString.newInternalFromJavaExternal(context.runtime, InetAddress.getByName(hostname.convertToString().toString()).getHostAddress());
         } catch(UnknownHostException e) {
             throw sockerr(context.runtime, "getaddress: name or service not known");
         }
@@ -617,6 +618,20 @@ public class SocketUtils {
         }
 
         return protocolFamily;
+    }
+
+    static Protocol protocolFromArg(IRubyObject protocol) {
+        Protocol proto;
+
+        if(protocol instanceof RubyString || protocol instanceof RubySymbol) {
+            String protocolString = protocol.toString();
+            proto = Protocol.getProtocolByName(protocolString);
+        } else {
+            int protocolInt = RubyNumeric.fix2int(protocol);
+            proto = Protocol.getProtocolByNumber(protocolInt);
+        }
+
+        return proto;
     }
     
     public static int portToInt(IRubyObject port) {

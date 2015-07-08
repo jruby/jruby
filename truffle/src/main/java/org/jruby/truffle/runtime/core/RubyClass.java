@@ -81,7 +81,7 @@ public class RubyClass extends RubyModule {
     protected void unsafeSetSuperclass(RubyClass superClass) {
         assert parentModule == null;
 
-        parentModule = superClass;
+        parentModule = superClass.start;
         superClass.addDependent(this);
 
         newVersion();

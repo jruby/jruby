@@ -52,7 +52,18 @@ public enum ArgumentType {
     }
 
     public RubyArray toArrayForm(Ruby runtime, String name) {
-        return anonymous ? runtime.newArray(runtime.newSymbol(symbolicName)) : runtime.newArray(runtime.newSymbol(symbolicName), runtime.newSymbol(name));
+        // we check for null name here as a precaution, since it will certainly blow up newSymbol (#3086)
+        return anonymous || name == null ? runtime.newArray(runtime.newSymbol(symbolicName)) : runtime.newArray(runtime.newSymbol(symbolicName), runtime.newSymbol(name));
+    }
+
+    public ArgumentType anonymousForm() {
+        switch (this) {
+            case opt: return anonopt;
+            case req: return anonreq;
+            case rest: return anonrest;
+            case keyrest: return anonkeyrest;
+        }
+        return this;
     }
 
     public final String symbolicName;

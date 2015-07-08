@@ -66,4 +66,5 @@ public interface IRReaderDecoder {
     public IRScope decodeScope();
 
     public TemporaryVariableType decodeTemporaryVariableType();
+    public ByteList getFilename();
 }

@@ -42,7 +42,7 @@ import javax.inject.Inject;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.ScriptingContainer;
-import org.jruby.embed.IsolatedScriptingContainer;
+import org.jruby.embed.osgi.OSGiIsolatedScriptingContainer;
 import org.junit.Test;
 import org.junit.Ignore;
 import org.junit.runner.RunWith;
@@ -80,7 +80,7 @@ public class JRubyOsgiEmbedTest {
         //System.setProperty( "jruby.debug.loadService", "true" );
         //System.setProperty( "jruby.native.enabled", "true" );
 
-        IsolatedScriptingContainer jruby = new IsolatedScriptingContainer();
+	OSGiIsolatedScriptingContainer jruby = new OSGiIsolatedScriptingContainer();
         jruby.addBundleToLoadPath( "org.jruby.osgi.scripts-bundle" );
         jruby.addBundleToGemPath( FrameworkUtil.getBundle( Gems.class ) );
 
@@ -93,7 +93,7 @@ public class JRubyOsgiEmbedTest {
 
         String gemPath = (String) jruby.runScriptlet( "Gem::Specification.dirs.inspect" );
         gemPath = gemPath.replaceAll( "bundle[^:]*://[^/]*", "bundle:/" );
-        assertEquals( gemPath, "[\"uri:bundle://specifications\", \"uri:classloader://META-INF/jruby.home/lib/ruby/gems/shared/specifications\", \"uri:classloader:/specifications\"]" );
+        assertEquals( gemPath, "[\"uri:bundle://specifications\", \"uri:classloader:/specifications\"]" );
 
         // ensure we can load rake from the default gems
         boolean loaded = (Boolean) jruby.runScriptlet( "require 'rake'" );

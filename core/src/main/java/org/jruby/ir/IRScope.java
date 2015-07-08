@@ -118,7 +118,6 @@ public abstract class IRScope implements ParseResult {
     private TemporaryLocalVariable currentScopeVariable;
 
     Map<String, LocalVariable> localVars;
-    Map<String, LocalVariable> evalScopeVars;
 
     EnumSet<IRFlags> flags = EnumSet.noneOf(IRFlags.class);
 
@@ -818,10 +817,6 @@ public abstract class IRScope implements ParseResult {
         LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name));
         localVars.put(name, lvar);
         return lvar;
-    }
-
-    protected void initEvalScopeVariableAllocator(boolean reset) {
-        if (reset || evalScopeVars == null) evalScopeVars = new HashMap<>();
     }
 
     public TemporaryLocalVariable createTemporaryVariable() {

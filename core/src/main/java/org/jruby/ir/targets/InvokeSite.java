@@ -186,6 +186,7 @@ public abstract class InvokeSite extends MutableCallSite {
         boolean blockGiven = signature.lastArgType() == Block.class;
 
         MethodHandle mh = Bootstrap.buildNativeHandle(site, method, blockGiven);
+        if (mh == null) mh = Bootstrap.buildIndyHandle(site, method, method.getImplementationClass());
         if (mh == null) mh = Bootstrap.buildJittedHandle(site, method, blockGiven);
         if (mh == null) mh = Bootstrap.buildGenericHandle(site, method, dispatchClass);
 

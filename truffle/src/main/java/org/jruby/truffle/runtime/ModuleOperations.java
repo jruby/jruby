@@ -13,10 +13,12 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.util.Function;
 import org.jruby.util.IdUtil;
 
 import java.util.HashMap;
@@ -57,7 +59,7 @@ public abstract class ModuleOperations {
         constants.putAll(module.getConstants());
 
         // Look in ancestors
-        for (RubyModule ancestor : module.includedModules()) {
+        for (RubyModule ancestor : module.prependedAndIncludedModules()) {
             for (Map.Entry<String, RubyConstant> constant : ancestor.getConstants().entrySet()) {
                 if (!constants.containsKey(constant.getKey())) {
                     constants.put(constant.getKey(), constant.getValue());
@@ -124,7 +126,7 @@ public abstract class ModuleOperations {
                 return constant;
             }
 
-            for (RubyModule ancestor : objectClass.includedModules()) {
+            for (RubyModule ancestor : objectClass.prependedAndIncludedModules()) {
                 constant = ancestor.getConstants().get(name);
 
                 if (constant != null) {
@@ -247,18 +249,9 @@ public abstract class ModuleOperations {
     public static InternalMethod lookupMethod(RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
-        InternalMethod method;
-
-        // Look in the current module
-        method = module.getMethods().get(name);
-
-        if (method != null) {
-            return method;
-        }
-
         // Look in ancestors
-        for (RubyModule ancestor : module.parentAncestors()) {
-            method = ancestor.getMethods().get(name);
+        for (RubyModule ancestor : module.ancestors()) {
+            InternalMethod method = ancestor.getMethods().get(name);
 
             if (method != null) {
                 return method;
@@ -266,7 +259,6 @@ public abstract class ModuleOperations {
         }
 
         // Nothing found
-
         return null;
     }
 
@@ -303,29 +295,54 @@ public abstract class ModuleOperations {
 
         final Map<String, Object> classVariables = new HashMap<>();
 
-        // Look in the current module
-        classVariables.putAll(module.getClassVariables());
-
-        // Look in ancestors
-        for (RubyModule ancestor : module.parentAncestors()) {
-            for (Map.Entry<String, Object> classVariable : ancestor.getClassVariables().entrySet()) {
-                if (!classVariables.containsKey(classVariable.getKey())) {
-                    classVariables.put(classVariable.getKey(), classVariable.getValue());
-                }
+        classVariableLookup(module, new Function<RubyModule, Object>() {
+            @Override
+            public Object apply(RubyModule module) {
+                classVariables.putAll(module.getClassVariables());
+                return null;
             }
-        }
+        });
 
         return classVariables;
     }
 
     @TruffleBoundary
-    public static Object lookupClassVariable(RubyModule module, String name) {
+    public static Object lookupClassVariable(RubyModule module, final String name) {
+        return classVariableLookup(module, new Function<RubyModule, Object>() {
+            @Override
+            public Object apply(RubyModule module) {
+                return module.getClassVariables().get(name);
+            }
+        });
+    }
+
+    @TruffleBoundary
+    public static void setClassVariable(RubyModule module, final String name, final Object value, final Node currentNode) {
+        RubyModule found = classVariableLookup(module, new Function<RubyModule, RubyModule>() {
+            @Override
+            public RubyModule apply(RubyModule module) {
+                if (module.getClassVariables().containsKey(name)) {
+                    module.setClassVariable(currentNode, name, value);
+                    return module;
+                } else {
+                    return null;
+                }
+            }
+        });
+
+        if (found == null) {
+            // Not existing class variable - set in the current module
+            module.setClassVariable(currentNode, name, value);
+        }
+    }
+
+    private static <R> R classVariableLookup(RubyModule module, Function<RubyModule, R> action) {
         CompilerAsserts.neverPartOfCompilation();
 
         // Look in the current module
-        Object value = module.getClassVariables().get(name);
-        if (value != null) {
-            return value;
+        R result = action.apply(module);
+        if (result != null) {
+            return result;
         }
 
         // If singleton class, check attached module.
@@ -334,48 +351,22 @@ public abstract class ModuleOperations {
             if (klass.isSingleton() && klass.getAttached() != null) {
                 module = klass.getAttached();
 
-                value = module.getClassVariables().get(name);
-                if (value != null) {
-                    return value;
+                result = action.apply(module);
+                if (result != null) {
+                    return result;
                 }
             }
         }
 
         // Look in ancestors
         for (RubyModule ancestor : module.parentAncestors()) {
-            value = ancestor.getClassVariables().get(name);
-            if (value != null) {
-                return value;
+            result = action.apply(ancestor);
+            if (result != null) {
+                return result;
             }
         }
 
-        // Nothing found
         return null;
-    }
-
-    @TruffleBoundary
-    public static void setClassVariable(RubyModule module, String name, Object value, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        // Look in the current module
-
-        if (module.getClassVariables().containsKey(name)) {
-            module.setClassVariable(currentNode, name, value);
-            return;
-        }
-
-        // Look in ancestors
-
-        for (RubyModule ancestor : module.parentAncestors()) {
-            if (ancestor.getClassVariables().containsKey(name)) {
-                ancestor.setClassVariable(currentNode, name, value);
-                return;
-            }
-        }
-
-        // Not existing class variable - set in the current module
-
-        module.setClassVariable(currentNode, name, value);
     }
 
     public static boolean isMethodPrivateFromName(String name) {

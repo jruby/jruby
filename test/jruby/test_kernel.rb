@@ -106,11 +106,11 @@ class TestKernel < Test::Unit::TestCase
 #  binding
 #  block_given?
   class CheckBlockGiven; def self.go() block_given? end; end
-  def test_iterator?
+  def test_block_given?
     assert !(Kernel.block_given?)
     assert(CheckBlockGiven.go { true })
     assert(!CheckBlockGiven.go)
-    assert(!CheckBlockGiven.go(&Proc.new))
+    assert(CheckBlockGiven.go(&Proc.new{}))
   end
 
 #  callcc
