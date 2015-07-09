@@ -40,6 +40,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int access(RubyString path, int mode) {
             final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
@@ -55,6 +56,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int chmod(RubyString path, int mode) {
             return posix().chmod(path.toString(), mode);
@@ -69,6 +71,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int chown(RubyString path, int owner, int group) {
             return posix().chown(path.toString(), owner, group);
@@ -168,6 +171,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(name)")
         public RubyBasicObject getenv(RubyBasicObject name) {
             final String nameString = RubyEncoding.decodeUTF8(StringNodes.getByteList(name).getUnsafeBytes(), StringNodes.getByteList(name).getBegin(), StringNodes.getByteList(name).getRealSize());
@@ -222,6 +226,7 @@ public abstract class PosixNodes {
             return Platform.getPlatform().getGroups(null).length;
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(pointer)")
         public int getGroups(int max, RubyBasicObject pointer) {
             final long[] groups = Platform.getPlatform().getGroups(null);
@@ -246,6 +251,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(pointer)")
         public int getrlimit(int resource, RubyBasicObject pointer) {
             final int result = posix().getrlimit(resource, PointerNodes.getPointer(pointer));
@@ -301,6 +307,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(nameValuePair)")
         public int putenv(RubyBasicObject nameValuePair) {
             throw new UnsupportedOperationException("Not yet implemented in jnr-posix");
@@ -315,6 +322,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(pointer)")
         public int readlink(RubyString path, RubyBasicObject pointer, int bufsize) {
             final ByteList byteList = StringNodes.getByteList(path);
@@ -338,6 +346,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = { "isRubyString(name)", "isRubyString(value)" })
         public int setenv(RubyBasicObject name, RubyBasicObject value, int overwrite) {
             final String nameString = RubyEncoding.decodeUTF8(StringNodes.getByteList(name).getUnsafeBytes(), StringNodes.getByteList(name).getBegin(), StringNodes.getByteList(name).getRealSize());
@@ -355,6 +364,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int link(RubyString path, RubyString other) {
             final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
@@ -371,6 +381,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int unlink(RubyString path) {
             final ByteList byteList = StringNodes.getByteList(path);
@@ -400,6 +411,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(name)")
         public int unsetenv(RubyBasicObject name) {
             final ByteList byteList = StringNodes.getByteList(name);
@@ -417,6 +429,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(pointer)")
         public int utimes(RubyString path, RubyBasicObject pointer) {
             final ByteList byteList = StringNodes.getByteList(path);
@@ -440,6 +453,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int mkdir(RubyString path, int mode) {
             return posix().mkdir(path.toString(), mode);
@@ -454,6 +468,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int chdir(RubyString path) {
             final String pathString = path.toString();
@@ -518,6 +533,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int setresuid(int uid, int id, int priority) {
             throw new RaiseException(getContext().getCoreLibrary().notImplementedError("setresuid", this));
@@ -546,6 +562,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int setreuid(int uid, int id) {
             throw new RaiseException(getContext().getCoreLibrary().notImplementedError("setreuid", this));
@@ -581,6 +598,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int setruid(int uid) {
             throw new RaiseException(getContext().getCoreLibrary().notImplementedError("setruid", this));
@@ -665,6 +683,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int rename(RubyString path, RubyString other) {
             final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
@@ -681,6 +700,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int rmdir(RubyString path) {
             return posix().rmdir(path.toString());
@@ -695,6 +715,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyBasicObject getcwd(RubyString resultPath, int maxSize) {
             // We just ignore maxSize - I think this is ok
@@ -742,11 +763,13 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isNil(nil)")
         public int fcntl(int fd, int fcntl, Object nil) {
             return posix().fcntl(fd, Fcntl.valueOf(fcntl));
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int fcntl(int fd, int fcntl, int arg) {
             return posix().fcntlInt(fd, Fcntl.valueOf(fcntl), arg);
@@ -817,6 +840,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int symlink(RubyString first, RubyString second) {
             return posix().symlink(first.toString(), second.toString());
@@ -831,6 +855,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isNil(hostName)")
         public int getaddrinfo(RubyBasicObject hostName, RubyString serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
             return getaddrinfo((RubyString) createString("0.0.0.0"), serviceName, hintsPointer, resultsPointer);
