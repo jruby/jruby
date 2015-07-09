@@ -135,8 +135,7 @@ public abstract class ByteArrayNodes {
 
         @Specialization
         public Object getByte(RubyBasicObject bytes, RubyString pattern, int start, int length) {
-            final int index = new ByteList(getBytes(bytes).unsafeBytes(), start, length)
-                    .indexOf(StringNodes.getByteList(pattern));
+            final int index = new ByteList(getBytes(bytes), start, length).indexOf(StringNodes.getByteList(pattern));
 
             if (index == -1) {
                 return nil();

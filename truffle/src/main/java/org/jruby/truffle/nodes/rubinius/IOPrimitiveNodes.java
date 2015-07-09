@@ -238,7 +238,8 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public int truncate(RubyString path, long length) {
-            final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
+            final ByteList byteList = StringNodes.getByteList(path);
+            final String pathString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
             final int result = posix().truncate(pathString, length);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
@@ -469,15 +470,14 @@ public abstract class IOPrimitiveNodes {
         public int write(VirtualFrame frame, RubyBasicObject file, RubyString string) {
             final int fd = getDescriptor(file);
 
+            final ByteList byteList = StringNodes.getByteList(string);
+
             if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
-                getContext().getDebugStandardOut().write(StringNodes.getByteList(string).unsafeBytes(), StringNodes.getByteList(string).begin(), StringNodes.getByteList(string).length());
-                return StringNodes.getByteList(string).length();
+                getContext().getDebugStandardOut().write(byteList.unsafeBytes(), byteList.begin(), byteList.length());
+                return byteList.length();
             }
 
             // We have to copy here as write starts at byte[0], and the ByteList may not
-
-            final ByteList byteList = StringNodes.getByteList(string);
-
             // TODO (eregon, 11 May 2015): review consistency under concurrent modification
             final ByteBuffer buffer = ByteBuffer.wrap(byteList.unsafeBytes(), byteList.begin(), byteList.length());
 

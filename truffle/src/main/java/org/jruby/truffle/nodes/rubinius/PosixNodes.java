@@ -12,8 +12,10 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
+
 import org.jruby.RubyEncoding;
 import org.jruby.platform.Platform;
 import org.jruby.truffle.nodes.core.CoreClass;
@@ -24,6 +26,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
 
@@ -314,7 +317,8 @@ public abstract class PosixNodes {
 
         @Specialization(guards = "isRubyPointer(pointer)")
         public int readlink(RubyString path, RubyBasicObject pointer, int bufsize) {
-            final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
+            final ByteList byteList = StringNodes.getByteList(path);
+            final String pathString = RubyEncoding.decodeUTF8(byteList.unsafeBytes(), byteList.begin(), byteList.length());
 
             final int result = posix().readlink(pathString, PointerNodes.getPointer(pointer), bufsize);
             if (result == -1) {
@@ -369,7 +373,8 @@ public abstract class PosixNodes {
 
         @Specialization
         public int unlink(RubyString path) {
-            return posix().unlink(RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize()));
+            final ByteList byteList = StringNodes.getByteList(path);
+            return posix().unlink(RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize()));
         }
 
     }
@@ -397,7 +402,8 @@ public abstract class PosixNodes {
 
         @Specialization(guards = "isRubyString(name)")
         public int unsetenv(RubyBasicObject name) {
-            final String nameString = RubyEncoding.decodeUTF8(StringNodes.getByteList(name).getUnsafeBytes(), StringNodes.getByteList(name).getBegin(), StringNodes.getByteList(name).getRealSize());
+            final ByteList byteList = StringNodes.getByteList(name);
+            final String nameString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
 
             return posix().unsetenv(nameString);
         }
@@ -413,7 +419,8 @@ public abstract class PosixNodes {
 
         @Specialization(guards = "isRubyPointer(pointer)")
         public int utimes(RubyString path, RubyBasicObject pointer) {
-            final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
+            final ByteList byteList = StringNodes.getByteList(path);
+            final String pathString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
 
             final int result = posix().utimes(pathString, PointerNodes.getPointer(pointer));
             if (result == -1) {

@@ -34,7 +34,9 @@ import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import jnr.posix.POSIX;
+
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
@@ -755,12 +757,14 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public boolean asciiOnly(RubyString string) {
-            if (!getByteList(string).getEncoding().isAsciiCompatible()) {
+            final ByteList byteList = StringNodes.getByteList(string);
+
+            if (!byteList.getEncoding().isAsciiCompatible()) {
                 return false;
             }
 
-            for (byte b : getByteList(string).unsafeBytes()) {
-                if ((b & 0x80) != 0) {
+            for (int i = 0; i < byteList.length(); i++) {
+                if ((byteList.get(i) & 0x80) != 0) {
                     return false;
                 }
             }
