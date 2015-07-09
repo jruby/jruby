@@ -89,7 +89,6 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
         if (ic.pushNewDynScope()) {
             context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
         }
-        context.setCurrentVisibility(getVisibility());
     }
 
     // FIXME: for subclasses we should override this method since it can be simple get
