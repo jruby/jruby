@@ -534,9 +534,14 @@ public class RubyProcess {
         runtime.getPosix().errno(0);
         pid = runtime.getPosix().waitpid(pid, status, flags);
         raiseErrnoIfSet(runtime, ECHILD);
-        
-        runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (status[0] >> 8) & 0xff, pid));
-        return runtime.newFixnum(pid);
+
+        if (pid > 0) {
+            runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (status[0] >> 8) & 0xff, pid));
+            return runtime.newFixnum(pid);
+        } else {
+            runtime.getCurrentContext().setLastExitStatus(runtime.getNil());
+            return runtime.getNil();
+        }
     }
 
     private interface NonNativeErrno {
