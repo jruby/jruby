@@ -227,9 +227,7 @@ module Commands
   end
 
   def irb(*args)
-    env_vars = {}
-    jruby_args = %w[-X+T -S irb]
-    raw_sh(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args)
+    run(*%w[-S irb], *args)
   end
 
   def rebuild
@@ -292,14 +290,14 @@ module Commands
     env_vars = {
       "EXCLUDES" => "test/mri/excludes_truffle"
     }
-    jruby_args = %w[-J-Xmx2G -X+T -Xtruffle.exceptions.print_java]
+    jruby_args = %w[-J-Xmx2G -Xtruffle.exceptions.print_java]
 
     if args.empty?
       args = File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
     end
 
     command = %w[test/mri/runner.rb -v --color=never --tty=no -q]
-    raw_sh(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *command, *args)
+    run(env_vars, *jruby_args, *command, *args)
   end
   private :test_mri
 
