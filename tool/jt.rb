@@ -155,11 +155,11 @@ module ShellUtils
 
   def mspec(command, *args)
     env_vars = {}
-    mspec_env env_vars, command, *args
-  end
-
-  def mspec_env(env, command, *args)
-    sh env, 'ruby', 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
+    if command.is_a?(Hash)
+      env_vars = command
+      command, *args = args
+    end
+    sh env_vars, 'ruby', 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
   end
 end
 
@@ -348,7 +348,7 @@ module Commands
       options << "-T#{JEXCEPTION}"
     end
 
-    mspec_env env_vars, 'run', *options, *args
+    mspec env_vars, 'run', *options, *args
   end
   private :test_specs
 
