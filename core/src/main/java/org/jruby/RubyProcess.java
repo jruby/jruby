@@ -627,16 +627,23 @@ public class RubyProcess {
     }
 
     public static IRubyObject waitpid(Ruby runtime, IRubyObject[] args) {
-        int pid = -1;
+        long pid = -1;
         int flags = 0;
         if (args.length > 0) {
-            pid = (int)args[0].convertToInteger().getLongValue();
+            pid = args[0].convertToInteger().getLongValue();
         }
         if (args.length > 1) {
             flags = (int)args[1].convertToInteger().getLongValue();
         }
 
-        return runtime.newFixnum(waitpid(runtime, pid, flags));
+        pid = waitpid(runtime, pid, flags);
+
+        if (pid == 0) {
+            runtime.getCurrentContext().setLastExitStatus(runtime.getNil());
+            return runtime.getNil();
+        }
+
+        return runtime.newFixnum(pid);
     }
 
     public static long waitpid(Ruby runtime, long pid, int flags) {
@@ -645,7 +652,10 @@ public class RubyProcess {
         pid = runtime.getPosix().waitpid(pid, status, flags);
         raiseErrnoIfSet(runtime, ECHILD);
 
-        runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], pid));
+        if (pid > 0) {
+            runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], pid));
+        }
+        
         return pid;
     }
 
