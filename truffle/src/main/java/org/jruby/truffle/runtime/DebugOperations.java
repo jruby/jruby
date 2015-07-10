@@ -16,10 +16,12 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
@@ -40,8 +42,10 @@ public abstract class DebugOperations {
         return inspected.toString();
     }
 
-    public static Object send(RubyContext context, Object object, String methodName, RubyProc block, Object... arguments) {
+    public static Object send(RubyContext context, Object object, String methodName, RubyBasicObject block, Object... arguments) {
         CompilerAsserts.neverPartOfCompilation();
+
+        assert block == null || RubyGuards.isRubyProc(block);
 
         final InternalMethod method = ModuleOperations.lookupMethod(context.getCoreLibrary().getMetaClass(object), methodName);
 

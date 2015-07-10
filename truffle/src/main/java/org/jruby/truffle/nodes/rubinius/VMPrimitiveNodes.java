@@ -101,8 +101,8 @@ public abstract class VMPrimitiveNodes {
             return referenceEqualNode.executeReferenceEqual(frame, left, right);
         }
 
-        @Specialization
-        public Object doCatch(VirtualFrame frame, Object tag, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object doCatch(VirtualFrame frame, Object tag, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             try {
@@ -422,8 +422,8 @@ public abstract class VMPrimitiveNodes {
             return true;
         }
 
-        @Specialization(guards = "isRubyString(signalName)")
-        public boolean watchSignal(RubyBasicObject signalName, RubyProc proc) {
+        @Specialization(guards = {"isRubyString(signalName)", "isRubyProc(proc)"})
+        public boolean watchSignalProc(RubyBasicObject signalName, RubyBasicObject proc) {
             Signal signal = new Signal(signalName.toString());
 
             SignalOperations.watchSignal(signal, new ProcSignalHandler(getContext(), proc));

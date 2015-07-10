@@ -29,7 +29,7 @@ public class TraceNode extends RubyNode {
     private final RubyContext context;
 
     @CompilationFinal private Assumption traceAssumption;
-    @CompilationFinal private RubyProc traceFunc;
+    @CompilationFinal private RubyBasicObject traceFunc;
     @Child private DirectCallNode callNode;
 
     private final RubyBasicObject event;

@@ -30,8 +30,8 @@ public abstract class RubiniusTypeNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject eachAncestor(VirtualFrame frame, RubyModule module, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyBasicObject eachAncestor(VirtualFrame frame, RubyModule module, RubyBasicObject block) {
             for (RubyModule ancestor : module.ancestors()) {
                 yield(frame, block, ancestor);
             }

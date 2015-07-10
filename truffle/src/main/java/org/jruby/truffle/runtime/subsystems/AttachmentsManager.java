@@ -19,6 +19,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.LineLocation;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.tools.LineToProbesMap;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -46,7 +47,9 @@ public class AttachmentsManager {
         lineToProbesMap.install();
     }
 
-    public synchronized void attach(String file, int line, final RubyProc block) {
+    public synchronized void attach(String file, int line, final RubyBasicObject block) {
+        assert RubyGuards.isRubyProc(block);
+
         final Instrument instrument = Instrument.create(new StandardInstrumentListener() {
 
             @Override

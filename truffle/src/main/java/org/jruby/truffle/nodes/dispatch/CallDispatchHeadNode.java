@@ -15,6 +15,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 
 public class CallDispatchHeadNode extends DispatchHeadNode {
@@ -29,7 +30,7 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            RubyProc blockObject,
+            RubyBasicObject blockObject,
             Object... argumentsObjects) {
         return dispatch(
                 frame,
@@ -43,7 +44,7 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            RubyProc blockObject,
+            RubyBasicObject blockObject,
             Object... argumentsObjects) {
         if (booleanCastNode == null) {
             CompilerDirectives.transferToInterpreter();
@@ -58,7 +59,7 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            RubyProc blockObject,
+            RubyBasicObject blockObject,
             Object... argumentsObjects) {
         final Object value = call(frame, receiverObject, methodName, blockObject, argumentsObjects);
 
@@ -80,7 +81,7 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            RubyProc blockObject,
+            RubyBasicObject blockObject,
             Object... argumentsObjects) {
         final Object value = call(frame, receiverObject, methodName, blockObject, argumentsObjects);
 
