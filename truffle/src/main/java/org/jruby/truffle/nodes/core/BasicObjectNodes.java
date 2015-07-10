@@ -177,10 +177,9 @@ public abstract class BasicObjectNodes {
             yield = new YieldDispatchHeadNode(context);
         }
 
-        @Specialization
-        public Object instanceEval(VirtualFrame frame, Object receiver, RubyString string, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
-
+        @CompilerDirectives.TruffleBoundary
+        @Specialization(guards = "isRubyString(string)")
+        public Object instanceEval(Object receiver, RubyBasicObject string, NotProvided block) {
             return getContext().instanceEval(StringNodes.getByteList(string), receiver, this);
         }
 

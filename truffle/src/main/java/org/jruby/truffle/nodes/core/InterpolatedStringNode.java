@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.ToSNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
@@ -67,14 +68,16 @@ public final class InterpolatedStringNode extends RubyNode {
     }
 
     @TruffleBoundary
-    private RubyBasicObject concat(RubyString[] strings) {
+    private RubyBasicObject concat(RubyBasicObject[] strings) {
         // TODO(CS): there is a lot of copying going on here - and I think this is sometimes inner loop stuff
 
         org.jruby.RubyString builder = null;
 
-        for (RubyString string : strings) {
+        for (RubyBasicObject string : strings) {
+            assert RubyGuards.isRubyString(string);
+
             if (builder == null) {
-                builder = getContext().toJRuby(string);
+                builder = getContext().toJRuby((RubyString) string);
             } else {
                 try {
                     builder.append19(getContext().toJRuby(string));

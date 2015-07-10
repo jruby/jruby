@@ -172,8 +172,8 @@ public abstract class ThreadNodes {
             initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
-        @Specialization
-        public RubyBasicObject raise(VirtualFrame frame, RubyThread thread, RubyString message, NotProvided unused) {
+        @Specialization(guards = "isRubyString(message)")
+        public RubyBasicObject raise(VirtualFrame frame, RubyThread thread, RubyBasicObject message, NotProvided unused) {
             return raise(frame, thread, getContext().getCoreLibrary().getRuntimeErrorClass(), message);
         }
 
@@ -182,8 +182,8 @@ public abstract class ThreadNodes {
             return raise(frame, thread, exceptionClass, (RubyString) createEmptyString());
         }
 
-        @Specialization
-        public RubyBasicObject raise(VirtualFrame frame, final RubyThread thread, RubyClass exceptionClass, RubyString message) {
+        @Specialization(guards = "isRubyString(message)")
+        public RubyBasicObject raise(VirtualFrame frame, final RubyThread thread, RubyClass exceptionClass, RubyBasicObject message) {
             final Object exception = exceptionClass.allocate(this);
             initialize.call(frame, exception, "initialize", null, message);
 

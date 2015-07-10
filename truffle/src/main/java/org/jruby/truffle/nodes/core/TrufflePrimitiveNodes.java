@@ -193,8 +193,8 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject dumpString(RubyString string) {
+        @Specialization(guards = "isRubyString(string)")
+        public RubyBasicObject dumpString(RubyBasicObject string) {
             final StringBuilder builder = new StringBuilder();
 
             final ByteList byteList = StringNodes.getByteList(string);
@@ -336,8 +336,8 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject attach(RubyString file, int line, RubyProc block) {
+        @Specialization(guards = "isRubyString(file)")
+        public RubyBasicObject attach(RubyBasicObject file, int line, RubyProc block) {
             getContext().getAttachmentsManager().attach(file.toString(), line, block);
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -352,8 +352,8 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject detach(RubyString file, int line) {
+        @Specialization(guards = "isRubyString(file)")
+        public RubyBasicObject detach(RubyBasicObject file, int line) {
             getContext().getAttachmentsManager().detach(file.toString(), line);
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -428,8 +428,8 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject debugPrint(RubyString string) {
+        @Specialization(guards = "isRubyString(string)")
+        public RubyBasicObject debugPrint(RubyBasicObject string) {
             System.err.println(string.toString());
             return nil();
         }

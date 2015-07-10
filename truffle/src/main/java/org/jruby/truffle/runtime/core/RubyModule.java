@@ -17,6 +17,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -321,7 +322,8 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     @TruffleBoundary
-    public void setAutoloadConstant(Node currentNode, String name, RubyString filename) {
+    public void setAutoloadConstant(Node currentNode, String name, RubyBasicObject filename) {
+        assert RubyGuards.isRubyString(filename);
         setConstantInternal(currentNode, name, filename, true);
     }
 

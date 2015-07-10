@@ -46,8 +46,8 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object match(RubyRegexp regexp, RubyString string) {
+        @Specialization(guards = "isRubyString(string)")
+        public Object match(RubyRegexp regexp, RubyBasicObject string) {
             return regexp.matchCommon(string, true, true);
         }
 
@@ -85,11 +85,9 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
-        public abstract RubyBasicObject executeEscape(VirtualFrame frame, RubyString pattern);
-
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject escape(RubyString pattern) {
+        @Specialization(guards = "isRubyString(pattern)")
+        public RubyBasicObject escape(RubyBasicObject pattern) {
             return createString(org.jruby.RubyRegexp.quote19(new ByteList(StringNodes.getByteList(pattern)), true).toString());
         }
 
@@ -118,8 +116,8 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object matchStart(RubyRegexp regexp, RubyString string, int startPos) {
+        @Specialization(guards = "isRubyString(string)")
+        public Object matchStart(RubyRegexp regexp, RubyBasicObject string, int startPos) {
             final Object matchResult = regexp.matchCommon(string, false, false, startPos);
             if (matchResult instanceof RubyMatchData && ((RubyMatchData) matchResult).getNumberOfRegions() > 0
                 && ((RubyMatchData) matchResult).getRegion().beg[0] == startPos) {
@@ -158,8 +156,8 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object searchFrom(RubyRegexp regexp, RubyString string, int startPos) {
+        @Specialization(guards = "isRubyString(string)")
+        public Object searchFrom(RubyRegexp regexp, RubyBasicObject string, int startPos) {
             return regexp.matchCommon(string, false, false, startPos);
         }
     }

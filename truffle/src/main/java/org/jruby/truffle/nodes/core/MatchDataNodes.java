@@ -71,7 +71,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization(guards = "isRubySymbol(index)")
-        public Object getIndex(RubyMatchData matchData, RubyBasicObject index, NotProvided length) {
+        public Object getIndexSymbol(RubyMatchData matchData, RubyBasicObject index, NotProvided length) {
             CompilerDirectives.transferToInterpreter();
 
             try {
@@ -86,8 +86,8 @@ public abstract class MatchDataNodes {
             }
         }
 
-        @Specialization
-        public Object getIndex(RubyMatchData matchData, RubyString index, NotProvided length) {
+        @Specialization(guards = "isRubyString(index)")
+        public Object getIndexString(RubyMatchData matchData, RubyBasicObject index, NotProvided length) {
             CompilerDirectives.transferToInterpreter();
 
             try {
