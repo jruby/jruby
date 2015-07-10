@@ -1007,7 +1007,7 @@ public class CoreLibrary {
 
     public RubyException privateMethodError(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return noMethodError(String.format("private method `%s' called for %s", name, module.toString()), name, currentNode);
+        return noMethodError(String.format("private method `%s' called for %s", name, module.getName()), name, currentNode);
     }
 
     public RubyException loadError(String message, Node currentNode) {
