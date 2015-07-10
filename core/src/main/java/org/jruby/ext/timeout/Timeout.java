@@ -85,13 +85,11 @@ public class Timeout implements Library {
     public static class TimeoutToplevel {
         @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE)
         public static IRubyObject timeout(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            final RubyModule timeout = context.runtime.getModule("Timeout");
-
             switch (args.length) {
             case 1:
-                return Timeout.timeout(context, timeout, args[0], block);
+                return Timeout.timeout(context, self, args[0], block);
             case 2:
-                return Timeout.timeout(context, timeout, args[0], args[1], block);
+                return Timeout.timeout(context, self, args[0], args[1], block);
             default:
                 Arity.raiseArgumentError(context.runtime, args.length, 1, 2);
                 return context.runtime.getNil();
@@ -100,7 +98,9 @@ public class Timeout implements Library {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject timeout(final ThreadContext context, IRubyObject timeout, IRubyObject seconds, Block block) {
+    public static IRubyObject timeout(final ThreadContext context, IRubyObject recv, IRubyObject seconds, Block block) {
+        IRubyObject timeout = context.runtime.getModule("Timeout");
+
         // No seconds, just yield
         if ( nilOrZeroSeconds(context, seconds) ) {
             return block.yieldSpecific(context);
@@ -129,7 +129,8 @@ public class Timeout implements Library {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject timeout(final ThreadContext context, IRubyObject timeout, IRubyObject seconds, IRubyObject exceptionType, Block block) {
+    public static IRubyObject timeout(final ThreadContext context, IRubyObject recv, IRubyObject seconds, IRubyObject exceptionType, Block block) {
+        IRubyObject timeout = context.runtime.getModule("Timeout");
         // No seconds, just yield
         if ( nilOrZeroSeconds(context, seconds) ) {
             return block.yieldSpecific(context);
