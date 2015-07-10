@@ -1080,9 +1080,9 @@ public abstract class ModuleNodes {
         private RubyBasicObject defineMethod(RubyModule module, String name, RubyProc proc) {
             CompilerDirectives.transferToInterpreter();
 
-            final CallTarget modifiedCallTarget = proc.getCallTargetForLambdas();
-            final SharedMethodInfo info = proc.getSharedMethodInfo().withName(name);
-            final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
+            final CallTarget modifiedCallTarget = ProcNodes.getCallTargetForLambdas(proc);
+            final SharedMethodInfo info = ProcNodes.getSharedMethodInfo(proc).withName(name);
+            final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC, false, modifiedCallTarget, ProcNodes.getDeclarationFrame(proc));
 
             return addMethod(module, name, modifiedMethod);
         }

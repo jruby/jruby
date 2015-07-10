@@ -308,7 +308,7 @@ public class CoreLibrary {
         methodClass = defineClass("Method", NO_ALLOCATOR);
         defineClass("Mutex", new MutexNodes.MutexAllocator());
         nilClass = defineClass("NilClass", NO_ALLOCATOR);
-        procClass = defineClass("Proc", new RubyProc.ProcAllocator());
+        procClass = defineClass("Proc", new ProcNodes.ProcAllocator());
         processModule = defineModule("Process");
         rangeClass = defineClass("Range", new RubyRange.RangeAllocator());
         regexpClass = defineClass("Regexp", new RubyRegexp.RegexpAllocator());

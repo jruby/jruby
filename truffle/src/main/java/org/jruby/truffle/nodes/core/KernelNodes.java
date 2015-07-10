@@ -1024,10 +1024,17 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyProc proc(RubyProc block) {
-            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA,
-                    block.getSharedMethodInfo(), block.getCallTargetForLambdas(), block.getCallTargetForLambdas(),
-                    block.getCallTargetForLambdas(), block.getDeclarationFrame(), block.getMethod(),
-                    block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
+            return ProcNodes.createRubyProc(
+                    getContext().getCoreLibrary().getProcClass(),
+                    ProcNodes.Type.LAMBDA,
+                    ProcNodes.getSharedMethodInfo(block),
+                    ProcNodes.getCallTargetForLambdas(block),
+                    ProcNodes.getCallTargetForLambdas(block),
+                    ProcNodes.getCallTargetForLambdas(block),
+                    ProcNodes.getDeclarationFrame(block),
+                    ProcNodes.getMethod(block),
+                    ProcNodes.getSelfCapturedInScope(block),
+                    ProcNodes.getBlockCapturedInScope(block));
         }
     }
 
@@ -1237,10 +1244,17 @@ public abstract class KernelNodes {
         public RubyProc proc(RubyProc block) {
             CompilerDirectives.transferToInterpreter();
 
-            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
-                    block.getSharedMethodInfo(), block.getCallTargetForProcs(), block.getCallTargetForProcs(),
-                    block.getCallTargetForLambdas(), block.getDeclarationFrame(), block.getMethod(),
-                    block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
+            return ProcNodes.createRubyProc(
+                    getContext().getCoreLibrary().getProcClass(),
+                    ProcNodes.Type.PROC,
+                    ProcNodes.getSharedMethodInfo(block),
+                    ProcNodes.getCallTargetForProcs(block),
+                    ProcNodes.getCallTargetForProcs(block),
+                    ProcNodes.getCallTargetForLambdas(block),
+                    ProcNodes.getDeclarationFrame(block),
+                    ProcNodes.getMethod(block),
+                    ProcNodes.getSelfCapturedInScope(block),
+                    ProcNodes.getBlockCapturedInScope(block));
         }
     }
 

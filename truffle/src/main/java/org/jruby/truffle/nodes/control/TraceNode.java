@@ -18,6 +18,7 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BindingNodes;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -65,7 +66,7 @@ public class TraceNode extends RubyNode {
             traceFunc = context.getTraceManager().getTraceFunc();
 
             if (traceFunc != null) {
-                callNode = insert(Truffle.getRuntime().createDirectCallNode(traceFunc.getCallTargetForBlocks()));
+                callNode = insert(Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForBlocks(traceFunc)));
             } else {
                 callNode = null;
             }
@@ -85,7 +86,7 @@ public class TraceNode extends RubyNode {
                 };
 
                 try {
-                    callNode.call(frame, RubyArguments.pack(traceFunc.getMethod(), traceFunc.getDeclarationFrame(), traceFunc.getSelfCapturedInScope(), traceFunc.getBlockCapturedInScope(), args));
+                    callNode.call(frame, RubyArguments.pack(ProcNodes.getMethod(traceFunc), ProcNodes.getDeclarationFrame(traceFunc), ProcNodes.getSelfCapturedInScope(traceFunc), ProcNodes.getBlockCapturedInScope(traceFunc), args));
                 } finally {
                     context.getTraceManager().setInTraceFunc(false);
                 }

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -35,8 +36,8 @@ public class GeneralYieldDispatchNode extends YieldDispatchNode {
 
     @Override
     public Object dispatchWithSelfAndBlock(VirtualFrame frame, RubyProc block, Object self, RubyProc modifiedBlock, Object... argumentsObjects) {
-        return callNode.call(frame, block.getCallTargetForBlocks(),
-                RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), self, modifiedBlock, argumentsObjects));
+        return callNode.call(frame, ProcNodes.getCallTargetForBlocks(block),
+                RubyArguments.pack(ProcNodes.getMethod(block), ProcNodes.getDeclarationFrame(block), self, modifiedBlock, argumentsObjects));
     }
 
 }

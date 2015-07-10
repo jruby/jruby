@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -111,7 +112,7 @@ public class RubyFiber extends RubyBasicObject {
     }
 
     public void initialize(final RubyProc block) {
-        name = "Ruby Fiber@" + block.getSharedMethodInfo().getSourceSection().getShortDescription();
+        name = "Ruby Fiber@" + ProcNodes.getSharedMethodInfo(block).getSourceSection().getShortDescription();
         final Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -128,7 +129,7 @@ public class RubyFiber extends RubyBasicObject {
             public void run() {
                 try {
                     final Object[] args = waitForResume();
-                    final Object result = block.rootCall(args);
+                    final Object result = ProcNodes.rootCall(block, args);
                     resume(lastResumedByFiber, true, result);
                 } catch (FiberExitException e) {
                     assert !isRootFiber;

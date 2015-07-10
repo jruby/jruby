@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.signal;
 
 import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyThread;
@@ -34,7 +35,7 @@ public class ProcSignalHandler implements SignalHandler {
         context.getSafepointManager().pauseMainThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
             @Override
             public void run(RubyThread thread, Node currentNode) {
-                proc.rootCall();
+                ProcNodes.rootCall(proc);
             }
         });
     }

@@ -154,6 +154,10 @@ public abstract class RubyGuards {
         return value.getDynamicObject().getShape().getObjectType() == ByteArrayNodes.BYTE_ARRAY_TYPE;
     }
 
+    public static boolean isRubyProc(Object value) {
+        return value instanceof RubyProc;
+    }
+
     // Internal types
 
     public static boolean isThreadLocal(Object value) {

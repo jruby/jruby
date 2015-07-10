@@ -12,9 +12,9 @@ package org.jruby.truffle.nodes.cast;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class LambdaNode extends RubyNode {
@@ -34,7 +34,7 @@ public class LambdaNode extends RubyNode {
 
         // TODO(CS): not sure we're closing over the correct state here
 
-        return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA,
+        return ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcClass(), ProcNodes.Type.LAMBDA,
                 method.getSharedMethodInfo(), method.getCallTarget(), method.getCallTarget(), method.getCallTarget(),
                 method.getDeclarationFrame(), method, RubyArguments.getSelf(frame.getArguments()), null);
     }

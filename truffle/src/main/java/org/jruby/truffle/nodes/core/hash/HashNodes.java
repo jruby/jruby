@@ -1361,7 +1361,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = {"isEmptyHash(hash)", "!hasDefaultValue(hash)", "hasDefaultBlock(hash)"})
         public Object shiftEmptyDefaultProc(RubyBasicObject hash) {
-            return getDefaultBlock(hash).rootCall(hash, nil());
+            return ProcNodes.rootCall(getDefaultBlock(hash), hash, nil());
         }
 
         @Specialization(guards = {"!isEmptyHash(hash)", "isPackedHash(hash)"})
