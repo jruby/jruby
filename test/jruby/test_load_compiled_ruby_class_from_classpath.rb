@@ -8,7 +8,7 @@ require "jruby"
 
 require 'jruby/compiler'
 
-class LoadCompiledRubyClassFromClasspathTest < Test::Unit::TestCase
+class TestLoadCompiledRubyClassFromClasspath < Test::Unit::TestCase
   include TestHelper
 
   RubyName = "runner"

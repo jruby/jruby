@@ -170,9 +170,7 @@ project 'JRuby Integration Tests' do
     jar 'org.jruby:jruby-complete', '${project.version}', :scope => :provided
 
     plugin :antrun do
-      # objectspace seems not to work at all here
-      # [ 'mri', 'jruby','objectspace', 'slow' ].each do |index|
-      [ 'mri', 'jruby', 'slow' ].each do |index|
+      [ 'mri', 'jruby','objectspace', 'slow' ].each do |index|
         files = ""
         File.open(File.join(basedir, index + '.index')) do |f|
           f.each_line.each do |line|
@@ -182,8 +180,6 @@ project 'JRuby Integration Tests' do
             filename = "#{line.chomp}.rb" unless File.exist? File.join(basedir, filename)
             next if filename =~ /mri\/psych\//
             next if filename =~ /mri\/net\/http\//
-            # to much assumptions about executed from root directory, etc
-            next if filename =~ /jruby\/test_load_compiled_ruby_class_from_classpath.rb/
             next unless File.exist? File.join(basedir, filename)
             files << "<arg value='test/#{filename}'/>"
           end
