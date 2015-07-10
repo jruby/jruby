@@ -27,6 +27,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyThread.Status;
 import org.jruby.exceptions.MainExitException;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
@@ -82,8 +83,8 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject backtick(VirtualFrame frame, RubyString command) {
+        @Specialization(guards = "isRubyString(command)")
+        public RubyBasicObject backtick(VirtualFrame frame, RubyBasicObject command) {
             // Command is lexically a string interoplation, so variables will already have been expanded
 
             if (toHashNode == null) {
@@ -490,44 +491,44 @@ public abstract class KernelNodes {
             }
         }
 
-        @Specialization
-        public Object eval(VirtualFrame frame, RubyString source, NotProvided binding, NotProvided filename, NotProvided lineNumber) {
+        @Specialization(guards = "isRubyString(source)")
+        public Object eval(VirtualFrame frame, RubyBasicObject source, NotProvided binding, NotProvided filename, NotProvided lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             return getContext().eval(StringNodes.getByteList(source), getCallerBinding(frame), true, this);
         }
 
-        @Specialization(guards = "isNil(noBinding)")
-        public Object evalNoBinding(VirtualFrame frame, RubyString source, Object noBinding, RubyString filename, int lineNumber) {
+        @Specialization(guards = {"isRubyString(source)", "isNil(noBinding)", "isRubyString(filename)"})
+        public Object evalNoBinding(VirtualFrame frame, RubyBasicObject source, Object noBinding, RubyBasicObject filename, int lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename.
             return eval(frame, source, NotProvided.INSTANCE, NotProvided.INSTANCE, NotProvided.INSTANCE);
         }
 
-        @Specialization(guards = "isRubyBinding(binding)")
-        public Object eval(RubyString source, RubyBasicObject binding, NotProvided filename, NotProvided lineNumber) {
+        @Specialization(guards = {"isRubyString(source)", "isRubyBinding(binding)"})
+        public Object eval(RubyBasicObject source, RubyBasicObject binding, NotProvided filename, NotProvided lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             return getContext().eval(StringNodes.getByteList(source), binding, false, this);
         }
 
-        @Specialization(guards = "isRubyBinding(binding)")
-        public Object eval(RubyString source, RubyBasicObject binding, RubyString filename, NotProvided lineNumber) {
+        @Specialization(guards = {"isRubyString(source)", "isRubyBinding(binding)", "isRubyString(filename)"})
+        public Object eval(RubyBasicObject source, RubyBasicObject binding, RubyBasicObject filename, NotProvided lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             return getContext().eval(StringNodes.getByteList(source), binding, false, filename.toString(), this);
         }
 
-        @Specialization(guards = "isRubyBinding(binding)")
-        public Object eval(RubyString source, RubyBasicObject binding, RubyString filename, int lineNumber) {
+        @Specialization(guards = {"isRubyString(source)", "isRubyBinding(binding)", "isRubyString(filename)"})
+        public Object eval(RubyBasicObject source, RubyBasicObject binding, RubyBasicObject filename, int lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             return getContext().eval(StringNodes.getByteList(source), binding, false, filename.toString(), this);
         }
 
-        @Specialization(guards = "!isRubyBinding(badBinding)")
-        public Object evalBadBinding(RubyString source, RubyBasicObject badBinding, NotProvided filename, NotProvided lineNumber) {
+        @Specialization(guards = {"isRubyString(source)", "!isRubyBinding(badBinding)"})
+        public Object evalBadBinding(RubyBasicObject source, RubyBasicObject badBinding, NotProvided filename, NotProvided lineNumber) {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(badBinding, "binding", this));
         }
     }
@@ -1038,8 +1039,8 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public boolean load(RubyString file, boolean wrap) {
+        @Specialization(guards = "isRubyString(file)")
+        public boolean load(RubyBasicObject file, boolean wrap) {
             if (wrap) {
                 throw new UnsupportedOperationException();
             }
@@ -1060,8 +1061,8 @@ public abstract class KernelNodes {
             return true;
         }
 
-        @Specialization
-        public boolean load(RubyString file, NotProvided wrap) {
+        @Specialization(guards = "isRubyString(file)")
+        public boolean load(RubyBasicObject file, NotProvided wrap) {
             return load(file, false);
         }
     }
@@ -1391,8 +1392,9 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public boolean require(RubyString feature) {
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(feature)")
+        public boolean require(RubyBasicObject feature) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
@@ -1427,10 +1429,9 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public boolean requireRelative(RubyString feature) {
-            CompilerDirectives.transferToInterpreter();
-
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(feature)")
+        public boolean requireRelative(RubyBasicObject feature) {
             final FeatureManager featureManager = getContext().getFeatureManager();
 
             final String featureString = feature.toString();
@@ -1622,8 +1623,8 @@ public abstract class KernelNodes {
             toS = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        @Specialization
-        public RubyBasicObject string(RubyString value) {
+        @Specialization(guards = "isRubyString(value)")
+        public RubyBasicObject string(RubyBasicObject value) {
             return value;
         }
 
@@ -1816,15 +1817,19 @@ public abstract class KernelNodes {
             return string;
         }
 
-        protected ByteList privatizeByteList(RubyString string) {
+        protected ByteList privatizeByteList(RubyBasicObject string) {
+            assert RubyGuards.isRubyString(string);
             return StringNodes.getByteList(string).dup();
         }
 
-        protected boolean byteListsEqual(RubyString string, ByteList byteList) {
+        protected boolean byteListsEqual(RubyBasicObject string, ByteList byteList) {
+            assert RubyGuards.isRubyString(string);
             return StringNodes.getByteList(string).equal(byteList);
         }
 
-        protected CallTarget compileFormat(RubyString format) {
+        protected CallTarget compileFormat(RubyBasicObject format) {
+            assert RubyGuards.isRubyString(format);
+
             try {
                 return new FormatParser(getContext()).parse(StringNodes.getByteList(format));
             } catch (FormatException e) {
@@ -1852,8 +1857,8 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public boolean system(VirtualFrame frame, RubyString command) {
+        @Specialization(guards = "isRubyString(command)")
+        public boolean system(VirtualFrame frame, RubyBasicObject command) {
             if (toHashNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
