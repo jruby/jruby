@@ -158,8 +158,8 @@ public abstract class DigestNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject update(RubyBasicObject digestObject, RubyString message) {
+        @Specialization(guards = "isRubyString(message)")
+        public RubyBasicObject update(RubyBasicObject digestObject, RubyBasicObject message) {
             final ByteList bytes = StringNodes.getByteList(message);
             getDigest(digestObject).update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             return digestObject;
@@ -233,8 +233,8 @@ public abstract class DigestNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject bubblebabble(RubyString message) {
+        @Specialization(guards = "isRubyString(message)")
+        public RubyBasicObject bubblebabble(RubyBasicObject message) {
             final ByteList byteList = StringNodes.getByteList(message);
             return createString(BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
         }

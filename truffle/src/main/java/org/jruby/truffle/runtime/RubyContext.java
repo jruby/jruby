@@ -399,7 +399,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         } else if (object instanceof Double) {
             return runtime.newFloat((double) object);
         } else if (object instanceof RubyString) {
-            return toJRuby((RubyString) object);
+            return toJRubyString((RubyString) object);
         } else if (RubyGuards.isRubyArray(object)) {
             return toJRubyArray((RubyBasicObject) object);
         } else if (object instanceof RubyEncoding) {
@@ -428,7 +428,9 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(encoding.getName()));
     }
 
-    public org.jruby.RubyString toJRuby(RubyString string) {
+    public org.jruby.RubyString toJRubyString(RubyBasicObject string) {
+        assert RubyGuards.isRubyString(string);
+
         final org.jruby.RubyString jrubyString = runtime.newString(StringNodes.getByteList(string).dup());
 
         final Object tainted = RubyBasicObject.getInstanceVariable(string, RubyBasicObject.TAINTED_IDENTIFIER);

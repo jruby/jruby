@@ -196,7 +196,7 @@ public class FeatureManager {
     public static String expandPath(RubyContext context, String fileName) {
         // TODO (nirvdrum 11-Feb-15) This needs to work on Windows without calling into non-Truffle JRuby.
         if (context.isRunningOnWindows()) {
-            final org.jruby.RubyString path = context.toJRuby((RubyString) StringNodes.createString(context.getCoreLibrary().getStringClass(), fileName));
+            final org.jruby.RubyString path = context.toJRubyString((RubyString) StringNodes.createString(context.getCoreLibrary().getStringClass(), fileName));
             final org.jruby.RubyString expanded = (org.jruby.RubyString) org.jruby.RubyFile.expand_path19(
                     context.getRuntime().getCurrentContext(),
                     null,

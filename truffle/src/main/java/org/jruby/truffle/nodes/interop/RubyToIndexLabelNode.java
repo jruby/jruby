@@ -24,8 +24,8 @@ public abstract class RubyToIndexLabelNode extends TargetableRubyNode {
     }
 
     @CompilerDirectives.TruffleBoundary
-    @Specialization
-    public Object doRubyString(RubyString index) {
+    @Specialization(guards = "isRubyString(index)")
+    public Object doRubyString(RubyBasicObject index) {
         return index.toString();
     }
 

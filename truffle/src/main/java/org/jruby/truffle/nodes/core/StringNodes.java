@@ -1565,7 +1565,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public int ord(RubyBasicObject string) {
-            return ((org.jruby.RubyFixnum) getContext().toJRuby((RubyString) string).ord(getContext().getRuntime().getCurrentContext())).getIntValue();
+            return ((org.jruby.RubyFixnum) getContext().toJRubyString((RubyString) string).ord(getContext().getRuntime().getCurrentContext())).getIntValue();
         }
     }
 

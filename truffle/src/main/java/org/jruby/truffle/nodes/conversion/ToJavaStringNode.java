@@ -33,13 +33,13 @@ public abstract class ToJavaStringNode extends RubyNode {
 
     @TruffleBoundary
     @Specialization(guards = "isRubySymbol(symbol)")
-    protected String toJavaString(RubyBasicObject symbol) {
+    protected String toJavaStringSymbol(RubyBasicObject symbol) {
         return SymbolNodes.getString(symbol);
     }
 
     @TruffleBoundary
-    @Specialization
-    protected String toJavaString(RubyString string) {
+    @Specialization(guards = "isRubyString(string)")
+    protected String toJavaStringString(RubyBasicObject string) {
         return string.toString();
     }
 

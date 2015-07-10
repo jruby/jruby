@@ -46,8 +46,8 @@ public abstract class ToSNode extends RubyNode {
     @Override
     public abstract RubyString executeRubyString(VirtualFrame frame);
 
-    @Specialization
-    public RubyBasicObject toS(RubyString string) {
+    @Specialization(guards = "isRubyString(string)")
+    public RubyBasicObject toS(RubyBasicObject string) {
         return string;
     }
 

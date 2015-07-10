@@ -44,8 +44,8 @@ public abstract class NameToSymbolOrStringNode extends RubyNode {
         return symbol;
     }
 
-    @Specialization
-    public RubyBasicObject coerceRubyString(RubyString string) {
+    @Specialization(guards = "isRubyString(string)")
+    public RubyBasicObject coerceRubyString(RubyBasicObject string) {
         return string;
     }
 

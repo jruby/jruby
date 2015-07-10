@@ -93,8 +93,8 @@ public abstract class ToStringNode extends PackNode {
         return new ByteList(Double.toString(value).getBytes(StandardCharsets.US_ASCII));
     }
 
-    @Specialization
-    public ByteList toString(VirtualFrame frame, RubyString string) {
+    @Specialization(guards = "isRubyString(string)")
+    public ByteList toStringString(VirtualFrame frame, RubyBasicObject string) {
         if (taintedProfile.profile(isTaintedNode.executeIsTainted(string))) {
             setTainted(frame);
         }

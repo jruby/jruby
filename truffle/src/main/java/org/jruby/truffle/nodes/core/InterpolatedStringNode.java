@@ -77,7 +77,7 @@ public final class InterpolatedStringNode extends RubyNode {
             assert RubyGuards.isRubyString(string);
 
             if (builder == null) {
-                builder = getContext().toJRuby((RubyString) string);
+                builder = getContext().toJRubyString((RubyString) string);
             } else {
                 try {
                     builder.append19(getContext().toJRuby(string));

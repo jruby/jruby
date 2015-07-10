@@ -259,7 +259,9 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     @TruffleBoundary
-    public RubyBasicObject gsub(RubyString string, String replacement) {
+    public RubyBasicObject gsub(RubyBasicObject string, String replacement) {
+        assert RubyGuards.isRubyString(string);
+
         final RubyContext context = getContext();
 
         final byte[] stringBytes = StringNodes.getByteList(string).bytes();
@@ -322,7 +324,9 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     @TruffleBoundary
-    public RubyBasicObject[] split(final RubyString string, final boolean useLimit, final int limit) {
+    public RubyBasicObject[] split(final RubyBasicObject string, final boolean useLimit, final int limit) {
+        assert RubyGuards.isRubyString(string);
+
         final RubyContext context = getContext();
 
         final ByteList bytes = StringNodes.getByteList(string);
@@ -387,7 +391,9 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     @TruffleBoundary
-    public Object scan(RubyString string) {
+    public Object scan(RubyBasicObject string) {
+        assert RubyGuards.isRubyString(string);
+
         final RubyContext context = getContext();
 
         final byte[] stringBytes = StringNodes.getByteList(string).bytes();

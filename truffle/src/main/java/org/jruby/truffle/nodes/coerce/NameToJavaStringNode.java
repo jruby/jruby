@@ -45,8 +45,8 @@ public abstract class NameToJavaStringNode extends RubyNode {
         return SymbolNodes.getString(symbol);
     }
 
-    @Specialization
-    public String coerceRubyString(RubyString string) {
+    @Specialization(guards = "isRubyString(string)")
+    public String coerceRubyString(RubyBasicObject string) {
         return string.toString();
     }
 

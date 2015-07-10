@@ -27,8 +27,8 @@ public abstract class StringToSymbolNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    @Specialization
-    public RubyBasicObject doString(RubyString string) {
+    @Specialization(guards = "isRubyString(string)")
+    public RubyBasicObject doString(RubyBasicObject string) {
         return getSymbol(string.toString());
     }
 
