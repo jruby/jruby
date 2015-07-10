@@ -289,6 +289,10 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     build do
       default_goal :deploy
     end
+
+    plugin(:source, '2.1.2') do
+      execute_goals('jar-no-fork', :id => 'attach-sources')
+    end
   end
 
   profile 'single invoker test' do
