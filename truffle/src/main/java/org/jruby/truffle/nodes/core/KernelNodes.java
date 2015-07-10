@@ -1726,12 +1726,12 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isRubyString(firstArgument(arguments))", "byteListsEqual(asRubyString(firstArgument(arguments)), cachedFormat)"})
+        @Specialization(guards = {"isRubyString(firstArgument(arguments))", "byteListsEqual(asRubyBasicObject(firstArgument(arguments)), cachedFormat)"})
         public RubyBasicObject formatCached(
                 VirtualFrame frame,
                 Object[] arguments,
-                @Cached("privatizeByteList(asRubyString(firstArgument(arguments)))") ByteList cachedFormat,
-                @Cached("create(compileFormat(asRubyString(firstArgument(arguments))))") DirectCallNode callPackNode) {
+                @Cached("privatizeByteList(asRubyBasicObject(firstArgument(arguments)))") ByteList cachedFormat,
+                @Cached("create(compileFormat(asRubyBasicObject(firstArgument(arguments))))") DirectCallNode callPackNode) {
             final Object[] store = ArrayUtils.extractRange(arguments, 1, arguments.length);
 
             final PackResult result;
@@ -1751,7 +1751,7 @@ public abstract class KernelNodes {
                 VirtualFrame frame,
                 Object[] arguments,
                 @Cached("create()") IndirectCallNode callPackNode) {
-            final RubyString format = (RubyString) arguments[0];
+            final RubyBasicObject format = (RubyBasicObject) arguments[0];
             final Object[] store = ArrayUtils.extractRange(arguments, 1, arguments.length);
 
             final PackResult result;
@@ -1842,8 +1842,8 @@ public abstract class KernelNodes {
             return args[0];
         }
 
-        protected RubyString asRubyString(Object arg) {
-            return (RubyString) arg;
+        protected RubyBasicObject asRubyBasicObject(Object arg) {
+            return (RubyBasicObject) arg;
         }
 
     }

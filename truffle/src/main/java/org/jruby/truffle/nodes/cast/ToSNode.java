@@ -43,9 +43,6 @@ public abstract class ToSNode extends RubyNode {
         return kernelToSNode.executeToS(frame, object);
     }
 
-    @Override
-    public abstract RubyString executeRubyString(VirtualFrame frame);
-
     @Specialization(guards = "isRubyString(string)")
     public RubyBasicObject toS(RubyBasicObject string) {
         return string;

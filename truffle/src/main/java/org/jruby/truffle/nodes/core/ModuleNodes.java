@@ -606,7 +606,7 @@ public abstract class ModuleNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
-            return toStrNode.executeRubyString(frame, object);
+            return toStrNode.executeToStr(frame, object);
         }
 
         @Specialization(guards = "isRubyString(code)")

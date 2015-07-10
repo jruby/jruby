@@ -38,22 +38,17 @@ public class ReadTimeZoneNode extends RubyNode {
     }
 
     @Override
-    public RubyString executeRubyString(VirtualFrame frame) {
+    public Object execute(VirtualFrame frame) {
         final Object tz = hashNode.call(frame, envNode.execute(frame), "[]", null, TZ);
 
         // TODO CS 4-May-15 not sure how TZ ends up being nil
 
         if (tz == nil()) {
-            return (RubyString) createString("UTC");
+            return createString("UTC");
         } else if (tz instanceof RubyString) {
-            return (RubyString) tz;
+            return tz;
         } else {
             throw new UnsupportedOperationException();
         }
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        return executeRubyString(frame);
     }
 }

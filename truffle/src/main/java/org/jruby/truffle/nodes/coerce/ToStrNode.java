@@ -33,7 +33,7 @@ public abstract class ToStrNode extends RubyNode {
         toStrNode = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    public abstract RubyString executeRubyString(VirtualFrame frame, Object object);
+    public abstract RubyBasicObject executeToStr(VirtualFrame frame, Object object);
 
     @Specialization(guards = "isRubyString(string)")
     public RubyBasicObject coerceRubyString(RubyBasicObject string) {

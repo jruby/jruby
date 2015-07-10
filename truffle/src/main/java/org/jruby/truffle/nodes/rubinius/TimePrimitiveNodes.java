@@ -48,7 +48,7 @@ public abstract class TimePrimitiveNodes {
         @Specialization
         public RubyTime timeSNow(VirtualFrame frame, RubyClass timeClass) {
             // TODO CS 4-Mar-15 whenever we get time we have to convert lookup and time zone to a string and look it up - need to cache somehow...
-            return new RubyTime(timeClass, now(readTimeZoneNode.executeRubyString(frame)), nil());
+            return new RubyTime(timeClass, now((RubyBasicObject) readTimeZoneNode.execute(frame)), nil());
         }
         
         @TruffleBoundary
@@ -95,7 +95,7 @@ public abstract class TimePrimitiveNodes {
         public RubyTime timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), localtime(milliseconds, readTimeZoneNode.executeRubyString(frame)), offset);
+            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), localtime(milliseconds, (RubyBasicObject) readTimeZoneNode.execute(frame)), offset);
         }
 
         private long getMillis(long seconds, int nanoseconds) {
@@ -179,7 +179,7 @@ public abstract class TimePrimitiveNodes {
             final int yday = dateTime.getDayOfYear();
             final boolean isdst = false;
 
-            final String envTimeZoneString = readTimeZoneNode.executeRubyString(frame).toString();
+            final String envTimeZoneString = readTimeZoneNode.execute(frame).toString();
             String zoneString = org.jruby.RubyTime.zoneHelper(envTimeZoneString, dateTime, false);
             Object zone;
             if (zoneString.matches(".*-\\d+")) {
@@ -249,7 +249,7 @@ public abstract class TimePrimitiveNodes {
             if (fromutc) {
                 zone = DateTimeZone.UTC;
             } else if (utcoffset == nil()) {
-                String tz = readTimeZoneNode.executeRubyString(frame).toString();
+                String tz = readTimeZoneNode.execute(frame).toString();
                 zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(), tz);
             } else if (utcoffset instanceof Integer) {
                 zone = DateTimeZone.forOffsetMillis(((int) utcoffset) * 1_000);

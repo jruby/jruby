@@ -48,32 +48,32 @@ public final class InterpolatedStringNode extends RubyNode {
     @ExplodeLoop
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyString[] strings = new RubyString[children.length];
+        final Object[] strings = new Object[children.length];
 
         boolean tainted = false;
 
         for (int n = 0; n < children.length; n++) {
-            final RubyString toInterpolate = children[n].executeRubyString(frame);
+            final Object toInterpolate = children[n].execute(frame);
             strings[n] = toInterpolate;
-            tainted |= isTaintedNode.isTainted(toInterpolate);
+            tainted |= isTaintedNode.executeIsTainted(toInterpolate);
         }
 
-        final RubyBasicObject string =  concat(strings);
+        final Object string = concat(strings);
 
         if (taintProfile.profile(tainted)) {
-            taintNode.taint(string);
+            taintNode.executeTaint(string);
         }
 
         return string;
     }
 
     @TruffleBoundary
-    private RubyBasicObject concat(RubyBasicObject[] strings) {
+    private RubyBasicObject concat(Object[] strings) {
         // TODO(CS): there is a lot of copying going on here - and I think this is sometimes inner loop stuff
 
         org.jruby.RubyString builder = null;
 
-        for (RubyBasicObject string : strings) {
+        for (Object string : strings) {
             assert RubyGuards.isRubyString(string);
 
             if (builder == null) {
@@ -82,7 +82,7 @@ public final class InterpolatedStringNode extends RubyNode {
                 try {
                     builder.append19(getContext().toJRuby(string));
                 } catch (org.jruby.exceptions.RaiseException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(builder.getEncoding().getCharsetName(), StringNodes.getByteList(string).getEncoding().getCharsetName(), this));
+                    throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(builder.getEncoding().getCharsetName(), StringNodes.getByteList((RubyBasicObject) string).getEncoding().getCharsetName(), this));
                 }
             }
         }

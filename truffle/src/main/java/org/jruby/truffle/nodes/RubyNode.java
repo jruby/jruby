@@ -141,16 +141,6 @@ public abstract class RubyNode extends Node {
         }
     }
 
-    public RubyString executeRubyString(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (value instanceof RubyString) {
-            return (RubyString) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
     public RubyRegexp executeRubyRegexp(VirtualFrame frame) throws UnexpectedResultException {
         final Object value = execute(frame);
 

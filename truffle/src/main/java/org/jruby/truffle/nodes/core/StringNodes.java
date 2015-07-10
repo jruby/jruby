@@ -431,7 +431,7 @@ public abstract class StringNodes {
                 }
 
                 try {
-                    final RubyBasicObject coerced = toStrNode.executeRubyString(frame, b);
+                    final RubyBasicObject coerced = toStrNode.executeToStr(frame, b);
 
                     return compare(a, coerced);
                 } catch (RaiseException e) {
@@ -937,17 +937,17 @@ public abstract class StringNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
             }
 
-            RubyString[] otherStrings = new RubyString[args.length];
+            RubyBasicObject[] otherStrings = new RubyBasicObject[args.length];
 
             for (int i = 0; i < args.length; i++) {
-                otherStrings[i] = toStr.executeRubyString(frame, args[i]);
+                otherStrings[i] = toStr.executeToStr(frame, args[i]);
             }
 
             return countSlow(string, otherStrings);
         }
 
         @TruffleBoundary
-        private int countSlow(RubyBasicObject string, RubyBasicObject[] otherStrings) {
+        private int countSlow(RubyBasicObject string, RubyBasicObject... otherStrings) {
             assert RubyGuards.isRubyString(string);
 
             RubyBasicObject otherStr = otherStrings[0];
@@ -1062,10 +1062,10 @@ public abstract class StringNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
             }
 
-            RubyString[] otherStrings = new RubyString[args.length];
+            RubyBasicObject[] otherStrings = new RubyBasicObject[args.length];
 
             for (int i = 0; i < args.length; i++) {
-                otherStrings[i] = toStr.executeRubyString(frame, args[i]);
+                otherStrings[i] = toStr.executeToStr(frame, args[i]);
             }
 
             return deleteBangSlow(string, otherStrings);
@@ -1291,7 +1291,7 @@ public abstract class StringNodes {
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            return forceEncoding(string, toStrNode.executeRubyString(frame, encoding));
+            return forceEncoding(string, toStrNode.executeToStr(frame, encoding));
         }
 
     }
@@ -1393,7 +1393,7 @@ public abstract class StringNodes {
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            return initialize(self, toStrNode.executeRubyString(frame, from));
+            return initialize(self, toStrNode.executeToStr(frame, from));
         }
     }
 
@@ -1872,10 +1872,10 @@ public abstract class StringNodes {
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            final RubyString[] otherStrings = new RubyString[args.length];
+            final RubyBasicObject[] otherStrings = new RubyBasicObject[args.length];
 
             for (int i = 0; i < args.length; i++) {
-                otherStrings[i] = toStrNode.executeRubyString(frame, args[i]);
+                otherStrings[i] = toStrNode.executeToStr(frame, args[i]);
             }
 
             RubyBasicObject otherStr = otherStrings[0];

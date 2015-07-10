@@ -73,7 +73,7 @@ public abstract class RegexpNodes {
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            return match(regexp, toStrNode.executeRubyString(frame, other));
+            return match(regexp, toStrNode.executeToStr(frame, other));
         }
 
     }

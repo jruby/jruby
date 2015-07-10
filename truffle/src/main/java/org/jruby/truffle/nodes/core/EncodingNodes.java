@@ -218,7 +218,7 @@ public abstract class EncodingNodes {
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            return defaultExternal(toStrNode.executeRubyString(frame, encoding));
+            return defaultExternal(toStrNode.executeToStr(frame, encoding));
         }
 
     }
@@ -260,7 +260,7 @@ public abstract class EncodingNodes {
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            final RubyString encodingName = toStrNode.executeRubyString(frame, encoding);
+            final RubyBasicObject encodingName = toStrNode.executeToStr(frame, encoding);
             getContext().getRuntime().setDefaultInternalEncoding(RubyEncoding.getEncoding(encodingName.toString()).getEncoding());
 
             return encodingName;

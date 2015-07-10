@@ -407,7 +407,7 @@ public class RubyRegexp extends RubyBasicObject {
         Object lastGoodMatchData = getContext().getCoreLibrary().getNilObject();
 
         if (regex.numberOfCaptures() == 0) {
-            final ArrayList<RubyString> strings = new ArrayList<>();
+            final ArrayList<RubyBasicObject> strings = new ArrayList<>();
 
             while (true) {
                 Object matchData = matchCommon(string, false, true, matcher, p + end, range);

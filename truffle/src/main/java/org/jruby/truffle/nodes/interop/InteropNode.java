@@ -273,7 +273,7 @@ public abstract class InteropNode extends RubyNode {
         @Override
         public Object execute(VirtualFrame frame) {
             if (ForeignAccessArguments.getReceiver(frame.getArguments()) instanceof RubyString) {
-                final RubyString string = (RubyString) ForeignAccessArguments.getReceiver(frame.getArguments());
+                final RubyBasicObject string = (RubyBasicObject) ForeignAccessArguments.getReceiver(frame.getArguments());
                 final int index = (int) ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex);
                 if (index >= StringNodes.getByteList(string).length()) {
                     return 0;
