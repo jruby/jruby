@@ -81,7 +81,7 @@ public abstract class ProcNodes {
         return ((RubyProc) proc).self;
     }
 
-    public static RubyProc getBlockCapturedInScope(RubyBasicObject proc) {
+    public static RubyBasicObject getBlockCapturedInScope(RubyBasicObject proc) {
         assert RubyGuards.isRubyProc(proc);
         return ((RubyProc) proc).block;
     }
@@ -113,7 +113,7 @@ public abstract class ProcNodes {
 
     public static void initialize(RubyBasicObject proc, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks, CallTarget callTargetForProcs,
                                   CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
-                                  Object self, RubyProc block) {
+                                  Object self, RubyBasicObject block) {
         assert RubyGuards.isRubyProc(proc);
 
         ((RubyProc) proc).sharedMethodInfo = sharedMethodInfo;
@@ -123,6 +123,7 @@ public abstract class ProcNodes {
         ((RubyProc) proc).declarationFrame = declarationFrame;
         ((RubyProc) proc).method = method;
         ((RubyProc) proc).self = self;
+        assert block == null || RubyGuards.isRubyProc(block);
         ((RubyProc) proc).block = block;
     }
 
@@ -132,7 +133,7 @@ public abstract class ProcNodes {
 
     public static RubyProc createRubyProc(RubyClass procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks,
                                           CallTarget callTargetForProcs, CallTarget callTargetForLambdas, MaterializedFrame declarationFrame,
-                                          InternalMethod method, Object self, RubyProc block) {
+                                          InternalMethod method, Object self, RubyBasicObject block) {
         return new RubyProc(procClass, type, sharedMethodInfo, callTargetForBlocks, callTargetForProcs, callTargetForLambdas, declarationFrame, method, self, block);
     }
 

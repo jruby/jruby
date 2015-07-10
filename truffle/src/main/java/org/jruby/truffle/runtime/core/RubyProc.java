@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -34,7 +35,7 @@ public class RubyProc extends RubyBasicObject {
      * Notably used by super to figure out in which method we were. */
     @CompilationFinal public InternalMethod method;
     @CompilationFinal public Object self;
-    @CompilationFinal public RubyProc block;
+    @CompilationFinal public RubyBasicObject block;
 
     public RubyProc(RubyClass procClass, ProcNodes.Type type) {
         super(procClass);
@@ -43,8 +44,9 @@ public class RubyProc extends RubyBasicObject {
 
     public RubyProc(RubyClass procClass, ProcNodes.Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks,
                     CallTarget callTargetForProcs, CallTarget callTargetForLambdas, MaterializedFrame declarationFrame,
-                    InternalMethod method, Object self, RubyProc block) {
+                    InternalMethod method, Object self, RubyBasicObject block) {
         this(procClass, type);
+        assert block == null || RubyGuards.isRubyProc(block);
         ProcNodes.initialize(this, sharedMethodInfo, callTargetForBlocks, callTargetForProcs, callTargetForLambdas, declarationFrame,
                 method, self, block);
     }
