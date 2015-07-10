@@ -270,7 +270,13 @@ module Commands
       jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
     end
 
-    raw_sh env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args
+    if ENV["JRUBY_ECLIPSE"] == "true"
+      jruby_bin = "#{JRUBY_DIR}/tool/jruby_eclipse"
+    else
+      jruby_bin = "#{JRUBY_DIR}/bin/jruby"
+    end
+
+    raw_sh env_vars, jruby_bin, *jruby_args, *args
   end
   alias ruby run
 
