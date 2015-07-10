@@ -182,6 +182,8 @@ project 'JRuby Integration Tests' do
             filename = "#{line.chomp}.rb" unless File.exist? File.join(basedir, filename)
             next if filename =~ /mri\/psych\//
             next if filename =~ /mri\/net\/http\//
+            # to much assumptions about executed from root directory, etc
+            next if filename =~ /jruby\/test_load_compiled_ruby_class_from_classpath.rb/
             next unless File.exist? File.join(basedir, filename)
             files << "<arg value='test/#{filename}'/>"
           end
