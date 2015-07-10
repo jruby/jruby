@@ -1303,6 +1303,37 @@ public abstract class KernelNodes {
 
     }
 
+    @CoreMethod(names = "public_send", needsBlock = true, required = 1, argumentsAsArray = true)
+    public abstract static class PublicSendNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private CallDispatchHeadNode dispatchNode;
+
+        public PublicSendNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+
+            dispatchNode = new CallDispatchHeadNode(context, false,
+                    DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT,
+                    MissingBehavior.CALL_METHOD_MISSING);
+
+            if (DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
+                dispatchNode.forceUncached();
+            }
+        }
+
+        @Specialization
+        public Object send(VirtualFrame frame, Object self, Object[] args, NotProvided block) {
+            return send(frame, self, args, (RubyProc) null);
+        }
+
+        @Specialization
+        public Object send(VirtualFrame frame, Object self, Object[] args, RubyProc block) {
+            final Object name = args[0];
+            final Object[] sendArgs = ArrayUtils.extractRange(args, 1, args.length);
+            return dispatchNode.call(frame, self, name, block, sendArgs);
+        }
+
+    }
+
     @CoreMethod(names = "rand", isModuleFunction = true, optional = 1)
     public abstract static class RandNode extends CoreMethodArrayArgumentsNode {
 
