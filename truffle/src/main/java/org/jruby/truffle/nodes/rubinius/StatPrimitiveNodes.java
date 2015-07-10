@@ -168,8 +168,8 @@ public abstract class StatPrimitiveNodes {
             writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
         }
 
-        @Specialization
-        public int stat(RubyBasicObject rubyStat, RubyString path) {
+        @Specialization(guards = "isRubyString(path)")
+        public int stat(RubyBasicObject rubyStat, RubyBasicObject path) {
             final FileStat stat = posix().allocateStat();
             final ByteList byteList = StringNodes.getByteList(path);
             final String pathString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
@@ -223,8 +223,8 @@ public abstract class StatPrimitiveNodes {
             writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
         }
 
-        @Specialization
-        public int lstat(RubyBasicObject rubyStat, RubyString path) {
+        @Specialization(guards = "isRubyString(path)")
+        public int lstat(RubyBasicObject rubyStat, RubyBasicObject path) {
             final FileStat stat = posix().allocateStat();
             final int code = posix().lstat(path.toString(), stat);
 

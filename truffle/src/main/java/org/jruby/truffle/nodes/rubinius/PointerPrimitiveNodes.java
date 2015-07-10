@@ -283,8 +283,8 @@ public abstract class PointerPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject address(RubyBasicObject pointer, RubyString string, int maxLength) {
+        @Specialization(guards = "isRubyString(string)")
+        public RubyBasicObject address(RubyBasicObject pointer, RubyBasicObject string, int maxLength) {
             final ByteList bytes = StringNodes.getByteList(string);
             final int length = Math.min(bytes.length(), maxLength);
             PointerNodes.getPointer(pointer).put(0, bytes.unsafeBytes(), bytes.begin(), length);

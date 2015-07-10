@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -51,7 +52,8 @@ public abstract class TimePrimitiveNodes {
         }
         
         @TruffleBoundary
-        private DateTime now(RubyString timeZone) {
+        private DateTime now(RubyBasicObject timeZone) {
+            assert RubyGuards.isRubyString(timeZone);
             return DateTime.now(org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(), timeZone.toString()));
         }
 
@@ -112,7 +114,8 @@ public abstract class TimePrimitiveNodes {
         }
 
         @TruffleBoundary
-        private DateTime localtime(long milliseconds, RubyString timeZone) {
+        private DateTime localtime(long milliseconds, RubyBasicObject timeZone) {
+            assert RubyGuards.isRubyString(timeZone);
             return new DateTime(milliseconds, org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(), timeZone.toString()));
         }
 
@@ -199,8 +202,8 @@ public abstract class TimePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject timeStrftime(RubyTime time, RubyString format) {
+        @Specialization(guards = "isRubyString(format)")
+        public RubyBasicObject timeStrftime(RubyTime time, RubyBasicObject format) {
             final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
             // TODO CS 15-Feb-15 ok to just pass nanoseconds as 0?
             return createString(rdf.formatToByteList(rdf.compilePattern(StringNodes.getByteList(format), false), time.getDateTime(), 0, null));

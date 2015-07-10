@@ -30,8 +30,8 @@ public abstract class EncodingPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyEncoding encodingGetObjectEncoding(RubyString string) {
+        @Specialization(guards = "isRubyString(string)")
+        public RubyEncoding encodingGetObjectEncodingString(RubyBasicObject string) {
             return RubyEncoding.getEncoding(StringNodes.getByteList(string).getEncoding());
         }
 

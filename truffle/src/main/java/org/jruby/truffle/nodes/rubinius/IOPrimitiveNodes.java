@@ -216,8 +216,8 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public int open(RubyString path, int mode, int permission) {
+        @Specialization(guards = "isRubyString(path)")
+        public int open(RubyBasicObject path, int mode, int permission) {
             return posix().open(StringNodes.getByteList(path), mode, permission);
         }
 
@@ -231,13 +231,13 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public int truncate(RubyString path, int length) {
+        @Specialization(guards = "isRubyString(path)")
+        public int truncate(RubyBasicObject path, int length) {
             return truncate(path, (long) length);
         }
 
-        @Specialization
-        public int truncate(RubyString path, long length) {
+        @Specialization(guards = "isRubyString(path)")
+        public int truncate(RubyBasicObject path, long length) {
             final ByteList byteList = StringNodes.getByteList(path);
             final String pathString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
             final int result = posix().truncate(pathString, length);
@@ -278,8 +278,8 @@ public abstract class IOPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public boolean fnmatch(RubyString pattern, RubyString path, int flags) {
+        @Specialization(guards = {"isRubyString(pattern)", "isRubyString(path)"})
+        public boolean fnmatch(RubyBasicObject pattern, RubyBasicObject path, int flags) {
             return Dir.fnmatch(StringNodes.getByteList(pattern).getUnsafeBytes(),
                     StringNodes.getByteList(pattern).getBegin(),
                     StringNodes.getByteList(pattern).getBegin() + StringNodes.getByteList(pattern).getRealSize(),
@@ -415,8 +415,8 @@ public abstract class IOPrimitiveNodes {
             resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        @Specialization
-        public Object reopenPath(VirtualFrame frame, RubyBasicObject file, RubyString path, int mode) {
+        @Specialization(guards = "isRubyString(path)")
+        public Object reopenPath(VirtualFrame frame, RubyBasicObject file, RubyBasicObject path, int mode) {
             int fd = getDescriptor(file);
             final String pathString = path.toString();
 
@@ -466,8 +466,8 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public int write(VirtualFrame frame, RubyBasicObject file, RubyString string) {
+        @Specialization(guards = "isRubyString(string)")
+        public int write(VirtualFrame frame, RubyBasicObject file, RubyBasicObject string) {
             final int fd = getDescriptor(file);
 
             final ByteList byteList = StringNodes.getByteList(string);

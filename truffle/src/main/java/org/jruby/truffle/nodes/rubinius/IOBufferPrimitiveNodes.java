@@ -155,8 +155,8 @@ public abstract class IOBufferPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public int unshift(VirtualFrame frame, RubyBasicObject ioBuffer, RubyString string, int startPosition) {
+        @Specialization(guards = "isRubyString(string)")
+        public int unshift(VirtualFrame frame, RubyBasicObject ioBuffer, RubyBasicObject string, int startPosition) {
             setWriteSynced(ioBuffer, false);
 
             final ByteList byteList = StringNodes.getByteList(string);

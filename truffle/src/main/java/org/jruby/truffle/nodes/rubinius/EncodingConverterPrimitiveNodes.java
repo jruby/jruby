@@ -56,15 +56,15 @@ public abstract class EncodingConverterPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyHash(options)")
-        public Object encodingConverterPrimitiveConvert(RubyEncodingConverter encodingConverter, RubyString source,
-                                                        RubyString target, int offset, int size, RubyBasicObject options) {
+        @Specialization(guards = {"isRubyString(source)", "isRubyString(target)", "isRubyHash(options)"})
+        public Object encodingConverterPrimitiveConvert(RubyEncodingConverter encodingConverter, RubyBasicObject source,
+                                                        RubyBasicObject target, int offset, int size, RubyBasicObject options) {
             throw new UnsupportedOperationException("not implemented");
         }
 
-        @Specialization
-        public Object encodingConverterPrimitiveConvert(RubyEncodingConverter encodingConverter, RubyString source,
-                                                        RubyString target, int offset, int size, int options) {
+        @Specialization(guards = {"isRubyString(source)", "isRubyString(target)"})
+        public Object encodingConverterPrimitiveConvert(RubyEncodingConverter encodingConverter, RubyBasicObject source,
+                                                        RubyBasicObject target, int offset, int size, int options) {
 
             // Taken from org.jruby.RubyConverter#primitive_convert.
 

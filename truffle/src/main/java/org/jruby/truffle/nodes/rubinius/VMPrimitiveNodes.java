@@ -175,8 +175,8 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject vmGetUserHome(RubyString username) {
+        @Specialization(guards = "isRubyString(username)")
+        public RubyBasicObject vmGetUserHome(RubyBasicObject username) {
             CompilerDirectives.transferToInterpreter();
             // TODO BJF 30-APR-2015 Review the more robust getHomeDirectoryPath implementation
             final Passwd passwd = getContext().getPosix().getpwnam(username.toString());
@@ -402,8 +402,8 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public boolean watchSignal(RubyString signalName, RubyString action) {
+        @Specialization(guards = {"isRubyString(signalName)", "isRubyString(action)"})
+        public boolean watchSignal(RubyBasicObject signalName, RubyBasicObject action) {
             if (!action.toString().equals("DEFAULT")) {
                 throw new UnsupportedOperationException();
             }
@@ -414,16 +414,16 @@ public abstract class VMPrimitiveNodes {
             return true;
         }
 
-        @Specialization(guards = "isNil(nil)")
-        public boolean watchSignal(RubyString signalName, Object nil) {
+        @Specialization(guards = {"isRubyString(signalName)", "isNil(nil)"})
+        public boolean watchSignal(RubyBasicObject signalName, Object nil) {
             Signal signal = new Signal(signalName.toString());
 
             SignalOperations.watchSignal(signal, SignalOperations.IGNORE_HANDLER);
             return true;
         }
 
-        @Specialization
-        public boolean watchSignal(RubyString signalName, RubyProc proc) {
+        @Specialization(guards = "isRubyString(signalName)")
+        public boolean watchSignal(RubyBasicObject signalName, RubyProc proc) {
             Signal signal = new Signal(signalName.toString());
 
             SignalOperations.watchSignal(signal, new ProcSignalHandler(getContext(), proc));
@@ -440,8 +440,8 @@ public abstract class VMPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object get(RubyString key) {
+        @Specialization(guards = "isRubyString(key)")
+        public Object get(RubyBasicObject key) {
             final Object value = getContext().getRubiniusConfiguration().get(key.toString());
 
             if (value == null) {
@@ -461,8 +461,8 @@ public abstract class VMPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject getSection(RubyString section) {
+        @Specialization(guards = "isRubyString(section)")
+        public RubyBasicObject getSection(RubyBasicObject section) {
             final List<RubyBasicObject> sectionKeyValues = new ArrayList<>();
 
             for (String key : getContext().getRubiniusConfiguration().getSection(section.toString())) {
