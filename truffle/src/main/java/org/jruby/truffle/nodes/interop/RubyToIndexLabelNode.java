@@ -15,7 +15,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 
 public abstract class RubyToIndexLabelNode extends TargetableRubyNode {
 

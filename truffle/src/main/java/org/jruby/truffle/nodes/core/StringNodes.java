@@ -34,9 +34,7 @@ import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import jnr.posix.POSIX;
-
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
@@ -1565,7 +1563,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public int ord(RubyBasicObject string) {
-            return ((org.jruby.RubyFixnum) getContext().toJRubyString((RubyString) string).ord(getContext().getRuntime().getCurrentContext())).getIntValue();
+            return ((org.jruby.RubyFixnum) getContext().toJRubyString(string).ord(getContext().getRuntime().getCurrentContext())).getIntValue();
         }
     }
 

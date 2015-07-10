@@ -15,7 +15,6 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 @Deprecated
 public class RubyBinding extends RubyBasicObject {

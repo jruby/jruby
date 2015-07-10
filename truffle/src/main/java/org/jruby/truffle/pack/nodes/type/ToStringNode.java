@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
@@ -30,7 +31,6 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
@@ -111,12 +111,12 @@ public abstract class ToStringNode extends PackNode {
 
         final Object value = toSNode.call(frame, array, "to_s", null);
 
-        if (value instanceof RubyString) {
+        if (RubyGuards.isRubyString(value)) {
             if (taintedProfile.profile(isTaintedNode.executeIsTainted(value))) {
                 setTainted(frame);
             }
 
-            return StringNodes.getByteList(((RubyString) value));
+            return StringNodes.getByteList((RubyBasicObject) value);
         }
 
         CompilerDirectives.transferToInterpreter();
@@ -137,12 +137,12 @@ public abstract class ToStringNode extends PackNode {
 
         final Object value = toStrNode.call(frame, object, conversionMethod, null);
 
-        if (value instanceof RubyString) {
+        if (RubyGuards.isRubyString(value)) {
             if (taintedProfile.profile(isTaintedNode.executeIsTainted(value))) {
                 setTainted(frame);
             }
 
-            return StringNodes.getByteList(((RubyString) value));
+            return StringNodes.getByteList((RubyBasicObject) value);
         }
 
         if (inspectOnConversionFailure) {

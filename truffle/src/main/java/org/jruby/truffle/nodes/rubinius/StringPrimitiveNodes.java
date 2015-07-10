@@ -74,7 +74,10 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyEncoding;
+import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
@@ -208,7 +211,7 @@ public abstract class StringPrimitiveNodes {
                 return subString;
             }
 
-            if (StringNodes.getByteList(((RubyString) subString)).length() == 0) {
+            if (StringNodes.getByteList((RubyBasicObject) subString).length() == 0) {
                 return nil();
             }
 

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.hash.Entry;
 
+@Deprecated
 public class RubyHash extends RubyBasicObject {
 
     public RubyProc defaultBlock;

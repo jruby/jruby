@@ -398,8 +398,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             return runtime.newFixnum((long) object);
         } else if (object instanceof Double) {
             return runtime.newFloat((double) object);
-        } else if (object instanceof RubyString) {
-            return toJRubyString((RubyString) object);
+        } else if (RubyGuards.isRubyString(object)) {
+            return toJRubyString((RubyBasicObject) object);
         } else if (RubyGuards.isRubyArray(object)) {
             return toJRubyArray((RubyBasicObject) object);
         } else if (object instanceof RubyEncoding) {

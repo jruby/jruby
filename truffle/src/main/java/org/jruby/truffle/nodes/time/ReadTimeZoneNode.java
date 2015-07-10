@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.time;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.constants.ReadConstantNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -19,7 +20,6 @@ import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 
 public class ReadTimeZoneNode extends RubyNode {
     
@@ -45,7 +45,7 @@ public class ReadTimeZoneNode extends RubyNode {
 
         if (tz == nil()) {
             return createString("UTC");
-        } else if (tz instanceof RubyString) {
+        } else if (RubyGuards.isRubyString(tz)) {
             return tz;
         } else {
             throw new UnsupportedOperationException();

@@ -14,7 +14,6 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 
 public abstract class CachedDispatchNode extends DispatchNode {
 
@@ -34,13 +33,13 @@ public abstract class CachedDispatchNode extends DispatchNode {
             DispatchAction dispatchAction) {
         super(context, dispatchAction);
 
-        assert (cachedName instanceof String) || (RubyGuards.isRubySymbol(cachedName)) || (cachedName instanceof RubyString);
+        assert (cachedName instanceof String) || (RubyGuards.isRubySymbol(cachedName)) || (RubyGuards.isRubyString(cachedName));
         this.cachedName = cachedName;
 
         if (RubyGuards.isRubySymbol(cachedName)) {
             cachedNameAsSymbol = (RubyBasicObject) cachedName;
-        } else if (cachedName instanceof RubyString) {
-            cachedNameAsSymbol = context.getSymbol(StringNodes.getByteList(((RubyString) cachedName)));
+        } else if (RubyGuards.isRubyString(cachedName)) {
+            cachedNameAsSymbol = context.getSymbol(StringNodes.getByteList((RubyBasicObject) cachedName));
         } else if (cachedName instanceof String) {
             cachedNameAsSymbol = context.getSymbol((String) cachedName);
         } else {
@@ -69,8 +68,8 @@ public abstract class CachedDispatchNode extends DispatchNode {
         } else if (RubyGuards.isRubySymbol(cachedName)) {
             // TODO(CS, 11-Jan-15) this just repeats the above guard...
             return cachedName == methodName;
-        } else if (cachedName instanceof RubyString) {
-            return (methodName instanceof RubyString) && StringNodes.getByteList(((RubyString) cachedName)).equal(StringNodes.getByteList(((RubyString) methodName)));
+        } else if (RubyGuards.isRubyString(cachedName)) {
+            return (RubyGuards.isRubyString(methodName)) && StringNodes.getByteList((RubyBasicObject) cachedName).equal(StringNodes.getByteList((RubyBasicObject) methodName));
         } else {
             throw new UnsupportedOperationException();
         }

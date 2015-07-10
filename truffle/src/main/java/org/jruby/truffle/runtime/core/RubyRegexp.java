@@ -421,7 +421,7 @@ public class RubyRegexp extends RubyBasicObject {
 
                 assert values.length == 1;
 
-                strings.add((RubyString) values[0]);
+                strings.add((RubyBasicObject) values[0]);
 
                 lastGoodMatchData = matchData;
                 end = StringSupport.positionEndForScan(StringNodes.getByteList(string), matcher, encoding, p, range);

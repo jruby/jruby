@@ -13,6 +13,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
+@Deprecated
 public class RubyString extends RubyBasicObject {
 
     public ByteList bytes;

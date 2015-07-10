@@ -16,18 +16,18 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyRegexp;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.translator.BodyTranslator;
 import org.jruby.util.RegexpOptions;
 
-public class InteroplatedRegexpNode extends RubyNode {
+public class InterpolatedRegexpNode extends RubyNode {
 
     @Children private final RubyNode[] children;
     private final RegexpOptions options;
     @Child private CallDispatchHeadNode toS;
 
-    public InteroplatedRegexpNode(RubyContext context, SourceSection sourceSection, RubyNode[] children, RegexpOptions options) {
+    public InterpolatedRegexpNode(RubyContext context, SourceSection sourceSection, RubyNode[] children, RegexpOptions options) {
         super(context, sourceSection);
         this.children = children;
         this.options = options;
@@ -42,7 +42,7 @@ public class InteroplatedRegexpNode extends RubyNode {
 
         for (int n = 0; n < children.length; n++) {
             final Object child = children[n].execute(frame);
-            strings[n] = org.jruby.RubyString.newString(getContext().getRuntime(), StringNodes.getByteList(((RubyString) toS.call(frame, child, "to_s", null))));
+            strings[n] = org.jruby.RubyString.newString(getContext().getRuntime(), StringNodes.getByteList((RubyBasicObject) toS.call(frame, child, "to_s", null)));
         }
 
         final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getRuntime(), strings, options);

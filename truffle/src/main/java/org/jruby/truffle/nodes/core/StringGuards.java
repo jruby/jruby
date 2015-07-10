@@ -13,7 +13,6 @@ package org.jruby.truffle.nodes.core;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.CodeRangeSupport;
 import org.jruby.util.StringSupport;
 

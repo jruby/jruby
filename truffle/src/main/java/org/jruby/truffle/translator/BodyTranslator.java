@@ -76,7 +76,6 @@ import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;
-import org.jruby.util.cli.Options;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -994,7 +993,7 @@ public class BodyTranslator extends Translator {
             children.add(child.accept(this));
         }
 
-        final InteroplatedRegexpNode i = new InteroplatedRegexpNode(context, sourceSection, children.toArray(new RubyNode[children.size()]), node.getOptions());
+        final InterpolatedRegexpNode i = new InterpolatedRegexpNode(context, sourceSection, children.toArray(new RubyNode[children.size()]), node.getOptions());
 
         if (node.getOptions().isOnce()) {
             return new OnceNode(context, i.getEncapsulatingSourceSection(), i);

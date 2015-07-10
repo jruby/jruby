@@ -26,7 +26,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.IdUtil;
 
 @NodeChildren({
@@ -53,7 +52,7 @@ public abstract class GetConstantNode extends RubyNode {
     protected Object autoloadConstant(VirtualFrame frame, RubyModule module, String name, RubyConstant constant,
             @Cached("createRequireNode()") RequireNode requireNode) {
 
-        requireNode.require((RubyString) constant.getValue());
+        requireNode.require((RubyBasicObject) constant.getValue());
 
         // retry
         return this.executeGetConstant(frame, module, name);

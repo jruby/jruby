@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
@@ -22,7 +23,6 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 
 @NodeChild(type = RubyNode.class)
 public abstract class ToSNode extends RubyNode {
@@ -52,8 +52,8 @@ public abstract class ToSNode extends RubyNode {
     public RubyBasicObject toS(VirtualFrame frame, Object object) throws UnexpectedResultException {
         final Object value = callToSNode.call(frame, object, "to_s", null);
 
-        if (value instanceof RubyString) {
-            return (RubyString) value;
+        if (RubyGuards.isRubyString(value)) {
+            return (RubyBasicObject) value;
         }
 
         throw new UnexpectedResultException(value);
@@ -63,8 +63,8 @@ public abstract class ToSNode extends RubyNode {
     public RubyBasicObject toSFallback(VirtualFrame frame, Object object) {
         final Object value = callToSNode.call(frame, object, "to_s", null);
 
-        if (value instanceof RubyString) {
-            return (RubyString) value;
+        if (RubyGuards.isRubyString(value)) {
+            return (RubyBasicObject) value;
         } else {
             return kernelToS(frame, object);
         }

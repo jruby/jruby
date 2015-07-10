@@ -24,7 +24,6 @@ import org.jruby.truffle.nodes.objects.TaintNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 
 /**
  * A list of expressions to build up into a string.
@@ -77,7 +76,7 @@ public final class InterpolatedStringNode extends RubyNode {
             assert RubyGuards.isRubyString(string);
 
             if (builder == null) {
-                builder = getContext().toJRubyString((RubyString) string);
+                builder = getContext().toJRubyString((RubyBasicObject) string);
             } else {
                 try {
                     builder.append19(getContext().toJRuby(string));

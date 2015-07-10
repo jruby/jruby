@@ -17,7 +17,6 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.Ruby;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
@@ -32,7 +31,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.ByteList;
@@ -389,7 +387,7 @@ public abstract class TrufflePrimitiveNodes {
             int n = 0;
 
             for (Object object : ArrayNodes.slowToArray(array)) {
-                if (object instanceof RubyString || RubyGuards.isRubySymbol(object)) {
+                if (RubyGuards.isRubyString(object) || RubyGuards.isRubySymbol(object)) {
                     strings[n] = object.toString();
                     n++;
                 } else {

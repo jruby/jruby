@@ -207,8 +207,8 @@ public class RubyBasicObject implements TruffleObject {
     public String toString() {
         CompilerAsserts.neverPartOfCompilation("RubyBasicObject#toString should only be used for debugging");
 
-        if (this instanceof RubyString) {
-            return Helpers.decodeByteList(getContext().getRuntime(), StringNodes.getByteList(((RubyString) this)));
+        if (RubyGuards.isRubyString(this)) {
+            return Helpers.decodeByteList(getContext().getRuntime(), StringNodes.getByteList((this)));
         } else if (RubyGuards.isRubySymbol(this)) {
             return SymbolNodes.getString(this);
         } else {

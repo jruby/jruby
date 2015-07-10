@@ -16,7 +16,6 @@ import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyEncoding;
-import org.jruby.truffle.runtime.core.RubyString;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Encoding} class..

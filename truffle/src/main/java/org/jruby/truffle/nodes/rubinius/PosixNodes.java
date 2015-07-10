@@ -12,10 +12,8 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
-
 import org.jruby.RubyEncoding;
 import org.jruby.platform.Platform;
 import org.jruby.truffle.nodes.core.CoreClass;
@@ -25,7 +23,6 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;

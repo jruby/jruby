@@ -26,7 +26,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.truffle.runtime.core.RubyRegexp;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
 import java.util.Iterator;
@@ -58,7 +57,7 @@ public abstract class RegexpNodes {
                 toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return match(regexp, (RubyString) toSNode.call(frame, symbol, "to_s", null));
+            return match(regexp, (RubyBasicObject) toSNode.call(frame, symbol, "to_s", null));
         }
 
         @Specialization(guards = "isNil(nil)")

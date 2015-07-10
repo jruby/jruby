@@ -1757,7 +1757,7 @@ public abstract class KernelNodes {
             final PackResult result;
 
             try {
-                result = (PackResult) callPackNode.call(frame, compileFormat((RubyString) arguments[0]), new Object[]{store, store.length});
+                result = (PackResult) callPackNode.call(frame, compileFormat((RubyBasicObject) arguments[0]), new Object[]{store, store.length});
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
