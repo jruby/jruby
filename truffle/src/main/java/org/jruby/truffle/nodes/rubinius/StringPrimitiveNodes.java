@@ -380,8 +380,8 @@ public abstract class StringPrimitiveNodes {
             sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { null });
         }
 
-        @Specialization
-        public int stringCompareSubstring(VirtualFrame frame, RubyBasicObject string, RubyString other, int start, int size) {
+        @Specialization(guards = "isRubyString(other)")
+        public int stringCompareSubstring(VirtualFrame frame, RubyBasicObject string, RubyBasicObject other, int start, int size) {
             // Transliterated from Rubinius C++.
 
             final int stringLength = sizeNode.executeInteger(frame, string);
@@ -437,8 +437,8 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public boolean stringEqual(RubyBasicObject string, RubyString other) {
+        @Specialization(guards = "isRubyString(other)")
+        public boolean stringEqual(RubyBasicObject string, RubyBasicObject other) {
             final ByteList a = StringNodes.getByteList(string);
             final ByteList b = StringNodes.getByteList(other);
 
@@ -610,8 +610,8 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object stringIndex(VirtualFrame frame, RubyBasicObject string, RubyString pattern, int start) {
+        @Specialization(guards = "isRubyString(pattern)")
+        public Object stringIndex(VirtualFrame frame, RubyBasicObject string, RubyBasicObject pattern, int start) {
             if (byteIndexToCharIndexNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 byteIndexToCharIndexNode = insert(StringPrimitiveNodesFactory.StringByteCharacterIndexNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
@@ -715,8 +715,8 @@ public abstract class StringPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object stringCharacterIndex(RubyBasicObject string, RubyString pattern, int offset) {
+        @Specialization(guards = "isRubyString(pattern)")
+        public Object stringCharacterIndex(RubyBasicObject string, RubyBasicObject pattern, int offset) {
             if (offset < 0) {
                 return nil();
             }
@@ -849,8 +849,8 @@ public abstract class StringPrimitiveNodes {
             }
         }
 
-        @Specialization
-        public Object stringByteIndex(RubyBasicObject string, RubyString pattern, int offset) {
+        @Specialization(guards = "isRubyString(pattern)")
+        public Object stringByteIndex(RubyBasicObject string, RubyBasicObject pattern, int offset) {
             // Taken from Rubinius's String::byte_index.
 
             final int match_size = StringNodes.getByteList(pattern).length();
@@ -941,8 +941,8 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject stringCopyFrom(RubyBasicObject string, RubyString other, int start, int size, int dest) {
+        @Specialization(guards = "isRubyString(other)")
+        public RubyBasicObject stringCopyFrom(RubyBasicObject string, RubyBasicObject other, int start, int size, int dest) {
             // Taken from Rubinius's String::copy_from.
 
             int src = start;
@@ -994,8 +994,8 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object stringRindex(RubyBasicObject string, RubyString pattern, int start) {
+        @Specialization(guards = "isRubyString(pattern)")
+        public Object stringRindex(RubyBasicObject string, RubyBasicObject pattern, int start) {
             // Taken from Rubinius's String::rindex.
 
             int pos = start;
@@ -1074,8 +1074,8 @@ public abstract class StringPrimitiveNodes {
             return StringNodes.createString(stringClass, new ByteList(bytes));
         }
 
-        @Specialization
-        public RubyBasicObject stringPattern(RubyClass stringClass, int size, RubyString string) {
+        @Specialization(guards = "isRubyString(string)")
+        public RubyBasicObject stringPattern(RubyClass stringClass, int size, RubyBasicObject string) {
             final byte[] bytes = new byte[size];
             final ByteList byteList = StringNodes.getByteList(string);
 
@@ -1121,8 +1121,8 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject stringByteAppend(RubyBasicObject string, RubyString other) {
+        @Specialization(guards = "isRubyString(other)")
+        public RubyBasicObject stringByteAppend(RubyBasicObject string, RubyBasicObject other) {
             StringNodes.getByteList(string).append(StringNodes.getByteList(other));
             return string;
         }
@@ -1179,7 +1179,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
-        public Object stringSubstring(RubyString string, int beg, int len) {
+        public Object stringSubstring(RubyBasicObject string, int beg, int len) {
             // Taken from org.jruby.RubyString#substr19 & org.jruby.RubyString#multibyteSubstr19.
 
             if (len < 0) {
