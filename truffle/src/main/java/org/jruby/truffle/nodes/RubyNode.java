@@ -22,6 +22,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 import org.jcodings.Encoding;
+import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
@@ -339,7 +340,7 @@ public abstract class RubyNode extends Node {
     protected Object rubyWithSelf(VirtualFrame frame, Object self, String expression, Object... arguments) {
         final MaterializedFrame evalFrame = setupFrame(RubyArguments.getSelf(frame.getArguments()), arguments);
 
-        final RubyBinding binding = new RubyBinding(
+        final RubyBinding binding = BindingNodes.createRubyBinding(
                 getContext().getCoreLibrary().getBindingClass(),
                 self,
                 evalFrame);

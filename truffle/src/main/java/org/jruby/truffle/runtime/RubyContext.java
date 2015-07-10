@@ -38,10 +38,7 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.core.BignumNodes;
-import org.jruby.truffle.nodes.core.LoadRequiredLibrariesNode;
-import org.jruby.truffle.nodes.core.SetTopLevelBindingNode;
-import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.exceptions.TopLevelRaiseHandler;
@@ -331,7 +328,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     @TruffleBoundary
     public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
         final Source source = Source.fromText(code, filename);
-        return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, binding.getSelf(), binding.getFrame(), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
+        return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, BindingNodes.getSelf(binding), BindingNodes.getFrame(binding), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
     }
 
     @TruffleBoundary

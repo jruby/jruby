@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
@@ -21,44 +22,19 @@ import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
  */
 public class RubyBinding extends RubyBasicObject {
 
-    @CompilationFinal private Object self;
-    @CompilationFinal private MaterializedFrame frame;
-
-    public RubyBinding(RubyClass bindingClass) {
-        super(bindingClass);
-    }
+    @CompilationFinal public Object self;
+    @CompilationFinal public MaterializedFrame frame;
 
     public RubyBinding(RubyClass bindingClass, Object self, MaterializedFrame frame) {
         super(bindingClass);
-
-        initialize(self, frame);
-    }
-
-    public void initialize(Object self, MaterializedFrame frame) {
-        assert self != null;
-        assert frame != null;
-
         this.self = self;
         this.frame = frame;
-    }
-
-    public Object getSelf() {
-        return self;
-    }
-
-    public MaterializedFrame getFrame() {
-        return frame;
-    }
-
-    @Override
-    public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-        getContext().getObjectSpaceManager().visitFrame(frame, visitor);
     }
 
     public static class BindingAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyBinding(rubyClass);
+            return BindingNodes.createRubyBinding(rubyClass);
         }
     }
 

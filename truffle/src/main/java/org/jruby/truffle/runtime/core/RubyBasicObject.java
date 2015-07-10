@@ -18,6 +18,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -162,6 +163,8 @@ public class RubyBasicObject implements TruffleObject {
                     ((RubyBasicObject) keyValue.getValue()).visitObjectGraph(visitor);
                 }
             }
+        } else if (RubyGuards.isRubyBinding(this)) {
+            getContext().getObjectSpaceManager().visitFrame(BindingNodes.getFrame(this), visitor);
         }
     }
 

@@ -29,7 +29,6 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.util.Memo;
 
@@ -61,7 +60,7 @@ public abstract class ProcNodes {
         public Object binding(RubyProc proc) {
             final MaterializedFrame frame = proc.getDeclarationFrame();
 
-            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(),
+            return BindingNodes.createRubyBinding(getContext().getCoreLibrary().getBindingClass(),
                     RubyArguments.getSelf(frame.getArguments()),
                     frame);
         }

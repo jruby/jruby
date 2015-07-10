@@ -76,7 +76,7 @@ public abstract class TrufflePrimitiveNodes {
 
             });
 
-            return new RubyBinding(
+            return BindingNodes.createRubyBinding(
                     getContext().getCoreLibrary().getBindingClass(),
                     RubyArguments.getSelf(frame.getArguments()),
                     frame);
