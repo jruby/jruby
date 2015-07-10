@@ -22,6 +22,7 @@ import com.oracle.truffle.api.tools.LineToProbesMap;
 import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyProc;
 
@@ -50,7 +51,7 @@ public class AttachmentsManager {
 
             @Override
             public void enter(Probe probe, Node node, VirtualFrame frame) {
-                final RubyBinding binding = BindingNodes.createRubyBinding(context.getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
+                final RubyBasicObject binding = BindingNodes.createRubyBinding(context.getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
                 block.rootCall(binding);
             }
 

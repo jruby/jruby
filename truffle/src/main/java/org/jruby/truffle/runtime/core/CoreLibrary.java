@@ -979,8 +979,9 @@ public class CoreLibrary {
         return nameError(String.format("method `%s' for %s is private", name, module.getName()), name, currentNode);
     }
 
-    public RubyException nameErrorLocalVariableNotDefined(String name, RubyBinding binding, Node currentNode) {
+    public RubyException nameErrorLocalVariableNotDefined(String name, RubyBasicObject binding, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
+        assert RubyGuards.isRubyBinding(binding);
         return nameError(String.format("local variable `%s' not defined for %s", name, binding.toString()), name, currentNode);
     }
 

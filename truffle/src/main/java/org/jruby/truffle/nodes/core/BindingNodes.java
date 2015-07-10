@@ -37,11 +37,11 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 @CoreClass(name = "Binding")
 public abstract class BindingNodes {
 
-    public static RubyBinding createRubyBinding(RubyClass bindingClass) {
+    public static RubyBasicObject createRubyBinding(RubyClass bindingClass) {
         return createRubyBinding(bindingClass, null, null);
     }
 
-    public static RubyBinding createRubyBinding(RubyClass bindingClass, Object self, MaterializedFrame frame) {
+    public static RubyBasicObject createRubyBinding(RubyClass bindingClass, Object self, MaterializedFrame frame) {
         return new RubyBinding(bindingClass, self, frame);
     }
 
@@ -65,8 +65,8 @@ public abstract class BindingNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object initializeCopy(RubyBinding self, RubyBinding from) {
+        @Specialization(guards = "isRubyBinding(from)")
+        public Object initializeCopy(RubyBasicObject self, RubyBasicObject from) {
             if (self == from) {
                 return self;
             }
@@ -104,7 +104,7 @@ public abstract class BindingNodes {
                 "getFrameDescriptor(binding) == cachedFrameDescriptor"
 
         })
-        public Object localVariableGetCached(RubyBinding binding, RubyBasicObject symbol,
+        public Object localVariableGetCached(RubyBasicObject binding, RubyBasicObject symbol,
                                              @Cached("symbol") RubyBasicObject cachedSymbol,
                                              @Cached("getFrameDescriptor(binding)") FrameDescriptor cachedFrameDescriptor,
                                              @Cached("findFrameSlot(binding, symbol)") FrameSlot cachedFrameSlot,
@@ -119,7 +119,7 @@ public abstract class BindingNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isRubySymbol(symbol)", "!isLastLine(symbol)"})
-        public Object localVariableGetUncached(RubyBinding binding, RubyBasicObject symbol) {
+        public Object localVariableGetUncached(RubyBasicObject binding, RubyBasicObject symbol) {
             final MaterializedFrame frame = getFrame(binding);
             final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(SymbolNodes.getString(symbol));
 
@@ -132,7 +132,7 @@ public abstract class BindingNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isRubySymbol(symbol)", "isLastLine(symbol)"})
-        public Object localVariableGetLastLine(RubyBinding binding, RubyBasicObject symbol) {
+        public Object localVariableGetLastLine(RubyBasicObject binding, RubyBasicObject symbol) {
             final MaterializedFrame frame = getFrame(binding);
             final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(SymbolNodes.getString(symbol));
 
@@ -148,11 +148,13 @@ public abstract class BindingNodes {
             }
         }
 
-        protected FrameDescriptor getFrameDescriptor(RubyBinding binding) {
+        protected FrameDescriptor getFrameDescriptor(RubyBasicObject binding) {
+            assert RubyGuards.isRubyBinding(binding);
             return getFrame(binding).getFrameDescriptor();
         }
 
-        protected FrameSlot findFrameSlot(RubyBinding binding, RubyBasicObject symbol) {
+        protected FrameSlot findFrameSlot(RubyBasicObject binding, RubyBasicObject symbol) {
+            assert RubyGuards.isRubyBinding(binding);
             assert RubyGuards.isRubySymbol(symbol);
 
             final String symbolString = SymbolNodes.getString(symbol);
@@ -202,7 +204,7 @@ public abstract class BindingNodes {
                 "getFrameDescriptor(binding) == cachedFrameDescriptor",
                 "symbol == cachedSymbol"
         })
-        public Object localVariableSetCached(RubyBinding binding, RubyBasicObject symbol, Object value,
+        public Object localVariableSetCached(RubyBasicObject binding, RubyBasicObject symbol, Object value,
                                              @Cached("symbol") RubyBasicObject cachedSymbol,
                                              @Cached("getFrameDescriptor(binding)") FrameDescriptor cachedFrameDescriptor,
                                              @Cached("createWriteNode(findFrameSlot(binding, symbol))") WriteFrameSlotNode writeLocalVariableNode) {
@@ -211,7 +213,7 @@ public abstract class BindingNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isRubySymbol(symbol)", "!isLastLine(symbol)"})
-        public Object localVariableSetUncached(RubyBinding binding, RubyBasicObject symbol, Object value) {
+        public Object localVariableSetUncached(RubyBasicObject binding, RubyBasicObject symbol, Object value) {
             final MaterializedFrame frame = getFrame(binding);
             final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(SymbolNodes.getString(symbol));
             frame.setObject(frameSlot, value);
@@ -220,18 +222,20 @@ public abstract class BindingNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isRubySymbol(symbol)", "isLastLine(symbol)"})
-        public Object localVariableSetLastLine(RubyBinding binding, RubyBasicObject symbol, Object value) {
+        public Object localVariableSetLastLine(RubyBasicObject binding, RubyBasicObject symbol, Object value) {
             final MaterializedFrame frame = getFrame(binding);
             final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(SymbolNodes.getString(symbol));
             frame.setObject(frameSlot, ThreadLocalObject.wrap(getContext(), value));
             return value;
         }
 
-        protected FrameDescriptor getFrameDescriptor(RubyBinding binding) {
+        protected FrameDescriptor getFrameDescriptor(RubyBasicObject binding) {
+            assert RubyGuards.isRubyBinding(binding);
             return getFrame(binding).getFrameDescriptor();
         }
 
-        protected FrameSlot findFrameSlot(RubyBinding binding, RubyBasicObject symbol) {
+        protected FrameSlot findFrameSlot(RubyBasicObject binding, RubyBasicObject symbol) {
+            assert RubyGuards.isRubyBinding(binding);
             assert RubyGuards.isRubySymbol(symbol);
 
             final String symbolString = SymbolNodes.getString(symbol);
@@ -269,7 +273,7 @@ public abstract class BindingNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject localVariables(RubyBinding binding) {
+        public RubyBasicObject localVariables(RubyBasicObject binding) {
             final RubyBasicObject array = createEmptyArray();
 
             MaterializedFrame frame = getFrame(binding);

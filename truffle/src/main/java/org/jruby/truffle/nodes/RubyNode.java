@@ -340,7 +340,7 @@ public abstract class RubyNode extends Node {
     protected Object rubyWithSelf(VirtualFrame frame, Object self, String expression, Object... arguments) {
         final MaterializedFrame evalFrame = setupFrame(RubyArguments.getSelf(frame.getArguments()), arguments);
 
-        final RubyBinding binding = BindingNodes.createRubyBinding(
+        final RubyBasicObject binding = BindingNodes.createRubyBinding(
                 getContext().getCoreLibrary().getBindingClass(),
                 self,
                 evalFrame);

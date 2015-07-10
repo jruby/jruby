@@ -321,18 +321,21 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     @TruffleBoundary
-    public Object eval(String code, RubyBinding binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
+    public Object eval(String code, RubyBasicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
+        assert RubyGuards.isRubyBinding(binding);
         return eval(ByteList.create(code), binding, ownScopeForAssignments, filename, currentNode);
     }
 
     @TruffleBoundary
-    public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
+    public Object eval(ByteList code, RubyBasicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
+        assert RubyGuards.isRubyBinding(binding);
         final Source source = Source.fromText(code, filename);
         return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, BindingNodes.getSelf(binding), BindingNodes.getFrame(binding), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
     }
 
     @TruffleBoundary
-    public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, Node currentNode) {
+    public Object eval(ByteList code, RubyBasicObject binding, boolean ownScopeForAssignments, Node currentNode) {
+        assert RubyGuards.isRubyBinding(binding);
         return eval(code, binding, ownScopeForAssignments, "(eval)", currentNode);
     }
 

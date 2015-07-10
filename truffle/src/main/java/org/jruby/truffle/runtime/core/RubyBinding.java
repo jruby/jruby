@@ -17,9 +17,7 @@ import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
-/**
- * Represents the Ruby {@code Binding} class.
- */
+@Deprecated
 public class RubyBinding extends RubyBasicObject {
 
     @CompilationFinal public Object self;

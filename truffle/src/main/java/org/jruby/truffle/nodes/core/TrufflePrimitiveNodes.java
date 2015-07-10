@@ -31,7 +31,6 @@ import org.jruby.truffle.runtime.cext.CExtSubsystem;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
@@ -54,7 +53,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization
-        public RubyBinding bindingOfCaller() {
+        public RubyBasicObject bindingOfCaller() {
             /*
              * When you use this method you're asking for the binding of the caller at the call site. When we get into
              * this method, that is then the binding of the caller of the caller.

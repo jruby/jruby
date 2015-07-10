@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -268,14 +269,8 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public abstract RubyBinding executeRubyBinding(VirtualFrame frame);
-
-        public Object execute(VirtualFrame frame) {
-            return executeRubyBinding(frame);
-        }
-
         @Specialization
-        public RubyBinding binding() {
+        public RubyBasicObject binding() {
             // Materialize the caller's frame - false means don't use a slow path to get it - we want to optimize it
 
             final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
@@ -482,12 +477,17 @@ public abstract class KernelNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), source);
         }
 
-        protected RubyBinding getCallerBinding(VirtualFrame frame) {
+        protected RubyBasicObject getCallerBinding(VirtualFrame frame) {
             if (bindingNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
             }
-            return bindingNode.executeRubyBinding(frame);
+
+            try {
+                return bindingNode.executeRubyBasicObject(frame);
+            } catch (UnexpectedResultException e) {
+                throw new UnsupportedOperationException(e);
+            }
         }
 
         @Specialization
@@ -498,36 +498,36 @@ public abstract class KernelNodes {
         }
 
         @Specialization(guards = "isNil(noBinding)")
-        public Object eval(VirtualFrame frame, RubyString source, Object noBinding, RubyString filename, int lineNumber) {
+        public Object evalNoBinding(VirtualFrame frame, RubyString source, Object noBinding, RubyString filename, int lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename.
             return eval(frame, source, NotProvided.INSTANCE, NotProvided.INSTANCE, NotProvided.INSTANCE);
         }
 
-        @Specialization
-        public Object eval(RubyString source, RubyBinding binding, NotProvided filename, NotProvided lineNumber) {
+        @Specialization(guards = "isRubyBinding(binding)")
+        public Object eval(RubyString source, RubyBasicObject binding, NotProvided filename, NotProvided lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             return getContext().eval(StringNodes.getByteList(source), binding, false, this);
         }
 
-        @Specialization
-        public Object eval(RubyString source, RubyBinding binding, RubyString filename, NotProvided lineNumber) {
+        @Specialization(guards = "isRubyBinding(binding)")
+        public Object eval(RubyString source, RubyBasicObject binding, RubyString filename, NotProvided lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             return getContext().eval(StringNodes.getByteList(source), binding, false, filename.toString(), this);
         }
 
-        @Specialization
-        public Object eval(RubyString source, RubyBinding binding, RubyString filename, int lineNumber) {
+        @Specialization(guards = "isRubyBinding(binding)")
+        public Object eval(RubyString source, RubyBasicObject binding, RubyString filename, int lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             return getContext().eval(StringNodes.getByteList(source), binding, false, filename.toString(), this);
         }
 
         @Specialization(guards = "!isRubyBinding(badBinding)")
-        public Object eval(RubyString source, RubyBasicObject badBinding, NotProvided filename, NotProvided lineNumber) {
+        public Object evalBadBinding(RubyString source, RubyBasicObject badBinding, NotProvided filename, NotProvided lineNumber) {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(badBinding, "binding", this));
         }
     }
