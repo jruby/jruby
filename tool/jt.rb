@@ -159,6 +159,11 @@ module ShellUtils
       env_vars = command
       command, *args = args
     end
+
+    if ENV["JRUBY_ECLIPSE"] == "true"
+      args.unshift "-ttool/jruby_eclipse"
+    end
+
     sh env_vars, 'ruby', 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
   end
 end

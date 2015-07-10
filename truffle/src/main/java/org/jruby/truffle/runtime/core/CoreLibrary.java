@@ -983,6 +983,11 @@ public class CoreLibrary {
         return nameError(String.format("local variable `%s' not defined for %s", name, binding.toString()), name, currentNode);
     }
 
+    public RubyException nameErrorClassVariableNotDefined(String name, RubyModule module, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return nameError(String.format("class variable `%s' not defined for %s", name, module.getName()), name, currentNode);
+    }
+
     public RubyException noMethodError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         RubyException noMethodError = new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));

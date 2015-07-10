@@ -1740,24 +1740,26 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "remove_class_variable", required = 1)
-    public abstract static class RemoveClassVariableNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class RemoveClassVariableNode extends CoreMethodNode {
 
         public RemoveClassVariableNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(name)")
-        public RubyModule removeClassVariableString(RubyModule module, RubyBasicObject name) {
-            module.removeClassVariable(this, name.toString());
-            return module;
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
-
+        
         @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(name)")
-        public RubyModule removeClassVariableSymbol(RubyModule module, RubyBasicObject name) {
-            module.removeClassVariable(this, SymbolNodes.getString(name));
-            return module;
+        @Specialization
+        public Object removeClassVariableString(RubyModule module, String name) {
+            RubyContext.checkClassVariableName(getContext(), name, this);
+            return module.removeClassVariable(this, name);
         }
 
     }

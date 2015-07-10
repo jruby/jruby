@@ -356,10 +356,15 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     @TruffleBoundary
-    public void removeClassVariable(Node currentNode, String variableName) {
+    public Object removeClassVariable(Node currentNode, String name) {
         checkFrozen(currentNode);
 
-        classVariables.remove(variableName);
+        final Object found = classVariables.remove(name);
+        if (found == null) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(context.getCoreLibrary().nameErrorClassVariableNotDefined(name, this, currentNode));
+        }
+        return found;
     }
 
     @TruffleBoundary
