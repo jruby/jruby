@@ -595,7 +595,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public Object mulObject(VirtualFrame frame, RubyBasicObject array, RubyString string) {
+        public Object mulObject(VirtualFrame frame, RubyBasicObject array, RubyBasicObject string) {
             CompilerDirectives.transferToInterpreter();
             return ruby(frame, "join(sep)", "sep", string);
         }
@@ -607,7 +607,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
-            if (respondToToStrNode.doesRespondToString(frame, object, (RubyString) createString("to_str"), false)) {
+            if (respondToToStrNode.doesRespondToString(frame, object, createString("to_str"), false)) {
                 return ruby(frame, "join(sep.to_str)", "sep", object);
             } else {
                 if (toIntNode == null) {
@@ -1797,7 +1797,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
-            if (respondToToAryNode.doesRespondToString(frame, object, (RubyString) createString("to_ary"), true)) {
+            if (respondToToAryNode.doesRespondToString(frame, object, createString("to_ary"), true)) {
                 if (toAryNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
@@ -2544,7 +2544,7 @@ public abstract class ArrayNodes {
             final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, null, array, null, new Object[] {}), maxBlock.getFrameDescriptor());
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
 
-            final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
+            final RubyProc block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcClass(), ProcNodes.Type.PROC,
                     maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
                     maxBlock.getCallTarget(), maximumClosureFrame.materialize(), null, array, null);
 
@@ -2646,7 +2646,7 @@ public abstract class ArrayNodes {
             final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, null, array, null, new Object[] {}), minBlock.getFrameDescriptor());
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
 
-            final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
+            final RubyProc block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcClass(), ProcNodes.Type.PROC,
                     minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
                     minBlock.getCallTarget(), minimumClosureFrame.materialize(), null, array, null);
 
@@ -2736,7 +2736,7 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "byteListsEqual(format, cachedFormat)")
+        @Specialization(guards = {"isRubyString(format)", "byteListsEqual(format, cachedFormat)"})
         public RubyBasicObject packCached(
                 VirtualFrame frame,
                 RubyBasicObject array,
@@ -2755,7 +2755,7 @@ public abstract class ArrayNodes {
             return finishPack(cachedFormat, result);
         }
 
-        @Specialization(contains = "packCached")
+        @Specialization(contains = "packCached", guards = "isRubyString(format)")
         public RubyBasicObject packUncached(
                 VirtualFrame frame,
                 RubyBasicObject array,
@@ -2849,15 +2849,18 @@ public abstract class ArrayNodes {
             return ruby(frame, "pack(format.to_str)", "format", format);
         }
 
-        protected ByteList privatizeByteList(RubyString string) {
+        protected ByteList privatizeByteList(RubyBasicObject string) {
+            assert RubyGuards.isRubyString(string);
             return StringNodes.getByteList(string).dup();
         }
 
-        protected boolean byteListsEqual(RubyString string, ByteList byteList) {
+        protected boolean byteListsEqual(RubyBasicObject string, ByteList byteList) {
+            assert RubyGuards.isRubyString(string);
             return StringNodes.getByteList(string).equal(byteList);
         }
 
-        protected CallTarget compileFormat(RubyString format) {
+        protected CallTarget compileFormat(RubyBasicObject format) {
+            assert RubyGuards.isRubyString(format);
             try {
                 return new PackParser(getContext()).parse(format.toString(), false);
             } catch (FormatException e) {

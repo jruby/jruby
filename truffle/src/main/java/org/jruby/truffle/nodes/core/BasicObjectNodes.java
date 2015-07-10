@@ -28,7 +28,6 @@ import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
@@ -177,10 +176,9 @@ public abstract class BasicObjectNodes {
             yield = new YieldDispatchHeadNode(context);
         }
 
-        @Specialization
-        public Object instanceEval(VirtualFrame frame, Object receiver, RubyString string, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
-
+        @CompilerDirectives.TruffleBoundary
+        @Specialization(guards = "isRubyString(string)")
+        public Object instanceEval(Object receiver, RubyBasicObject string, NotProvided block) {
             return getContext().instanceEval(StringNodes.getByteList(string), receiver, this);
         }
 

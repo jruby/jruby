@@ -273,9 +273,9 @@ public abstract class MethodNodes {
         public RubyProc toProc(RubyBasicObject methodObject) {
             final InternalMethod method = getMethod(methodObject);
 
-            return new RubyProc(
+            return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcClass(),
-                    RubyProc.Type.LAMBDA,
+                    ProcNodes.Type.LAMBDA,
                     method.getSharedMethodInfo(),
                     method.getCallTarget(),
                     method.getCallTarget(),

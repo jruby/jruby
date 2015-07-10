@@ -10,15 +10,17 @@
 package org.jruby.truffle.runtime.core;
 
 import org.jcodings.Encoding;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 
 public class StringCodeRangeableWrapper implements CodeRangeable {
 
-    private final RubyString string;
+    private final RubyBasicObject string;
 
-    public StringCodeRangeableWrapper(RubyString string) {
+    public StringCodeRangeableWrapper(RubyBasicObject string) {
+        assert RubyGuards.isRubyString(string);
         this.string = string;
     }
 

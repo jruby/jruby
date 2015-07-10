@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 
 @NodeChild(value = "child", type = RubyNode.class)
@@ -25,26 +26,21 @@ public abstract class ProcOrNullNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract RubyProc executeProcOrNull(Object proc);
+    public abstract RubyBasicObject executeProcOrNull(Object proc);
 
     @Specialization
-    public RubyProc doNotProvided(NotProvided proc) {
+    public RubyBasicObject doNotProvided(NotProvided proc) {
         return null;
     }
 
     @Specialization(guards = "isNil(nil)")
-    public RubyProc doNil(Object nil) {
+    public RubyBasicObject doNil(Object nil) {
         return null;
     }
 
-    @Specialization
-    public RubyProc doProc(RubyProc proc) {
+    @Specialization(guards = "isRubyProc(proc)")
+    public RubyBasicObject doProc(RubyBasicObject proc) {
         return proc;
-    }
-
-    @Override
-    public final RubyProc executeRubyProc(VirtualFrame frame) {
-        return (RubyProc) execute(frame);
     }
 
 }

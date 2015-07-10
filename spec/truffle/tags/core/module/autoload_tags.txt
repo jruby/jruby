@@ -1,4 +1,3 @@
-fails:Module#autoload ignores the autoload request if the file is already loaded
 fails:Module#autoload does not remove the constant from the constant table if the loaded files does not define it
 fails:Module#autoload calls #to_path on non-string filenames
 fails:Module#autoload calls #to_path on non-String filename arguments

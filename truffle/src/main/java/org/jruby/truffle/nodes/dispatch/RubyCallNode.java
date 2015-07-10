@@ -144,14 +144,14 @@ public class RubyCallNode extends RubyNode {
             argumentsObjects = executeArguments(frame);
         }
 
-        final RubyProc blockObject = executeBlock(frame);
+        final RubyBasicObject blockObject = executeBlock(frame);
 
         return dispatchHead.call(frame, receiverObject, methodName, blockObject, argumentsObjects);
     }
 
-    private RubyProc executeBlock(VirtualFrame frame) {
+    private RubyBasicObject executeBlock(VirtualFrame frame) {
         if (block != null) {
-            return block.executeRubyProc(frame);
+            return (RubyBasicObject) block.execute(frame);
         } else {
             return null;
         }

@@ -21,7 +21,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
 import java.util.zip.CRC32;
@@ -45,22 +44,22 @@ public abstract class ZlibNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public long crc32(RubyString message, NotProvided initial) {
+        @Specialization(guards = "isRubyString(message)")
+        public long crc32(RubyBasicObject message, NotProvided initial) {
             final ByteList bytes = StringNodes.getByteList(message);
             final CRC32 crc32 = new CRC32();
             crc32.update(bytes.unsafeBytes(), bytes.begin(), bytes.length());
             return crc32.getValue();
         }
 
-        @Specialization
-        public long crc32(RubyString message, int initial) {
+        @Specialization(guards = "isRubyString(message)")
+        public long crc32(RubyBasicObject message, int initial) {
             return crc32(message, (long) initial);
         }
 
         @TruffleBoundary
-        @Specialization
-        public long crc32(RubyString message, long initial) {
+        @Specialization(guards = "isRubyString(message)")
+        public long crc32(RubyBasicObject message, long initial) {
             final ByteList bytes = StringNodes.getByteList(message);
             final CRC32 crc32 = new CRC32();
             crc32.update(bytes.unsafeBytes(), bytes.begin(), bytes.length());
@@ -68,8 +67,8 @@ public abstract class ZlibNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyBignum(initial)")
-        public long crc32(RubyString message, RubyBasicObject initial) {
+        @Specialization(guards = {"isRubyString(message)", "isRubyBignum(initial)"})
+        public long crc32(RubyBasicObject message, RubyBasicObject initial) {
             throw new RaiseException(getContext().getCoreLibrary().rangeError("bignum too big to convert into `unsigned long'", this));
         }
 
@@ -85,8 +84,8 @@ public abstract class ZlibNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject deflate(RubyString message, int level) {
+        @Specialization(guards = "isRubyString(message)")
+        public RubyBasicObject deflate(RubyBasicObject message, int level) {
             final Deflater deflater = new Deflater(level);
 
             final ByteList messageBytes = StringNodes.getByteList(message);
@@ -117,8 +116,8 @@ public abstract class ZlibNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject inflate(RubyString message) {
+        @Specialization(guards = "isRubyString(message)")
+        public RubyBasicObject inflate(RubyBasicObject message) {
             final Inflater inflater = new Inflater();
 
             final ByteList messageBytes = StringNodes.getByteList(message);

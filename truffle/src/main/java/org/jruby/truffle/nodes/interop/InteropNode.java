@@ -21,27 +21,21 @@ import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
-import org.jruby.truffle.nodes.interop.InteropNodeFactory.ExecuteMethodNodeGen;
 import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.nodes.DirectCallNode;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
-import com.oracle.truffle.api.source.SourceSection;
 import java.util.List;
 
 public abstract class InteropNode extends RubyNode {
@@ -107,7 +101,7 @@ public abstract class InteropNode extends RubyNode {
     	
     	public InteropExecute(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.execute = ExecuteMethodNodeGen.create(context, sourceSection, null);
+            this.execute = InteropNodeFactory.ExecuteMethodNodeGen.create(context, sourceSection, null);
         }
 
         @Override
@@ -246,7 +240,7 @@ public abstract class InteropNode extends RubyNode {
         @Override
         public Object execute(VirtualFrame frame) {
             Object o = ForeignAccess.getReceiver(frame);
-            return o instanceof RubyString && StringNodes.getByteList(((RubyString) o)).length() == 1;
+            return RubyGuards.isRubyString(o) && StringNodes.getByteList(((RubyBasicObject) o)).length() == 1;
         }
     }
 
@@ -258,7 +252,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return StringNodes.getByteList(((RubyString) ForeignAccess.getReceiver(frame))).get(0);
+            return StringNodes.getByteList(((RubyBasicObject) ForeignAccess.getReceiver(frame))).get(0);
         }
     }
 
@@ -349,8 +343,8 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            if (ForeignAccess.getReceiver(frame) instanceof RubyString) {
-                final RubyString string = (RubyString) ForeignAccess.getReceiver(frame);
+            if (RubyGuards.isRubyString(ForeignAccess.getReceiver(frame))) {
+                final RubyBasicObject string = (RubyBasicObject) ForeignAccess.getReceiver(frame);
                 final int index = (int) ForeignAccess.getArguments(frame).get(labelIndex);
                 if (index >= StringNodes.getByteList(string).length()) {
                     return 0;

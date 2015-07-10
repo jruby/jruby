@@ -281,8 +281,8 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
-        @Specialization
-        public RubyBasicObject add(RubyString string, RubyString other) {
+        @Specialization(guards = "isRubyString(other)")
+        public RubyBasicObject add(RubyBasicObject string, RubyBasicObject other) {
             final Encoding enc = checkEncoding(string, getCodeRangeable(other), this);
             final RubyBasicObject ret = createString(StringSupport.addByteLists(getByteList(string), getByteList(other)));
 
@@ -311,7 +311,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyBasicObject multiply(RubyString string, int times) {
+        public RubyBasicObject multiply(RubyBasicObject string, int times) {
             if (negativeTimesProfile.profile(times < 0)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
@@ -332,7 +332,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isRubyBignum(times)")
-        public RubyBasicObject multiply(RubyString string, RubyBasicObject times) {
+        public RubyBasicObject multiply(RubyBasicObject string, RubyBasicObject times) {
             CompilerDirectives.transferToInterpreter();
 
             throw new RaiseException(
@@ -340,7 +340,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = { "!isRubyBignum(times)", "!isInteger(times)" })
-        public RubyBasicObject multiply(VirtualFrame frame, RubyString string, Object times) {
+        public RubyBasicObject multiply(VirtualFrame frame, RubyBasicObject string, Object times) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
@@ -362,19 +362,19 @@ public abstract class StringNodes {
             stringEqualNode = StringPrimitiveNodesFactory.StringEqualPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[]{});
         }
 
-        @Specialization
-        public boolean equal(RubyString a, RubyString b) {
+        @Specialization(guards = "isRubyString(b)")
+        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return stringEqualNode.stringEqual(a, b);
         }
 
         @Specialization(guards = "!isRubyString(b)")
-        public boolean equal(VirtualFrame frame, RubyString a, Object b) {
+        public boolean equal(VirtualFrame frame, RubyBasicObject a, Object b) {
             if (respondToNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 respondToNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToNode.doesRespondToString(frame, b, (RubyString) StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "to_str"), false)) {
+            if (respondToNode.doesRespondToString(frame, b, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "to_str"), false)) {
                 if (objectEqualNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     objectEqualNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -400,8 +400,8 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public int compare(RubyString a, RubyString b) {
+        @Specialization(guards = "isRubyString(b)")
+        public int compare(RubyBasicObject a, RubyBasicObject b) {
             // Taken from org.jruby.RubyString#op_cmp
 
             final int ret = getByteList(a).cmp(getByteList(b));
@@ -414,7 +414,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "!isRubyString(b)")
-        public Object compare(VirtualFrame frame, RubyString a, Object b) {
+        public Object compare(VirtualFrame frame, RubyBasicObject a, Object b) {
             CompilerDirectives.transferToInterpreter();
 
             if (respondToToStrNode == null) {
@@ -422,14 +422,14 @@ public abstract class StringNodes {
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToToStrNode.doesRespondToString(frame, b, (RubyString) StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "to_str"), false)) {
+            if (respondToToStrNode.doesRespondToString(frame, b, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "to_str"), false)) {
                 if (toStrNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
                 }
 
                 try {
-                    final RubyString coerced = toStrNode.executeRubyString(frame, b);
+                    final RubyBasicObject coerced = toStrNode.executeToStr(frame, b);
 
                     return compare(a, coerced);
                 } catch (RaiseException e) {
@@ -446,7 +446,7 @@ public abstract class StringNodes {
                 respondToCmpNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToCmpNode.doesRespondToString(frame, b, (RubyString) StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "<=>"), false)) {
+            if (respondToCmpNode.doesRespondToString(frame, b, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "<=>"), false)) {
                 if (cmpNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -482,7 +482,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyBasicObject concat(RubyString string, int other) {
+        public RubyBasicObject concat(RubyBasicObject string, int other) {
             if (other < 0) {
                 CompilerDirectives.transferToInterpreter();
 
@@ -493,7 +493,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyBasicObject concat(RubyString string, long other) {
+        public RubyBasicObject concat(RubyBasicObject string, long other) {
             if (other < 0) {
                 CompilerDirectives.transferToInterpreter();
 
@@ -504,7 +504,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isRubyBignum(other)")
-        public RubyBasicObject concat(RubyString string, RubyBasicObject other) {
+        public RubyBasicObject concatBignum(RubyBasicObject string, RubyBasicObject other) {
             if (BignumNodes.getBigIntegerValue(other).signum() < 0) {
                 CompilerDirectives.transferToInterpreter();
 
@@ -516,8 +516,8 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject concat(RubyString string, RubyString other) {
+        @Specialization(guards = "isRubyString(other)")
+        public RubyBasicObject concatString(RubyBasicObject string, RubyBasicObject other) {
             final int codeRange = getCodeRange(other);
             final int[] ptr_cr_ret = { codeRange };
 
@@ -538,12 +538,12 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {"!isInteger(other)", "!isLong(other)", "!isRubyBignum(other)", "!isRubyString(other)"})
-        public Object concat(VirtualFrame frame, RubyString string, Object other) {
+        public Object concat(VirtualFrame frame, RubyBasicObject string, Object other) {
             return ruby(frame, "concat StringValue(other)", "other", other);
         }
 
         @TruffleBoundary
-        private RubyBasicObject concatNumeric(RubyString string, int c) {
+        private RubyBasicObject concatNumeric(RubyBasicObject string, int c) {
             // Taken from org.jruby.RubyString#concatNumeric
 
             final ByteList value = getByteList(string);
@@ -598,7 +598,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
-        public Object getIndex(VirtualFrame frame, RubyString string, int index, Object length) {
+        public Object getIndex(VirtualFrame frame, RubyBasicObject string, int index, Object length) {
             int normalizedIndex = normalizeIndex(string, index);
             final ByteList bytes = getByteList(string);
 
@@ -611,23 +611,23 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = { "!isRubyRange(index)", "!isRubyRegexp(index)", "!isRubyString(index)", "wasNotProvided(length) || isRubiniusUndefined(length)" })
-        public Object getIndex(VirtualFrame frame, RubyString string, Object index, Object length) {
+        public Object getIndex(VirtualFrame frame, RubyBasicObject string, Object index, Object length) {
             return getIndex(frame, string, getToIntNode().doInt(frame, index), length);
         }
 
         @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
-        public Object sliceIntegerRange(VirtualFrame frame, RubyString string, RubyRange.IntegerFixnumRange range, Object length) {
+        public Object sliceIntegerRange(VirtualFrame frame, RubyBasicObject string, RubyRange.IntegerFixnumRange range, Object length) {
             return sliceRange(frame, string, range.getBegin(), range.getEnd(), range.doesExcludeEnd());
         }
 
         @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
-        public Object sliceLongRange(VirtualFrame frame, RubyString string, RubyRange.LongFixnumRange range, Object length) {
+        public Object sliceLongRange(VirtualFrame frame, RubyBasicObject string, RubyRange.LongFixnumRange range, Object length) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values should be properly lowered, only if possible.
             return sliceRange(frame, string, (int) range.getBegin(), (int) range.getEnd(), range.doesExcludeEnd());
         }
 
         @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
-        public Object sliceObjectRange(VirtualFrame frame, RubyString string, RubyRange.ObjectRange range, Object length) {
+        public Object sliceObjectRange(VirtualFrame frame, RubyBasicObject string, RubyRange.ObjectRange range, Object length) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values may return Fixnums beyond int boundaries and we should handle that -- Bignums are always errors.
             final int coercedBegin = getToIntNode().doInt(frame, range.getBegin());
             final int coercedEnd = getToIntNode().doInt(frame, range.getEnd());
@@ -635,7 +635,9 @@ public abstract class StringNodes {
             return sliceRange(frame, string, coercedBegin, coercedEnd, range.doesExcludeEnd());
         }
 
-        private Object sliceRange(VirtualFrame frame, RubyString string, int begin, int end, boolean doesExcludeEnd) {
+        private Object sliceRange(VirtualFrame frame, RubyBasicObject string, int begin, int end, boolean doesExcludeEnd) {
+            assert RubyGuards.isRubyString(string);
+
             if (sizeNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 sizeNode = insert(StringNodesFactory.SizeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
@@ -673,33 +675,33 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object slice(VirtualFrame frame, RubyString string, int start, int length) {
+        public Object slice(VirtualFrame frame, RubyBasicObject string, int start, int length) {
             return getSubstringNode().execute(frame, string, start, length);
         }
 
         @Specialization(guards = "wasProvided(length)")
-        public Object slice(VirtualFrame frame, RubyString string, int start, Object length) {
+        public Object slice(VirtualFrame frame, RubyBasicObject string, int start, Object length) {
             return slice(frame, string, start, getToIntNode().doInt(frame, length));
         }
 
         @Specialization(guards = { "!isRubyRange(start)", "!isRubyRegexp(start)", "!isRubyString(start)", "wasProvided(length)" })
-        public Object slice(VirtualFrame frame, RubyString string, Object start, Object length) {
+        public Object slice(VirtualFrame frame, RubyBasicObject string, Object start, Object length) {
             return slice(frame, string, getToIntNode().doInt(frame, start), getToIntNode().doInt(frame, length));
         }
 
         @Specialization(guards = "wasNotProvided(capture) || isRubiniusUndefined(capture)")
-        public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, Object capture) {
+        public Object slice(VirtualFrame frame, RubyBasicObject string, RubyRegexp regexp, Object capture) {
             return sliceCapture(frame, string, regexp, 0);
         }
 
         @Specialization(guards = "wasProvided(capture)")
-        public Object sliceCapture(VirtualFrame frame, RubyString string, RubyRegexp regexp, Object capture) {
+        public Object sliceCapture(VirtualFrame frame, RubyBasicObject string, RubyRegexp regexp, Object capture) {
             // Extracted from Rubinius's definition of String#[].
             return ruby(frame, "match, str = subpattern(index, other); Regexp.last_match = match; str", "index", regexp, "other", capture);
         }
 
-        @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
-        public Object slice(VirtualFrame frame, RubyString string, RubyString matchStr, Object length) {
+        @Specialization(guards = {"wasNotProvided(length) || isRubiniusUndefined(length)", "isRubyString(matchStr)"})
+        public Object slice(VirtualFrame frame, RubyBasicObject string, RubyBasicObject matchStr, Object length) {
             if (includeNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 includeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -754,13 +756,15 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization
-        public boolean asciiOnly(RubyString string) {
-            if (!getByteList(string).getEncoding().isAsciiCompatible()) {
+        public boolean asciiOnly(RubyBasicObject string) {
+            final ByteList byteList = StringNodes.getByteList(string);
+
+            if (!byteList.getEncoding().isAsciiCompatible()) {
                 return false;
             }
 
-            for (byte b : getByteList(string).unsafeBytes()) {
-                if ((b & 0x80) != 0) {
+            for (int i = 0; i < byteList.length(); i++) {
+                if ((byteList.get(i) & 0x80) != 0) {
                     return false;
                 }
             }
@@ -777,7 +781,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyBasicObject b(RubyString string) {
+        public RubyBasicObject b(RubyBasicObject string) {
             final ByteList bytes = getByteList(string).dup();
             bytes.setEncoding(ASCIIEncoding.INSTANCE);
             return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
@@ -793,7 +797,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyBasicObject bytes(RubyString string) {
+        public RubyBasicObject bytes(RubyBasicObject string) {
             final byte[] bytes = getByteList(string).bytes();
 
             final int[] store = new int[bytes.length];
@@ -815,7 +819,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public int byteSize(RubyString string) {
+        public int byteSize(RubyBasicObject string) {
             return getByteList(string).length();
         }
 
@@ -836,8 +840,8 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
-        @Specialization(guards = "bothSingleByteOptimizable(string, other)")
-        public Object caseCmpSingleByte(RubyString string, RubyString other) {
+        @Specialization(guards = {"isRubyString(other)", "bothSingleByteOptimizable(string, other)"})
+        public Object caseCmpSingleByte(RubyBasicObject string, RubyBasicObject other) {
             // Taken from org.jruby.RubyString#casecmp19.
 
             if (StringSupport.areCompatible(getCodeRangeable(string), getCodeRangeable(other)) == null) {
@@ -847,8 +851,8 @@ public abstract class StringNodes {
             return getByteList(string).caseInsensitiveCmp(getByteList(other));
         }
 
-        @Specialization(guards = "!bothSingleByteOptimizable(string, other)")
-        public Object caseCmp(RubyString string, RubyString other) {
+        @Specialization(guards = {"isRubyString(other)", "!bothSingleByteOptimizable(string, other)"})
+        public Object caseCmp(RubyBasicObject string, RubyBasicObject other) {
             // Taken from org.jruby.RubyString#casecmp19 and
 
             final Encoding encoding = StringSupport.areCompatible(getCodeRangeable(string), getCodeRangeable(other));
@@ -865,7 +869,10 @@ public abstract class StringNodes {
             return StringSupport.multiByteCasecmp(enc, value, otherValue);
         }
 
-        public static boolean bothSingleByteOptimizable(RubyString string, RubyString other) {
+        public static boolean bothSingleByteOptimizable(RubyBasicObject string, RubyBasicObject other) {
+            assert RubyGuards.isRubyString(string);
+            assert RubyGuards.isRubyString(other);
+
             final boolean stringSingleByteOptimizable = StringSupport.isSingleByteOptimizable(getCodeRangeable(string), getByteList(string).getEncoding());
             final boolean otherSingleByteOptimizable = StringSupport.isSingleByteOptimizable(getCodeRangeable(other), getByteList(other).getEncoding());
 
@@ -884,7 +891,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object chopBang(VirtualFrame frame, RubyString string) {
+        public Object chopBang(VirtualFrame frame, RubyBasicObject string) {
             if (sizeNode.executeInteger(frame, string) == 0) {
                 return nil();
             }
@@ -901,7 +908,8 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
-        private int choppedLength(RubyString string) {
+        private int choppedLength(RubyBasicObject string) {
+            assert RubyGuards.isRubyString(string);
             return StringSupport.choppedLength19(getCodeRangeable(string), getContext().getRuntime());
         }
     }
@@ -917,7 +925,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public int count(VirtualFrame frame, RubyString string, Object[] args) {
+        public int count(VirtualFrame frame, RubyBasicObject string, Object[] args) {
             if (getByteList(string).getRealSize() == 0) {
                 return 0;
             }
@@ -927,24 +935,28 @@ public abstract class StringNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
             }
 
-            RubyString[] otherStrings = new RubyString[args.length];
+            RubyBasicObject[] otherStrings = new RubyBasicObject[args.length];
 
             for (int i = 0; i < args.length; i++) {
-                otherStrings[i] = toStr.executeRubyString(frame, args[i]);
+                otherStrings[i] = toStr.executeToStr(frame, args[i]);
             }
 
             return countSlow(string, otherStrings);
         }
 
         @TruffleBoundary
-        private int countSlow(RubyString string, RubyString[] otherStrings) {
-            RubyString otherStr = otherStrings[0];
+        private int countSlow(RubyBasicObject string, RubyBasicObject... otherStrings) {
+            assert RubyGuards.isRubyString(string);
+
+            RubyBasicObject otherStr = otherStrings[0];
             Encoding enc = getByteList(otherStr).getEncoding();
 
             final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
             StringSupport.TrTables tables = StringSupport.trSetupTable(getByteList(otherStr), getContext().getRuntime(), table, null, true, enc);
             for (int i = 1; i < otherStrings.length; i++) {
                 otherStr = otherStrings[i];
+
+                assert RubyGuards.isRubyString(otherStr);
 
                 enc = checkEncoding(string, getCodeRangeable(otherStr), this);
                 tables = StringSupport.trSetupTable(getByteList(otherStr), getContext().getRuntime(), table, tables, false, enc);
@@ -969,8 +981,8 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
-        @Specialization
-        public Object crypt(RubyString string, RubyString salt) {
+        @Specialization(guards = "isRubyString(salt)")
+        public Object crypt(RubyBasicObject string, RubyBasicObject salt) {
             // Taken from org.jruby.RubyString#crypt.
 
             final ByteList value = getByteList(string);
@@ -1022,7 +1034,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyBasicObject data(RubyString string) {
+        public RubyBasicObject data(RubyBasicObject string) {
             return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), getByteList(string));
         }
     }
@@ -1038,7 +1050,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object deleteBang(VirtualFrame frame, RubyString string, Object... args) {
+        public Object deleteBang(VirtualFrame frame, RubyBasicObject string, Object... args) {
             if (getByteList(string).length() == 0) {
                 return nil();
             }
@@ -1048,18 +1060,20 @@ public abstract class StringNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
             }
 
-            RubyString[] otherStrings = new RubyString[args.length];
+            RubyBasicObject[] otherStrings = new RubyBasicObject[args.length];
 
             for (int i = 0; i < args.length; i++) {
-                otherStrings[i] = toStr.executeRubyString(frame, args[i]);
+                otherStrings[i] = toStr.executeToStr(frame, args[i]);
             }
 
             return deleteBangSlow(string, otherStrings);
         }
 
         @TruffleBoundary
-        private Object deleteBangSlow(RubyString string, RubyString... otherStrings) {
-            RubyString otherString = otherStrings[0];
+        private Object deleteBangSlow(RubyBasicObject string, RubyBasicObject... otherStrings) {
+            assert RubyGuards.isRubyString(string);
+
+            RubyBasicObject otherString = otherStrings[0];
             Encoding enc = checkEncoding(string, getCodeRangeable(otherString), this);
 
             boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
@@ -1068,6 +1082,8 @@ public abstract class StringNodes {
                     squeeze, null, true, enc);
 
             for (int i = 1; i < otherStrings.length; i++) {
+                assert RubyGuards.isRubyString(otherStrings[i]);
+
                 enc = checkEncoding(string, getCodeRangeable(otherStrings[i]), this);
                 tables = StringSupport.trSetupTable(getByteList(otherStrings[i]), getContext().getRuntime(), squeeze, tables, false, enc);
             }
@@ -1089,7 +1105,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject downcase(RubyString string) {
+        public RubyBasicObject downcase(RubyBasicObject string) {
             final ByteList newByteList = StringNodesHelper.downcase(getContext().getRuntime(), getByteList(string));
             return StringNodes.createString(string.getLogicalClass(), newByteList);
         }
@@ -1104,7 +1120,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject downcase(RubyString string) {
+        public RubyBasicObject downcase(RubyBasicObject string) {
             final ByteList newByteList = StringNodesHelper.downcase(getContext().getRuntime(), getByteList(string));
 
             if (newByteList.equal(getByteList(string))) {
@@ -1124,7 +1140,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyBasicObject eachByte(VirtualFrame frame, RubyString string, RubyProc block) {
+        public RubyBasicObject eachByte(VirtualFrame frame, RubyBasicObject string, RubyProc block) {
             final ByteList bytes = getByteList(string);
 
             for (int i = 0; i < bytes.getRealSize(); i++) {
@@ -1147,7 +1163,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isValidOr7BitEncoding(string)")
-        public RubyBasicObject eachChar(VirtualFrame frame, RubyString string, RubyProc block) {
+        public RubyBasicObject eachChar(VirtualFrame frame, RubyBasicObject string, RubyProc block) {
             ByteList strByteList = getByteList(string);
             byte[] ptrBytes = strByteList.unsafeBytes();
             int ptr = strByteList.begin();
@@ -1166,7 +1182,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "!isValidOr7BitEncoding(string)")
-        public RubyBasicObject eachCharMultiByteEncoding(VirtualFrame frame, RubyString string, RubyProc block) {
+        public RubyBasicObject eachCharMultiByteEncoding(VirtualFrame frame, RubyBasicObject string, RubyProc block) {
             ByteList strByteList = getByteList(string);
             byte[] ptrBytes = strByteList.unsafeBytes();
             int ptr = strByteList.begin();
@@ -1190,7 +1206,7 @@ public abstract class StringNodes {
         }
 
         // TODO (nirvdrum 10-Mar-15): This was extracted from JRuby, but likely will need to become a Rubinius primitive.
-        private Object substr(RubyString string, int beg, int len) {
+        private Object substr(RubyBasicObject string, int beg, int len) {
             final ByteList bytes = getByteList(string);
 
             int length = bytes.length();
@@ -1225,7 +1241,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public boolean empty(RubyString string) {
+        public boolean empty(RubyBasicObject string) {
             return getByteList(string).length() == 0;
         }
     }
@@ -1239,7 +1255,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyEncoding encoding(RubyString string) {
+        public RubyEncoding encoding(RubyBasicObject string) {
             return RubyEncoding.getEncoding(getByteList(string).getEncoding());
         }
     }
@@ -1254,26 +1270,26 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject forceEncoding(RubyString string, RubyString encodingName) {
+        @Specialization(guards = "isRubyString(encodingName)")
+        public RubyBasicObject forceEncoding(RubyBasicObject string, RubyBasicObject encodingName) {
             final RubyEncoding encoding = RubyEncoding.getEncoding(encodingName.toString());
             return forceEncoding(string, encoding);
         }
 
         @Specialization
-        public RubyBasicObject forceEncoding(RubyString string, RubyEncoding encoding) {
+        public RubyBasicObject forceEncoding(RubyBasicObject string, RubyEncoding encoding) {
             StringNodes.forceEncoding(string, encoding.getEncoding());
             return string;
         }
 
         @Specialization(guards = { "!isRubyString(encoding)", "!isRubyEncoding(encoding)" })
-        public RubyBasicObject forceEncoding(VirtualFrame frame, RubyString string, Object encoding) {
+        public RubyBasicObject forceEncoding(VirtualFrame frame, RubyBasicObject string, Object encoding) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            return forceEncoding(string, toStrNode.executeRubyString(frame, encoding));
+            return forceEncoding(string, toStrNode.executeToStr(frame, encoding));
         }
 
     }
@@ -1289,7 +1305,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object getByte(RubyString string, int index) {
+        public Object getByte(RubyBasicObject string, int index) {
             final ByteList bytes = getByteList(string);
 
             if (negativeIndexProfile.profile(index < 0)) {
@@ -1312,7 +1328,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public int hash(RubyString string) {
+        public int hash(RubyBasicObject string) {
             return getByteList(string).hashCode();
         }
 
@@ -1327,7 +1343,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject inspect(RubyString string) {
+        public RubyBasicObject inspect(RubyBasicObject string) {
             final org.jruby.RubyString inspected = (org.jruby.RubyString) org.jruby.RubyString.inspect19(getContext().getRuntime(), getByteList(string));
             return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), inspected.getByteList());
         }
@@ -1344,12 +1360,12 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyBasicObject initialize(RubyString self, NotProvided from) {
+        public RubyBasicObject initialize(RubyBasicObject self, NotProvided from) {
             return self;
         }
 
-        @Specialization
-        public RubyBasicObject initialize(RubyString self, RubyString from) {
+        @Specialization(guards = "isRubyString(from)")
+        public RubyBasicObject initialize(RubyBasicObject self, RubyBasicObject from) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
@@ -1369,13 +1385,13 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = { "!isRubyString(from)", "wasProvided(from)" })
-        public RubyBasicObject initialize(VirtualFrame frame, RubyString self, Object from) {
+        public RubyBasicObject initialize(VirtualFrame frame, RubyBasicObject self, Object from) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            return initialize(self, toStrNode.executeRubyString(frame, from));
+            return initialize(self, toStrNode.executeToStr(frame, from));
         }
     }
 
@@ -1386,8 +1402,8 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object initializeCopy(RubyString self, RubyString from) {
+        @Specialization(guards = "isRubyString(from)")
+        public Object initializeCopy(RubyBasicObject self, RubyBasicObject from) {
             if (self == from) {
                 return self;
             }
@@ -1426,8 +1442,8 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
-        @Specialization
-        public Object insert(VirtualFrame frame, RubyString string, int index, RubyString otherString) {
+        @Specialization(guards = "isRubyString(otherString)")
+        public Object insert(VirtualFrame frame, RubyBasicObject string, int index, RubyBasicObject otherString) {
             if (index == -1) {
                 return concatNode.call(frame, string, "<<", null, otherString);
 
@@ -1452,7 +1468,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
-        public Object lstripBangSingleByte(RubyString string) {
+        public Object lstripBangSingleByte(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#lstrip_bang19 and org.jruby.RubyString#singleByteLStrip.
 
             if (getByteList(string).getRealSize() == 0) {
@@ -1476,7 +1492,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
-        public Object lstripBang(RubyString string) {
+        public Object lstripBang(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#lstrip_bang19 and org.jruby.RubyString#multiByteLStrip.
 
             if (getByteList(string).getRealSize() == 0) {
@@ -1516,7 +1532,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyBasicObject modifyBang(RubyString string) {
+        public RubyBasicObject modifyBang(RubyBasicObject string) {
             modify(string);
             return string;
         }
@@ -1531,7 +1547,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyBasicObject setNumBytes(RubyString string, int count) {
+        public RubyBasicObject setNumBytes(RubyBasicObject string, int count) {
             getByteList(string).view(0, count);
             return string;
         }
@@ -1546,8 +1562,8 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization
-        public int ord(RubyString string) {
-            return ((org.jruby.RubyFixnum) getContext().toJRuby(string).ord(getContext().getRuntime().getCurrentContext())).getIntValue();
+        public int ord(RubyBasicObject string) {
+            return ((org.jruby.RubyFixnum) getContext().toJRubyString(string).ord(getContext().getRuntime().getCurrentContext())).getIntValue();
         }
     }
 
@@ -1566,8 +1582,8 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), other);
         }
 
-        @Specialization
-        public RubyBasicObject replace(RubyString string, RubyString other) {
+        @Specialization(guards = "isRubyString(other)")
+        public RubyBasicObject replace(RubyBasicObject string, RubyBasicObject other) {
             if (string == other) {
                 return string;
             }
@@ -1590,7 +1606,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
-        public Object rstripBangSingleByte(RubyString string) {
+        public Object rstripBangSingleByte(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#rstrip_bang19 and org.jruby.RubyString#singleByteRStrip19.
 
             if (getByteList(string).getRealSize() == 0) {
@@ -1615,7 +1631,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
-        public Object rstripBang(RubyString string) {
+        public Object rstripBang(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#rstrip_bang19 and org.jruby.RubyString#multiByteRStrip19.
 
             if (getByteList(string).getRealSize() == 0) {
@@ -1662,7 +1678,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyBasicObject swapcaseSingleByte(RubyString string) {
+        public RubyBasicObject swapcaseSingleByte(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#swapcase_bang19.
 
             final ByteList value = getByteList(string);
@@ -1709,7 +1725,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isAsciiCompatible(string)")
-        public RubyBasicObject dumpAsciiCompatible(RubyString string) {
+        public RubyBasicObject dumpAsciiCompatible(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#dump
 
             ByteList outputBytes = dumpCommon(string);
@@ -1722,7 +1738,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "!isAsciiCompatible(string)")
-        public RubyBasicObject dump(RubyString string) {
+        public RubyBasicObject dump(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#dump
 
             ByteList outputBytes = dumpCommon(string);
@@ -1745,7 +1761,8 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
-        private ByteList dumpCommon(RubyString string) {
+        private ByteList dumpCommon(RubyBasicObject string) {
+            assert RubyGuards.isRubyString(string);
             return StringSupport.dumpCommon(getContext().getRuntime(), getByteList(string));
         }
     }
@@ -1771,7 +1788,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public int setByte(RubyString string, int index, int value) {
+        public int setByte(RubyBasicObject string, int index, int value) {
             final int normalizedIndex = StringNodesHelper.checkIndexForRef(string, index, this);
 
             modify(string);
@@ -1790,15 +1807,15 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        public abstract int executeInteger(VirtualFrame frame, RubyString string);
+        public abstract int executeInteger(VirtualFrame frame, RubyBasicObject string);
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
-        public int sizeSingleByte(RubyString string) {
+        public int sizeSingleByte(RubyBasicObject string) {
             return getByteList(string).getRealSize();
         }
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
-        public int size(RubyString string) {
+        public int size(RubyBasicObject string) {
             return StringSupport.strLengthFromRubyString(getCodeRangeable(string));
         }
     }
@@ -1814,8 +1831,8 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "zeroArgs(string, args)")
-        public Object squeezeBangZeroArgs(VirtualFrame frame, RubyString string, Object... args) {
+        @Specialization(guards = "zeroArgs(args)")
+        public Object squeezeBangZeroArgs(RubyBasicObject string, Object... args) {
             // Taken from org.jruby.RubyString#squeeze_bang19.
 
             if (getByteList(string).length() == 0) {
@@ -1840,8 +1857,8 @@ public abstract class StringNodes {
             return string;
         }
 
-        @Specialization(guards = "!zeroArgs(string, args)")
-        public Object squeezeBang(VirtualFrame frame, RubyString string, Object... args) {
+        @Specialization(guards = "!zeroArgs(args)")
+        public Object squeezeBang(VirtualFrame frame, RubyBasicObject string, Object... args) {
             // Taken from org.jruby.RubyString#squeeze_bang19.
 
             if (getByteList(string).length() == 0) {
@@ -1853,13 +1870,13 @@ public abstract class StringNodes {
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            final RubyString[] otherStrings = new RubyString[args.length];
+            final RubyBasicObject[] otherStrings = new RubyBasicObject[args.length];
 
             for (int i = 0; i < args.length; i++) {
-                otherStrings[i] = toStrNode.executeRubyString(frame, args[i]);
+                otherStrings[i] = toStrNode.executeToStr(frame, args[i]);
             }
 
-            RubyString otherStr = otherStrings[0];
+            RubyBasicObject otherStr = otherStrings[0];
             Encoding enc = checkEncoding(string, getCodeRangeable(otherStr), this);
             final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
             StringSupport.TrTables tables = StringSupport.trSetupTable(getByteList(otherStr), getContext().getRuntime(), squeeze, null, true, enc);
@@ -1893,7 +1910,7 @@ public abstract class StringNodes {
             return StringSupport.multiByteSqueeze(getContext().getRuntime(), value, squeeze, tables, enc, isArg);
         }
 
-        public static boolean zeroArgs(RubyString string, Object... args) {
+        public static boolean zeroArgs(Object... args) {
             return args.length == 0;
         }
     }
@@ -1907,7 +1924,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject succ(RubyString string) {
+        public RubyBasicObject succ(RubyBasicObject string) {
             if (length(string) > 0) {
                 return StringNodes.createString(string.getLogicalClass(), StringSupport.succCommon(getContext().getRuntime(), getByteList(string)));
             } else {
@@ -1925,7 +1942,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject succBang(RubyString string) {
+        public RubyBasicObject succBang(RubyBasicObject string) {
             if (getByteList(string).getRealSize() > 0) {
                 setByteList(string, StringSupport.succCommon(getContext().getRuntime(), getByteList(string)));
             }
@@ -1953,12 +1970,12 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object sum(VirtualFrame frame, RubyString string, int bits) {
+        public Object sum(VirtualFrame frame, RubyBasicObject string, int bits) {
             return sum(frame, string, (long) bits);
         }
 
         @Specialization
-        public Object sum(VirtualFrame frame, RubyString string, long bits) {
+        public Object sum(VirtualFrame frame, RubyBasicObject string, long bits) {
             // Copied from JRuby
 
             final byte[] bytes = getByteList(string).getUnsafeBytes();
@@ -1988,12 +2005,12 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object sum(VirtualFrame frame, RubyString string, NotProvided bits) {
+        public Object sum(VirtualFrame frame, RubyBasicObject string, NotProvided bits) {
             return sum(frame, string, 16);
         }
 
         @Specialization(guards = { "!isInteger(bits)", "!isLong(bits)", "wasProvided(bits)" })
-        public Object sum(VirtualFrame frame, RubyString string, Object bits) {
+        public Object sum(VirtualFrame frame, RubyBasicObject string, Object bits) {
             return ruby(frame, "sum Rubinius::Type.coerce_to(bits, Fixnum, :to_int)", "bits", bits);
         }
 
@@ -2008,7 +2025,7 @@ public abstract class StringNodes {
 
         @Specialization
         @TruffleBoundary
-        public double toF(RubyString string) {
+        public double toF(RubyBasicObject string) {
             try {
                 return convertToDouble(string);
             } catch (NumberFormatException e) {
@@ -2017,7 +2034,7 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
-        private double convertToDouble(RubyString string) {
+        private double convertToDouble(RubyBasicObject string) {
             return ConvertDouble.byteListToDouble19(getByteList(string), false);
         }
     }
@@ -2030,16 +2047,16 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "!isStringSubclass(string)")
-        public RubyBasicObject toS(RubyString string) {
+        public RubyBasicObject toS(RubyBasicObject string) {
             return string;
         }
 
         @Specialization(guards = "isStringSubclass(string)")
-        public Object toSOnSubclass(VirtualFrame frame, RubyString string) {
+        public Object toSOnSubclass(VirtualFrame frame, RubyBasicObject string) {
             return ruby(frame, "''.replace(self)", "self", string);
         }
 
-        public boolean isStringSubclass(RubyString string) {
+        public boolean isStringSubclass(RubyBasicObject string) {
             return string.getLogicalClass() != getContext().getCoreLibrary().getStringClass();
         }
 
@@ -2053,7 +2070,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyBasicObject toSym(RubyString string) {
+        public RubyBasicObject toSym(RubyBasicObject string) {
             return getSymbol(getByteList(string));
         }
     }
@@ -2067,12 +2084,12 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "reverseIsEqualToSelf(string)")
-        public RubyBasicObject reverseNoOp(RubyString string) {
+        public RubyBasicObject reverseNoOp(RubyBasicObject string) {
             return string;
         }
 
         @Specialization(guards = { "!reverseIsEqualToSelf(string)", "isSingleByteOptimizable(string)" })
-        public RubyBasicObject reverseSingleByteOptimizable(RubyString string) {
+        public RubyBasicObject reverseSingleByteOptimizable(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#reverse!
 
             modify(string);
@@ -2091,7 +2108,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = { "!reverseIsEqualToSelf(string)", "!isSingleByteOptimizable(string)" })
-        public RubyBasicObject reverse(RubyString string) {
+        public RubyBasicObject reverse(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#reverse!
 
             modify(string);
@@ -2126,7 +2143,8 @@ public abstract class StringNodes {
             return string;
         }
 
-        public static boolean reverseIsEqualToSelf(RubyString string) {
+        public static boolean reverseIsEqualToSelf(RubyBasicObject string) {
+            assert RubyGuards.isRubyString(string);
             return getByteList(string).getRealSize() <= 1;
         }
     }
@@ -2153,8 +2171,8 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), toStr);
         }
 
-        @Specialization
-        public Object trBang(VirtualFrame frame, RubyString self, RubyString fromStr, RubyString toStr) {
+        @Specialization(guards = {"isRubyString(fromStr)", "isRubyString(toStr)"})
+        public Object trBang(VirtualFrame frame, RubyBasicObject self, RubyBasicObject fromStr, RubyBasicObject toStr) {
             if (getByteList(self).getRealSize() == 0) {
                 return nil();
             }
@@ -2194,8 +2212,8 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), toStr);
         }
 
-        @Specialization
-        public Object trSBang(VirtualFrame frame, RubyString self, RubyString fromStr, RubyString toStr) {
+        @Specialization(guards = {"isRubyString(fromStr)", "isRubyString(toStr)"})
+        public Object trSBang(VirtualFrame frame, RubyBasicObject self, RubyBasicObject fromStr, RubyBasicObject toStr) {
             if (getByteList(self).getRealSize() == 0) {
                 return nil();
             }
@@ -2221,8 +2239,8 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject unpack(RubyString string, RubyString format) {
+        @Specialization(guards = "isRubyString(format)")
+        public RubyBasicObject unpack(RubyBasicObject string, RubyBasicObject format) {
             final org.jruby.RubyArray jrubyArray = Pack.unpack(getContext().getRuntime(), getByteList(string), getByteList(format));
             return getContext().toTruffle(jrubyArray);
         }
@@ -2238,7 +2256,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject upcase(RubyString string) {
+        public RubyBasicObject upcase(RubyBasicObject string) {
             final ByteList byteListString = StringNodesHelper.upcase(getContext().getRuntime(), getByteList(string));
             return StringNodes.createString(string.getLogicalClass(), byteListString);
         }
@@ -2254,7 +2272,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject upcaseBang(RubyString string) {
+        public RubyBasicObject upcaseBang(RubyBasicObject string) {
             final ByteList byteListString = StringNodesHelper.upcase(getContext().getRuntime(), getByteList(string));
 
             if (byteListString.equal(getByteList(string))) {
@@ -2274,7 +2292,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public boolean validEncodingQuery(RubyString string) {
+        public boolean validEncodingQuery(RubyBasicObject string) {
             return scanForCodeRange(string) != StringSupport.CR_BROKEN;
         }
 
@@ -2291,7 +2309,7 @@ public abstract class StringNodes {
 
         @Specialization
         @TruffleBoundary
-        public RubyBasicObject capitalizeBang(RubyString string) {
+        public RubyBasicObject capitalizeBang(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#capitalize_bang19.
 
             final ByteList value = getByteList(string);
@@ -2349,7 +2367,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object capitalize(VirtualFrame frame, RubyString string) {
+        public Object capitalize(VirtualFrame frame, RubyBasicObject string) {
             final Object duped = dupNode.call(frame, string, "dup", null);
             capitalizeBangNode.call(frame, duped, "capitalize!", null);
 
@@ -2366,7 +2384,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyBasicObject clear(RubyString string) {
+        public RubyBasicObject clear(RubyBasicObject string) {
             ByteList empty = ByteList.EMPTY_BYTELIST;
             empty.setEncoding(getByteList(string).getEncoding());
             setByteList(string, empty);
@@ -2386,7 +2404,9 @@ public abstract class StringNodes {
             return runtime.newString(string).downcase(runtime.getCurrentContext()).getByteList();
         }
 
-        public static int checkIndex(RubyString string, int index, RubyNode node) {
+        public static int checkIndex(RubyBasicObject string, int index, RubyNode node) {
+            assert RubyGuards.isRubyString(string);
+
             if (index > length(string)) {
                 CompilerDirectives.transferToInterpreter();
 
@@ -2408,7 +2428,9 @@ public abstract class StringNodes {
             return index;
         }
 
-        public static int checkIndexForRef(RubyString string, int index, RubyNode node) {
+        public static int checkIndexForRef(RubyBasicObject string, int index, RubyNode node) {
+            assert RubyGuards.isRubyString(string);
+
             final int length = getByteList(string).getRealSize();
 
             if (index >= length) {
@@ -2433,12 +2455,18 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
-        public static void replaceInternal(RubyString string, int start, int length, RubyString replacement) {
+        public static void replaceInternal(RubyBasicObject string, int start, int length, RubyBasicObject replacement) {
+            assert RubyGuards.isRubyString(string);
+            assert RubyGuards.isRubyString(replacement);
             StringSupport.replaceInternal19(start, length, getCodeRangeable(string), getCodeRangeable(replacement));
         }
 
         @TruffleBoundary
-        private static Object trTransHelper(RubyContext context, RubyString self, RubyString fromStr, RubyString toStr, boolean sFlag) {
+        private static Object trTransHelper(RubyContext context, RubyBasicObject self, RubyBasicObject fromStr, RubyBasicObject toStr, boolean sFlag) {
+            assert RubyGuards.isRubyString(self);
+            assert RubyGuards.isRubyString(fromStr);
+            assert RubyGuards.isRubyString(toStr);
+
             final CodeRangeable ret = StringSupport.trTransHelper(context.getRuntime(), getCodeRangeable(self), getCodeRangeable(fromStr), getCodeRangeable(toStr), sFlag);
 
             if (ret == null) {

@@ -10,12 +10,14 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.hash.Entry;
 
+@Deprecated
 public class RubyHash extends RubyBasicObject {
 
-    public RubyProc defaultBlock;
+    public RubyBasicObject defaultBlock;
     public Object defaultValue;
     public Object store;
     public int size;
@@ -23,8 +25,9 @@ public class RubyHash extends RubyBasicObject {
     public Entry lastInSequence;
     public boolean compareByIdentity;
 
-    public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence, DynamicObject dynamicObject) {
+    public RubyHash(RubyClass rubyClass, RubyBasicObject defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence, DynamicObject dynamicObject) {
         super(rubyClass, dynamicObject);
+        assert defaultBlock == null || RubyGuards.isRubyProc(defaultBlock);
         this.defaultBlock = defaultBlock;
         this.defaultValue = defaultValue;
         this.store = store;

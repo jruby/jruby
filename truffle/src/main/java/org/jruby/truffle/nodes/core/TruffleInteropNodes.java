@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -20,9 +19,9 @@ import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 
 @CoreClass(name = "Truffle::Interop")
 public abstract class TruffleInteropNodes {
@@ -178,7 +177,7 @@ public abstract class TruffleInteropNodes {
         @CompilationFinal private String identifier;
 
         @Specialization(guards = "isRubySymbol(identifier)")
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier) {
+        public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier) {
             if (this.identifier == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 this.identifier = SymbolNodes.getString(identifier).intern();
@@ -187,12 +186,13 @@ public abstract class TruffleInteropNodes {
         }
 
         @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubyString identifier) {
+        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier) {
             return ForeignAccess.execute(node, frame, receiver, slowPathToString(identifier));
         }
 
         @TruffleBoundary
-        private static String slowPathToString(RubyString identifier) {
+        private static String slowPathToString(RubyBasicObject identifier) {
+            assert RubyGuards.isRubyString(identifier);
             return identifier.toString();
         }
 
@@ -221,7 +221,7 @@ public abstract class TruffleInteropNodes {
         @CompilationFinal private String identifier;
 
         @Specialization(guards = "isRubySymbol(identifier)")
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier,  Object value) {
+        public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier,  Object value) {
             if (this.identifier == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 this.identifier = SymbolNodes.getString(identifier).intern();
@@ -229,13 +229,14 @@ public abstract class TruffleInteropNodes {
             return ForeignAccess.execute(node, frame, receiver, this.identifier, value);
         }
 
-        @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubyString identifier, Object value) {
+        @Specialization(guards = "isRubyString(identifier)")
+        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier, Object value) {
             return ForeignAccess.execute(node, frame, receiver, slowPathToString(identifier), value);
         }
 
         @TruffleBoundary
-        private static String slowPathToString(RubyString identifier) {
+        private static String slowPathToString(RubyBasicObject identifier) {
+            assert RubyGuards.isRubyString(identifier);
             return identifier.toString();
         }
 
@@ -307,13 +308,13 @@ public abstract class TruffleInteropNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object export(VirtualFrame frame, RubyString name,  TruffleObject object) {
+        @Specialization(guards = "isRubyString(name)")
+        public Object export(VirtualFrame frame, RubyBasicObject name,  TruffleObject object) {
             getContext().exportObject(name, object);
             return object;
         }
 
-        protected static String rubyStringToString(RubyString rubyString) {
+        protected static String rubyStringToString(RubyBasicObject rubyString) {
         	return rubyString.toString();
         }
     }
@@ -326,8 +327,8 @@ public abstract class TruffleInteropNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object importObject(VirtualFrame frame, RubyString name) {
+        @Specialization(guards = "isRubyString(name)")
+        public Object importObject(VirtualFrame frame, RubyBasicObject name) {
             return getContext().importObject(name);
         }
 

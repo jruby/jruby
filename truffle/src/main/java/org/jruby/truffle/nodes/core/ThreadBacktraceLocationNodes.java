@@ -44,7 +44,8 @@ public class ThreadBacktraceLocationNodes {
         return (Activation) ACTIVATION_PROPERTY.get(threadBacktraceLocation.getDynamicObject(), true);
     }
 
-    @CoreMethod(names = "absolute_path")
+    @CoreMethod(names = { "absolute_path", "path" })
+    // TODO (eregon, 8 July 2015): these two methods are slightly different (path can be relative if it is the main script)
     public abstract static class AbsolutePathNode extends UnaryCoreMethodNode {
 
         public AbsolutePathNode(RubyContext context, SourceSection sourceSection) {

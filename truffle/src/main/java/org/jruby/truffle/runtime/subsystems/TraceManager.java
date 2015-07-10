@@ -17,11 +17,16 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBinding;
+import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.utilities.CyclicAssumption;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 
 import java.util.ArrayList;
@@ -94,7 +99,7 @@ public class TraceManager {
                             if (callNode == null) {
                                 CompilerDirectives.transferToInterpreterAndInvalidate();
 
-                                callNode = insert(Truffle.getRuntime().createDirectCallNode(traceFunc.getCallTargetForBlocks()));
+                                callNode = insert(Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForBlocks(traceFunc)));
 
                                 if (callNode.isCallTargetCloningAllowed()) {
                                     callNode.cloneCallTarget();
@@ -108,10 +113,10 @@ public class TraceManager {
                             isInTraceFunc = true;
 
                             callNode.call(frame, RubyArguments.pack(
-                                    traceFunc.getMethod(),
-                                    traceFunc.getDeclarationFrame(),
-                                    traceFunc.getSelfCapturedInScope(),
-                                    traceFunc.getBlockCapturedInScope(),
+                                    ProcNodes.getMethod(traceFunc),
+                                    ProcNodes.getDeclarationFrame(traceFunc),
+                                    ProcNodes.getSelfCapturedInScope(traceFunc),
+                                    ProcNodes.getBlockCapturedInScope(traceFunc),
                                     new Object[]{event, file, line, id, binding, classname}));
 
                             isInTraceFunc = false;

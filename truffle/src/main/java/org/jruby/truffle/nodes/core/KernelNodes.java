@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -26,6 +27,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyThread.Status;
 import org.jruby.exceptions.MainExitException;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
@@ -81,8 +83,8 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject backtick(VirtualFrame frame, RubyString command) {
+        @Specialization(guards = "isRubyString(command)")
+        public RubyBasicObject backtick(VirtualFrame frame, RubyBasicObject command) {
             // Command is lexically a string interoplation, so variables will already have been expanded
 
             if (toHashNode == null) {
@@ -268,20 +270,14 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        public abstract RubyBinding executeRubyBinding(VirtualFrame frame);
-
-        public Object execute(VirtualFrame frame) {
-            return executeRubyBinding(frame);
-        }
-
         @Specialization
-        public RubyBinding binding() {
+        public RubyBasicObject binding() {
             // Materialize the caller's frame - false means don't use a slow path to get it - we want to optimize it
 
             final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
 
-            return new RubyBinding(
+            return BindingNodes.createRubyBinding(
                     getContext().getCoreLibrary().getBindingClass(),
                     RubyArguments.getSelf(callerFrame.getArguments()),
                     callerFrame);
@@ -482,52 +478,57 @@ public abstract class KernelNodes {
             return ToStrNodeGen.create(getContext(), getSourceSection(), source);
         }
 
-        protected RubyBinding getCallerBinding(VirtualFrame frame) {
+        protected RubyBasicObject getCallerBinding(VirtualFrame frame) {
             if (bindingNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
             }
-            return bindingNode.executeRubyBinding(frame);
+
+            try {
+                return bindingNode.executeRubyBasicObject(frame);
+            } catch (UnexpectedResultException e) {
+                throw new UnsupportedOperationException(e);
+            }
         }
 
-        @Specialization
-        public Object eval(VirtualFrame frame, RubyString source, NotProvided binding, NotProvided filename, NotProvided lineNumber) {
+        @Specialization(guards = "isRubyString(source)")
+        public Object eval(VirtualFrame frame, RubyBasicObject source, NotProvided binding, NotProvided filename, NotProvided lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             return getContext().eval(StringNodes.getByteList(source), getCallerBinding(frame), true, this);
         }
 
-        @Specialization(guards = "isNil(noBinding)")
-        public Object eval(VirtualFrame frame, RubyString source, Object noBinding, RubyString filename, int lineNumber) {
+        @Specialization(guards = {"isRubyString(source)", "isNil(noBinding)", "isRubyString(filename)"})
+        public Object evalNoBinding(VirtualFrame frame, RubyBasicObject source, Object noBinding, RubyBasicObject filename, int lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename.
             return eval(frame, source, NotProvided.INSTANCE, NotProvided.INSTANCE, NotProvided.INSTANCE);
         }
 
-        @Specialization
-        public Object eval(RubyString source, RubyBinding binding, NotProvided filename, NotProvided lineNumber) {
+        @Specialization(guards = {"isRubyString(source)", "isRubyBinding(binding)"})
+        public Object eval(RubyBasicObject source, RubyBasicObject binding, NotProvided filename, NotProvided lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             return getContext().eval(StringNodes.getByteList(source), binding, false, this);
         }
 
-        @Specialization
-        public Object eval(RubyString source, RubyBinding binding, RubyString filename, NotProvided lineNumber) {
+        @Specialization(guards = {"isRubyString(source)", "isRubyBinding(binding)", "isRubyString(filename)"})
+        public Object eval(RubyBasicObject source, RubyBasicObject binding, RubyBasicObject filename, NotProvided lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             return getContext().eval(StringNodes.getByteList(source), binding, false, filename.toString(), this);
         }
 
-        @Specialization
-        public Object eval(RubyString source, RubyBinding binding, RubyString filename, int lineNumber) {
+        @Specialization(guards = {"isRubyString(source)", "isRubyBinding(binding)", "isRubyString(filename)"})
+        public Object eval(RubyBasicObject source, RubyBasicObject binding, RubyBasicObject filename, int lineNumber) {
             CompilerDirectives.transferToInterpreter();
 
             return getContext().eval(StringNodes.getByteList(source), binding, false, filename.toString(), this);
         }
 
-        @Specialization(guards = "!isRubyBinding(badBinding)")
-        public Object eval(RubyString source, RubyBasicObject badBinding, NotProvided filename, NotProvided lineNumber) {
+        @Specialization(guards = {"isRubyString(source)", "!isRubyBinding(badBinding)"})
+        public Object evalBadBinding(RubyBasicObject source, RubyBasicObject badBinding, NotProvided filename, NotProvided lineNumber) {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(badBinding, "binding", this));
         }
     }
@@ -1023,10 +1024,17 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyProc proc(RubyProc block) {
-            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA,
-                    block.getSharedMethodInfo(), block.getCallTargetForLambdas(), block.getCallTargetForLambdas(),
-                    block.getCallTargetForLambdas(), block.getDeclarationFrame(), block.getMethod(),
-                    block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
+            return ProcNodes.createRubyProc(
+                    getContext().getCoreLibrary().getProcClass(),
+                    ProcNodes.Type.LAMBDA,
+                    ProcNodes.getSharedMethodInfo(block),
+                    ProcNodes.getCallTargetForLambdas(block),
+                    ProcNodes.getCallTargetForLambdas(block),
+                    ProcNodes.getCallTargetForLambdas(block),
+                    ProcNodes.getDeclarationFrame(block),
+                    ProcNodes.getMethod(block),
+                    ProcNodes.getSelfCapturedInScope(block),
+                    ProcNodes.getBlockCapturedInScope(block));
         }
     }
 
@@ -1038,8 +1046,8 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public boolean load(RubyString file, boolean wrap) {
+        @Specialization(guards = "isRubyString(file)")
+        public boolean load(RubyBasicObject file, boolean wrap) {
             if (wrap) {
                 throw new UnsupportedOperationException();
             }
@@ -1060,8 +1068,8 @@ public abstract class KernelNodes {
             return true;
         }
 
-        @Specialization
-        public boolean load(RubyString file, NotProvided wrap) {
+        @Specialization(guards = "isRubyString(file)")
+        public boolean load(RubyBasicObject file, NotProvided wrap) {
             return load(file, false);
         }
     }
@@ -1236,10 +1244,17 @@ public abstract class KernelNodes {
         public RubyProc proc(RubyProc block) {
             CompilerDirectives.transferToInterpreter();
 
-            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
-                    block.getSharedMethodInfo(), block.getCallTargetForProcs(), block.getCallTargetForProcs(),
-                    block.getCallTargetForLambdas(), block.getDeclarationFrame(), block.getMethod(),
-                    block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
+            return ProcNodes.createRubyProc(
+                    getContext().getCoreLibrary().getProcClass(),
+                    ProcNodes.Type.PROC,
+                    ProcNodes.getSharedMethodInfo(block),
+                    ProcNodes.getCallTargetForProcs(block),
+                    ProcNodes.getCallTargetForProcs(block),
+                    ProcNodes.getCallTargetForLambdas(block),
+                    ProcNodes.getDeclarationFrame(block),
+                    ProcNodes.getMethod(block),
+                    ProcNodes.getSelfCapturedInScope(block),
+                    ProcNodes.getBlockCapturedInScope(block));
         }
     }
 
@@ -1303,6 +1318,37 @@ public abstract class KernelNodes {
 
     }
 
+    @CoreMethod(names = "public_send", needsBlock = true, required = 1, argumentsAsArray = true)
+    public abstract static class PublicSendNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private CallDispatchHeadNode dispatchNode;
+
+        public PublicSendNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+
+            dispatchNode = new CallDispatchHeadNode(context, false,
+                    DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT,
+                    MissingBehavior.CALL_METHOD_MISSING);
+
+            if (DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
+                dispatchNode.forceUncached();
+            }
+        }
+
+        @Specialization
+        public Object send(VirtualFrame frame, Object self, Object[] args, NotProvided block) {
+            return send(frame, self, args, (RubyProc) null);
+        }
+
+        @Specialization
+        public Object send(VirtualFrame frame, Object self, Object[] args, RubyProc block) {
+            final Object name = args[0];
+            final Object[] sendArgs = ArrayUtils.extractRange(args, 1, args.length);
+            return dispatchNode.call(frame, self, name, block, sendArgs);
+        }
+
+    }
+
     @CoreMethod(names = "rand", isModuleFunction = true, optional = 1)
     public abstract static class RandNode extends CoreMethodArrayArgumentsNode {
 
@@ -1360,8 +1406,9 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public boolean require(RubyString feature) {
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(feature)")
+        public boolean require(RubyBasicObject feature) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
@@ -1396,10 +1443,9 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public boolean requireRelative(RubyString feature) {
-            CompilerDirectives.transferToInterpreter();
-
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(feature)")
+        public boolean requireRelative(RubyBasicObject feature) {
             final FeatureManager featureManager = getContext().getFeatureManager();
 
             final String featureString = feature.toString();
@@ -1591,8 +1637,8 @@ public abstract class KernelNodes {
             toS = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        @Specialization
-        public RubyBasicObject string(RubyString value) {
+        @Specialization(guards = "isRubyString(value)")
+        public RubyBasicObject string(RubyBasicObject value) {
             return value;
         }
 
@@ -1694,12 +1740,12 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isRubyString(firstArgument(arguments))", "byteListsEqual(asRubyString(firstArgument(arguments)), cachedFormat)"})
+        @Specialization(guards = {"isRubyString(firstArgument(arguments))", "byteListsEqual(asRubyBasicObject(firstArgument(arguments)), cachedFormat)"})
         public RubyBasicObject formatCached(
                 VirtualFrame frame,
                 Object[] arguments,
-                @Cached("privatizeByteList(asRubyString(firstArgument(arguments)))") ByteList cachedFormat,
-                @Cached("create(compileFormat(asRubyString(firstArgument(arguments))))") DirectCallNode callPackNode) {
+                @Cached("privatizeByteList(asRubyBasicObject(firstArgument(arguments)))") ByteList cachedFormat,
+                @Cached("create(compileFormat(asRubyBasicObject(firstArgument(arguments))))") DirectCallNode callPackNode) {
             final Object[] store = ArrayUtils.extractRange(arguments, 1, arguments.length);
 
             final PackResult result;
@@ -1719,13 +1765,13 @@ public abstract class KernelNodes {
                 VirtualFrame frame,
                 Object[] arguments,
                 @Cached("create()") IndirectCallNode callPackNode) {
-            final RubyString format = (RubyString) arguments[0];
+            final RubyBasicObject format = (RubyBasicObject) arguments[0];
             final Object[] store = ArrayUtils.extractRange(arguments, 1, arguments.length);
 
             final PackResult result;
 
             try {
-                result = (PackResult) callPackNode.call(frame, compileFormat((RubyString) arguments[0]), new Object[]{store, store.length});
+                result = (PackResult) callPackNode.call(frame, compileFormat((RubyBasicObject) arguments[0]), new Object[]{store, store.length});
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -1785,15 +1831,19 @@ public abstract class KernelNodes {
             return string;
         }
 
-        protected ByteList privatizeByteList(RubyString string) {
+        protected ByteList privatizeByteList(RubyBasicObject string) {
+            assert RubyGuards.isRubyString(string);
             return StringNodes.getByteList(string).dup();
         }
 
-        protected boolean byteListsEqual(RubyString string, ByteList byteList) {
+        protected boolean byteListsEqual(RubyBasicObject string, ByteList byteList) {
+            assert RubyGuards.isRubyString(string);
             return StringNodes.getByteList(string).equal(byteList);
         }
 
-        protected CallTarget compileFormat(RubyString format) {
+        protected CallTarget compileFormat(RubyBasicObject format) {
+            assert RubyGuards.isRubyString(format);
+
             try {
                 return new FormatParser(getContext()).parse(StringNodes.getByteList(format));
             } catch (FormatException e) {
@@ -1806,8 +1856,8 @@ public abstract class KernelNodes {
             return args[0];
         }
 
-        protected RubyString asRubyString(Object arg) {
-            return (RubyString) arg;
+        protected RubyBasicObject asRubyBasicObject(Object arg) {
+            return (RubyBasicObject) arg;
         }
 
     }
@@ -1821,8 +1871,8 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public boolean system(VirtualFrame frame, RubyString command) {
+        @Specialization(guards = "isRubyString(command)")
+        public boolean system(VirtualFrame frame, RubyBasicObject command) {
             if (toHashNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));

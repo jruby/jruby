@@ -76,7 +76,6 @@ import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;
-import org.jruby.util.cli.Options;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -87,8 +86,6 @@ import java.util.*;
  * contention here! We make all references to JRuby explicit.
  */
 public class BodyTranslator extends Translator {
-
-    private static final int PASS_A_LOT = Options.TRUFFLE_PASSALOT.load();
 
     protected final BodyTranslator parent;
     protected final TranslatorEnvironment environment;
@@ -996,7 +993,7 @@ public class BodyTranslator extends Translator {
             children.add(child.accept(this));
         }
 
-        final InteroplatedRegexpNode i = new InteroplatedRegexpNode(context, sourceSection, children.toArray(new RubyNode[children.size()]), node.getOptions());
+        final InterpolatedRegexpNode i = new InterpolatedRegexpNode(context, sourceSection, children.toArray(new RubyNode[children.size()]), node.getOptions());
 
         if (node.getOptions().isOnce()) {
             return new OnceNode(context, i.getEncapsulatingSourceSection(), i);
@@ -2203,12 +2200,6 @@ public class BodyTranslator extends Translator {
 
         final List<RubyNode> lineSequence = new ArrayList<>();
 
-        if (PASS_A_LOT > 0) {
-            if (PASS_A_LOT > Math.random() * 100) {
-                lineSequence.add(new ThreadPassNode(context, sourceSection));
-            }
-        }
-
         lineSequence.add(node.getNextNode().accept(this));
 
         lineSequence.get(0).setAtNewline();
@@ -2737,7 +2728,7 @@ public class BodyTranslator extends Translator {
             condition = new NotNode(context, sourceSection, condition);
         }
 
-        final RubyNode body;
+        RubyNode body;
         final BreakID whileBreakID = environment.getParseEnvironment().allocateBreakID();
 
         final boolean oldTranslatingWhile = translatingWhile;
@@ -2758,6 +2749,10 @@ public class BodyTranslator extends Translator {
         }
 
         final RubyNode loop;
+
+        if (YIELDS) {
+            body = SequenceNode.sequence(context, sourceSection, new ThreadPassNode(context, sourceSection), body);
+        }
 
         if (node.evaluateAtStart()) {
             loop = WhileNode.createWhile(context, sourceSection, condition, body);

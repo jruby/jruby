@@ -59,7 +59,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.sockets.FDSet;
 import org.jruby.truffle.runtime.sockets.FDSetFactory;
 import org.jruby.truffle.runtime.sockets.FDSetFactoryFactory;
@@ -216,8 +215,8 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public int open(RubyString path, int mode, int permission) {
+        @Specialization(guards = "isRubyString(path)")
+        public int open(RubyBasicObject path, int mode, int permission) {
             return posix().open(StringNodes.getByteList(path), mode, permission);
         }
 
@@ -231,14 +230,15 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public int truncate(RubyString path, int length) {
+        @Specialization(guards = "isRubyString(path)")
+        public int truncate(RubyBasicObject path, int length) {
             return truncate(path, (long) length);
         }
 
-        @Specialization
-        public int truncate(RubyString path, long length) {
-            final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
+        @Specialization(guards = "isRubyString(path)")
+        public int truncate(RubyBasicObject path, long length) {
+            final ByteList byteList = StringNodes.getByteList(path);
+            final String pathString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
             final int result = posix().truncate(pathString, length);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
@@ -277,8 +277,8 @@ public abstract class IOPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public boolean fnmatch(RubyString pattern, RubyString path, int flags) {
+        @Specialization(guards = {"isRubyString(pattern)", "isRubyString(path)"})
+        public boolean fnmatch(RubyBasicObject pattern, RubyBasicObject path, int flags) {
             return Dir.fnmatch(StringNodes.getByteList(pattern).getUnsafeBytes(),
                     StringNodes.getByteList(pattern).getBegin(),
                     StringNodes.getByteList(pattern).getBegin() + StringNodes.getByteList(pattern).getRealSize(),
@@ -414,8 +414,8 @@ public abstract class IOPrimitiveNodes {
             resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        @Specialization
-        public Object reopenPath(VirtualFrame frame, RubyBasicObject file, RubyString path, int mode) {
+        @Specialization(guards = "isRubyString(path)")
+        public Object reopenPath(VirtualFrame frame, RubyBasicObject file, RubyBasicObject path, int mode) {
             int fd = getDescriptor(file);
             final String pathString = path.toString();
 
@@ -465,19 +465,18 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public int write(VirtualFrame frame, RubyBasicObject file, RubyString string) {
+        @Specialization(guards = "isRubyString(string)")
+        public int write(VirtualFrame frame, RubyBasicObject file, RubyBasicObject string) {
             final int fd = getDescriptor(file);
-
-            if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
-                getContext().getDebugStandardOut().write(StringNodes.getByteList(string).unsafeBytes(), StringNodes.getByteList(string).begin(), StringNodes.getByteList(string).length());
-                return StringNodes.getByteList(string).length();
-            }
-
-            // We have to copy here as write starts at byte[0], and the ByteList may not
 
             final ByteList byteList = StringNodes.getByteList(string);
 
+            if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
+                getContext().getDebugStandardOut().write(byteList.unsafeBytes(), byteList.begin(), byteList.length());
+                return byteList.length();
+            }
+
+            // We have to copy here as write starts at byte[0], and the ByteList may not
             // TODO (eregon, 11 May 2015): review consistency under concurrent modification
             final ByteBuffer buffer = ByteBuffer.wrap(byteList.unsafeBytes(), byteList.begin(), byteList.length());
 

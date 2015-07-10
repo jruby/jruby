@@ -38,14 +38,14 @@ public abstract class ProcCastNode extends RubyNode {
         return nil();
     }
 
-    @Specialization
-    public RubyProc doRubyProc(RubyProc proc) {
+    @Specialization(guards = "isRubyProc(proc)")
+    public RubyBasicObject doRubyProc(RubyBasicObject proc) {
         return proc;
     }
 
     @Specialization
-    public RubyProc doObject(VirtualFrame frame, RubyBasicObject object) {
-        return (RubyProc) toProc.call(frame, object, "to_proc", null);
+    public Object doObject(VirtualFrame frame, RubyBasicObject object) {
+        return toProc.call(frame, object, "to_proc", null);
     }
 
 }

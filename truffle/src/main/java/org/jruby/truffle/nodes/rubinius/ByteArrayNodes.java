@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.util.ByteList;
 
@@ -79,8 +78,8 @@ public abstract class ByteArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject prepend(RubyBasicObject bytes, RubyString string) {
+        @Specialization(guards = "isRubyString(string)")
+        public RubyBasicObject prepend(RubyBasicObject bytes, RubyBasicObject string) {
             final int prependLength = StringNodes.getByteList(string).getUnsafeBytes().length;
             final int originalLength = getBytes(bytes).getUnsafeBytes().length;
             final int newLength = prependLength + originalLength;
@@ -133,10 +132,9 @@ public abstract class ByteArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object getByte(RubyBasicObject bytes, RubyString pattern, int start, int length) {
-            final int index = new ByteList(getBytes(bytes).unsafeBytes(), start, length)
-                    .indexOf(StringNodes.getByteList(pattern));
+        @Specialization(guards = "isRubyString(pattern)")
+        public Object getByte(RubyBasicObject bytes, RubyBasicObject pattern, int start, int length) {
+            final int index = new ByteList(getBytes(bytes), start, length).indexOf(StringNodes.getByteList(pattern));
 
             if (index == -1) {
                 return nil();

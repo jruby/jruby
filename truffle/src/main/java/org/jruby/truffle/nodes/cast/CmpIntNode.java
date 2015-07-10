@@ -33,7 +33,6 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 
 /**
  * This is a port of MRI's rb_cmpint, as taken from RubyComparable and broken out into specialized nodes.
@@ -53,7 +52,7 @@ public abstract class CmpIntNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract int executeCmpInt(VirtualFrame frame, Object cmpResult, RubyString a, Object b);
+    public abstract int executeCmpInt(VirtualFrame frame, Object cmpResult, Object a, Object b);
 
     @Specialization
     public int cmpInt(int value, Object receiver, Object other) {

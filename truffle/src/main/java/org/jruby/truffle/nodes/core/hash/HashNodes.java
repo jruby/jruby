@@ -183,12 +183,12 @@ public abstract class HashNodes {
         HASH_FACTORY = shape.createFactory();
     }
 
-    public static RubyProc getDefaultBlock(RubyBasicObject hash) {
+    public static RubyBasicObject getDefaultBlock(RubyBasicObject hash) {
         assert RubyGuards.isRubyHash(hash);
         return ((RubyHash) hash).defaultBlock;
     }
 
-    public static void setDefaultBlock(RubyBasicObject hash, RubyProc defaultBlock) {
+    public static void setDefaultBlock(RubyBasicObject hash, RubyBasicObject defaultBlock) {
         assert RubyGuards.isRubyHash(hash);
         ((RubyHash) hash).defaultBlock = defaultBlock;
     }
@@ -265,7 +265,7 @@ public abstract class HashNodes {
         return createHash(hashClass, null, null, store, size, null, null);
     }
 
-    public static RubyBasicObject createHash(RubyClass hashClass, RubyProc defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
+    public static RubyBasicObject createHash(RubyClass hashClass, RubyBasicObject defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
         return new RubyHash(hashClass, defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, HASH_FACTORY.newInstance());
     }
 
@@ -1361,7 +1361,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = {"isEmptyHash(hash)", "!hasDefaultValue(hash)", "hasDefaultBlock(hash)"})
         public Object shiftEmptyDefaultProc(RubyBasicObject hash) {
-            return getDefaultBlock(hash).rootCall(hash, nil());
+            return ProcNodes.rootCall(getDefaultBlock(hash), hash, nil());
         }
 
         @Specialization(guards = {"!isEmptyHash(hash)", "isPackedHash(hash)"})

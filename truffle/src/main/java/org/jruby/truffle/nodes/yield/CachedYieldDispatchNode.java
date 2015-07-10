@@ -14,8 +14,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.util.cli.Options;
 
@@ -28,10 +31,12 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
     @Child private DirectCallNode callNode;
     @Child private YieldDispatchNode next;
 
-    public CachedYieldDispatchNode(RubyContext context, RubyProc block, YieldDispatchNode next) {
+    public CachedYieldDispatchNode(RubyContext context, RubyBasicObject block, YieldDispatchNode next) {
         super(context);
 
-        callNode = Truffle.getRuntime().createDirectCallNode(block.getCallTargetForBlocks());
+        assert RubyGuards.isRubyProc(block);
+
+        callNode = Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForBlocks(block));
         insert(callNode);
 
         if (INLINER_ALWAYS_CLONE_YIELD && callNode.isCallTargetCloningAllowed()) {
@@ -46,8 +51,8 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
-    protected boolean guard(RubyProc block) {
-        return block.getCallTargetForBlocks() == callNode.getCallTarget();
+    protected boolean guard(RubyBasicObject block) {
+        return ProcNodes.getCallTargetForBlocks(block) == callNode.getCallTarget();
     }
 
     @Override
@@ -56,9 +61,12 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
-    public Object dispatchWithSelfAndBlock(VirtualFrame frame, RubyProc block, Object self, RubyProc modifiedBlock, Object... argumentsObjects) {
+    public Object dispatchWithSelfAndBlock(VirtualFrame frame, RubyBasicObject block, Object self, RubyBasicObject modifiedBlock, Object... argumentsObjects) {
+        assert block == null || RubyGuards.isRubyProc(block);
+        assert modifiedBlock == null || RubyGuards.isRubyProc(modifiedBlock);
+
         if (guard(block)) {
-            return callNode.call(frame, RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), self, modifiedBlock, argumentsObjects));
+            return callNode.call(frame, RubyArguments.pack(ProcNodes.getMethod(block), ProcNodes.getDeclarationFrame(block), self, modifiedBlock, argumentsObjects));
         } else {
             return next.dispatchWithSelfAndBlock(frame, block, self, modifiedBlock, argumentsObjects);
         }

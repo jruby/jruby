@@ -19,10 +19,12 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.LineLocation;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.tools.LineToProbesMap;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BindingNodes;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBinding;
-import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,7 +46,9 @@ public class AttachmentsManager {
         lineToProbesMap.install();
     }
 
-    public synchronized void attach(String file, int line, final RubyProc block) {
+    public synchronized void attach(String file, int line, final RubyBasicObject block) {
+        assert RubyGuards.isRubyProc(block);
+
         final String info = String.format("Truffle::Primitive.attach@%s:%d", file, line);
 
         final Instrument instrument = Instrument.create(new AdvancedInstrumentResultListener() {
@@ -67,7 +71,7 @@ public class AttachmentsManager {
 
                     @Override
                     public Object executeRoot(Node node, VirtualFrame frame) {
-                        final RubyBinding binding = new RubyBinding(
+                        final RubyBasicObject binding = BindingNodes.createRubyBinding(
                                 context.getCoreLibrary().getBindingClass(),
                                 RubyArguments.getSelf(frame.getArguments()),
                                 frame.materialize());
@@ -75,7 +79,7 @@ public class AttachmentsManager {
                         if (callNode == null) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
 
-                            callNode = insert(Truffle.getRuntime().createDirectCallNode(block.getCallTargetForBlocks()));
+                            callNode = insert(Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForBlocks(block)));
 
                             if (callNode.isCallTargetCloningAllowed()) {
                                 callNode.cloneCallTarget();
@@ -87,10 +91,10 @@ public class AttachmentsManager {
                         }
 
                         callNode.call(frame, RubyArguments.pack(
-                                block.getMethod(),
-                                block.getDeclarationFrame(),
-                                block.getSelfCapturedInScope(),
-                                block.getBlockCapturedInScope(),
+                                ProcNodes.getMethod(block),
+                                ProcNodes.getDeclarationFrame(block),
+                                ProcNodes.getSelfCapturedInScope(block),
+                                ProcNodes.getBlockCapturedInScope(block),
                                 new Object[]{binding}));
 
                         return null;

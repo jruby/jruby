@@ -20,7 +20,7 @@ import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.util.ByteList;
 
 public abstract class StatPrimitiveNodes {
 
@@ -165,10 +165,11 @@ public abstract class StatPrimitiveNodes {
             writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
         }
 
-        @Specialization
-        public int stat(RubyBasicObject rubyStat, RubyString path) {
+        @Specialization(guards = "isRubyString(path)")
+        public int stat(RubyBasicObject rubyStat, RubyBasicObject path) {
             final FileStat stat = posix().allocateStat();
-            final String pathString = RubyEncoding.decodeUTF8(StringNodes.getByteList(path).getUnsafeBytes(), StringNodes.getByteList(path).getBegin(), StringNodes.getByteList(path).getRealSize());
+            final ByteList byteList = StringNodes.getByteList(path);
+            final String pathString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
             final int code = posix().stat(pathString, stat);
 
             if (code == 0) {
@@ -219,8 +220,8 @@ public abstract class StatPrimitiveNodes {
             writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
         }
 
-        @Specialization
-        public int lstat(RubyBasicObject rubyStat, RubyString path) {
+        @Specialization(guards = "isRubyString(path)")
+        public int lstat(RubyBasicObject rubyStat, RubyBasicObject path) {
             final FileStat stat = posix().allocateStat();
             final int code = posix().lstat(path.toString(), stat);
 

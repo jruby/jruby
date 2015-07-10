@@ -50,7 +50,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyEncoding;
-import org.jruby.truffle.runtime.core.RubyString;
 
 import java.io.File;
 
@@ -88,8 +87,8 @@ public abstract class DirPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isNil(encoding)")
-        public RubyBasicObject open(RubyBasicObject dir, RubyString path, RubyBasicObject encoding) {
+        @Specialization(guards = {"isRubyString(path)", "isNil(encoding)"})
+        public RubyBasicObject open(RubyBasicObject dir, RubyBasicObject path, RubyBasicObject encoding) {
             // TODO CS 22-Apr-15 race conditions here
 
             final File file = new File(path.toString());
@@ -111,8 +110,8 @@ public abstract class DirPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject open(RubyBasicObject dir, RubyString path, RubyEncoding encoding) {
+        @Specialization(guards = "isRubyString(path)")
+        public RubyBasicObject open(RubyBasicObject dir, RubyBasicObject path, RubyEncoding encoding) {
             // TODO BJF 30-APR-2015 HandleEncoding
             return open(dir, path, nil());
         }

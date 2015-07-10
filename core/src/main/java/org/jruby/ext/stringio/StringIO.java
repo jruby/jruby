@@ -1126,10 +1126,11 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
         enc = ptr.string.getEncoding();
         enc2 = str.getEncoding();
+        final ByteList strByteList = str.getByteList();
         if (enc != enc2 && enc != EncodingUtils.ascii8bitEncoding(runtime)
                 // this is a hack because we don't seem to handle incoming ASCII-8BIT properly in transcoder
                 && enc2 != ASCIIEncoding.INSTANCE) {
-            str = runtime.newString(EncodingUtils.strConvEnc(context, str.getByteList(), enc2, enc));
+            str = runtime.newString(EncodingUtils.strConvEnc(context, strByteList, enc2, enc));
         }
         len = str.size();
         if (len == 0) return RubyFixnum.zero(runtime);
@@ -1139,11 +1140,11 @@ public class StringIO extends RubyObject implements EncodingCapable {
             ptr.pos = olen;
         }
         if (ptr.pos == olen) {
-            EncodingUtils.encStrBufCat(runtime, ptr.string, str.getByteList(), enc);
+            EncodingUtils.encStrBufCat(runtime, ptr.string, strByteList, enc);
         } else {
             strioExtend(ptr.pos, len);
             ByteList ptrByteList = ptr.string.getByteList();
-            System.arraycopy(str.getByteList().getUnsafeBytes(), str.getByteList().getBegin(), ptrByteList.getUnsafeBytes(), ptrByteList.begin + ptr.pos, len);
+            System.arraycopy(strByteList.getUnsafeBytes(), strByteList.getBegin(), ptrByteList.getUnsafeBytes(), ptrByteList.begin() + ptr.pos, len);
         }
         ptr.string.infectBy(str);
         ptr.string.infectBy(this);

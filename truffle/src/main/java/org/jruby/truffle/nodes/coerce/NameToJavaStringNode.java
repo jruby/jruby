@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -22,7 +23,6 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 
 /**
  * Take a Symbol or some object accepting #to_str
@@ -45,8 +45,8 @@ public abstract class NameToJavaStringNode extends RubyNode {
         return SymbolNodes.getString(symbol);
     }
 
-    @Specialization
-    public String coerceRubyString(RubyString string) {
+    @Specialization(guards = "isRubyString(string)")
+    public String coerceRubyString(RubyBasicObject string) {
         return string.toString();
     }
 
@@ -65,7 +65,7 @@ public abstract class NameToJavaStringNode extends RubyNode {
             }
         }
 
-        if (coerced instanceof RubyString) {
+        if (RubyGuards.isRubyString(coerced)) {
             return coerced.toString();
         } else {
             CompilerDirectives.transferToInterpreter();

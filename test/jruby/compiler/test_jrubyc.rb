@@ -86,12 +86,11 @@ class TestJrubyc < Test::Unit::TestCase
     File.delete("test_file1.class") rescue nil
   end
 
-  def test_signature_with_arg_named_result
-    if RbConfig::CONFIG['bindir'].match( /!\//) || RbConfig::CONFIG['bindir'].match( /:\//)
-      skip( 'only filesystem installations of jruby can compile ruby to java' ) 
-    end
-    $compile_test = false
-    File.open("test_file2.rb", "w") {|file| file.write(<<-RUBY
+  # only filesystem installations of jruby can compile ruby to java
+  if !(RbConfig::CONFIG['bindir'].match( /!\//) || RbConfig::CONFIG['bindir'].match( /:\//))
+    def test_signature_with_arg_named_result
+      $compile_test = false
+      File.open("test_file2.rb", "w") {|file| file.write(<<-RUBY
       class C
         java_signature 'public int f(int result)'
         def f(arg)
@@ -100,19 +99,19 @@ class TestJrubyc < Test::Unit::TestCase
       end
 
       C.new.f(0)
-    RUBY
-    )}
+      RUBY
+      )}
 
-    JRuby::Compiler::compile_argv(["--verbose", "--java", "--javac", "test_file2.rb"])
-    output = File.read(@tempfile_stderr.path)
-
-    assert_equal("", output)
-
-    assert_nothing_raised { require 'test_file2' }
-    assert($compile_test)
-  ensure
-    File.delete("test_file2.rb") rescue nil
-    File.delete("C.java") rescue nil
-    File.delete("C.class") rescue nil
+      JRuby::Compiler::compile_argv(["--verbose", "--java", "--javac", "test_file2.rb"])
+      output = File.read(@tempfile_stderr.path)
+      assert_equal("", output)
+      
+      assert_nothing_raised { require 'test_file2' }
+      assert($compile_test)
+    ensure
+      File.delete("test_file2.rb") rescue nil
+      File.delete("C.java") rescue nil
+      File.delete("C.class") rescue nil
+    end
   end
 end

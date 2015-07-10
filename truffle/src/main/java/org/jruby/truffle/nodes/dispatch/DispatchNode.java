@@ -16,6 +16,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -94,7 +95,7 @@ public abstract class DispatchNode extends RubyNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            RubyProc blockObject,
+            RubyBasicObject blockObject,
             Object argumentsObjects,
             String reason) {
         final DispatchHeadNode head = getHeadNode();

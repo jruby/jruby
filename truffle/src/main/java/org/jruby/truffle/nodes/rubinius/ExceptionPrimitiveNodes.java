@@ -13,9 +13,10 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.runtime.core.RubyString;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Exception} class.
@@ -44,8 +45,8 @@ public abstract class ExceptionPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "errno == EPERM")
-        public RubyException eperm(RubyString message, int errno) {
+        @Specialization(guards = {"isRubyString(message)", "errno == EPERM"})
+        public RubyException eperm(RubyBasicObject message, int errno) {
             return getContext().getCoreLibrary().operationNotPermittedError(message.toString(), this);
         }
 
@@ -54,8 +55,8 @@ public abstract class ExceptionPrimitiveNodes {
             return getContext().getCoreLibrary().operationNotPermittedError("nil", this);
         }
 
-        @Specialization(guards = "errno == ENOENT")
-        public RubyException enoent(RubyString message, int errno) {
+        @Specialization(guards = {"isRubyString(message)", "errno == ENOENT"})
+        public RubyException enoent(RubyBasicObject message, int errno) {
             return getContext().getCoreLibrary().fileNotFoundError(message.toString(), this);
         }
 
@@ -69,8 +70,8 @@ public abstract class ExceptionPrimitiveNodes {
             return getContext().getCoreLibrary().badFileDescriptor(this);
         }
 
-        @Specialization(guards = "errno == EEXIST")
-        public RubyException eexist(RubyString message, int errno) {
+        @Specialization(guards = {"isRubyString(message)", "errno == EEXIST"})
+        public RubyException eexist(RubyBasicObject message, int errno) {
             return getContext().getCoreLibrary().fileExistsError(message.toString(), this);
         }
 
@@ -79,8 +80,8 @@ public abstract class ExceptionPrimitiveNodes {
             return getContext().getCoreLibrary().fileExistsError("nil", this);
         }
 
-        @Specialization(guards = "errno == EACCES")
-        public RubyException eacces(RubyString message, int errno) {
+        @Specialization(guards = {"isRubyString(message)", "errno == EACCES"})
+        public RubyException eacces(RubyBasicObject message, int errno) {
             return getContext().getCoreLibrary().permissionDeniedError(message.toString(), this);
         }
 
@@ -89,8 +90,8 @@ public abstract class ExceptionPrimitiveNodes {
             return getContext().getCoreLibrary().permissionDeniedError("nil", this);
         }
 
-        @Specialization(guards = "errno == EFAULT")
-        public RubyException efault(RubyString message, int errno) {
+        @Specialization(guards = {"isRubyString(message)", "errno == EFAULT"})
+        public RubyException efault(RubyBasicObject message, int errno) {
             return getContext().getCoreLibrary().badAddressError(this);
         }
 
@@ -99,18 +100,18 @@ public abstract class ExceptionPrimitiveNodes {
             return getContext().getCoreLibrary().badAddressError(this);
         }
 
-        @Specialization(guards = "errno == ENOTDIR")
-        public RubyException enotdir(RubyString message, int errno) {
+        @Specialization(guards = {"isRubyString(message)", "errno == ENOTDIR"})
+        public RubyException enotdir(RubyBasicObject message, int errno) {
             return getContext().getCoreLibrary().notDirectoryError(message.toString(), this);
         }
 
-        @Specialization(guards = "errno == EINVAL")
-        public RubyException einval(RubyString message, int errno) {
+        @Specialization(guards = {"isRubyString(message)", "errno == EINVAL"})
+        public RubyException einval(RubyBasicObject message, int errno) {
             return getContext().getCoreLibrary().errnoError(errno, this);
         }
 
-        @Specialization(guards = "errno == EINPROGRESS")
-        public RubyException einprogress(RubyString message, int errno) {
+        @Specialization(guards = {"isRubyString(message)", "errno == EINPROGRESS"})
+        public RubyException einprogress(RubyBasicObject message, int errno) {
             return getContext().getCoreLibrary().errnoError(errno, this);
         }
 
@@ -120,7 +121,7 @@ public abstract class ExceptionPrimitiveNodes {
             final Errno errnoObject = Errno.valueOf(errno);
 
             final String messageString;
-            if (message instanceof RubyString) {
+            if (RubyGuards.isRubyString(message)) {
                 messageString = message.toString();
             } else if (message == nil()) {
                 messageString = "nil";
