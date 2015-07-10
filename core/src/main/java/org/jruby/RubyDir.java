@@ -326,6 +326,9 @@ public class RubyDir extends RubyObject {
         if (adjustedPath.startsWith("uri:")){
             realPath = adjustedPath;
         }
+        else if (adjustedPath.startsWith("file:")){
+            realPath = "uri:" + adjustedPath;
+        }
         else {
             FileResource dir = getDir(runtime, adjustedPath, true);
             realPath = dir.canonicalPath();
