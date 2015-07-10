@@ -53,7 +53,7 @@ public abstract class CmpIntNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract int executeCmpInt(VirtualFrame frame, Object cmpResult, RubyString a, Object b);
+    public abstract int executeCmpInt(VirtualFrame frame, Object cmpResult, Object a, Object b);
 
     @Specialization
     public int cmpInt(int value, Object receiver, Object other) {
