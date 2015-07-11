@@ -10,57 +10,32 @@
 
 package org.jruby.truffle.nodes.coerce;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyString;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ToPathNode extends RubyNode {
 
-    @Child private CallDispatchHeadNode toPathNode;
-
     public ToPathNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toPathNode = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
     public abstract RubyString executeRubyString(VirtualFrame frame, Object object);
 
-    @Specialization
-    public RubyBasicObject coerceRubyString(RubyString path) {
+    @Specialization(guards = "isRubyString(path)")
+    public RubyBasicObject coerceRubyString(RubyBasicObject path) {
         return path;
     }
 
     @Specialization(guards = "!isRubyString(object)")
     public RubyBasicObject coerceObject(VirtualFrame frame, Object object) {
-        final Object coerced;
-
-        try {
-            coerced = toPathNode.call(frame, object, "to_path", null);
-        } catch (RaiseException e) {
-            if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "String", this));
-            } else {
-                throw e;
-            }
-        }
-
-        if (coerced instanceof RubyString) {
-            return (RubyString) coerced;
-        } else {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_path", coerced, this));
-        }
+        return (RubyBasicObject) ruby(frame, "Rubinius::Type.coerce_to_path(object)", "object", object);
     }
 
 }

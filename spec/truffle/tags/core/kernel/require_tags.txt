@@ -1,7 +1,4 @@
-fails:Kernel#require (path resolution) calls #to_str on non-String objects
-fails:Kernel#require (path resolution) raises a TypeError if #to_str does not return a String
 fails:Kernel#require (path resolution) calls #to_path on non-String objects
-fails:Kernel#require (path resolution) calls #to_str on non-String objects returned by #to_path
 fails:Kernel#require (path resolution) loads a ../ relative path from the current working directory with empty $LOAD_PATH
 fails:Kernel#require (path resolution) loads a ../ relative path from the current working directory with non-empty $LOAD_PATH
 fails:Kernel#require (path resolution) loads a non-canonical path from the current working directory with non-empty $LOAD_PATH
@@ -32,10 +29,7 @@ fails:Kernel#require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_
 fails:Kernel#require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_FEATURES returns false when passed a path and the file is not found
 fails:Kernel#require (shell expansion) performs tilde expansion on a .rb file before storing paths in $LOADED_FEATURES
 fails:Kernel#require (shell expansion) performs tilde expansion on a non-extensioned file before storing paths in $LOADED_FEATURES
-fails:Kernel.require (path resolution) calls #to_str on non-String objects
-fails:Kernel.require (path resolution) raises a TypeError if #to_str does not return a String
 fails:Kernel.require (path resolution) calls #to_path on non-String objects
-fails:Kernel.require (path resolution) calls #to_str on non-String objects returned by #to_path
 fails:Kernel.require (path resolution) loads a ../ relative path from the current working directory with empty $LOAD_PATH
 fails:Kernel.require (path resolution) loads a ../ relative path from the current working directory with non-empty $LOAD_PATH
 fails:Kernel.require (path resolution) loads a non-canonical path from the current working directory with non-empty $LOAD_PATH
