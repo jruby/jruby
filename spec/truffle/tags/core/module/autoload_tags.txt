@@ -1,7 +1,5 @@
-fails:Module#autoload does not remove the constant from the constant table if the loaded files does not define it
 fails:Module#autoload calls #to_path on non-string filenames
 fails:Module#autoload calls #to_path on non-String filename arguments
 fails:Module#autoload (concurrently) blocks a second thread while a first is doing the autoload
 fails:Module#autoload (concurrently) blocks others threads while doing an autoload
 fails:Module#autoload shares the autoload request across dup'ed copies of modules
-fails:Module#autoload when changing $LOAD_PATH does not reload a file due to a different load path
