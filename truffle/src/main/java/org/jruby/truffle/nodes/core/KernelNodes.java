@@ -29,6 +29,7 @@ import org.jruby.RubyThread.Status;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.StringCachingGuards;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeGen;
@@ -1749,6 +1750,7 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = {"format", "sprintf"}, isModuleFunction = true, argumentsAsArray = true, required = 1, taintFromParameter = 0)
+    @ImportStatic(StringCachingGuards.class)
     public abstract static class FormatNode extends CoreMethodArrayArgumentsNode {
 
         @Child private TaintNode taintNode;
@@ -1846,16 +1848,6 @@ public abstract class KernelNodes {
             }
 
             return string;
-        }
-
-        protected ByteList privatizeByteList(RubyBasicObject string) {
-            assert RubyGuards.isRubyString(string);
-            return StringNodes.getByteList(string).dup();
-        }
-
-        protected boolean byteListsEqual(RubyBasicObject string, ByteList byteList) {
-            assert RubyGuards.isRubyString(string);
-            return StringNodes.getByteList(string).equal(byteList);
         }
 
         protected CallTarget compileFormat(RubyBasicObject format) {
