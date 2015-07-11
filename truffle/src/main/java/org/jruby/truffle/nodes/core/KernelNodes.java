@@ -481,7 +481,8 @@ public abstract class KernelNodes {
         protected RubyBasicObject getCallerBinding(VirtualFrame frame) {
             if (bindingNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+                bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(
+                        getContext(), getSourceSection(), new RubyNode[]{}));
             }
 
             try {
@@ -491,46 +492,62 @@ public abstract class KernelNodes {
             }
         }
 
-        @Specialization(guards = "isRubyString(source)")
-        public Object eval(VirtualFrame frame, RubyBasicObject source, NotProvided binding, NotProvided filename, NotProvided lineNumber) {
-            CompilerDirectives.transferToInterpreter();
-
+        @Specialization(guards = {
+                "isRubyString(source)"
+        })
+        public Object evalNoBinding(VirtualFrame frame, RubyBasicObject source, NotProvided binding,
+                                    NotProvided filename, NotProvided lineNumber) {
             return getContext().eval(StringNodes.getByteList(source), getCallerBinding(frame), true, this);
         }
 
-        @Specialization(guards = {"isRubyString(source)", "isNil(noBinding)", "isRubyString(filename)"})
-        public Object evalNoBinding(VirtualFrame frame, RubyBasicObject source, Object noBinding, RubyBasicObject filename, int lineNumber) {
-            CompilerDirectives.transferToInterpreter();
-
-            // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename.
-            return eval(frame, source, NotProvided.INSTANCE, NotProvided.INSTANCE, NotProvided.INSTANCE);
+        @Specialization(guards = {
+                "isRubyString(source)",
+                "isNil(noBinding)",
+                "isRubyString(filename)"
+        })
+        public Object evalNilBinding(VirtualFrame frame, RubyBasicObject source, Object noBinding,
+                                     RubyBasicObject filename, int lineNumber) {
+            return evalNoBinding(frame, source, NotProvided.INSTANCE, NotProvided.INSTANCE, NotProvided.INSTANCE);
         }
 
-        @Specialization(guards = {"isRubyString(source)", "isRubyBinding(binding)"})
-        public Object eval(RubyBasicObject source, RubyBasicObject binding, NotProvided filename, NotProvided lineNumber) {
-            CompilerDirectives.transferToInterpreter();
-
+        @Specialization(guards = {
+                "isRubyString(source)",
+                "isRubyBinding(binding)"
+        })
+        public Object evalBinding(RubyBasicObject source, RubyBasicObject binding, NotProvided filename,
+                                  NotProvided lineNumber) {
             return getContext().eval(StringNodes.getByteList(source), binding, false, this);
         }
 
-        @Specialization(guards = {"isRubyString(source)", "isRubyBinding(binding)", "isRubyString(filename)"})
-        public Object eval(RubyBasicObject source, RubyBasicObject binding, RubyBasicObject filename, NotProvided lineNumber) {
-            CompilerDirectives.transferToInterpreter();
-
+        @TruffleBoundary
+        @Specialization(guards = {
+                "isRubyString(source)",
+                "isRubyBinding(binding)",
+                "isRubyString(filename)"})
+        public Object evalBindingFilename(RubyBasicObject source, RubyBasicObject binding, RubyBasicObject filename,
+                                          NotProvided lineNumber) {
             return getContext().eval(StringNodes.getByteList(source), binding, false, filename.toString(), this);
         }
 
-        @Specialization(guards = {"isRubyString(source)", "isRubyBinding(binding)", "isRubyString(filename)"})
-        public Object eval(RubyBasicObject source, RubyBasicObject binding, RubyBasicObject filename, int lineNumber) {
-            CompilerDirectives.transferToInterpreter();
-
+        @TruffleBoundary
+        @Specialization(guards = {
+                "isRubyString(source)",
+                "isRubyBinding(binding)",
+                "isRubyString(filename)"})
+        public Object evalBindingFilenameLine(RubyBasicObject source, RubyBasicObject binding, RubyBasicObject filename,
+                                              int lineNumber) {
             return getContext().eval(StringNodes.getByteList(source), binding, false, filename.toString(), this);
         }
 
-        @Specialization(guards = {"isRubyString(source)", "!isRubyBinding(badBinding)"})
-        public Object evalBadBinding(RubyBasicObject source, RubyBasicObject badBinding, NotProvided filename, NotProvided lineNumber) {
+        @TruffleBoundary
+        @Specialization(guards = {
+                "isRubyString(source)",
+                "!isRubyBinding(badBinding)"})
+        public Object evalBadBinding(RubyBasicObject source, RubyBasicObject badBinding, NotProvided filename,
+                                     NotProvided lineNumber) {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(badBinding, "binding", this));
         }
+
     }
 
     @CoreMethod(names = "exec", isModuleFunction = true, required = 1, argumentsAsArray = true)
