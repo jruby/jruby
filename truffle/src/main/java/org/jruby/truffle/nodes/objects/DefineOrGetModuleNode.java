@@ -100,7 +100,7 @@ public class DefineOrGetModuleNode extends RubyNode {
         if ((constant != null) && constant.isAutoload()) {
             if (requireNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+                requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), null));
             }
 
             // We know that we're redefining this constant as we're defining a class/module with that name.  We remove

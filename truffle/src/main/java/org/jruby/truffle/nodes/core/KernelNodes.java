@@ -22,6 +22,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -36,6 +37,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeGen;
 import org.jruby.truffle.nodes.coerce.NameToJavaStringNodeGen;
+import org.jruby.truffle.nodes.coerce.ToPathNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
@@ -1502,13 +1504,20 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "require", isModuleFunction = true, required = 1)
-    public abstract static class RequireNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "feature")
+    })
+    public abstract static class RequireNode extends CoreMethodNode {
 
         public RequireNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
+        @CreateCast("feature")
+        public RubyNode coerceFeatureToPath(RubyNode feature) {
+            return ToPathNodeGen.create(getContext(), getSourceSection(), feature);
+        }
+
         @Specialization(guards = "isRubyString(feature)")
         public boolean require(RubyBasicObject feature) {
             CompilerDirectives.transferToInterpreter();

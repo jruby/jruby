@@ -79,7 +79,7 @@ public abstract class GetConstantNode extends RubyNode {
     }
 
     protected RequireNode createRequireNode() {
-        return KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {});
+        return KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), null);
     }
 
     protected boolean isValidConstantName(String name) {

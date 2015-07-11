@@ -1,7 +1,6 @@
 fails:Kernel#require (path resolution) calls #to_str on non-String objects
 fails:Kernel#require (path resolution) raises a TypeError if #to_str does not return a String
 fails:Kernel#require (path resolution) calls #to_path on non-String objects
-fails:Kernel#require (path resolution) calls #to_path on a String
 fails:Kernel#require (path resolution) calls #to_str on non-String objects returned by #to_path
 fails:Kernel#require (path resolution) loads a ../ relative path from the current working directory with empty $LOAD_PATH
 fails:Kernel#require (path resolution) loads a ../ relative path from the current working directory with non-empty $LOAD_PATH
@@ -36,7 +35,6 @@ fails:Kernel#require (shell expansion) performs tilde expansion on a non-extensi
 fails:Kernel.require (path resolution) calls #to_str on non-String objects
 fails:Kernel.require (path resolution) raises a TypeError if #to_str does not return a String
 fails:Kernel.require (path resolution) calls #to_path on non-String objects
-fails:Kernel.require (path resolution) calls #to_path on a String
 fails:Kernel.require (path resolution) calls #to_str on non-String objects returned by #to_path
 fails:Kernel.require (path resolution) loads a ../ relative path from the current working directory with empty $LOAD_PATH
 fails:Kernel.require (path resolution) loads a ../ relative path from the current working directory with non-empty $LOAD_PATH
