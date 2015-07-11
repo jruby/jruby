@@ -217,7 +217,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
       build do
         default_goal 'install'
-	plugin_management do
+        plugin_management do
           plugin :surefire, '2.15', :skipTests => true
         end
       end
