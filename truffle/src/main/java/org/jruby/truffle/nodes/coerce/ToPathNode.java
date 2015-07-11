@@ -15,29 +15,29 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyString;
 
 @NodeChild(value = "child", type = RubyNode.class)
-public abstract class ToStrNode extends RubyNode {
+public abstract class ToPathNode extends RubyNode {
 
-    @Child private CallDispatchHeadNode toStrNode;
+    @Child private CallDispatchHeadNode toPathNode;
 
-    public ToStrNode(RubyContext context, SourceSection sourceSection) {
+    public ToPathNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toStrNode = DispatchHeadNodeFactory.createMethodCall(context);
+        toPathNode = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    public abstract RubyBasicObject executeToStr(VirtualFrame frame, Object object);
+    public abstract RubyString executeRubyString(VirtualFrame frame, Object object);
 
-    @Specialization(guards = "isRubyString(string)")
-    public RubyBasicObject coerceRubyString(RubyBasicObject string) {
-        return string;
+    @Specialization
+    public RubyBasicObject coerceRubyString(RubyString path) {
+        return path;
     }
 
     @Specialization(guards = "!isRubyString(object)")
@@ -45,7 +45,7 @@ public abstract class ToStrNode extends RubyNode {
         final Object coerced;
 
         try {
-            coerced = toStrNode.call(frame, object, "to_str", null);
+            coerced = toPathNode.call(frame, object, "to_path", null);
         } catch (RaiseException e) {
             if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
@@ -55,11 +55,11 @@ public abstract class ToStrNode extends RubyNode {
             }
         }
 
-        if (RubyGuards.isRubyString(coerced)) {
-            return (RubyBasicObject) coerced;
+        if (coerced instanceof RubyString) {
+            return (RubyString) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_path", coerced, this));
         }
     }
 

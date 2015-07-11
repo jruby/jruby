@@ -1,2 +1,1 @@
-fails:Kernel.autoload calls #to_path on non-String filenames
 slow:Kernel#autoload when Object is frozen raises a RuntimeError before defining the constant

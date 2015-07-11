@@ -528,23 +528,16 @@ public abstract class ModuleNodes {
             emptyNode = StringNodesFactory.EmptyNodeFactory.create(context, sourceSection, new RubyNode[]{});
         }
 
-        @CreateCast("filename") public RubyNode coerceFilenameToString(RubyNode filename) {
-            return ToStrNodeGen.create(getContext(), getSourceSection(), filename);
+        @CreateCast("name") public RubyNode coerceNameToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
-        @Specialization(guards = {"isRubySymbol(name)", "isRubyString(filename)"})
-        public RubyBasicObject autoloadSymbol(RubyModule module, RubyBasicObject name, RubyBasicObject filename) {
-            return autoload(module, SymbolNodes.getString(name), filename);
+        @CreateCast("filename") public RubyNode coerceFilenameToPath(RubyNode filename) {
+            return ToPathNodeGen.create(getContext(), getSourceSection(), filename);
         }
 
-        @Specialization(guards = {"isRubyString(name)", "isRubyString(filename)"})
-        public RubyBasicObject autoloadString(RubyModule module, RubyBasicObject name, RubyBasicObject filename) {
-            return autoload(module, name.toString(), filename);
-        }
-
-        private RubyBasicObject autoload(RubyModule module, String name, RubyBasicObject filename) {
-            assert RubyGuards.isRubyString(filename);
-
+        @Specialization(guards = "isRubyString(filename)")
+        public RubyBasicObject autoload(RubyModule module, String name, RubyBasicObject filename) {
             if (invalidConstantName.profile(!IdUtil.isValidConstantName19(name))) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("autoload must be constant name: %s", name), name, this));
