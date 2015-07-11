@@ -27,8 +27,10 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyThread.Status;
 import org.jruby.exceptions.MainExitException;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.StringCachingGuards;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
@@ -43,6 +45,7 @@ import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.LookupMethodNode;
 import org.jruby.truffle.nodes.methods.LookupMethodNodeGen;
+import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
@@ -60,6 +63,8 @@ import org.jruby.truffle.runtime.core.RubyModule.MethodFilter;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.FeatureManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
+import org.jruby.truffle.translator.NodeWrapper;
+import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 
 import java.io.BufferedReader;
@@ -271,6 +276,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject binding() {
             // Materialize the caller's frame - false means don't use a slow path to get it - we want to optimize it
@@ -466,6 +472,7 @@ public abstract class KernelNodes {
             @NodeChild(value = "filename", type = RubyNode.class),
             @NodeChild(value = "lineNumber", type = RubyNode.class)
     })
+    @ImportStatic(StringCachingGuards.class)
     public abstract static class EvalNode extends CoreMethodNode {
 
         @Child private CallDispatchHeadNode toStr;
@@ -493,11 +500,62 @@ public abstract class KernelNodes {
             }
         }
 
+        class RootNodeWrapper {
+
+            private final RubyRootNode rootNode;
+
+            public RootNodeWrapper(RubyRootNode rootNode) {
+                this.rootNode = rootNode;
+            }
+
+            public RubyRootNode getRootNode() {
+                return rootNode;
+            }
+        }
+
+        @Specialization(guards = {
+                "isRubyString(source)",
+                "byteListsEqual(source, cachedSource)",
+                "!parseDependsOnDeclarationFrame(cachedRootNode)"
+        })
+        public Object evalNoBindingCached(
+                VirtualFrame frame,
+                RubyBasicObject source,
+                NotProvided binding,
+                NotProvided filename,
+                NotProvided lineNumber,
+                @Cached("privatizeByteList(source)") ByteList cachedSource,
+                @Cached("compileSource(frame, source)") RootNodeWrapper cachedRootNode,
+                @Cached("createCallTarget(cachedRootNode)") CallTarget cachedCallTarget,
+                @Cached("create(cachedCallTarget)") DirectCallNode callNode
+        ) {
+            final RubyBasicObject callerBinding = getCallerBinding(frame);
+
+            final Object callerSelf = BindingNodes.getSelf(callerBinding);
+            final MaterializedFrame parentFrame = BindingNodes.getFrame(callerBinding);
+
+            final InternalMethod method = new InternalMethod(
+                    cachedRootNode.getRootNode().getSharedMethodInfo(),
+                    cachedRootNode.getRootNode().getSharedMethodInfo().getName(),
+                    getContext().getCoreLibrary().getObjectClass(),
+                    Visibility.PUBLIC,
+                    false,
+                    cachedCallTarget,
+                    parentFrame);
+
+            return callNode.call(frame, RubyArguments.pack(
+                    method,
+                    parentFrame,
+                    callerSelf,
+                    null,
+                    new Object[]{}));
+        }
+
         @Specialization(guards = {
                 "isRubyString(source)"
-        })
-        public Object evalNoBinding(VirtualFrame frame, RubyBasicObject source, NotProvided binding,
-                                    NotProvided filename, NotProvided lineNumber) {
+        }, contains = "evalNoBindingCached")
+        public Object evalNoBindingUncached(VirtualFrame frame, RubyBasicObject source, NotProvided binding,
+                                            NotProvided filename, NotProvided lineNumber) {
             return getContext().eval(StringNodes.getByteList(source), getCallerBinding(frame), true, this);
         }
 
@@ -508,7 +566,7 @@ public abstract class KernelNodes {
         })
         public Object evalNilBinding(VirtualFrame frame, RubyBasicObject source, Object noBinding,
                                      RubyBasicObject filename, int lineNumber) {
-            return evalNoBinding(frame, source, NotProvided.INSTANCE, NotProvided.INSTANCE, NotProvided.INSTANCE);
+            return evalNoBindingUncached(frame, source, NotProvided.INSTANCE, NotProvided.INSTANCE, NotProvided.INSTANCE);
         }
 
         @Specialization(guards = {
@@ -547,6 +605,32 @@ public abstract class KernelNodes {
         public Object evalBadBinding(RubyBasicObject source, RubyBasicObject badBinding, NotProvided filename,
                                      NotProvided lineNumber) {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(badBinding, "binding", this));
+        }
+
+        protected RootNodeWrapper compileSource(VirtualFrame frame, RubyBasicObject sourceText) {
+            assert RubyGuards.isRubyString(sourceText);
+
+            final RubyBasicObject callerBinding = getCallerBinding(frame);
+            final MaterializedFrame parentFrame = BindingNodes.getFrame(callerBinding);
+
+            final Source source = Source.fromText(sourceText.toString(), "(eval)");
+
+            final TranslatorDriver translator = new TranslatorDriver(getContext());
+
+            return new RootNodeWrapper(translator.parse(getContext(), source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.EVAL, parentFrame, true, this, new NodeWrapper() {
+                @Override
+                public RubyNode wrap(RubyNode node) {
+                    return node; // return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PRIVATE, "simple eval", node);
+                }
+            }));
+        }
+
+        protected boolean parseDependsOnDeclarationFrame(RootNodeWrapper rootNode) {
+            return rootNode.getRootNode().needsDeclarationFrame();
+        }
+
+        protected CallTarget createCallTarget(RootNodeWrapper rootNode) {
+            return Truffle.getRuntime().createCallTarget(rootNode.rootNode);
         }
 
     }
