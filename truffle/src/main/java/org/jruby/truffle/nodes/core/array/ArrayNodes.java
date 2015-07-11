@@ -24,6 +24,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.StringCachingGuards;
 import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.coerce.ToAryNodeGen;
@@ -2728,6 +2729,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "pack", required = 1, taintFromParameter = 0)
+    @ImportStatic(StringCachingGuards.class)
     public abstract static class PackNode extends ArrayCoreMethodNode {
 
         @Child private TaintNode taintNode;
@@ -2847,16 +2849,6 @@ public abstract class ArrayNodes {
         @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isNil(format)"})
         public Object pack(VirtualFrame frame, RubyBasicObject array, Object format) {
             return ruby(frame, "pack(format.to_str)", "format", format);
-        }
-
-        protected ByteList privatizeByteList(RubyBasicObject string) {
-            assert RubyGuards.isRubyString(string);
-            return StringNodes.getByteList(string).dup();
-        }
-
-        protected boolean byteListsEqual(RubyBasicObject string, ByteList byteList) {
-            assert RubyGuards.isRubyString(string);
-            return StringNodes.getByteList(string).equal(byteList);
         }
 
         protected CallTarget compileFormat(RubyBasicObject format) {

@@ -198,7 +198,7 @@ public class TranslatorDriver {
             NodeUtil.printTree(System.err, truffleNode);
         }
 
-        return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode);
+        return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
     }
 
     private Object getData(RubyContext context) {
