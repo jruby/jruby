@@ -44,7 +44,7 @@ public class TranslatorEnvironment {
     private final boolean neverAssignInParentScope;
 
     protected final TranslatorEnvironment parent;
-    private boolean needsDeclarationFrame = true; // We keep the logic as we might do it differently one day.
+    private boolean needsDeclarationFrame = false; // We keep the logic as we might do it differently one day.
     private final SharedMethodInfo sharedMethodInfo;
 
     private final String namedMethodName;
