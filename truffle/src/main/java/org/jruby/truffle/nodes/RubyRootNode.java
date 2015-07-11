@@ -30,20 +30,26 @@ public class RubyRootNode extends RootNode {
     private final SharedMethodInfo sharedMethodInfo;
     @Child private RubyNode body;
     private final RubyNode uninitializedBody;
+    private final boolean needsDeclarationFrame;
 
     private boolean instrumentationApplied = false;
 
     public RubyRootNode(RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor, SharedMethodInfo sharedMethodInfo, RubyNode body) {
+        this(context, sourceSection, frameDescriptor, sharedMethodInfo, body, false);
+    }
+
+    public RubyRootNode(RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor, SharedMethodInfo sharedMethodInfo, RubyNode body, boolean needsDeclarationFrame) {
         super(sourceSection, frameDescriptor);
         assert body != null;
         this.context = context;
         this.body = body;
         this.sharedMethodInfo = sharedMethodInfo;
+        this.needsDeclarationFrame = needsDeclarationFrame;
         uninitializedBody = NodeUtil.cloneNode(body);
     }
 
     public RubyRootNode cloneRubyRootNode() {
-        return new RubyRootNode(context, getSourceSection(), getFrameDescriptor(), sharedMethodInfo, NodeUtil.cloneNode(uninitializedBody));
+        return new RubyRootNode(context, getSourceSection(), getFrameDescriptor(), sharedMethodInfo, NodeUtil.cloneNode(uninitializedBody), needsDeclarationFrame);
     }
 
     @Override
@@ -81,5 +87,9 @@ public class RubyRootNode extends RootNode {
             Probe.applyASTProbers(body);
             instrumentationApplied = true;
         }
+    }
+
+    public boolean needsDeclarationFrame() {
+        return needsDeclarationFrame;
     }
 }

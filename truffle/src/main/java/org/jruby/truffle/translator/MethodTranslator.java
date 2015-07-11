@@ -186,7 +186,7 @@ class MethodTranslator extends BodyTranslator {
         }
 
         final RubyRootNode rootNode = new RubyRootNode(
-                context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
+                context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
         if (PRINT_AST_METHOD_NAMES.contains(methodName)) {
             System.err.println(sourceSection + " " + methodName);
@@ -242,7 +242,7 @@ class MethodTranslator extends BodyTranslator {
                     newRootNodeForLambdas.getFrameDescriptor(), newRootNodeForLambdas.getSharedMethodInfo(),
                     new CatchBreakAsReturnNode(context, sourceSection,
                         new CatchReturnNode(context, newRootNodeForLambdas.getSourceSection(),
-                            newRootNodeForLambdas.getBody(), getEnvironment().getReturnID())));
+                            newRootNodeForLambdas.getBody(), getEnvironment().getReturnID())), environment.needsDeclarationFrame());
 
             final CallTarget callTargetAsLambda = Truffle.getRuntime().createCallTarget(newRootNodeWithCatchReturn);
 
