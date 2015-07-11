@@ -30,29 +30,16 @@ public class MethodDefinitionNode extends RubyNode {
 
     private final CallTarget callTarget;
 
-    private final boolean requiresDeclarationFrame;
-
     public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
-            boolean requiresDeclarationFrame, CallTarget callTarget) {
+                                CallTarget callTarget) {
         super(context, sourceSection);
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
-        this.requiresDeclarationFrame = requiresDeclarationFrame;
         this.callTarget = callTarget;
     }
 
     public InternalMethod executeMethod(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
-        final MaterializedFrame declarationFrame;
-
-        if (requiresDeclarationFrame) {
-            declarationFrame = frame.materialize();
-        } else {
-            declarationFrame = null;
-        }
-
-        return new InternalMethod(sharedMethodInfo, name, null, null, false, callTarget, declarationFrame);
+        return new InternalMethod(sharedMethodInfo, name, null, null, false, callTarget, frame.materialize());
     }
 
     @Override

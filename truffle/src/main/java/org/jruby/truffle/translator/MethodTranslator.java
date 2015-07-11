@@ -247,10 +247,10 @@ class MethodTranslator extends BodyTranslator {
             final CallTarget callTargetAsLambda = Truffle.getRuntime().createCallTarget(newRootNodeWithCatchReturn);
 
             return new BlockDefinitionNode(context, sourceSection, environment.getSharedMethodInfo(),
-                    environment.needsDeclarationFrame(), callTargetAsBlock, callTargetAsProc, callTargetAsLambda, environment.getBreakID());
+                    callTargetAsBlock, callTargetAsProc, callTargetAsLambda, environment.getBreakID());
         } else {
             return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(),
-                    environment.needsDeclarationFrame(), Truffle.getRuntime().createCallTarget(rootNode));
+                    Truffle.getRuntime().createCallTarget(rootNode));
         }
     }
 

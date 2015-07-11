@@ -74,7 +74,6 @@ class ModuleTranslator extends BodyTranslator {
                 sourceSection,
                 environment.getSharedMethodInfo().getName(),
                 environment.getSharedMethodInfo(),
-                environment.needsDeclarationFrame(),
                 Truffle.getRuntime().createCallTarget(rootNode));
     }
 
