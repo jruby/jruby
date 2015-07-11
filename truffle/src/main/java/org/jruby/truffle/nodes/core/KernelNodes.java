@@ -502,8 +502,7 @@ public abstract class KernelNodes {
             }
         }
 
-        class RootNodeWrapper {
-
+        protected static class RootNodeWrapper {
             private final RubyRootNode rootNode;
 
             public RootNodeWrapper(RubyRootNode rootNode) {
