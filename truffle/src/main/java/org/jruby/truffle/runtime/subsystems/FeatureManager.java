@@ -52,7 +52,10 @@ public class FeatureManager {
 
         if (feature.startsWith("./")) {
             final String cwd = context.getRuntime().getCurrentDirectory();
-            feature = cwd + "/" + feature;
+            feature = cwd + "/" + feature.substring(2);
+        } else if (feature.startsWith("../")) {
+            final String cwd = context.getRuntime().getCurrentDirectory();
+            feature = cwd.substring(0, cwd.lastIndexOf('/')) + "/" + feature.substring(3);
         }
 
         try {
