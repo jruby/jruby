@@ -274,16 +274,10 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   profile 'snapshots' do
-    snapshots_dir = '/builds/snapshots'
-
-    properties 'snapshots.dir' => snapshots_dir
-    activation do
-      file( :exists => snapshots_dir )
-    end
 
     distribution_management do
-      repository( :url => "file:#{snapshots_dir}/maven", :id => 'local releases' )
-      snapshot_repository( :url => "file:#{snapshots_dir}/maven",
+      repository( :url => "file:${project.build.directory}/maven", :id => 'local releases' )
+      snapshot_repository( :url => "file:${project.build.directory}/maven",
                            :id => 'local snapshots' )
     end
     build do
