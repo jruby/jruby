@@ -13,7 +13,6 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyProc;
 
 public class TraceManager {
 
