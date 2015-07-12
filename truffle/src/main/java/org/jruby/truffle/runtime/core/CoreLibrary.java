@@ -340,7 +340,7 @@ public class CoreLibrary {
 
         encodingCompatibilityErrorClass = defineClass(encodingClass, encodingErrorClass, "CompatibilityError");
 
-        encodingConverterClass = defineClass(encodingClass, objectClass, "Converter", new RubyEncodingConverter.EncodingConverterAllocator());
+        encodingConverterClass = defineClass(encodingClass, objectClass, "Converter", new EncodingConverterNodes.EncodingConverterAllocator());
 
         truffleModule = defineModule("Truffle");
         defineModule(truffleModule, "Interop");
