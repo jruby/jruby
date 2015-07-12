@@ -20,6 +20,7 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 /**
  * Represents the Ruby {@code Proc} class.
  */
+@Deprecated
 public class RubyProc extends RubyBasicObject {
 
     public final ProcNodes.Type type;

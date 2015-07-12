@@ -18,7 +18,7 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
@@ -85,7 +85,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (RubyProc) blockObject,
+                    (RubyBasicObject) blockObject,
                     argumentsObjects,
                     "class modified");
         }
@@ -100,7 +100,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    (RubyProc) blockObject,
+                                    (RubyBasicObject) blockObject,
                                     (Object[]) argumentsObjects));
                 } else {
                     return callNode.call(
@@ -109,7 +109,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    (RubyProc) blockObject,
+                                    (RubyBasicObject) blockObject,
                                     (Object[]) argumentsObjects));
                 }
             }

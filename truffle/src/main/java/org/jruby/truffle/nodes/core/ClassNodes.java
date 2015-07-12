@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyProc;
 
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
@@ -104,7 +103,7 @@ public abstract class ClassNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 moduleInitializeNode = insert(ModuleNodesFactory.InitializeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null,null}));
             }
-            moduleInitializeNode.executeInitialize(frame, rubyClass, (RubyProc) block);
+            moduleInitializeNode.executeInitialize(frame, rubyClass, block);
         }
 
         @Specialization

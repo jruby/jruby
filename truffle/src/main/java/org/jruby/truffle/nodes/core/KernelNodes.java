@@ -22,7 +22,6 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -1113,9 +1112,9 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyProc proc(NotProvided block) {
+        public RubyBasicObject proc(NotProvided block) {
             final Frame parentFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
-            final RubyProc parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
+            final RubyBasicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
 
             if (parentBlock == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1125,7 +1124,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public RubyProc proc(RubyBasicObject block) {
+        public RubyBasicObject proc(RubyBasicObject block) {
             return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcClass(),
                     ProcNodes.Type.LAMBDA,
@@ -1343,7 +1342,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public RubyProc proc(RubyBasicObject block) {
+        public RubyBasicObject proc(RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             return ProcNodes.createRubyProc(
@@ -1439,7 +1438,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object send(VirtualFrame frame, Object self, Object[] args, NotProvided block) {
-            return send(frame, self, args, (RubyProc) null);
+            return send(frame, self, args, (RubyBasicObject) null);
         }
 
         @Specialization(guards = "isRubyProc(block)")

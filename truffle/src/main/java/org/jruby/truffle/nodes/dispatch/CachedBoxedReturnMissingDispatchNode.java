@@ -15,7 +15,6 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyProc;
 
 public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
 
@@ -68,7 +67,7 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (RubyProc) blockObject,
+                    (RubyBasicObject) blockObject,
                     argumentsObjects,
                     "class modified");
         }

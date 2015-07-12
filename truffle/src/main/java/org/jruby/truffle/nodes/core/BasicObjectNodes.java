@@ -28,7 +28,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyProc;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
@@ -182,7 +181,7 @@ public abstract class BasicObjectNodes {
         public Object methodMissing(Object self, Object[] args, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
-            return methodMissing(self, args, (RubyProc) null);
+            return methodMissing(self, args, (RubyBasicObject) null);
         }
 
         @Specialization(guards = "isRubyProc(block)")
@@ -243,7 +242,7 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object send(VirtualFrame frame, Object self, Object[] args, NotProvided block) {
-            return send(frame, self, args, (RubyProc) null);
+            return send(frame, self, args, (RubyBasicObject) null);
         }
 
         @Specialization(guards = "isRubyProc(block)")

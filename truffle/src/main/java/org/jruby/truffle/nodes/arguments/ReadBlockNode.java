@@ -14,7 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * Read the block as a {@code Proc}.
@@ -30,7 +30,7 @@ public class ReadBlockNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyProc block = RubyArguments.getBlock(frame.getArguments());
+        final RubyBasicObject block = RubyArguments.getBlock(frame.getArguments());
 
         if (block == null) {
             return valueIfNotPresent;

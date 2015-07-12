@@ -128,11 +128,11 @@ public abstract class ProcNodes {
         ((RubyProc) proc).block = block;
     }
 
-    public static RubyProc createRubyProc(RubyClass procClass, Type type) {
-        return new RubyProc(procClass, type);
+    public static RubyBasicObject createRubyProc(RubyClass procClass, Type type) {
+        return createRubyProc(procClass, type, null, null, null, null, null, null, null, null);
     }
 
-    public static RubyProc createRubyProc(RubyClass procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks,
+    public static RubyBasicObject createRubyProc(RubyClass procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks,
                                           CallTarget callTargetForProcs, CallTarget callTargetForLambdas, MaterializedFrame declarationFrame,
                                           InternalMethod method, Object self, RubyBasicObject block) {
         return new RubyProc(procClass, type, sharedMethodInfo, callTargetForBlocks, callTargetForProcs, callTargetForLambdas, declarationFrame, method, self, block);
@@ -233,7 +233,7 @@ public abstract class ProcNodes {
 
             });
 
-            final RubyProc grandparentBlock = RubyArguments.getBlock(grandparentFrame.getArguments());
+            final RubyBasicObject grandparentBlock = RubyArguments.getBlock(grandparentFrame.getArguments());
 
             if (grandparentBlock == null) {
                 CompilerDirectives.transferToInterpreter();

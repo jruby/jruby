@@ -41,7 +41,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.HashLookupResult;
@@ -615,7 +614,7 @@ public abstract class HashNodes {
             if (block == NotProvided.INSTANCE) {
                 return nil();
             } else {
-                return yieldNode.dispatch(frame, (RubyProc) block, key);
+                return yieldNode.dispatch(frame, (RubyBasicObject) block, key);
             }
         }
 
@@ -647,7 +646,7 @@ public abstract class HashNodes {
             if (block == NotProvided.INSTANCE) {
                 return nil();
             } else {
-                return yieldNode.dispatch(frame, (RubyProc) block, key);
+                return yieldNode.dispatch(frame, (RubyBasicObject) block, key);
             }
         }
 
@@ -661,7 +660,7 @@ public abstract class HashNodes {
                 if (block == NotProvided.INSTANCE) {
                     return nil();
                 } else {
-                    return yieldNode.dispatch(frame, (RubyProc) block, key);
+                    return yieldNode.dispatch(frame, (RubyBasicObject) block, key);
                 }
             }
 
@@ -1312,12 +1311,12 @@ public abstract class HashNodes {
                 fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
             
-            final RubyProc blockProc;
+            final RubyBasicObject blockProc;
             
             if (block == NotProvided.INSTANCE) {
                 blockProc = null;
             } else {
-                blockProc = (RubyProc) block;
+                blockProc = (RubyBasicObject) block;
             }
 
             return fallbackCallNode.call(frame, hash, "merge_fallback", blockProc, other);

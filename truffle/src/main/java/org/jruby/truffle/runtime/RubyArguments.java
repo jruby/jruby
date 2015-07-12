@@ -16,7 +16,6 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
@@ -61,8 +60,8 @@ public final class RubyArguments {
         return arguments[SELF_INDEX];
     }
 
-    public static RubyProc getBlock(Object[] arguments) {
-        return (RubyProc) arguments[BLOCK_INDEX];
+    public static RubyBasicObject getBlock(Object[] arguments) {
+        return (RubyBasicObject) arguments[BLOCK_INDEX];
     }
 
     public static Object[] extractUserArguments(Object[] arguments) {

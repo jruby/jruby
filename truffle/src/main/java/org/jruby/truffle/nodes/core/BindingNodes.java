@@ -31,7 +31,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "Binding")
@@ -74,7 +73,7 @@ public abstract class BindingNodes {
             final Object[] arguments = getFrame(from).getArguments();
             final InternalMethod method = RubyArguments.getMethod(arguments);
             final Object boundSelf = RubyArguments.getSelf(arguments);
-            final RubyProc boundBlock = RubyArguments.getBlock(arguments);
+            final RubyBasicObject boundBlock = RubyArguments.getBlock(arguments);
             final Object[] userArguments = RubyArguments.extractUserArguments(arguments);
 
             final Object[] copiedArguments = RubyArguments.pack(method, getFrame(from), boundSelf, boundBlock, userArguments);
