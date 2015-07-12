@@ -275,6 +275,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   profile 'snapshots' do
 
+    modules [ 'maven' ]
+
     distribution_management do
       repository( :url => "file:${project.build.directory}/maven", :id => 'local releases' )
       snapshot_repository( :url => "file:${project.build.directory}/maven",
