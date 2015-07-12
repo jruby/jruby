@@ -227,8 +227,8 @@ public abstract class RangeNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "step > 0")
-        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, int step, RubyProc block) {
+        @Specialization(guards = {"step > 0", "isRubyProc(block)"})
+        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, int step, RubyBasicObject block) {
             int count = 0;
 
             try {
@@ -248,8 +248,8 @@ public abstract class RangeNodes {
             return range;
         }
 
-        @Specialization(guards = "step > 0")
-        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, int step, RubyProc block) {
+        @Specialization(guards = {"step > 0", "isRubyProc(block)"})
+        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, int step, RubyBasicObject block) {
             int count = 0;
 
             try {
@@ -269,13 +269,13 @@ public abstract class RangeNodes {
             return range;
         }
 
-        @Specialization(guards = "wasProvided(step)")
-        public Object stepFallback(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, RubyProc block) {
+        @Specialization(guards = {"wasProvided(step)", "isRubyProc(block)"})
+        public Object stepFallback(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, RubyBasicObject block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
 
-        @Specialization(guards = "wasProvided(step)")
-        public Object stepFallback(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, RubyProc block) {
+        @Specialization(guards = {"wasProvided(step)", "isRubyProc(block)"})
+        public Object stepFallback(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, RubyBasicObject block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
 
@@ -284,8 +284,8 @@ public abstract class RangeNodes {
             return ruby(frame, "step_internal");
         }
 
-        @Specialization
-        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, NotProvided step, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, NotProvided step, RubyBasicObject block) {
             return ruby(frame, "step_internal(&block)", "block", block);
         }
 
@@ -299,8 +299,8 @@ public abstract class RangeNodes {
             return ruby(frame, "step_internal");
         }
 
-        @Specialization
-        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, NotProvided step, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, NotProvided step, RubyBasicObject block) {
             return ruby(frame, "step_internal(&block)", "block", block);
         }
 
@@ -309,8 +309,8 @@ public abstract class RangeNodes {
             return ruby(frame, "step_internal(step)", "step", step);
         }
 
-        @Specialization(guards = "wasProvided(step)")
-        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, RubyProc block) {
+        @Specialization(guards = {"wasProvided(step)", "isRubyProc(block)"})
+        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, RubyBasicObject block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
 
@@ -319,8 +319,8 @@ public abstract class RangeNodes {
             return ruby(frame, "step_internal");
         }
 
-        @Specialization
-        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, NotProvided step, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, NotProvided step, RubyBasicObject block) {
             return ruby(frame, "step_internal(&block)", "block", block);
         }
 

@@ -92,8 +92,8 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubySymbol(timing)")
-        public Object handle_interrupt(VirtualFrame frame, RubyThread self, RubyClass exceptionClass, RubyBasicObject timing, RubyProc block) {
+        @Specialization(guards = {"isRubySymbol(timing)", "isRubyProc(block)"})
+        public Object handle_interrupt(VirtualFrame frame, RubyThread self, RubyClass exceptionClass, RubyBasicObject timing, RubyBasicObject block) {
             // TODO (eregon, 12 July 2015): should we consider exceptionClass?
             final InterruptMode newInterruptMode = symbolToInterruptMode(timing);
 

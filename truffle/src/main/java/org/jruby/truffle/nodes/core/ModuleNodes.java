@@ -648,8 +648,8 @@ public abstract class ModuleNodes {
             });
         }
 
-        @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule self, NotProvided code, NotProvided file, NotProvided line, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object classEval(VirtualFrame frame, RubyModule self, NotProvided code, NotProvided file, NotProvided line, RubyBasicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, self);
         }
 
@@ -659,8 +659,8 @@ public abstract class ModuleNodes {
             throw new RaiseException(getContext().getCoreLibrary().argumentError(0, 1, 2, this));
         }
 
-        @Specialization(guards = "wasProvided(code)")
-        public Object classEval(RubyModule self, Object code, NotProvided file, NotProvided line, RubyProc block) {
+        @Specialization(guards = {"wasProvided(code)", "isRubyProc(block)"})
+        public Object classEval(RubyModule self, Object code, NotProvided file, NotProvided line, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(1, 0, this));
         }
@@ -677,10 +677,10 @@ public abstract class ModuleNodes {
             yield = new YieldDispatchHeadNode(context);
         }
 
-        public abstract Object executeClassExec(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block);
+        public abstract Object executeClassExec(VirtualFrame frame, RubyModule self, Object[] args, RubyBasicObject block);
 
-        @Specialization
-        public Object classExec(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object classExec(VirtualFrame frame, RubyModule self, Object[] args, RubyBasicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, self, args);
         }
 
@@ -1037,20 +1037,20 @@ public abstract class ModuleNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject defineMethod(RubyModule module, String name, NotProvided proc, RubyProc block) {
-            return defineMethod(module, name, block, NotProvided.INSTANCE);
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyBasicObject defineMethodBlock(RubyModule module, String name, NotProvided proc, RubyBasicObject block) {
+            return defineMethodProc(module, name, block, NotProvided.INSTANCE);
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject defineMethod(RubyModule module, String name, RubyProc proc, NotProvided block) {
+        @Specialization(guards = "isRubyProc(proc)")
+        public RubyBasicObject defineMethodProc(RubyModule module, String name, RubyBasicObject proc, NotProvided block) {
             return defineMethod(module, name, proc);
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyMethod(method)")
-        public RubyBasicObject defineMethod(RubyModule module, String name, RubyBasicObject method, NotProvided block) {
+        public RubyBasicObject defineMethodMethod(RubyModule module, String name, RubyBasicObject method, NotProvided block) {
             module.addMethod(this, MethodNodes.getMethod(method).withName(name));
             return getSymbol(name);
         }
@@ -1070,8 +1070,10 @@ public abstract class ModuleNodes {
             return addMethod(module, name, UnboundMethodNodes.getMethod(method));
         }
 
-        private RubyBasicObject defineMethod(RubyModule module, String name, RubyProc proc) {
+        private RubyBasicObject defineMethod(RubyModule module, String name, RubyBasicObject proc) {
             CompilerDirectives.transferToInterpreter();
+
+            assert RubyGuards.isRubyProc(proc);
 
             final CallTarget modifiedCallTarget = ProcNodes.getCallTargetForLambdas(proc);
             final SharedMethodInfo info = ProcNodes.getSharedMethodInfo(proc).withName(name);
@@ -1125,9 +1127,11 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        public abstract RubyModule executeInitialize(VirtualFrame frame, RubyModule module, RubyProc block);
+        public abstract RubyModule executeInitialize(VirtualFrame frame, RubyModule module, RubyBasicObject block);
 
-        void classEval(VirtualFrame frame, RubyModule module, RubyProc block) {
+        void classEval(VirtualFrame frame, RubyModule module, RubyBasicObject block) {
+            assert RubyGuards.isRubyProc(block);
+
             if (classExecNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null,null,null}));
@@ -1140,8 +1144,8 @@ public abstract class ModuleNodes {
             return module;
         }
 
-        @Specialization
-        public RubyModule initialize(VirtualFrame frame, RubyModule module, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyModule initialize(VirtualFrame frame, RubyModule module, RubyBasicObject block) {
             classEval(frame, module, block);
             return module;
         }
