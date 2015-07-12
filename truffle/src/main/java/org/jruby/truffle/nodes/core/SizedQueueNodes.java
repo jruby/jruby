@@ -12,6 +12,8 @@ package org.jruby.truffle.nodes.core;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -23,6 +25,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
+import org.jruby.util.unsafe.UnsafeHolder;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.CreateCast;
@@ -277,6 +280,43 @@ public abstract class SizedQueueNodes {
             final BlockingQueue<Object> queue = getQueue(self);
             queue.clear();
             return self;
+        }
+
+    }
+
+    @CoreMethod(names = "num_waiting")
+    public abstract static class NumWaitingNode extends CoreMethodArrayArgumentsNode {
+
+        private static final long LOCK_FIELD_OFFSET = UnsafeHolder.fieldOffset(ArrayBlockingQueue.class, "lock");
+        private static final long NOT_EMPTY_CONDITION_FIELD_OFFSET = UnsafeHolder.fieldOffset(ArrayBlockingQueue.class, "notEmpty");
+        private static final long NOT_FULL_CONDITION_FIELD_OFFSET = UnsafeHolder.fieldOffset(ArrayBlockingQueue.class, "notFull");
+
+        public NumWaitingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @SuppressWarnings("restriction")
+        @Specialization
+        public int num_waiting(RubyBasicObject self) {
+            final BlockingQueue<Object> queue = getQueue(self);
+
+            final ArrayBlockingQueue<Object> arrayBlockingQueue = (ArrayBlockingQueue<Object>) queue;
+            final ReentrantLock lock = (ReentrantLock) UnsafeHolder.U.getObject(arrayBlockingQueue, LOCK_FIELD_OFFSET);
+            final Condition notEmptyCondition = (Condition) UnsafeHolder.U.getObject(arrayBlockingQueue, NOT_EMPTY_CONDITION_FIELD_OFFSET);
+            final Condition notFullCondition = (Condition) UnsafeHolder.U.getObject(arrayBlockingQueue, NOT_FULL_CONDITION_FIELD_OFFSET);
+
+            getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+                @Override
+                public Boolean block() throws InterruptedException {
+                    lock.lockInterruptibly();
+                    return SUCCESS;
+                }
+            });
+            try {
+                return lock.getWaitQueueLength(notEmptyCondition) + lock.getWaitQueueLength(notFullCondition);
+            } finally {
+                lock.unlock();
+            }
         }
 
     }

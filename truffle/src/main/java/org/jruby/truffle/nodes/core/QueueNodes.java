@@ -12,6 +12,8 @@ package org.jruby.truffle.nodes.core;
 import java.util.EnumSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
@@ -22,6 +24,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
+import org.jruby.util.unsafe.UnsafeHolder;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -193,6 +196,41 @@ public abstract class QueueNodes {
         @TruffleBoundary
         public Object marshal_dump(RubyBasicObject self) {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDump(self, this));
+        }
+
+    }
+
+    @CoreMethod(names = "num_waiting")
+    public abstract static class NumWaitingNode extends CoreMethodArrayArgumentsNode {
+
+        private static final long LOCK_FIELD_OFFSET = UnsafeHolder.fieldOffset(LinkedBlockingQueue.class, "takeLock");
+        private static final long NOT_EMPTY_CONDITION_FIELD_OFFSET = UnsafeHolder.fieldOffset(LinkedBlockingQueue.class, "notEmpty");
+
+        public NumWaitingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @SuppressWarnings("restriction")
+        @Specialization
+        public int num_waiting(RubyBasicObject self) {
+            final BlockingQueue<Object> queue = getQueue(self);
+
+            final LinkedBlockingQueue<Object> linkedBlockingQueue = (LinkedBlockingQueue<Object>) queue;
+            final ReentrantLock lock = (ReentrantLock) UnsafeHolder.U.getObject(linkedBlockingQueue, LOCK_FIELD_OFFSET);
+            final Condition notEmptyCondition = (Condition) UnsafeHolder.U.getObject(linkedBlockingQueue, NOT_EMPTY_CONDITION_FIELD_OFFSET);
+
+            getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+                @Override
+                public Boolean block() throws InterruptedException {
+                    lock.lockInterruptibly();
+                    return SUCCESS;
+                }
+            });
+            try {
+                return lock.getWaitQueueLength(notEmptyCondition);
+            } finally {
+                lock.unlock();
+            }
         }
 
     }
