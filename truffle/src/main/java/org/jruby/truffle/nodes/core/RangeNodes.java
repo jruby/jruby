@@ -227,7 +227,7 @@ public abstract class RangeNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isStepValid(range, step, block)")
+        @Specialization(guards = "step > 0")
         public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, int step, RubyProc block) {
             int count = 0;
 
@@ -248,7 +248,7 @@ public abstract class RangeNodes {
             return range;
         }
 
-        @Specialization(guards = "isStepValid(range, step, block)")
+        @Specialization(guards = "step > 0")
         public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, int step, RubyProc block) {
             int count = 0;
 
@@ -269,12 +269,12 @@ public abstract class RangeNodes {
             return range;
         }
 
-        @Specialization(guards = { "!isStepValidInt(range, step, block)", "wasProvided(step)" })
+        @Specialization(guards = "wasProvided(step)")
         public Object stepFallback(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, RubyProc block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
 
-        @Specialization(guards = { "!isStepValidInt(range, step, block)", "wasProvided(step)" })
+        @Specialization(guards = "wasProvided(step)")
         public Object stepFallback(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, RubyProc block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
@@ -328,23 +328,6 @@ public abstract class RangeNodes {
         public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, NotProvided block) {
             return ruby(frame, "step_internal(step)", "step", step);
         }
-
-        public static boolean isStepValidInt(RubyRange.IntegerFixnumRange fixnumRange, Object step, RubyProc proc) {
-            return step instanceof Integer && (int) step > 0;
-        }
-
-        public static boolean isStepValidInt(RubyRange.LongFixnumRange fixnumRange, Object step, RubyProc proc) {
-            return step instanceof Integer && (int) step > 0;
-        }
-
-        public static boolean isStepValid(RubyRange.IntegerFixnumRange fixnumRange, int step, RubyProc proc) {
-            return step > 0;
-        }
-
-        public static boolean isStepValid(RubyRange.LongFixnumRange fixnumRange, int step, RubyProc proc) {
-            return step > 0;
-        }
-
 
     }
 
