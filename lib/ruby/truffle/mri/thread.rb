@@ -120,6 +120,12 @@ class ConditionVariable
     end
     self
   end
+
+  # Truffle: define marshal_dump as MRI tests expect it
+  def marshal_dump
+    raise TypeError, "can't dump #{self.class}"
+  end
+
 end
 
 # Truffle: Queue and SizedQueue are defined in Java
