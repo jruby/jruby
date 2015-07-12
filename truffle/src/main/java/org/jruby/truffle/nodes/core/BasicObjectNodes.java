@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -140,8 +141,8 @@ public abstract class BasicObjectNodes {
             return getContext().instanceEval(StringNodes.getByteList(string), receiver, this);
         }
 
-        @Specialization
-        public Object instanceEval(VirtualFrame frame, Object receiver, NotProvided string, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object instanceEval(VirtualFrame frame, Object receiver, NotProvided string, RubyBasicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, receiver, receiver);
         }
 
@@ -154,8 +155,8 @@ public abstract class BasicObjectNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             return yieldWithModifiedSelf(frame, block, receiver, arguments);
@@ -184,8 +185,8 @@ public abstract class BasicObjectNodes {
             return methodMissing(self, args, (RubyProc) null);
         }
 
-        @Specialization
-        public Object methodMissing(Object self, Object[] args, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object methodMissing(Object self, Object[] args, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             final RubyBasicObject name = (RubyBasicObject) args[0];
@@ -193,8 +194,11 @@ public abstract class BasicObjectNodes {
             return methodMissing(self, name, sentArgs, block);
         }
 
-        private Object methodMissing(Object self, RubyBasicObject name, Object[] args, RubyProc block) {
+        private Object methodMissing(Object self, RubyBasicObject name, Object[] args, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
+
+            assert block == null || RubyGuards.isRubyProc(block);
+
             // TODO: should not be a call to Java toString(), but rather sth like name_err_mesg_to_str() in MRI error.c
             if (lastCallWasVCall()) {
                 throw new RaiseException(
@@ -242,8 +246,8 @@ public abstract class BasicObjectNodes {
             return send(frame, self, args, (RubyProc) null);
         }
 
-        @Specialization
-        public Object send(VirtualFrame frame, Object self, Object[] args, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object send(VirtualFrame frame, Object self, Object[] args, RubyBasicObject block) {
             final Object name = args[0];
             final Object[] sendArgs = ArrayUtils.extractRange(args, 1, args.length);
             return dispatchNode.call(frame, self, name, block, sendArgs);

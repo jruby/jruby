@@ -1124,8 +1124,8 @@ public abstract class KernelNodes {
             return proc(parentBlock);
         }
 
-        @Specialization
-        public RubyProc proc(RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyProc proc(RubyBasicObject block) {
             return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcClass(),
                     ProcNodes.Type.LAMBDA,
@@ -1342,8 +1342,8 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyProc proc(RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyProc proc(RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             return ProcNodes.createRubyProc(
@@ -1442,8 +1442,8 @@ public abstract class KernelNodes {
             return send(frame, self, args, (RubyProc) null);
         }
 
-        @Specialization
-        public Object send(VirtualFrame frame, Object self, Object[] args, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object send(VirtualFrame frame, Object self, Object[] args, RubyBasicObject block) {
             final Object name = args[0];
             final Object[] sendArgs = ArrayUtils.extractRange(args, 1, args.length);
             return dispatchNode.call(frame, self, name, block, sendArgs);
@@ -1674,8 +1674,8 @@ public abstract class KernelNodes {
             return nil();
         }
 
-        @Specialization
-        public RubyProc setTraceFunc(RubyProc traceFunc) {
+        @Specialization(guards = "isRubyProc(traceFunc)")
+        public RubyBasicObject setTraceFunc(RubyBasicObject traceFunc) {
             CompilerDirectives.transferToInterpreter();
 
             getContext().getTraceManager().setTraceFunc(traceFunc);

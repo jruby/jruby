@@ -39,8 +39,8 @@ public abstract class RangeNodes {
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
-        @Specialization
-        public RubyBasicObject collect(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyBasicObject collect(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyBasicObject block) {
             final int begin = range.getBegin();
             final int exclusiveEnd = range.getExclusiveEnd();
             final int length = exclusiveEnd - begin;
@@ -75,8 +75,8 @@ public abstract class RangeNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object each(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object each(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyBasicObject block) {
             final int exclusiveEnd = range.getExclusiveEnd();
 
             int count = 0;
@@ -98,8 +98,8 @@ public abstract class RangeNodes {
             return range;
         }
 
-        @Specialization
-        public Object each(VirtualFrame frame, RubyRange.LongFixnumRange range, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object each(VirtualFrame frame, RubyRange.LongFixnumRange range, RubyBasicObject block) {
             final long exclusiveEnd = range.getExclusiveEnd();
 
             int count = 0;
@@ -122,18 +122,18 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public Object each(VirtualFrame frame, RubyRange.LongFixnumRange range, NotProvided proc) {
+        public Object each(VirtualFrame frame, RubyRange.LongFixnumRange range, NotProvided block) {
             return ruby(frame, "each_internal(&block)", "block", nil());
         }
 
         @Specialization
-        public Object each(VirtualFrame frame, RubyRange.ObjectRange range, NotProvided proc) {
+        public Object each(VirtualFrame frame, RubyRange.ObjectRange range, NotProvided block) {
             return ruby(frame, "each_internal(&block)", "block", nil());
         }
 
-        @Specialization
-        public Object each(VirtualFrame frame, RubyRange.ObjectRange range, RubyProc proc) {
-            return ruby(frame, "each_internal(&block)", "block", proc);
+        @Specialization(guards = "isRubyProc(block)")
+        public Object each(VirtualFrame frame, RubyRange.ObjectRange range, RubyBasicObject block) {
+            return ruby(frame, "each_internal(&block)", "block", block);
         }
 
     }

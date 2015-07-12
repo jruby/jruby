@@ -128,8 +128,8 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject initialize(RubyThread thread, Object[] arguments, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyBasicObject initialize(RubyThread thread, Object[] arguments, RubyBasicObject block) {
             thread.initialize(getContext(), this, arguments, block);
             return nil();
         }

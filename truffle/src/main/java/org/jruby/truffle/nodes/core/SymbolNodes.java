@@ -212,19 +212,19 @@ public abstract class SymbolNodes {
         }
 
         @Specialization(guards = "cachedSymbol == symbol")
-        public RubyProc toProcCached(RubyBasicObject symbol,
+        public RubyBasicObject toProcCached(RubyBasicObject symbol,
                                      @Cached("symbol") RubyBasicObject cachedSymbol,
-                                     @Cached("createProc(symbol)") RubyProc cachedProc) {
+                                     @Cached("createProc(symbol)") RubyBasicObject cachedProc) {
             return cachedProc;
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyProc toProcUncached(RubyBasicObject symbol) {
+        public RubyBasicObject toProcUncached(RubyBasicObject symbol) {
             return createProc(symbol);
         }
 
-        protected RubyProc createProc(RubyBasicObject symbol) {
+        protected RubyBasicObject createProc(RubyBasicObject symbol) {
             final SourceSection sourceSection = RubyCallStack.getCallerFrame(getContext())
                     .getCallNode().getEncapsulatingSourceSection();
 

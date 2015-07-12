@@ -74,8 +74,8 @@ public abstract class FiberNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject initialize(RubyFiber fiber, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyBasicObject initialize(RubyFiber fiber, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             fiber.initialize(block);

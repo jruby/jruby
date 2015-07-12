@@ -42,8 +42,9 @@ import org.jruby.util.Memo;
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
 
-    public static Type getType(RubyProc proc) {
-        return proc.type;
+    public static Type getType(RubyBasicObject proc) {
+        assert RubyGuards.isRubyProc(proc);
+        return ((RubyProc) proc).type;
     }
 
     public static SharedMethodInfo getSharedMethodInfo(RubyBasicObject proc) {
@@ -149,7 +150,7 @@ public abstract class ProcNodes {
         }
 
         @Specialization
-        public int arity(RubyProc proc) {
+        public int arity(RubyBasicObject proc) {
             return getSharedMethodInfo(proc).getArity().getArityNumber();
         }
 
@@ -163,7 +164,7 @@ public abstract class ProcNodes {
         }
 
         @Specialization
-        public Object binding(RubyProc proc) {
+        public Object binding(RubyBasicObject proc) {
             final MaterializedFrame frame = getDeclarationFrame(proc);
 
             return BindingNodes.createRubyBinding(getContext().getCoreLibrary().getBindingClass(),
@@ -184,12 +185,12 @@ public abstract class ProcNodes {
         }
 
         @Specialization
-        public Object call(VirtualFrame frame, RubyProc proc, Object[] args, NotProvided block) {
+        public Object call(VirtualFrame frame, RubyBasicObject proc, Object[] args, NotProvided block) {
             return yieldNode.dispatch(frame, proc, args);
         }
 
-        @Specialization
-        public Object call(VirtualFrame frame, RubyProc proc, Object[] args, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object call(VirtualFrame frame, RubyBasicObject proc, Object[] args, RubyBasicObject block) {
             return yieldNode.dispatchWithModifiedBlock(frame, proc, block, args);
         }
 
@@ -202,8 +203,8 @@ public abstract class ProcNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject initialize(RubyProc proc, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyBasicObject initialize(RubyBasicObject proc, RubyBasicObject block) {
             ProcNodes.initialize(proc, getSharedMethodInfo(block), getCallTargetForProcs(block),
                     getCallTargetForProcs(block), getCallTargetForLambdas(block), getDeclarationFrame(block),
                     getMethod(block), getSelfCapturedInScope(block), getBlockCapturedInScope(block));
@@ -213,7 +214,7 @@ public abstract class ProcNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject initialize(RubyProc proc, NotProvided block) {
+        public RubyBasicObject initialize(RubyBasicObject proc, NotProvided block) {
             final Memo<Integer> frameCount = new Memo<>(0);
 
             // The parent will be the Proc.new call.  We need to go an extra level up in order to get the parent
@@ -254,7 +255,7 @@ public abstract class ProcNodes {
         }
 
         @Specialization
-        public boolean lambda(RubyProc proc) {
+        public boolean lambda(RubyBasicObject proc) {
             return getType(proc) == Type.LAMBDA;
         }
 
@@ -269,7 +270,7 @@ public abstract class ProcNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject parameters(RubyProc proc) {
+        public RubyBasicObject parameters(RubyBasicObject proc) {
             final ArgsNode argsNode = getSharedMethodInfo(proc).getParseTree().findFirstChild(ArgsNode.class);
 
             final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
@@ -289,7 +290,7 @@ public abstract class ProcNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object sourceLocation(RubyProc proc) {
+        public Object sourceLocation(RubyBasicObject proc) {
             SourceSection sourceSection = getSharedMethodInfo(proc).getSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {

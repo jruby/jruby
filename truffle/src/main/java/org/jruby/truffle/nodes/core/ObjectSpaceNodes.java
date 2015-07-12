@@ -89,8 +89,8 @@ public abstract class ObjectSpaceNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public int eachObject(VirtualFrame frame, NotProvided ofClass, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public int eachObject(VirtualFrame frame, NotProvided ofClass, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             int count = 0;
@@ -105,8 +105,8 @@ public abstract class ObjectSpaceNodes {
             return count;
         }
 
-        @Specialization
-        public int eachObject(VirtualFrame frame, RubyClass ofClass, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public int eachObject(VirtualFrame frame, RubyClass ofClass, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             int count = 0;
