@@ -710,14 +710,14 @@ public abstract class HashNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isNullHash(hash)")
-        public RubyBasicObject eachNull(RubyBasicObject hash, RubyProc block) {
+        @Specialization(guards = {"isNullHash(hash)", "isRubyProc(block)"})
+        public RubyBasicObject eachNull(RubyBasicObject hash, RubyBasicObject block) {
             return hash;
         }
 
         @ExplodeLoop
-        @Specialization(guards = "isPackedHash(hash)")
-        public RubyBasicObject eachPackedArray(VirtualFrame frame, RubyBasicObject hash, RubyProc block) {
+        @Specialization(guards = {"isPackedHash(hash)", "isRubyProc(block)"})
+        public RubyBasicObject eachPackedArray(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject block) {
             assert verifyStore(hash);
 
             final Object[] store = (Object[]) getStore(hash);
@@ -744,8 +744,8 @@ public abstract class HashNodes {
             return hash;
         }
 
-        @Specialization(guards = "isBucketHash(hash)")
-        public RubyBasicObject eachBuckets(VirtualFrame frame, RubyBasicObject hash, RubyProc block) {
+        @Specialization(guards = {"isBucketHash(hash)", "isRubyProc(block)"})
+        public RubyBasicObject eachBuckets(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject block) {
             assert verifyStore(hash);
 
             for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(getFirstInSequence(hash))) {
@@ -804,8 +804,8 @@ public abstract class HashNodes {
             return hash;
         }
 
-        @Specialization
-        public RubyBasicObject initialize(RubyBasicObject hash, NotProvided defaultValue, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyBasicObject initialize(RubyBasicObject hash, NotProvided defaultValue, RubyBasicObject block) {
             setStore(hash, null, 0, null, null);
             setDefaultValue(hash, null);
             setDefaultBlock(hash, block);
@@ -820,8 +820,8 @@ public abstract class HashNodes {
             return hash;
         }
 
-        @Specialization(guards = "wasProvided(defaultValue)")
-        public Object initialize(RubyBasicObject hash, Object defaultValue, RubyProc block) {
+        @Specialization(guards = {"wasProvided(defaultValue)", "isRubyProc(block)"})
+        public Object initialize(RubyBasicObject hash, Object defaultValue, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("wrong number of arguments (1 for 0)", this));
         }
@@ -902,16 +902,16 @@ public abstract class HashNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isNullHash(hash)")
-        public RubyBasicObject mapNull(VirtualFrame frame, RubyBasicObject hash, RubyProc block) {
+        @Specialization(guards = {"isNullHash(hash)", "isRubyProc(block)"})
+        public RubyBasicObject mapNull(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject block) {
             assert verifyStore(hash);
 
             return createEmptyArray();
         }
 
         @ExplodeLoop
-        @Specialization(guards = "isPackedHash(hash)")
-        public RubyBasicObject mapPackedArray(VirtualFrame frame, RubyBasicObject hash, RubyProc block) {
+        @Specialization(guards = {"isPackedHash(hash)", "isRubyProc(block)"})
+        public RubyBasicObject mapPackedArray(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject block) {
             assert verifyStore(hash);
 
             if (arrayBuilderNode == null) {
@@ -941,8 +941,8 @@ public abstract class HashNodes {
             return arrayBuilderNode.finishAndCreate(getContext().getCoreLibrary().getArrayClass(), resultStore, length);
         }
 
-        @Specialization(guards = "isBucketHash(hash)")
-        public RubyBasicObject mapBuckets(VirtualFrame frame, RubyBasicObject hash, RubyProc block) {
+        @Specialization(guards = {"isBucketHash(hash)", "isRubyProc(block)"})
+        public RubyBasicObject mapBuckets(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject block) {
             assert verifyStore(hash);
 
             if (arrayBuilderNode == null) {
@@ -1263,8 +1263,8 @@ public abstract class HashNodes {
 
         // Merge using a block
 
-        @Specialization(guards = {"isRubyHash(other)", "!isCompareByIdentity(hash)"})
-        public RubyBasicObject merge(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject other, RubyProc block) {
+        @Specialization(guards = {"isRubyHash(other)", "!isCompareByIdentity(hash)", "isRubyProc(block)"})
+        public RubyBasicObject merge(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject other, RubyBasicObject block) {
             CompilerDirectives.bailout("Hash#merge with a block cannot be compiled at the moment");
 
             final RubyBasicObject merged = createHash(hash.getLogicalClass(), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null, null);
@@ -1581,8 +1581,8 @@ public abstract class HashNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyProc setDefaultProc(RubyBasicObject hash, RubyProc defaultProc) {
+        @Specialization(guards = "isRubyProc(defaultProc)")
+        public RubyBasicObject setDefaultProc(RubyBasicObject hash, RubyBasicObject defaultProc) {
             setDefaultValue(hash, null);
             setDefaultBlock(hash, defaultProc);
             return defaultProc;
