@@ -14,13 +14,16 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.RubyThread.Status;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyThread.InterruptMode;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 
 @CoreClass(name = "Thread")
@@ -73,6 +76,47 @@ public abstract class ThreadNodes {
             });
 
             return rubyThread;
+        }
+
+    }
+
+    @RubiniusOnly
+    @CoreMethod(names = "handle_interrupt", required = 2, needsBlock = true, visibility = Visibility.PRIVATE)
+    public abstract static class HandleInterruptNode extends YieldingCoreMethodNode {
+
+        private final RubyBasicObject immediateSymbol = getContext().getSymbol("immediate");
+        private final RubyBasicObject onBlockingSymbol = getContext().getSymbol("on_blocking");
+        private final RubyBasicObject neverSymbol = getContext().getSymbol("never");
+
+        public HandleInterruptNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubySymbol(timing)")
+        public Object handle_interrupt(VirtualFrame frame, RubyThread self, RubyClass exceptionClass, RubyBasicObject timing, RubyProc block) {
+            // TODO (eregon, 12 July 2015): should we consider exceptionClass?
+            final InterruptMode newInterruptMode = symbolToInterruptMode(timing);
+
+            final InterruptMode oldInterruptMode = self.getInterruptMode();
+            self.setInterruptMode(newInterruptMode);
+            try {
+                return yield(frame, block);
+            } finally {
+                self.setInterruptMode(oldInterruptMode);
+            }
+        }
+
+        private InterruptMode symbolToInterruptMode(RubyBasicObject symbol) {
+            if (symbol == immediateSymbol) {
+                return InterruptMode.IMMEDIATE;
+            } else if (symbol == onBlockingSymbol) {
+                return InterruptMode.ON_BLOCKING;
+            } else if (symbol == neverSymbol) {
+                return InterruptMode.NEVER;
+            } else {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("invalid timing symbol", this));
+            }
         }
 
     }

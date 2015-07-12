@@ -1,8 +1,4 @@
 # Truffle: Last version of lib/thread.rb in MRI @ r42801 (324df61e).
-# Truffle: we shim Thread.handle_interrupt as we do not support it yet.
-def Thread.handle_interrupt(h)
-  yield
-end
 
 #
 #               thread.rb - thread support classes

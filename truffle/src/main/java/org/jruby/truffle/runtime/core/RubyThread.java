@@ -10,6 +10,8 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.nodes.Node;
+
+import org.jruby.RubySymbol;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ProcNodes;
@@ -56,6 +58,12 @@ public class RubyThread extends RubyBasicObject {
     private final List<Lock> ownedLocks = new ArrayList<>(); // Always accessed by the same underlying Java thread.
 
     private boolean abortOnException = false;
+
+    public enum InterruptMode {
+        IMMEDIATE, ON_BLOCKING, NEVER
+    }
+
+    private InterruptMode interruptMode = InterruptMode.IMMEDIATE;
 
     public RubyThread(RubyClass rubyClass, ThreadManager manager) {
         super(rubyClass);
@@ -232,6 +240,14 @@ public class RubyThread extends RubyBasicObject {
 
     public void setAbortOnException(boolean abortOnException) {
         this.abortOnException = abortOnException;
+    }
+
+    public InterruptMode getInterruptMode() {
+        return interruptMode;
+    }
+
+    public void setInterruptMode(InterruptMode interruptMode) {
+        this.interruptMode = interruptMode;
     }
 
     public static class ThreadAllocator implements Allocator {
