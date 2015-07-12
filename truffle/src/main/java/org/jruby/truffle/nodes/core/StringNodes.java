@@ -1139,8 +1139,8 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject eachByte(VirtualFrame frame, RubyBasicObject string, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyBasicObject eachByte(VirtualFrame frame, RubyBasicObject string, RubyBasicObject block) {
             final ByteList bytes = getByteList(string);
 
             for (int i = 0; i < bytes.getRealSize(); i++) {
@@ -1162,8 +1162,8 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isValidOr7BitEncoding(string)")
-        public RubyBasicObject eachChar(VirtualFrame frame, RubyBasicObject string, RubyProc block) {
+        @Specialization(guards = {"isValidOr7BitEncoding(string)", "isRubyProc(block)"})
+        public RubyBasicObject eachChar(VirtualFrame frame, RubyBasicObject string, RubyBasicObject block) {
             ByteList strByteList = getByteList(string);
             byte[] ptrBytes = strByteList.unsafeBytes();
             int ptr = strByteList.begin();
@@ -1181,8 +1181,8 @@ public abstract class StringNodes {
             return string;
         }
 
-        @Specialization(guards = "!isValidOr7BitEncoding(string)")
-        public RubyBasicObject eachCharMultiByteEncoding(VirtualFrame frame, RubyBasicObject string, RubyProc block) {
+        @Specialization(guards = {"!isValidOr7BitEncoding(string)", "isRubyProc(block)"})
+        public RubyBasicObject eachCharMultiByteEncoding(VirtualFrame frame, RubyBasicObject string, RubyBasicObject block) {
             ByteList strByteList = getByteList(string);
             byte[] ptrBytes = strByteList.unsafeBytes();
             int ptr = strByteList.begin();

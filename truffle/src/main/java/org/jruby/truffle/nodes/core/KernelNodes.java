@@ -36,6 +36,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeGen;
 import org.jruby.truffle.nodes.coerce.NameToJavaStringNodeGen;
+import org.jruby.truffle.nodes.coerce.ToPathNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
@@ -45,7 +46,6 @@ import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.LookupMethodNode;
 import org.jruby.truffle.nodes.methods.LookupMethodNodeGen;
-import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
@@ -500,8 +500,7 @@ public abstract class KernelNodes {
             }
         }
 
-        class RootNodeWrapper {
-
+        protected static class RootNodeWrapper {
             private final RubyRootNode rootNode;
 
             public RootNodeWrapper(RubyRootNode rootNode) {
@@ -1113,9 +1112,9 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyProc proc(NotProvided block) {
+        public RubyBasicObject proc(NotProvided block) {
             final Frame parentFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
-            final RubyProc parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
+            final RubyBasicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
 
             if (parentBlock == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1124,8 +1123,8 @@ public abstract class KernelNodes {
             return proc(parentBlock);
         }
 
-        @Specialization
-        public RubyProc proc(RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyBasicObject proc(RubyBasicObject block) {
             return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcClass(),
                     ProcNodes.Type.LAMBDA,
@@ -1342,8 +1341,8 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyProc proc(RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyBasicObject proc(RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             return ProcNodes.createRubyProc(
@@ -1439,11 +1438,11 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object send(VirtualFrame frame, Object self, Object[] args, NotProvided block) {
-            return send(frame, self, args, (RubyProc) null);
+            return send(frame, self, args, (RubyBasicObject) null);
         }
 
-        @Specialization
-        public Object send(VirtualFrame frame, Object self, Object[] args, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object send(VirtualFrame frame, Object self, Object[] args, RubyBasicObject block) {
             final Object name = args[0];
             final Object[] sendArgs = ArrayUtils.extractRange(args, 1, args.length);
             return dispatchNode.call(frame, self, name, block, sendArgs);
@@ -1502,13 +1501,20 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "require", isModuleFunction = true, required = 1)
-    public abstract static class RequireNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "feature")
+    })
+    public abstract static class RequireNode extends CoreMethodNode {
 
         public RequireNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
+        @CreateCast("feature")
+        public RubyNode coerceFeatureToPath(RubyNode feature) {
+            return ToPathNodeGen.create(getContext(), getSourceSection(), feature);
+        }
+
         @Specialization(guards = "isRubyString(feature)")
         public boolean require(RubyBasicObject feature) {
             CompilerDirectives.transferToInterpreter();
@@ -1667,8 +1673,8 @@ public abstract class KernelNodes {
             return nil();
         }
 
-        @Specialization
-        public RubyProc setTraceFunc(RubyProc traceFunc) {
+        @Specialization(guards = "isRubyProc(traceFunc)")
+        public RubyBasicObject setTraceFunc(RubyBasicObject traceFunc) {
             CompilerDirectives.transferToInterpreter();
 
             getContext().getTraceManager().setTraceFunc(traceFunc);

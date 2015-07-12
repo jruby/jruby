@@ -32,6 +32,15 @@ class Thread
     current.abort_on_exception = value
   end
 
+  def self.handle_interrupt(config, &block)
+    unless config.is_a?(Hash) and config.size == 1
+      raise ArgumentError, "unknown mask signature"
+    end
+    exception, timing = config.first
+    Rubinius.privately do
+      current.handle_interrupt(exception, timing, &block)
+    end
+  end
 end
 
 class ThreadGroup

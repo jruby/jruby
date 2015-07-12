@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -22,7 +23,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyProc;
 
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
@@ -64,12 +64,14 @@ public abstract class ClassNodes {
             return doNewInstance(frame, rubyClass, args, null);
         }
 
-        @Specialization
-        public Object newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyBasicObject block) {
             return doNewInstance(frame, rubyClass, args, block);
         }
 
-        private Object doNewInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
+        private Object doNewInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyBasicObject block) {
+            assert block == null || RubyGuards.isRubyProc(block);
+
             final Object instance = allocateNode.call(frame, rubyClass, "allocate", null);
             initialize.call(frame, instance, "initialize", block, args);
             return instance;
@@ -94,7 +96,9 @@ public abstract class ClassNodes {
             inheritedNode.call(frame, superClass, "inherited", null, subClass);
         }
 
-        void moduleInitialize(VirtualFrame frame, RubyClass rubyClass, RubyProc block) {
+        void moduleInitialize(VirtualFrame frame, RubyClass rubyClass, RubyBasicObject block) {
+            assert RubyGuards.isRubyProc(block);
+
             if (moduleInitializeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 moduleInitializeNode = insert(ModuleNodesFactory.InitializeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null,null}));
@@ -104,32 +108,34 @@ public abstract class ClassNodes {
 
         @Specialization
         public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, NotProvided superclass, NotProvided block) {
-            return initializeGeneralWithoutBlock(frame, rubyClass, getContext().getCoreLibrary().getObjectClass(), null);
+            return initializeGeneralWithoutBlock(frame, rubyClass, getContext().getCoreLibrary().getObjectClass());
         }
 
         @Specialization
         public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, NotProvided block) {
-            return initializeGeneralWithoutBlock(frame, rubyClass, superclass, null);
+            return initializeGeneralWithoutBlock(frame, rubyClass, superclass);
         }
 
-        @Specialization
-        public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, NotProvided superclass, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, NotProvided superclass, RubyBasicObject block) {
             return initializeGeneralWithBlock(frame, rubyClass, getContext().getCoreLibrary().getObjectClass(), block);
         }
 
-        @Specialization
-        public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, RubyBasicObject block) {
             return initializeGeneralWithBlock(frame, rubyClass, superclass, block);
         }
 
-        private RubyClass initializeGeneralWithoutBlock(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, RubyProc block) {
+        private RubyClass initializeGeneralWithoutBlock(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass) {
             rubyClass.initialize(superclass);
             triggerInheritedHook(frame, rubyClass, superclass);
 
             return rubyClass;
         }
 
-        private RubyClass initializeGeneralWithBlock(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, RubyProc block) {
+        private RubyClass initializeGeneralWithBlock(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, RubyBasicObject block) {
+            assert RubyGuards.isRubyProc(block);
+
             rubyClass.initialize(superclass);
             triggerInheritedHook(frame, rubyClass, superclass);
             moduleInitialize(frame, rubyClass, block);

@@ -30,7 +30,6 @@ import org.jruby.truffle.runtime.cext.CExtSubsystem;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.ByteList;
@@ -334,8 +333,8 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(file)")
-        public RubyBasicObject attach(RubyBasicObject file, int line, RubyProc block) {
+        @Specialization(guards = {"isRubyString(file)", "isRubyProc(block)"})
+        public RubyBasicObject attach(RubyBasicObject file, int line, RubyBasicObject block) {
             getContext().getAttachmentsManager().attach(file.toString(), line, block);
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -471,8 +470,8 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object atExit(boolean always, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object atExit(boolean always, RubyBasicObject block) {
             getContext().getAtExitManager().add(block, always);
             return nil();
         }

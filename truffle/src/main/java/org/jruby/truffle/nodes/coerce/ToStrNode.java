@@ -49,9 +49,7 @@ public abstract class ToStrNode extends RubyNode {
         } catch (RaiseException e) {
             if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(
-                        getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "String", this));
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "String", this));
             } else {
                 throw e;
             }
@@ -61,9 +59,7 @@ public abstract class ToStrNode extends RubyNode {
             return (RubyBasicObject) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
-
-            throw new RaiseException(
-                    getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
         }
     }
 

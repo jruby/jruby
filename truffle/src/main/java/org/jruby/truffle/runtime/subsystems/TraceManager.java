@@ -27,7 +27,6 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyProc;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,7 +42,9 @@ public class TraceManager {
         this.context = context;
     }
 
-    public void setTraceFunc(final RubyProc traceFunc) {
+    public void setTraceFunc(final RubyBasicObject traceFunc) {
+        assert RubyGuards.isRubyProc(traceFunc);
+
         if (instruments != null) {
             for (Instrument instrument : instruments) {
                 instrument.dispose();

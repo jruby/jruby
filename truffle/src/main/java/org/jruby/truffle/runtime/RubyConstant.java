@@ -27,6 +27,10 @@ public class RubyConstant {
         this.autoload = autoload;
     }
 
+    public RubyModule getDeclaringModule() {
+        return declaringModule;
+    }
+
     public Object getValue() {
         return value;
     }

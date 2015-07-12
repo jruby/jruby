@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyProc;
 
 import java.math.BigInteger;
 
@@ -32,8 +31,8 @@ public abstract class IntegerNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object downto(VirtualFrame frame, int from, int to, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object downto(VirtualFrame frame, int from, int to, RubyBasicObject block) {
             int count = 0;
 
             try {
@@ -53,8 +52,8 @@ public abstract class IntegerNodes {
             return nil();
         }
 
-        @Specialization
-        public Object downto(VirtualFrame frame, long from, long to, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object downto(VirtualFrame frame, long from, long to, RubyBasicObject block) {
             // TODO BJF 22-Apr-2015 how to handle reportLoopCount(long)
             int count = 0;
 
@@ -75,8 +74,8 @@ public abstract class IntegerNodes {
             return nil();
         }
 
-        @Specialization
-        public Object downto(VirtualFrame frame, int from, double to, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object downto(VirtualFrame frame, int from, double to, RubyBasicObject block) {
             return downto(frame, from, (int) Math.ceil(to), block);
         }
 
@@ -103,8 +102,8 @@ public abstract class IntegerNodes {
             return createArray(array, n);
         }
 
-        @Specialization
-        public Object times(VirtualFrame frame, int n, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object times(VirtualFrame frame, int n, RubyBasicObject block) {
             int count = 0;
 
             try {
@@ -124,8 +123,8 @@ public abstract class IntegerNodes {
             return n;
         }
 
-        @Specialization
-        public Object times(VirtualFrame frame, long n, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object times(VirtualFrame frame, long n, RubyBasicObject block) {
             int count = 0;
 
             try {
@@ -145,8 +144,8 @@ public abstract class IntegerNodes {
             return n;
         }
 
-        @Specialization(guards = "isRubyBignum(n)")
-        public Object times(VirtualFrame frame, RubyBasicObject n, RubyProc block,
+        @Specialization(guards = {"isRubyBignum(n)", "isRubyProc(block)"})
+        public Object times(VirtualFrame frame, RubyBasicObject n, RubyBasicObject block,
                 @Cached("create(getContext(), getSourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
 
             for (BigInteger i = BigInteger.ZERO; i.compareTo(BignumNodes.getBigIntegerValue(n)) < 0; i = i.add(BigInteger.ONE)) {
@@ -189,8 +188,8 @@ public abstract class IntegerNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object upto(VirtualFrame frame, int from, int to, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object upto(VirtualFrame frame, int from, int to, RubyBasicObject block) {
             int count = 0;
 
             try {
@@ -210,13 +209,13 @@ public abstract class IntegerNodes {
             return nil();
         }
 
-        @Specialization
-        public Object upto(VirtualFrame frame, int from, double to, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object upto(VirtualFrame frame, int from, double to, RubyBasicObject block) {
             return upto(frame, from, (int) Math.floor(to), block);
         }
 
-        @Specialization
-        public Object upto(VirtualFrame frame, long from, long to, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object upto(VirtualFrame frame, long from, long to, RubyBasicObject block) {
             int count = 0;
 
             try {

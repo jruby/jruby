@@ -157,6 +157,9 @@ public abstract class RubyGuards {
     public static boolean isRubyProc(Object value) {
         return value instanceof RubyProc;
     }
+    public static boolean isRubyEncodingConverter(RubyBasicObject encodingConverter) {
+        return encodingConverter instanceof RubyEncodingConverter;
+    }
 
     // Internal types
 

@@ -13,7 +13,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.interop.RubyToIndexLabelNode;
 import org.jruby.truffle.nodes.interop.RubyToIndexLabelNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyProc;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -94,7 +93,7 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (RubyProc) blockObject,
+                    blockObject,
                     argumentsObjects);
         }
     }

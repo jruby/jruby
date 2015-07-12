@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.core.YieldingCoreMethodNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyProc;
 
 @CoreClass(name = "Rubinius::Type")
 public abstract class RubiniusTypeNodes {

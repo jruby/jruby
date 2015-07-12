@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 @CoreClass(name = "ObjectSpace")
@@ -89,8 +88,8 @@ public abstract class ObjectSpaceNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public int eachObject(VirtualFrame frame, NotProvided ofClass, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public int eachObject(VirtualFrame frame, NotProvided ofClass, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             int count = 0;
@@ -105,8 +104,8 @@ public abstract class ObjectSpaceNodes {
             return count;
         }
 
-        @Specialization
-        public int eachObject(VirtualFrame frame, RubyClass ofClass, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public int eachObject(VirtualFrame frame, RubyClass ofClass, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             int count = 0;

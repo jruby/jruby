@@ -57,6 +57,12 @@ public class RubyThread extends RubyBasicObject {
 
     private boolean abortOnException = false;
 
+    public enum InterruptMode {
+        IMMEDIATE, ON_BLOCKING, NEVER
+    }
+
+    private InterruptMode interruptMode = InterruptMode.IMMEDIATE;
+
     public RubyThread(RubyClass rubyClass, ThreadManager manager) {
         super(rubyClass);
         this.manager = manager;
@@ -232,6 +238,14 @@ public class RubyThread extends RubyBasicObject {
 
     public void setAbortOnException(boolean abortOnException) {
         this.abortOnException = abortOnException;
+    }
+
+    public InterruptMode getInterruptMode() {
+        return interruptMode;
+    }
+
+    public void setInterruptMode(InterruptMode interruptMode) {
+        this.interruptMode = interruptMode;
     }
 
     public static class ThreadAllocator implements Allocator {
