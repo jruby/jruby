@@ -50,48 +50,6 @@ public abstract class BasicObjectNodes {
 
     }
 
-
-    @CoreMethod(names = "==", required = 1)
-    public abstract static class EqualNode extends BinaryCoreMethodNode {
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
-        @Specialization public boolean equal(int a, int b) { return a == b; }
-        @Specialization public boolean equal(long a, long b) { return a == b; }
-        @Specialization public boolean equal(double a, double b) { return a == b; }
-
-        @Specialization public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            return a == b;
-        }
-
-        @Specialization(guards = {"isNotRubyBasicObject(a)", "isNotRubyBasicObject(b)", "notSameClass(a, b)"})
-        public boolean equal(Object a, Object b) {
-            return false;
-        }
-
-        @Specialization(guards = "isNotRubyBasicObject(a)")
-        public boolean equal(Object a, RubyBasicObject b) {
-            return false;
-        }
-
-        @Specialization(guards = "isNotRubyBasicObject(b)")
-        public boolean equal(RubyBasicObject a, Object b) {
-            return false;
-        }
-
-        protected boolean isNotRubyBasicObject(Object value) {
-            return !(value instanceof RubyBasicObject);
-        }
-
-        protected boolean notSameClass(Object a, Object b) {
-            return a.getClass() != b.getClass();
-        }
-
-    }
-
     @CoreMethod(names = "!=", required = 1)
     public abstract static class NotEqualNode extends CoreMethodArrayArgumentsNode {
 
@@ -109,7 +67,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "equal?", required = 1)
+    @CoreMethod(names = { "equal?", "==" }, required = 1)
     public abstract static class ReferenceEqualNode extends BinaryCoreMethodNode {
 
         public ReferenceEqualNode(RubyContext context, SourceSection sourceSection) {
