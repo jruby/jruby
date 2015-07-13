@@ -29,7 +29,6 @@ public class FixnumLowerNode extends RubyNode {
     @CompilationFinal private boolean hasSeenUndefined = false;
 
     @CompilationFinal private boolean hasNeededToLowerLongFixnum = false;
-    @CompilationFinal private boolean hasNeededToLowerLongFixnumRange = false;
 
     public FixnumLowerNode(RubyNode child) {
         super(child.getContext(), child.getEncapsulatingSourceSection());
@@ -57,11 +56,7 @@ public class FixnumLowerNode extends RubyNode {
         }
 
         if (hasSeenLongRange && value instanceof RubyRange.LongFixnumRange) {
-            if (canLower((RubyRange.LongFixnumRange) value)) {
-                return lower((RubyRange.LongFixnumRange) value);
-            } else {
-                return value;
-            }
+            return value;
         }
 
         if (hasSeenUndefined && value instanceof NotProvided) {
@@ -91,11 +86,7 @@ public class FixnumLowerNode extends RubyNode {
 
         if (value instanceof RubyRange.LongFixnumRange) {
             hasSeenLongRange = true;
-            if (canLower((RubyRange.LongFixnumRange) value)) {
-                return lower((RubyRange.LongFixnumRange) value);
-            } else {
-                return value;
-            }
+            return value;
         }
 
         if (value instanceof NotProvided) {
@@ -124,9 +115,6 @@ public class FixnumLowerNode extends RubyNode {
             if (e.getResult() instanceof Long && canLower((long) e.getResult())) {
                 hasNeededToLowerLongFixnum = true;
                 return lower((long) e.getResult());
-            } else if (e.getResult() instanceof RubyRange.LongFixnumRange && canLower((RubyRange.LongFixnumRange) e.getResult())) {
-                hasNeededToLowerLongFixnumRange = true;
-                throw new UnexpectedResultException(lower((RubyRange.LongFixnumRange) e.getResult()));
             } else {
                 throw e;
             }
@@ -139,39 +127,6 @@ public class FixnumLowerNode extends RubyNode {
     }
 
     @Override
-    public RubyRange.IntegerFixnumRange executeIntegerFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        try {
-            if (hasNeededToLowerLongFixnumRange) {
-                final RubyRange.LongFixnumRange range = super.executeLongFixnumRange(frame);
-
-                if (canLower(range)) {
-                    return lower(range);
-                } else {
-                    throw new UnexpectedResultException(range);
-                }
-            } else {
-                return super.executeIntegerFixnumRange(frame);
-            }
-        } catch (UnexpectedResultException e) {
-            if (e.getResult() instanceof Long && canLower((long) e.getResult())) {
-                hasNeededToLowerLongFixnum = true;
-                throw new UnexpectedResultException(lower((long) e.getResult()));
-            } else if (e.getResult() instanceof RubyRange.LongFixnumRange && canLower((RubyRange.LongFixnumRange) e.getResult())) {
-                hasNeededToLowerLongFixnumRange = true;
-                return lower((RubyRange.LongFixnumRange) e.getResult());
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    @Override
-    public RubyRange.LongFixnumRange executeLongFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        throw new RuntimeException();
-
-    }
-
-    @Override
     public NotProvided executeNotProvided(VirtualFrame frame) throws UnexpectedResultException {
         try {
             return super.executeNotProvided(frame);
@@ -179,9 +134,6 @@ public class FixnumLowerNode extends RubyNode {
             if (e.getResult() instanceof Long && canLower((long) e.getResult())) {
                 hasNeededToLowerLongFixnum = true;
                 throw new UnexpectedResultException(lower((long) e.getResult()));
-            } else if (e.getResult() instanceof RubyRange.LongFixnumRange && canLower((RubyRange.LongFixnumRange) e.getResult())) {
-                hasNeededToLowerLongFixnumRange = true;
-                throw new UnexpectedResultException(e.getResult());
             } else {
                 throw e;
             }
@@ -195,15 +147,6 @@ public class FixnumLowerNode extends RubyNode {
     private static int lower(long value) {
         assert canLower(value);
         return (int) value;
-    }
-
-    private static boolean canLower(RubyRange.LongFixnumRange range) {
-        return canLower(range.getBegin()) && canLower(range.getEnd());
-    }
-
-    private static RubyRange.IntegerFixnumRange lower(RubyRange.LongFixnumRange range) {
-        assert canLower(range);
-        return new RubyRange.IntegerFixnumRange(range.getContext().getCoreLibrary().getRangeClass(), lower(range.getBegin()), lower(range.getEnd()), range.doesExcludeEnd());
     }
 
 }
