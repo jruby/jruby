@@ -4756,12 +4756,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     @Deprecated
+    @JRubyMethod(name = "popen3", rest = true, meta = true)
     public static IRubyObject popen3(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return popen3_19(context, recv, args, block);
-    }
-
-    @Deprecated
-    public static IRubyObject popen3_19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         final Ruby runtime = context.runtime;
 
         // TODO: handle opts
