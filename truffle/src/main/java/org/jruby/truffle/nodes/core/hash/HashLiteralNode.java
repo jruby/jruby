@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -21,7 +22,6 @@ import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
 
@@ -106,7 +106,7 @@ public abstract class HashLiteralNode extends RubyNode {
             initializers: for (int n = 0; n < keyValues.length / 2; n++) {
                 Object key = keyValues[n * 2].execute(frame);
 
-                if (stringKeyProfile.profile(key instanceof RubyString)) {
+                if (stringKeyProfile.profile(RubyGuards.isRubyString(key))) {
                     if (isFrozenNode == null) {
                         CompilerDirectives.transferToInterpreter();
                         isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));

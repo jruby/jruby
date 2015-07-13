@@ -16,7 +16,6 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
@@ -30,7 +29,9 @@ public final class RubyArguments {
     public static final int BLOCK_INDEX = 3;
     public static final int RUNTIME_ARGUMENT_COUNT = 4;
 
-    public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, Object self, RubyProc block, Object[] arguments) {
+    public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, Object self, RubyBasicObject block, Object[] arguments) {
+        assert block == null || RubyGuards.isRubyProc(block);
+
         final Object[] packed = new Object[arguments.length + RUNTIME_ARGUMENT_COUNT];
 
         packed[METHOD_INDEX] = method;
@@ -59,8 +60,8 @@ public final class RubyArguments {
         return arguments[SELF_INDEX];
     }
 
-    public static RubyProc getBlock(Object[] arguments) {
-        return (RubyProc) arguments[BLOCK_INDEX];
+    public static RubyBasicObject getBlock(Object[] arguments) {
+        return (RubyBasicObject) arguments[BLOCK_INDEX];
     }
 
     public static Object[] extractUserArguments(Object[] arguments) {

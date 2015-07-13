@@ -1,8 +1,4 @@
 # Truffle: Last version of lib/thread.rb in MRI @ r42801 (324df61e).
-# Truffle: we shim Thread.handle_interrupt as we do not support it yet.
-def Thread.handle_interrupt(h)
-  yield
-end
 
 #
 #               thread.rb - thread support classes
@@ -26,265 +22,106 @@ if $DEBUG
   Thread.abort_on_exception = true
 end
 
-# Truffle: ConditionVariable is defined in Java.
-
 #
-# This class provides a way to synchronize communication between threads.
+# ConditionVariable objects augment class Mutex. Using condition variables,
+# it is possible to suspend while in the middle of a critical section until a
+# resource becomes available.
 #
 # Example:
 #
 #   require 'thread'
 #
-#   queue = Queue.new
+#   mutex = Mutex.new
+#   resource = ConditionVariable.new
 #
-#   producer = Thread.new do
-#     5.times do |i|
-#       sleep rand(i) # simulate expense
-#       queue << i
-#       puts "#{i} produced"
-#     end
-#   end
+#   a = Thread.new {
+#     mutex.synchronize {
+#       # Thread 'a' now needs the resource
+#       resource.wait(mutex)
+#       # 'a' can now have the resource
+#     }
+#   }
 #
-#   consumer = Thread.new do
-#     5.times do |i|
-#       value = queue.pop
-#       sleep rand(i/2) # simulate expense
-#       puts "consumed #{value}"
-#     end
-#   end
+#   b = Thread.new {
+#     mutex.synchronize {
+#       # Thread 'b' has finished using the resource
+#       resource.signal
+#     }
+#   }
 #
-#   consumer.join
-#
-class Queue
+class ConditionVariable
   #
-  # Creates a new queue.
+  # Creates a new ConditionVariable
   #
   def initialize
-    @que = []
-    @que.taint          # enable tainted communication
-    @num_waiting = 0
-    self.taint
-    @mutex = Mutex.new
-    @cond = ConditionVariable.new
+    @waiters = {}
+    @waiters_mutex = Mutex.new
   end
 
   #
-  # Pushes +obj+ to the queue.
+  # Releases the lock held in +mutex+ and waits; reacquires the lock on wakeup.
   #
-  def push(obj)
-    Thread.handle_interrupt(StandardError => :on_blocking) do
-      @mutex.synchronize do
-        @que.push obj
-        @cond.signal
-      end
-      self
-    end
-  end
-
+  # If +timeout+ is given, this method returns after +timeout+ seconds passed,
+  # even if no other thread has signaled.
   #
-  # Alias of push
-  #
-  alias << push
-
-  #
-  # Alias of push
-  #
-  alias enq push
-
-  #
-  # Retrieves data from the queue.  If the queue is empty, the calling thread is
-  # suspended until data is pushed onto the queue.  If +non_block+ is true, the
-  # thread isn't suspended, and an exception is raised.
-  #
-  def pop(non_block=false)
-    Thread.handle_interrupt(StandardError => :on_blocking) do
-      @mutex.synchronize do
-        while true
-          if @que.empty?
-            if non_block
-              raise ThreadError, "queue empty"
-            else
-              begin
-                @num_waiting += 1
-                @cond.wait @mutex
-              ensure
-                @num_waiting -= 1
-              end
-            end
-          else
-            return @que.shift
+  def wait(mutex, timeout=nil)
+    Thread.handle_interrupt(StandardError => :never) do
+      begin
+        Thread.handle_interrupt(StandardError => :on_blocking) do
+          @waiters_mutex.synchronize do
+            @waiters[Thread.current] = true
           end
+          mutex.sleep timeout
+        end
+      ensure
+        @waiters_mutex.synchronize do
+          @waiters.delete(Thread.current)
         end
       end
     end
-  end
-
-  #
-  # Alias of pop
-  #
-  alias shift pop
-
-  #
-  # Alias of pop
-  #
-  alias deq pop
-
-  #
-  # Returns +true+ if the queue is empty.
-  #
-  def empty?
-    @que.empty?
-  end
-
-  #
-  # Removes all objects from the queue.
-  #
-  def clear
-    @que.clear
     self
   end
 
   #
-  # Returns the length of the queue.
+  # Wakes up the first thread in line waiting for this lock.
   #
-  def length
-    @que.length
+  def signal
+    Thread.handle_interrupt(StandardError => :on_blocking) do
+      begin
+        t, _ = @waiters_mutex.synchronize { @waiters.shift }
+        t.run if t
+      rescue ThreadError
+        retry # t was already dead?
+      end
+    end
+    self
   end
 
   #
-  # Alias of length.
+  # Wakes up all threads waiting for this lock.
   #
-  alias size length
-
-  #
-  # Returns the number of threads waiting on the queue.
-  #
-  def num_waiting
-    @num_waiting
-  end
-end
-
-#
-# This class represents queues of specified size capacity.  The push operation
-# may be blocked if the capacity is full.
-#
-# See Queue for an example of how a SizedQueue works.
-#
-class SizedQueue < Queue
-  #
-  # Creates a fixed-length queue with a maximum size of +max+.
-  #
-  def initialize(max)
-    max = Rubinius::Type.num2long(max)
-    raise ArgumentError, "queue size must be positive" unless max > 0
-    @max = max
-    @enque_cond = ConditionVariable.new
-    @num_enqueue_waiting = 0
-    super()
-  end
-
-  #
-  # Returns the maximum size of the queue.
-  #
-  def max
-    @max
-  end
-
-  #
-  # Sets the maximum size of the queue.
-  #
-  def max=(max)
-    max = Rubinius::Type.num2long(max)
-    raise ArgumentError, "queue size must be positive" unless max > 0
-
-    @mutex.synchronize do
-      if max <= @max
-        @max = max
-      else
-        diff = max - @max
-        @max = max
-        diff.times do
-          @enque_cond.signal
+  def broadcast
+    Thread.handle_interrupt(StandardError => :on_blocking) do
+      threads = nil
+      @waiters_mutex.synchronize do
+        threads = @waiters.keys
+        @waiters.clear
+      end
+      for t in threads
+        begin
+          t.run
+        rescue ThreadError
         end
       end
     end
-    max
+    self
   end
 
-  #
-  # Pushes +obj+ to the queue.  If there is no space left in the queue, waits
-  # until space becomes available.
-  #
-  def push(obj, non_block=false)
-    Thread.handle_interrupt(RuntimeError => :on_blocking) do
-      @mutex.synchronize do
-        while true
-          break if @que.length < @max
-          raise ThreadError, "queue full" if non_block
-          @num_enqueue_waiting += 1
-          begin
-            @enque_cond.wait @mutex
-          ensure
-            @num_enqueue_waiting -= 1
-          end
-        end
-
-        @que.push obj
-        @cond.signal
-      end
-      self
-    end
+  # Truffle: define marshal_dump as MRI tests expect it
+  def marshal_dump
+    raise TypeError, "can't dump #{self.class}"
   end
 
-  #
-  # Alias of push
-  #
-  alias << push
-
-  #
-  # Alias of push
-  #
-  alias enq push
-
-  #
-  # Retrieves data from the queue and runs a waiting thread, if any.
-  #
-  def pop(*args)
-    retval = super
-    @mutex.synchronize do
-      if @que.length < @max
-        @enque_cond.signal
-      end
-    end
-    retval
-  end
-
-  #
-  # Alias of pop
-  #
-  alias shift pop
-
-  #
-  # Alias of pop
-  #
-  alias deq pop
-
-  #
-  # Returns the number of threads waiting on the queue.
-  #
-  def num_waiting
-    @num_waiting + @num_enqueue_waiting
-  end
 end
 
-# Documentation comments:
-#  - How do you make RDoc inherit documentation from superclass?
-
-# Truffle: define marshal_dump as MRI tests expect it
-[ConditionVariable, Queue].each do |klass|
-  klass.class_exec do
-    def marshal_dump
-      raise TypeError, "can't dump #{self.class}"
-    end
-  end
-end
+# Truffle: Queue and SizedQueue are defined in Java

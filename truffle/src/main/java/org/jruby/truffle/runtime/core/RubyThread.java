@@ -11,6 +11,8 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.RubyThread.Status;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -55,6 +57,12 @@ public class RubyThread extends RubyBasicObject {
 
     private boolean abortOnException = false;
 
+    public enum InterruptMode {
+        IMMEDIATE, ON_BLOCKING, NEVER
+    }
+
+    private InterruptMode interruptMode = InterruptMode.IMMEDIATE;
+
     public RubyThread(RubyClass rubyClass, ThreadManager manager) {
         super(rubyClass);
         this.manager = manager;
@@ -62,12 +70,13 @@ public class RubyThread extends RubyBasicObject {
         fiberManager = new FiberManager(this, manager);
     }
 
-    public void initialize(RubyContext context, Node currentNode, final Object[] arguments, final RubyProc block) {
-        String info = block.getSharedMethodInfo().getSourceSection().getShortDescription();
+    public void initialize(RubyContext context, Node currentNode, final Object[] arguments, final RubyBasicObject block) {
+        assert RubyGuards.isRubyProc(block);
+        String info = ProcNodes.getSharedMethodInfo(block).getSourceSection().getShortDescription();
         initialize(context, currentNode, info, new Runnable() {
             @Override
             public void run() {
-                value = block.rootCall(arguments);
+                value = ProcNodes.rootCall(block, arguments);
             }
         });
     }
@@ -229,6 +238,14 @@ public class RubyThread extends RubyBasicObject {
 
     public void setAbortOnException(boolean abortOnException) {
         this.abortOnException = abortOnException;
+    }
+
+    public InterruptMode getInterruptMode() {
+        return interruptMode;
+    }
+
+    public void setInterruptMode(InterruptMode interruptMode) {
+        this.interruptMode = interruptMode;
     }
 
     public static class ThreadAllocator implements Allocator {

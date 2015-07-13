@@ -19,7 +19,6 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.util.ByteList;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -283,8 +282,8 @@ public abstract class PointerPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject address(RubyBasicObject pointer, RubyString string, int maxLength) {
+        @Specialization(guards = "isRubyString(string)")
+        public RubyBasicObject address(RubyBasicObject pointer, RubyBasicObject string, int maxLength) {
             final ByteList bytes = StringNodes.getByteList(string);
             final int length = Math.min(bytes.length(), maxLength);
             PointerNodes.getPointer(pointer).put(0, bytes.unsafeBytes(), bytes.begin(), length);

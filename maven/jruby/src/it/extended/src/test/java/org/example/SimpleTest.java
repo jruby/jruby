@@ -54,6 +54,7 @@ public class SimpleTest {
 "        next if filename =~ /psych\\/test_nil.rb/\n" +
 	 // TODO file an issue or so
 "        next if filename =~ /test_load_compiled_ruby.rb/\n" +
+"        next if filename =~ /compiler\\/test_jrubyc.rb/\n" +
          // TODO remove the following after fix of #2215
 "        next if filename =~ /test_jar_on_load_path.rb/\n" +
 "        next if filename =~ /test_file.rb/\n" +
@@ -88,11 +89,10 @@ public class SimpleTest {
     // 	runIt(null, "require '/home/christian/projects/active/maven/jruby/test/jruby/test_command_line_switches.rb'");
     // }
 
-    // does not seem to pass at all
-    // @Test
-    // public void testObjectspace() throws Exception {
-    // 	runIt("objectspace");
-    // }
+    @Test
+    public void testObjectspace() throws Exception {
+    	runIt("objectspace");
+    }
 
     @Test
     public void testMRI() throws Exception {

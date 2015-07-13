@@ -67,14 +67,13 @@ class ModuleTranslator extends BodyTranslator {
 
         body = new SetMethodDeclarationContext(context, sourceSection, Visibility.PUBLIC, name, body);
 
-        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
+        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
         return new MethodDefinitionNode(
                 context,
                 sourceSection,
                 environment.getSharedMethodInfo().getName(),
                 environment.getSharedMethodInfo(),
-                environment.needsDeclarationFrame(),
                 Truffle.getRuntime().createCallTarget(rootNode));
     }
 

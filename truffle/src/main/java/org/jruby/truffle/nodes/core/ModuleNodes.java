@@ -52,7 +52,9 @@ import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyModule.MethodFilter;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -518,27 +520,23 @@ public abstract class ModuleNodes {
         @Child private StringNodes.EmptyNode emptyNode;
         private final ConditionProfile invalidConstantName = ConditionProfile.createBinaryProfile();
         private final ConditionProfile emptyFilename = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile alreadyLoaded = ConditionProfile.createBinaryProfile();
 
         public AutoloadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             emptyNode = StringNodesFactory.EmptyNodeFactory.create(context, sourceSection, new RubyNode[]{});
         }
 
-        @CreateCast("filename") public RubyNode coerceFilenameToString(RubyNode filename) {
-            return ToStrNodeGen.create(getContext(), getSourceSection(), filename);
+        @CreateCast("name") public RubyNode coerceNameToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
-        @Specialization(guards = "isRubySymbol(name)")
-        public RubyBasicObject autoloadSymbol(RubyModule module, RubyBasicObject name, RubyString filename) {
-            return autoload(module, SymbolNodes.getString(name), filename);
+        @CreateCast("filename") public RubyNode coerceFilenameToPath(RubyNode filename) {
+            return ToPathNodeGen.create(getContext(), getSourceSection(), filename);
         }
 
-        @Specialization(guards = "isRubyString(name)")
-        public RubyBasicObject autoloadString(RubyModule module, RubyBasicObject name, RubyString filename) {
-            return autoload(module, name.toString(), filename);
-        }
-
-        private RubyBasicObject autoload(RubyModule module, String name, RubyString filename) {
+        @Specialization(guards = "isRubyString(filename)")
+        public RubyBasicObject autoload(RubyModule module, String name, RubyBasicObject filename) {
             if (invalidConstantName.profile(!IdUtil.isValidConstantName19(name))) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("autoload must be constant name: %s", name), name, this));
@@ -547,6 +545,10 @@ public abstract class ModuleNodes {
             if (emptyFilename.profile(emptyNode.empty(filename))) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("empty file name", this));
+            }
+
+            if (alreadyLoaded.profile(module.getConstants().get(name) != null)) {
+                return nil();
             }
 
             module.setAutoloadConstant(this, name, filename);
@@ -599,35 +601,37 @@ public abstract class ModuleNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
-            return toStrNode.executeRubyString(frame, object);
+            return toStrNode.executeToStr(frame, object);
         }
 
-        @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, NotProvided file, NotProvided line, NotProvided block) {
-            return classEvalSource(frame, module, code, "(eval)");
+        @Specialization(guards = "isRubyString(code)")
+        public Object classEval(RubyModule module, RubyBasicObject code, NotProvided file, NotProvided line, NotProvided block) {
+            return classEvalSource(module, code, "(eval)");
         }
 
-        @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, NotProvided line, NotProvided block) {
-            return classEvalSource(frame, module, code, file.toString());
+        @Specialization(guards = {"isRubyString(code)", "isRubyString(file)"})
+        public Object classEval(RubyModule module, RubyBasicObject code, RubyBasicObject file, NotProvided line, NotProvided block) {
+            return classEvalSource(module, code, file.toString());
         }
 
-        @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, int line, NotProvided block) {
-            return classEvalSource(frame, module, code, file.toString());
+        @Specialization(guards = {"isRubyString(code)", "isRubyString(file)"})
+        public Object classEval(RubyModule module, RubyBasicObject code, RubyBasicObject file, int line, NotProvided block) {
+            return classEvalSource(module, code, file.toString());
         }
 
         @Specialization(guards = "wasProvided(code)")
         public Object classEval(VirtualFrame frame, RubyModule module, Object code, NotProvided file, NotProvided line, NotProvided block) {
-            return classEvalSource(frame, module, (RubyString) toStr(frame, code), file.toString());
+            return classEvalSource(module, toStr(frame, code), file.toString());
         }
 
-        @Specialization(guards = "wasProvided(file)")
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, Object file, NotProvided line, NotProvided block) {
-            return classEvalSource(frame, module, code, toStr(frame, file).toString());
+        @Specialization(guards = {"isRubyString(code)", "wasProvided(file)"})
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyBasicObject code, Object file, NotProvided line, NotProvided block) {
+            return classEvalSource(module, code, toStr(frame, file).toString());
         }
 
-        private Object classEvalSource(VirtualFrame frame, RubyModule module, RubyString code, String file) {
+        private Object classEvalSource(RubyModule module, RubyBasicObject code, String file) {
+            assert RubyGuards.isRubyString(code);
+
             final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
             Encoding encoding = StringNodes.getByteList(code).getEncoding();
@@ -643,8 +647,8 @@ public abstract class ModuleNodes {
             });
         }
 
-        @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule self, NotProvided code, NotProvided file, NotProvided line, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object classEval(VirtualFrame frame, RubyModule self, NotProvided code, NotProvided file, NotProvided line, RubyBasicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, self);
         }
 
@@ -654,8 +658,8 @@ public abstract class ModuleNodes {
             throw new RaiseException(getContext().getCoreLibrary().argumentError(0, 1, 2, this));
         }
 
-        @Specialization(guards = "wasProvided(code)")
-        public Object classEval(RubyModule self, Object code, NotProvided file, NotProvided line, RubyProc block) {
+        @Specialization(guards = {"wasProvided(code)", "isRubyProc(block)"})
+        public Object classEval(RubyModule self, Object code, NotProvided file, NotProvided line, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(1, 0, this));
         }
@@ -672,10 +676,10 @@ public abstract class ModuleNodes {
             yield = new YieldDispatchHeadNode(context);
         }
 
-        public abstract Object executeClassExec(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block);
+        public abstract Object executeClassExec(VirtualFrame frame, RubyModule self, Object[] args, RubyBasicObject block);
 
-        @Specialization
-        public Object classExec(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object classExec(VirtualFrame frame, RubyModule self, Object[] args, RubyBasicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, self, args);
         }
 
@@ -900,24 +904,24 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = {"!inherit", "isRubySymbol(name)"})
-        public Object getConstantNoInherit(VirtualFrame frame, RubyModule module, RubyBasicObject name, boolean inherit) {
+        public Object getConstantNoInherit(RubyModule module, RubyBasicObject name, boolean inherit) {
             return getConstantNoInherit(module, SymbolNodes.getString(name), this);
         }
 
         // String
-        @Specialization(guards = { "inherit", "!isScoped(name)" })
-        public Object getConstant(VirtualFrame frame, RubyModule module, RubyString name, boolean inherit) {
+        @Specialization(guards = { "inherit", "isRubyString(name)", "!isScoped(name)" })
+        public Object getConstantString(VirtualFrame frame, RubyModule module, RubyBasicObject name, boolean inherit) {
             return getConstantNode.executeGetConstant(frame, module, name.toString());
         }
 
-        @Specialization(guards = { "!inherit", "!isScoped(name)" })
-        public Object getConstantNoInherit(VirtualFrame frame, RubyModule module, RubyString name, boolean inherit) {
+        @Specialization(guards = { "!inherit", "isRubyString(name)", "!isScoped(name)" })
+        public Object getConstantNoInheritString(RubyModule module, RubyBasicObject name, boolean inherit) {
             return getConstantNoInherit(module, name.toString(), this);
         }
 
         // Scoped String
-        @Specialization(guards = "isScoped(fullName)")
-        public Object getConstantScoped(VirtualFrame frame, RubyModule module, RubyString fullName, boolean inherit) {
+        @Specialization(guards = {"isRubyString(fullName)", "isScoped(fullName)"})
+        public Object getConstantScoped(RubyModule module, RubyBasicObject fullName, boolean inherit) {
             return getConstantScoped(module, fullName.toString(), inherit);
         }
 
@@ -945,7 +949,8 @@ public abstract class ModuleNodes {
         }
 
         @TruffleBoundary
-        boolean isScoped(RubyString name) {
+        boolean isScoped(RubyBasicObject name) {
+            assert RubyGuards.isRubyString(name);
             // TODO (eregon, 27 May 2015): Any way to make this efficient?
             return name.toString().contains("::");
         }
@@ -1031,20 +1036,20 @@ public abstract class ModuleNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject defineMethod(RubyModule module, String name, NotProvided proc, RubyProc block) {
-            return defineMethod(module, name, block, NotProvided.INSTANCE);
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyBasicObject defineMethodBlock(RubyModule module, String name, NotProvided proc, RubyBasicObject block) {
+            return defineMethodProc(module, name, block, NotProvided.INSTANCE);
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject defineMethod(RubyModule module, String name, RubyProc proc, NotProvided block) {
+        @Specialization(guards = "isRubyProc(proc)")
+        public RubyBasicObject defineMethodProc(RubyModule module, String name, RubyBasicObject proc, NotProvided block) {
             return defineMethod(module, name, proc);
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyMethod(method)")
-        public RubyBasicObject defineMethod(RubyModule module, String name, RubyBasicObject method, NotProvided block) {
+        public RubyBasicObject defineMethodMethod(RubyModule module, String name, RubyBasicObject method, NotProvided block) {
             module.addMethod(this, MethodNodes.getMethod(method).withName(name));
             return getSymbol(name);
         }
@@ -1064,12 +1069,14 @@ public abstract class ModuleNodes {
             return addMethod(module, name, UnboundMethodNodes.getMethod(method));
         }
 
-        private RubyBasicObject defineMethod(RubyModule module, String name, RubyProc proc) {
+        private RubyBasicObject defineMethod(RubyModule module, String name, RubyBasicObject proc) {
             CompilerDirectives.transferToInterpreter();
 
-            final CallTarget modifiedCallTarget = proc.getCallTargetForLambdas();
-            final SharedMethodInfo info = proc.getSharedMethodInfo().withName(name);
-            final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
+            assert RubyGuards.isRubyProc(proc);
+
+            final CallTarget modifiedCallTarget = ProcNodes.getCallTargetForLambdas(proc);
+            final SharedMethodInfo info = ProcNodes.getSharedMethodInfo(proc).withName(name);
+            final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC, false, modifiedCallTarget, ProcNodes.getDeclarationFrame(proc));
 
             return addMethod(module, name, modifiedMethod);
         }
@@ -1119,9 +1126,11 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        public abstract RubyModule executeInitialize(VirtualFrame frame, RubyModule module, RubyProc block);
+        public abstract RubyModule executeInitialize(VirtualFrame frame, RubyModule module, RubyBasicObject block);
 
-        void classEval(VirtualFrame frame, RubyModule module, RubyProc block) {
+        void classEval(VirtualFrame frame, RubyModule module, RubyBasicObject block) {
+            assert RubyGuards.isRubyProc(block);
+
             if (classExecNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null,null,null}));
@@ -1134,8 +1143,8 @@ public abstract class ModuleNodes {
             return module;
         }
 
-        @Specialization
-        public RubyModule initialize(VirtualFrame frame, RubyModule module, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyModule initialize(VirtualFrame frame, RubyModule module, RubyBasicObject block) {
             classEval(frame, module, block);
             return module;
         }
@@ -1202,8 +1211,8 @@ public abstract class ModuleNodes {
 
             final List<RubyModule> modules = new ArrayList<>();
 
-            for (RubyModule included : module.parentAncestors()) {
-                if (included.isOnlyAModule()) {
+            for (RubyModule included : module.ancestors()) {
+                if (included.isOnlyAModule() && included != module) {
                     modules.add(included);
                 }
             }
@@ -1735,24 +1744,26 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "remove_class_variable", required = 1)
-    public abstract static class RemoveClassVariableNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "module"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class RemoveClassVariableNode extends CoreMethodNode {
 
         public RemoveClassVariableNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(name)")
-        public RubyModule removeClassVariableString(RubyModule module, RubyBasicObject name) {
-            module.removeClassVariable(this, name.toString());
-            return module;
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
-
+        
         @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(name)")
-        public RubyModule removeClassVariableSymbol(RubyModule module, RubyBasicObject name) {
-            module.removeClassVariable(this, SymbolNodes.getString(name));
-            return module;
+        @Specialization
+        public Object removeClassVariableString(RubyModule module, String name) {
+            RubyContext.checkClassVariableName(getContext(), name, this);
+            return module.removeClassVariable(this, name);
         }
 
     }

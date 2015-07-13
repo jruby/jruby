@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 
 @NodeChild(value="child", type=RubyNode.class)
 public abstract class ToJavaStringNode extends RubyNode {
@@ -33,13 +32,13 @@ public abstract class ToJavaStringNode extends RubyNode {
 
     @TruffleBoundary
     @Specialization(guards = "isRubySymbol(symbol)")
-    protected String toJavaString(RubyBasicObject symbol) {
+    protected String toJavaStringSymbol(RubyBasicObject symbol) {
         return SymbolNodes.getString(symbol);
     }
 
     @TruffleBoundary
-    @Specialization
-    protected String toJavaString(RubyString string) {
+    @Specialization(guards = "isRubyString(string)")
+    protected String toJavaStringString(RubyBasicObject string) {
         return string.toString();
     }
 

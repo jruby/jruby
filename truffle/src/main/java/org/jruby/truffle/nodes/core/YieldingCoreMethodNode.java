@@ -12,11 +12,12 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
@@ -36,15 +37,18 @@ public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNod
         return booleanCastNode.executeBoolean(frame, value);
     }
 
-    public Object yield(VirtualFrame frame, RubyProc block, Object... arguments) {
+    public Object yield(VirtualFrame frame, RubyBasicObject block, Object... arguments) {
+        assert block == null || RubyGuards.isRubyProc(block);
         return dispatchNode.dispatch(frame, block, arguments);
     }
 
-    public boolean yieldIsTruthy(VirtualFrame frame, RubyProc block, Object... arguments) {
+    public boolean yieldIsTruthy(VirtualFrame frame, RubyBasicObject block, Object... arguments) {
+        assert block == null || RubyGuards.isRubyProc(block);
         return booleanCast(frame, yield(frame, block, arguments));
     }
 
-    public Object yieldWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... arguments) {
+    public Object yieldWithModifiedSelf(VirtualFrame frame, RubyBasicObject block, Object self, Object... arguments) {
+        assert block == null || RubyGuards.isRubyProc(block);
         return dispatchNode.dispatchWithModifiedSelf(frame, block, self, arguments);
     }
 

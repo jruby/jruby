@@ -8,7 +8,7 @@ require "jruby"
 
 require 'jruby/compiler'
 
-class LoadCompiledRubyClassFromClasspathTest < Test::Unit::TestCase
+class TestLoadCompiledRubyClassFromClasspath < Test::Unit::TestCase
   include TestHelper
 
   RubyName = "runner"
@@ -46,7 +46,7 @@ class LoadCompiledRubyClassFromClasspathTest < Test::Unit::TestCase
     result = nil
 
     FileUtils.cd("..") do
-      result = jruby("-Xaot.loadClasses=true -r#{RubyName} -e '1'")
+      result = jruby("-r#{RubyName} -e '1'", 'jruby.aot.loadClasses' => 'true' )
     end
     assert_equal 0, $?.exitstatus, "did not get 0 for exit status from running jruby against the class"
     assert_equal "hello from runner", result, "wrong text from runner"

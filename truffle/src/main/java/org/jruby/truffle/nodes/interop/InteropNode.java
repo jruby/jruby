@@ -29,7 +29,6 @@ import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 
@@ -167,7 +166,7 @@ public abstract class InteropNode extends RubyNode {
         @Override
         public Object execute(VirtualFrame frame) {
             Object o = ForeignAccessArguments.getReceiver(frame.getArguments());
-            return o instanceof RubyString && StringNodes.getByteList(((RubyString) o)).length() == 1;
+            return RubyGuards.isRubyString(o) && StringNodes.getByteList((RubyBasicObject) o).length() == 1;
         }
     }
 
@@ -180,7 +179,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return StringNodes.getByteList(((RubyString) ForeignAccessArguments.getReceiver(frame.getArguments()))).get(0);
+            return StringNodes.getByteList((RubyBasicObject) ForeignAccessArguments.getReceiver(frame.getArguments())).get(0);
         }
     }
 
@@ -272,8 +271,8 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            if (ForeignAccessArguments.getReceiver(frame.getArguments()) instanceof RubyString) {
-                final RubyString string = (RubyString) ForeignAccessArguments.getReceiver(frame.getArguments());
+            if (RubyGuards.isRubyString(ForeignAccessArguments.getReceiver(frame.getArguments()))) {
+                final RubyBasicObject string = (RubyBasicObject) ForeignAccessArguments.getReceiver(frame.getArguments());
                 final int index = (int) ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex);
                 if (index >= StringNodes.getByteList(string).length()) {
                     return 0;
@@ -286,7 +285,6 @@ public abstract class InteropNode extends RubyNode {
             }
         }
     }
-
 
     private static class ResolvedInteropIndexedReadNode extends RubyNode {
 

@@ -23,7 +23,6 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyRange;
 
 @CoreClass(name = "Range")
@@ -39,8 +38,8 @@ public abstract class RangeNodes {
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
-        @Specialization
-        public RubyBasicObject collect(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyBasicObject collect(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyBasicObject block) {
             final int begin = range.getBegin();
             final int exclusiveEnd = range.getExclusiveEnd();
             final int length = exclusiveEnd - begin;
@@ -75,8 +74,8 @@ public abstract class RangeNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object each(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object each(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyBasicObject block) {
             final int exclusiveEnd = range.getExclusiveEnd();
 
             int count = 0;
@@ -98,8 +97,8 @@ public abstract class RangeNodes {
             return range;
         }
 
-        @Specialization
-        public Object each(VirtualFrame frame, RubyRange.LongFixnumRange range, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object each(VirtualFrame frame, RubyRange.LongFixnumRange range, RubyBasicObject block) {
             final long exclusiveEnd = range.getExclusiveEnd();
 
             int count = 0;
@@ -122,18 +121,18 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public Object each(VirtualFrame frame, RubyRange.LongFixnumRange range, NotProvided proc) {
+        public Object each(VirtualFrame frame, RubyRange.LongFixnumRange range, NotProvided block) {
             return ruby(frame, "each_internal(&block)", "block", nil());
         }
 
         @Specialization
-        public Object each(VirtualFrame frame, RubyRange.ObjectRange range, NotProvided proc) {
+        public Object each(VirtualFrame frame, RubyRange.ObjectRange range, NotProvided block) {
             return ruby(frame, "each_internal(&block)", "block", nil());
         }
 
-        @Specialization
-        public Object each(VirtualFrame frame, RubyRange.ObjectRange range, RubyProc proc) {
-            return ruby(frame, "each_internal(&block)", "block", proc);
+        @Specialization(guards = "isRubyProc(block)")
+        public Object each(VirtualFrame frame, RubyRange.ObjectRange range, RubyBasicObject block) {
+            return ruby(frame, "each_internal(&block)", "block", block);
         }
 
     }
@@ -227,8 +226,8 @@ public abstract class RangeNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isStepValid(range, step, block)")
-        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, int step, RubyProc block) {
+        @Specialization(guards = {"step > 0", "isRubyProc(block)"})
+        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, int step, RubyBasicObject block) {
             int count = 0;
 
             try {
@@ -248,8 +247,8 @@ public abstract class RangeNodes {
             return range;
         }
 
-        @Specialization(guards = "isStepValid(range, step, block)")
-        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, int step, RubyProc block) {
+        @Specialization(guards = {"step > 0", "isRubyProc(block)"})
+        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, int step, RubyBasicObject block) {
             int count = 0;
 
             try {
@@ -269,13 +268,13 @@ public abstract class RangeNodes {
             return range;
         }
 
-        @Specialization(guards = { "!isStepValidInt(range, step, block)", "wasProvided(step)" })
-        public Object stepFallback(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, RubyProc block) {
+        @Specialization(guards = {"wasProvided(step)", "isRubyProc(block)"})
+        public Object stepFallback(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, RubyBasicObject block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
 
-        @Specialization(guards = { "!isStepValidInt(range, step, block)", "wasProvided(step)" })
-        public Object stepFallback(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, RubyProc block) {
+        @Specialization(guards = {"wasProvided(step)", "isRubyProc(block)"})
+        public Object stepFallback(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, RubyBasicObject block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
 
@@ -284,8 +283,8 @@ public abstract class RangeNodes {
             return ruby(frame, "step_internal");
         }
 
-        @Specialization
-        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, NotProvided step, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, NotProvided step, RubyBasicObject block) {
             return ruby(frame, "step_internal(&block)", "block", block);
         }
 
@@ -299,8 +298,8 @@ public abstract class RangeNodes {
             return ruby(frame, "step_internal");
         }
 
-        @Specialization
-        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, NotProvided step, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, NotProvided step, RubyBasicObject block) {
             return ruby(frame, "step_internal(&block)", "block", block);
         }
 
@@ -309,8 +308,8 @@ public abstract class RangeNodes {
             return ruby(frame, "step_internal(step)", "step", step);
         }
 
-        @Specialization(guards = "wasProvided(step)")
-        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, RubyProc block) {
+        @Specialization(guards = {"wasProvided(step)", "isRubyProc(block)"})
+        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, RubyBasicObject block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
 
@@ -319,8 +318,8 @@ public abstract class RangeNodes {
             return ruby(frame, "step_internal");
         }
 
-        @Specialization
-        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, NotProvided step, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, NotProvided step, RubyBasicObject block) {
             return ruby(frame, "step_internal(&block)", "block", block);
         }
 
@@ -328,23 +327,6 @@ public abstract class RangeNodes {
         public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, NotProvided block) {
             return ruby(frame, "step_internal(step)", "step", step);
         }
-
-        public static boolean isStepValidInt(RubyRange.IntegerFixnumRange fixnumRange, Object step, RubyProc proc) {
-            return step instanceof Integer && (int) step > 0;
-        }
-
-        public static boolean isStepValidInt(RubyRange.LongFixnumRange fixnumRange, Object step, RubyProc proc) {
-            return step instanceof Integer && (int) step > 0;
-        }
-
-        public static boolean isStepValid(RubyRange.IntegerFixnumRange fixnumRange, int step, RubyProc proc) {
-            return step > 0;
-        }
-
-        public static boolean isStepValid(RubyRange.LongFixnumRange fixnumRange, int step, RubyProc proc) {
-            return step > 0;
-        }
-
 
     }
 

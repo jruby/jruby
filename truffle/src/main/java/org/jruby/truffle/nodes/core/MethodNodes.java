@@ -32,7 +32,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 
@@ -270,12 +269,12 @@ public abstract class MethodNodes {
         }
 
         @Specialization
-        public RubyProc toProc(RubyBasicObject methodObject) {
+        public RubyBasicObject toProc(RubyBasicObject methodObject) {
             final InternalMethod method = getMethod(methodObject);
 
-            return new RubyProc(
+            return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcClass(),
-                    RubyProc.Type.LAMBDA,
+                    ProcNodes.Type.LAMBDA,
                     method.getSharedMethodInfo(),
                     method.getCallTarget(),
                     method.getCallTarget(),

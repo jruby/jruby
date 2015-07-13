@@ -39,9 +39,6 @@ public abstract class WriteHexStringNode extends PackNode {
 
     @Specialization
     public Object write(VirtualFrame frame, ByteList bytes) {
-        final byte[] b = bytes.unsafeBytes();
-        int begin = bytes.begin();
-
         int currentByte = 0;
 
         final int lengthToUse;
@@ -58,7 +55,7 @@ public abstract class WriteHexStringNode extends PackNode {
             byte currentChar;
 
             if (n < bytes.length()) {
-                currentChar = b[begin + n];
+                currentChar = (byte) bytes.get(n);
             } else {
                 currentChar = 0;
             }

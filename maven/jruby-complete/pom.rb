@@ -76,35 +76,37 @@ project 'JRuby Complete' do
                    :failOnError => false )
   end
 
-  profile 'sonatype-oss-release' do
+  ['sonatype-oss-release', 'snapshots'].each do |name|
+    profile name do
 
-    # use the javadocs and sources from jruby-core !!!
-    phase :package do
-      plugin :dependency do
-        items = [ 'sources', 'javadoc' ].collect do |classifier|
-          { 'groupId' =>  '${project.groupId}',
-            'artifactId' =>  'jruby-core',
-            'version' =>  '${project.version}',
-            'classifier' =>  classifier,
-            'overWrite' =>  'false',
-            'outputDirectory' =>  '${project.build.directory}' }
+      # use the javadocs and sources from jruby-core !!!
+      phase :package do
+        plugin :dependency do
+          items = [ 'sources', 'javadoc' ].collect do |classifier|
+            { 'groupId' =>  '${project.groupId}',
+              'artifactId' =>  'jruby-core',
+              'version' =>  '${project.version}',
+              'classifier' =>  classifier,
+              'overWrite' =>  'false',
+              'outputDirectory' =>  '${project.build.directory}' }
+          end
+          execute_goals( 'copy',
+                         :id => 'copy javadocs and sources from jruby-core',
+                         'artifactItems' => items )
         end
-        execute_goals( 'copy',
-                       :id => 'copy javadocs and sources from jruby-core',
-                       'artifactItems' => items )
-      end
 
-      plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
-        execute_goals( 'attach-artifact',
-                       :id => 'attach-artifacts',
-                       'artifacts' => [ { 'file' =>  '${project.build.directory}/jruby-core-${project.version}-sources.jar',
-                                          'classifier' =>  'sources' },
-                                        { 'file' =>  '${project.build.directory}/jruby-core-${project.version}-javadoc.jar',
-                                          'classifier' =>  'javadoc' } ] )
+        plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
+          execute_goals( 'attach-artifact',
+                         :id => 'attach-artifacts',
+                         'artifacts' => [ { 'file' =>  '${project.build.directory}/jruby-core-${project.version}-sources.jar',
+                                            'classifier' =>  'sources' },
+                                          { 'file' =>  '${project.build.directory}/jruby-core-${project.version}-javadoc.jar',
+                                            'classifier' =>  'javadoc' } ] )
+        end
       end
     end
   end
-
+  
   profile :id => :jdk8 do
     activation do
       jdk '1.8'

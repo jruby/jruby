@@ -9,11 +9,13 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.runtime.core.RubyProc;
 
 import java.util.Deque;
 import java.util.NoSuchElementException;
@@ -23,14 +25,16 @@ public class AtExitManager {
 
     private final RubyContext context;
 
-    private final Deque<RubyProc> runOnExit = new ConcurrentLinkedDeque<>();
-    private final Deque<RubyProc> runOnExitAlways = new ConcurrentLinkedDeque<>();
+    private final Deque<RubyBasicObject> runOnExit = new ConcurrentLinkedDeque<>();
+    private final Deque<RubyBasicObject> runOnExitAlways = new ConcurrentLinkedDeque<>();
 
     public AtExitManager(RubyContext context) {
         this.context = context;
     }
 
-    public void add(RubyProc block, boolean always) {
+    public void add(RubyBasicObject block, boolean always) {
+        assert RubyGuards.isRubyProc(block);
+
         if (always) {
             runOnExitAlways.push(block);
         } else {
@@ -48,9 +52,9 @@ public class AtExitManager {
         }
     }
 
-    private void runExitHooks(Deque<RubyProc> stack) {
+    private void runExitHooks(Deque<RubyBasicObject> stack) {
         while (true) {
-            RubyProc block;
+            RubyBasicObject block;
             try {
                 block = stack.pop();
             } catch (NoSuchElementException e) {
@@ -58,7 +62,7 @@ public class AtExitManager {
             }
 
             try {
-                block.rootCall();
+                ProcNodes.rootCall(block);
             } catch (RaiseException e) {
                 final RubyException rubyException = e.getRubyException();
 

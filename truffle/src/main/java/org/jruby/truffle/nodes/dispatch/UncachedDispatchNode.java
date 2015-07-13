@@ -24,8 +24,8 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class UncachedDispatchNode extends DispatchNode {
@@ -78,7 +78,7 @@ public class UncachedDispatchNode extends DispatchNode {
                                 method,
                                 method.getDeclarationFrame(),
                                 receiverObject,
-                                (RubyProc) blockObject,
+                                (RubyBasicObject) blockObject,
                                 (Object[]) argumentsObjects));
             } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
                 return true;
@@ -121,7 +121,7 @@ public class UncachedDispatchNode extends DispatchNode {
                             missingMethod,
                             missingMethod.getDeclarationFrame(),
                             receiverObject,
-                            (RubyProc) blockObject,
+                            (RubyBasicObject) blockObject,
                             modifiedArgumentsObjects));
         } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
             return false;

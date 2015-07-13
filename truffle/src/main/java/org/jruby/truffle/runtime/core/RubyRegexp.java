@@ -21,6 +21,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.joni.*;
 import org.joni.exception.SyntaxException;
 import org.joni.exception.ValueException;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -98,12 +99,16 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     @TruffleBoundary
-    public Object matchCommon(RubyString source, boolean operator, boolean setNamedCaptures) {
+    public Object matchCommon(RubyBasicObject source, boolean operator, boolean setNamedCaptures) {
+        assert RubyGuards.isRubyString(source);
+
         return matchCommon(source, operator, setNamedCaptures, 0);
     }
 
     @TruffleBoundary
-    public Object matchCommon(RubyString source, boolean operator, boolean setNamedCaptures, int startPos) {
+    public Object matchCommon(RubyBasicObject source, boolean operator, boolean setNamedCaptures, int startPos) {
+        assert RubyGuards.isRubyString(source);
+
         final byte[] stringBytes = StringNodes.getByteList(source).bytes();
 
         final ByteList bl = this.getSource();
@@ -118,7 +123,9 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     @TruffleBoundary
-    public Object matchCommon(RubyString source, boolean operator, boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
+    public Object matchCommon(RubyBasicObject source, boolean operator, boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
+        assert RubyGuards.isRubyString(source);
+
         final ByteList bytes = StringNodes.getByteList(source);
         final RubyContext context = getContext();
 
@@ -219,7 +226,9 @@ public class RubyRegexp extends RubyBasicObject {
         }
     }
 
-    private RubyBasicObject makeString(RubyString source, int start, int length) {
+    private RubyBasicObject makeString(RubyBasicObject source, int start, int length) {
+        assert RubyGuards.isRubyString(source);
+
         final ByteList bytes = new ByteList(StringNodes.getByteList(source), start, length);
         final RubyBasicObject ret = StringNodes.createString(source.getLogicalClass(), bytes);
 
@@ -250,7 +259,9 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     @TruffleBoundary
-    public RubyBasicObject gsub(RubyString string, String replacement) {
+    public RubyBasicObject gsub(RubyBasicObject string, String replacement) {
+        assert RubyGuards.isRubyString(string);
+
         final RubyContext context = getContext();
 
         final byte[] stringBytes = StringNodes.getByteList(string).bytes();
@@ -313,7 +324,9 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     @TruffleBoundary
-    public RubyBasicObject[] split(final RubyString string, final boolean useLimit, final int limit) {
+    public RubyBasicObject[] split(final RubyBasicObject string, final boolean useLimit, final int limit) {
+        assert RubyGuards.isRubyString(string);
+
         final RubyContext context = getContext();
 
         final ByteList bytes = StringNodes.getByteList(string);
@@ -378,7 +391,9 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     @TruffleBoundary
-    public Object scan(RubyString string) {
+    public Object scan(RubyBasicObject string) {
+        assert RubyGuards.isRubyString(string);
+
         final RubyContext context = getContext();
 
         final byte[] stringBytes = StringNodes.getByteList(string).bytes();
@@ -392,7 +407,7 @@ public class RubyRegexp extends RubyBasicObject {
         Object lastGoodMatchData = getContext().getCoreLibrary().getNilObject();
 
         if (regex.numberOfCaptures() == 0) {
-            final ArrayList<RubyString> strings = new ArrayList<>();
+            final ArrayList<RubyBasicObject> strings = new ArrayList<>();
 
             while (true) {
                 Object matchData = matchCommon(string, false, true, matcher, p + end, range);
@@ -406,7 +421,7 @@ public class RubyRegexp extends RubyBasicObject {
 
                 assert values.length == 1;
 
-                strings.add((RubyString) values[0]);
+                strings.add((RubyBasicObject) values[0]);
 
                 lastGoodMatchData = matchData;
                 end = StringSupport.positionEndForScan(StringNodes.getByteList(string), matcher, encoding, p, range);

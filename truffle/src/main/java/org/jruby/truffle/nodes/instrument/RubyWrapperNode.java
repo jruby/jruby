@@ -18,9 +18,6 @@ import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 
 @NodeInfo(cost = NodeCost.NONE)
 public final class RubyWrapperNode extends RubyNode implements WrapperNode {
@@ -148,25 +145,6 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
 
         try {
             result = child.executeDouble(frame);
-            probeNode.returnValue(child, frame, result);
-        } catch (KillException e) {
-            throw e;
-        } catch (Exception e) {
-            probeNode.returnExceptional(child, frame, e);
-            throw e;
-        }
-
-        return result;
-    }
-
-    @Override
-    public RubyString executeRubyString(VirtualFrame frame) throws UnexpectedResultException {
-        probeNode.enter(child, frame);
-
-        RubyString result;
-
-        try {
-            result = child.executeRubyString(frame);
             probeNode.returnValue(child, frame, result);
         } catch (KillException e) {
             throw e;

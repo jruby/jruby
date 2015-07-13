@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
@@ -26,9 +27,8 @@ import java.util.ArrayList;
 public abstract class RubyCallStack {
 
     /** Ignores Kernel#send and aliases */
+    @CompilerDirectives.TruffleBoundary
     public static FrameInstance getCallerFrame(final RubyContext context) {
-        CompilerAsserts.neverPartOfCompilation();
-
         return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
             @Override
             public FrameInstance visitFrame(FrameInstance frameInstance) {

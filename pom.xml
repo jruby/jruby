@@ -828,27 +828,36 @@ DO NOT MODIFIY - GENERATED CODE
     </profile>
     <profile>
       <id>snapshots</id>
-      <activation>
-        <file>
-          <exists>/builds/snapshots</exists>
-        </file>
-      </activation>
       <build>
         <defaultGoal>deploy</defaultGoal>
+        <plugins>
+          <plugin>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.1.2</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
       </build>
+      <modules>
+        <module>maven</module>
+      </modules>
       <distributionManagement>
         <repository>
           <id>local releases</id>
-          <url>file:/builds/snapshots/maven</url>
+          <url>file:${project.build.directory}/maven</url>
         </repository>
         <snapshotRepository>
           <id>local snapshots</id>
-          <url>file:/builds/snapshots/maven</url>
+          <url>file:${project.build.directory}/maven</url>
         </snapshotRepository>
       </distributionManagement>
-      <properties>
-        <snapshots.dir>/builds/snapshots</snapshots.dir>
-      </properties>
     </profile>
     <profile>
       <id>single invoker test</id>

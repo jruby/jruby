@@ -19,6 +19,7 @@ import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
+import org.jruby.truffle.runtime.core.RubyThread.InterruptMode;
 
 import java.util.Collections;
 import java.util.Set;
@@ -63,18 +64,29 @@ public class SafepointManager {
     }
 
     public void poll(Node currentNode) {
+        poll(currentNode, false);
+    }
+
+    public void pollFromBlockingCall(Node currentNode) {
         poll(currentNode, true);
     }
 
-    private void poll(Node currentNode, boolean holdsGlobalLock) {
+    private void poll(Node currentNode, boolean fromBlockingCall) {
         try {
             assumption.check();
         } catch (InvalidAssumptionException e) {
-            SafepointAction deferredAction = assumptionInvalidated(currentNode, holdsGlobalLock, false);
+            final RubyThread thread = context.getThreadManager().getCurrentThread();
+            final boolean interruptible = (thread.getInterruptMode() == InterruptMode.IMMEDIATE) ||
+                    (fromBlockingCall && thread.getInterruptMode() == InterruptMode.ON_BLOCKING);
+            if (!interruptible) {
+                return; // interrupt me later
+            }
+
+            SafepointAction deferredAction = assumptionInvalidated(currentNode, true, false);
 
             // We're now running again normally, with the global lock, and can run deferred actions
-            if (deferredAction != null && holdsGlobalLock) {
-                deferredAction.run(context.getThreadManager().getCurrentThread(), currentNode);
+            if (deferredAction != null) {
+                deferredAction.run(thread, currentNode);
             }
         }
     }

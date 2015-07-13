@@ -15,13 +15,13 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 
 /**
  * Take a Symbol or some object accepting #to_str
@@ -44,8 +44,8 @@ public abstract class NameToSymbolOrStringNode extends RubyNode {
         return symbol;
     }
 
-    @Specialization
-    public RubyBasicObject coerceRubyString(RubyString string) {
+    @Specialization(guards = "isRubyString(string)")
+    public RubyBasicObject coerceRubyString(RubyBasicObject string) {
         return string;
     }
 
@@ -64,8 +64,8 @@ public abstract class NameToSymbolOrStringNode extends RubyNode {
             }
         }
 
-        if (coerced instanceof RubyString) {
-            return (RubyString) coerced;
+        if (RubyGuards.isRubyString(coerced)) {
+            return (RubyBasicObject) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));

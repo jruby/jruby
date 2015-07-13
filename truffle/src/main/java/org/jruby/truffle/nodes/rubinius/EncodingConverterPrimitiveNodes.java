@@ -18,6 +18,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.EncodingConverterNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -26,8 +28,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyEncodingConverter;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
 /**
@@ -44,7 +44,7 @@ public abstract class EncodingConverterPrimitiveNodes {
 
         @Specialization
         public Object encodingConverterAllocate(RubyClass encodingConverterClass, NotProvided unused1, NotProvided unused2) {
-            return new RubyEncodingConverter(encodingConverterClass, null);
+            return EncodingConverterNodes.createEncodingConverter(encodingConverterClass, null);
         }
 
     }
@@ -56,15 +56,15 @@ public abstract class EncodingConverterPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyHash(options)")
-        public Object encodingConverterPrimitiveConvert(RubyEncodingConverter encodingConverter, RubyString source,
-                                                        RubyString target, int offset, int size, RubyBasicObject options) {
+        @Specialization(guards = {"isRubyString(source)", "isRubyString(target)", "isRubyHash(options)"})
+        public Object encodingConverterPrimitiveConvert(RubyBasicObject encodingConverter, RubyBasicObject source,
+                                                        RubyBasicObject target, int offset, int size, RubyBasicObject options) {
             throw new UnsupportedOperationException("not implemented");
         }
 
-        @Specialization
-        public Object encodingConverterPrimitiveConvert(RubyEncodingConverter encodingConverter, RubyString source,
-                                                        RubyString target, int offset, int size, int options) {
+        @Specialization(guards = {"isRubyString(source)", "isRubyString(target)"})
+        public Object encodingConverterPrimitiveConvert(RubyBasicObject encodingConverter, RubyBasicObject source,
+                                                        RubyBasicObject target, int offset, int size, int options) {
 
             // Taken from org.jruby.RubyConverter#primitive_convert.
 
@@ -80,7 +80,7 @@ public abstract class EncodingConverterPrimitiveNodes {
             final Ptr inPtr = new Ptr();
             final Ptr outPtr = new Ptr();
 
-            final EConv ec = encodingConverter.getEConv();
+            final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);
 
             final boolean changeOffset = (offset == 0);
             final boolean growOutputBuffer = (size == -1);
@@ -154,28 +154,30 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject encodingConverterPutback(RubyEncodingConverter encodingConverter, int maxBytes) {
+        public RubyBasicObject encodingConverterPutback(RubyBasicObject encodingConverter, int maxBytes) {
             // Taken from org.jruby.RubyConverter#putback.
 
-            final EConv ec = encodingConverter.getEConv();
+            final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);
             final int putbackable = ec.putbackable();
 
             return putback(encodingConverter, putbackable < maxBytes ? putbackable : maxBytes);
         }
 
         @Specialization
-        public RubyBasicObject encodingConverterPutback(RubyEncodingConverter encodingConverter, NotProvided maxBytes) {
+        public RubyBasicObject encodingConverterPutback(RubyBasicObject encodingConverter, NotProvided maxBytes) {
             // Taken from org.jruby.RubyConverter#putback.
 
-            final EConv ec = encodingConverter.getEConv();
+            final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);
 
             return putback(encodingConverter, ec.putbackable());
         }
 
-        private RubyBasicObject putback(RubyEncodingConverter encodingConverter, int n) {
+        private RubyBasicObject putback(RubyBasicObject encodingConverter, int n) {
+            assert RubyGuards.isRubyEncodingConverter(encodingConverter);
+
             // Taken from org.jruby.RubyConverter#putback.
 
-            final EConv ec = encodingConverter.getEConv();
+            final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);
 
             final ByteList bytes = new ByteList(n);
             ec.putback(bytes.getUnsafeBytes(), bytes.getBegin(), n);
@@ -202,10 +204,10 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
 
         @Specialization
-        public Object encodingConverterLastError(VirtualFrame frame, RubyEncodingConverter encodingConverter) {
+        public Object encodingConverterLastError(VirtualFrame frame, RubyBasicObject encodingConverter) {
             CompilerDirectives.transferToInterpreter();
 
-            final EConv ec = encodingConverter.getEConv();
+            final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);
             final EConv.LastError lastError = ec.lastError;
 
             if (lastError.getResult() != EConvResult.InvalidByteSequence &&
@@ -252,10 +254,10 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
 
         @Specialization
-        public Object encodingConverterLastError(RubyEncodingConverter encodingConverter) {
+        public Object encodingConverterLastError(RubyBasicObject encodingConverter) {
             CompilerDirectives.transferToInterpreter();
 
-            final EConv ec = encodingConverter.getEConv();
+            final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);
 
             final Object[] ret = { getSymbol(ec.lastError.getResult().symbolicName()), nil(), nil(), nil(), nil() };
 

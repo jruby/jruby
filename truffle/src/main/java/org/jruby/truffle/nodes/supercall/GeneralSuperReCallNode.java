@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
@@ -82,13 +81,13 @@ public class GeneralSuperReCallNode extends RubyNode {
         }
 
         // Execute or inherit the block
-        final RubyProc blockObject;
+        final RubyBasicObject blockObject;
         if (block != null) {
             final Object blockTempObject = block.execute(frame);
             if (blockTempObject == nil()) {
                 blockObject = null;
             } else {
-                blockObject = (RubyProc) blockTempObject;
+                blockObject = (RubyBasicObject) blockTempObject;
             }
         } else {
             blockObject = RubyArguments.getBlock(originalArguments);

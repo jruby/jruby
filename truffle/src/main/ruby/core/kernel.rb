@@ -8,6 +8,12 @@
 
 module Kernel
 
+  def __dir__
+    path = caller_locations(1, 1).first.absolute_path
+    File.dirname(path)
+  end
+  module_function :__dir__
+
   def printf(*args)
     print sprintf(*args)
   end

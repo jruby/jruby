@@ -24,7 +24,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyRegexp;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpSupport;
 
@@ -58,20 +57,20 @@ public abstract class RegexpPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRegexpLiteral(regexp)")
-        public RubyRegexp initializeRegexpLiteral(RubyRegexp regexp, RubyString pattern, int options) {
+        @Specialization(guards = {"isRegexpLiteral(regexp)", "isRubyString(pattern)"})
+        public RubyRegexp initializeRegexpLiteral(RubyRegexp regexp, RubyBasicObject pattern, int options) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().securityError("can't modify literal regexp", this));
         }
 
-        @Specialization(guards = { "!isRegexpLiteral(regexp)", "isInitialized(regexp)" })
-        public RubyRegexp initializeAlreadyInitialized(RubyRegexp regexp, RubyString pattern, int options) {
+        @Specialization(guards = {"!isRegexpLiteral(regexp)", "isInitialized(regexp)", "isRubyString(pattern)"})
+        public RubyRegexp initializeAlreadyInitialized(RubyRegexp regexp, RubyBasicObject pattern, int options) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("already initialized regexp", this));
         }
 
-        @Specialization(guards = { "!isRegexpLiteral(regexp)", "!isInitialized(regexp)" })
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString pattern, int options) {
+        @Specialization(guards = {"!isRegexpLiteral(regexp)", "!isInitialized(regexp)", "isRubyString(pattern)"})
+        public RubyRegexp initialize(RubyRegexp regexp, RubyBasicObject pattern, int options) {
             regexp.initialize(this, StringNodes.getByteList(pattern), options);
             return regexp;
         }
@@ -122,22 +121,22 @@ public abstract class RegexpPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "!isInitialized(regexp)")
-        public Object searchRegionNotInitialized(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
+        @Specialization(guards = {"!isInitialized(regexp)", "isRubyString(string)"})
+        public Object searchRegionNotInitialized(RubyRegexp regexp, RubyBasicObject string, int start, int end, boolean forward) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
         }
 
-        @Specialization(guards = "!isValidEncoding(string)")
-        public Object searchRegionInvalidEncoding(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
+        @Specialization(guards = {"isRubyString(string)", "!isValidEncoding(string)"})
+        public Object searchRegionInvalidEncoding(RubyRegexp regexp, RubyBasicObject string, int start, int end, boolean forward) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(
                     String.format("invalid byte sequence in %s", StringNodes.getByteList(string).getEncoding()), this));
         }
 
         @TruffleBoundary
-        @Specialization(guards = { "isInitialized(regexp)", "isValidEncoding(string)" })
-        public Object searchRegion(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
+        @Specialization(guards = {"isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)"})
+        public Object searchRegion(RubyRegexp regexp, RubyBasicObject string, int start, int end, boolean forward) {
             final ByteList stringBl = StringNodes.getByteList(string);
             final ByteList bl = regexp.getSource();
             final Encoding enc = regexp.checkEncoding(StringNodes.getCodeRangeable(string), true);

@@ -15,7 +15,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 
 /**
  * Creates a symbol from a string.
@@ -27,8 +26,8 @@ public abstract class StringToSymbolNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    @Specialization
-    public RubyBasicObject doString(RubyString string) {
+    @Specialization(guards = "isRubyString(string)")
+    public RubyBasicObject doString(RubyBasicObject string) {
         return getSymbol(string.toString());
     }
 

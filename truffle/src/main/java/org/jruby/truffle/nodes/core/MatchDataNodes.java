@@ -29,7 +29,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.truffle.runtime.core.RubyRange;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
 import java.util.Arrays;
@@ -71,7 +70,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization(guards = "isRubySymbol(index)")
-        public Object getIndex(RubyMatchData matchData, RubyBasicObject index, NotProvided length) {
+        public Object getIndexSymbol(RubyMatchData matchData, RubyBasicObject index, NotProvided length) {
             CompilerDirectives.transferToInterpreter();
 
             try {
@@ -86,8 +85,8 @@ public abstract class MatchDataNodes {
             }
         }
 
-        @Specialization
-        public Object getIndex(RubyMatchData matchData, RubyString index, NotProvided length) {
+        @Specialization(guards = "isRubyString(index)")
+        public Object getIndexString(RubyMatchData matchData, RubyBasicObject index, NotProvided length) {
             CompilerDirectives.transferToInterpreter();
 
             try {

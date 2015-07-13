@@ -9,35 +9,16 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import com.oracle.truffle.api.nodes.Node;
 import org.jcodings.transcode.EConv;
-import org.jruby.truffle.nodes.objects.Allocator;
-import org.jruby.truffle.runtime.RubyContext;
 
+@Deprecated
 public class RubyEncodingConverter extends RubyBasicObject {
 
-    public EConv getEConv() {
-        return econv;
-    }
-
-    private EConv econv;
+    public EConv econv;
 
     public RubyEncodingConverter(RubyClass rubyClass, EConv econv) {
         super(rubyClass);
         this.econv = econv;
-    }
-
-    public void setEConv(EConv econv) {
-        this.econv = econv;
-    }
-
-    public static class EncodingConverterAllocator implements Allocator {
-
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyEncodingConverter(rubyClass, null);
-        }
-
     }
 
 }

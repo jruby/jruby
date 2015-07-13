@@ -18,6 +18,8 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BindingNodes;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -162,6 +164,10 @@ public class RubyBasicObject implements TruffleObject {
                     ((RubyBasicObject) keyValue.getValue()).visitObjectGraph(visitor);
                 }
             }
+        } else if (RubyGuards.isRubyBinding(this)) {
+            getContext().getObjectSpaceManager().visitFrame(BindingNodes.getFrame(this), visitor);
+        } else if (RubyGuards.isRubyProc(this)) {
+            getContext().getObjectSpaceManager().visitFrame(ProcNodes.getDeclarationFrame(this), visitor);
         }
     }
 
@@ -204,8 +210,8 @@ public class RubyBasicObject implements TruffleObject {
     public String toString() {
         CompilerAsserts.neverPartOfCompilation("RubyBasicObject#toString should only be used for debugging");
 
-        if (this instanceof RubyString) {
-            return Helpers.decodeByteList(getContext().getRuntime(), StringNodes.getByteList(((RubyString) this)));
+        if (RubyGuards.isRubyString(this)) {
+            return Helpers.decodeByteList(getContext().getRuntime(), StringNodes.getByteList((this)));
         } else if (RubyGuards.isRubySymbol(this)) {
             return SymbolNodes.getString(this);
         } else {

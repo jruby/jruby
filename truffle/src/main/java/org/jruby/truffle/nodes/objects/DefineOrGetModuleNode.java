@@ -21,9 +21,9 @@ import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyString;
 
 /**
  * Define a new module, or get the existing one of the same name.
@@ -100,7 +100,7 @@ public class DefineOrGetModuleNode extends RubyNode {
         if ((constant != null) && constant.isAutoload()) {
             if (requireNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+                requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), null));
             }
 
             // We know that we're redefining this constant as we're defining a class/module with that name.  We remove
@@ -108,7 +108,7 @@ public class DefineOrGetModuleNode extends RubyNode {
             // call or the recursive execute call.
             lexicalParent.removeConstant(this, name);
 
-            requireNode.require((RubyString) constant.getValue());
+            requireNode.require((RubyBasicObject) constant.getValue());
 
             return lookupForExistingModule(lexicalParent);
         }

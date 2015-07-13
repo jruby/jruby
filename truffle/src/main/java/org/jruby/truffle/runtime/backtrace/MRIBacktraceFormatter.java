@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.backtrace;
 
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -18,7 +19,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
 import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.runtime.core.RubyString;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,7 +81,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
             String message;
             try {
                 Object messageObject = DebugOperations.send(context, exception, "message", null);
-                if (messageObject instanceof RubyString) {
+                if (RubyGuards.isRubyString(messageObject)) {
                     message = messageObject.toString();
                 } else {
                     message = exception.getMessage().toString();

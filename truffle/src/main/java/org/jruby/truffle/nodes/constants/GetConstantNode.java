@@ -26,7 +26,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.IdUtil;
 
 @NodeChildren({
@@ -53,10 +52,18 @@ public abstract class GetConstantNode extends RubyNode {
     protected Object autoloadConstant(VirtualFrame frame, RubyModule module, String name, RubyConstant constant,
             @Cached("createRequireNode()") RequireNode requireNode) {
 
-        requireNode.require((RubyString) constant.getValue());
+        final RubyBasicObject path = (RubyBasicObject) constant.getValue();
 
-        // retry
-        return this.executeGetConstant(frame, module, name);
+        // The autoload constant must only be removed if everything succeeds.
+        // We remove it first to allow lookup to ignore it and add it back if there was a failure.
+        constant.getDeclaringModule().removeConstant(this, name);
+        try {
+            requireNode.require(path);
+            return executeGetConstant(frame, module, name);
+        } catch (RaiseException e) {
+            constant.getDeclaringModule().setAutoloadConstant(this, name, path);
+            throw e;
+        }
     }
 
     @Specialization(guards = "constant == null")
@@ -72,7 +79,7 @@ public abstract class GetConstantNode extends RubyNode {
     }
 
     protected RequireNode createRequireNode() {
-        return KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {});
+        return KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), null);
     }
 
     protected boolean isValidConstantName(String name) {

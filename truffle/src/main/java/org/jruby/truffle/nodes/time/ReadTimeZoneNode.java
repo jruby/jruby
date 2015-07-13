@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.time;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.constants.ReadConstantNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -19,7 +20,6 @@ import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 
 public class ReadTimeZoneNode extends RubyNode {
     
@@ -38,22 +38,17 @@ public class ReadTimeZoneNode extends RubyNode {
     }
 
     @Override
-    public RubyString executeRubyString(VirtualFrame frame) {
+    public Object execute(VirtualFrame frame) {
         final Object tz = hashNode.call(frame, envNode.execute(frame), "[]", null, TZ);
 
         // TODO CS 4-May-15 not sure how TZ ends up being nil
 
         if (tz == nil()) {
-            return (RubyString) createString("UTC");
-        } else if (tz instanceof RubyString) {
-            return (RubyString) tz;
+            return createString("UTC");
+        } else if (RubyGuards.isRubyString(tz)) {
+            return tz;
         } else {
             throw new UnsupportedOperationException();
         }
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        return executeRubyString(frame);
     }
 }

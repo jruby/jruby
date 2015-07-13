@@ -19,10 +19,12 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.LineLocation;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.tools.LineToProbesMap;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BindingNodes;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBinding;
-import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,13 +46,15 @@ public class AttachmentsManager {
         lineToProbesMap.install();
     }
 
-    public synchronized void attach(String file, int line, final RubyProc block) {
+    public synchronized void attach(String file, int line, final RubyBasicObject block) {
+        assert RubyGuards.isRubyProc(block);
+
         final Instrument instrument = Instrument.create(new StandardInstrumentListener() {
 
             @Override
             public void enter(Probe probe, Node node, VirtualFrame frame) {
-                final RubyBinding binding = new RubyBinding(context.getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
-                block.rootCall(binding);
+                final RubyBasicObject binding = BindingNodes.createRubyBinding(context.getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
+                ProcNodes.rootCall(block, binding);
             }
 
             @Override

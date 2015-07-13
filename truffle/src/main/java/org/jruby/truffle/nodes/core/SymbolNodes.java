@@ -27,7 +27,6 @@ import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyEncoding;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.SymbolCodeRangeableWrapper;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -212,19 +211,19 @@ public abstract class SymbolNodes {
         }
 
         @Specialization(guards = "cachedSymbol == symbol")
-        public RubyProc toProcCached(RubyBasicObject symbol,
+        public RubyBasicObject toProcCached(RubyBasicObject symbol,
                                      @Cached("symbol") RubyBasicObject cachedSymbol,
-                                     @Cached("createProc(symbol)") RubyProc cachedProc) {
+                                     @Cached("createProc(symbol)") RubyBasicObject cachedProc) {
             return cachedProc;
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyProc toProcUncached(RubyBasicObject symbol) {
+        public RubyBasicObject toProcUncached(RubyBasicObject symbol) {
             return createProc(symbol);
         }
 
-        protected RubyProc createProc(RubyBasicObject symbol) {
+        protected RubyBasicObject createProc(RubyBasicObject symbol) {
             final SourceSection sourceSection = RubyCallStack.getCallerFrame(getContext())
                     .getCallNode().getEncapsulatingSourceSection();
 
@@ -242,9 +241,9 @@ public abstract class SymbolNodes {
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
-            return new RubyProc(
+            return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcClass(),
-                    RubyProc.Type.PROC,
+                    ProcNodes.Type.PROC,
                     sharedMethodInfo,
                     callTarget, callTarget, callTarget,
                     null, null,

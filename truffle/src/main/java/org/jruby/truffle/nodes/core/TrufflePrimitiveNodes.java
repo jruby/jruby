@@ -30,11 +30,9 @@ import org.jruby.truffle.runtime.cext.CExtSubsystem;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBinding;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
+import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 
 import java.util.HashMap;
@@ -52,7 +50,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization
-        public RubyBinding bindingOfCaller() {
+        public RubyBasicObject bindingOfCaller() {
             /*
              * When you use this method you're asking for the binding of the caller at the call site. When we get into
              * this method, that is then the binding of the caller of the caller.
@@ -74,7 +72,7 @@ public abstract class TrufflePrimitiveNodes {
 
             });
 
-            return new RubyBinding(
+            return BindingNodes.createRubyBinding(
                     getContext().getCoreLibrary().getBindingClass(),
                     RubyArguments.getSelf(frame.getArguments()),
                     frame);
@@ -192,12 +190,14 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject dumpString(RubyString string) {
+        @Specialization(guards = "isRubyString(string)")
+        public RubyBasicObject dumpString(RubyBasicObject string) {
             final StringBuilder builder = new StringBuilder();
 
-            for (byte b : StringNodes.getByteList(string).unsafeBytes()) {
-                builder.append(String.format("\\x%02x", b));
+            final ByteList byteList = StringNodes.getByteList(string);
+
+            for (int i = 0; i < byteList.length(); i++) {
+                builder.append(String.format("\\x%02x", byteList.get(i)));
             }
 
             return createString(builder.toString());
@@ -333,8 +333,8 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject attach(RubyString file, int line, RubyProc block) {
+        @Specialization(guards = {"isRubyString(file)", "isRubyProc(block)"})
+        public RubyBasicObject attach(RubyBasicObject file, int line, RubyBasicObject block) {
             getContext().getAttachmentsManager().attach(file.toString(), line, block);
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -349,8 +349,8 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject detach(RubyString file, int line) {
+        @Specialization(guards = "isRubyString(file)")
+        public RubyBasicObject detach(RubyBasicObject file, int line) {
             getContext().getAttachmentsManager().detach(file.toString(), line);
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -386,7 +386,7 @@ public abstract class TrufflePrimitiveNodes {
             int n = 0;
 
             for (Object object : ArrayNodes.slowToArray(array)) {
-                if (object instanceof RubyString || RubyGuards.isRubySymbol(object)) {
+                if (RubyGuards.isRubyString(object) || RubyGuards.isRubySymbol(object)) {
                     strings[n] = object.toString();
                     n++;
                 } else {
@@ -425,8 +425,8 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject debugPrint(RubyString string) {
+        @Specialization(guards = "isRubyString(string)")
+        public RubyBasicObject debugPrint(RubyBasicObject string) {
             System.err.println(string.toString());
             return nil();
         }
@@ -470,8 +470,8 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object atExit(boolean always, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object atExit(boolean always, RubyBasicObject block) {
             getContext().getAtExitManager().add(block, always);
             return nil();
         }

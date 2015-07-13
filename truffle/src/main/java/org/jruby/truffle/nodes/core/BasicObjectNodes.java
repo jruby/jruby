@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -27,8 +28,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
@@ -51,48 +50,6 @@ public abstract class BasicObjectNodes {
 
     }
 
-
-    @CoreMethod(names = "==", required = 1)
-    public abstract static class EqualNode extends BinaryCoreMethodNode {
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
-        @Specialization public boolean equal(int a, int b) { return a == b; }
-        @Specialization public boolean equal(long a, long b) { return a == b; }
-        @Specialization public boolean equal(double a, double b) { return a == b; }
-
-        @Specialization public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            return a == b;
-        }
-
-        @Specialization(guards = {"isNotRubyBasicObject(a)", "isNotRubyBasicObject(b)", "notSameClass(a, b)"})
-        public boolean equal(Object a, Object b) {
-            return false;
-        }
-
-        @Specialization(guards = "isNotRubyBasicObject(a)")
-        public boolean equal(Object a, RubyBasicObject b) {
-            return false;
-        }
-
-        @Specialization(guards = "isNotRubyBasicObject(b)")
-        public boolean equal(RubyBasicObject a, Object b) {
-            return false;
-        }
-
-        protected boolean isNotRubyBasicObject(Object value) {
-            return !(value instanceof RubyBasicObject);
-        }
-
-        protected boolean notSameClass(Object a, Object b) {
-            return a.getClass() != b.getClass();
-        }
-
-    }
-
     @CoreMethod(names = "!=", required = 1)
     public abstract static class NotEqualNode extends CoreMethodArrayArgumentsNode {
 
@@ -110,7 +67,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "equal?", required = 1)
+    @CoreMethod(names = { "equal?", "==" }, required = 1)
     public abstract static class ReferenceEqualNode extends BinaryCoreMethodNode {
 
         public ReferenceEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -177,15 +134,14 @@ public abstract class BasicObjectNodes {
             yield = new YieldDispatchHeadNode(context);
         }
 
-        @Specialization
-        public Object instanceEval(VirtualFrame frame, Object receiver, RubyString string, NotProvided block) {
-            CompilerDirectives.transferToInterpreter();
-
+        @CompilerDirectives.TruffleBoundary
+        @Specialization(guards = "isRubyString(string)")
+        public Object instanceEval(Object receiver, RubyBasicObject string, NotProvided block) {
             return getContext().instanceEval(StringNodes.getByteList(string), receiver, this);
         }
 
-        @Specialization
-        public Object instanceEval(VirtualFrame frame, Object receiver, NotProvided string, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object instanceEval(VirtualFrame frame, Object receiver, NotProvided string, RubyBasicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, receiver, receiver);
         }
 
@@ -198,8 +154,8 @@ public abstract class BasicObjectNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             return yieldWithModifiedSelf(frame, block, receiver, arguments);
@@ -225,11 +181,11 @@ public abstract class BasicObjectNodes {
         public Object methodMissing(Object self, Object[] args, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
-            return methodMissing(self, args, (RubyProc) null);
+            return methodMissing(self, args, (RubyBasicObject) null);
         }
 
-        @Specialization
-        public Object methodMissing(Object self, Object[] args, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object methodMissing(Object self, Object[] args, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             final RubyBasicObject name = (RubyBasicObject) args[0];
@@ -237,8 +193,11 @@ public abstract class BasicObjectNodes {
             return methodMissing(self, name, sentArgs, block);
         }
 
-        private Object methodMissing(Object self, RubyBasicObject name, Object[] args, RubyProc block) {
+        private Object methodMissing(Object self, RubyBasicObject name, Object[] args, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
+
+            assert block == null || RubyGuards.isRubyProc(block);
+
             // TODO: should not be a call to Java toString(), but rather sth like name_err_mesg_to_str() in MRI error.c
             if (lastCallWasVCall()) {
                 throw new RaiseException(
@@ -283,11 +242,11 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object send(VirtualFrame frame, Object self, Object[] args, NotProvided block) {
-            return send(frame, self, args, (RubyProc) null);
+            return send(frame, self, args, (RubyBasicObject) null);
         }
 
-        @Specialization
-        public Object send(VirtualFrame frame, Object self, Object[] args, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object send(VirtualFrame frame, Object self, Object[] args, RubyBasicObject block) {
             final Object name = args[0];
             final Object[] sendArgs = ArrayUtils.extractRange(args, 1, args.length);
             return dispatchNode.call(frame, self, name, block, sendArgs);

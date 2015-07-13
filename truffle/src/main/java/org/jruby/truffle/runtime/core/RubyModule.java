@@ -15,8 +15,8 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
-
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -288,9 +288,11 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         ModuleChain cur = start;
         while (mod != null && !(mod instanceof RubyClass)) {
             if (!(mod instanceof PrependMarker)) {
-                cur.insertAfter(mod.getActualModule());
-                mod.getActualModule().addDependent(this);
-                cur = cur.getParentModule();
+                if (!ModuleOperations.includesModule(this, mod.getActualModule())) {
+                    cur.insertAfter(mod.getActualModule());
+                    mod.getActualModule().addDependent(this);
+                    cur = cur.getParentModule();
+                }
             }
             mod = mod.getParentModule();
         }
@@ -319,7 +321,8 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     @TruffleBoundary
-    public void setAutoloadConstant(Node currentNode, String name, RubyString filename) {
+    public void setAutoloadConstant(Node currentNode, String name, RubyBasicObject filename) {
+        assert RubyGuards.isRubyString(filename);
         setConstantInternal(currentNode, name, filename, true);
     }
 
@@ -354,10 +357,15 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     @TruffleBoundary
-    public void removeClassVariable(Node currentNode, String variableName) {
+    public Object removeClassVariable(Node currentNode, String name) {
         checkFrozen(currentNode);
 
-        classVariables.remove(variableName);
+        final Object found = classVariables.remove(name);
+        if (found == null) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(context.getCoreLibrary().nameErrorClassVariableNotDefined(name, this, currentNode));
+        }
+        return found;
     }
 
     @TruffleBoundary

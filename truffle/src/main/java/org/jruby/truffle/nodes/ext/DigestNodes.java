@@ -20,7 +20,6 @@ import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
 import java.security.MessageDigest;
@@ -158,8 +157,8 @@ public abstract class DigestNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject update(RubyBasicObject digestObject, RubyString message) {
+        @Specialization(guards = "isRubyString(message)")
+        public RubyBasicObject update(RubyBasicObject digestObject, RubyBasicObject message) {
             final ByteList bytes = StringNodes.getByteList(message);
             getDigest(digestObject).update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             return digestObject;
@@ -233,8 +232,8 @@ public abstract class DigestNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public RubyBasicObject bubblebabble(RubyString message) {
+        @Specialization(guards = "isRubyString(message)")
+        public RubyBasicObject bubblebabble(RubyBasicObject message) {
             final ByteList byteList = StringNodes.getByteList(message);
             return createString(BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
         }

@@ -21,7 +21,6 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyProc;
 
 /**
  * Yield to the current block.
@@ -48,7 +47,7 @@ public class YieldNode extends RubyNode {
             argumentsObjects[i] = arguments[i].execute(frame);
         }
 
-        final RubyProc block = RubyArguments.getBlock(frame.getArguments());
+        final RubyBasicObject block = RubyArguments.getBlock(frame.getArguments());
 
         if (block == null) {
             CompilerDirectives.transferToInterpreter();

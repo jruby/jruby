@@ -298,7 +298,6 @@ public class CoreLibrary {
 
         arrayClass = defineClass("Array", new ArrayNodes.ArrayAllocator());
         bindingClass = defineClass("Binding", new RubyBinding.BindingAllocator());
-        defineClass("ConditionVariable", new ConditionVariableNodes.ConditionVariableAllocator());
         dirClass = defineClass("Dir");
         encodingClass = defineClass("Encoding", NO_ALLOCATOR);
         falseClass = defineClass("FalseClass", NO_ALLOCATOR);
@@ -309,8 +308,10 @@ public class CoreLibrary {
         methodClass = defineClass("Method", NO_ALLOCATOR);
         defineClass("Mutex", new MutexNodes.MutexAllocator());
         nilClass = defineClass("NilClass", NO_ALLOCATOR);
-        procClass = defineClass("Proc", new RubyProc.ProcAllocator());
+        procClass = defineClass("Proc", new ProcNodes.ProcAllocator());
         processModule = defineModule("Process");
+        RubyClass queueClass = defineClass("Queue", new QueueNodes.QueueAllocator());
+        defineClass(queueClass, "SizedQueue", new SizedQueueNodes.SizedQueueAllocator());
         rangeClass = defineClass("Range", new RubyRange.RangeAllocator());
         regexpClass = defineClass("Regexp", new RubyRegexp.RegexpAllocator());
         stringClass = defineClass("String", new StringNodes.StringAllocator());
@@ -339,7 +340,7 @@ public class CoreLibrary {
 
         encodingCompatibilityErrorClass = defineClass(encodingClass, encodingErrorClass, "CompatibilityError");
 
-        encodingConverterClass = defineClass(encodingClass, objectClass, "Converter", new RubyEncodingConverter.EncodingConverterAllocator());
+        encodingConverterClass = defineClass(encodingClass, objectClass, "Converter", new EncodingConverterNodes.EncodingConverterAllocator());
 
         truffleModule = defineModule("Truffle");
         defineModule(truffleModule, "Interop");
@@ -420,7 +421,6 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(BindingNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BignumNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ClassNodesFactory.getFactories());
-        coreMethodNodeManager.addCoreMethodNodes(ConditionVariableNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ExceptionNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(FalseClassNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(FiberNodesFactory.getFactories());
@@ -437,8 +437,10 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(ObjectSpaceNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ProcessNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ProcNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(QueueNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(RangeNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(RegexpNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(SizedQueueNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(StringNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(SymbolNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ThreadNodesFactory.getFactories());
@@ -910,6 +912,12 @@ public class CoreLibrary {
         return typeError(String.format("%s can't be coerced into %s", from, to), currentNode);
     }
 
+    public RubyException typeErrorCantDump(Object object, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        String logicalClass = getLogicalClass(object).getName();
+        return typeError(String.format("can't dump %s", logicalClass), currentNode);
+    }
+
     public RubyException typeErrorWrongArgumentType(Object object, String expectedType, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         String badClassName = getLogicalClass(object).getName();
@@ -979,9 +987,15 @@ public class CoreLibrary {
         return nameError(String.format("method `%s' for %s is private", name, module.getName()), name, currentNode);
     }
 
-    public RubyException nameErrorLocalVariableNotDefined(String name, RubyBinding binding, Node currentNode) {
+    public RubyException nameErrorLocalVariableNotDefined(String name, RubyBasicObject binding, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
+        assert RubyGuards.isRubyBinding(binding);
         return nameError(String.format("local variable `%s' not defined for %s", name, binding.toString()), name, currentNode);
+    }
+
+    public RubyException nameErrorClassVariableNotDefined(String name, RubyModule module, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return nameError(String.format("class variable `%s' not defined for %s", name, module.getName()), name, currentNode);
     }
 
     public RubyException noMethodError(String message, String name, Node currentNode) {
@@ -1008,7 +1022,7 @@ public class CoreLibrary {
 
     public RubyException privateMethodError(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return noMethodError(String.format("private method `%s' called for %s", name, module.toString()), name, currentNode);
+        return noMethodError(String.format("private method `%s' called for %s", name, module.getName()), name, currentNode);
     }
 
     public RubyException loadError(String message, Node currentNode) {

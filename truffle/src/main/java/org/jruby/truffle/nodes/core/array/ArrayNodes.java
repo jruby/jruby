@@ -24,6 +24,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.StringCachingGuards;
 import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.coerce.ToAryNodeGen;
@@ -595,7 +596,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public Object mulObject(VirtualFrame frame, RubyBasicObject array, RubyString string) {
+        public Object mulObject(VirtualFrame frame, RubyBasicObject array, RubyBasicObject string) {
             CompilerDirectives.transferToInterpreter();
             return ruby(frame, "join(sep)", "sep", string);
         }
@@ -607,7 +608,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
-            if (respondToToStrNode.doesRespondToString(frame, object, (RubyString) createString("to_str"), false)) {
+            if (respondToToStrNode.doesRespondToString(frame, object, createString("to_str"), false)) {
                 return ruby(frame, "join(sep.to_str)", "sep", object);
             } else {
                 if (toIntNode == null) {
@@ -1487,13 +1488,13 @@ public abstract class ArrayNodes {
             return toEnumNode.call(frame, array, "to_enum", null, eachSymbol);
         }
 
-        @Specialization(guards = "isNullArray(array)")
-        public Object eachNull(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        public Object eachNull(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             return nil();
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object eachIntegerFixnum(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
+        public Object eachIntegerFixnum(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final int[] store = (int[]) getStore(array);
 
             int count = 0;
@@ -1515,8 +1516,8 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isLongArray(array)")
-        public Object eachLongFixnum(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isLongArray(array)", "isRubyProc(block)"})
+        public Object eachLongFixnum(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final long[] store = (long[]) getStore(array);
 
             int count = 0;
@@ -1538,8 +1539,8 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isDoubleArray(array)")
-        public Object eachFloat(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isDoubleArray(array)", "isRubyProc(block)"})
+        public Object eachFloat(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final double[] store = (double[]) getStore(array);
 
             int count = 0;
@@ -1561,8 +1562,8 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isObjectArray(array)")
-        public Object eachObject(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
+        public Object eachObject(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final Object[] store = (Object[]) getStore(array);
 
             int count = 0;
@@ -1594,13 +1595,13 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isNullArray(array)")
-        public RubyBasicObject eachWithEmpty(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        public RubyBasicObject eachWithEmpty(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             return array;
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object eachWithIndexInt(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
+        public Object eachWithIndexInt(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final int[] store = (int[]) getStore(array);
 
             int count = 0;
@@ -1622,8 +1623,8 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isLongArray(array)")
-        public Object eachWithIndexLong(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isLongArray(array)", "isRubyProc(block)"})
+        public Object eachWithIndexLong(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final long[] store = (long[]) getStore(array);
 
             int count = 0;
@@ -1645,8 +1646,8 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isDoubleArray(array)")
-        public Object eachWithIndexDouble(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isDoubleArray(array)", "isRubyProc(block)"})
+        public Object eachWithIndexDouble(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final double[] store = (double[]) getStore(array);
 
             int count = 0;
@@ -1668,8 +1669,8 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isObjectArray(array)")
-        public Object eachWithIndexObject(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
+        public Object eachWithIndexObject(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final Object[] store = (Object[]) getStore(array);
 
             int count = 0;
@@ -1797,7 +1798,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
-            if (respondToToAryNode.doesRespondToString(frame, object, (RubyString) createString("to_ary"), true)) {
+            if (respondToToAryNode.doesRespondToString(frame, object, createString("to_ary"), true)) {
                 if (toAryNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
@@ -1833,8 +1834,8 @@ public abstract class ArrayNodes {
             return initialize(array, 0, nil(), block);
         }
 
-        @Specialization
-        public RubyBasicObject initialize(RubyBasicObject array, NotProvided size, NotProvided defaultValue, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public RubyBasicObject initialize(RubyBasicObject array, NotProvided size, NotProvided defaultValue, RubyBasicObject block) {
             return initialize(array, 0, nil(), NotProvided.INSTANCE);
         }
 
@@ -1934,19 +1935,19 @@ public abstract class ArrayNodes {
 
         }
 
-        @Specialization(guards = { "wasProvided(defaultValue)", "size >= 0" })
-        public Object initialize(VirtualFrame frame, RubyBasicObject array, int size, Object defaultValue, RubyProc block) {
+        @Specialization(guards = {"wasProvided(defaultValue)", "size >= 0", "isRubyProc(block)"})
+        public Object initialize(VirtualFrame frame, RubyBasicObject array, int size, Object defaultValue, RubyBasicObject block) {
             return initialize(frame, array, size, NotProvided.INSTANCE, block);
         }
 
-        @Specialization(guards = { "wasProvided(defaultValue)", "size < 0" })
-        public Object initializeNegative(VirtualFrame frame, RubyBasicObject array, int size, Object defaultValue, RubyProc block) {
+        @Specialization(guards = {"wasProvided(defaultValue)", "size < 0", "isRubyProc(block)"})
+        public Object initializeNegative(VirtualFrame frame, RubyBasicObject array, int size, Object defaultValue, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
-        @Specialization(guards = "size >= 0")
-        public Object initialize(VirtualFrame frame, RubyBasicObject array, int size, NotProvided defaultValue, RubyProc block) {
+        @Specialization(guards = {"size >= 0", "isRubyProc(block)"})
+        public Object initialize(VirtualFrame frame, RubyBasicObject array, int size, NotProvided defaultValue, RubyBasicObject block) {
             Object store = arrayBuilder.start();
 
             int count = 0;
@@ -1971,8 +1972,8 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "size < 0")
-        public Object initializeNegative(VirtualFrame frame, RubyBasicObject array, int size, NotProvided defaultValue, RubyProc block) {
+        @Specialization(guards = {"size < 0", "isRubyProc(block)"})
+        public Object initializeNegative(VirtualFrame frame, RubyBasicObject array, int size, NotProvided defaultValue, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
@@ -1984,8 +1985,8 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isRubyArray(copy)")
-        public RubyBasicObject initialize(RubyBasicObject array, RubyBasicObject copy, NotProvided defaultValue, RubyProc block) {
+        @Specialization(guards = {"isRubyArray(copy)", "isRubyProc(block)"})
+        public RubyBasicObject initialize(RubyBasicObject array, RubyBasicObject copy, NotProvided defaultValue, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
             setStore(array, slowToArray(copy), getSize(copy));
             return array;
@@ -2069,71 +2070,71 @@ public abstract class ArrayNodes {
             dispatch = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.CALL_METHOD_MISSING);
         }
 
-        @Specialization(guards = { "isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectEmptyArray(VirtualFrame frame, RubyBasicObject array, Object initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
+        public Object injectEmptyArray(VirtualFrame frame, RubyBasicObject array, Object initial, NotProvided unused, RubyBasicObject block) {
             return initial;
         }
 
-        @Specialization(guards = "isEmptyArray(array)")
-        public Object injectEmptyArrayNoInitial(VirtualFrame frame, RubyBasicObject array, NotProvided initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isEmptyArray(array)", "isRubyProc(block)" })
+        public Object injectEmptyArrayNoInitial(VirtualFrame frame, RubyBasicObject array, NotProvided initial, NotProvided unused, RubyBasicObject block) {
             return nil();
         }
 
-        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectIntegerFixnum(VirtualFrame frame, RubyBasicObject array, Object initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
+        public Object injectIntegerFixnum(VirtualFrame frame, RubyBasicObject array, Object initial, NotProvided unused, RubyBasicObject block) {
             return injectHelper(frame, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)), array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)" })
-        public Object injectIntegerFixnumNoInitial(VirtualFrame frame, RubyBasicObject array, NotProvided initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
+        public Object injectIntegerFixnumNoInitial(VirtualFrame frame, RubyBasicObject array, NotProvided initial, NotProvided unused, RubyBasicObject block) {
             final ArrayMirror mirror = ArrayMirror.reflect((int[]) ArrayNodes.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
-        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectLongFixnum(VirtualFrame frame, RubyBasicObject array, Object initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
+        public Object injectLongFixnum(VirtualFrame frame, RubyBasicObject array, Object initial, NotProvided unused, RubyBasicObject block) {
             return injectHelper(frame, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)), array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)" })
-        public Object injectLongFixnumNoInitial(VirtualFrame frame, RubyBasicObject array, NotProvided initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
+        public Object injectLongFixnumNoInitial(VirtualFrame frame, RubyBasicObject array, NotProvided initial, NotProvided unused, RubyBasicObject block) {
             final ArrayMirror mirror = ArrayMirror.reflect((long[]) ArrayNodes.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
-        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectFloat(VirtualFrame frame, RubyBasicObject array, Object initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
+        public Object injectFloat(VirtualFrame frame, RubyBasicObject array, Object initial, NotProvided unused, RubyBasicObject block) {
             return injectHelper(frame, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)), array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)" })
-        public Object injectFloatNoInitial(VirtualFrame frame, RubyBasicObject array, NotProvided initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
+        public Object injectFloatNoInitial(VirtualFrame frame, RubyBasicObject array, NotProvided initial, NotProvided unused, RubyBasicObject block) {
             final ArrayMirror mirror = ArrayMirror.reflect((double[]) ArrayNodes.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
-        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
-        public Object injectObject(VirtualFrame frame, RubyBasicObject array, Object initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
+        public Object injectObject(VirtualFrame frame, RubyBasicObject array, Object initial, NotProvided unused, RubyBasicObject block) {
             return injectHelper(frame, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)), array, initial, block, 0);
         }
 
-        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)" })
-        public Object injectObjectNoInitial(VirtualFrame frame, RubyBasicObject array, NotProvided initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
+        public Object injectObjectNoInitial(VirtualFrame frame, RubyBasicObject array, NotProvided initial, NotProvided unused, RubyBasicObject block) {
             final ArrayMirror mirror = ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
-        @Specialization(guards = { "isNullArray(array)", "wasProvided(initial)" })
-        public Object injectNull(VirtualFrame frame, RubyBasicObject array, Object initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isNullArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
+        public Object injectNull(VirtualFrame frame, RubyBasicObject array, Object initial, NotProvided unused, RubyBasicObject block) {
             return initial;
         }
 
-        @Specialization(guards = "isNullArray(array)")
-        public Object injectNullNoInitial(VirtualFrame frame, RubyBasicObject array, NotProvided initial, NotProvided unused, RubyProc block) {
+        @Specialization(guards = { "isNullArray(array)", "isRubyProc(block)" })
+        public Object injectNullNoInitial(VirtualFrame frame, RubyBasicObject array, NotProvided initial, NotProvided unused, RubyBasicObject block) {
             return nil();
         }
 
@@ -2195,7 +2196,9 @@ public abstract class ArrayNodes {
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
         }
 
-        private Object injectHelper(VirtualFrame frame, ArrayMirror mirror, RubyBasicObject array, Object initial, RubyProc block, int startIndex) {
+        private Object injectHelper(VirtualFrame frame, ArrayMirror mirror, RubyBasicObject array, Object initial, RubyBasicObject block, int startIndex) {
+            assert RubyGuards.isRubyProc(block);
+
             int count = 0;
 
             Object accumulator = initial;
@@ -2345,13 +2348,13 @@ public abstract class ArrayNodes {
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
-        @Specialization(guards = "isNullArray(array)")
-        public RubyBasicObject mapNull(RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        public RubyBasicObject mapNull(RubyBasicObject array, RubyBasicObject block) {
             return createEmptyArray();
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object mapIntegerFixnum(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
+        public Object mapIntegerFixnum(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final int[] store = (int[]) getStore(array);
             final int arraySize = getSize(array);
             Object mappedStore = arrayBuilder.start(arraySize);
@@ -2374,8 +2377,8 @@ public abstract class ArrayNodes {
             return createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
         }
 
-        @Specialization(guards = "isLongArray(array)")
-        public Object mapLongFixnum(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isLongArray(array)", "isRubyProc(block)"})
+        public Object mapLongFixnum(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final long[] store = (long[]) getStore(array);
             final int arraySize = getSize(array);
             Object mappedStore = arrayBuilder.start(arraySize);
@@ -2398,8 +2401,8 @@ public abstract class ArrayNodes {
             return createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
         }
 
-        @Specialization(guards = "isDoubleArray(array)")
-        public Object mapFloat(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isDoubleArray(array)", "isRubyProc(block)"})
+        public Object mapFloat(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final double[] store = (double[]) getStore(array);
             final int arraySize = getSize(array);
             Object mappedStore = arrayBuilder.start(arraySize);
@@ -2422,8 +2425,8 @@ public abstract class ArrayNodes {
             return createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
         }
 
-        @Specialization(guards = "isObjectArray(array)")
-        public Object mapObject(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
+        public Object mapObject(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final Object[] store = (Object[]) getStore(array);
             final int arraySize = getSize(array);
             Object mappedStore = arrayBuilder.start(arraySize);
@@ -2457,13 +2460,13 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isNullArray(array)")
-        public RubyBasicObject mapInPlaceNull(RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        public RubyBasicObject mapInPlaceNull(RubyBasicObject array, RubyBasicObject block) {
             return array;
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object mapInPlaceFixnumInteger(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
+        public Object mapInPlaceFixnumInteger(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             if (writeNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
@@ -2491,8 +2494,8 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isObjectArray(array)")
-        public Object mapInPlaceObject(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
+        public Object mapInPlaceObject(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             if (writeNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
@@ -2544,7 +2547,7 @@ public abstract class ArrayNodes {
             final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, null, array, null, new Object[] {}), maxBlock.getFrameDescriptor());
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
 
-            final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
+            final RubyBasicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcClass(), ProcNodes.Type.PROC,
                     maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
                     maxBlock.getCallTarget(), maximumClosureFrame.materialize(), null, array, null);
 
@@ -2646,7 +2649,7 @@ public abstract class ArrayNodes {
             final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, null, array, null, new Object[] {}), minBlock.getFrameDescriptor());
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
 
-            final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
+            final RubyBasicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcClass(), ProcNodes.Type.PROC,
                     minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
                     minBlock.getCallTarget(), minimumClosureFrame.materialize(), null, array, null);
 
@@ -2728,6 +2731,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "pack", required = 1, taintFromParameter = 0)
+    @ImportStatic(StringCachingGuards.class)
     public abstract static class PackNode extends ArrayCoreMethodNode {
 
         @Child private TaintNode taintNode;
@@ -2736,7 +2740,7 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "byteListsEqual(format, cachedFormat)")
+        @Specialization(guards = {"isRubyString(format)", "byteListsEqual(format, cachedFormat)"})
         public RubyBasicObject packCached(
                 VirtualFrame frame,
                 RubyBasicObject array,
@@ -2755,7 +2759,7 @@ public abstract class ArrayNodes {
             return finishPack(cachedFormat, result);
         }
 
-        @Specialization(contains = "packCached")
+        @Specialization(contains = "packCached", guards = "isRubyString(format)")
         public RubyBasicObject packUncached(
                 VirtualFrame frame,
                 RubyBasicObject array,
@@ -2849,15 +2853,8 @@ public abstract class ArrayNodes {
             return ruby(frame, "pack(format.to_str)", "format", format);
         }
 
-        protected ByteList privatizeByteList(RubyString string) {
-            return StringNodes.getByteList(string).dup();
-        }
-
-        protected boolean byteListsEqual(RubyString string, ByteList byteList) {
-            return StringNodes.getByteList(string).equal(byteList);
-        }
-
-        protected CallTarget compileFormat(RubyString format) {
+        protected CallTarget compileFormat(RubyBasicObject format) {
+            assert RubyGuards.isRubyString(format);
             try {
                 return new PackParser(getContext()).parse(format.toString(), false);
             } catch (FormatException e) {
@@ -3455,13 +3452,13 @@ public abstract class ArrayNodes {
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
-        @Specialization(guards = "isNullArray(array)")
-        public Object selectNull(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        public Object selectNull(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             return createEmptyArray();
         }
 
-        @Specialization(guards = "isObjectArray(array)")
-        public Object selectObject(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
+        public Object selectObject(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final Object[] store = (Object[]) getStore(array);
 
             Object selectedStore = arrayBuilder.start(getSize(array));
@@ -3493,8 +3490,8 @@ public abstract class ArrayNodes {
             return createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object selectFixnumInteger(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
+        public Object selectFixnumInteger(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final int[] store = (int[]) getStore(array);
 
             Object selectedStore = arrayBuilder.start(getSize(array));
@@ -3536,13 +3533,13 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isNullArray(array)")
-        public Object rejectInPlaceNull(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        public Object rejectInPlaceNull(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             return array;
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object rejectInPlaceInt(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
+        public Object rejectInPlaceInt(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final int[] store = (int[]) getStore(array);
 
             int i = 0;
@@ -3566,8 +3563,8 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isLongArray(array)")
-        public Object rejectInPlaceLong(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isLongArray(array)", "isRubyProc(block)"})
+        public Object rejectInPlaceLong(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final long[] store = (long[]) getStore(array);
 
             int i = 0;
@@ -3591,8 +3588,8 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isDoubleArray(array)")
-        public Object rejectInPlaceDouble(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isDoubleArray(array)", "isRubyProc(block)"})
+        public Object rejectInPlaceDouble(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final double[] store = (double[]) getStore(array);
 
             int i = 0;
@@ -3616,8 +3613,8 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isObjectArray(array)")
-        public Object rejectInPlaceObject(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
+        public Object rejectInPlaceObject(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final Object[] store = (Object[]) getStore(array);
 
             int i = 0;
@@ -3652,13 +3649,13 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isNullArray(array)")
-        public Object rejectInPlaceNull(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        public Object rejectInPlaceNull(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             return nil();
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object rejectInPlaceInt(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
+        public Object rejectInPlaceInt(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final int[] store = (int[]) getStore(array);
 
             int i = 0;
@@ -3684,8 +3681,8 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = "isLongArray(array)")
-        public Object rejectInPlaceLong(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isLongArray(array)", "isRubyProc(block)"})
+        public Object rejectInPlaceLong(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final long[] store = (long[]) getStore(array);
 
             int i = 0;
@@ -3711,8 +3708,8 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = "isDoubleArray(array)")
-        public Object rejectInPlaceDouble(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isDoubleArray(array)", "isRubyProc(block)"})
+        public Object rejectInPlaceDouble(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final double[] store = (double[]) getStore(array);
 
             int i = 0;
@@ -3738,8 +3735,8 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = "isObjectArray(array)")
-        public Object rejectInPlaceObject(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
+        public Object rejectInPlaceObject(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final Object[] store = (Object[]) getStore(array);
 
             int i = 0;
@@ -3836,13 +3833,13 @@ public abstract class ArrayNodes {
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
-        @Specialization(guards = "isNullArray(array)")
-        public Object selectNull(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
+        public Object selectNull(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             return createEmptyArray();
         }
 
-        @Specialization(guards = "isObjectArray(array)")
-        public Object selectObject(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
+        public Object selectObject(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final Object[] store = (Object[]) getStore(array);
 
             Object selectedStore = arrayBuilder.start(getSize(array));
@@ -3872,8 +3869,8 @@ public abstract class ArrayNodes {
             return createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
         }
 
-        @Specialization(guards = "isIntArray(array)")
-        public Object selectFixnumInteger(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
+        public Object selectFixnumInteger(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             final int[] store = (int[]) getStore(array);
 
             Object selectedStore = arrayBuilder.start(getSize(array));
@@ -4470,8 +4467,8 @@ public abstract class ArrayNodes {
             return createArray(store, size);
         }
 
-        @Specialization
-        public Object sortUsingRubinius(VirtualFrame frame, RubyBasicObject array, RubyProc block) {
+        @Specialization(guards = "isRubyProc(block)")
+        public Object sortUsingRubinius(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
             return sortUsingRubinius(frame, array, (Object) block);
         }
 

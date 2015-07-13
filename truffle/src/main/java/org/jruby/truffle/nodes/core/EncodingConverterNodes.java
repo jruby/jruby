@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
@@ -25,14 +26,28 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyEncodingConverter;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 
 @CoreClass(name = "Encoding::Converter")
 public abstract class EncodingConverterNodes {
+
+    public static EConv getEConv(RubyBasicObject encodingConverter) {
+        return ((RubyEncodingConverter) encodingConverter).econv;
+    }
+
+    public static void setEConv(RubyBasicObject encodingConverter, EConv econv) {
+        ((RubyEncodingConverter) encodingConverter).econv = econv;
+    }
+
+    public static RubyBasicObject createEncodingConverter(RubyClass rubyClass, EConv econv) {
+        return new RubyEncodingConverter(rubyClass, econv);
+    }
 
     @RubiniusOnly
     @CoreMethod(names = "initialize_jruby", required = 2, optional = 1, visibility = Visibility.PRIVATE)
@@ -44,7 +59,7 @@ public abstract class EncodingConverterNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject initialize(RubyEncodingConverter self, Object source, Object destination, Object unusedOptions) {
+        public RubyBasicObject initialize(RubyBasicObject self, Object source, Object destination, Object unusedOptions) {
             // Adapted from RubyConverter - see attribution there
 
             Ruby runtime = getContext().getRuntime();
@@ -82,7 +97,7 @@ public abstract class EncodingConverterNodes {
             econv.sourceEncoding = encs[0];
             econv.destinationEncoding = encs[1];
 
-            self.setEConv(econv);
+            setEConv(self, econv);
 
             return nil();
         }
@@ -154,4 +169,12 @@ public abstract class EncodingConverterNodes {
         }
     }
 
+    public static class EncodingConverterAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+            return createEncodingConverter(rubyClass, null);
+        }
+
+    }
 }

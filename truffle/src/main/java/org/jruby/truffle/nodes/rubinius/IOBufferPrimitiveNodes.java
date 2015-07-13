@@ -49,7 +49,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
 import java.util.EnumSet;
@@ -155,11 +154,12 @@ public abstract class IOBufferPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public int unshift(VirtualFrame frame, RubyBasicObject ioBuffer, RubyString string, int startPosition) {
+        @Specialization(guards = "isRubyString(string)")
+        public int unshift(VirtualFrame frame, RubyBasicObject ioBuffer, RubyBasicObject string, int startPosition) {
             setWriteSynced(ioBuffer, false);
 
-            int stringSize = StringNodes.getByteList(string).realSize() - startPosition;
+            final ByteList byteList = StringNodes.getByteList(string);
+            int stringSize = byteList.realSize() - startPosition;
             final int usedSpace = getUsed(ioBuffer);
             final int availableSpace = IOBUFFER_SIZE - usedSpace;
 
@@ -170,7 +170,7 @@ public abstract class IOBufferPrimitiveNodes {
             ByteList storage = ByteArrayNodes.getBytes(getStorage(ioBuffer));
 
             // Data is copied here - can we do something COW?
-            System.arraycopy(StringNodes.getByteList(string).unsafeBytes(), startPosition, storage.getUnsafeBytes(), usedSpace, stringSize);
+            System.arraycopy(byteList.unsafeBytes(), byteList.begin() + startPosition, storage.getUnsafeBytes(), storage.begin() + usedSpace, stringSize);
 
             setUsed(ioBuffer, usedSpace + stringSize);
 

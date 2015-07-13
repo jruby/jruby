@@ -14,9 +14,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.concurrent.Callable;
 
@@ -30,13 +31,16 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
-    protected boolean guard(RubyProc block) {
+    protected boolean guard(RubyBasicObject block) {
         return false;
     }
 
     @Override
-    public Object dispatchWithSelfAndBlock(VirtualFrame frame, final RubyProc block, Object self, RubyProc modifiedBlock, Object... argumentsObjects) {
+    public Object dispatchWithSelfAndBlock(VirtualFrame frame, final RubyBasicObject block, Object self, RubyBasicObject modifiedBlock, Object... argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
+
+        assert block == null || RubyGuards.isRubyProc(block);
+        assert modifiedBlock == null || RubyGuards.isRubyProc(modifiedBlock);
 
         final YieldDispatchNode dispatch = atomic(new Callable<YieldDispatchNode>() {
             @Override

@@ -19,7 +19,6 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class CachedBoxedDispatchNode extends CachedDispatchNode {
@@ -94,7 +93,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (RubyProc) blockObject,
+                    (RubyBasicObject) blockObject,
                     argumentsObjects,
                     "class modified");
         }
@@ -109,7 +108,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    (RubyProc) blockObject,
+                                    (RubyBasicObject) blockObject,
                                     (Object[]) argumentsObjects));
                 } else {
                     return callNode.call(
@@ -118,7 +117,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    (RubyProc) blockObject,
+                                    (RubyBasicObject) blockObject,
                                     (Object[]) argumentsObjects));
                 }
             }
