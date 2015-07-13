@@ -16,7 +16,6 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.core.CoreLibrary;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyRange;
 
 public class FixnumLowerNode extends RubyNode {
@@ -35,11 +34,6 @@ public class FixnumLowerNode extends RubyNode {
     public FixnumLowerNode(RubyNode child) {
         super(child.getContext(), child.getEncapsulatingSourceSection());
         this.child = child;
-    }
-
-    @Override
-    public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) throws UnexpectedResultException {
-        throw new UnsupportedOperationException();
     }
 
     @Override
