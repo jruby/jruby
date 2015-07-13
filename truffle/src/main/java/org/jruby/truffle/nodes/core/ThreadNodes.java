@@ -452,50 +452,6 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "raise", required = 1, optional = 1)
-    public abstract static class RaiseNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode initialize;
-
-        public RaiseNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
-        }
-
-        @Specialization(guards = "isRubyString(message)")
-        public RubyBasicObject raise(VirtualFrame frame, RubyBasicObject thread, RubyBasicObject message, NotProvided unused) {
-            return raise(frame, thread, getContext().getCoreLibrary().getRuntimeErrorClass(), message);
-        }
-
-        @Specialization(guards = "isRubyClass(exceptionClass)")
-        public RubyBasicObject raiseClass(VirtualFrame frame, RubyBasicObject thread, RubyBasicObject exceptionClass, NotProvided message) {
-            return raise(frame, thread, exceptionClass, createEmptyString());
-        }
-
-        @Specialization(guards = {"isRubyClass(exceptionClass)", "isRubyString(message)"})
-        public RubyBasicObject raise(VirtualFrame frame, final RubyBasicObject thread, RubyBasicObject exceptionClass, RubyBasicObject message) {
-            final Object exception = ClassNodes.allocate(((RubyClass) exceptionClass), this);
-            initialize.call(frame, exception, "initialize", null, message);
-
-            if (!RubyGuards.isRubyException(exception)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeError("exception class/object expected", this));
-            }
-
-            final RaiseException exceptionWrapper = new RaiseException(exception);
-
-            getContext().getSafepointManager().pauseThreadAndExecuteLater(getCurrentFiberJavaThread(thread), this, new SafepointAction() {
-                @Override
-                public void run(RubyBasicObject currentThread, Node currentNode) {
-                    throw exceptionWrapper;
-                }
-            });
-
-            return nil();
-        }
-
-    }
-
     @CoreMethod(names = "status")
     public abstract static class StatusNode extends CoreMethodArrayArgumentsNode {
 

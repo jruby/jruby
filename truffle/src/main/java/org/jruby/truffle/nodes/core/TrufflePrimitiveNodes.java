@@ -16,6 +16,7 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
@@ -30,9 +31,9 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.cext.CExtManager;
 import org.jruby.truffle.runtime.cext.CExtSubsystem;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.CoreLibrary;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
+import org.jruby.truffle.runtime.subsystems.SafepointAction;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
@@ -536,6 +537,30 @@ public abstract class TrufflePrimitiveNodes {
                 return yield(frame, block);
             }
         }
+    }
+
+    @CoreMethod(names = "thread_raise", required = 2, onSingleton = true)
+    public abstract static class RaiseNode extends CoreMethodArrayArgumentsNode {
+
+        public RaiseNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = { "isRubyThread(thread)", "isRubyException(exception)" })
+        public RubyBasicObject raise(RubyBasicObject thread, final RubyBasicObject exception) {
+            getContext().getSafepointManager().pauseThreadAndExecuteLater(
+                    ThreadNodes.getCurrentFiberJavaThread(thread),
+                    this,
+                    new SafepointAction() {
+                        @Override
+                        public void run(RubyBasicObject currentThread, Node currentNode) {
+                            throw new RaiseException(exception);
+                        }
+                    });
+
+            return nil();
+        }
+
     }
 
 }
