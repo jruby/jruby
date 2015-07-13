@@ -34,7 +34,9 @@ import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import jnr.posix.POSIX;
+
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
@@ -52,7 +54,7 @@ import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayCoreMethodNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
-import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNode;
+import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -1780,11 +1782,13 @@ public abstract class StringNodes {
         }
 
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
-            return new FixnumLowerNode(ToIntNodeGen.create(getContext(), getSourceSection(), index));
+            return FixnumLowerNodeGen.create(getContext(), getSourceSection(),
+                    ToIntNodeGen.create(getContext(), getSourceSection(), index));
         }
 
         @CreateCast("value") public RubyNode coerceValueToInt(RubyNode value) {
-            return new FixnumLowerNode(ToIntNodeGen.create(getContext(), getSourceSection(), value));
+            return FixnumLowerNodeGen.create(getContext(), getSourceSection(),
+                    ToIntNodeGen.create(getContext(), getSourceSection(), value));
         }
 
         @Specialization

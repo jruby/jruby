@@ -11,10 +11,11 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
-import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNode;
+import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNodeGen;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
@@ -67,7 +68,7 @@ public class RubiniusPrimitiveNodeConstructor implements RubiniusPrimitiveConstr
 
     private RubyNode transformArgument(RubyNode argument, int n) {
         if (ArrayUtils.contains(annotation.lowerFixnumParameters(), n)) {
-            return new FixnumLowerNode(argument);
+            return FixnumLowerNodeGen.create(argument.getContext(), argument.getSourceSection(), argument);
         } else {
             return argument;
         }

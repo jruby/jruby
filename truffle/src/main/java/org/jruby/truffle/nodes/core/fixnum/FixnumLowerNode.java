@@ -9,144 +9,50 @@
  */
 package org.jruby.truffle.nodes.core.fixnum;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.CoreLibrary;
-import org.jruby.truffle.runtime.core.RubyRange;
 
-public class FixnumLowerNode extends RubyNode {
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.source.SourceSection;
 
-    @Child private RubyNode child;
+/**
+ * Passes through {@code int} values unmodified, but will convert a {@code long} value to an {@code int}, if it fits
+ * within the range of an {@code int}. Leaves all other values unmodified. Used where a specialization only accepts
+ * {@code int}, such as Java array indexing, but we would like to also handle {@code long} if they also fit within an
+ * {@code int}.
+ */
+@NodeChild(value = "value", type = RubyNode.class)
+public abstract class FixnumLowerNode extends RubyNode {
 
-    @CompilationFinal private boolean hasSeenInteger = false;
-    @CompilationFinal private boolean hasSeenLong = false;
-    @CompilationFinal private boolean hasSeenIntegerRange = false;
-    @CompilationFinal private boolean hasSeenLongRange = false;
-    @CompilationFinal private boolean hasSeenUndefined = false;
-
-    @CompilationFinal private boolean hasNeededToLowerLongFixnum = false;
-
-    public FixnumLowerNode(RubyNode child) {
-        super(child.getContext(), child.getEncapsulatingSourceSection());
-        this.child = child;
+    public FixnumLowerNode(RubyContext context, SourceSection sourceSection) {
+        super(context, sourceSection);
     }
 
-    @Override
-    public Object execute(VirtualFrame frame) {
-        final Object value = child.execute(frame);
-
-        if (hasSeenInteger && value instanceof Integer) {
-            return value;
-        }
-
-        if (hasSeenLong && value instanceof Long) {
-            if (canLower((long) value)) {
-                return lower((long) value);
-            } else {
-                return value;
-            }
-        }
-
-        if (hasSeenIntegerRange && value instanceof RubyRange.IntegerFixnumRange) {
-            return value;
-        }
-
-        if (hasSeenLongRange && value instanceof RubyRange.LongFixnumRange) {
-            return value;
-        }
-
-        if (hasSeenUndefined && value instanceof NotProvided) {
-            return value;
-        }
-
-        CompilerDirectives.transferToInterpreterAndInvalidate();
-
-        if (value instanceof Integer) {
-            hasSeenInteger = true;
-            return value;
-        }
-
-        if (value instanceof Long) {
-            hasSeenLong = true;
-            if (canLower((long) value)) {
-                return lower((long) value);
-            } else {
-                return value;
-            }
-        }
-
-        if (value instanceof RubyRange.IntegerFixnumRange) {
-            hasSeenIntegerRange = true;
-            return value;
-        }
-
-        if (value instanceof RubyRange.LongFixnumRange) {
-            hasSeenLongRange = true;
-            return value;
-        }
-
-        if (value instanceof NotProvided) {
-            hasSeenUndefined = true;
-            return value;
-        }
-
+    @Specialization
+    public int lower(int value) {
         return value;
     }
 
-    @Override
-    public int executeInteger(VirtualFrame frame) throws UnexpectedResultException {
-        try {
-            if (hasNeededToLowerLongFixnum) {
-                final long value = super.executeLong(frame);
-
-                if (canLower(value)) {
-                    return lower(value);
-                } else {
-                    throw new UnexpectedResultException(value);
-                }
-            } else {
-                return super.executeInteger(frame);
-            }
-        } catch (UnexpectedResultException e) {
-            if (e.getResult() instanceof Long && canLower((long) e.getResult())) {
-                hasNeededToLowerLongFixnum = true;
-                return lower((long) e.getResult());
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    @Override
-    public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
-        throw new RuntimeException();
-    }
-
-    @Override
-    public NotProvided executeNotProvided(VirtualFrame frame) throws UnexpectedResultException {
-        try {
-            return super.executeNotProvided(frame);
-        } catch (UnexpectedResultException e) {
-            if (e.getResult() instanceof Long && canLower((long) e.getResult())) {
-                hasNeededToLowerLongFixnum = true;
-                throw new UnexpectedResultException(lower((long) e.getResult()));
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    private static boolean canLower(long value) {
-        return CoreLibrary.fitsIntoInteger(value);
-    }
-
-    private static int lower(long value) {
-        assert canLower(value);
+    @Specialization(guards = "canLower(value)")
+    public int lower(long value) {
         return (int) value;
     }
 
+    @Specialization(guards = "!canLower(value)")
+    public long lowerFails(long value) {
+        return value;
+    }
+
+    @Specialization(guards = { "!isInteger(value)", "!isLong(value)" })
+    public Object passThrough(Object value) {
+        return value;
+    }
+
+    protected static boolean canLower(long value) {
+        return CoreLibrary.fitsIntoInteger(value);
+    }
+
 }
+

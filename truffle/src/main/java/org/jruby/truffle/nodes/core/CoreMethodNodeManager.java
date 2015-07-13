@@ -14,13 +14,14 @@ import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeUtil;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.*;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNode;
+import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNodeGen;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
@@ -170,7 +171,7 @@ public class CoreMethodNodeManager {
             RubyNode readSelfNode = new SelfNode(context, sourceSection);
 
             if (method.lowerFixnumSelf()) {
-                readSelfNode = new FixnumLowerNode(readSelfNode);
+                readSelfNode = FixnumLowerNodeGen.create(context, sourceSection, readSelfNode);
             }
 
             if (method.raiseIfFrozenSelf()) {
@@ -187,7 +188,7 @@ public class CoreMethodNodeManager {
                 RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
 
                 if (ArrayUtils.contains(method.lowerFixnumParameters(), n)) {
-                    readArgumentNode = new FixnumLowerNode(readArgumentNode);
+                    readArgumentNode = FixnumLowerNodeGen.create(context, sourceSection, readArgumentNode);
                 }
 
                 if (ArrayUtils.contains(method.raiseIfFrozenParameters(), n)) {
