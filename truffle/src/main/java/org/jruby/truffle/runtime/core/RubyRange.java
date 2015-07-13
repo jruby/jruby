@@ -69,6 +69,7 @@ public abstract class RubyRange extends RubyBasicObject {
 
         public LongFixnumRange(RubyClass rangeClass, long begin, long end, boolean excludeEnd) {
             super(rangeClass);
+            assert !CoreLibrary.fitsIntoInteger(begin) || !CoreLibrary.fitsIntoInteger(end);
             this.begin = begin;
             this.end = end;
             this.excludeEnd = excludeEnd;
