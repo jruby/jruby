@@ -15,14 +15,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CFGInliner {
+    private static final boolean debug = false;
     private final CFG cfg;
+    private final IRScope hostScope;
 
     public CFGInliner(CFG build) {
         this.cfg = build;
+        this.hostScope = cfg.getScope();
     }
 
-    private SimpleCloneInfo cloneHostInstrs(CFG cfg) {
-        SimpleCloneInfo ii = new SimpleCloneInfo(cfg.getScope(), false);
+    private SimpleCloneInfo cloneHostInstrs() {
+        SimpleCloneInfo ii = new SimpleCloneInfo(hostScope, false);
         for (BasicBlock b : cfg.getBasicBlocks()) {
             b.cloneInstrs(ii);
         }
@@ -31,7 +34,7 @@ public class CFGInliner {
     }
 
     private CFG cloneSelf(InlineCloneInfo ii) {
-        CFG selfClone = new CFG(cfg.getScope());
+        CFG selfClone = new CFG(hostScope);
 
         // clone bbs
         for (BasicBlock b : cfg.getBasicBlocks()) {
@@ -52,40 +55,59 @@ public class CFGInliner {
         return selfClone;
     }
 
-    public void inlineMethod(IRScope scope, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call, boolean cloneHost) {
-        // Temporarily turn off inlining of recursive methods
-        // Conservative turning off for inlining of a method in a closure nested within the same method
-        IRScope hostScope = cfg.getScope();
-        if (hostScope.getNearestMethod() == scope) return;
+    private boolean isRecursiveInline(IRScope methodScope) {
+        return hostScope.getNearestMethod() == methodScope;
+    }
 
-/*
-        System.out.println("Looking for: " + call.getIPC() + ": " + call);
-        System.out.println("host cfg   :" + cfg.toStringGraph());
-        System.out.println("host instrs:" + cfg.toStringInstrs());
-        System.out.println("source cfg   :" + scope.getCFG().toStringGraph());
-        System.out.println("source instrs:" + scope.getCFG().toStringInstrs());
-*/
+    // Use receivers variable if it is one.  Otherwise make a new temp for one.
+    private Variable getReceiverVariable(Operand receiver) {
+        return receiver instanceof Variable ? (Variable) receiver : hostScope.createTemporaryVariable();
+    }
 
-        // Find callBB
-        if (callBB == null) {
-            for (BasicBlock x: cfg.getBasicBlocks()) {
-                for (Instr i: x.getInstrs()) {
-                    // System.out.println("IPC " + i.getIPC() + " = " + i);
-                    if (i.getIPC() == call.getIPC()) {
-                        // System.out.println("Found it!!!! -- " + call);
-                        callBB = x;
-                        break;
-                    }
+    private BasicBlock findCallsiteBB(CallBase call) {
+        for (BasicBlock bb: cfg.getBasicBlocks()) {
+            for (Instr i: bb.getInstrs()) {
+                // System.out.println("IPC " + i.getIPC() + " = " + i);
+                if (i.getIPC() == call.getIPC()) {
+                    // System.out.println("Found it!!!! -- " + call);
+                    return bb;
                 }
             }
         }
 
+        return null;
+    }
+
+    private void printInlineDebugPrologue(IRScope methodScope, CallBase call) {
+        System.out.println("Looking for: " + call.getIPC() + ": " + call);
+        System.out.println("host cfg   :" + cfg.toStringGraph());
+        System.out.println("host instrs:" + cfg.toStringInstrs());
+        System.out.println("source cfg   :" + methodScope.getCFG().toStringGraph());
+        System.out.println("source instrs:" + methodScope.getCFG().toStringInstrs());
+    }
+
+    private void printInlineCannotFindCallsiteBB(CallBase call) {
+        System.out.println("----------------------------------");
+        System.out.println("Did not find BB with call: " + call);
+        System.out.println("Host cfg   :" + cfg.toStringGraph());
+        System.out.println("Host instrs:" + cfg.toStringInstrs());
+        System.out.println("----------------------------------");
+    }
+
+    // Vocabulary:
+    //   hostScope - scope where the method will be inlining into
+    //   methodScope - scope of the method to be inlined
+    //   callBB - BB where callsite is located
+    //   call - callsite where we want to inline the methods body.
+    public void inlineMethod(IRScope methodScope, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call, boolean cloneHost) {
+        // Temporarily turn off inlining of recursive methods
+        // Conservative turning off for inlining of a method in a closure nested within the same method
+        if (isRecursiveInline(methodScope)) return;
+        if (debug) printInlineDebugPrologue(methodScope, call);
+
+        if (callBB == null) callBB = findCallsiteBB(call);
         if (callBB == null) {
-            System.out.println("----------------------------------");
-            System.out.println("Did not find BB with call: " + call);
-            System.out.println("Host cfg   :" + cfg.toStringGraph());
-            System.out.println("Host instrs:" + cfg.toStringInstrs());
-            System.out.println("----------------------------------");
+            if (debug) printInlineCannotFindCallsiteBB(call);
             return;
         }
 
@@ -98,26 +120,17 @@ public class CFGInliner {
         }
         cfg.removeAllOutgoingEdgesForBB(callBB);
 
-        SimpleCloneInfo hostCloneInfo = cloneHost ? cloneHostInstrs(cfg) : null;
+        SimpleCloneInfo hostCloneInfo = cloneHost ? cloneHostInstrs() : null;
 
         // Host method data init
-        Operand callReceiver = call.getReceiver();
-        Variable callReceiverVar;
-        if (callReceiver instanceof Variable) {
-            callReceiverVar = (Variable)callReceiver;
-        } else {
-            callReceiverVar = hostScope.createTemporaryVariable();
-        }
-
-        InlineCloneInfo ii = new InlineCloneInfo(call, cfg, callReceiverVar, scope);
+        Variable callReceiverVar = getReceiverVariable(call.getReceiver());
+        InlineCloneInfo ii = new InlineCloneInfo(call, cfg, callReceiverVar, methodScope);
 
         // Inlinee method data init
-        CFG methodCFG = scope.getCFG();
-        List<BasicBlock> methodBBs = new ArrayList<BasicBlock>();
-        for (BasicBlock b: methodCFG.getBasicBlocks()) methodBBs.add(b);
+        CFG methodCFG = methodScope.getCFG();
+        List<BasicBlock> methodBBs = new ArrayList<>(methodCFG.getBasicBlocks());
 
-        // Check if we are inlining a recursive method
-        if (hostScope.getNearestMethod() == scope) {
+        if (isRecursiveInline(methodScope)) {
             // 1. clone self
             // SSS: FIXME: We need a clone-graph api method in cfg and graph
             CFG selfClone = cloneSelf(ii);
@@ -152,8 +165,9 @@ public class CFGInliner {
             if (destination.isExitBB()) continue;
 
             BasicBlock dstBB = ii.getRenamedBB(destination);
-            if (callReceiver != callReceiverVar) {
-                dstBB.insertInstr(new CopyInstr(callReceiverVar, callReceiver));
+            // Receiver is not a variable so we made a new temp above...copy into new temp the original recv value.
+            if (call.getReceiver() != callReceiverVar) {
+                dstBB.insertInstr(new CopyInstr(callReceiverVar, call.getReceiver()));
             }
 
             if (!ii.canMapArgsStatically()) {
@@ -255,7 +269,7 @@ public class CFGInliner {
 
     private void inlineClosureAtYieldSite(InlineCloneInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) {
         // 1. split yield site bb and move outbound edges from yield site bb to split bb.
-        BasicBlock splitBB = yieldBB.splitAtInstruction(yield, cfg.getScope().getNewLabel(), false);
+        BasicBlock splitBB = yieldBB.splitAtInstruction(yield, hostScope.getNewLabel(), false);
         cfg.addBasicBlock(splitBB);
         for (Edge<BasicBlock> e : cfg.getOutgoingEdges(yieldBB)) {
             cfg.addEdge(splitBB, e.getDestination().getData(), e.getType());
