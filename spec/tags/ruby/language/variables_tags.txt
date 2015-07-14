@@ -5,3 +5,4 @@ fails:Multiple assignment with a single RHS value assigns an Array when the RHS 
 fails:Multiple assignment with a MRHS value calls #to_ary to convert a splatted Object when the position receiving the value is a multiple assignment
 fails:Multiple assignment with a MRHS value does not call #to_ary to convert a splatted Object when the position receiving the value is a simple variable
 fails:Multiple assignment with a MRHS value does not call #to_ary to convert a splatted Object when the position receiving the value is a rest variable
+fails:Multiple assignment with a MRHS value does not call #to_ary to convert a splatted Object as part of a MRHS with a splat MRHS
