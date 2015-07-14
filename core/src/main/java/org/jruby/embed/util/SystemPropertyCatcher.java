@@ -121,17 +121,17 @@ public class SystemPropertyCatcher {
         }
         return Boolean.parseBoolean(s);
     }
-    
+
     /**
      * Sets classloader based on System property. This is only used from
      * JRubyEgnineFactory.
-     * 
+     *
      * @param container ScriptingContainer to be set classloader
      */
-    
+
     public static void setClassLoader(ScriptingContainer container) {
         String s = SafePropertyAccessor.getProperty(PropertyName.CLASSLOADER.toString());
-        
+
         // current should be removed later
         if (s == null || "container".equals(s) || "current".equals(s)) { // default
             container.setClassLoader(container.getClass().getClassLoader());
@@ -159,15 +159,24 @@ public class SystemPropertyCatcher {
         if (s != null) {
             if ("jit".equalsIgnoreCase(s)) {
                 config.setCompileMode(CompileMode.JIT);
-            } else if ("force".equalsIgnoreCase(s)) {
+            }
+            else if ("force".equalsIgnoreCase(s)) {
                 config.setCompileMode(CompileMode.FORCE);
-            } else {
+            }
+            else {
                 config.setCompileMode(CompileMode.OFF);
             }
         }
         s = SafePropertyAccessor.getProperty(PropertyName.COMPATVERSION.toString());
         if (s != null) {
-            if (isRuby19(s)) {
+            s = s.toLowerCase();
+            if ( matches(s, "j?(ruby)?1[\\._]?8") ) {
+                config.setCompatVersion(CompatVersion.RUBY1_8);
+            }
+            else if ( matches(s, "j?(ruby)?2[\\._]?0") ) {
+                config.setCompatVersion(CompatVersion.RUBY2_0);
+            }
+            else if ( matches(s, "j?(ruby)?1[\\._]?9") ) {
                 config.setCompatVersion(CompatVersion.RUBY1_9);
             }
         }
@@ -218,7 +227,7 @@ public class SystemPropertyCatcher {
             if (resource == null) return null;
         }
 
-        String location = null;
+        String location;
         if (resource.getProtocol().equals("jar")) {
             location = getPath(resource);
             if (!location.startsWith("file:")) {
@@ -278,15 +287,14 @@ public class SystemPropertyCatcher {
      * @return true is the given name is correct to choose Ruby 1.9 version. Otherwise,
      *         returns false.
      */
+    @Deprecated
     public static boolean isRuby19(String name) {
-        String n = name.toLowerCase();
-        Pattern p = Pattern.compile("j?ruby1[\\._]?9");
-        Matcher m = p.matcher(n);
-        if (m.matches()) {
-            return true;
-        } else {
-            return false;
-        }
+        return matches(name.toLowerCase(), "j?ruby1[\\._]?9");
+    }
+
+    private static boolean matches(final String name, final String pattern) {
+        Matcher matcher = Pattern.compile(pattern).matcher( name );
+        return matcher.matches();
     }
 
     /**
