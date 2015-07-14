@@ -174,7 +174,7 @@ describe "Single-method Java interfaces" do
   end
 
   it "should be implementable with .impl" do
-    impl = SingleMethodInterface.impl {|name| name}
+    impl = SingleMethodInterface.impl { |name| name }
     impl.should be_kind_of(SingleMethodInterface)
     SingleMethodInterface.should === impl
 
@@ -182,15 +182,27 @@ describe "Single-method Java interfaces" do
   end
 
   it "should allow assignable equivalents to be passed to a method" do
-    impl = DescendantOfSingleMethodInterface.impl {|name| name}
+    impl = DescendantOfSingleMethodInterface.impl { |name| name }
     impl.should be_kind_of(SingleMethodInterface)
     DescendantOfSingleMethodInterface.should === impl
     UsesSingleMethodInterface.callIt(impl).should == :callIt
     UsesSingleMethodInterface.new.callIt2(impl).should == :callIt
   end
 
+  it "passes correct arguments to proc .impl" do
+    Java::java.io.File.new('.').listFiles do |pathname|
+      pathname.should be_kind_of(java.io.File)
+      true
+    end
+
+    Java::java_integration.fixtures.iface.SingleMethodIfaceWith2Args::Caller.call do |arg1, arg2|
+      arg1.should == 'hello'
+      arg2.should == 42
+    end
+  end
+
   it "should maintain Ruby object equality when passed through Java and back" do
-    result = SingleMethodInterface.impl {|name| name}
+    result = SingleMethodInterface.impl { |name| name }
     callable = mock "callable"
     callable.should_receive(:call).and_return result
     UsesSingleMethodInterface.new.callIt3(callable).should == result
@@ -210,7 +222,7 @@ describe "Single-method Java interfaces" do
       interfaces.concat(cls.interfaces)
       cls = cls.superclass
     end
-    
+
     interfaces.should include(SingleMethodInterface.java_class)
   end
 end
@@ -688,15 +700,15 @@ describe "A Ruby class implementing an interface" do
       lambda {c2.new}.should_not raise_error
     end
   end
-  
+
   it "returns the Java class implementing the interface for .java_class" do
     cls = Class.new do
       include java.lang.Runnable
     end
     obj = cls.new
-    
+
     java_cls = obj.java_class
-    
+
     java_cls.interfaces.should include(java.lang.Runnable.java_class)
   end
 end
