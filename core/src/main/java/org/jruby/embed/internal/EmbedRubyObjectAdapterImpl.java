@@ -61,10 +61,11 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
-    private RubyObjectAdapter adapter = JavaEmbedUtils.newObjectAdapter();
-    private ScriptingContainer container;
 
-    public enum MethodType {
+    private final RubyObjectAdapter adapter = JavaEmbedUtils.newObjectAdapter();
+    private final ScriptingContainer container;
+
+    public static enum MethodType {
         CALLMETHOD_NOARG,
         CALLMETHOD,
         CALLMETHOD_WITHBLOCK,
@@ -79,7 +80,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
     public boolean isKindOf(IRubyObject value, RubyModule rubyModule) {
         return adapter.isKindOf(value, rubyModule);
     }
-    
+
     public IRubyObject[] convertToJavaArray(IRubyObject array) {
         return adapter.convertToJavaArray(array);
     }
@@ -87,7 +88,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
     public RubyInteger convertToRubyInteger(IRubyObject obj) {
         return adapter.convertToRubyInteger(obj);
     }
-    
+
     public RubyString convertToRubyString(IRubyObject obj) {
         return adapter.convertToRubyString(obj);
     }
@@ -195,7 +196,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
             throw new InvokeFailedException(e);
         }
     }
-    
+
     public <T> T callMethod(Object receiver, String methodName, Object[] args, Class<T> returnType, EmbedEvalUnit unit) {
         try {
             RubyObject rubyReceiver = getReceiverObject(receiver);
@@ -268,7 +269,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
             throw new InvokeFailedException(e);
         }
     }
-    
+
     public <T> T runRubyMethod(Class<T> returnType, Object receiver, String methodName, Block block, Object... args) {
         try {
             RubyObject rubyReceiver = (RubyObject)JavaEmbedUtils.javaToRuby(container.getProvider().getRuntime(), receiver);
@@ -289,7 +290,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
             return null;
         }
         Ruby runtime = container.getProvider().getRuntime();
-        
+
         boolean sharing_variables = true;
         Object obj = container.getAttribute(AttributeName.SHARING_VARIABLES);
         if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
@@ -323,7 +324,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
             }
         }
     }
-    
+
     private RubyObject getReceiverObject(Object receiver) {
         Ruby runtime = container.getProvider().getRuntime();
         if (receiver == null || !(receiver instanceof IRubyObject)) {
