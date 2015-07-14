@@ -20,10 +20,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   issue_management 'https://github.com/jruby/jruby/issues', 'GitHub'
 
-  [ 'user', 'dev', 'scm', 'annouce' ].each do |id|
-    mailing_list "jruby-#{id}" do
-      archives "http://markmail.org/search/list:org.codehaus.jruby.#{id}"
-    end
+  mailing_list "jruby" do
+    archives "http://blade.nagaokaut.ac.jp/ruby/jruby/index.shtml"
   end
 
   license 'GPL 3', 'http://www.gnu.org/licenses/gpl-3.0-standalone.html'
