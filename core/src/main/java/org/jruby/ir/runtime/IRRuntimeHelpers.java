@@ -1325,8 +1325,16 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static RubyArray irSplat(ThreadContext context, IRubyObject maybeAry) {
-        return Helpers.splatValue19(maybeAry);
+    public static RubyArray irSplat(ThreadContext context, IRubyObject ary) {
+        Ruby runtime = context.runtime;
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck19(ary, runtime.getArray(), "to_a");
+        if (tmp.isNil()) {
+            tmp = runtime.newArray(ary);
+        }
+        else if (true /**RTEST(flag)**/) { // this logic is only used for bare splat, and MRI dups
+            tmp = ((RubyArray)tmp).aryDup();
+        }
+        return (RubyArray)tmp;
     }
 
     public static IRubyObject irToAry(ThreadContext context, IRubyObject value) {
