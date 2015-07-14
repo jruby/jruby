@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 
 /**
@@ -48,6 +49,7 @@ public class RubyThread extends RubyBasicObject {
 
     private volatile Thread thread;
     private volatile Status status = Status.RUN;
+    private volatile AtomicBoolean wakeUp = new AtomicBoolean(false);
 
     private volatile RubyException exception;
     private volatile Object value;
@@ -178,7 +180,7 @@ public class RubyThread extends RubyBasicObject {
     }
 
     public void wakeup() {
-        status = Status.RUN;
+        wakeUp.set(true);
         Thread t = thread;
         if (t != null) {
             t.interrupt();
@@ -254,6 +256,11 @@ public class RubyThread extends RubyBasicObject {
 
     public void setInterruptMode(InterruptMode interruptMode) {
         this.interruptMode = interruptMode;
+    }
+
+    /** Return whether Thread#{run,wakeup} was called and clears the wakeup flag. */
+    public boolean shouldWakeUp() {
+        return wakeUp.getAndSet(false);
     }
 
     public static class ThreadAllocator implements Allocator {

@@ -1811,26 +1811,17 @@ public abstract class KernelNodes {
             final RubyThread thread = getContext().getThreadManager().getCurrentThread();
 
             long slept = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Long>() {
-                boolean shouldWakeUp = false;
-
                 @Override
                 public Long block() throws InterruptedException {
                     long now = System.currentTimeMillis();
                     long slept = now - start;
 
-                    if (shouldWakeUp || slept >= durationInMillis) {
+                    if (slept >= durationInMillis || thread.shouldWakeUp()) {
                         return slept;
                     }
+                    Thread.sleep(durationInMillis - slept);
 
-                    try {
-                        Thread.sleep(durationInMillis - slept);
-                        return System.currentTimeMillis() - start;
-                    } catch (InterruptedException e) {
-                        if (thread.getStatus() == Status.RUN) { // Thread#{wakeup,run}
-                            shouldWakeUp = true;
-                        }
-                        throw e;
-                    }
+                    return System.currentTimeMillis() - start;
                 }
             });
 
