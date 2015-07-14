@@ -1,7 +1,6 @@
 fails:Basic multiple assignment with a splatted single RHS value does not call #to_ary on an object
 fails:Basic multiple assignment with a splatted single RHS value calls #to_a even if it's private
 
-fails:Multiple assignment with a single RHS value assigns an Array when the RHS is an Array subclass
 fails:Multiple assignment with a MRHS value calls #to_ary to convert a splatted Object when the position receiving the value is a multiple assignment
 fails:Multiple assignment with a MRHS value does not call #to_ary to convert a splatted Object when the position receiving the value is a simple variable
 fails:Multiple assignment with a MRHS value does not call #to_ary to convert a splatted Object when the position receiving the value is a rest variable

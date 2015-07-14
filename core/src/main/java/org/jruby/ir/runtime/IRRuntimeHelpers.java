@@ -1338,21 +1338,11 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject irToAry(ThreadContext context, IRubyObject value) {
-        if (value instanceof RubyArray) {
-            return value;
-        } else {
-            IRubyObject newValue = TypeConverter.convertToType19(value, context.runtime.getArray(), "to_ary", false);
-            if (newValue.isNil()) {
-                return RubyArray.newArrayLight(context.runtime, value);
-            }
-
-            // must be array by now, or error
-            if (!(newValue instanceof RubyArray)) {
-                throw context.runtime.newTypeError(newValue.getMetaClass() + "#" + "to_ary" + " should return Array");
-            }
-
-            return newValue;
+        if (!(value instanceof RubyArray)) {
+            value = RubyArray.aryToAry(value);
         }
+
+        return value;
     }
 
     public static int irReqdArgMultipleAsgnIndex(int n,  int preArgsCount, int index, int postArgsCount) {

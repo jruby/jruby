@@ -292,10 +292,10 @@ public class Helpers {
 
     public static RubyArray viewArgsArray(ThreadContext context, RubyArray rubyArray, int preArgsCount, int postArgsCount) {
         int n = rubyArray.getLength();
-        if ((preArgsCount >= n) || (preArgsCount + postArgsCount >= n)) {
+        if (preArgsCount + postArgsCount >= n) {
             return RubyArray.newEmptyArray(context.runtime);
         } else {
-            return (RubyArray)rubyArray.subseqLight(preArgsCount, n - preArgsCount - postArgsCount);
+            return (RubyArray)rubyArray.subseq(context.runtime.getArray(), preArgsCount, n - preArgsCount - postArgsCount, true);
         }
     }
 
