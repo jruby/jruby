@@ -1807,14 +1807,23 @@ public abstract class KernelNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("time interval must be positive", this));
             }
 
-            final long start = System.currentTimeMillis();
             final RubyThread thread = getContext().getThreadManager().getCurrentThread();
 
             // Clear the wakeUp flag, following Ruby semantics:
             // it should only be considered if we are inside the sleep when Thread#{run,wakeup} is called.
             thread.shouldWakeUp();
 
-            long slept = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Long>() {
+            return sleepFor(getContext(), durationInMillis);
+        }
+
+        public static long sleepFor(RubyContext context, final long durationInMillis) {
+            assert durationInMillis >= 0;
+
+            final RubyThread thread = context.getThreadManager().getCurrentThread();
+
+            final long start = System.currentTimeMillis();
+
+            long slept = context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Long>() {
                 @Override
                 public Long block() throws InterruptedException {
                     long now = System.currentTimeMillis();
