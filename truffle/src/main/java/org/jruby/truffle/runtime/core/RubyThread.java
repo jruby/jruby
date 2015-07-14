@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ProcNodes;
@@ -155,10 +156,17 @@ public class RubyThread extends RubyBasicObject {
     }
 
     public boolean join(final int timeoutInMillis) {
-        final boolean joined = manager.runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
+        final long start = System.currentTimeMillis();
+        final boolean joined = manager.runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
             @Override
             public Boolean block() throws InterruptedException {
-                return finished.await(timeoutInMillis, TimeUnit.MILLISECONDS);
+                long now = System.currentTimeMillis();
+                long waited = now - start;
+                if (waited >= timeoutInMillis) {
+                    // We need to know whether countDown() was called and we do not want to block.
+                    return finished.getCount() == 0;
+                }
+                return finished.await(timeoutInMillis - waited, TimeUnit.MILLISECONDS);
             }
         });
 

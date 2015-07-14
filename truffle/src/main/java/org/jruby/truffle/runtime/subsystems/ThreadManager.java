@@ -116,7 +116,7 @@ public class ThreadManager {
      * @return the return value from {@code action} or null if interrupted
      */
     @TruffleBoundary
-    public <T> T runOnce(BlockingActionWithoutGlobalLock<T> action) {
+    private <T> T runOnce(BlockingActionWithoutGlobalLock<T> action) {
         T result = null;
         final RubyThread runningThread = leaveGlobalLock();
         runningThread.setStatus(Status.SLEEP);

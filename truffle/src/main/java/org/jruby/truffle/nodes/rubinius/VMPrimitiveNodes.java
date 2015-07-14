@@ -508,7 +508,7 @@ public abstract class VMPrimitiveNodes {
             final int finalOptions = options;
 
             // retry:
-            pid = getContext().getThreadManager().runOnce(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
+            pid = getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
                     return posix().waitpid(input_pid, statusReference, finalOptions);
