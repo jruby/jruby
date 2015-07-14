@@ -1810,6 +1810,10 @@ public abstract class KernelNodes {
             final long start = System.currentTimeMillis();
             final RubyThread thread = getContext().getThreadManager().getCurrentThread();
 
+            // Clear the wakeUp flag, following Ruby semantics:
+            // it should only be considered if we are inside the sleep when Thread#{run,wakeup} is called.
+            thread.shouldWakeUp();
+
             long slept = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Long>() {
                 @Override
                 public Long block() throws InterruptedException {
