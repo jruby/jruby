@@ -25,6 +25,7 @@ import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -2287,16 +2288,24 @@ public class Helpers {
         }
     }
 
-    public static RubyArray argsPush(RubyArray first, IRubyObject second) {
+    public static RubyArray argsPush(ThreadContext context, RubyArray first, IRubyObject second) {
         return ((RubyArray)first.dup()).append(second);
     }
 
-    public static RubyArray argsCat(IRubyObject first, IRubyObject second) {
-        Ruby runtime = first.getRuntime();
-        IRubyObject secondArgs;
-        secondArgs = Helpers.splatValue19(second);
+    @Deprecated
+    public static RubyArray argsPush(RubyArray first, IRubyObject second) {
+        return argsPush(first.getRuntime().getCurrentContext(), first, second);
+    }
 
-        return ((RubyArray) Helpers.ensureRubyArray(runtime, first).dup()).concat(secondArgs);
+    public static RubyArray argsCat(ThreadContext context, IRubyObject first, IRubyObject second) {
+        IRubyObject secondArgs = IRRuntimeHelpers.irSplat(context, second);
+
+        return ((RubyArray) Helpers.ensureRubyArray(context.runtime, first).dup()).concat(secondArgs);
+    }
+
+    @Deprecated
+    public static RubyArray argsCat(IRubyObject first, IRubyObject second) {
+        return argsCat(first.getRuntime().getCurrentContext(), first, second);
     }
 
     /** Use an ArgsNode (used for blocks) to generate ArgumentDescriptors */
