@@ -334,7 +334,6 @@ modes.each do |mode|
 
     it "compiles splatted values" do
       run("def foo(a,b,c);[a,b,c];end;foo(1, *[2, 3])") {|result| expect(result).to eq([1,2,3]) }
-      run("class Coercible1;def to_ary;[2,3];end;end; [1, *Coercible1.new]") {|result| expect(result).to eq([1,2,3]) }
     end
 
     it "compiles multiple assignment" do
