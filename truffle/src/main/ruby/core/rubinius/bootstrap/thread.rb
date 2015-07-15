@@ -68,6 +68,7 @@ class Thread
     if self == Thread.current
       Kernel.raise exc
     else
+      exc.capture_backtrace! 2 unless exc.backtrace?
       Truffle::Primitive.thread_raise self, exc
     end
   end
