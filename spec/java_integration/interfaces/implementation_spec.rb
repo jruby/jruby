@@ -190,15 +190,16 @@ describe "Single-method Java interfaces" do
   end
 
   it "passes correct arguments to proc .impl" do
-    Java::java.io.File.new('.').listFiles do |pathname|
-      pathname.should be_kind_of(java.io.File)
-      true
+    Java::java.io.File.new('.').list do |dir, name| # FilenameFilter
+      dir.should be_kind_of(java.io.File)
+      name.should be_kind_of(String)
+      true # boolean accept(File dir, String name)
     end
 
-    Java::java_integration.fixtures.iface.SingleMethodIfaceWith2Args::Caller.call do |arg1, arg2|
-      arg1.should == 'hello'
-      arg2.should == 42
-    end
+    caller = Java::java_integration.fixtures.iface.SingleMethodInterfaceWithArg::Caller
+
+    caller.call { |arg| arg.should == 42 }
+    caller.call('x') { |arg| arg.should == 'x' }
   end
 
   it "should maintain Ruby object equality when passed through Java and back" do
