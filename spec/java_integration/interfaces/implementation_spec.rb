@@ -200,6 +200,14 @@ describe "Single-method Java interfaces" do
 
     caller.call { |arg| arg.should == 42 }
     caller.call('x') { |arg| arg.should == 'x' }
+
+    Java::java_integration.fixtures.iface.SingleMethodInterfaceWith4Args::Caller.call do
+      |arg1, arg2, arg3, arg4|
+      arg2.should == 'hello'
+      arg3.should == 'world'
+      arg4.should == 42
+      [ arg2, arg3, arg4 ] # return Object[]
+    end
   end
 
   it "should maintain Ruby object equality when passed through Java and back" do
