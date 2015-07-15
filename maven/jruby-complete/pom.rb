@@ -81,8 +81,10 @@ project 'JRuby Complete' do
 
       # use the javadocs and sources from jruby-core !!!
       phase :package do
+        set = ['sources']
+        set << 'javadocs' if name != 'snapshots'
         plugin :dependency do
-          items = [ 'sources', 'javadoc' ].collect do |classifier|
+          items = set.collect do |classifier|
             { 'groupId' =>  '${project.groupId}',
               'artifactId' =>  'jruby-core',
               'version' =>  '${project.version}',
@@ -96,12 +98,12 @@ project 'JRuby Complete' do
         end
 
         plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
+          artifacts = set.collect do |classifier|
+            { 'file' =>  "${project.build.directory}/jruby-core-${project.version}-#{classifier}.jar", 'classifier' =>  classifier }
+          end
           execute_goals( 'attach-artifact',
                          :id => 'attach-artifacts',
-                         'artifacts' => [ { 'file' =>  '${project.build.directory}/jruby-core-${project.version}-sources.jar',
-                                            'classifier' =>  'sources' },
-                                          { 'file' =>  '${project.build.directory}/jruby-core-${project.version}-javadoc.jar',
-                                            'classifier' =>  'javadoc' } ] )
+                         'artifacts' => artifacts )
         end
       end
     end
