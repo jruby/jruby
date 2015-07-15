@@ -25,7 +25,6 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyThread.Status;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;

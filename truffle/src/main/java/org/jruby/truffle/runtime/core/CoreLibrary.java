@@ -319,7 +319,7 @@ public class CoreLibrary {
         threadClass = defineClass("Thread", new RubyThread.ThreadAllocator());
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location", NO_ALLOCATOR);
-        timeClass = defineClass("Time", new RubyTime.TimeAllocator());
+        timeClass = defineClass("Time", new TimeNodes.TimeAllocator());
         trueClass = defineClass("TrueClass", NO_ALLOCATOR);
         unboundMethodClass = defineClass("UnboundMethod", NO_ALLOCATOR);
         final RubyClass ioClass = defineClass("IO", new IOPrimitiveNodes.IOAllocator());

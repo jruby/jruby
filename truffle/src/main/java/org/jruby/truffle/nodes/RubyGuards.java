@@ -161,6 +161,10 @@ public abstract class RubyGuards {
         return encodingConverter instanceof RubyEncodingConverter;
     }
 
+    public static boolean isRubyTime(RubyBasicObject time) {
+        return time instanceof RubyTime;
+    }
+
     // Internal types
 
     public static boolean isThreadLocal(Object value) {
@@ -190,5 +194,4 @@ public abstract class RubyGuards {
     public static boolean isInfinity(double value) {
         return Double.isInfinite(value);
     }
-
 }

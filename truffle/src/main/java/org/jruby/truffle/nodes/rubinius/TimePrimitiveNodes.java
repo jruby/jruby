@@ -19,18 +19,16 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.TimeNodes;
 import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyTime;
 import org.jruby.util.RubyDateFormatter;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Time} class.
- * <p>
- * Also see {@link RubyTime}.
  */
 public abstract class TimePrimitiveNodes {
 
@@ -45,9 +43,9 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public RubyTime timeSNow(VirtualFrame frame, RubyClass timeClass) {
+        public RubyBasicObject timeSNow(VirtualFrame frame, RubyClass timeClass) {
             // TODO CS 4-Mar-15 whenever we get time we have to convert lookup and time zone to a string and look it up - need to cache somehow...
-            return new RubyTime(timeClass, now((RubyBasicObject) readTimeZoneNode.execute(frame)), nil());
+            return TimeNodes.createRubyTime(timeClass, now((RubyBasicObject) readTimeZoneNode.execute(frame)), nil());
         }
         
         @TruffleBoundary
@@ -66,8 +64,8 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public RubyTime timeSDup(RubyTime other) {
-            final RubyTime time = new RubyTime(getContext().getCoreLibrary().getTimeClass(), other.getDateTime(), other.getOffset());
+        public RubyBasicObject timeSDup(RubyBasicObject other) {
+            final RubyBasicObject time = TimeNodes.createRubyTime(getContext().getCoreLibrary().getTimeClass(), TimeNodes.getDateTime(other), TimeNodes.getOffset(other));
             return time;
         }
 
@@ -84,17 +82,17 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization(guards = { "isUTC", "isNil(offset)" })
-        public RubyTime timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, Object offset) {
+        public RubyBasicObject timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds), nil());
+            return TimeNodes.createRubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds), nil());
         }
 
         @Specialization(guards = { "!isUTC", "isNil(offset)" })
-        public RubyTime timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, Object offset) {
+        public RubyBasicObject timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), localtime(milliseconds, (RubyBasicObject) readTimeZoneNode.execute(frame)), offset);
+            return TimeNodes.createRubyTime(getContext().getCoreLibrary().getTimeClass(), localtime(milliseconds, (RubyBasicObject) readTimeZoneNode.execute(frame)), offset);
         }
 
         private long getMillis(long seconds, int nanoseconds) {
@@ -128,8 +126,8 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public long timeSeconds(RubyTime time) {
-            return time.getDateTime().getMillis() / 1_000;
+        public long timeSeconds(RubyBasicObject time) {
+            return TimeNodes.getDateTime(time).getMillis() / 1_000;
         }
 
     }
@@ -142,8 +140,8 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public long timeUSeconds(RubyTime time) {
-            return time.getDateTime().getMillisOfSecond() * 1_000L;
+        public long timeUSeconds(RubyBasicObject time) {
+            return TimeNodes.getDateTime(time).getMillisOfSecond() * 1_000L;
         }
 
     }
@@ -159,9 +157,9 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject timeDecompose(VirtualFrame frame, RubyTime time) {
+        public RubyBasicObject timeDecompose(VirtualFrame frame, RubyBasicObject time) {
             CompilerDirectives.transferToInterpreter();
-            final DateTime dateTime = time.getDateTime();
+            final DateTime dateTime = TimeNodes.getDateTime(time);
             final int sec = dateTime.getSecondOfMinute();
             final int min = dateTime.getMinuteOfHour();
             final int hour = dateTime.getHourOfDay();
@@ -202,10 +200,10 @@ public abstract class TimePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(format)")
-        public RubyBasicObject timeStrftime(RubyTime time, RubyBasicObject format) {
+        public RubyBasicObject timeStrftime(RubyBasicObject time, RubyBasicObject format) {
             final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
             // TODO CS 15-Feb-15 ok to just pass nanoseconds as 0?
-            return createString(rdf.formatToByteList(rdf.compilePattern(StringNodes.getByteList(format), false), time.getDateTime(), 0, null));
+            return createString(rdf.formatToByteList(rdf.compilePattern(StringNodes.getByteList(format), false), TimeNodes.getDateTime(time), 0, null));
         }
 
     }
@@ -221,18 +219,18 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
+        public RubyBasicObject timeSFromArray(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
                 int nsec, int isdst, boolean fromutc, Object utcoffset) {
             return buildTime(frame, timeClass, sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
         }
 
         @Specialization(guards = "!isInteger(sec) || !isInteger(nsec)")
-        public RubyTime timeSFromArrayFallback(VirtualFrame frame, RubyClass timeClass, Object sec, int min, int hour, int mday, int month, int year,
+        public RubyBasicObject timeSFromArrayFallback(VirtualFrame frame, RubyClass timeClass, Object sec, int min, int hour, int mday, int month, int year,
                                        Object nsec, int isdst, boolean fromutc, Object utcoffset) {
             return null; // Primitive failure
         }
 
-        private RubyTime buildTime(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
+        private RubyBasicObject buildTime(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
                                        int nsec, int isdst, boolean fromutc, Object utcoffset) {
             CompilerDirectives.transferToInterpreter();
 
@@ -263,7 +261,7 @@ public abstract class TimePrimitiveNodes {
 
             if (isdst == -1) {
                 final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, zone);
-                return new RubyTime(timeClass, dateTime, utcoffset);
+                return TimeNodes.createRubyTime(timeClass, dateTime, utcoffset);
             } else {
                 throw new UnsupportedOperationException(String.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
             }
@@ -289,8 +287,8 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public long timeNSeconds(RubyTime time) {
-            return time.getDateTime().getMillisOfSecond() * 1_000_000L;
+        public long timeNSeconds(RubyBasicObject time) {
+            return TimeNodes.getDateTime(time).getMillisOfSecond() * 1_000_000L;
         }
 
     }
@@ -303,8 +301,8 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public long timeSetNSeconds(RubyTime time, int nanoseconds) {
-            time.setDateTime(time.getDateTime().withMillisOfSecond(nanoseconds / 1_000_000));
+        public long timeSetNSeconds(RubyBasicObject time, int nanoseconds) {
+            TimeNodes.setDateTime(time, TimeNodes.getDateTime(time).withMillisOfSecond(nanoseconds / 1_000_000));
             return nanoseconds;
         }
 
@@ -318,7 +316,7 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public Object timeEnvZone(RubyTime time) {
+        public Object timeEnvZone(RubyBasicObject time) {
             throw new UnsupportedOperationException("time_env_zone");
         }
 
@@ -332,12 +330,12 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public Object timeUTCOffset(RubyTime time) {
-            Object offset = time.getOffset();
+        public Object timeUTCOffset(RubyBasicObject time) {
+            Object offset = TimeNodes.getOffset(time);
             if (offset != nil()) {
                 return offset;
             } else {
-                return time.getDateTime().getZone().getOffset(time.getDateTime().getMillis()) / 1_000;
+                return TimeNodes.getDateTime(time).getZone().getOffset(TimeNodes.getDateTime(time).getMillis()) / 1_000;
             }
         }
 

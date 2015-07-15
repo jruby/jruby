@@ -10,7 +10,6 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.nodes.Node;
-
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ProcNodes;
