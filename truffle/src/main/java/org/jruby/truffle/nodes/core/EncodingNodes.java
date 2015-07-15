@@ -27,7 +27,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyEncoding;
-import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.util.ByteList;
 
 @CoreClass(name = "Encoding")
@@ -79,8 +78,8 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(first)")
-        public Object isCompatibleStringRegexp(RubyBasicObject first, RubyRegexp second) {
+        @Specialization(guards = {"isRubyString(first)", "isRubyRegexp(second)"})
+        public Object isCompatibleStringRegexp(RubyBasicObject first, RubyBasicObject second) {
             final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringNodes.getByteList(first).getEncoding(), RegexpNodes.getRegex(second).getEncoding());
 
             if (compatibleEncoding != null) {
@@ -91,8 +90,8 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(second)")
-        public Object isCompatibleRegexpString(RubyRegexp first, RubyBasicObject second) {
+        @Specialization(guards = {"isRubyRegexp(first)", "isRubyString(second)"})
+        public Object isCompatibleRegexpString(RubyBasicObject first, RubyBasicObject second) {
             final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(RegexpNodes.getRegex(first).getEncoding(), StringNodes.getByteList(second).getEncoding());
 
             if (compatibleEncoding != null) {
@@ -103,8 +102,8 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatibleRegexpRegexp(RubyRegexp first, RubyRegexp second) {
+        @Specialization(guards = {"isRubyRegexp(first)", "isRubyRegexp(second)"})
+        public Object isCompatibleRegexpRegexp(RubyBasicObject first, RubyBasicObject second) {
             final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(RegexpNodes.getRegex(first).getEncoding(), RegexpNodes.getRegex(second).getEncoding());
 
             if (compatibleEncoding != null) {
@@ -115,8 +114,8 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(second)")
-        public Object isCompatibleRegexpSymbol(RubyRegexp first, RubyBasicObject second) {
+        @Specialization(guards = {"isRubyRegexp(first)", "isRubySymbol(second)"})
+        public Object isCompatibleRegexpSymbol(RubyBasicObject first, RubyBasicObject second) {
             final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(RegexpNodes.getRegex(first).getEncoding(), SymbolNodes.getByteList(second).getEncoding());
 
             if (compatibleEncoding != null) {
@@ -127,8 +126,8 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(first)")
-        public Object isCompatibleSymbolRegexp(RubyBasicObject first, RubyRegexp second) {
+        @Specialization(guards = {"isRubySymbol(first)", "isRubyRegexp(second)"})
+        public Object isCompatibleSymbolRegexp(RubyBasicObject first, RubyBasicObject second) {
             final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(SymbolNodes.getByteList(first).getEncoding(), RegexpNodes.getRegex(second).getEncoding());
 
             if (compatibleEncoding != null) {

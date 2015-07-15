@@ -17,7 +17,6 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.translator.BodyTranslator;
 import org.jruby.util.RegexpOptions;
 
@@ -35,7 +34,7 @@ public class InterpolatedRegexpNode extends RubyNode {
     }
 
     @Override
-    public RubyRegexp executeRubyRegexp(VirtualFrame frame) {
+    public Object execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
         final org.jruby.RubyString[] strings = new org.jruby.RubyString[children.length];
@@ -47,7 +46,7 @@ public class InterpolatedRegexpNode extends RubyNode {
 
         final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getRuntime(), strings, options);
 
-        final RubyRegexp regexp = RegexpNodes.createRubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), preprocessed.getByteList(), options);
+        final RubyBasicObject regexp = RegexpNodes.createRubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), preprocessed.getByteList(), options);
 
         if (options.isEncodingNone()) {
             if (!BodyTranslator.all7Bit(preprocessed.getByteList().bytes())) {
@@ -58,10 +57,5 @@ public class InterpolatedRegexpNode extends RubyNode {
         }
 
         return regexp;
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        return executeRubyRegexp(frame);
     }
 }

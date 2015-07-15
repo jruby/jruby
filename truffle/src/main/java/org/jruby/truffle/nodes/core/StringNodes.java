@@ -34,9 +34,7 @@ import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import jnr.posix.POSIX;
-
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
@@ -691,19 +689,19 @@ public abstract class StringNodes {
             return slice(frame, string, getToIntNode().doInt(frame, start), getToIntNode().doInt(frame, length));
         }
 
-        @Specialization(guards = "wasNotProvided(capture) || isRubiniusUndefined(capture)")
-        public Object slice(VirtualFrame frame, RubyBasicObject string, RubyRegexp regexp, Object capture) {
+        @Specialization(guards = {"isRubyRegexp(regexp)", "wasNotProvided(capture) || isRubiniusUndefined(capture)"})
+        public Object slice1(VirtualFrame frame, RubyBasicObject string, RubyBasicObject regexp, Object capture) {
             return sliceCapture(frame, string, regexp, 0);
         }
 
-        @Specialization(guards = "wasProvided(capture)")
-        public Object sliceCapture(VirtualFrame frame, RubyBasicObject string, RubyRegexp regexp, Object capture) {
+        @Specialization(guards = {"isRubyRegexp(regexp)", "wasProvided(capture)"})
+        public Object sliceCapture(VirtualFrame frame, RubyBasicObject string, RubyBasicObject regexp, Object capture) {
             // Extracted from Rubinius's definition of String#[].
             return ruby(frame, "match, str = subpattern(index, other); Regexp.last_match = match; str", "index", regexp, "other", capture);
         }
 
         @Specialization(guards = {"wasNotProvided(length) || isRubiniusUndefined(length)", "isRubyString(matchStr)"})
-        public Object slice(VirtualFrame frame, RubyBasicObject string, RubyBasicObject matchStr, Object length) {
+        public Object slice2(VirtualFrame frame, RubyBasicObject string, RubyBasicObject matchStr, Object length) {
             if (includeNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 includeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));

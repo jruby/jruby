@@ -10,14 +10,14 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import com.oracle.truffle.api.nodes.Node;
-import org.joni.*;
-import org.jruby.truffle.nodes.core.RegexpNodes;
-import org.jruby.util.*;
+import org.joni.Regex;
+import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
 
 /**
  * Represents the Ruby {@code Regexp} class.
  */
+@Deprecated
 public class RubyRegexp extends RubyBasicObject {
 
     // TODO(CS): not sure these compilation finals are correct - are they needed anyway?

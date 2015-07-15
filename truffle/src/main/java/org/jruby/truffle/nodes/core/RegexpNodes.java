@@ -227,7 +227,8 @@ public abstract class RegexpNodes {
     }
 
     @TruffleBoundary
-    public static RubyBasicObject gsub(RubyRegexp regexp, RubyBasicObject string, String replacement) {
+    public static RubyBasicObject gsub(RubyBasicObject regexp, RubyBasicObject string, String replacement) {
+        assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(string);
 
         final RubyContext context = regexp.getContext();
@@ -272,7 +273,8 @@ public abstract class RegexpNodes {
     }
 
     @TruffleBoundary
-    public static RubyBasicObject[] split(RubyRegexp regexp, final RubyBasicObject string, final boolean useLimit, final int limit) {
+    public static RubyBasicObject[] split(RubyBasicObject regexp, final RubyBasicObject string, final boolean useLimit, final int limit) {
+        assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(string);
 
         final RubyContext context = regexp.getContext();
@@ -448,40 +450,42 @@ public abstract class RegexpNodes {
         return enc;
     }
 
-    public static void initialize(RubyRegexp regexp, Node currentNode, ByteList setSource, int options) {
+    public static void initialize(RubyBasicObject regexp, Node currentNode, ByteList setSource, int options) {
+        assert RubyGuards.isRubyRegexp(regexp);
         setSource(regexp, setSource);
         setOptions(regexp, RegexpOptions.fromEmbeddedOptions(options));
         setRegex(regexp, compile(currentNode, regexp.getContext(), setSource, getOptions(regexp)));
     }
 
-    public static void initialize(RubyRegexp regexp, Regex setRegex, ByteList setSource) {
+    public static void initialize(RubyBasicObject regexp, Regex setRegex, ByteList setSource) {
+        assert RubyGuards.isRubyRegexp(regexp);
         setRegex(regexp, setRegex);
         setSource(regexp, setSource);
     }
 
-    public static RubyRegexp createRubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, RegexpOptions options) {
-        final RubyRegexp regexp = new RubyRegexp(regexpClass);
+    public static RubyBasicObject createRubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, RegexpOptions options) {
+        final RubyBasicObject regexp = new RubyRegexp(regexpClass);
         RegexpNodes.setOptions(regexp, options);
         RegexpNodes.initialize(regexp, RegexpNodes.compile(currentNode, regexpClass.getContext(), regex, options), regex);
         return regexp;
     }
 
-    public static RubyRegexp createRubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, int options) {
-        final RubyRegexp regexp = new RubyRegexp(regexpClass);
+    public static RubyBasicObject createRubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, int options) {
+        final RubyBasicObject regexp = new RubyRegexp(regexpClass);
         RegexpNodes.setOptions(regexp, RegexpOptions.fromEmbeddedOptions(options));
         RegexpNodes.initialize(regexp, RegexpNodes.compile(currentNode, regexpClass.getContext(), regex, RegexpNodes.getOptions(regexp)), regex);
         return regexp;
     }
 
-    public static RubyRegexp createRubyRegexp(RubyClass regexpClass, Regex regex, ByteList source, RegexpOptions options) {
-        final RubyRegexp regexp = new RubyRegexp(regexpClass);
+    public static RubyBasicObject createRubyRegexp(RubyClass regexpClass, Regex regex, ByteList source, RegexpOptions options) {
+        final RubyBasicObject regexp = new RubyRegexp(regexpClass);
         RegexpNodes.setOptions(regexp, options);
         RegexpNodes.initialize(regexp, regex, source);
         return regexp;
     }
 
-    public static RubyRegexp createRubyRegexp(RubyClass regexpClass, Regex regex, ByteList source) {
-        final RubyRegexp regexp = new RubyRegexp(regexpClass);
+    public static RubyBasicObject createRubyRegexp(RubyClass regexpClass, Regex regex, ByteList source) {
+        final RubyBasicObject regexp = new RubyRegexp(regexpClass);
         RegexpNodes.initialize(regexp, regex, source);
         return regexp;
     }

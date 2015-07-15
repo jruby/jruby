@@ -11,16 +11,15 @@
 package org.jruby.truffle.nodes.core;
 
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.util.StringSupport;
 
 public class RegexpGuards {
 
-    public static boolean isInitialized(RubyRegexp regexp) {
+    public static boolean isInitialized(RubyBasicObject regexp) {
         return RegexpNodes.getRegex(regexp) != null;
     }
 
-    public static boolean isRegexpLiteral(RubyRegexp regexp) {
+    public static boolean isRegexpLiteral(RubyBasicObject regexp) {
         return RegexpNodes.getOptions(regexp).isLiteral();
     }
 

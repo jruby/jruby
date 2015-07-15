@@ -9,13 +9,12 @@
  */
 package org.jruby.truffle.nodes.core.fixnum;
 
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.CoreLibrary;
-
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.CoreLibrary;
 
 /**
  * Passes through {@code int} values unmodified, but will convert a {@code long} value to an {@code int}, if it fits

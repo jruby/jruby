@@ -30,7 +30,10 @@ import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.util.ByteList;
 
@@ -136,16 +139,6 @@ public abstract class RubyNode extends Node {
 
         if (value instanceof Double) {
             return (double) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
-    public RubyRegexp executeRubyRegexp(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (value instanceof RubyRegexp) {
-            return (RubyRegexp) value;
         } else {
             throw new UnexpectedResultException(value);
         }
