@@ -425,7 +425,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public IRubyObject toJRuby(RubyEncoding encoding) {
-        return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(encoding.getName()));
+        return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(EncodingNodes.getName(encoding)));
     }
 
     public org.jruby.RubyString toJRubyString(RubyBasicObject string) {

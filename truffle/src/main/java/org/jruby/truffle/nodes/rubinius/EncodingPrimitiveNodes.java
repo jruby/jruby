@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.core.EncodingNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
@@ -31,12 +32,12 @@ public abstract class EncodingPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public RubyEncoding encodingGetObjectEncodingString(RubyBasicObject string) {
-            return RubyEncoding.getEncoding(StringNodes.getByteList(string).getEncoding());
+            return EncodingNodes.getEncoding(StringNodes.getByteList(string).getEncoding());
         }
 
         @Specialization(guards = "isRubySymbol(symbol)")
         public RubyEncoding encodingGetObjectEncodingSymbol(RubyBasicObject symbol) {
-            return RubyEncoding.getEncoding(SymbolNodes.getByteList(symbol).getEncoding());
+            return EncodingNodes.getEncoding(SymbolNodes.getByteList(symbol).getEncoding());
         }
 
         @Specialization

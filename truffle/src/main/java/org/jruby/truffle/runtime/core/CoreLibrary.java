@@ -648,26 +648,26 @@ public class CoreLibrary {
             public void defineEncoding(EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
                 Encoding e = encodingEntry.getEncoding();
 
-                RubyEncoding re = RubyEncoding.newEncoding(encodingClass, e, name, p, end, encodingEntry.isDummy());
-                RubyEncoding.storeEncoding(encodingEntry.getIndex(), re);
+                RubyEncoding re = EncodingNodes.newEncoding(encodingClass, e, name, p, end, encodingEntry.isDummy());
+                EncodingNodes.storeEncoding(encodingEntry.getIndex(), re);
             }
 
             @Override
             public void defineConstant(int encodingListIndex, String constName) {
-                encodingClass.setConstant(node, constName, RubyEncoding.getEncoding(encodingListIndex));
+                encodingClass.setConstant(node, constName, EncodingNodes.getEncoding(encodingListIndex));
             }
         });
 
         getContext().getRuntime().getEncodingService().defineAliases(new EncodingService.EncodingAliasVisitor() {
             @Override
             public void defineAlias(int encodingListIndex, String constName) {
-                RubyEncoding re = RubyEncoding.getEncoding(encodingListIndex);
-                RubyEncoding.storeAlias(constName, re);
+                RubyEncoding re = EncodingNodes.getEncoding(encodingListIndex);
+                EncodingNodes.storeAlias(constName, re);
             }
 
             @Override
             public void defineConstant(int encodingListIndex, String constName) {
-                encodingClass.setConstant(node, constName, RubyEncoding.getEncoding(encodingListIndex));
+                encodingClass.setConstant(node, constName, EncodingNodes.getEncoding(encodingListIndex));
             }
         });
     }
@@ -1113,7 +1113,7 @@ public class CoreLibrary {
 
     public RubyException rangeError(int code, RubyEncoding encoding, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return rangeError(String.format("invalid codepoint %x in %s", code, encoding.getEncoding()), currentNode);
+        return rangeError(String.format("invalid codepoint %x in %s", code, EncodingNodes.getEncoding(encoding)), currentNode);
     }
 
     public RubyException rangeError(String type, String value, String range, Node currentNode) {

@@ -184,7 +184,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubyEncoding encoding(RubyBasicObject symbol) {
-            return RubyEncoding.getEncoding(getByteList(symbol).getEncoding());
+            return EncodingNodes.getEncoding(getByteList(symbol).getEncoding());
         }
 
     }

@@ -138,7 +138,7 @@ public abstract class KernelNodes {
             }
 
             // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
-            return createString(resultBuilder.toString(), RubyEncoding.getEncoding("UTF-8").getEncoding());
+            return createString(resultBuilder.toString(), EncodingNodes.getEncoding(EncodingNodes.getEncoding("UTF-8")));
         }
 
     }

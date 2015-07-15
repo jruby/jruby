@@ -67,6 +67,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
+import org.jruby.truffle.nodes.core.EncodingNodes;
 import org.jruby.truffle.nodes.core.StringGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.StringNodesFactory;
@@ -537,7 +538,7 @@ public abstract class StringPrimitiveNodes {
         public RubyBasicObject stringFromCodepointSimple(int code, RubyEncoding encoding) {
             return StringNodes.createString(
                     getContext().getCoreLibrary().getStringClass(),
-                    new ByteList(new byte[]{(byte) code}, encoding.getEncoding()));
+                    new ByteList(new byte[]{(byte) code}, EncodingNodes.getEncoding(encoding)));
         }
 
         @TruffleBoundary
@@ -546,7 +547,7 @@ public abstract class StringPrimitiveNodes {
             final int length;
 
             try {
-                length = encoding.getEncoding().codeToMbcLength(code);
+                length = EncodingNodes.getEncoding(encoding).codeToMbcLength(code);
             } catch (EncodingException e) {
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
@@ -558,7 +559,7 @@ public abstract class StringPrimitiveNodes {
             final byte[] bytes = new byte[length];
 
             try {
-                encoding.getEncoding().codeToMbc(code, bytes, 0);
+                EncodingNodes.getEncoding(encoding).codeToMbc(code, bytes, 0);
             } catch (EncodingException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
@@ -566,7 +567,7 @@ public abstract class StringPrimitiveNodes {
 
             return StringNodes.createString(
                     getContext().getCoreLibrary().getStringClass(),
-                    new ByteList(bytes, encoding.getEncoding()));
+                    new ByteList(bytes, EncodingNodes.getEncoding(encoding)));
         }
 
         @Specialization
@@ -580,7 +581,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         protected boolean isSimple(int code, RubyEncoding encoding) {
-            return encoding.getEncoding() == ASCIIEncoding.INSTANCE && code >= 0x00 && code <= 0xFF;
+            return EncodingNodes.getEncoding(encoding) == ASCIIEncoding.INSTANCE && code >= 0x00 && code <= 0xFF;
         }
 
     }
