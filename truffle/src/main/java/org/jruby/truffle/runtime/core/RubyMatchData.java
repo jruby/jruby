@@ -34,6 +34,7 @@ package org.jruby.truffle.runtime.core;
 
 import org.jcodings.Encoding;
 import org.joni.Region;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.RegexpNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.array.ArrayUtils;
@@ -61,10 +62,11 @@ public class RubyMatchData extends RubyBasicObject {
     private final int begin, end;
     private Object fullTuple;
 
-    public RubyMatchData(RubyClass rubyClass, RubyBasicObject source, RubyRegexp regexp, Region region, Object[] values, RubyBasicObject pre, RubyBasicObject post, RubyBasicObject global, int begin, int end) {
+    public RubyMatchData(RubyClass rubyClass, RubyBasicObject source, RubyBasicObject regexp, Region region, Object[] values, RubyBasicObject pre, RubyBasicObject post, RubyBasicObject global, int begin, int end) {
         super(rubyClass);
+        assert RubyGuards.isRubyRegexp(regexp);
         this.source = source;
-        this.regexp = regexp;
+        this.regexp = (RubyRegexp) regexp;
         this.region = region;
         this.values = values;
         this.pre = pre;
