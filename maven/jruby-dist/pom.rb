@@ -144,6 +144,9 @@ project 'JRuby Dist' do
                                         :classifier => 'src' } ] )
         
       end
+      plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin', '1.2' ) do
+        execute_goals( :artifacts, :algorithms => ['SHA256' ] )
+      end
     end
   end
 end
