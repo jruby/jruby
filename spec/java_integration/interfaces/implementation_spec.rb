@@ -204,13 +204,13 @@ describe "Single-method Java interfaces" do
 
   it "should maintain Ruby object equality when passed through Java and back" do
     result = SingleMethodInterface.impl { |name| name }
-    callable = mock "callable"
+    callable = double "callable"
     callable.should_receive(:call).and_return result
     UsesSingleMethodInterface.new.callIt3(callable).should == result
   end
 
   it "coerces to that interface after duck-typed implementation has happened" do
-    callable = mock "SingleMethodInterfaceImpl"
+    callable = double "SingleMethodInterfaceImpl"
     callable.should_receive(:callIt).and_return :callIt
     UsesSingleMethodInterface.callIt(callable).should == :callIt
 
@@ -551,7 +551,7 @@ end
 
 describe "Coercion of normal ruby objects" do
   it "should allow an object passed to a java method to be coerced to the interface" do
-    ri = mock "returns interface"
+    ri = double "returns interface"
     consumer = ReturnsInterfaceConsumer.new
     consumer.set_returns_interface ri
     ri.should be_kind_of(ReturnsInterface)
@@ -559,7 +559,7 @@ describe "Coercion of normal ruby objects" do
 
 
   it "should return the original ruby object when returned back to Ruby" do
-    obj = mock "ruby object"
+    obj = double "ruby object"
     cti = CoerceToInterface.new
     result = cti.returnArgumentBackToRuby(JRuby.runtime, obj)
     obj.should be_kind_of(Java::JavaLang::Runnable)
@@ -568,7 +568,7 @@ describe "Coercion of normal ruby objects" do
   end
 
   it "should return the original ruby object when converted back to Ruby" do
-    obj = mock "ruby object"
+    obj = double "ruby object"
     cti = CoerceToInterface.new
     result = cti.coerceArgumentBackToRuby(JRuby.runtime, obj)
     obj.should be_kind_of(Java::JavaLang::Runnable)
@@ -576,8 +576,8 @@ describe "Coercion of normal ruby objects" do
   end
 
   it "should pass the original ruby object when converted back to Ruby and used as an argument to another Ruby object" do
-    obj = mock "ruby object"
-    callable = mock "callable"
+    obj = double "ruby object"
+    callable = double "callable"
     callable.should_receive(:call).with(obj)
     cti = CoerceToInterface.new
     cti.passArgumentToInvokableRubyObject(callable, obj)
@@ -585,15 +585,15 @@ describe "Coercion of normal ruby objects" do
   end
 
   it "should allow an object passed to a java constructor to be coerced to the interface" do
-    ri = mock "returns interface"
+    ri = double "returns interface"
     ReturnsInterfaceConsumer.new(ri)
     ri.should be_kind_of(ReturnsInterface)
   end
 
   it "should allow an object to be coerced as a return type of a java method" do
-    ri = mock "returns interface"
-    value = mock "return value runnable"
-    ri.stub!(:getRunnable).and_return value
+    ri = double "returns interface"
+    value = double "return value runnable"
+    ri.stub(:getRunnable).and_return value
 
     consumer = ReturnsInterfaceConsumer.new(ri)
     runnable = consumer.getRunnable
