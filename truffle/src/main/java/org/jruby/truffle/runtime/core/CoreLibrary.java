@@ -313,7 +313,7 @@ public class CoreLibrary {
         RubyClass queueClass = defineClass("Queue", new QueueNodes.QueueAllocator());
         defineClass(queueClass, "SizedQueue", new SizedQueueNodes.SizedQueueAllocator());
         rangeClass = defineClass("Range", new RubyRange.RangeAllocator());
-        regexpClass = defineClass("Regexp", new RubyRegexp.RegexpAllocator());
+        regexpClass = defineClass("Regexp", new RegexpNodes.RegexpAllocator());
         stringClass = defineClass("String", new StringNodes.StringAllocator());
         symbolClass = defineClass("Symbol", NO_ALLOCATOR);
         threadClass = defineClass("Thread", new RubyThread.ThreadAllocator());

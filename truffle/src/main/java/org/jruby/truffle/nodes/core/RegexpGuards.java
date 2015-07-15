@@ -17,11 +17,11 @@ import org.jruby.util.StringSupport;
 public class RegexpGuards {
 
     public static boolean isInitialized(RubyRegexp regexp) {
-        return regexp.getRegex() != null;
+        return RegexpNodes.getRegex(regexp) != null;
     }
 
     public static boolean isRegexpLiteral(RubyRegexp regexp) {
-        return regexp.getOptions().isLiteral();
+        return RegexpNodes.getOptions(regexp).isLiteral();
     }
 
     public static boolean isValidEncoding(RubyBasicObject string) {

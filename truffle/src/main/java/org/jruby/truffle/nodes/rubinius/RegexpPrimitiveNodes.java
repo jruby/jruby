@@ -18,6 +18,7 @@ import org.jcodings.Encoding;
 import org.joni.Matcher;
 import org.joni.Regex;
 import org.jruby.truffle.nodes.core.RegexpGuards;
+import org.jruby.truffle.nodes.core.RegexpNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -44,7 +45,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization
         public boolean fixedEncoding(RubyRegexp regexp) {
-            return regexp.getOptions().isFixed();
+            return RegexpNodes.getOptions(regexp).isFixed();
         }
 
     }
@@ -71,7 +72,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization(guards = {"!isRegexpLiteral(regexp)", "!isInitialized(regexp)", "isRubyString(pattern)"})
         public RubyRegexp initialize(RubyRegexp regexp, RubyBasicObject pattern, int options) {
-            regexp.initialize(this, StringNodes.getByteList(pattern), options);
+            RegexpNodes.initialize(regexp, this, StringNodes.getByteList(pattern), options);
             return regexp;
         }
 
@@ -87,7 +88,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization(guards = "isInitialized(regexp)")
         public int options(RubyRegexp regexp) {
-            return regexp.getOptions().toOptions();
+            return RegexpNodes.getOptions(regexp).toOptions();
         }
 
         @Specialization(guards = "!isInitialized(regexp)")
@@ -138,19 +139,19 @@ public abstract class RegexpPrimitiveNodes {
         @Specialization(guards = {"isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)"})
         public Object searchRegion(RubyRegexp regexp, RubyBasicObject string, int start, int end, boolean forward) {
             final ByteList stringBl = StringNodes.getByteList(string);
-            final ByteList bl = regexp.getSource();
-            final Encoding enc = regexp.checkEncoding(StringNodes.getCodeRangeable(string), true);
+            final ByteList bl = RegexpNodes.getSource(regexp);
+            final Encoding enc = RegexpNodes.checkEncoding(regexp, StringNodes.getCodeRangeable(string), true);
             final ByteList preprocessed = RegexpSupport.preprocess(getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
 
-            final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), regexp.getRegex().getOptions(), regexp.checkEncoding(StringNodes.getCodeRangeable(string), true));
+            final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), RegexpNodes.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, StringNodes.getCodeRangeable(string), true));
             final Matcher matcher = r.matcher(stringBl.getUnsafeBytes(), stringBl.begin(), stringBl.begin() + stringBl.realSize());
 
             if (forward) {
                 // Search forward through the string.
-                return regexp.matchCommon(string, false, false, matcher, start + stringBl.begin(), end + stringBl.begin());
+                return RegexpNodes.matchCommon(regexp, string, false, false, matcher, start + stringBl.begin(), end + stringBl.begin());
             } else {
                 // Search backward through the string.
-                return regexp.matchCommon(string, false, false, matcher, end + stringBl.begin(), start + stringBl.begin());
+                return RegexpNodes.matchCommon(regexp, string, false, false, matcher, end + stringBl.begin(), start + stringBl.begin());
             }
         }
 

@@ -34,6 +34,7 @@ package org.jruby.truffle.runtime.core;
 
 import org.jcodings.Encoding;
 import org.joni.Region;
+import org.jruby.truffle.nodes.core.RegexpNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
@@ -116,7 +117,7 @@ public class RubyMatchData extends RubyBasicObject {
     }
 
     public int getBackrefNumber(ByteList value) {
-        return regexp.getRegex().nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), region);
+        return RegexpNodes.getRegex(regexp).nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), region);
     }
 
     @Override
