@@ -1,2 +1,3 @@
 fails:Thread#raise on a running thread raises a RuntimeError when called with no arguments inside rescue
 fails:Thread#raise on same thread re-raises the rescued exception
+fails:Thread#raise on a running thread can go unhandled
