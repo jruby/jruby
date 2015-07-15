@@ -98,14 +98,14 @@ public class JRubyOsgiEmbedTest {
         assertEquals( gemPath, "[\"uri:classloader:/specifications\", \"uri:classloader://specifications\"]" );
 
         jruby.runScriptlet( "require 'jar-dependencies'" );
-        list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
-        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"jar-dependencies\"]");
+        list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.sort.inspect" );
+        assertEquals(list, "[\"jar-dependencies\", \"jruby-openssl\", \"rake\"]");
 
         // ensure we can load can load embedded gems
         loaded = (Boolean) jruby.runScriptlet( "require 'virtus'" );
         assertEquals(true, loaded);
 
-	list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
-        assertEquals(list, "[\"rake\", \"jruby-openssl\", \"jar-dependencies\", \"thread_safe\", \"descendants_tracker\", \"equalizer\", \"coercible\", \"ice_nine\", \"axiom-types\", \"virtus\"]");
+        list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.sort.inspect" );
+        assertEquals(list, "[\"axiom-types\", \"coercible\", \"descendants_tracker\", \"equalizer\", \"ice_nine\", \"jar-dependencies\", \"jruby-openssl\", \"rake\", \"thread_safe\", \"virtus\"]");
     }
 }
