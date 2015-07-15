@@ -57,6 +57,16 @@ def sha1_checksum(filename)
   HashTask.hash_for(filename, Digest::SHA1)
 end
 
+def sha256_checksum(filename)
+  HashTask.hash_for(filename, Digest::SHA256)
+end
+
+def checksums(filename)
+  md5_checksum filename
+  sha1_checksum filename
+  sha256_checksum filename
+end
+
 def permute_tests(base_name, options, *prereqs, &block)
   permute_task("test", Rake::TestTask, base_name, options, *prereqs, &block)
 end
