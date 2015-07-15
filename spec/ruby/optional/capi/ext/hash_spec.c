@@ -11,6 +11,18 @@ VALUE hash_spec_rb_hash(VALUE self, VALUE hash) {
 }
 #endif
 
+#ifdef HAVE_RB_HASH_DUP
+VALUE hash_spec_rb_hash_dup(VALUE self, VALUE hash) {
+  return rb_hash_dup(hash);
+}
+#endif
+
+#ifdef HAVE_RB_HASH_FREEZE
+VALUE hash_spec_rb_hash_freeze(VALUE self, VALUE hash) {
+  return rb_hash_freeze(hash);
+}
+#endif
+
 #ifdef HAVE_RB_HASH_AREF
 VALUE hash_spec_rb_hash_aref(VALUE self, VALUE hash, VALUE key) {
   return rb_hash_aref(hash, key);
@@ -116,6 +128,14 @@ void Init_hash_spec() {
 
 #ifdef HAVE_RB_HASH
   rb_define_method(cls, "rb_hash", hash_spec_rb_hash, 1);
+#endif
+
+#ifdef HAVE_RB_HASH_DUP
+  rb_define_method(cls, "rb_hash_dup", hash_spec_rb_hash_dup, 1);
+#endif
+
+#ifdef HAVE_RB_HASH_FREEZE
+  rb_define_method(cls, "rb_hash_freeze", hash_spec_rb_hash_freeze, 1);
 #endif
 
 #ifdef HAVE_RB_HASH_AREF

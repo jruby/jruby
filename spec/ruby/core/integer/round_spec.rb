@@ -30,7 +30,7 @@ describe "Integer#round" do
 
   platform_is_not :wordsize => 32 do
     it "raises a RangeError when passed a big negative value" do
-      lambda { 42.round(fixnum_min()) }.should raise_error(RangeError)
+      lambda { 42.round(fixnum_min) }.should raise_error(RangeError)
     end
   end
 

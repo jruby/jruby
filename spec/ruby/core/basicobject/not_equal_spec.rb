@@ -29,4 +29,25 @@ describe "BasicObject#!=" do
 
     (a != b).should be_false
   end
+
+  describe "when invoked using Kernel#send" do
+    it "returns true if other is not identical to self" do
+      a = Object.new
+      b = Object.new
+      a.send(:!=, b).should be_true
+    end
+
+    it "returns false if other is identical to self" do
+      a = Object.new
+      a.send(:!=, a).should be_false
+    end
+
+    it "dispatches to #==" do
+      a = mock("not_equal")
+      b = Object.new
+      a.should_receive(:==).and_return(true)
+
+      a.send(:!=, b).should be_false
+    end
+  end
 end

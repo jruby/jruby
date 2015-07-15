@@ -25,12 +25,21 @@ describe "Enumerator::Lazy#take" do
     enumerator_class::Lazy.new(Object.new, 100) {}.take(200).size.should == 100
   end
 
+  it "sets given count to size if the old size is Infinity" do
+    loop.lazy.take(20).size.should == 20
+  end
+
   describe "when the returned lazy enumerator is evaluated by .force" do
     it "stops after specified times" do
       (0..Float::INFINITY).lazy.take(2).force.should == [0, 1]
 
       @eventsmixed.take(1).force
       ScratchPad.recorded.should == [:before_yield]
+    end
+
+    it "stops without iterations if the given argument is 0" do
+      @eventsmixed.take(0).force
+      ScratchPad.recorded.should == []
     end
   end
 
@@ -46,6 +55,11 @@ describe "Enumerator::Lazy#take" do
 
         @eventsmixed.take(10).take(1).force
         ScratchPad.recorded.should == [:before_yield]
+      end
+
+      it "stops without iterations if the given argument is 0" do
+        @eventsmixed.take(10).take(0).force
+        ScratchPad.recorded.should == []
       end
     end
   end

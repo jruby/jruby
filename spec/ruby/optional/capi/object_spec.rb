@@ -618,7 +618,7 @@ describe "CApiObject" do
     end
 
     it "returns self when called on a Bignum" do
-      @o.rb_to_int(bignum_value()).should == bignum_value()
+      @o.rb_to_int(bignum_value).should == bignum_value
     end
 
     it "calls #to_int to convert and object to an integer" do
