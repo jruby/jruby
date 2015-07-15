@@ -17,4 +17,12 @@ describe "Enumerator#size" do
     base_size = 300
     enum.size.should == 301
   end
+
+  ruby_version_is "2.1" do
+    it "returns the result from size.call if the size respond to call " do
+      obj = mock('call')
+      obj.should_receive(:call).and_return(42)
+      Enumerator.new(obj) {}.size.should == 42
+    end
+  end
 end

@@ -303,6 +303,16 @@ describe :marshal_load, :shared => true do
       new_obj.instance_variable_get(:@mix).should equal new_obj[1]
       new_obj[1].instance_variable_get(:@foo).should == 10
     end
+
+    it "loads an extended Array object containing a user-marshaled object" do
+      obj = [UserMarshal.new, UserMarshal.new].extend(Meths)
+      new_obj = Marshal.send(@method, "\x04\be:\nMeths[\ao:\x10UserMarshal\x06:\n@dataI\"\nstuff\x06:\x06ETo;\x06\x06;\aI\"\nstuff\x06;\bT")
+
+      new_obj.should == obj
+      obj_ancestors = class << obj; ancestors[1..-1]; end
+      new_obj_ancestors = class << new_obj; ancestors[1..-1]; end
+      obj_ancestors.should == new_obj_ancestors
+    end
   end
 
   describe "for a Hash" do
@@ -315,6 +325,17 @@ describe :marshal_load, :shared => true do
       new_obj_metaclass_ancestors = class << new_obj; ancestors; end
       new_obj_metaclass_ancestors[@num_self_class].should == Meths
       new_obj_metaclass_ancestors[@num_self_class+1].should == UserHashInitParams
+    end
+
+    it "loads an extended hash object containing a user-marshaled object" do
+      obj = {:a => UserMarshal.new}.extend(Meths)
+
+      new_obj = Marshal.send(@method, "\004\be:\nMeths{\006:\006aU:\020UserMarshal\"\nstuff")
+
+      new_obj.should == obj
+      new_obj_metaclass_ancestors = class << new_obj; ancestors; end
+      new_obj_metaclass_ancestors[@num_self_class].should == Meths
+      new_obj_metaclass_ancestors[@num_self_class+1].should == Hash
     end
 
     it "preserves hash ivars when hash contains a string having ivar" do
@@ -355,7 +376,7 @@ describe :marshal_load, :shared => true do
       it "loads a US-ASCII String" do
         str = "abc".force_encoding("us-ascii")
         data = "\x04\bI\"\babc\x06:\x06EF"
-        result = Marshal.load(data)
+        result = Marshal.send(@method, data)
         result.should == str
         result.encoding.should equal(Encoding::US_ASCII)
       end
@@ -363,7 +384,7 @@ describe :marshal_load, :shared => true do
       it "loads a UTF-8 String" do
         str = "\x6d\xc3\xb6\x68\x72\x65".force_encoding("utf-8")
         data = "\x04\bI\"\vm\xC3\xB6hre\x06:\x06ET"
-        result = Marshal.load(data)
+        result = Marshal.send(@method, data)
         result.should == str
         result.encoding.should equal(Encoding::UTF_8)
       end
@@ -371,7 +392,7 @@ describe :marshal_load, :shared => true do
       it "loads a String in another encoding" do
         str = "\x6d\x00\xf6\x00\x68\x00\x72\x00\x65\x00".force_encoding("utf-16le")
         data = "\x04\bI\"\x0Fm\x00\xF6\x00h\x00r\x00e\x00\x06:\rencoding\"\rUTF-16LE"
-        result = Marshal.load(data)
+        result = Marshal.send(@method, data)
         result.should == str
         result.encoding.should equal(Encoding::UTF_16LE)
       end
@@ -379,7 +400,7 @@ describe :marshal_load, :shared => true do
       it "loads a String as ASCII-8BIT if no encoding is specified at the end" do
         str = "\xC3\xB8".force_encoding("ASCII-8BIT")
         data = "\x04\b\"\a\xC3\xB8".force_encoding("UTF-8")
-        result = Marshal.load(data)
+        result = Marshal.send(@method, data)
         result.encoding.should == Encoding::ASCII_8BIT
         result.should == str
       end
@@ -643,6 +664,24 @@ describe :marshal_load, :shared => true do
     end
   end
 
+  describe "for a Bignum" do
+    platform_is :wordsize => 64 do
+      context "that is Bignum on 32-bit platforms but Fixnum on 64-bit" do
+        it "dumps a Fixnum" do
+          val = Marshal.send(@method, "\004\bl+\ab:wU")
+          val.should == 1433877090
+          val.class.should == Fixnum
+        end
+
+        it "dumps an array containing multiple references to the Bignum as an array of Fixnum" do
+          arr = Marshal.send(@method, "\004\b[\al+\a\223BwU@\006")
+          arr.should == [1433879187, 1433879187]
+          arr.each { |v| v.class.should == Fixnum }
+        end
+      end
+    end
+  end
+
   describe "for a Time" do
     it "loads" do
       Marshal.send(@method, Marshal.dump(Time.at(1))).should == Time.at(1)
@@ -652,26 +691,26 @@ describe :marshal_load, :shared => true do
       t = Time.new
       t.instance_variable_set(:@foo, 'bar')
 
-      Marshal.load(Marshal.dump(t)).instance_variable_get(:@foo).should == 'bar'
+      Marshal.send(@method, Marshal.dump(t)).instance_variable_get(:@foo).should == 'bar'
     end
 
     it "loads Time objects stored as links" do
       t = Time.new
 
-      t1, t2 = Marshal.load(Marshal.dump([t, t]))
+      t1, t2 = Marshal.send(@method, Marshal.dump([t, t]))
       t1.should equal t2
     end
 
     it "loads the zone" do
       with_timezone 'AST', 3 do
         t = Time.local(2012, 1, 1)
-        Marshal.load(Marshal.dump(t)).zone.should == t.zone
+        Marshal.send(@method, Marshal.dump(t)).zone.should == t.zone
       end
     end
 
     it "loads nanoseconds" do
       t = Time.now
-      Marshal.load(Marshal.dump(t)).nsec.should == t.nsec
+      Marshal.send(@method, Marshal.dump(t)).nsec.should == t.nsec
     end
   end
 

@@ -75,6 +75,11 @@ describe "Enumerable#each_cons" do
             enum.each_cons(1).size.should == 10
           end
 
+          it "returns 0 when the argument is larger than self" do
+            enum = EnumerableSpecs::NumerousWithSize.new(1, 2, 3)
+            enum.each_cons(20).size.should == 0
+          end
+
           it "returns 0 when the enum is empty" do
             enum = EnumerableSpecs::EmptyWithSize.new
             enum.each_cons(10).size.should == 0

@@ -35,26 +35,26 @@ describe "Fixnum#<< with n << m" do
 
   not_compliant_on :rubinius, :jruby do
     it "returns 0 when m < 0 and m is a Bignum" do
-      (3 << -bignum_value()).should == 0
+      (3 << -bignum_value).should == 0
     end
   end
 
   deviates_on :rubinius do
     it "raises a RangeError when m < 0 and m is a Bignum" do
-      lambda { 3 << -bignum_value() }.should raise_error(RangeError)
+      lambda { 3 << -bignum_value }.should raise_error(RangeError)
     end
   end
 
-  it "returns a Bignum == fixnum_max() * 2 when fixnum_max() << 1 and n > 0" do
-    result = fixnum_max() << 1
+  it "returns a Bignum == fixnum_max * 2 when fixnum_max << 1 and n > 0" do
+    result = fixnum_max << 1
     result.should be_an_instance_of(Bignum)
-    result.should == fixnum_max() * 2
+    result.should == fixnum_max * 2
   end
 
-  it "returns a Bignum == fixnum_min() * 2 when fixnum_min() << 1 and n < 0" do
-    result = fixnum_min() << 1
+  it "returns a Bignum == fixnum_min * 2 when fixnum_min << 1 and n < 0" do
+    result = fixnum_min << 1
     result.should be_an_instance_of(Bignum)
-    result.should == fixnum_min() * 2
+    result.should == fixnum_min * 2
   end
 
   it "calls #to_int to convert the argument to an Integer" do

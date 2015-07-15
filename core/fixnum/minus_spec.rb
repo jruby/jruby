@@ -15,6 +15,7 @@ describe "Fixnum#-" do
 
     bignum_zero = bignum_value.coerce(0).first
     (1 - bignum_zero).should be_an_instance_of Fixnum
+    (fixnum_min - 1).should be_an_instance_of(Bignum)
   end
 
   it "raises a TypeError when given a non-Integer" do

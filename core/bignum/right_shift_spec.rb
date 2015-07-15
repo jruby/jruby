@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Bignum#>> with n >> m" do
   before :each do
-    @bignum = bignum_value() * 16
+    @bignum = bignum_value * 16
   end
 
   it "returns n shifted right m bits when n > 0, m > 0" do
@@ -61,26 +61,26 @@ describe "Bignum#>> with n >> m" do
 
   not_compliant_on :rubinius do
     it "returns 0 when m is a Bignum" do
-      (@bignum >> bignum_value()).should == 0
+      (@bignum >> bignum_value).should == 0
     end
   end
 
   deviates_on :rubinius do
     it "raises a RangeError when m is a Bignum" do
-      lambda { @bignum >> bignum_value() }.should raise_error(RangeError)
+      lambda { @bignum >> bignum_value }.should raise_error(RangeError)
     end
   end
 
-  it "returns a Fixnum == fixnum_max() when (fixnum_max() * 2) >> 1 and n > 0" do
-    result = (fixnum_max() * 2) >> 1
+  it "returns a Fixnum == fixnum_max when (fixnum_max * 2) >> 1 and n > 0" do
+    result = (fixnum_max * 2) >> 1
     result.should be_an_instance_of(Fixnum)
-    result.should == fixnum_max()
+    result.should == fixnum_max
   end
 
-  it "returns a Fixnum == fixnum_min() when (fixnum_min() * 2) >> 1 and n < 0" do
-    result = (fixnum_min() * 2) >> 1
+  it "returns a Fixnum == fixnum_min when (fixnum_min * 2) >> 1 and n < 0" do
+    result = (fixnum_min * 2) >> 1
     result.should be_an_instance_of(Fixnum)
-    result.should == fixnum_min()
+    result.should == fixnum_min
   end
 
   it "calls #to_int to convert the argument to an Integer" do
