@@ -110,15 +110,7 @@ class MSpecScript
   # Registers all filters and actions.
   def register
     if config[:formatter].nil?
-      # For some unidentified reason, running specs under MRI 2.0
-      # with the SpinnerFormatter adds a lot of errors.
-      buggy_spinner_formatter = RUBY_NAME == "ruby" && RUBY_VERSION < "2.1"
-
-      if STDOUT.tty? and !buggy_spinner_formatter
-        config[:formatter] = SpinnerFormatter
-      else
-        config[:formatter] = @files.size < 50 ? DottedFormatter : FileFormatter
-      end
+      config[:formatter] = STDOUT.tty? ? SpinnerFormatter : @files.size < 50 ? DottedFormatter : FileFormatter
     end
 
     if config[:formatter]
