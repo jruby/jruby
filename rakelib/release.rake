@@ -17,21 +17,14 @@ task :post_process_artifacts => :windows_installer do
       real_file = real_file.sub(/-src/, '').sub(/-/, '-src-')
     end
     mv file, real_file
-    md5_checksum real_file
-    sha1_checksum real_file
+    checksums real_file
   end
 
   cp Dir[File.join(JRUBY_COMPLETE_DIR, JRUBY_COMPLETE_GLOB)], RELEASE_DIR
-  Dir[File.join(RELEASE_DIR, JRUBY_COMPLETE_GLOB)].each do |file|
-    md5_checksum file
-    sha1_checksum file
-  end
+  Dir[File.join(RELEASE_DIR, JRUBY_COMPLETE_GLOB)].each {|file| checksums file }
 
   cp Dir[File.join(JRUBY_JARS_DIR, JRUBY_JARS_GLOB)], RELEASE_DIR
-  Dir[File.join(RELEASE_DIR, JRUBY_JARS_GLOB)].each do |file|
-    md5_checksum file
-    sha1_checksum file
-  end
+  Dir[File.join(RELEASE_DIR, JRUBY_JARS_GLOB)].each {|file| checksums file }
 end
 
 # Assume there will only be one release performed after a clean so
