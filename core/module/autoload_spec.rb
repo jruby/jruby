@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require 'thread'
 
 describe "Module#autoload?" do
   it "returns the name of the file that will be autoloaded" do

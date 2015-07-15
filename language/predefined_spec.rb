@@ -529,17 +529,6 @@ describe "Execution variable $:" do
     $:.should_not include(".")
   end
 
-  not_compliant_on :rubinius do
-    it "does not include '.' when the taint check level > 1" do
-      begin
-        orig_opts, ENV['RUBYOPT'] = ENV['RUBYOPT'], '-T'
-        `#{RUBY_EXE} -e 'p $:.include?(".")'`.should == "false\n"
-      ensure
-        ENV['RUBYOPT'] = orig_opts
-      end
-    end
-  end
-
   it "is the same object as $LOAD_PATH and $-I" do
     $:.__id__.should == $LOAD_PATH.__id__
     $:.__id__.should == $-I.__id__
