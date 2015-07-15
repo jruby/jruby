@@ -1,5 +1,3 @@
-fails:SystemCallError.new requires at least one argumentt
-fails:SystemCallError.new takes an optional errno argument
 fails:SystemCallError.new accepts single Fixnum argument as errno
 fails:SystemCallError.new constructs the appropriate Errno class
 fails:SystemCallError.new returns an arity of -1 for the initialize method

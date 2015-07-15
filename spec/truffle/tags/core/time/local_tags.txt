@@ -9,5 +9,4 @@ fails:Time.local handles fractional microseconds as a Rational
 fails:Time.local ignores fractional seconds if a passed whole number of microseconds
 fails:Time.local ignores fractional seconds if a passed fractional number of microseconds
 fails:Time.local timezone changes correctly adjusts the timezone change to 'EET' on 'Europe/Istanbul'
-fails:Time.local timezone changes correctly adjusts the timezone change to 'WET' on 'Europe/Lisbon'
 fails:Time.local timezone changes correctly adjusts the timezone change to 'CEST' on 'Europe/Amsterdam'

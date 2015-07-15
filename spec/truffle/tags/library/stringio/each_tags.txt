@@ -1,1 +1,0 @@
-fails:StringIO#each when passed no arguments yields a LocalJumpError when passed no block

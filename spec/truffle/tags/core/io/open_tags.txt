@@ -1,3 +1,1 @@
-fails:IO.open does not propagate a StandardError raised by #close
-fails:IO.open does not set last error when a StandardError raised by #close
 fails:IO.open propagates an exception raised by #close that is a StandardError

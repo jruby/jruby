@@ -8,7 +8,6 @@ fails:Process.kill accepts a signal name without the 'SIG' prefix
 fails:Process.kill accepts a signal name with the 'SIG' prefix
 fails:Process.kill acceps an Integer as a signal value
 fails:Process.kill calls #to_int to coerce the pid to an Integer
-fails:Process.kill raises an Errno::EPERM if permission is denied
 fails:Process.kill signals multiple processes
 fails:Process.kill returns the number of processes signaled
 fails:Process.kill signals the process group if the PID is zero
