@@ -219,21 +219,21 @@ public class JavaUtil {
         return type.isPrimitive() ? CodegenUtils.getBoxType(type) : type;
     }
 
+    public static boolean isDuckTypeConvertable(final Class<?> argumentType, final Class<?> targetType) {
+        return targetType.isInterface() &&
+                ! targetType.isAssignableFrom(argumentType) &&
+                    RubyObject.class.isAssignableFrom(argumentType);
+    }
+
+    public static <T> T convertProcToInterface(ThreadContext context, RubyObject rubyObject, Class<T> targetType) {
+        return convertProcToInterface(context, (RubyBasicObject) rubyObject, targetType);
+    }
+
     @SuppressWarnings("unchecked")
-    public static boolean isDuckTypeConvertable(Class providedArgumentType, Class parameterType) {
-        return parameterType.isInterface() &&
-                ! parameterType.isAssignableFrom(providedArgumentType) &&
-                    RubyObject.class.isAssignableFrom(providedArgumentType);
-    }
-
-    public static Object convertProcToInterface(ThreadContext context, RubyObject rubyObject, Class target) {
-        return convertProcToInterface(context, (RubyBasicObject) rubyObject, target);
-    }
-
-    public static Object convertProcToInterface(ThreadContext context, RubyBasicObject rubyObject, Class target) {
+    public static <T> T convertProcToInterface(ThreadContext context, RubyBasicObject rubyObject, Class<T> targetType) {
         final Ruby runtime = context.runtime;
 
-        final RubyModule ifaceModule = Java.getInterfaceModule(runtime, JavaClass.get(runtime, target));
+        final RubyModule ifaceModule = Java.getInterfaceModule(runtime, JavaClass.get(runtime, targetType));
         if ( ! ifaceModule.isInstance(rubyObject) ) {
             ifaceModule.callMethod(context, "extend_object", rubyObject);
             ifaceModule.callMethod(context, "extended", rubyObject);
@@ -246,7 +246,7 @@ public class JavaUtil {
             singletonClass.addMethod("method_missing", new Java.ProcToInterface(singletonClass));
         }
         JavaObject javaObject = (JavaObject) Helpers.invoke(context, rubyObject, "__jcreate_meta!");
-        return javaObject.getValue();
+        return (T) javaObject.getValue();
     }
 
     public static NumericConverter getNumericConverter(Class target) {
