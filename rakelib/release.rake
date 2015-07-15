@@ -5,6 +5,7 @@ JRUBY_COMPLETE_DIR = File.join('maven', 'jruby-complete', 'target')
 JRUBY_COMPLETE_GLOB = 'jruby-complete-*.jar'
 JRUBY_JARS_DIR = File.join('maven', 'jruby-jars', 'pkg')
 JRUBY_JARS_GLOB = 'jruby-jars-*.gem'
+JRUBY_EXE_GLOB = '*.exe'
 
 desc "post-process mvn build to generate properly named and fingerprinted files"
 task :post_process_artifacts => :windows_installer do
@@ -25,6 +26,8 @@ task :post_process_artifacts => :windows_installer do
 
   cp Dir[File.join(JRUBY_JARS_DIR, JRUBY_JARS_GLOB)], RELEASE_DIR
   Dir[File.join(RELEASE_DIR, JRUBY_JARS_GLOB)].each {|file| checksums file }
+
+  Dir[File.join(RELEASE_DIR, JRUBY_EXE_GLOB)].each {|file| checksums file }
 end
 
 # Assume there will only be one release performed after a clean so
