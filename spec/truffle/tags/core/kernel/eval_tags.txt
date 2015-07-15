@@ -1,5 +1,3 @@
-fails:Kernel#eval evaluates within the scope of the eval
-fails:Kernel#eval evaluates such that consts are scoped to the class of the eval
 fails:Kernel#eval uses the filename of the binding if none is provided
 fails:Kernel#eval uses the receiver as self inside the eval
 fails:Kernel#eval returns from the scope calling #eval when evaluating 'return'
@@ -8,5 +6,3 @@ slow:Kernel#eval raises a LocalJumpError if there is no lambda-style closure in 
 slow:Kernel#eval does not share locals across eval scopes
 windows:Kernel#eval does not share locals across eval scopes
 windows:Kernel#eval raises a LocalJumpError if there is no lambda-style closure in the chain
-fails:Kernel#eval raises a LocalJumpError if there is no lambda-style closure in the chain
-fails:Kernel#eval does not share locals across eval scopes
