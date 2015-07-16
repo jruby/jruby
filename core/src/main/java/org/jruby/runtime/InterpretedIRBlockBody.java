@@ -103,12 +103,14 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         InterpreterContext ic = ensureInstrsReady();
 
         // Pass on eval state info to the dynamic scope and clear it on the block-body
-        DynamicScope prevScope = binding.getDynamicScope();
+        DynamicScope actualScope = binding.getDynamicScope();
         if (ic.pushNewDynScope()) {
-            context.pushScope(DynamicScope.newDynamicScope(getStaticScope(), prevScope, this.evalType.get()));
+            actualScope = DynamicScope.newDynamicScope(getStaticScope(), actualScope, this.evalType.get());
+            if (type == Type.LAMBDA) actualScope.setLambda(true);
+            context.pushScope(actualScope);
         } else if (ic.reuseParentDynScope()) {
             // Reuse! We can avoid the push only if surrounding vars aren't referenced!
-            context.pushScope(prevScope);
+            context.pushScope(actualScope);
         }
         this.evalType.set(EvalType.NONE);
 

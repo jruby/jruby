@@ -122,7 +122,6 @@ public class IRRuntimeHelpers {
         // If not in a lambda, check if this was a non-local return
         if (IRRuntimeHelpers.inLambda(blockType)) return returnValue;
 
-        IRScopeType scopeType = dynScope.getStaticScope().getScopeType();
         while (dynScope != null) {
             StaticScope ss = dynScope.getStaticScope();
             // SSS FIXME: Why is scopeType empty? Looks like this static-scope
@@ -133,7 +132,9 @@ public class IRRuntimeHelpers {
             // To be investigated.
             IRScopeType ssType = ss.getScopeType();
             if (ssType != null) {
-                if (ssType.isMethodType() || (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT)) {
+                if (ssType.isMethodType() ||
+                        (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT) ||
+                        (ssType.isClosureType() && dynScope.isLambda())) {
                     break;
                 }
             }
@@ -152,8 +153,8 @@ public class IRRuntimeHelpers {
         } else {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
-            // If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating.
-            if (inNonMethodBodyLambda(scope, blockType) || (rj.methodToReturnFrom == dynScope)) {
+            // If we are in the method scope we are supposed to return from, stop propagating.
+            if (rj.methodToReturnFrom == dynScope) {
                 if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope + " matching dynscope? " + (rj.methodToReturnFrom == dynScope));
                 return (IRubyObject) rj.returnValue;
             }
