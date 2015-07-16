@@ -648,7 +648,7 @@ public class CoreLibrary {
             public void defineEncoding(EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
                 Encoding e = encodingEntry.getEncoding();
 
-                RubyEncoding re = EncodingNodes.newEncoding(encodingClass, e, name, p, end, encodingEntry.isDummy());
+                RubyBasicObject re = EncodingNodes.newEncoding(encodingClass, e, name, p, end, encodingEntry.isDummy());
                 EncodingNodes.storeEncoding(encodingEntry.getIndex(), re);
             }
 
@@ -661,7 +661,7 @@ public class CoreLibrary {
         getContext().getRuntime().getEncodingService().defineAliases(new EncodingService.EncodingAliasVisitor() {
             @Override
             public void defineAlias(int encodingListIndex, String constName) {
-                RubyEncoding re = EncodingNodes.getEncoding(encodingListIndex);
+                RubyBasicObject re = EncodingNodes.getEncoding(encodingListIndex);
                 EncodingNodes.storeAlias(constName, re);
             }
 
@@ -1111,8 +1111,9 @@ public class CoreLibrary {
         return new RubyException(getErrnoClass(Errno.ENOTDIR), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Not a directory - %s", path)), RubyCallStack.getBacktrace(currentNode));
     }
 
-    public RubyException rangeError(int code, RubyEncoding encoding, Node currentNode) {
+    public RubyException rangeError(int code, RubyBasicObject encoding, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
+        assert RubyGuards.isRubyEncoding(encoding);
         return rangeError(String.format("invalid codepoint %x in %s", code, EncodingNodes.getEncoding(encoding)), currentNode);
     }
 

@@ -1255,7 +1255,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyEncoding encoding(RubyBasicObject string) {
+        public RubyBasicObject encoding(RubyBasicObject string) {
             return EncodingNodes.getEncoding(getByteList(string).getEncoding());
         }
     }
@@ -1271,13 +1271,13 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(encodingName)")
-        public RubyBasicObject forceEncoding(RubyBasicObject string, RubyBasicObject encodingName) {
-            final RubyEncoding encoding = EncodingNodes.getEncoding(encodingName.toString());
-            return forceEncoding(string, encoding);
+        public RubyBasicObject forceEncodingString(RubyBasicObject string, RubyBasicObject encodingName) {
+            final RubyBasicObject encoding = EncodingNodes.getEncoding(encodingName.toString());
+            return forceEncodingEncoding(string, encoding);
         }
 
-        @Specialization
-        public RubyBasicObject forceEncoding(RubyBasicObject string, RubyEncoding encoding) {
+        @Specialization(guards = "isRubyEncoding(encoding)")
+        public RubyBasicObject forceEncodingEncoding(RubyBasicObject string, RubyBasicObject encoding) {
             StringNodes.forceEncoding(string, EncodingNodes.getEncoding(encoding));
             return string;
         }
@@ -1289,7 +1289,7 @@ public abstract class StringNodes {
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            return forceEncoding(string, toStrNode.executeToStr(frame, encoding));
+            return forceEncodingString(string, toStrNode.executeToStr(frame, encoding));
         }
 
     }

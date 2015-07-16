@@ -402,8 +402,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             return toJRubyString((RubyBasicObject) object);
         } else if (RubyGuards.isRubyArray(object)) {
             return toJRubyArray((RubyBasicObject) object);
-        } else if (object instanceof RubyEncoding) {
-            return toJRuby((RubyEncoding) object);
+        } else if (RubyGuards.isRubyEncoding(object)) {
+            return toJRubyEncoding((RubyBasicObject) object);
         } else {
             throw getRuntime().newRuntimeError("cannot pass " + object + " (" + object.getClass().getName()  + ") to JRuby");
         }
@@ -424,7 +424,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return runtime.newArray(toJRuby(ArrayNodes.slowToArray(array)));
     }
 
-    public IRubyObject toJRuby(RubyEncoding encoding) {
+    public IRubyObject toJRubyEncoding(RubyBasicObject encoding) {
+        assert RubyGuards.isRubyEncoding(encoding);
         return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(EncodingNodes.getName(encoding)));
     }
 

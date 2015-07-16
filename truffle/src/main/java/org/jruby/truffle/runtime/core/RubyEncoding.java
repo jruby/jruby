@@ -15,6 +15,7 @@ import org.jruby.util.ByteList;
 /**
  * This is a bridge between JRuby encoding and Truffle encoding
  */
+@Deprecated
 public class RubyEncoding extends RubyBasicObject {
 
     public final Encoding encoding;

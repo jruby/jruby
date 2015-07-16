@@ -31,22 +31,22 @@ public abstract class EncodingPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public RubyEncoding encodingGetObjectEncodingString(RubyBasicObject string) {
+        public RubyBasicObject encodingGetObjectEncodingString(RubyBasicObject string) {
             return EncodingNodes.getEncoding(StringNodes.getByteList(string).getEncoding());
         }
 
         @Specialization(guards = "isRubySymbol(symbol)")
-        public RubyEncoding encodingGetObjectEncodingSymbol(RubyBasicObject symbol) {
+        public RubyBasicObject encodingGetObjectEncodingSymbol(RubyBasicObject symbol) {
             return EncodingNodes.getEncoding(SymbolNodes.getByteList(symbol).getEncoding());
         }
 
-        @Specialization
-        public RubyEncoding encodingGetObjectEncoding(RubyEncoding encoding) {
+        @Specialization(guards = "isRubyEncoding(encoding)")
+        public RubyBasicObject encodingGetObjectEncoding(RubyBasicObject encoding) {
             return encoding;
         }
 
         @Specialization(guards = {"!isRubyString(object)", "!isRubySymbol(object)", "!isRubyEncoding(object)"})
-        public RubyBasicObject encodingGetObjectEncoding(RubyBasicObject object) {
+        public RubyBasicObject encodingGetObjectEncodingNil(RubyBasicObject object) {
             // TODO(CS, 26 Jan 15) something to do with __encoding__ here?
             return nil();
         }

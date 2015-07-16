@@ -110,8 +110,8 @@ public abstract class DirPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(path)")
-        public RubyBasicObject open(RubyBasicObject dir, RubyBasicObject path, RubyEncoding encoding) {
+        @Specialization(guards = {"isRubyString(path)", "isRubyEncoding(encoding)"})
+        public RubyBasicObject openEncoding(RubyBasicObject dir, RubyBasicObject path, RubyBasicObject encoding) {
             // TODO BJF 30-APR-2015 HandleEncoding
             return open(dir, path, nil());
         }
