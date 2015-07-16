@@ -284,11 +284,11 @@ public class RubyNumeric extends RubyObject {
     }
 
     public static RubyInteger str2inum(Ruby runtime, RubyString str, int base) {
-        return str2inum(runtime,str,base,false);
+        return str2inum(runtime, str, base, false);
     }
 
     public static RubyNumeric int2fix(Ruby runtime, long val) {
-        return RubyFixnum.newFixnum(runtime,val);
+        return RubyFixnum.newFixnum(runtime, val);
     }
 
     /** rb_num2fix
