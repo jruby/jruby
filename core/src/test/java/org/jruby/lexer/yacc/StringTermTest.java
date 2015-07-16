@@ -4,7 +4,6 @@ import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.KCode;
 
 import junit.framework.TestCase;
 

@@ -1,18 +1,24 @@
 package org.jruby.javasupport;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import org.jruby.Ruby;
 
+public class TestJavaClass extends junit.framework.TestCase {
 
-public class TestJavaClass extends TestCase {
-
-    public void test() {
+    @Test
+    public void testGet() {
         Ruby runtime = Ruby.newInstance();
         // This is now needed, since module Java
         // isn't in by default
-        runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require",runtime.newString("java"));
+        requireJava(runtime);
+
         JavaClass javaClass = JavaClass.get(runtime, String.class);
         assertSame(javaClass, JavaClass.get(runtime, String.class));
     }
+
+    static void requireJava(final Ruby runtime) {
+        runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(), "require", runtime.newString("java"));
+    }
+
 }
