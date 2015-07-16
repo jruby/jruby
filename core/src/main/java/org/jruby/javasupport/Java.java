@@ -1487,7 +1487,18 @@ public class Java implements Library {
         Method single = null;
         for ( final Method method : iface.getMethods() ) {
             final int mod = method.getModifiers();
-            if ( Modifier.isStatic(mod) || ! Modifier.isAbstract(mod) ) continue;
+            if ( Modifier.isStatic(mod) ) continue;
+            if ( Modifier.isAbstract(mod) ) {
+                try { // check if it's equals, hashCode etc. :
+                    Object.class.getMethod(method.getName(), method.getParameterTypes());
+                    continue; // abstract but implemented by java.lang.Object
+                }
+                catch (NoSuchMethodException e) { /* fall-thorough */ }
+                catch (SecurityException e) {
+                    // NOTE: we could try check for FunctionalInterface on Java 8
+                }
+            }
+            else continue; // not-abstract ... default method
             if ( single == null ) single = method;
             else return null; // not a functional iface
         }

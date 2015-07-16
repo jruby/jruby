@@ -37,8 +37,8 @@ public class TestJava extends junit.framework.TestCase {
 
         //if ( Java.JAVA8 ) { // compare and equals both abstract
         method = Java.getFunctionalInterfaceMethod(java.util.Comparator.class);
-        //assertNotNull(method);
-        //assertEquals("compare", method.getName());
+        assertNotNull(method);
+        assertEquals("compare", method.getName());
         //}
 
         method = Java.getFunctionalInterfaceMethod(java.lang.Comparable.class);
