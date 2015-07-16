@@ -34,7 +34,7 @@ import java.util.Arrays;
  */
 public class FeatureManager {
 
-    private final boolean SHOW_RESOLUTION = Options.TRUFFLE_REQUIRE_SHOW_RESOLUTION.load();
+    private static final boolean SHOW_RESOLUTION = Options.TRUFFLE_REQUIRE_SHOW_RESOLUTION.load();
 
     private final RubyContext context;
 
