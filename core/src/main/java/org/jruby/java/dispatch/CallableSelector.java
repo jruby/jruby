@@ -1,6 +1,7 @@
 package org.jruby.java.dispatch;
 
 import java.lang.reflect.Member;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
+import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaClass;
@@ -22,6 +24,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;
 import static org.jruby.util.CodegenUtils.getBoxType;
 import static org.jruby.util.CodegenUtils.prettyParams;
+import static org.jruby.javasupport.Java.getFunctionalInterfaceMethod;
 
 /**
  * Method selection logic for calling from Ruby to Java.
@@ -188,18 +191,27 @@ public class CallableSelector {
                             ambiguous = true;
                         }
                     }
+
                     // somehow we can still decide e.g. if we got a RubyFixnum
-                    // then (int) constructor shoudl be preffered over (float)
+                    // then (int) constructor should be preferred over (float)
                     if ( ambiguous ) {
-                        int msPref = 0, cPref = 0;
-                        for ( int i = 0; i < msTypes.length; i++ ) {
-                            final Class<?> msType = msTypes[i], cType = cTypes[i];
-                            msPref += calcTypePreference(msType, args[i]);
-                            cPref += calcTypePreference(cType, args[i]);
+                        // special handling if we're dealing with Proc#impl :
+                        final IRubyObject lastArg = args.length > 0 ? args[ args.length - 1 ] : null;
+                        final T procToIfaceMatch = matchProcToInterfaceCandidate(lastArg, candidates);
+                        if ( procToIfaceMatch != null ) {
+                            mostSpecific = procToIfaceMatch; ambiguous = false;
                         }
-                        // for backwards compatibility we do not switch to cType as
-                        // the better fit - we seem to lack tests on this front ...
-                        if ( msPref > cPref ) ambiguous = false; // continue OUTER;
+                        else {
+                            int msPref = 0, cPref = 0;
+                            for ( int i = 0; i < msTypes.length; i++ ) {
+                                final Class<?> msType = msTypes[i], cType = cTypes[i];
+                                msPref += calcTypePreference(msType, args[i]);
+                                cPref += calcTypePreference(cType, args[i]);
+                            }
+                            // for backwards compatibility we do not switch to cType as
+                            // the better fit - we seem to lack tests on this front ...
+                            if ( msPref > cPref ) ambiguous = false; // continue OUTER;
+                        }
                     }
                 }
                 method = mostSpecific;
@@ -228,6 +240,39 @@ public class CallableSelector {
         }
 
         return method;
+    }
+
+    private static <T extends ParameterTypes> T matchProcToInterfaceCandidate(
+            final IRubyObject lastArg, final List<T> candidates) {
+        if ( lastArg instanceof RubyProc ) {
+            // cases such as (both ifaces - differ in arg count) :
+            // java.io.File#listFiles(java.io.FileFilter) ... accept(File)
+            // java.io.File#listFiles(java.io.FilenameFilter) ... accept(File, String)
+            final int arity = ((RubyProc) lastArg).getBlock().arity().getValue();
+            T match = null;
+            for ( int i = 0; i < candidates.size(); i++ ) {
+                final T method = candidates.get(i);
+
+                final Class<?>[] params = method.getParameterTypes();
+
+                if ( params.length == 0 ) return null; // can not match (no args)
+                final Class<?> lastParam = params[ params.length - 1 ];
+
+                if ( ! lastParam.isInterface() ) return null; // can not match
+
+                final Method implMethod = getFunctionalInterfaceMethod(lastParam);
+                if ( implMethod != null ) {
+                    // we're sure to have an interface in the end - match arg count :
+                    // NOTE: implMethod.getParameterCount() on Java 8 would do ...
+                    if ( implMethod.getParameterTypes().length == arity ) {
+                        if ( match != null ) return null; // 2 with same arity (can not match)
+                        match = method; // do not break here we want to check all
+                    }
+                }
+            }
+            return match;
+        }
+        return null;
     }
 
     private static <T extends ParameterTypes> T findCallable(T[] callables, CallableAcceptor acceptor, IRubyObject[] args) {
