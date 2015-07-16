@@ -112,23 +112,9 @@ public class ClassCache<T> {
     }
 
     protected Class<T> defineClass(ClassGenerator classGenerator) {
-        // attempt to load from classloaders
-        String className = classGenerator.name();
-        Class contents = null;
-        try {
-            contents = getClassLoader().loadClass(className);
-            if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                LOG.debug("found jitted code in classloader: {}", className);
-            }
-        } catch (ClassNotFoundException cnfe) {
-            if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                LOG.debug("no jitted code in classloader for method {} at class: {}", classGenerator, className);
-            }
-            // proceed to define in-memory
-        }
         OneShotClassLoader oneShotCL = new OneShotClassLoader(getClassLoader());
         classGenerator.generate();
-        contents = oneShotCL.defineClass(classGenerator.name(), classGenerator.bytecode());
+        Class contents = oneShotCL.defineClass(classGenerator.name(), classGenerator.bytecode());
         classLoadCount.incrementAndGet();
 
         return contents;

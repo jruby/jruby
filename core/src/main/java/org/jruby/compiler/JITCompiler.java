@@ -96,8 +96,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
 public class JITCompiler implements JITCompilerMBean {
     private static final Logger LOG = LoggerFactory.getLogger("JITCompiler");
-    
-    public static final boolean USE_CACHE = true;
+
     public static final String RUBY_JIT_PREFIX = "rubyjit";
 
     public static final String CLASS_METHOD_DELIMITER = "$$";
@@ -321,37 +320,6 @@ public class JITCompiler implements JITCompilerMBean {
             throw new RuntimeException(nsae);
         }
     }
-
-    public static void saveToCodeCache(Ruby ruby, byte[] bytecode, String packageName, File cachedClassFile) {
-        String codeCache = RubyInstanceConfig.JIT_CODE_CACHE;
-        File codeCacheDir = new File(codeCache);
-        if (!codeCacheDir.exists()) {
-            ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " does not exist");
-        } else if (!codeCacheDir.isDirectory()) {
-            ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " is not a directory");
-        } else if (!codeCacheDir.canWrite()) {
-            ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " is not writable");
-        } else {
-            if (!new File(codeCache, packageName).isDirectory()) {
-                boolean createdDirs = new File(codeCache, packageName).mkdirs();
-                if (!createdDirs) {
-                    ruby.getWarnings().warn("could not create JIT cache dir: " + new File(codeCache, packageName));
-                }
-            }
-            // write to code cache
-            FileOutputStream fos = null;
-            try {
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) LOG.info("writing jitted code to to " + cachedClassFile);
-                fos = new FileOutputStream(cachedClassFile);
-                fos.write(bytecode);
-            } catch (Exception e) {
-                e.printStackTrace();
-                // ignore
-            } finally {
-                try {fos.close();} catch (Exception e) {}
-            }
-        }
-    }
     
     public static class JITClassGenerator implements ClassCache.ClassGenerator {
         public JITClassGenerator(String className, String methodName, String key, Ruby ruby, DefaultMethod method, JITCounts counts) {
@@ -383,27 +351,6 @@ public class JITCompiler implements JITCompilerMBean {
         @SuppressWarnings("unchecked")
         protected void compile() {
             if (bytecode != null) return;
-            
-            // check if we have a cached compiled version on disk
-            String codeCache = RubyInstanceConfig.JIT_CODE_CACHE;
-            File cachedClassFile = new File(codeCache + "/" + className + ".class");
-
-            if (codeCache != null &&
-                    cachedClassFile.exists()) {
-                FileInputStream fis = null;
-                try {
-                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) LOG.info("loading cached code from: " + cachedClassFile);
-                    fis = new FileInputStream(cachedClassFile);
-                    bytecode = new byte[(int)fis.getChannel().size()];
-                    fis.read(bytecode);
-                    name = new ClassReader(bytecode).getClassName();
-                    return;
-                } catch (Exception e) {
-                    // ignore and proceed to compile
-                } finally {
-                    try {fis.close();} catch (Exception e) {}
-                }
-            }
             
             // Time the compilation
             long start = System.nanoTime();
@@ -463,10 +410,6 @@ public class JITCompiler implements JITCompilerMBean {
                 throw new NotCompilableException(
                         "JITed method size exceeds configured max of " +
                         ruby.getInstanceConfig().getJitMaxSize());
-            }
-
-            if (codeCache != null) {
-                JITCompiler.saveToCodeCache(ruby, bytecode, packageName, cachedClassFile);
             }
             
             counts.compiledCount.incrementAndGet();

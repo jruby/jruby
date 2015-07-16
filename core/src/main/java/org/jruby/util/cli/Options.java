@@ -98,7 +98,6 @@ public class Options {
     public static final Option<Integer> JIT_LOGEVERY = integer(JIT, "jit.logEvery", 0, "Log a message every n methods JIT compiled.");
     public static final Option<String> JIT_EXCLUDE = string(JIT, "jit.exclude", new String[]{"ClsOrMod","ClsOrMod::method_name","-::method_name"}, "", "Exclude methods from JIT. Comma delimited.");
     public static final Option<Boolean> JIT_CACHE = bool(JIT, "jit.cache", !COMPILE_INVOKEDYNAMIC.load(), "Cache jitted method in-memory bodies across runtimes and loads.");
-    public static final Option<String> JIT_CODECACHE = string(JIT, "jit.codeCache", new String[]{"dir"}, "Save jitted methods to <dir> as they're compiled, for future runs.");
     public static final Option<Boolean> JIT_DEBUG = bool(JIT, "jit.debug", false, "Log loading of JITed bytecode.");
     public static final Option<Boolean> JIT_BACKGROUND = bool(JIT, "jit.background", true, "Run the JIT compiler in a background thread.");
     
@@ -254,4 +253,7 @@ public class Options {
         // We were defaulting on for Java 8 and might again later if JEP 210 helps reduce warmup time.
         return false;
     }
+
+    @Deprecated
+    public static final Option<String> JIT_CODECACHE = Option.string("jit.codeCache", JIT, new String[]{"dir"}, "Save jitted methods to <dir> as they're compiled, for future runs.");
 }

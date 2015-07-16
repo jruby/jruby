@@ -1814,8 +1814,6 @@ public class RubyInstanceConfig {
 
     public static final boolean JIT_CACHE_ENABLED = Options.JIT_CACHE.load();
 
-    public static final String JIT_CODE_CACHE = Options.JIT_CODECACHE.load();
-
     public static final boolean REFLECTED_HANDLES = Options.REFLECTED_HANDLES.load();
 
     public static final boolean NO_UNWRAP_PROCESS_STREAMS = Options.PROCESS_NOUNWRAP.load();
@@ -2030,4 +2028,6 @@ public class RubyInstanceConfig {
     @Deprecated public static final boolean INVOKEDYNAMIC_CONSTANTS = invokedynamicCache && Options.INVOKEDYNAMIC_CACHE_CONSTANTS.load();
     @Deprecated public static final boolean INVOKEDYNAMIC_LITERALS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_LITERALS.load();
     @Deprecated public static final boolean INVOKEDYNAMIC_IVARS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_IVARS.load();
+
+    @Deprecated public static final String JIT_CODE_CACHE = "";
 }
