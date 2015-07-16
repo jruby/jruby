@@ -303,7 +303,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_rehash
      *
      */
-    @JRubyMethod(name = "rehash")
+    @JRubyMethod(name = "rehash", notImplemented = true)
     public RubyHash rehash() {
         return getOrCreateRubyHashMap().rehash();
     }
@@ -477,7 +477,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_shift
      *
      */
-    @JRubyMethod(name = "shift")
+    @JRubyMethod(name = "shift", notImplemented = true)
     public IRubyObject shift(ThreadContext context) {
         return getOrCreateRubyHashMap().shift(context);
     }
