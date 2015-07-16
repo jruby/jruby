@@ -33,6 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
+import org.jruby.util.FileResource;
 import org.jruby.util.collections.StringArraySet;
 import java.io.File;
 import java.io.FileDescriptor;
@@ -321,8 +322,13 @@ public class LoadService {
 
             Library library = findLibraryBySearchState(state);
 
+            // load() will do a last chance look in current working directory for the file (see load.c:rb_f_load()).
             if (library == null) {
-              throw runtime.newLoadError("no such file to load -- " + file, file);
+                FileResource fileResource = JRubyFile.createResourceAsFile(runtime, file);
+
+                if (!fileResource.exists()) throw runtime.newLoadError("no such file to load -- " + file, file);
+
+                library = LibrarySearcher.ResourceLibrary.create(file, file, fileResource);
             }
 
             try {
