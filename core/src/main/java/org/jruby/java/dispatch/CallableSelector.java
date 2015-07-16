@@ -596,35 +596,45 @@ public class CallableSelector {
     }
 
     private static int argsHashCode(IRubyObject a0) {
-        return 31 + javaClassHashCode(a0);
+        return 31 + javaClassOrProcHashCode(a0);
     }
 
     private static int argsHashCode(IRubyObject a0, IRubyObject a1) {
-        return 31 * argsHashCode(a0) + javaClassHashCode(a1);
+        return 17 * ( 31 + javaClassHashCode(a0) ) +
+                javaClassOrProcHashCode(a1);
     }
 
     private static int argsHashCode(IRubyObject a0, IRubyObject a1, IRubyObject a2) {
-        return 31 * argsHashCode(a0, a1) + javaClassHashCode(a2);
+        return 17 * ( 17 * ( 31 + javaClassHashCode(a0) ) + javaClassHashCode(a1) ) +
+                javaClassOrProcHashCode(a2);
     }
 
     private static int argsHashCode(IRubyObject a0, IRubyObject a1, IRubyObject a2, IRubyObject a3) {
-        return 31 * argsHashCode(a0, a1, a2) + javaClassHashCode(a3);
+        return 17 * ( 17 * ( 17 * ( 31 + javaClassHashCode(a0) ) + javaClassHashCode(a1) ) + javaClassHashCode(a2) ) +
+                javaClassOrProcHashCode(a3);
     }
 
-    private static int argsHashCode(IRubyObject[] args) {
-        if ( args == null ) return 0;
+    private static int argsHashCode(final IRubyObject[] args) {
+        final int last = args.length - 1;
+        if ( last == -1 ) return 0;
 
-        int result = 1;
-
-        for ( int i = 0; i < args.length; i++ ) {
-            result = 31 * result + javaClassHashCode(args[i]);
+        int result = 31;
+        for ( int i = 0; i < last; i++ ) {
+            result = 17 * ( result + javaClassHashCode( args[i] ) );
         }
 
-        return result;
+        return result + javaClassOrProcHashCode( args[last] );
     }
 
     private static int javaClassHashCode(final IRubyObject arg) {
-        return arg == null ? 0 : arg.getJavaClass().hashCode();
+        // if ( arg == null ) return 0;
+        return arg.getJavaClass().hashCode();
+    }
+
+    private static int javaClassOrProcHashCode(final IRubyObject arg) {
+        // if ( arg == null ) return 0;
+        final Class<?> javaClass = arg.getJavaClass();
+        return javaClass == RubyProc.class ? arg.hashCode() : javaClass.hashCode();
     }
 
     private static Class<?> getJavaClass(final IRubyObject arg) {

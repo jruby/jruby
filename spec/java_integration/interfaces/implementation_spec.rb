@@ -210,6 +210,16 @@ describe "Single-method Java interfaces" do
     end
   end
 
+  it "resolves 'ambiguous' method by proc argument count (with .impl)" do
+    java.io.File.new('.').listFiles do |pathname| # FileFilter#accept(File)
+      pathname.should be_kind_of(java.io.File)
+    end
+    java.io.File.new('.').listFiles do |dir, name| # FilenameFilter#accept(File, String)
+      dir.should be_kind_of(java.io.File)
+      name.should be_kind_of(String)
+    end
+  end
+
   it "should maintain Ruby object equality when passed through Java and back" do
     result = SingleMethodInterface.impl { |name| name }
     callable = double "callable"
