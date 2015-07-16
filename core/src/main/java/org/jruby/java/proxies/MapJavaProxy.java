@@ -194,7 +194,8 @@ public class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public RubyHash rehash() {
-            throw getRuntime().newNotImplementedError("rehash method is not implemented in a Java Map backed object");
+            // java.util.Map does not expose rehash, and many maps don't use hashing, so we do nothing. #3142
+            return this;
         }
 
         @Override
@@ -204,12 +205,9 @@ public class MapJavaProxy extends ConcreteJavaProxy {
             return this;
         }
 
-        /** rb_hash_shift
-         *
-         */
         @Override
         public IRubyObject shift(ThreadContext context) {
-            throw getRuntime().newNotImplementedError("shift method is not implemented in a Java Map backed object");
+            throw getRuntime().newNotImplementedError("Java Maps do not preserve insertion order and do not support shift");
         }
 
         @Override
