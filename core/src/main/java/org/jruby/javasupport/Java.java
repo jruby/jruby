@@ -1486,14 +1486,15 @@ public class Java implements Library {
         assert iface.isInterface();
         Method single = null;
         for ( final Method method : iface.getMethods() ) {
-            if ( Modifier.isStatic(method.getModifiers()) || isDefault(method) ) continue;
+            final int mod = method.getModifiers();
+            if ( Modifier.isStatic(mod) || ! Modifier.isAbstract(mod) ) continue;
             if ( single == null ) single = method;
             else return null; // not a functional iface
         }
         return single;
     }
 
-    private static final boolean JAVA8;
+    static final boolean JAVA8;
     static {
         boolean java8 = false;
         final String version = SafePropertyAccessor.getProperty("java.version", "0.0");
@@ -1510,7 +1511,7 @@ public class Java implements Library {
     }
 
     // TODO if about to compile against Java 8 this does not need to be reflective
-    private static boolean isDefault(final Method method) {
+    static boolean isDefaultMethod(final Method method) {
         if ( JAVA8 ) {
             try {
                 return (Boolean) Method.class.getMethod("isDefault").invoke(method);
