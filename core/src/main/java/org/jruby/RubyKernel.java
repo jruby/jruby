@@ -396,7 +396,7 @@ public class RubyKernel {
             if (arg.toString().startsWith("0x")) {
                 return ConvertBytes.byteListToInum19(runtime, arg.getByteList(), 16, true).toFloat();
             }
-            return RubyNumeric.str2fnum19(runtime, arg,true);
+            return RubyNumeric.str2fnum(runtime, arg, true);
         } else if(object.isNil()){
             throw runtime.newTypeError("can't convert nil into Float");
         } else {

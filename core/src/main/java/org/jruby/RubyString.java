@@ -3340,7 +3340,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "to_f")
     public IRubyObject to_f19() {
-        return RubyNumeric.str2fnum19(getRuntime(), this, false);
+        return RubyNumeric.str2fnum(getRuntime(), this, false);
     }
 
     /** rb_str_split_m
