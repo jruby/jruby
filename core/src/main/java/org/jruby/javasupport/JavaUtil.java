@@ -325,13 +325,13 @@ public class JavaUtil {
         if ( maybeGetOrSet && ( beanMethodName.startsWith("get") || beanMethodName.startsWith("set") ) ) {
             if (isUpperDigit(ch = beanMethodName.charAt(3))) {
                 if ( length == 4 ) return Character.toString(toLowerCase(ch));
-                return "" + toLowerCase(ch) + beanMethodName.substring(4);
+                return toLowerCase(ch) + beanMethodName.substring(4);
             }
         }
         else if ( beanMethodName.startsWith("is") && length > 2 ) {
             if (isUpperDigit(ch = beanMethodName.charAt(2))) {
                 if ( length == 3 ) return Character.toString( toLowerCase(ch) );
-                return "" + toLowerCase(ch) + beanMethodName.substring(3);
+                return toLowerCase(ch) + beanMethodName.substring(3);
             }
         }
         return null;
