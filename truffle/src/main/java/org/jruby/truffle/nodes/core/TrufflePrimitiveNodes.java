@@ -336,7 +336,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = {"isRubyString(file)", "isRubyProc(block)"})
+        @Specialization(guards = { "isRubyString(file)", "isRubyProc(block)" })
         public RubyBasicObject attach(RubyBasicObject file, int line, RubyBasicObject block) {
             getContext().getAttachmentsManager().attach(file.toString(), line, block);
             return getContext().getCoreLibrary().getNilObject();
@@ -368,7 +368,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = {"isRubyArray(initFunctions)", "isRubyArray(cFlags)", "isRubyArray(files)"})
+        @Specialization(guards = { "isRubyArray(initFunctions)", "isRubyArray(cFlags)", "isRubyArray(files)" })
         public boolean cExtLoad(RubyBasicObject initFunctions, RubyBasicObject cFlags, RubyBasicObject files) {
             final CExtSubsystem subsystem = CExtManager.getSubsystem();
 
