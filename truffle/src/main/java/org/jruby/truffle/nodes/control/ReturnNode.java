@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.control;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.ReturnException;
 
@@ -21,10 +22,10 @@ import org.jruby.truffle.runtime.control.ReturnException;
  */
 public class ReturnNode extends RubyNode {
 
-    private final long returnID;
+    private final ReturnID returnID;
     @Child private RubyNode value;
 
-    public ReturnNode(RubyContext context, SourceSection sourceSection, long returnID, RubyNode value) {
+    public ReturnNode(RubyContext context, SourceSection sourceSection, ReturnID returnID, RubyNode value) {
         super(context, sourceSection);
         this.returnID = returnID;
         this.value = value;
@@ -34,5 +35,5 @@ public class ReturnNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         throw new ReturnException(returnID, value.execute(frame));
     }
-    
+
 }

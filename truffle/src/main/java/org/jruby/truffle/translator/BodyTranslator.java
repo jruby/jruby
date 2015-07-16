@@ -65,6 +65,7 @@ import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveConstructor;
 import org.jruby.truffle.nodes.rubinius.RubiniusSingleBlockArgNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
@@ -455,7 +456,7 @@ public class BodyTranslator extends Translator {
         final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
 
         final RubiniusPrimitiveConstructor primitive = context.getRubiniusPrimitiveManager().getPrimitive(primitiveName);
-        final long returnID = environment.getReturnID();
+        final ReturnID returnID = environment.getReturnID();
         return primitive.createCallPrimitiveNode(context, sourceSection, returnID);
     }
 
@@ -1371,7 +1372,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitGlobalAsgnNode(org.jruby.ast.GlobalAsgnNode node) {
         return translateGlobalAsgnNode(node, node.getValueNode().accept(this));
     }
-    
+
     public RubyNode translateGlobalAsgnNode(org.jruby.ast.GlobalAsgnNode node, RubyNode rhs) {
         final SourceSection sourceSection = translate(node.getPosition());
 

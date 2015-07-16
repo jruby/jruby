@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.ReturnException;
 
@@ -23,11 +24,11 @@ import org.jruby.truffle.runtime.control.ReturnException;
 public class CallRubiniusPrimitiveNode extends RubyNode {
 
     @Child private RubyNode primitive;
-    private final long returnID;
+    private final ReturnID returnID;
 
     private final ConditionProfile primitiveSucceededCondition = ConditionProfile.createBinaryProfile();
 
-    public CallRubiniusPrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode primitive, long returnID) {
+    public CallRubiniusPrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode primitive, ReturnID returnID) {
         super(context, sourceSection);
         this.primitive = primitive;
         this.returnID = returnID;
