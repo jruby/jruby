@@ -72,7 +72,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.anno.JRubyMethod;
@@ -107,10 +106,13 @@ import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.IdUtil;
+import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
+
 import static org.jruby.java.dispatch.CallableSelector.newCallableCache;
 import static org.jruby.java.invokers.RubyToJavaInvoker.convertArguments;
+import static org.jruby.runtime.Visibility.*;
 
 @JRubyModule(name = "Java")
 public class Java implements Library {
@@ -1474,4 +1476,50 @@ public class Java implements Library {
                                               final RubyClass baseType, final JavaClass javaClass, boolean invokeInherited) {
         return createProxyClass(runtime, RubyClass.newClass(runtime, baseType), javaClass, invokeInherited);
     }
+
+    /**
+     * @param iface
+     * @return the sole un-implemented method for a functional-style interface or null
+     * @note This method is internal and might be subject to change, do not assume its part of JRuby's API!
+     */
+    public static Method getFunctionalInterfaceMethod(final Class<?> iface) {
+        assert iface.isInterface();
+        Method single = null;
+        for ( final Method method : iface.getMethods() ) {
+            if ( Modifier.isStatic(method.getModifiers()) || isDefault(method) ) continue;
+            if ( single == null ) single = method;
+            else return null; // not a functional iface
+        }
+        return single;
+    }
+
+    private static final boolean JAVA8;
+    static {
+        boolean java8 = false;
+        final String version = SafePropertyAccessor.getProperty("java.version", "0.0");
+        if ( version.length() > 2 ) {
+            int v = Character.getNumericValue( version.charAt(0) );
+            if ( v > 8 ) java8 = true; // 9.0
+            else if ( v == 1 ) {
+                v = Character.getNumericValue( version.charAt(2) ); // 1.8
+                if ( v < 10 && v >= 8 ) java8 = true;
+            }
+            // seems as no Java 10 support ... yet :)
+        }
+        JAVA8 = java8;
+    }
+
+    // TODO if about to compile against Java 8 this does not need to be reflective
+    private static boolean isDefault(final Method method) {
+        if ( JAVA8 ) {
+            try {
+                return (Boolean) Method.class.getMethod("isDefault").invoke(method);
+            }
+            catch (NoSuchMethodException ex) { throw new RuntimeException(ex); }
+            catch (IllegalAccessException ex) { throw new RuntimeException(ex); }
+            catch (Exception ex) { /* noop */ }
+        }
+        return false;
+    }
+
 }
