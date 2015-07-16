@@ -246,26 +246,6 @@ class TestKernel < Test::Unit::TestCase
     assert_raises(TypeError) { Kernel.load Object.new }
   end
 
-  def test_shall_load_from_load_path
-    tmp = ENV["TEMP"] || ENV["TMP"] || ENV["TMPDIR"] || "/tmp"
-    Dir.chdir(tmp) do
-      load_path_save = $LOAD_PATH.dup
-      begin
-        File.open(File.expand_path('.') +'/file_to_be_loaded','w' ) do |f|
-          f.puts "raise"
-        end
-        $LOAD_PATH.delete_if{|dir| dir=='.'}
-        assert_raise(LoadError) {
-          load 'file_to_be_loaded'
-        }
-      ensure
-        File.delete(File.expand_path('.') +'/file_to_be_loaded')
-        $LOAD_PATH.clear
-        $LOAD_PATH.concat(load_path_save)
-      end
-    end
-  end
-
   def test_local_variables
     if RbConfig::CONFIG['ruby_install_name'] == 'jruby'
       a = lambda do
