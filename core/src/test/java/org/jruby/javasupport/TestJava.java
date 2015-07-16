@@ -49,11 +49,28 @@ public class TestJava extends junit.framework.TestCase {
         assertNotNull(method);
         assertEquals("iterator", method.getName());
 
-        method = Java.getFunctionalInterfaceMethod(java.lang.AutoCloseable.class);
+        method = Java.getFunctionalInterfaceMethod(java.util.concurrent.ThreadFactory.class);
         assertNotNull(method);
 
         method = Java.getFunctionalInterfaceMethod(java.util.Enumeration.class);
         assertNull(method);
+
+        method = Java.getFunctionalInterfaceMethod(FxRunnable1.class);
+        assertNotNull(method);
+        assertEquals("run", method.getName());
+
+        method = Java.getFunctionalInterfaceMethod(FxRunnable2.class);
+        assertNotNull(method);
+        assertEquals("run", method.getName());
+
+        method = Java.getFunctionalInterfaceMethod(NonFxRunnable.class);
+        assertNull(method);
     }
+
+    private static interface FxRunnable1 extends Runnable { abstract void run() ; }
+
+    private static interface FxRunnable2 extends Runnable { /* inherited run() */ }
+
+    private static interface NonFxRunnable extends Runnable { public void doRun() ; }
 
 }
