@@ -169,6 +169,10 @@ public abstract class RubyGuards {
         return object instanceof RubyException;
     }
 
+    public static boolean isRubyFiber(Object fiber) {
+        return fiber instanceof RubyFiber;
+    }
+
     // Internal types
 
     public static boolean isThreadLocal(Object value) {

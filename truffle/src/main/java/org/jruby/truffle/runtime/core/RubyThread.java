@@ -99,7 +99,7 @@ public class RubyThread extends RubyBasicObject {
 
         start();
         try {
-            RubyFiber fiber = getRootFiber();
+            RubyBasicObject fiber = getRootFiber();
             FiberNodes.run(fiber, task);
         } catch (ThreadExitException e) {
             value = context.getCoreLibrary().getNilObject();
@@ -140,7 +140,7 @@ public class RubyThread extends RubyBasicObject {
     }
 
     public Thread getCurrentFiberJavaThread() {
-        return fiberManager.getCurrentFiber().fields.thread;
+        return ((RubyFiber) fiberManager.getCurrentFiber()).fields.thread;
     }
 
     public void join() {
@@ -238,7 +238,7 @@ public class RubyThread extends RubyBasicObject {
         return fiberManager;
     }
 
-    public RubyFiber getRootFiber() {
+    public RubyBasicObject getRootFiber() {
         return fiberManager.getRootFiber();
     }
 

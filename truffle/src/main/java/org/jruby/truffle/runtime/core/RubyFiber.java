@@ -21,6 +21,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * passing. Note that with fibers, a Ruby thread has multiple Java threads which interleave.
  * A {@code Fiber} is associated with a single (Ruby) {@code Thread}.
  */
+@Deprecated
 public class RubyFiber extends RubyBasicObject {
 
     public class FiberFields {
@@ -29,7 +30,7 @@ public class RubyFiber extends RubyBasicObject {
         public final boolean isRootFiber;
         // we need 2 slots when the safepoint manager sends the kill message and there is another message unprocessed
         public final BlockingQueue<FiberNodes.FiberMessage> messageQueue = new LinkedBlockingQueue<>(2);
-        public RubyFiber lastResumedByFiber = null;
+        public RubyBasicObject lastResumedByFiber = null;
         public boolean alive = true;
         public volatile Thread thread;
 
