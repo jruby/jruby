@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyMatchData;
 
@@ -34,7 +35,7 @@ public class ReadMatchReferenceNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        final Object match = getContext().getThreadManager().getCurrentThread().getThreadLocals().getInstanceVariable("$~");
+        final Object match = ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread()).getInstanceVariable("$~");
 
         if (match == null || match == nil()) {
             return nil();

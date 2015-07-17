@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -107,7 +108,7 @@ public class InstrumentationServerManager {
             @Override
             public void handle(HttpExchange httpExchange) {
                 try {
-                    Thread mainThread = context.getThreadManager().getRootThread().getCurrentFiberJavaThread();
+                    Thread mainThread = ThreadNodes.getCurrentFiberJavaThread(context.getThreadManager().getRootThread());
                     context.getSafepointManager().pauseMainThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
                         @Override
                         public void run(RubyThread thread, final Node currentNode) {

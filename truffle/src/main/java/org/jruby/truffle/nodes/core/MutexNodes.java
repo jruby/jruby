@@ -89,7 +89,7 @@ public abstract class MutexNodes {
                 @Override
                 public Boolean block() throws InterruptedException {
                     lock.lockInterruptibly();
-                    thread.acquiredLock(lock);
+                    ThreadNodes.acquiredLock(thread, lock);
                     return SUCCESS;
                 }
             });
@@ -142,7 +142,7 @@ public abstract class MutexNodes {
 
             if (lock.tryLock()) {
                 RubyThread thread = getContext().getThreadManager().getCurrentThread();
-                thread.acquiredLock(lock);
+                ThreadNodes.acquiredLock(thread, lock);
                 return true;
             } else {
                 return false;
@@ -181,7 +181,7 @@ public abstract class MutexNodes {
                 }
             }
 
-            thread.releasedLock(lock);
+            ThreadNodes.releasedLock(thread, lock);
         }
 
     }
@@ -227,7 +227,7 @@ public abstract class MutexNodes {
             // Here we do it before unlocking for providing nice semantics for
             // thread1: mutex.sleep
             // thread2: mutex.synchronize { <ensured that thread1 is sleeping and thread1.wakeup will wake it up> }
-            thread.shouldWakeUp();
+            ThreadNodes.shouldWakeUp(thread);
 
             UnlockNode.unlock(lock, thread, this);
             try {

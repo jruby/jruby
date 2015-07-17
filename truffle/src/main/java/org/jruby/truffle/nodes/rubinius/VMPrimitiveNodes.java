@@ -118,7 +118,7 @@ public abstract class VMPrimitiveNodes {
                         SourceSection sourceSection = getSourceSection();
                         clearExceptionVariableNode = insert(
                                 new WriteInstanceVariableNode(getContext(), getSourceSection(), "$!",
-                                        new LiteralNode(getContext(), getSourceSection(), getContext().getThreadManager().getCurrentThread().getThreadLocals()),
+                                        new LiteralNode(getContext(), getSourceSection(), ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread())),
                                         new DefinedWrapperNode(context, sourceSection,
                                                 new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                                                 "nil"),

@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.nodes.core.FiberNodes;
+import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 
@@ -43,7 +44,7 @@ public class RubyFiber extends RubyBasicObject {
     public final FiberFields fields;
 
     public RubyFiber(RubyThread parent, RubyClass rubyClass, String name) {
-        this(parent, parent.getFiberManager(), parent.getThreadManager(), rubyClass, name, false);
+        this(parent, ThreadNodes.getFiberManager(parent), ThreadNodes.getThreadManager(parent), rubyClass, name, false);
     }
 
     public RubyFiber(RubyThread parent, FiberManager fiberManager, ThreadManager threadManager, RubyClass rubyClass, String name, boolean isRootFiber) {

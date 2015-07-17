@@ -223,7 +223,7 @@ public abstract class RegexpNodes {
     public static void setThread(RubyBasicObject regexp, String name, Object value) {
         assert RubyGuards.isRubyRegexp(regexp);
         assert value != null;
-        RubyBasicObject.setInstanceVariable(regexp.getContext().getThreadManager().getCurrentThread().getThreadLocals(), name, value);
+        RubyBasicObject.setInstanceVariable(ThreadNodes.getThreadLocals(regexp.getContext().getThreadManager().getCurrentThread()), name, value);
     }
 
     @TruffleBoundary

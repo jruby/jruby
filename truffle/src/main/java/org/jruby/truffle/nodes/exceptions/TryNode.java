@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
@@ -45,7 +46,7 @@ public class TryNode extends RubyNode {
         this.rescueParts = rescueParts;
         this.elsePart = elsePart;
         clearExceptionVariableNode = new WriteInstanceVariableNode(context, sourceSection, "$!",
-                new LiteralNode(context, sourceSection, context.getThreadManager().getCurrentThread().getThreadLocals()),
+                new LiteralNode(context, sourceSection, ThreadNodes.getThreadLocals(context.getThreadManager().getCurrentThread())),
                 new DefinedWrapperNode(context, sourceSection,
                         new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                         "nil"),
@@ -85,7 +86,7 @@ public class TryNode extends RubyNode {
     private Object handleException(VirtualFrame frame, RaiseException exception) {
         CompilerDirectives.transferToInterpreter();
 
-        final RubyBasicObject threadLocals = getContext().getThreadManager().getCurrentThread().getThreadLocals();
+        final RubyBasicObject threadLocals = ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread());
         RubyBasicObject.setInstanceVariable(threadLocals, "$!", exception.getRubyException());
 
         for (RescueNode rescue : rescueParts) {

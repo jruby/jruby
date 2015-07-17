@@ -1813,7 +1813,7 @@ public abstract class KernelNodes {
 
             // Clear the wakeUp flag, following Ruby semantics:
             // it should only be considered if we are inside the sleep when Thread#{run,wakeup} is called.
-            thread.shouldWakeUp();
+            ThreadNodes.shouldWakeUp(thread);
 
             return sleepFor(getContext(), durationInMillis);
         }
@@ -1831,7 +1831,7 @@ public abstract class KernelNodes {
                     long now = System.currentTimeMillis();
                     long slept = now - start;
 
-                    if (slept >= durationInMillis || thread.shouldWakeUp()) {
+                    if (slept >= durationInMillis || ThreadNodes.shouldWakeUp(thread)) {
                         return slept;
                     }
                     Thread.sleep(durationInMillis - slept);

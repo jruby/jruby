@@ -19,17 +19,224 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.control.ReturnException;
+import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyFiber;
 import org.jruby.truffle.runtime.core.RubyThread;
-import org.jruby.truffle.runtime.core.RubyThread.InterruptMode;
+import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
+import org.jruby.truffle.runtime.subsystems.ThreadManager;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 
 @CoreClass(name = "Thread")
 public abstract class ThreadNodes {
+
+    public static RubyThread createRubyThread(RubyClass rubyClass, ThreadManager manager) {
+        return new RubyThread(rubyClass, manager);
+    }
+
+    public static void initialize(final RubyThread thread, RubyContext context, Node currentNode, final Object[] arguments, final RubyBasicObject block) {
+        assert RubyGuards.isRubyProc(block);
+        String info = ProcNodes.getSharedMethodInfo(block).getSourceSection().getShortDescription();
+        initialize(thread, context, currentNode, info, new Runnable() {
+            @Override
+            public void run() {
+                thread.fields.value = ProcNodes.rootCall(block, arguments);
+            }
+        });
+    }
+
+    public static void initialize(final RubyThread thread, final RubyContext context, final Node currentNode, final String info, final Runnable task) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                ThreadNodes.run(thread, context, currentNode, info, task);
+            }
+        }).start();
+    }
+
+    public static void run(RubyThread thread, final RubyContext context, Node currentNode, String info, Runnable task) {
+        thread.fields.name = "Ruby Thread@" + info;
+        Thread.currentThread().setName(thread.fields.name);
+
+        start(thread);
+        try {
+            RubyBasicObject fiber = getRootFiber(thread);
+            FiberNodes.run(fiber, task);
+        } catch (ThreadExitException e) {
+            thread.fields.value = context.getCoreLibrary().getNilObject();
+            return;
+        } catch (RaiseException e) {
+            thread.fields.exception = e.getRubyException();
+        } catch (ReturnException e) {
+            thread.fields.exception = context.getCoreLibrary().unexpectedReturn(currentNode);
+        } finally {
+            cleanup(thread);
+        }
+    }
+
+    // Only used by the main thread which cannot easily wrap everything inside a try/finally.
+    public static void start(RubyThread thread) {
+        thread.fields.thread = Thread.currentThread();
+        thread.fields.manager.registerThread(thread);
+    }
+
+    // Only used by the main thread which cannot easily wrap everything inside a try/finally.
+    public static void cleanup(RubyThread thread) {
+        thread.fields.status = Status.ABORTING;
+        thread.fields.manager.unregisterThread(thread);
+
+        thread.fields.status = Status.DEAD;
+        thread.fields.thread = null;
+        releaseOwnedLocks(thread);
+        thread.fields.finished.countDown();
+    }
+
+    public static void shutdown(RubyThread thread) {
+        thread.fields.fiberManager.shutdown();
+        throw new ThreadExitException();
+    }
+
+    public static Thread getRootFiberJavaThread(RubyThread thread) {
+        return thread.fields.thread;
+    }
+
+    public static Thread getCurrentFiberJavaThread(RubyThread thread) {
+        return ((RubyFiber) thread.fields.fiberManager.getCurrentFiber()).fields.thread;
+    }
+
+    public static void join(final RubyThread thread) {
+        thread.fields.manager.runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<Boolean>() {
+            @Override
+            public Boolean block() throws InterruptedException {
+                thread.fields.finished.await();
+                return SUCCESS;
+            }
+        });
+
+        if (thread.fields.exception != null) {
+            throw new RaiseException(thread.fields.exception);
+        }
+    }
+
+    public static boolean join(final RubyThread thread, final int timeoutInMillis) {
+        final long start = System.currentTimeMillis();
+        final boolean joined = thread.fields.manager.runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<Boolean>() {
+            @Override
+            public Boolean block() throws InterruptedException {
+                long now = System.currentTimeMillis();
+                long waited = now - start;
+                if (waited >= timeoutInMillis) {
+                    // We need to know whether countDown() was called and we do not want to block.
+                    return thread.fields.finished.getCount() == 0;
+                }
+                return thread.fields.finished.await(timeoutInMillis - waited, TimeUnit.MILLISECONDS);
+            }
+        });
+
+        if (joined && thread.fields.exception != null) {
+            throw new RaiseException(thread.fields.exception);
+        }
+
+        return joined;
+    }
+
+    public static void wakeup(RubyThread thread) {
+        thread.fields.wakeUp.set(true);
+        Thread t = thread.fields.thread;
+        if (t != null) {
+            t.interrupt();
+        }
+    }
+
+    public static Object getValue(RubyThread thread) {
+        return thread.fields.value;
+    }
+
+    public static Object getException(RubyThread thread) {
+        return thread.fields.exception;
+    }
+
+    public static String getName(RubyThread thread) {
+        return thread.fields.name;
+    }
+
+    public static void setName(RubyThread thread, String name) {
+        thread.fields.name = name;
+    }
+
+    public static ThreadManager getThreadManager(RubyThread thread) {
+        return thread.fields.manager;
+    }
+
+    public static FiberManager getFiberManager(RubyThread thread) {
+        return thread.fields.fiberManager;
+    }
+
+    public static RubyBasicObject getRootFiber(RubyThread thread) {
+        return thread.fields.fiberManager.getRootFiber();
+    }
+
+    public static boolean isAbortOnException(RubyThread thread) {
+        return thread.fields.abortOnException;
+    }
+
+    public static void setAbortOnException(RubyThread thread, boolean abortOnException) {
+        thread.fields.abortOnException = abortOnException;
+    }
+
+    public static InterruptMode getInterruptMode(RubyThread thread) {
+        return thread.fields.interruptMode;
+    }
+
+    public static void setInterruptMode(RubyThread thread, InterruptMode interruptMode) {
+        thread.fields.interruptMode = interruptMode;
+    }
+
+    /** Return whether Thread#{run,wakeup} was called and clears the wakeup flag.
+     * @param thread*/
+    public static boolean shouldWakeUp(RubyThread thread) {
+        return thread.fields.wakeUp.getAndSet(false);
+    }
+
+    public static void acquiredLock(RubyThread thread, Lock lock) {
+        thread.fields.ownedLocks.add(lock);
+    }
+
+    public static void releasedLock(RubyThread thread, Lock lock) {
+        // TODO: this is O(ownedLocks.length).
+        thread.fields.ownedLocks.remove(lock);
+    }
+
+    public static void releaseOwnedLocks(RubyThread thread) {
+        for (Lock lock : thread.fields.ownedLocks) {
+            lock.unlock();
+        }
+    }
+
+    public static Status getStatus(RubyThread thread) {
+        return thread.fields.status;
+    }
+
+    public static void setStatus(RubyThread thread, Status status) {
+        thread.fields.status = status;
+    }
+
+    public static RubyBasicObject getThreadLocals(RubyThread thread) {
+        return thread.fields.threadLocals;
+    }
+
+    public enum InterruptMode {
+        IMMEDIATE, ON_BLOCKING, NEVER
+    }
 
     @CoreMethod(names = "alive?")
     public abstract static class AliveNode extends CoreMethodArrayArgumentsNode {
@@ -40,7 +247,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public boolean alive(RubyThread thread) {
-            return thread.getStatus() != Status.ABORTING && thread.getStatus() != Status.DEAD;
+            return getStatus(thread) != Status.ABORTING && getStatus(thread) != Status.DEAD;
         }
 
     }
@@ -68,12 +275,12 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyThread kill(final RubyThread rubyThread) {
-            final Thread toKill = rubyThread.getRootFiberJavaThread();
+            final Thread toKill = getRootFiberJavaThread(rubyThread);
 
             getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new SafepointAction() {
                 @Override
                 public void run(RubyThread currentThread, Node currentNode) {
-                    currentThread.shutdown();
+                    shutdown(currentThread);
                 }
             });
 
@@ -99,12 +306,12 @@ public abstract class ThreadNodes {
             // TODO (eregon, 12 July 2015): should we consider exceptionClass?
             final InterruptMode newInterruptMode = symbolToInterruptMode(timing);
 
-            final InterruptMode oldInterruptMode = self.getInterruptMode();
-            self.setInterruptMode(newInterruptMode);
+            final InterruptMode oldInterruptMode = getInterruptMode(self);
+            setInterruptMode(self, newInterruptMode);
             try {
                 return yield(frame, block);
             } finally {
-                self.setInterruptMode(oldInterruptMode);
+                setInterruptMode(self, oldInterruptMode);
             }
         }
 
@@ -132,7 +339,7 @@ public abstract class ThreadNodes {
 
         @Specialization(guards = "isRubyProc(block)")
         public RubyBasicObject initialize(RubyThread thread, Object[] arguments, RubyBasicObject block) {
-            thread.initialize(getContext(), this, arguments, block);
+            ThreadNodes.initialize(thread, getContext(), this, arguments, block);
             return nil();
         }
 
@@ -147,7 +354,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyThread join(RubyThread thread, NotProvided timeout) {
-            thread.join();
+            ThreadNodes.join(thread);
             return thread;
         }
 
@@ -167,7 +374,7 @@ public abstract class ThreadNodes {
         }
 
         private Object joinMillis(RubyThread self, int timeoutInMillis) {
-            if (self.join(timeoutInMillis)) {
+            if (ThreadNodes.join(self, timeoutInMillis)) {
                 return self;
             } else {
                 return nil();
@@ -240,7 +447,7 @@ public abstract class ThreadNodes {
 
             final RaiseException exceptionWrapper = new RaiseException(exception);
 
-            getContext().getSafepointManager().pauseThreadAndExecuteLater(thread.getCurrentFiberJavaThread(), this, new SafepointAction() {
+            getContext().getSafepointManager().pauseThreadAndExecuteLater(getCurrentFiberJavaThread(thread), this, new SafepointAction() {
                 @Override
                 public void run(RubyThread currentThread, Node currentNode) {
                     throw exceptionWrapper;
@@ -262,15 +469,15 @@ public abstract class ThreadNodes {
         @Specialization
         public Object status(RubyThread self) {
             // TODO: slightly hackish
-            if (self.getStatus() == Status.DEAD) {
-                if (self.getException() != null) {
+            if (getStatus(self) == Status.DEAD) {
+                if (getException(self) != null) {
                     return nil();
                 } else {
                     return false;
                 }
             }
 
-            return createString(self.getStatus().bytes);
+            return createString(getStatus(self).bytes);
         }
 
     }
@@ -284,7 +491,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public boolean stop(RubyThread self) {
-            return self.getStatus() == Status.DEAD || self.getStatus() == Status.SLEEP;
+            return getStatus(self) == Status.DEAD || getStatus(self) == Status.SLEEP;
         }
 
     }
@@ -298,8 +505,8 @@ public abstract class ThreadNodes {
 
         @Specialization
         public Object value(RubyThread self) {
-            self.join();
-            return self.getValue();
+            join(self);
+            return getValue(self);
         }
 
     }
@@ -313,13 +520,13 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyThread wakeup(final RubyThread thread) {
-            if (thread.getStatus() == Status.DEAD) {
+            if (getStatus(thread) == Status.DEAD) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().threadError("killed thread", this));
             }
 
             // TODO: should only interrupt sleep
-            thread.wakeup();
+            ThreadNodes.wakeup(thread);
 
             return thread;
         }
@@ -335,7 +542,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public boolean abortOnException(RubyThread self) {
-            return self.isAbortOnException();
+            return isAbortOnException(self);
         }
 
     }
@@ -349,10 +556,18 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyBasicObject setAbortOnException(RubyThread self, boolean abortOnException) {
-            self.setAbortOnException(abortOnException);
+            ThreadNodes.setAbortOnException(self, abortOnException);
             return nil();
         }
 
     }
 
+    public static class ThreadAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+            return createRubyThread(rubyClass, context.getThreadManager());
+        }
+
+    }
 }

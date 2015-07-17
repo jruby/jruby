@@ -14,6 +14,7 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.nodes.core.FiberNodes;
+import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -41,14 +42,14 @@ public class ThreadManager {
 
     public ThreadManager(RubyContext context) {
         this.context = context;
-        this.rootThread = new RubyThread(context.getCoreLibrary().getThreadClass(), this);
-        rootThread.setName("main");
+        this.rootThread = ThreadNodes.createRubyThread(context.getCoreLibrary().getThreadClass(), this);
+        ThreadNodes.setName(rootThread, "main");
     }
 
     public void initialize() {
         registerThread(rootThread);
-        rootThread.start();
-        FiberNodes.start(rootThread.getRootFiber());
+        ThreadNodes.start(rootThread);
+        FiberNodes.start(ThreadNodes.getRootFiber(rootThread));
     }
 
     public RubyThread getRootThread() {
@@ -106,13 +107,13 @@ public class ThreadManager {
 
         do {
             final RubyThread runningThread = leaveGlobalLock();
-            runningThread.setStatus(Status.SLEEP);
+            ThreadNodes.setStatus(runningThread, Status.SLEEP);
 
             try {
                 try {
                     result = action.block();
                 } finally {
-                    runningThread.setStatus(Status.RUN);
+                    ThreadNodes.setStatus(runningThread, Status.RUN);
                     // We need to enter the global lock before anything else!
                     enterGlobalLock(runningThread);
                 }
@@ -142,9 +143,9 @@ public class ThreadManager {
         try {
             killOtherThreads();
         } finally {
-            rootThread.getFiberManager().shutdown();
-            FiberNodes.cleanup(rootThread.getRootFiber());
-            rootThread.cleanup();
+            ThreadNodes.getFiberManager(rootThread).shutdown();
+            FiberNodes.cleanup(ThreadNodes.getRootFiber(rootThread));
+            ThreadNodes.cleanup(rootThread);
         }
     }
 
@@ -154,8 +155,8 @@ public class ThreadManager {
                 context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
                     @Override
                     public synchronized void run(RubyThread thread, Node currentNode) {
-                        if (thread != rootThread && Thread.currentThread() == thread.getRootFiberJavaThread()) {
-                            thread.shutdown();
+                        if (thread != rootThread && Thread.currentThread() == ThreadNodes.getRootFiberJavaThread(thread)) {
+                            ThreadNodes.shutdown(thread);
                         }
                     }
                 });

@@ -97,7 +97,7 @@ public abstract class FiberNodes {
     public static void start(RubyBasicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
         getFields(fiber).thread = Thread.currentThread();
-        getFields(fiber).rubyThread.getFiberManager().registerFiber(fiber);
+        ThreadNodes.getFiberManager(getFields(fiber).rubyThread).registerFiber(fiber);
         fiber.getContext().getSafepointManager().enterThread();
         fiber.getContext().getThreadManager().enterGlobalLock(getFields(fiber).rubyThread);
     }
@@ -108,7 +108,7 @@ public abstract class FiberNodes {
         getFields(fiber).alive = false;
         fiber.getContext().getThreadManager().leaveGlobalLock();
         fiber.getContext().getSafepointManager().leaveThread();
-        getFields(fiber).rubyThread.getFiberManager().unregisterFiber(fiber);
+        ThreadNodes.getFiberManager(getFields(fiber).rubyThread).unregisterFiber(fiber);
         getFields(fiber).thread = null;
     }
 
@@ -132,7 +132,7 @@ public abstract class FiberNodes {
             }
         });
 
-        getFields(fiber).rubyThread.getFiberManager().setCurrentFiber(fiber);
+        ThreadNodes.getFiberManager(getFields(fiber).rubyThread).setCurrentFiber(fiber);
 
         if (message instanceof FiberExitMessage) {
             throw new FiberExitException();
@@ -227,7 +227,7 @@ public abstract class FiberNodes {
                 throw new RaiseException(getContext().getCoreLibrary().fiberError("fiber called across threads", this));
             }
 
-            final RubyBasicObject sendingFiber = currentThread.getFiberManager().getCurrentFiber();
+            final RubyBasicObject sendingFiber = ThreadNodes.getFiberManager(currentThread).getCurrentFiber();
 
             return singleValue(frame, transferControlTo(sendingFiber, fiber, isYield, args));
         }
@@ -281,7 +281,7 @@ public abstract class FiberNodes {
         @Specialization
         public Object yield(VirtualFrame frame, Object[] args) {
             RubyThread currentThread = getContext().getThreadManager().getCurrentThread();
-            final RubyBasicObject yieldingFiber = currentThread.getFiberManager().getCurrentFiber();
+            final RubyBasicObject yieldingFiber = ThreadNodes.getFiberManager(currentThread).getCurrentFiber();
             final RubyBasicObject fiberYieldedTo = ((RubyFiber) yieldingFiber).fields.lastResumedByFiber;
 
             if (((RubyFiber) yieldingFiber).fields.isRootFiber || fiberYieldedTo == null) {

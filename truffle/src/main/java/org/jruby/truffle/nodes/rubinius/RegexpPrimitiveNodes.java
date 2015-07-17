@@ -20,6 +20,7 @@ import org.joni.Regex;
 import org.jruby.truffle.nodes.core.RegexpGuards;
 import org.jruby.truffle.nodes.core.RegexpNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -164,7 +165,7 @@ public abstract class RegexpPrimitiveNodes {
         @Specialization
         public Object setLastMatch(RubyClass regexpClass, Object matchData) {
             RubyBasicObject.setInstanceVariable(
-                    getContext().getThreadManager().getCurrentThread().getThreadLocals(), "$~", matchData);
+                    ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread()), "$~", matchData);
 
             return matchData;
         }

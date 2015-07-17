@@ -317,7 +317,7 @@ public class CoreLibrary {
         regexpClass = defineClass("Regexp", new RegexpNodes.RegexpAllocator());
         stringClass = defineClass("String", new StringNodes.StringAllocator());
         symbolClass = defineClass("Symbol", NO_ALLOCATOR);
-        threadClass = defineClass("Thread", new RubyThread.ThreadAllocator());
+        threadClass = defineClass("Thread", new ThreadNodes.ThreadAllocator());
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location", NO_ALLOCATOR);
         timeClass = defineClass("Time", new TimeNodes.TimeAllocator());
