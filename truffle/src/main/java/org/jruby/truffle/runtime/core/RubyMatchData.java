@@ -38,6 +38,7 @@ import org.jruby.truffle.nodes.RubyGuards;
 /**
  * Represents the Ruby {@code MatchData} class.
  */
+@Deprecated
 public class RubyMatchData extends RubyBasicObject {
 
     public static class MatchDataFields {

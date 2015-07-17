@@ -173,7 +173,7 @@ public abstract class RegexpNodes {
         final RubyBasicObject post = makeString(source, region.end[0], bytes.length() - region.end[0]);
         final RubyBasicObject global = makeString(source, region.beg[0], region.end[0] - region.beg[0]);
 
-        final RubyMatchData matchObject = MatchDataNodes.createRubyMatchData(context.getCoreLibrary().getMatchDataClass(), source, regexp, region, values, pre, post, global, matcher.getBegin(), matcher.getEnd());
+        final RubyBasicObject matchObject = MatchDataNodes.createRubyMatchData(context.getCoreLibrary().getMatchDataClass(), source, regexp, region, values, pre, post, global, matcher.getBegin(), matcher.getEnd());
 
         if (operator) {
             if (values.length > 0) {
@@ -573,7 +573,7 @@ public abstract class RegexpNodes {
         @Specialization(guards = "isRubyString(string)")
         public Object matchStart(RubyBasicObject regexp, RubyBasicObject string, int startPos) {
             final Object matchResult = matchCommon(regexp, string, false, false, startPos);
-            if (matchResult instanceof RubyMatchData && MatchDataNodes.getNumberOfRegions(((RubyMatchData) matchResult)) > 0
+            if (RubyGuards.isRubyMatchData(matchResult) && MatchDataNodes.getNumberOfRegions(((RubyMatchData) matchResult)) > 0
                 && MatchDataNodes.getRegion(((RubyMatchData) matchResult)).beg[0] == startPos) {
                 return matchResult;
             }

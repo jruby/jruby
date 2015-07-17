@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.globals;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -29,7 +30,7 @@ public class CheckMatchVariableTypeNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final Object childValue = child.execute(frame);
 
-        if (!(childValue instanceof RubyMatchData || childValue == nil() || childValue == nil())) {
+        if (!(RubyGuards.isRubyMatchData(childValue) || childValue == nil() || childValue == nil())) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(childValue, "MatchData", this));
         }

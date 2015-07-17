@@ -43,7 +43,7 @@ import java.util.Arrays;
 @CoreClass(name = "MatchData")
 public abstract class MatchDataNodes {
 
-    public static RubyMatchData createRubyMatchData(RubyClass rubyClass, RubyBasicObject source, RubyBasicObject regexp, Region region, Object[] values, RubyBasicObject pre, RubyBasicObject post, RubyBasicObject global, int begin, int end) {
+    public static RubyBasicObject createRubyMatchData(RubyClass rubyClass, RubyBasicObject source, RubyBasicObject regexp, Region region, Object[] values, RubyBasicObject pre, RubyBasicObject post, RubyBasicObject global, int begin, int end) {
         return new RubyMatchData(rubyClass, source, regexp, region, values, pre, post, global, begin, end);
     }
 
@@ -275,7 +275,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public Object getIndex(RubyMatchData matchData, int index, NotProvided length) {
+        public Object getIndex(RubyBasicObject matchData, int index, NotProvided length) {
             CompilerDirectives.transferToInterpreter();
 
             final Object[] values = getValues(matchData);
@@ -289,7 +289,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public Object getIndex(RubyMatchData matchData, int index, int length) {
+        public Object getIndex(RubyBasicObject matchData, int index, int length) {
             CompilerDirectives.transferToInterpreter();
             // TODO BJF 15-May-2015 Need to handle negative indexes and lengths and out of bounds
             final Object[] values = getValues(matchData);
@@ -299,7 +299,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization(guards = "isRubySymbol(index)")
-        public Object getIndexSymbol(RubyMatchData matchData, RubyBasicObject index, NotProvided length) {
+        public Object getIndexSymbol(RubyBasicObject matchData, RubyBasicObject index, NotProvided length) {
             CompilerDirectives.transferToInterpreter();
 
             try {
@@ -315,7 +315,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization(guards = "isRubyString(index)")
-        public Object getIndexString(RubyMatchData matchData, RubyBasicObject index, NotProvided length) {
+        public Object getIndexString(RubyBasicObject matchData, RubyBasicObject index, NotProvided length) {
             CompilerDirectives.transferToInterpreter();
 
             try {
@@ -332,7 +332,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization(guards = {"!isRubySymbol(index)", "!isRubyString(index)", "!isIntegerFixnumRange(index)"})
-        public Object getIndex(VirtualFrame frame, RubyMatchData matchData, Object index, NotProvided length) {
+        public Object getIndex(VirtualFrame frame, RubyBasicObject matchData, Object index, NotProvided length) {
             CompilerDirectives.transferToInterpreter();
 
             if (toIntNode == null) {
@@ -344,7 +344,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization(guards = {"!isRubySymbol(range)", "!isRubyString(range)"})
-        public Object getIndex(VirtualFrame frame, RubyMatchData matchData, RubyRange.IntegerFixnumRange range, NotProvided len) {
+        public Object getIndex(VirtualFrame frame, RubyBasicObject matchData, RubyRange.IntegerFixnumRange range, NotProvided len) {
             final Object[] values = getValues(matchData);
             final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, range.getBegin());
             final int end = ArrayNodes.normalizeIndex(values.length, range.getEnd());
@@ -367,7 +367,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public Object begin(RubyMatchData matchData, int index) {
+        public Object begin(RubyBasicObject matchData, int index) {
             CompilerDirectives.transferToInterpreter();
 
             if (badIndexProfile.profile((index < 0) || (index >= getNumberOfRegions(matchData)))) {
@@ -391,7 +391,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyBasicObject toA(RubyMatchData matchData) {
+        public RubyBasicObject toA(RubyBasicObject matchData) {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), getCaptures(matchData));
@@ -408,7 +408,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public Object end(RubyMatchData matchData, int index) {
+        public Object end(RubyBasicObject matchData, int index) {
             CompilerDirectives.transferToInterpreter();
 
             if (badIndexProfile.profile((index < 0) || (index >= getNumberOfRegions(matchData)))) {
@@ -434,7 +434,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public Object full(VirtualFrame frame, RubyMatchData matchData) {
+        public Object full(VirtualFrame frame, RubyBasicObject matchData) {
             if (getFullTuple(matchData) != null) {
                 return getFullTuple(matchData);
             }
@@ -463,7 +463,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public int length(RubyMatchData matchData) {
+        public int length(RubyBasicObject matchData) {
             return getValues(matchData).length;
         }
 
@@ -480,7 +480,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public Object preMatch(RubyMatchData matchData) {
+        public Object preMatch(RubyBasicObject matchData) {
             return taintResultNode.maybeTaint(getSource(matchData), getPre(matchData));
         }
 
@@ -497,7 +497,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public Object postMatch(RubyMatchData matchData) {
+        public Object postMatch(RubyBasicObject matchData) {
             return taintResultNode.maybeTaint(getSource(matchData), getPost(matchData));
         }
 
@@ -511,7 +511,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyBasicObject toA(RubyMatchData matchData) {
+        public RubyBasicObject toA(RubyBasicObject matchData) {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), getValues(matchData));
@@ -526,7 +526,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyBasicObject toS(RubyMatchData matchData) {
+        public RubyBasicObject toS(RubyBasicObject matchData) {
             CompilerDirectives.transferToInterpreter();
 
             final ByteList bytes = StringNodes.getByteList(getGlobal(matchData)).dup();
@@ -542,7 +542,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyBasicObject regexp(RubyMatchData matchData) {
+        public RubyBasicObject regexp(RubyBasicObject matchData) {
             return getRegexp(matchData);
         }
     }
@@ -556,7 +556,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization
-        public RubyBasicObject rubiniusSource(RubyMatchData matchData) {
+        public RubyBasicObject rubiniusSource(RubyBasicObject matchData) {
             return getSource(matchData);
         }
     }
