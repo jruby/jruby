@@ -61,7 +61,6 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyModule.MethodFilter;
-import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.FeatureManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
@@ -1809,7 +1808,7 @@ public abstract class KernelNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("time interval must be positive", this));
             }
 
-            final RubyThread thread = getContext().getThreadManager().getCurrentThread();
+            final RubyBasicObject thread = getContext().getThreadManager().getCurrentThread();
 
             // Clear the wakeUp flag, following Ruby semantics:
             // it should only be considered if we are inside the sleep when Thread#{run,wakeup} is called.
@@ -1821,7 +1820,7 @@ public abstract class KernelNodes {
         public static long sleepFor(RubyContext context, final long durationInMillis) {
             assert durationInMillis >= 0;
 
-            final RubyThread thread = context.getThreadManager().getCurrentThread();
+            final RubyBasicObject thread = context.getThreadManager().getCurrentThread();
 
             final long start = System.currentTimeMillis();
 

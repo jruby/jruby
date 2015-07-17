@@ -13,7 +13,6 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.FiberNodes;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyFiber;
-import org.jruby.truffle.runtime.core.RubyThread;
 
 import java.util.Collections;
 import java.util.Set;
@@ -28,7 +27,7 @@ public class FiberManager {
     private RubyBasicObject currentFiber;
     private final Set<RubyBasicObject> runningFibers = Collections.newSetFromMap(new ConcurrentHashMap<RubyBasicObject, Boolean>());
 
-    public FiberManager(RubyThread rubyThread, ThreadManager threadManager) {
+    public FiberManager(RubyBasicObject rubyThread, ThreadManager threadManager) {
         this.rootFiber = FiberNodes.newRootFiber(rubyThread, this, threadManager);
         this.currentFiber = rootFiber;
     }

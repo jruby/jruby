@@ -25,6 +25,7 @@ import java.util.concurrent.locks.Lock;
  * not a one-to-one mapping between Ruby threads and Java threads - specifically in combination with
  * fibers as they are currently implemented as their own Java threads.
  */
+@Deprecated
 public class RubyThread extends RubyBasicObject {
 
     public static class ThreadFields {

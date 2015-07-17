@@ -16,10 +16,11 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.RubyThread.Status;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyThread;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.Collections;
 import java.util.Set;
@@ -75,7 +76,7 @@ public class SafepointManager {
         try {
             assumption.check();
         } catch (InvalidAssumptionException e) {
-            final RubyThread thread = context.getThreadManager().getCurrentThread();
+            final RubyBasicObject thread = context.getThreadManager().getCurrentThread();
             final boolean interruptible = (ThreadNodes.getInterruptMode(thread) == ThreadNodes.InterruptMode.IMMEDIATE) ||
                     (fromBlockingCall && ThreadNodes.getInterruptMode(thread) == ThreadNodes.InterruptMode.ON_BLOCKING);
             if (!interruptible) {
@@ -95,7 +96,7 @@ public class SafepointManager {
         // Read these while in the safepoint.
         SafepointAction deferredAction = deferred ? action : null;
 
-        RubyThread thread = null;
+        RubyBasicObject thread = null;
         if (holdsGlobalLock) {
             thread = context.getThreadManager().leaveGlobalLock();
         }
@@ -114,7 +115,9 @@ public class SafepointManager {
         return deferredAction;
     }
 
-    private void step(Node currentNode, RubyThread thread, boolean isDrivingThread) {
+    private void step(Node currentNode, RubyBasicObject thread, boolean isDrivingThread) {
+        assert RubyGuards.isRubyThread(thread);
+
         // wait other threads to reach their safepoint
         phaser.arriveAndAwaitAdvance();
 
@@ -140,7 +143,7 @@ public class SafepointManager {
             throw new IllegalStateException("Re-entered SafepointManager");
         }
 
-        RubyThread thread = context.getThreadManager().getCurrentThread();
+        RubyBasicObject thread = context.getThreadManager().getCurrentThread();
 
         // Need to lock interruptibly since we are in the registered threads.
         while (!lock.tryLock()) {
@@ -197,12 +200,12 @@ public class SafepointManager {
     public void pauseThreadAndExecuteLater(final Thread thread, RubyNode currentNode, final SafepointAction action) {
         if (Thread.currentThread() == thread) {
             // fast path if we are already the right thread
-            RubyThread rubyThread = context.getThreadManager().getCurrentThread();
+            RubyBasicObject rubyThread = context.getThreadManager().getCurrentThread();
             action.run(rubyThread, currentNode);
         } else {
             pauseAllThreadsAndExecute(currentNode, true, new SafepointAction() {
                 @Override
-                public void run(RubyThread rubyThread, Node currentNode) {
+                public void run(RubyBasicObject rubyThread, Node currentNode) {
                     if (Thread.currentThread() == thread) {
                         action.run(rubyThread, currentNode);
                     }
@@ -214,7 +217,7 @@ public class SafepointManager {
     public void pauseMainThreadAndExecuteLaterFromNonRubyThread(final Thread thread, final SafepointAction action) {
         pauseAllThreadsAndExecuteFromNonRubyThread(true, new SafepointAction() {
             @Override
-            public void run(RubyThread rubyThread, Node currentNode) {
+            public void run(RubyBasicObject rubyThread, Node currentNode) {
                 if (Thread.currentThread() == thread) {
                     action.run(rubyThread, currentNode);
                 }

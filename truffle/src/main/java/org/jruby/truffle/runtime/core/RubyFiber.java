@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.FiberNodes;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
@@ -26,7 +27,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class RubyFiber extends RubyBasicObject {
 
     public class FiberFields {
-        public final RubyThread rubyThread;
+        public final RubyBasicObject rubyThread;
         public String name;
         public final boolean isRootFiber;
         // we need 2 slots when the safepoint manager sends the kill message and there is another message unprocessed
@@ -35,7 +36,8 @@ public class RubyFiber extends RubyBasicObject {
         public boolean alive = true;
         public volatile Thread thread;
 
-        public FiberFields(RubyThread rubyThread, boolean isRootFiber) {
+        public FiberFields(RubyBasicObject rubyThread, boolean isRootFiber) {
+            assert RubyGuards.isRubyThread(rubyThread);
             this.rubyThread = rubyThread;
             this.isRootFiber = isRootFiber;
         }
@@ -43,11 +45,11 @@ public class RubyFiber extends RubyBasicObject {
 
     public final FiberFields fields;
 
-    public RubyFiber(RubyThread parent, RubyClass rubyClass, String name) {
+    public RubyFiber(RubyBasicObject parent, RubyClass rubyClass, String name) {
         this(parent, ThreadNodes.getFiberManager(parent), ThreadNodes.getThreadManager(parent), rubyClass, name, false);
     }
 
-    public RubyFiber(RubyThread parent, FiberManager fiberManager, ThreadManager threadManager, RubyClass rubyClass, String name, boolean isRootFiber) {
+    public RubyFiber(RubyBasicObject parent, FiberManager fiberManager, ThreadManager threadManager, RubyClass rubyClass, String name, boolean isRootFiber) {
         super(rubyClass);
         fields = new FiberFields(parent, isRootFiber);
         FiberNodes.getFields(this).name = name;

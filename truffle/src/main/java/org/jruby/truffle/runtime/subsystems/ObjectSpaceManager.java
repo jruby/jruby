@@ -61,7 +61,7 @@ public class ObjectSpaceManager {
 
     private final Map<RubyBasicObject, FinalizerReference> finalizerReferences = new WeakHashMap<>();
     private final ReferenceQueue<RubyBasicObject> finalizerQueue = new ReferenceQueue<>();
-    private RubyThread finalizerThread;
+    private RubyBasicObject finalizerThread;
 
     public ObjectSpaceManager(RubyContext context) {
         this.context = context;
@@ -151,7 +151,7 @@ public class ObjectSpaceManager {
         context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
 
             @Override
-            public void run(RubyThread currentThread, Node currentNode) {
+            public void run(RubyBasicObject currentThread, Node currentNode) {
                 synchronized (liveObjects) {
                     currentThread.visitObjectGraph(visitor);
                     context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);

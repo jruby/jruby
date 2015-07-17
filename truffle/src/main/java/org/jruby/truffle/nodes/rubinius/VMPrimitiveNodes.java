@@ -63,7 +63,6 @@ import org.jruby.truffle.runtime.control.ThrowException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
@@ -144,7 +143,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject vmGCStart() {
-            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
+            final RubyBasicObject runningThread = getContext().getThreadManager().leaveGlobalLock();
 
             try {
                 System.gc();

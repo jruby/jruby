@@ -28,7 +28,6 @@ import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyFiber;
-import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 
@@ -40,7 +39,8 @@ public abstract class FiberNodes {
         return ((RubyFiber) fiber).fields;
     }
 
-    public static RubyBasicObject newRootFiber(RubyThread thread, FiberManager fiberManager, ThreadManager threadManager) {
+    public static RubyBasicObject newRootFiber(RubyBasicObject thread, FiberManager fiberManager, ThreadManager threadManager) {
+        assert RubyGuards.isRubyThread(thread);
         RubyContext context = thread.getContext();
         return createRubyFiber(thread, fiberManager, threadManager, context.getCoreLibrary().getFiberClass(), "root Fiber for Thread", true);
     }
@@ -184,11 +184,13 @@ public abstract class FiberNodes {
         return getFields(fiber).alive || !getFields(fiber).messageQueue.isEmpty();
     }
 
-    public static RubyBasicObject createRubyFiber(RubyThread parent, RubyClass rubyClass, String name) {
+    public static RubyBasicObject createRubyFiber(RubyBasicObject parent, RubyClass rubyClass, String name) {
+        assert RubyGuards.isRubyThread(parent);
         return new RubyFiber(parent, rubyClass, name);
     }
 
-    public static RubyBasicObject createRubyFiber(RubyThread parent, FiberManager fiberManager, ThreadManager threadManager, RubyClass rubyClass, String name, boolean isRootFiber) {
+    public static RubyBasicObject createRubyFiber(RubyBasicObject parent, FiberManager fiberManager, ThreadManager threadManager, RubyClass rubyClass, String name, boolean isRootFiber) {
+        assert RubyGuards.isRubyThread(parent);
         return new RubyFiber(parent, fiberManager, threadManager, rubyClass, name, isRootFiber);
     }
 
@@ -221,7 +223,7 @@ public abstract class FiberNodes {
                 throw new RaiseException(getContext().getCoreLibrary().deadFiberCalledError(this));
             }
 
-            RubyThread currentThread = getContext().getThreadManager().getCurrentThread();
+            RubyBasicObject currentThread = getContext().getThreadManager().getCurrentThread();
             if (((RubyFiber) fiber).fields.rubyThread != currentThread) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().fiberError("fiber called across threads", this));
@@ -280,7 +282,7 @@ public abstract class FiberNodes {
 
         @Specialization
         public Object yield(VirtualFrame frame, Object[] args) {
-            RubyThread currentThread = getContext().getThreadManager().getCurrentThread();
+            final RubyBasicObject currentThread = getContext().getThreadManager().getCurrentThread();
             final RubyBasicObject yieldingFiber = ThreadNodes.getFiberManager(currentThread).getCurrentFiber();
             final RubyBasicObject fiberYieldedTo = ((RubyFiber) yieldingFiber).fields.lastResumedByFiber;
 
@@ -345,7 +347,7 @@ public abstract class FiberNodes {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            RubyThread parent = context.getThreadManager().getCurrentThread();
+            RubyBasicObject parent = context.getThreadManager().getCurrentThread();
             return createRubyFiber(parent, rubyClass, null);
         }
 

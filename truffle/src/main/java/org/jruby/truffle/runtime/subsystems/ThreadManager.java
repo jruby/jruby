@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.subsystems;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.RubyThread.Status;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.nodes.core.FiberNodes;
 import org.jruby.truffle.nodes.core.ThreadNodes;
@@ -19,7 +20,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyThread;
 
 import java.util.Collections;
 import java.util.Set;
@@ -35,10 +35,10 @@ public class ThreadManager {
 
     private final ReentrantLock globalLock = new ReentrantLock();
 
-    private final RubyThread rootThread;
-    private RubyThread currentThread;
+    private final RubyBasicObject rootThread;
+    private RubyBasicObject currentThread;
 
-    private final Set<RubyThread> runningRubyThreads = Collections.newSetFromMap(new ConcurrentHashMap<RubyThread, Boolean>());
+    private final Set<RubyBasicObject> runningRubyThreads = Collections.newSetFromMap(new ConcurrentHashMap<RubyBasicObject, Boolean>());
 
     public ThreadManager(RubyContext context) {
         this.context = context;
@@ -52,7 +52,7 @@ public class ThreadManager {
         FiberNodes.start(ThreadNodes.getRootFiber(rootThread));
     }
 
-    public RubyThread getRootThread() {
+    public RubyBasicObject getRootThread() {
         return rootThread;
     }
 
@@ -63,7 +63,8 @@ public class ThreadManager {
      * blocking.
      */
     @TruffleBoundary
-    public void enterGlobalLock(RubyThread thread) {
+    public void enterGlobalLock(RubyBasicObject thread) {
+        assert RubyGuards.isRubyThread(thread);
         globalLock.lock();
         currentThread = thread;
     }
@@ -75,12 +76,12 @@ public class ThreadManager {
      * make sure that happens
      */
     @TruffleBoundary
-    public RubyThread leaveGlobalLock() {
+    public RubyBasicObject leaveGlobalLock() {
         if (!globalLock.isHeldByCurrentThread()) {
             throw new RuntimeException("You don't own this lock!");
         }
 
-        final RubyThread result = currentThread;
+        final RubyBasicObject result = currentThread;
         globalLock.unlock();
         return result;
     }
@@ -106,7 +107,7 @@ public class ThreadManager {
         T result = null;
 
         do {
-            final RubyThread runningThread = leaveGlobalLock();
+            final RubyBasicObject runningThread = leaveGlobalLock();
             ThreadNodes.setStatus(runningThread, Status.SLEEP);
 
             try {
@@ -126,16 +127,18 @@ public class ThreadManager {
         return result;
     }
 
-    public RubyThread getCurrentThread() {
+    public RubyBasicObject getCurrentThread() {
         assert globalLock.isHeldByCurrentThread() : "getCurrentThread() is only correct if holding the global lock";
         return currentThread;
     }
 
-    public synchronized void registerThread(RubyThread thread) {
+    public synchronized void registerThread(RubyBasicObject thread) {
+        assert RubyGuards.isRubyThread(thread);
         runningRubyThreads.add(thread);
     }
 
-    public synchronized void unregisterThread(RubyThread thread) {
+    public synchronized void unregisterThread(RubyBasicObject thread) {
+        assert RubyGuards.isRubyThread(thread);
         runningRubyThreads.remove(thread);
     }
 
@@ -154,7 +157,7 @@ public class ThreadManager {
             try {
                 context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
                     @Override
-                    public synchronized void run(RubyThread thread, Node currentNode) {
+                    public synchronized void run(RubyBasicObject thread, Node currentNode) {
                         if (thread != rootThread && Thread.currentThread() == ThreadNodes.getRootFiberJavaThread(thread)) {
                             ThreadNodes.shutdown(thread);
                         }

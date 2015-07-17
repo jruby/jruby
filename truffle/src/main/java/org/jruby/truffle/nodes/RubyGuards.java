@@ -173,6 +173,10 @@ public abstract class RubyGuards {
         return fiber instanceof RubyFiber;
     }
 
+    public static boolean isRubyThread(Object object) {
+        return object instanceof RubyThread;
+    }
+
     // Internal types
 
     public static boolean isThreadLocal(Object value) {
