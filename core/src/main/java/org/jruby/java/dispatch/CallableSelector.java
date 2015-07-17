@@ -224,21 +224,27 @@ public class CallableSelector {
 
         // fall back on old ways
         if (method == null) {
-            method = findCallable(methods, Exact, args);
+            method = findMatchingCallableForArgsFallback(runtime, methods, args);
+        }
+
+        return method;
+    }
+
+    private static <T extends ParameterTypes> T findMatchingCallableForArgsFallback(final Ruby runtime,
+        final T[] methods, final IRubyObject... args) {
+        T method = findCallable(methods, Exact, args);
+        if (method == null) {
+            method = findCallable(methods, AssignableAndPrimitivable, args);
             if (method == null) {
-                method = findCallable(methods, AssignableAndPrimitivable, args);
+                method = findCallable(methods, AssignableOrDuckable, args);
                 if (method == null) {
                     method = findCallable(methods, AssignableOrDuckable, args);
                     if (method == null) {
-                        method = findCallable(methods, AssignableOrDuckable, args);
-                        if (method == null) {
-                            method = findCallable(methods, AssignableAndPrimitivableWithVarargs, args);
-                        }
+                        method = findCallable(methods, AssignableAndPrimitivableWithVarargs, args);
                     }
                 }
             }
         }
-
         return method;
     }
 
