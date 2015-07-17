@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.exceptions;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -34,7 +35,7 @@ public class TopLevelRaiseHandler extends RubyNode {
         } catch (RaiseException e) {
             final RubyException rubyException = e.getRubyException();
 
-            for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), rubyException, rubyException.getBacktrace())) {
+            for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), rubyException, ExceptionNodes.getBacktrace(rubyException))) {
                 System.err.println(line);
             }
 

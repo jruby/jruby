@@ -165,6 +165,10 @@ public abstract class RubyGuards {
         return time instanceof RubyTime;
     }
 
+    public static boolean isRubyException(RubyBasicObject object) {
+        return object instanceof RubyException;
+    }
+
     // Internal types
 
     public static boolean isThreadLocal(Object value) {

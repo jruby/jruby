@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.backtrace;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -34,7 +35,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
 
             if (activations.isEmpty()) {
                 if (exception != null) {
-                    lines.add(String.format("%s (%s)", exception.getMessage(), exception.getLogicalClass().getName()));
+                    lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), exception.getLogicalClass().getName()));
                 }
             } else {
                 lines.add(formatInLine(context, activations, exception));
@@ -84,10 +85,10 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
                 if (RubyGuards.isRubyString(messageObject)) {
                     message = messageObject.toString();
                 } else {
-                    message = exception.getMessage().toString();
+                    message = ExceptionNodes.getMessage(exception).toString();
                 }
             } catch (RaiseException e) {
-                message = exception.getMessage().toString();
+                message = ExceptionNodes.getMessage(exception).toString();
             }
 
             builder.append(": ");

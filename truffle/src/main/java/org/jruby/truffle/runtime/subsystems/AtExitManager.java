@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.subsystems;
 
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -66,7 +67,7 @@ public class AtExitManager {
             } catch (RaiseException e) {
                 final RubyException rubyException = e.getRubyException();
 
-                for (String line : Backtrace.DISPLAY_FORMATTER.format(context, rubyException, rubyException.getBacktrace())) {
+                for (String line : Backtrace.DISPLAY_FORMATTER.format(context, rubyException, ExceptionNodes.getBacktrace(rubyException))) {
                     System.err.println(line);
                 }
             } catch (Exception e) {

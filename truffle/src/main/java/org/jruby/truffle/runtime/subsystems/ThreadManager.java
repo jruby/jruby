@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.subsystems;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.RubyThread.Status;
+import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -159,7 +160,7 @@ public class ThreadManager {
             } catch (RaiseException e) {
                 final RubyException rubyException = e.getRubyException();
 
-                for (String line : Backtrace.DISPLAY_FORMATTER.format(e.getRubyException().getContext(), rubyException, rubyException.getBacktrace())) {
+                for (String line : Backtrace.DISPLAY_FORMATTER.format(e.getRubyException().getContext(), rubyException, ExceptionNodes.getBacktrace(rubyException))) {
                     System.err.println(line);
                 }
             }

@@ -18,18 +18,17 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.BindingNodes;
-import org.jruby.truffle.nodes.core.ProcNodes;
-import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.nodes.core.SymbolNodes;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -214,6 +213,9 @@ public class RubyBasicObject implements TruffleObject {
             return Helpers.decodeByteList(getContext().getRuntime(), StringNodes.getByteList((this)));
         } else if (RubyGuards.isRubySymbol(this)) {
             return SymbolNodes.getString(this);
+        } else if (RubyGuards.isRubyException(this)) {
+            return ExceptionNodes.getMessage((RubyException) this) + " : " + super.toString() + "\n" +
+                    Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(getContext(), ((RubyException) this), ExceptionNodes.getBacktrace((RubyException) this)));
         } else {
             return String.format("RubyBasicObject@%x<logicalClass=%s>", System.identityHashCode(this), logicalClass.getName());
         }

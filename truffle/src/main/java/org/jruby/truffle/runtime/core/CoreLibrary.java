@@ -221,7 +221,7 @@ public class CoreLibrary {
         // Create Exception classes
 
         // Exception
-        exceptionClass = defineClass("Exception", new RubyException.ExceptionAllocator());
+        exceptionClass = defineClass("Exception", new ExceptionNodes.ExceptionAllocator());
 
         // NoMemoryError
         defineClass(exceptionClass, "NoMemoryError");
@@ -589,7 +589,7 @@ public class CoreLibrary {
         } catch (RaiseException e) {
             final RubyException rubyException = e.getRubyException();
 
-            for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), rubyException, rubyException.getBacktrace())) {
+            for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), rubyException, ExceptionNodes.getBacktrace(rubyException))) {
                 System.err.println(line);
             }
 
@@ -761,7 +761,7 @@ public class CoreLibrary {
 
     public RubyException runtimeError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(runtimeErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(runtimeErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException frozenError(String className, Node currentNode) {
@@ -771,7 +771,7 @@ public class CoreLibrary {
 
     public RubyException argumentError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(argumentErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(argumentErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException argumentErrorOutOfRange(Node currentNode) {
@@ -818,12 +818,12 @@ public class CoreLibrary {
             return systemCallError(String.format("Unknown Error (%s)", errno), currentNode);
         }
 
-        return new RubyException(getErrnoClass(errnoObj), StringNodes.createString(context.getCoreLibrary().getStringClass(), errnoObj.description()), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(getErrnoClass(errnoObj), StringNodes.createString(context.getCoreLibrary().getStringClass(), errnoObj.description()), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException indexError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(indexErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(indexErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException indexTooSmallError(String type, int index, int length, Node currentNode) {
@@ -838,7 +838,7 @@ public class CoreLibrary {
 
     public RubyException localJumpError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(localJumpErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(localJumpErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException noBlockGiven(Node currentNode) {
@@ -858,7 +858,7 @@ public class CoreLibrary {
 
     public RubyException typeError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(typeErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(typeErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException typeErrorCantDefineSingleton(Node currentNode) {
@@ -933,7 +933,7 @@ public class CoreLibrary {
 
     public RubyException nameError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        RubyException nameError = new RubyException(nameErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        RubyException nameError = ExceptionNodes.createRubyException(nameErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
         RubyBasicObject.setInstanceVariable(nameError, "@name", context.getSymbolTable().getSymbol(name));
         return nameError;
     }
@@ -1007,7 +1007,7 @@ public class CoreLibrary {
 
     public RubyException noMethodError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        RubyException noMethodError = new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        RubyException noMethodError = ExceptionNodes.createRubyException(context.getCoreLibrary().getNoMethodErrorClass(), StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
         RubyBasicObject.setInstanceVariable(noMethodError, "@name", context.getSymbolTable().getSymbol(name));
         return noMethodError;
     }
@@ -1034,7 +1034,7 @@ public class CoreLibrary {
 
     public RubyException loadError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(context.getCoreLibrary().getLoadErrorClass(), StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(context.getCoreLibrary().getLoadErrorClass(), StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException loadErrorCannotLoad(String name, Node currentNode) {
@@ -1044,78 +1044,78 @@ public class CoreLibrary {
 
     public RubyException zeroDivisionError(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), StringNodes.createString(context.getCoreLibrary().getStringClass(), "divided by 0"), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), StringNodes.createString(context.getCoreLibrary().getStringClass(), "divided by 0"), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException notImplementedError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(notImplementedErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Method %s not implemented", message)), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(notImplementedErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Method %s not implemented", message)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException syntaxError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(syntaxErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(syntaxErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException floatDomainError(String value, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(floatDomainErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), value), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(floatDomainErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), value), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException mathDomainError(String method, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(getErrnoClass(Errno.EDOM), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Numerical argument is out of domain - \"%s\"", method)), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EDOM), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Numerical argument is out of domain - \"%s\"", method)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException invalidArgumentError(String value, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(getErrnoClass(Errno.EINVAL), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Invalid argument -  %s", value)), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EINVAL), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Invalid argument -  %s", value)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException ioError(String fileName, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(ioErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Error reading file -  %s", fileName)), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(ioErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Error reading file -  %s", fileName)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException badAddressError(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(getErrnoClass(Errno.EFAULT), StringNodes.createString(context.getCoreLibrary().getStringClass(), "Bad address"), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EFAULT), StringNodes.createString(context.getCoreLibrary().getStringClass(), "Bad address"), RubyCallStack.getBacktrace(currentNode));
     }
 
 
     public RubyException badFileDescriptor(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(getErrnoClass(Errno.EBADF), StringNodes.createString(context.getCoreLibrary().getStringClass(), "Bad file descriptor"), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EBADF), StringNodes.createString(context.getCoreLibrary().getStringClass(), "Bad file descriptor"), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException fileExistsError(String fileName, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(getErrnoClass(Errno.EEXIST), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("File exists - %s", fileName)), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EEXIST), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("File exists - %s", fileName)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException fileNotFoundError(String fileName, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(getErrnoClass(Errno.ENOENT), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("No such file or directory -  %s", fileName)), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(getErrnoClass(Errno.ENOENT), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("No such file or directory -  %s", fileName)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException dirNotEmptyError(String path, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(getErrnoClass(Errno.ENOTEMPTY), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Directory not empty - %s", path)), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(getErrnoClass(Errno.ENOTEMPTY), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Directory not empty - %s", path)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException operationNotPermittedError(String path, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(getErrnoClass(Errno.EPERM), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Operation not permitted - %s", path)), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EPERM), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Operation not permitted - %s", path)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException permissionDeniedError(String path, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(getErrnoClass(Errno.EACCES), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Permission denied - %s", path)), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EACCES), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Permission denied - %s", path)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException notDirectoryError(String path, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(getErrnoClass(Errno.ENOTDIR), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Not a directory - %s", path)), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(getErrnoClass(Errno.ENOTDIR), StringNodes.createString(context.getCoreLibrary().getStringClass(), String.format("Not a directory - %s", path)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException rangeError(int code, RubyBasicObject encoding, Node currentNode) {
@@ -1139,17 +1139,17 @@ public class CoreLibrary {
 
     public RubyException rangeError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(rangeErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(rangeErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException internalError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), StringNodes.createString(context.getCoreLibrary().getStringClass(), "internal implementation error - " + message), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), StringNodes.createString(context.getCoreLibrary().getStringClass(), "internal implementation error - " + message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException regexpError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(regexpErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(regexpErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException encodingCompatibilityErrorIncompatible(String a, String b, Node currentNode) {
@@ -1159,12 +1159,12 @@ public class CoreLibrary {
 
     public RubyException encodingCompatibilityError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(encodingCompatibilityErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(encodingCompatibilityErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException fiberError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(fiberErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(fiberErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException deadFiberCalledError(Node currentNode) {
@@ -1179,17 +1179,17 @@ public class CoreLibrary {
 
     public RubyException threadError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(threadErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(threadErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException securityError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(securityErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(securityErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException systemCallError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(systemCallErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(systemCallErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyContext getContext() {
