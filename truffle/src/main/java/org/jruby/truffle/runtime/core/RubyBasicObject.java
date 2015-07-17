@@ -173,6 +173,14 @@ public class RubyBasicObject implements TruffleObject {
                     ((RubyBasicObject) object).visitObjectGraph(visitor);
                 }
             }
+        } else if (RubyGuards.isObjectRange(this)) {
+            if (((RubyObjectRange) this).begin instanceof RubyBasicObject) {
+                ((RubyBasicObject) ((RubyObjectRange) this).begin).visitObjectGraph(visitor);
+            }
+
+            if (((RubyObjectRange) this).end instanceof RubyBasicObject) {
+                ((RubyBasicObject) ((RubyObjectRange) this).end).visitObjectGraph(visitor);
+            }
         }
     }
 

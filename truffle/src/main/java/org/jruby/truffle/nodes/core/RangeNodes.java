@@ -41,8 +41,14 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isRubyProc(block)")
         public RubyBasicObject collect(VirtualFrame frame, RubyIntegerFixnumRange range, RubyBasicObject block) {
-            final int begin = range.getBegin();
-            final int exclusiveEnd = range.getExclusiveEnd();
+            final int begin = range.begin;
+            int result;
+            if (range.excludeEnd) {
+                result = range.end;
+            } else {
+                result = range.end + 1;
+            }
+            final int exclusiveEnd = result;
             final int length = exclusiveEnd - begin;
 
             Object store = arrayBuilder.start(length);
@@ -77,12 +83,18 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isRubyProc(block)")
         public Object each(VirtualFrame frame, RubyIntegerFixnumRange range, RubyBasicObject block) {
-            final int exclusiveEnd = range.getExclusiveEnd();
+            int result;
+            if (range.excludeEnd) {
+                result = range.end;
+            } else {
+                result = range.end + 1;
+            }
+            final int exclusiveEnd = result;
 
             int count = 0;
 
             try {
-                for (int n = range.getBegin(); n < exclusiveEnd; n++) {
+                for (int n = range.begin; n < exclusiveEnd; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -100,12 +112,18 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isRubyProc(block)")
         public Object each(VirtualFrame frame, RubyLongFixnumRange range, RubyBasicObject block) {
-            final long exclusiveEnd = range.getExclusiveEnd();
+            long result;
+            if (range.excludeEnd) {
+                result = range.end;
+            } else {
+                result = range.end + 1;
+            }
+            final long exclusiveEnd = result;
 
             int count = 0;
 
             try {
-                for (long n = range.getBegin(); n < exclusiveEnd; n++) {
+                for (long n = range.begin; n < exclusiveEnd; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -147,17 +165,17 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public boolean excludeEndInt(RubyBasicObject range) {
-            return ((RubyIntegerFixnumRange) range).doesExcludeEnd();
+            return ((RubyIntegerFixnumRange) range).excludeEnd;
         }
 
         @Specialization(guards = "isLongFixnumRange(range)")
         public boolean excludeEndLong(RubyBasicObject range) {
-            return ((RubyLongFixnumRange) range).doesExcludeEnd();
+            return ((RubyLongFixnumRange) range).excludeEnd;
         }
 
         @Specialization(guards = "isObjectRange(range)")
         public boolean excludeEndObject(RubyBasicObject range) {
-            return ((RubyObjectRange) range).doesExcludeEnd();
+            return ((RubyObjectRange) range).excludeEnd;
         }
 
     }
@@ -171,17 +189,17 @@ public abstract class RangeNodes {
 
         @Specialization
         public int each(RubyIntegerFixnumRange range) {
-            return range.getBegin();
+            return range.begin;
         }
 
         @Specialization
         public long each(RubyLongFixnumRange range) {
-            return range.getBegin();
+            return range.begin;
         }
 
         @Specialization
         public Object each(RubyObjectRange range) {
-            return range.getBegin();
+            return range.begin;
         }
 
     }
@@ -200,7 +218,9 @@ public abstract class RangeNodes {
 
         @Specialization
         public RubyObjectRange initialize(RubyObjectRange range, Object begin, Object end, boolean excludeEnd) {
-            range.initialize(begin, end, excludeEnd);
+            range.begin = begin;
+            range.end = end;
+            range.excludeEnd = excludeEnd;
             return range;
         }
 
@@ -215,17 +235,17 @@ public abstract class RangeNodes {
 
         @Specialization
         public int last(RubyIntegerFixnumRange range) {
-            return range.getEnd();
+            return range.end;
         }
 
         @Specialization
         public long last(RubyLongFixnumRange range) {
-            return range.getEnd();
+            return range.end;
         }
 
         @Specialization
         public Object last(RubyObjectRange range) {
-            return range.getEnd();
+            return range.end;
         }
 
     }
@@ -242,7 +262,13 @@ public abstract class RangeNodes {
             int count = 0;
 
             try {
-                for (int n = range.getBegin(); n < range.getExclusiveEnd(); n += step) {
+                int result;
+                if (range.excludeEnd) {
+                    result = range.end;
+                } else {
+                    result = range.end + 1;
+                }
+                for (int n = range.begin; n < result; n += step) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -263,7 +289,13 @@ public abstract class RangeNodes {
             int count = 0;
 
             try {
-                for (long n = range.getBegin(); n < range.getExclusiveEnd(); n += step) {
+                long result;
+                if (range.excludeEnd) {
+                    result = range.end;
+                } else {
+                    result = range.end + 1;
+                }
+                for (long n = range.begin; n < result; n += step) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -350,8 +382,14 @@ public abstract class RangeNodes {
 
         @Specialization
         public RubyBasicObject toA(RubyIntegerFixnumRange range) {
-            final int begin = range.getBegin();
-            final int length = range.getExclusiveEnd() - begin;
+            final int begin = range.begin;
+            int result;
+            if (range.excludeEnd) {
+                result = range.end;
+            } else {
+                result = range.end + 1;
+            }
+            final int length = result - begin;
 
             if (length < 0) {
                 return createEmptyArray();
@@ -387,7 +425,7 @@ public abstract class RangeNodes {
 
         @Specialization
         public Object setBegin(RubyObjectRange range, Object begin) {
-            range.setBegin(begin);
+            range.begin = begin;
 
             return begin;
         }
@@ -406,7 +444,7 @@ public abstract class RangeNodes {
 
         @Specialization
         public Object setEnd(RubyObjectRange range, Object end) {
-            range.setEnd(end);
+            range.end = end;
 
             return end;
         }
@@ -429,7 +467,7 @@ public abstract class RangeNodes {
 
         @Specialization
         public boolean setExcludeEnd(RubyObjectRange range, boolean excludeEnd) {
-            range.setExcludeEnd(excludeEnd);
+            range.excludeEnd = excludeEnd;
 
             return excludeEnd;
         }

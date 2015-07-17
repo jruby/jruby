@@ -1130,9 +1130,9 @@ public class CoreLibrary {
     public RubyBasicObject rangeError(RubyIntegerFixnumRange range, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return rangeError(String.format("%d..%s%d out of range",
-                range.getBegin(),
-                range.doesExcludeEnd() ? "." : "",
-                range.getEnd()), currentNode);
+                range.begin,
+                range.excludeEnd ? "." : "",
+                range.end), currentNode);
     }
 
     public RubyBasicObject rangeError(String message, Node currentNode) {

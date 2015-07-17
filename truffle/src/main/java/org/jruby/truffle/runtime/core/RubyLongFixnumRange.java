@@ -11,9 +11,9 @@ package org.jruby.truffle.runtime.core;
 
 public class RubyLongFixnumRange extends RubyBasicObject {
 
-    private final boolean excludeEnd;
-    private final long begin;
-    private final long end;
+    public final boolean excludeEnd;
+    public final long begin;
+    public final long end;
 
     public RubyLongFixnumRange(RubyClass rangeClass, long begin, long end, boolean excludeEnd) {
         super(rangeClass);
@@ -21,26 +21,6 @@ public class RubyLongFixnumRange extends RubyBasicObject {
         this.begin = begin;
         this.end = end;
         this.excludeEnd = excludeEnd;
-    }
-
-    public final long getBegin() {
-        return begin;
-    }
-
-    public final long getEnd() {
-        return end;
-    }
-
-    public boolean doesExcludeEnd() {
-        return excludeEnd;
-    }
-
-    public final long getExclusiveEnd() {
-        if (excludeEnd) {
-            return end;
-        } else {
-            return end + 1;
-        }
     }
 
 }
