@@ -167,7 +167,7 @@ public class CallableSelector {
                 boolean ambiguous = false;
 
                 final IRubyObject lastArg = args.length > 0 ? args[ args.length - 1 ] : null;
-                int mostSpecificArity = 0;
+                int mostSpecificArity = Integer.MIN_VALUE;
 
                 OUTER: for ( int c = 1; c < size; c++ ) {
                     final T candidate = candidates.get(c);
@@ -195,59 +195,54 @@ public class CallableSelector {
                         }
                     }
 
+                    // special handling if we're dealing with Proc#impl :
+                    if ( lastArg instanceof RubyProc ) {
+                        // cases such as (both ifaces - differ in arg count) :
+                        // java.io.File#listFiles(java.io.FileFilter) ... accept(File)
+                        // java.io.File#listFiles(java.io.FilenameFilter) ... accept(File, String)
+                        int procArity = ((RubyProc) lastArg).getBlock().arity().getValue();
+
+                        final Method implMethod; final int cLast = cTypes.length - 1;
+
+                        if ( cLast >= 0 && cTypes[cLast].isInterface() && ( implMethod = getFunctionalInterfaceMethod(cTypes[cLast]) ) != null ) {
+                            // we're sure to have an interface in the end - match arg count :
+                            // NOTE: implMethod.getParameterCount() on Java 8 would do ...
+                            final int methodArity = implMethod.getParameterTypes().length;
+                            if ( methodArity == procArity ) {
+                                if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
+                                // TODO we could try to match parameter types with arg types
+                                else {
+                                    mostSpecific = candidate; ambiguous = false;
+                                    mostSpecificArity = procArity;
+                                }
+                                continue  /* OUTER */; // we want to check all
+                            }
+                            else if ( methodArity < procArity && mostSpecificArity != procArity ) { // not ideal but still usable
+                                if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
+                                else if ( mostSpecificArity < methodArity ) { // candidate is "better" match
+                                    mostSpecific = candidate; ambiguous = false;
+                                    mostSpecificArity = methodArity;
+                                }
+                                continue /* OUTER */;
+                            }
+                            else { // we're not a match and if there's something else matched than it's not really ambiguous
+                                ambiguous = false; /* continue /* OUTER */;
+                            }
+                        }
+                    }
+
                     // somehow we can still decide e.g. if we got a RubyFixnum
                     // then (int) constructor should be preferred over (float)
                     if ( ambiguous ) {
-                        // special handling if we're dealing with Proc#impl :
-                        if ( lastArg instanceof RubyProc ) {
-                            // cases such as (both ifaces - differ in arg count) :
-                            // java.io.File#listFiles(java.io.FileFilter) ... accept(File)
-                            // java.io.File#listFiles(java.io.FilenameFilter) ... accept(File, String)
-                            final int procArity = ((RubyProc) lastArg).getBlock().arity().getValue();
-
-
-                            final Method implMethod; final int cLast = cTypes.length - 1;
-
-                            if ( cLast >= 0 && cTypes[cLast].isInterface() && ( implMethod = getFunctionalInterfaceMethod(cTypes[cLast]) ) != null ) {
-                                // we're sure to have an interface in the end - match arg count :
-                                // NOTE: implMethod.getParameterCount() on Java 8 would do ...
-                                final int methodArity = implMethod.getParameterTypes().length;
-                                if ( methodArity == procArity ) {
-                                    if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
-                                    // TODO we could try to match parameter types with arg types
-                                    else {
-                                        mostSpecific = candidate; ambiguous = false;
-                                        mostSpecificArity = procArity;
-                                    }
-                                    continue  /* OUTER */; // we want to check all
-                                }
-                                else if ( methodArity < procArity && mostSpecificArity != procArity ) { // not ideal but still usable
-                                    if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
-                                    else if ( mostSpecificArity < methodArity ) { // candidate is "better" match
-                                        mostSpecific = candidate; ambiguous = false;
-                                        mostSpecificArity = methodArity;
-                                    }
-                                    continue /* OUTER */;
-                                }
-
-                            }
+                        int msPref = 0, cPref = 0;
+                        for ( int i = 0; i < msTypes.length; i++ ) {
+                            final Class<?> msType = msTypes[i], cType = cTypes[i];
+                            msPref += calcTypePreference(msType, args[i]);
+                            cPref += calcTypePreference(cType, args[i]);
                         }
-
-                        //final T procToIfaceMatch = matchProcToInterfaceCandidate(lastArg, candidates);
-                        if ( false /* && procToIfaceMatch != null */ ) {
-                            //mostSpecific = procToIfaceMatch; ambiguous = false;
-                        }
-                        else {
-                            int msPref = 0, cPref = 0;
-                            for ( int i = 0; i < msTypes.length; i++ ) {
-                                final Class<?> msType = msTypes[i], cType = cTypes[i];
-                                msPref += calcTypePreference(msType, args[i]);
-                                cPref += calcTypePreference(cType, args[i]);
-                            }
-                            // for backwards compatibility we do not switch to cType as
-                            // the better fit - we seem to lack tests on this front ...
-                            if ( msPref > cPref ) ambiguous = false; // continue OUTER;
-                        }
+                        // for backwards compatibility we do not switch to cType as
+                        // the better fit - we seem to lack tests on this front ...
+                        if ( msPref > cPref ) ambiguous = false; // continue OUTER;
                     }
                 }
                 method = mostSpecific;
