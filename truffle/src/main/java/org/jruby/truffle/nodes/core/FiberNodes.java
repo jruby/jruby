@@ -12,20 +12,27 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ControlFlowException;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.SingleValueCastNode;
 import org.jruby.truffle.nodes.cast.SingleValueCastNodeGen;
 import org.jruby.truffle.nodes.core.FiberNodesFactory.FiberTransferNodeFactory;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyFiber;
 import org.jruby.truffle.runtime.core.RubyThread;
 
 @CoreClass(name = "Fiber")
 public abstract class FiberNodes {
+
+    public interface FiberMessage {
+    }
 
     public abstract static class FiberTransferNode extends CoreMethodArrayArgumentsNode {
 
@@ -125,4 +132,60 @@ public abstract class FiberNodes {
 
     }
 
+    public static class FiberResumeMessage implements FiberMessage {
+
+        private final boolean yield;
+        private final RubyFiber sendingFiber;
+        private final Object[] args;
+
+        public FiberResumeMessage(boolean yield, RubyFiber sendingFiber, Object[] args) {
+            this.yield = yield;
+            this.sendingFiber = sendingFiber;
+            this.args = args;
+        }
+
+        public boolean isYield() {
+            return yield;
+        }
+
+        public RubyFiber getSendingFiber() {
+            return sendingFiber;
+        }
+
+        public Object[] getArgs() {
+            return args;
+        }
+
+    }
+
+    public static class FiberExitMessage implements FiberMessage {
+    }
+
+    public static class FiberExceptionMessage implements FiberMessage {
+
+        private final RubyBasicObject exception;
+
+        public FiberExceptionMessage(RubyBasicObject exception) {
+            this.exception = exception;
+        }
+
+        public RubyBasicObject getException() {
+            return exception;
+        }
+
+    }
+
+    public static class FiberExitException extends ControlFlowException {
+        private static final long serialVersionUID = 1522270454305076317L;
+    }
+
+    public static class FiberAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+            RubyThread parent = context.getThreadManager().getCurrentThread();
+            return new RubyFiber(parent, rubyClass, null);
+        }
+
+    }
 }

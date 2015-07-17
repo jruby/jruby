@@ -302,7 +302,7 @@ public class CoreLibrary {
         dirClass = defineClass("Dir");
         encodingClass = defineClass("Encoding", NO_ALLOCATOR);
         falseClass = defineClass("FalseClass", NO_ALLOCATOR);
-        fiberClass = defineClass("Fiber", new RubyFiber.FiberAllocator());
+        fiberClass = defineClass("Fiber", new FiberNodes.FiberAllocator());
         defineModule("FileTest");
         hashClass = defineClass("Hash", new HashNodes.HashAllocator());
         matchDataClass = defineClass("MatchData");
