@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
+import org.jruby.truffle.nodes.core.FiberNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -47,7 +48,7 @@ public class ThreadManager {
     public void initialize() {
         registerThread(rootThread);
         rootThread.start();
-        rootThread.getRootFiber().start();
+        FiberNodes.start(rootThread.getRootFiber());
     }
 
     public RubyThread getRootThread() {
@@ -142,7 +143,7 @@ public class ThreadManager {
             killOtherThreads();
         } finally {
             rootThread.getFiberManager().shutdown();
-            rootThread.getRootFiber().cleanup();
+            FiberNodes.cleanup(rootThread.getRootFiber());
             rootThread.cleanup();
         }
     }

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import org.jruby.truffle.nodes.core.FiberNodes;
 import org.jruby.truffle.runtime.core.RubyFiber;
 import org.jruby.truffle.runtime.core.RubyThread;
 
@@ -26,7 +27,7 @@ public class FiberManager {
     private final Set<RubyFiber> runningFibers = Collections.newSetFromMap(new ConcurrentHashMap<RubyFiber, Boolean>());
 
     public FiberManager(RubyThread rubyThread, ThreadManager threadManager) {
-        this.rootFiber = RubyFiber.newRootFiber(rubyThread, this, threadManager);
+        this.rootFiber = FiberNodes.newRootFiber(rubyThread, this, threadManager);
         this.currentFiber = rootFiber;
     }
 
@@ -52,8 +53,8 @@ public class FiberManager {
 
     public void shutdown() {
         for (RubyFiber fiber : runningFibers) {
-            if (!fiber.isRootFiber()) {
-                fiber.shutdown();
+            if (!fiber.fields.isRootFiber) {
+                FiberNodes.shutdown(fiber);
             }
         }
     }

@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.FiberNodes;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
@@ -99,7 +100,7 @@ public class RubyThread extends RubyBasicObject {
         start();
         try {
             RubyFiber fiber = getRootFiber();
-            fiber.run(task);
+            FiberNodes.run(fiber, task);
         } catch (ThreadExitException e) {
             value = context.getCoreLibrary().getNilObject();
             return;
@@ -139,7 +140,7 @@ public class RubyThread extends RubyBasicObject {
     }
 
     public Thread getCurrentFiberJavaThread() {
-        return fiberManager.getCurrentFiber().getJavaThread();
+        return fiberManager.getCurrentFiber().fields.thread;
     }
 
     public void join() {
