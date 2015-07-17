@@ -37,40 +37,50 @@ import java.util.concurrent.locks.Lock;
  */
 public class RubyThread extends RubyBasicObject {
 
-    private final ThreadManager manager;
-
-    private final FiberManager fiberManager;
-
-    private String name;
-
-    /** We use this instead of {@link Thread#join()} since we don't always have a reference
-     * to the {@link Thread} and we want to handle cases where the Thread did not start yet. */
-    private final CountDownLatch finished = new CountDownLatch(1);
-
-    private volatile Thread thread;
-    private volatile Status status = Status.RUN;
-    private volatile AtomicBoolean wakeUp = new AtomicBoolean(false);
-
-    private volatile Object exception;
-    private volatile Object value;
-
-    private final RubyBasicObject threadLocals;
-
-    private final List<Lock> ownedLocks = new ArrayList<>(); // Always accessed by the same underlying Java thread.
-
-    private boolean abortOnException = false;
-
     public enum InterruptMode {
         IMMEDIATE, ON_BLOCKING, NEVER
     }
 
-    private InterruptMode interruptMode = InterruptMode.IMMEDIATE;
+    public static class ThreadFields {
+        public final ThreadManager manager;
+
+        public final FiberManager fiberManager;
+
+        public String name;
+
+        /**
+         * We use this instead of {@link Thread#join()} since we don't always have a reference
+         * to the {@link Thread} and we want to handle cases where the Thread did not start yet.
+         */
+        public final CountDownLatch finished = new CountDownLatch(1);
+
+        public volatile Thread thread;
+        public volatile Status status = Status.RUN;
+        public volatile AtomicBoolean wakeUp = new AtomicBoolean(false);
+
+        public volatile Object exception;
+        public volatile Object value;
+
+        public final RubyBasicObject threadLocals;
+
+        public final List<Lock> ownedLocks = new ArrayList<>(); // Always accessed by the same underlying Java thread.
+
+        public boolean abortOnException = false;
+
+        public InterruptMode interruptMode = InterruptMode.IMMEDIATE;
+
+        public ThreadFields(ThreadManager manager, FiberManager fiberManager, RubyBasicObject threadLocals) {
+            this.manager = manager;
+            this.fiberManager = fiberManager;
+            this.threadLocals = threadLocals;
+        }
+    }
+
+    public ThreadFields fields;
 
     public RubyThread(RubyClass rubyClass, ThreadManager manager) {
         super(rubyClass);
-        this.manager = manager;
-        threadLocals = new RubyBasicObject(rubyClass.getContext().getCoreLibrary().getObjectClass());
-        fiberManager = new FiberManager(this, manager);
+        fields = new ThreadFields(manager, new FiberManager(this, manager), new RubyBasicObject(rubyClass.getContext().getCoreLibrary().getObjectClass()));
     }
 
     public void initialize(RubyContext context, Node currentNode, final Object[] arguments, final RubyBasicObject block) {
@@ -79,7 +89,7 @@ public class RubyThread extends RubyBasicObject {
         initialize(context, currentNode, info, new Runnable() {
             @Override
             public void run() {
-                value = ProcNodes.rootCall(block, arguments);
+                fields.value = ProcNodes.rootCall(block, arguments);
             }
         });
     }
@@ -94,20 +104,20 @@ public class RubyThread extends RubyBasicObject {
     }
 
     public void run(final RubyContext context, Node currentNode, String info, Runnable task) {
-        name = "Ruby Thread@" + info;
-        Thread.currentThread().setName(name);
+        fields.name = "Ruby Thread@" + info;
+        Thread.currentThread().setName(fields.name);
 
         start();
         try {
             RubyBasicObject fiber = getRootFiber();
             FiberNodes.run(fiber, task);
         } catch (ThreadExitException e) {
-            value = context.getCoreLibrary().getNilObject();
+            fields.value = context.getCoreLibrary().getNilObject();
             return;
         } catch (RaiseException e) {
-            exception = e.getRubyException();
+            fields.exception = e.getRubyException();
         } catch (ReturnException e) {
-            exception = context.getCoreLibrary().unexpectedReturn(currentNode);
+            fields.exception = context.getCoreLibrary().unexpectedReturn(currentNode);
         } finally {
             cleanup();
         }
@@ -115,152 +125,152 @@ public class RubyThread extends RubyBasicObject {
 
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
     public void start() {
-        thread = Thread.currentThread();
-        manager.registerThread(this);
+        fields.thread = Thread.currentThread();
+        fields.manager.registerThread(this);
     }
 
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
     public void cleanup() {
-        status = Status.ABORTING;
-        manager.unregisterThread(this);
+        fields.status = Status.ABORTING;
+        fields.manager.unregisterThread(this);
 
-        status = Status.DEAD;
-        thread = null;
+        fields.status = Status.DEAD;
+        fields.thread = null;
         releaseOwnedLocks();
-        finished.countDown();
+        fields.finished.countDown();
     }
 
     public void shutdown() {
-        fiberManager.shutdown();
+        fields.fiberManager.shutdown();
         throw new ThreadExitException();
     }
 
     public Thread getRootFiberJavaThread() {
-        return thread;
+        return fields.thread;
     }
 
     public Thread getCurrentFiberJavaThread() {
-        return ((RubyFiber) fiberManager.getCurrentFiber()).fields.thread;
+        return ((RubyFiber) fields.fiberManager.getCurrentFiber()).fields.thread;
     }
 
     public void join() {
-        manager.runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+        fields.manager.runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
             @Override
             public Boolean block() throws InterruptedException {
-                finished.await();
+                fields.finished.await();
                 return SUCCESS;
             }
         });
 
-        if (exception != null) {
-            throw new RaiseException(exception);
+        if (fields.exception != null) {
+            throw new RaiseException(fields.exception);
         }
     }
 
     public boolean join(final int timeoutInMillis) {
         final long start = System.currentTimeMillis();
-        final boolean joined = manager.runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+        final boolean joined = fields.manager.runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
             @Override
             public Boolean block() throws InterruptedException {
                 long now = System.currentTimeMillis();
                 long waited = now - start;
                 if (waited >= timeoutInMillis) {
                     // We need to know whether countDown() was called and we do not want to block.
-                    return finished.getCount() == 0;
+                    return fields.finished.getCount() == 0;
                 }
-                return finished.await(timeoutInMillis - waited, TimeUnit.MILLISECONDS);
+                return fields.finished.await(timeoutInMillis - waited, TimeUnit.MILLISECONDS);
             }
         });
 
-        if (joined && exception != null) {
-            throw new RaiseException(exception);
+        if (joined && fields.exception != null) {
+            throw new RaiseException(fields.exception);
         }
 
         return joined;
     }
 
     public void wakeup() {
-        wakeUp.set(true);
-        Thread t = thread;
+        fields.wakeUp.set(true);
+        Thread t = fields.thread;
         if (t != null) {
             t.interrupt();
         }
     }
 
     public void acquiredLock(Lock lock) {
-        ownedLocks.add(lock);
+        fields.ownedLocks.add(lock);
     }
 
     public void releasedLock(Lock lock) {
         // TODO: this is O(ownedLocks.length).
-        ownedLocks.remove(lock);
+        fields.ownedLocks.remove(lock);
     }
 
     protected void releaseOwnedLocks() {
-        for (Lock lock : ownedLocks) {
+        for (Lock lock : fields.ownedLocks) {
             lock.unlock();
         }
     }
 
     public Status getStatus() {
-        return status;
+        return fields.status;
     }
 
     public void setStatus(Status status) {
-        this.status = status;
+        fields.status = status;
     }
 
     public RubyBasicObject getThreadLocals() {
-        return threadLocals;
+        return fields.threadLocals;
     }
 
     public Object getValue() {
-        return value;
+        return fields.value;
     }
 
     public Object getException() {
-        return exception;
+        return fields.exception;
     }
 
     public String getName() {
-        return name;
+        return fields.name;
     }
 
     public void setName(String name) {
-        this.name = name;
+        fields.name = name;
     }
 
     public ThreadManager getThreadManager() {
-        return manager;
+        return fields.manager;
     }
 
     public FiberManager getFiberManager() {
-        return fiberManager;
+        return fields.fiberManager;
     }
 
     public RubyBasicObject getRootFiber() {
-        return fiberManager.getRootFiber();
+        return fields.fiberManager.getRootFiber();
     }
 
     public boolean isAbortOnException() {
-        return abortOnException;
+        return fields.abortOnException;
     }
 
     public void setAbortOnException(boolean abortOnException) {
-        this.abortOnException = abortOnException;
+        fields.abortOnException = abortOnException;
     }
 
     public InterruptMode getInterruptMode() {
-        return interruptMode;
+        return fields.interruptMode;
     }
 
     public void setInterruptMode(InterruptMode interruptMode) {
-        this.interruptMode = interruptMode;
+        fields.interruptMode = interruptMode;
     }
 
     /** Return whether Thread#{run,wakeup} was called and clears the wakeup flag. */
     public boolean shouldWakeUp() {
-        return wakeUp.getAndSet(false);
+        return fields.wakeUp.getAndSet(false);
     }
 
     public static class ThreadAllocator implements Allocator {
