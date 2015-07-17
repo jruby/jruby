@@ -9,15 +9,16 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import com.oracle.truffle.api.source.NullSourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 
-/**
- * Source sections used for core method nodes.
- */
-public final class CoreSourceSection extends NullSourceSection {
+public abstract class CoreSourceSection {
 
-    public CoreSourceSection(String className, String methodName) {
-        super("core", String.format("%s#%s", className, methodName));
+    public static SourceSection createCoreSourceSection(String className, String methodName) {
+        return SourceSection.createUnavailable("core", String.format("%s#%s", className, methodName));
+    }
+
+    public static boolean isCoreSourceSection(SourceSection sourceSection) {
+        return sourceSection.getShortDescription().startsWith("core: ");
     }
 
 }

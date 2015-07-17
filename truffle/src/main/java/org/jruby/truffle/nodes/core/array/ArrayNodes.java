@@ -2596,7 +2596,7 @@ public abstract class ArrayNodes {
         private final CallTarget callTarget;
 
         public MaxBlock(RubyContext context) {
-            final SourceSection sourceSection = new CoreSourceSection("Array", "max");
+            final SourceSection sourceSection = CoreSourceSection.createCoreSourceSection("Array", "max");
 
             frameDescriptor = new FrameDescriptor();
             frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
@@ -2698,7 +2698,7 @@ public abstract class ArrayNodes {
         private final CallTarget callTarget;
 
         public MinBlock(RubyContext context) {
-            final SourceSection sourceSection = new CoreSourceSection("Array", "min");
+            final SourceSection sourceSection = CoreSourceSection.createCoreSourceSection("Array", "min");
 
             frameDescriptor = new FrameDescriptor();
             frameSlot = frameDescriptor.addFrameSlot("minimum_memo");

@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.runtime.backtrace;
 
-import com.oracle.truffle.api.source.NullSourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.DebugOperations;
@@ -58,7 +58,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         final SourceSection reportedSourceSection;
         final String reportedName;
 
-        if (sourceSection instanceof CoreSourceSection) {
+        if (CoreSourceSection.isCoreSourceSection(sourceSection)) {
             reportedSourceSection = nextUserSourceSection(activations, 1);
             reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
         } else {
@@ -110,7 +110,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         final SourceSection reportedSourceSection;
         final String reportedName;
 
-        if (sourceSection instanceof CoreSourceSection) {
+        if (CoreSourceSection.isCoreSourceSection(sourceSection)) {
             reportedSourceSection = activations.get(n + 1).getCallNode().getEncapsulatingSourceSection();
             reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
         } else {
@@ -119,7 +119,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         }
 
         final StringBuilder builder = new StringBuilder();
-        if (reportedSourceSection instanceof NullSourceSection) {
+        if (reportedSourceSection.getSource() == null) {
             builder.append("???");
         } else {
             builder.append(reportedSourceSection.getSource().getName());
@@ -137,7 +137,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         while (n < activations.size()) {
             SourceSection sourceSection = activations.get(n).getCallNode().getEncapsulatingSourceSection();
 
-            if (!(sourceSection instanceof CoreSourceSection)) {
+            if (!CoreSourceSection.isCoreSourceSection(sourceSection)) {
                 return sourceSection;
             }
 

@@ -18,7 +18,7 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.nodes.RootNode;
-import com.oracle.truffle.api.source.NullSourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 
 public class RubyMethodForeignAccessFactory implements ForeignAccess.Factory10 {
     private final RubyContext context;
@@ -33,22 +33,22 @@ public class RubyMethodForeignAccessFactory implements ForeignAccess.Factory10 {
 
     @Override
     public CallTarget accessIsNull() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsNull(context, new NullSourceSection("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsNull(context, SourceSection.createUnavailable("", ""))));
     }
 
     @Override
     public CallTarget accessIsExecutable() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsExecutable(context, new NullSourceSection("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsExecutable(context, SourceSection.createUnavailable("", ""))));
     }
 
     @Override
     public CallTarget accessIsBoxed() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsBoxedPrimitive(context, new NullSourceSection("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createIsBoxedPrimitive(context, SourceSection.createUnavailable("", ""))));
     }
 
     @Override
     public CallTarget accessHasSize() {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createHasSizePropertyFalse(context, new NullSourceSection("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createHasSizePropertyFalse(context, SourceSection.createUnavailable("", ""))));
     }
 
     @Override
@@ -73,7 +73,7 @@ public class RubyMethodForeignAccessFactory implements ForeignAccess.Factory10 {
 
     @Override
     public CallTarget accessExecute(int i) {
-        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createExecute(context, new NullSourceSection("", ""))));
+        return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createExecute(context, SourceSection.createUnavailable("", ""))));
     }
 
     @Override

@@ -14,7 +14,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.*;
-import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -224,7 +223,7 @@ public abstract class UnboundMethodNodes {
         public Object sourceLocation(RubyBasicObject unboundMethod) {
             SourceSection sourceSection = getMethod(unboundMethod).getSharedMethodInfo().getSourceSection();
 
-            if (sourceSection instanceof NullSourceSection) {
+            if (sourceSection.getSource() == null) {
                 return nil();
             } else {
                 RubyBasicObject file = createString(sourceSection.getSource().getName());

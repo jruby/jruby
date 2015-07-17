@@ -195,7 +195,7 @@ public class CoreLibrary {
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
-        this.node = new CoreLibraryNode(context, new CoreSourceSection("CoreLibrary", "initialize"));
+        this.node = new CoreLibraryNode(context, CoreSourceSection.createCoreSourceSection("CoreLibrary", "initialize"));
 
         // Nothing in this constructor can use RubyContext.getCoreLibrary() as we are building it!
         // Therefore, only initialize the core classes and modules here.

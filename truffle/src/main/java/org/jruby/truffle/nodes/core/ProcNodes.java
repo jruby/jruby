@@ -19,7 +19,7 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.source.NullSourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -293,7 +293,7 @@ public abstract class ProcNodes {
         public Object sourceLocation(RubyBasicObject proc) {
             SourceSection sourceSection = getSharedMethodInfo(proc).getSourceSection();
 
-            if (sourceSection instanceof NullSourceSection) {
+            if (sourceSection.getSource() == null) {
                 return nil();
             } else {
                 RubyBasicObject file = createString(sourceSection.getSource().getName());

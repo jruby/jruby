@@ -76,7 +76,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
 
         final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
-        if (sourceSection instanceof CoreSourceSection) {
+        if (CoreSourceSection.isCoreSourceSection(sourceSection)) {
             final InternalMethod method = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments());
             builder.append(method.getDeclaringModule().getName());
             builder.append("#");
