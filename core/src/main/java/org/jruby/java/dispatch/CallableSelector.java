@@ -201,6 +201,7 @@ public class CallableSelector {
                         // java.io.File#listFiles(java.io.FileFilter) ... accept(File)
                         // java.io.File#listFiles(java.io.FilenameFilter) ... accept(File, String)
                         int procArity = ((RubyProc) lastArg).getBlock().arity().getValue();
+                        if (procArity < 0) procArity = - (procArity + 1); /* fixedArity = false; */
 
                         final Method implMethod; final int cLast = cTypes.length - 1;
 
