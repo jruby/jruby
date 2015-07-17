@@ -166,6 +166,9 @@ public class CallableSelector {
                 Class<?>[] msTypes = mostSpecific.getParameterTypes();
                 boolean ambiguous = false;
 
+                final IRubyObject lastArg = args.length > 0 ? args[ args.length - 1 ] : null;
+                int mostSpecificArity = 0;
+
                 OUTER: for ( int c = 1; c < size; c++ ) {
                     final T candidate = candidates.get(c);
                     final Class<?>[] cTypes = candidate.getParameterTypes();
@@ -196,10 +199,43 @@ public class CallableSelector {
                     // then (int) constructor should be preferred over (float)
                     if ( ambiguous ) {
                         // special handling if we're dealing with Proc#impl :
-                        final IRubyObject lastArg = args.length > 0 ? args[ args.length - 1 ] : null;
-                        final T procToIfaceMatch = matchProcToInterfaceCandidate(lastArg, candidates);
-                        if ( procToIfaceMatch != null ) {
-                            mostSpecific = procToIfaceMatch; ambiguous = false;
+                        if ( lastArg instanceof RubyProc ) {
+                            // cases such as (both ifaces - differ in arg count) :
+                            // java.io.File#listFiles(java.io.FileFilter) ... accept(File)
+                            // java.io.File#listFiles(java.io.FilenameFilter) ... accept(File, String)
+                            final int procArity = ((RubyProc) lastArg).getBlock().arity().getValue();
+
+
+                            final Method implMethod; final int cLast = cTypes.length - 1;
+
+                            if ( cLast >= 0 && cTypes[cLast].isInterface() && ( implMethod = getFunctionalInterfaceMethod(cTypes[cLast]) ) != null ) {
+                                // we're sure to have an interface in the end - match arg count :
+                                // NOTE: implMethod.getParameterCount() on Java 8 would do ...
+                                final int methodArity = implMethod.getParameterTypes().length;
+                                if ( methodArity == procArity ) {
+                                    if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
+                                    // TODO we could try to match parameter types with arg types
+                                    else {
+                                        mostSpecific = candidate; ambiguous = false;
+                                        mostSpecificArity = procArity;
+                                    }
+                                    continue  /* OUTER */; // we want to check all
+                                }
+                                else if ( methodArity < procArity && mostSpecificArity != procArity ) { // not ideal but still usable
+                                    if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
+                                    else if ( mostSpecificArity < methodArity ) { // candidate is "better" match
+                                        mostSpecific = candidate; ambiguous = false;
+                                        mostSpecificArity = methodArity;
+                                    }
+                                    continue /* OUTER */;
+                                }
+
+                            }
+                        }
+
+                        //final T procToIfaceMatch = matchProcToInterfaceCandidate(lastArg, candidates);
+                        if ( false /* && procToIfaceMatch != null */ ) {
+                            //mostSpecific = procToIfaceMatch; ambiguous = false;
                         }
                         else {
                             int msPref = 0, cPref = 0;
@@ -246,39 +282,6 @@ public class CallableSelector {
             }
         }
         return method;
-    }
-
-    private static <T extends ParameterTypes> T matchProcToInterfaceCandidate(
-            final IRubyObject lastArg, final List<T> candidates) {
-        if ( lastArg instanceof RubyProc ) {
-            // cases such as (both ifaces - differ in arg count) :
-            // java.io.File#listFiles(java.io.FileFilter) ... accept(File)
-            // java.io.File#listFiles(java.io.FilenameFilter) ... accept(File, String)
-            final int arity = ((RubyProc) lastArg).getBlock().arity().getValue();
-            T match = null;
-            for ( int i = 0; i < candidates.size(); i++ ) {
-                final T method = candidates.get(i);
-
-                final Class<?>[] params = method.getParameterTypes();
-
-                if ( params.length == 0 ) return null; // can not match (no args)
-                final Class<?> lastParam = params[ params.length - 1 ];
-
-                if ( ! lastParam.isInterface() ) return null; // can not match
-
-                final Method implMethod = getFunctionalInterfaceMethod(lastParam);
-                if ( implMethod != null ) {
-                    // we're sure to have an interface in the end - match arg count :
-                    // NOTE: implMethod.getParameterCount() on Java 8 would do ...
-                    if ( implMethod.getParameterTypes().length == arity ) {
-                        if ( match != null ) return null; // 2 with same arity (can not match)
-                        match = method; // do not break here we want to check all
-                    }
-                }
-            }
-            return match;
-        }
-        return null;
     }
 
     private static <T extends ParameterTypes> T findCallable(T[] callables, CallableAcceptor acceptor, IRubyObject[] args) {

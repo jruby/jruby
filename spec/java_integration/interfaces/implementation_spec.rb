@@ -218,6 +218,12 @@ describe "Single-method Java interfaces" do
       dir.should be_kind_of(java.io.File)
       name.should be_kind_of(String)
     end
+
+    java.io.File.new('.').listFiles do |dir, name, invalid|
+      # should choose FilenameFilter#accept(File, String)
+      dir.should be_kind_of(java.io.File)
+      name.should be_kind_of(String)
+    end
   end
 
   it "should maintain Ruby object equality when passed through Java and back" do
