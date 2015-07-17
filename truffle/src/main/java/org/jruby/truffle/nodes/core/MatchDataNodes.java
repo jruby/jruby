@@ -343,12 +343,12 @@ public abstract class MatchDataNodes {
             return getIndex(matchData, toIntNode.doInt(frame, index), NotProvided.INSTANCE);
         }
 
-        @Specialization(guards = {"!isRubySymbol(range)", "!isRubyString(range)"})
-        public Object getIndex(VirtualFrame frame, RubyBasicObject matchData, RubyIntegerFixnumRange range, NotProvided len) {
+        @Specialization(guards = "isIntegerFixnumRange(range)")
+        public Object getIndex(RubyBasicObject matchData, RubyBasicObject range, NotProvided len) {
             final Object[] values = getValues(matchData);
-            final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, range.begin);
-            final int end = ArrayNodes.normalizeIndex(values.length, range.end);
-            final int exclusiveEnd = ArrayNodes.clampExclusiveIndex(values.length, range.excludeEnd ? end : end + 1);
+            final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, ((RubyIntegerFixnumRange) range).begin);
+            final int end = ArrayNodes.normalizeIndex(values.length, ((RubyIntegerFixnumRange) range).end);
+            final int exclusiveEnd = ArrayNodes.clampExclusiveIndex(values.length, ((RubyIntegerFixnumRange) range).excludeEnd ? end : end + 1);
             final int length = exclusiveEnd - normalizedIndex;
 
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);

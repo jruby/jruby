@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+@Deprecated
 public class RubyLongFixnumRange extends RubyBasicObject {
 
     public final boolean excludeEnd;

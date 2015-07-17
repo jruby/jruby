@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+@Deprecated
 public class RubyObjectRange extends RubyBasicObject {
 
     public boolean excludeEnd;

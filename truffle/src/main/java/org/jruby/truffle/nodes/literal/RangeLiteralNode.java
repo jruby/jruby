@@ -21,10 +21,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.CoreLibrary;
-import org.jruby.truffle.runtime.core.RubyIntegerFixnumRange;
-import org.jruby.truffle.runtime.core.RubyLongFixnumRange;
-import org.jruby.truffle.runtime.core.RubyObjectRange;
+import org.jruby.truffle.runtime.core.*;
 
 @NodeChildren({@NodeChild("begin"), @NodeChild("end")})
 public abstract class RangeLiteralNode extends RubyNode {
@@ -39,17 +36,17 @@ public abstract class RangeLiteralNode extends RubyNode {
     }
 
     @Specialization
-    public RubyIntegerFixnumRange intRange(int begin, int end) {
+    public RubyBasicObject intRange(int begin, int end) {
         return new RubyIntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
     }
 
     @Specialization(guards = { "fitsIntoInteger(begin)", "fitsIntoInteger(end)" })
-    public RubyIntegerFixnumRange longFittingIntRange(long begin, long end) {
+    public RubyBasicObject longFittingIntRange(long begin, long end) {
         return new RubyIntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), (int) begin, (int) end, excludeEnd);
     }
 
     @Specialization(guards = "!fitsIntoInteger(begin) || !fitsIntoInteger(end)")
-    public RubyLongFixnumRange longRange(long begin, long end) {
+    public RubyBasicObject longRange(long begin, long end) {
         return new RubyLongFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
     }
 

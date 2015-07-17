@@ -111,26 +111,6 @@ public abstract class RubyNode extends Node {
         }
     }
 
-    public RubyIntegerFixnumRange executeIntegerFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (value instanceof RubyIntegerFixnumRange) {
-            return (RubyIntegerFixnumRange) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
-    public RubyLongFixnumRange executeLongFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (value instanceof RubyLongFixnumRange) {
-            return (RubyLongFixnumRange) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
     public double executeDouble(VirtualFrame frame) throws UnexpectedResultException {
         final Object value = execute(frame);
 

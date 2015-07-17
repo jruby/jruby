@@ -615,24 +615,24 @@ public abstract class StringNodes {
             return getIndex(frame, string, getToIntNode().doInt(frame, index), length);
         }
 
-        @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
-        public Object sliceIntegerRange(VirtualFrame frame, RubyBasicObject string, RubyIntegerFixnumRange range, Object length) {
-            return sliceRange(frame, string, range.begin, range.end, range.excludeEnd);
+        @Specialization(guards = {"isIntegerFixnumRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)"})
+        public Object sliceIntegerRange(VirtualFrame frame, RubyBasicObject string, RubyBasicObject range, Object length) {
+            return sliceRange(frame, string, ((RubyIntegerFixnumRange) range).begin, ((RubyIntegerFixnumRange) range).end, ((RubyIntegerFixnumRange) range).excludeEnd);
         }
 
-        @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
-        public Object sliceLongRange(VirtualFrame frame, RubyBasicObject string, RubyLongFixnumRange range, Object length) {
+        @Specialization(guards = {"isLongFixnumRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)"})
+        public Object sliceLongRange(VirtualFrame frame, RubyBasicObject string, RubyBasicObject range, Object length) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values should be properly lowered, only if possible.
-            return sliceRange(frame, string, (int) range.begin, (int) range.end, range.excludeEnd);
+            return sliceRange(frame, string, (int) ((RubyLongFixnumRange) range).begin, (int) ((RubyLongFixnumRange) range).end, ((RubyLongFixnumRange) range).excludeEnd);
         }
 
-        @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
-        public Object sliceObjectRange(VirtualFrame frame, RubyBasicObject string, RubyObjectRange range, Object length) {
+        @Specialization(guards = {"isObjectRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)"})
+        public Object sliceObjectRange(VirtualFrame frame, RubyBasicObject string, RubyBasicObject range, Object length) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values may return Fixnums beyond int boundaries and we should handle that -- Bignums are always errors.
-            final int coercedBegin = getToIntNode().doInt(frame, range.begin);
-            final int coercedEnd = getToIntNode().doInt(frame, range.end);
+            final int coercedBegin = getToIntNode().doInt(frame, ((RubyObjectRange) range).begin);
+            final int coercedEnd = getToIntNode().doInt(frame, ((RubyObjectRange) range).end);
 
-            return sliceRange(frame, string, coercedBegin, coercedEnd, range.excludeEnd);
+            return sliceRange(frame, string, coercedBegin, coercedEnd, ((RubyObjectRange) range).excludeEnd);
         }
 
         private Object sliceRange(VirtualFrame frame, RubyBasicObject string, int begin, int end, boolean doesExcludeEnd) {
