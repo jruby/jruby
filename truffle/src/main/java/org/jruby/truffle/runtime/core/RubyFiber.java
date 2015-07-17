@@ -81,8 +81,6 @@ public class RubyFiber extends RubyBasicObject {
         private static final long serialVersionUID = 1522270454305076317L;
     }
 
-    private final FiberManager fiberManager;
-    private final ThreadManager threadManager;
     private final RubyThread rubyThread;
 
     private String name;
@@ -106,8 +104,6 @@ public class RubyFiber extends RubyBasicObject {
     private RubyFiber(RubyThread parent, FiberManager fiberManager, ThreadManager threadManager, RubyClass rubyClass, String name, boolean isRootFiber) {
         super(rubyClass);
         this.rubyThread = parent;
-        this.fiberManager = fiberManager;
-        this.threadManager = threadManager;
         this.name = name;
         this.isRootFiber = isRootFiber;
     }
@@ -159,17 +155,17 @@ public class RubyFiber extends RubyBasicObject {
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
     public void start() {
         thread = Thread.currentThread();
-        fiberManager.registerFiber(this);
+        rubyThread.getFiberManager().registerFiber(this);
         getContext().getSafepointManager().enterThread();
-        threadManager.enterGlobalLock(rubyThread);
+        getContext().getThreadManager().enterGlobalLock(rubyThread);
     }
 
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
     public void cleanup() {
         alive = false;
-        threadManager.leaveGlobalLock();
+        getContext().getThreadManager().leaveGlobalLock();
         getContext().getSafepointManager().leaveThread();
-        fiberManager.unregisterFiber(this);
+        rubyThread.getFiberManager().unregisterFiber(this);
         thread = null;
     }
 
@@ -197,7 +193,7 @@ public class RubyFiber extends RubyBasicObject {
             }
         });
 
-        fiberManager.setCurrentFiber(this);
+        rubyThread.getFiberManager().setCurrentFiber(this);
 
         if (message instanceof FiberExitMessage) {
             throw new FiberExitException();
@@ -205,7 +201,7 @@ public class RubyFiber extends RubyBasicObject {
             throw new RaiseException(((FiberExceptionMessage) message).getException());
         } else if (message instanceof FiberResumeMessage) {
             final FiberResumeMessage resumeMessage = (FiberResumeMessage) message;
-            assert threadManager.getCurrentThread() == resumeMessage.getSendingFiber().getRubyThread();
+            assert getContext().getThreadManager().getCurrentThread() == resumeMessage.getSendingFiber().getRubyThread();
             if (!(resumeMessage.isYield())) {
                 lastResumedByFiber = resumeMessage.getSendingFiber();
             }
