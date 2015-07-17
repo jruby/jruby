@@ -177,6 +177,10 @@ public abstract class RubyGuards {
         return object instanceof RubyThread;
     }
 
+    public static boolean isRubyMatchData(Object object) {
+        return object instanceof RubyMatchData;
+    }
+
     // Internal types
 
     public static boolean isThreadLocal(Object value) {
