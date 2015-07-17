@@ -15,15 +15,16 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayBuilderNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyRange;
+import org.jruby.truffle.runtime.core.*;
 
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
@@ -39,7 +40,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public RubyBasicObject collect(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyBasicObject block) {
+        public RubyBasicObject collect(VirtualFrame frame, RubyIntegerFixnumRange range, RubyBasicObject block) {
             final int begin = range.getBegin();
             final int exclusiveEnd = range.getExclusiveEnd();
             final int length = exclusiveEnd - begin;
@@ -75,7 +76,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object each(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyBasicObject block) {
+        public Object each(VirtualFrame frame, RubyIntegerFixnumRange range, RubyBasicObject block) {
             final int exclusiveEnd = range.getExclusiveEnd();
 
             int count = 0;
@@ -98,7 +99,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object each(VirtualFrame frame, RubyRange.LongFixnumRange range, RubyBasicObject block) {
+        public Object each(VirtualFrame frame, RubyLongFixnumRange range, RubyBasicObject block) {
             final long exclusiveEnd = range.getExclusiveEnd();
 
             int count = 0;
@@ -121,17 +122,17 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public Object each(VirtualFrame frame, RubyRange.LongFixnumRange range, NotProvided block) {
+        public Object each(VirtualFrame frame, RubyLongFixnumRange range, NotProvided block) {
             return ruby(frame, "each_internal(&block)", "block", nil());
         }
 
         @Specialization
-        public Object each(VirtualFrame frame, RubyRange.ObjectRange range, NotProvided block) {
+        public Object each(VirtualFrame frame, RubyObjectRange range, NotProvided block) {
             return ruby(frame, "each_internal(&block)", "block", nil());
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object each(VirtualFrame frame, RubyRange.ObjectRange range, RubyBasicObject block) {
+        public Object each(VirtualFrame frame, RubyObjectRange range, RubyBasicObject block) {
             return ruby(frame, "each_internal(&block)", "block", block);
         }
 
@@ -144,9 +145,19 @@ public abstract class RangeNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public boolean excludeEnd(RubyRange range) {
-            return range.doesExcludeEnd();
+        @Specialization(guards = "isIntegerFixnumRange(range)")
+        public boolean excludeEndInt(RubyBasicObject range) {
+            return ((RubyIntegerFixnumRange) range).doesExcludeEnd();
+        }
+
+        @Specialization(guards = "isLongFixnumRange(range)")
+        public boolean excludeEndLong(RubyBasicObject range) {
+            return ((RubyLongFixnumRange) range).doesExcludeEnd();
+        }
+
+        @Specialization(guards = "isObjectRange(range)")
+        public boolean excludeEndObject(RubyBasicObject range) {
+            return ((RubyObjectRange) range).doesExcludeEnd();
         }
 
     }
@@ -159,17 +170,17 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public int each(RubyRange.IntegerFixnumRange range) {
+        public int each(RubyIntegerFixnumRange range) {
             return range.getBegin();
         }
 
         @Specialization
-        public long each(RubyRange.LongFixnumRange range) {
+        public long each(RubyLongFixnumRange range) {
             return range.getBegin();
         }
 
         @Specialization
-        public Object each(RubyRange.ObjectRange range) {
+        public Object each(RubyObjectRange range) {
             return range.getBegin();
         }
 
@@ -183,12 +194,12 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public RubyRange.ObjectRange initialize(RubyRange.ObjectRange range, Object begin, Object end, NotProvided excludeEnd) {
+        public RubyObjectRange initialize(RubyObjectRange range, Object begin, Object end, NotProvided excludeEnd) {
             return initialize(range, begin, end, false);
         }
 
         @Specialization
-        public RubyRange.ObjectRange initialize(RubyRange.ObjectRange range, Object begin, Object end, boolean excludeEnd) {
+        public RubyObjectRange initialize(RubyObjectRange range, Object begin, Object end, boolean excludeEnd) {
             range.initialize(begin, end, excludeEnd);
             return range;
         }
@@ -203,17 +214,17 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public int last(RubyRange.IntegerFixnumRange range) {
+        public int last(RubyIntegerFixnumRange range) {
             return range.getEnd();
         }
 
         @Specialization
-        public long last(RubyRange.LongFixnumRange range) {
+        public long last(RubyLongFixnumRange range) {
             return range.getEnd();
         }
 
         @Specialization
-        public Object last(RubyRange.ObjectRange range) {
+        public Object last(RubyObjectRange range) {
             return range.getEnd();
         }
 
@@ -227,7 +238,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization(guards = {"step > 0", "isRubyProc(block)"})
-        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, int step, RubyBasicObject block) {
+        public Object step(VirtualFrame frame, RubyIntegerFixnumRange range, int step, RubyBasicObject block) {
             int count = 0;
 
             try {
@@ -248,7 +259,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization(guards = {"step > 0", "isRubyProc(block)"})
-        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, int step, RubyBasicObject block) {
+        public Object step(VirtualFrame frame, RubyLongFixnumRange range, int step, RubyBasicObject block) {
             int count = 0;
 
             try {
@@ -269,62 +280,62 @@ public abstract class RangeNodes {
         }
 
         @Specialization(guards = {"wasProvided(step)", "isRubyProc(block)"})
-        public Object stepFallback(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, RubyBasicObject block) {
+        public Object stepFallback(VirtualFrame frame, RubyIntegerFixnumRange range, Object step, RubyBasicObject block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
 
         @Specialization(guards = {"wasProvided(step)", "isRubyProc(block)"})
-        public Object stepFallback(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, RubyBasicObject block) {
+        public Object stepFallback(VirtualFrame frame, RubyLongFixnumRange range, Object step, RubyBasicObject block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
 
         @Specialization
-        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, NotProvided step, NotProvided block) {
+        public Object step(VirtualFrame frame, RubyIntegerFixnumRange range, NotProvided step, NotProvided block) {
             return ruby(frame, "step_internal");
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, NotProvided step, RubyBasicObject block) {
+        public Object step(VirtualFrame frame, RubyIntegerFixnumRange range, NotProvided step, RubyBasicObject block) {
             return ruby(frame, "step_internal(&block)", "block", block);
         }
 
         @Specialization(guards = { "!isInteger(step)", "!isLong(step)", "wasProvided(step)" })
-        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, NotProvided block) {
+        public Object step(VirtualFrame frame, RubyIntegerFixnumRange range, Object step, NotProvided block) {
             return ruby(frame, "step_internal(step)", "step", step);
         }
 
         @Specialization
-        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, NotProvided step, NotProvided block) {
+        public Object step(VirtualFrame frame, RubyLongFixnumRange range, NotProvided step, NotProvided block) {
             return ruby(frame, "step_internal");
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, NotProvided step, RubyBasicObject block) {
+        public Object step(VirtualFrame frame, RubyLongFixnumRange range, NotProvided step, RubyBasicObject block) {
             return ruby(frame, "step_internal(&block)", "block", block);
         }
 
         @Specialization(guards = "wasProvided(step)")
-        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, NotProvided block) {
+        public Object step(VirtualFrame frame, RubyLongFixnumRange range, Object step, NotProvided block) {
             return ruby(frame, "step_internal(step)", "step", step);
         }
 
         @Specialization(guards = {"wasProvided(step)", "isRubyProc(block)"})
-        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, RubyBasicObject block) {
+        public Object step(VirtualFrame frame, RubyObjectRange range, Object step, RubyBasicObject block) {
             return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
         }
 
         @Specialization
-        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, NotProvided step, NotProvided block) {
+        public Object step(VirtualFrame frame, RubyObjectRange range, NotProvided step, NotProvided block) {
             return ruby(frame, "step_internal");
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, NotProvided step, RubyBasicObject block) {
+        public Object step(VirtualFrame frame, RubyObjectRange range, NotProvided step, RubyBasicObject block) {
             return ruby(frame, "step_internal(&block)", "block", block);
         }
 
         @Specialization(guards = "wasProvided(step)")
-        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, NotProvided block) {
+        public Object step(VirtualFrame frame, RubyObjectRange range, Object step, NotProvided block) {
             return ruby(frame, "step_internal(step)", "step", step);
         }
 
@@ -338,7 +349,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public RubyBasicObject toA(RubyRange.IntegerFixnumRange range) {
+        public RubyBasicObject toA(RubyIntegerFixnumRange range) {
             final int begin = range.getBegin();
             final int length = range.getExclusiveEnd() - begin;
 
@@ -357,7 +368,7 @@ public abstract class RangeNodes {
 
 
         @Specialization
-        public Object toA(VirtualFrame frame, RubyRange.ObjectRange range) {
+        public Object toA(VirtualFrame frame, RubyObjectRange range) {
             return ruby(frame, "to_a_internal");
         }
 
@@ -375,7 +386,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public Object setBegin(RubyRange.ObjectRange range, Object begin) {
+        public Object setBegin(RubyObjectRange range, Object begin) {
             range.setBegin(begin);
 
             return begin;
@@ -394,7 +405,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public Object setEnd(RubyRange.ObjectRange range, Object end) {
+        public Object setEnd(RubyObjectRange range, Object end) {
             range.setEnd(end);
 
             return end;
@@ -417,7 +428,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public boolean setExcludeEnd(RubyRange.ObjectRange range, boolean excludeEnd) {
+        public boolean setExcludeEnd(RubyObjectRange range, boolean excludeEnd) {
             range.setExcludeEnd(excludeEnd);
 
             return excludeEnd;
@@ -425,4 +436,12 @@ public abstract class RangeNodes {
 
     }
 
+    public static class RangeAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+            return new RubyObjectRange(rubyClass, context.getCoreLibrary().getNilObject(), context.getCoreLibrary().getNilObject(), false);
+        }
+
+    }
 }

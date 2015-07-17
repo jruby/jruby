@@ -616,18 +616,18 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
-        public Object sliceIntegerRange(VirtualFrame frame, RubyBasicObject string, RubyRange.IntegerFixnumRange range, Object length) {
+        public Object sliceIntegerRange(VirtualFrame frame, RubyBasicObject string, RubyIntegerFixnumRange range, Object length) {
             return sliceRange(frame, string, range.getBegin(), range.getEnd(), range.doesExcludeEnd());
         }
 
         @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
-        public Object sliceLongRange(VirtualFrame frame, RubyBasicObject string, RubyRange.LongFixnumRange range, Object length) {
+        public Object sliceLongRange(VirtualFrame frame, RubyBasicObject string, RubyLongFixnumRange range, Object length) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values should be properly lowered, only if possible.
             return sliceRange(frame, string, (int) range.getBegin(), (int) range.getEnd(), range.doesExcludeEnd());
         }
 
         @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
-        public Object sliceObjectRange(VirtualFrame frame, RubyBasicObject string, RubyRange.ObjectRange range, Object length) {
+        public Object sliceObjectRange(VirtualFrame frame, RubyBasicObject string, RubyObjectRange range, Object length) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values may return Fixnums beyond int boundaries and we should handle that -- Bignums are always errors.
             final int coercedBegin = getToIntNode().doInt(frame, range.getBegin());
             final int coercedEnd = getToIntNode().doInt(frame, range.getEnd());

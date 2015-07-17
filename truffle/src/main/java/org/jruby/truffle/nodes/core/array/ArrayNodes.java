@@ -674,7 +674,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object slice(VirtualFrame frame, RubyBasicObject array, RubyRange.IntegerFixnumRange range, NotProvided len) {
+        public Object slice(VirtualFrame frame, RubyBasicObject array, RubyIntegerFixnumRange range, NotProvided len) {
             final int normalizedIndex = normalizeIndex(array, range.getBegin());
 
             if (normalizedIndex < 0 || normalizedIndex > getSize(array)) {
@@ -958,7 +958,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "!isRubyArray(other)")
-        public Object setRange(VirtualFrame frame, RubyBasicObject array, RubyRange.IntegerFixnumRange range, Object other, NotProvided unused) {
+        public Object setRange(VirtualFrame frame, RubyBasicObject array, RubyIntegerFixnumRange range, Object other, NotProvided unused) {
             final int normalizedStart = normalizeIndex(array, range.getBegin());
             int normalizedEnd = range.doesExcludeEnd() ? normalizeIndex(array, range.getEnd()) - 1 : normalizeIndex(array, range.getEnd());
             if (normalizedEnd < 0) {
@@ -973,7 +973,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = {"isRubyArray(other)", "!isIntArray(array) || !isIntArray(other)"})
-        public Object setRangeArray(VirtualFrame frame, RubyBasicObject array, RubyRange.IntegerFixnumRange range, RubyBasicObject other, NotProvided unused) {
+        public Object setRangeArray(VirtualFrame frame, RubyBasicObject array, RubyIntegerFixnumRange range, RubyBasicObject other, NotProvided unused) {
             final int normalizedStart = normalizeIndex(array, range.getBegin());
             if (normalizedStart < 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -990,7 +990,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = {"isIntArray(array)", "isRubyArray(other)", "isIntArray(other)"})
-        public Object setIntegerFixnumRange(VirtualFrame frame, RubyBasicObject array, RubyRange.IntegerFixnumRange range, RubyBasicObject other, NotProvided unused) {
+        public Object setIntegerFixnumRange(VirtualFrame frame, RubyBasicObject array, RubyIntegerFixnumRange range, RubyBasicObject other, NotProvided unused) {
             if (range.doesExcludeEnd()) {
                 CompilerDirectives.transferToInterpreter();
                 return setRangeArray(frame, array, range, other, unused);

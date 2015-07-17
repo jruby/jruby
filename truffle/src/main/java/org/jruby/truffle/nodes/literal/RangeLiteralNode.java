@@ -22,7 +22,9 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
-import org.jruby.truffle.runtime.core.RubyRange;
+import org.jruby.truffle.runtime.core.RubyIntegerFixnumRange;
+import org.jruby.truffle.runtime.core.RubyLongFixnumRange;
+import org.jruby.truffle.runtime.core.RubyObjectRange;
 
 @NodeChildren({@NodeChild("begin"), @NodeChild("end")})
 public abstract class RangeLiteralNode extends RubyNode {
@@ -37,18 +39,18 @@ public abstract class RangeLiteralNode extends RubyNode {
     }
 
     @Specialization
-    public RubyRange.IntegerFixnumRange intRange(int begin, int end) {
-        return new RubyRange.IntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+    public RubyIntegerFixnumRange intRange(int begin, int end) {
+        return new RubyIntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
     }
 
     @Specialization(guards = { "fitsIntoInteger(begin)", "fitsIntoInteger(end)" })
-    public RubyRange.IntegerFixnumRange longFittingIntRange(long begin, long end) {
-        return new RubyRange.IntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), (int) begin, (int) end, excludeEnd);
+    public RubyIntegerFixnumRange longFittingIntRange(long begin, long end) {
+        return new RubyIntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), (int) begin, (int) end, excludeEnd);
     }
 
     @Specialization(guards = "!fitsIntoInteger(begin) || !fitsIntoInteger(end)")
-    public RubyRange.LongFixnumRange longRange(long begin, long end) {
-        return new RubyRange.LongFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+    public RubyLongFixnumRange longRange(long begin, long end) {
+        return new RubyLongFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
     }
 
     @Specialization(guards = { "!isIntOrLong(begin) || !isIntOrLong(end)" })
@@ -69,7 +71,7 @@ public abstract class RangeLiteralNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("bad value for range", this));
         }
 
-        return new RubyRange.ObjectRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+        return new RubyObjectRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
     }
 
     protected boolean fitsIntoInteger(long value) {

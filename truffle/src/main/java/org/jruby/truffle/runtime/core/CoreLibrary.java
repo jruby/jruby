@@ -313,7 +313,7 @@ public class CoreLibrary {
         processModule = defineModule("Process");
         RubyClass queueClass = defineClass("Queue", new QueueNodes.QueueAllocator());
         defineClass(queueClass, "SizedQueue", new SizedQueueNodes.SizedQueueAllocator());
-        rangeClass = defineClass("Range", new RubyRange.RangeAllocator());
+        rangeClass = defineClass("Range", new RangeNodes.RangeAllocator());
         regexpClass = defineClass("Regexp", new RegexpNodes.RegexpAllocator());
         stringClass = defineClass("String", new StringNodes.StringAllocator());
         symbolClass = defineClass("Symbol", NO_ALLOCATOR);
@@ -1127,7 +1127,7 @@ public class CoreLibrary {
         return rangeError(String.format("%s %s out of range of %s", type, value, range), currentNode);
     }
 
-    public RubyBasicObject rangeError(RubyRange.IntegerFixnumRange range, Node currentNode) {
+    public RubyBasicObject rangeError(RubyIntegerFixnumRange range, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return rangeError(String.format("%d..%s%d out of range",
                 range.getBegin(),

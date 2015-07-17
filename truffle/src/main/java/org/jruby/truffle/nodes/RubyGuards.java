@@ -54,11 +54,19 @@ public abstract class RubyGuards {
     }
 
     public static boolean isIntegerFixnumRange(Object value) {
-        return value instanceof RubyRange.IntegerFixnumRange;
+        return value instanceof RubyIntegerFixnumRange;
+    }
+
+    public static boolean isLongFixnumRange(Object value) {
+        return value instanceof RubyLongFixnumRange;
+    }
+
+    public static boolean isObjectRange(Object value) {
+        return value instanceof RubyObjectRange;
     }
 
     public static boolean isRubyRange(Object value) {
-        return value instanceof RubyRange;
+        return isIntegerFixnumRange(value) || isLongFixnumRange(value) || isObjectRange(value);
     }
 
     public static boolean isRubyArray(Object value) {

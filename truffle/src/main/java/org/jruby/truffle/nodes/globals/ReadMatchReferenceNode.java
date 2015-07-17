@@ -17,7 +17,6 @@ import org.jruby.truffle.nodes.core.MatchDataNodes;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyMatchData;
 
 public class ReadMatchReferenceNode extends RubyNode {
 

@@ -77,7 +77,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
@@ -284,8 +283,8 @@ public abstract class StringPrimitiveNodes {
             return stringByteSubstring(string, (int) index, length);
         }
 
-        @Specialization
-        public Object stringByteSubstring(RubyBasicObject string, RubyRange range, NotProvided length) {
+        @Specialization(guards = "isRubyRange(range)")
+        public Object stringByteSubstring(RubyBasicObject string, RubyBasicObject range, NotProvided length) {
             return null;
         }
 

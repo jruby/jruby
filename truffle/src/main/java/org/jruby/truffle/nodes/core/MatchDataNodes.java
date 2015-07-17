@@ -32,8 +32,8 @@ import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyIntegerFixnumRange;
 import org.jruby.truffle.runtime.core.RubyMatchData;
-import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
@@ -344,7 +344,7 @@ public abstract class MatchDataNodes {
         }
 
         @Specialization(guards = {"!isRubySymbol(range)", "!isRubyString(range)"})
-        public Object getIndex(VirtualFrame frame, RubyBasicObject matchData, RubyRange.IntegerFixnumRange range, NotProvided len) {
+        public Object getIndex(VirtualFrame frame, RubyBasicObject matchData, RubyIntegerFixnumRange range, NotProvided len) {
             final Object[] values = getValues(matchData);
             final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, range.getBegin());
             final int end = ArrayNodes.normalizeIndex(values.length, range.getEnd());
