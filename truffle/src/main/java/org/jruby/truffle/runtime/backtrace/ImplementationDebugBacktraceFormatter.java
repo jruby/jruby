@@ -11,11 +11,12 @@ package org.jruby.truffle.runtime.backtrace;
 
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
-import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;
@@ -24,7 +25,9 @@ import java.util.List;
 public class ImplementationDebugBacktraceFormatter implements BacktraceFormatter {
 
     @Override
-    public String[] format(RubyContext context, RubyException exception, Backtrace backtrace) {
+    public String[] format(RubyContext context, RubyBasicObject exception, Backtrace backtrace) {
+        assert RubyGuards.isRubyException(exception);
+
         try {
             final List<Activation> activations = backtrace.getActivations();
 

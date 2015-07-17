@@ -51,7 +51,7 @@ import java.util.Arrays;
 public class RubyMatchData extends RubyBasicObject {
 
     private final RubyBasicObject source;
-    private final RubyRegexp regexp;
+    private final RubyBasicObject regexp;
     private final Region region;
     private final Object[] values;
     private final RubyBasicObject pre;
@@ -66,7 +66,7 @@ public class RubyMatchData extends RubyBasicObject {
         super(rubyClass);
         assert RubyGuards.isRubyRegexp(regexp);
         this.source = source;
-        this.regexp = (RubyRegexp) regexp;
+        this.regexp = regexp;
         this.region = region;
         this.values = values;
         this.pre = pre;

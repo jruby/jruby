@@ -46,7 +46,9 @@ import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.CoreLibrary;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.SymbolTable;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 import org.jruby.truffle.runtime.rubinius.RubiniusConfiguration;
@@ -501,7 +503,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return truffleString;
     }
 
-    public RubyException toTruffle(org.jruby.RubyException jrubyException, RubyNode currentNode) {
+    public RubyBasicObject toTruffle(org.jruby.RubyException jrubyException, RubyNode currentNode) {
         switch (jrubyException.getMetaClass().getName()) {
             case "ArgumentError":
                 return getCoreLibrary().argumentError(jrubyException.getMessage().toString(), currentNode);

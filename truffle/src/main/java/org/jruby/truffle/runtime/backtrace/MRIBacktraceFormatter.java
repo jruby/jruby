@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
-import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +27,9 @@ import java.util.List;
 public class MRIBacktraceFormatter implements BacktraceFormatter {
 
     @Override
-    public String[] format(RubyContext context, RubyException exception, Backtrace backtrace) {
+    public String[] format(RubyContext context, RubyBasicObject exception, Backtrace backtrace) {
+        assert RubyGuards.isRubyException(exception);
+
         try {
             final List<Activation> activations = backtrace.getActivations();
 
@@ -51,7 +53,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         }
     }
 
-    private static String formatInLine(RubyContext context, List<Activation> activations, RubyException exception) {
+    private static String formatInLine(RubyContext context, List<Activation> activations, RubyBasicObject exception) {
         final StringBuilder builder = new StringBuilder();
 
         final Activation activation = activations.get(0);

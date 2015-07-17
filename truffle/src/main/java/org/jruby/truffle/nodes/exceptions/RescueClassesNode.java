@@ -15,8 +15,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyException;
 
 /**
  * Rescues any of a set of classes.
@@ -31,7 +31,7 @@ public class RescueClassesNode extends RescueNode {
     }
 
     @Override
-    public boolean canHandle(VirtualFrame frame, RubyException exception) {
+    public boolean canHandle(VirtualFrame frame, RubyBasicObject exception) {
         CompilerDirectives.transferToInterpreter();
 
         final RubyClass exceptionRubyClass = exception.getLogicalClass();

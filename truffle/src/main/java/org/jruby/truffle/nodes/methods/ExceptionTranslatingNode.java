@@ -26,7 +26,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.util.cli.Options;
 
 public class ExceptionTranslatingNode extends RubyNode {
@@ -86,7 +85,7 @@ public class ExceptionTranslatingNode extends RubyNode {
         }
     }
 
-    private RubyException translate(ArithmeticException exception) {
+    private RubyBasicObject translate(ArithmeticException exception) {
         if (PRINT_JAVA_EXCEPTIONS) {
             exception.printStackTrace();
         }
@@ -94,7 +93,7 @@ public class ExceptionTranslatingNode extends RubyNode {
         return getContext().getCoreLibrary().zeroDivisionError(this);
     }
 
-    private RubyException translate(UnsupportedSpecializationException exception) {
+    private RubyBasicObject translate(UnsupportedSpecializationException exception) {
         if (PRINT_JAVA_EXCEPTIONS) {
             exception.printStackTrace();
         }
@@ -159,7 +158,7 @@ public class ExceptionTranslatingNode extends RubyNode {
         }
     }
 
-    public RubyException translate(Throwable throwable) {
+    public RubyBasicObject translate(Throwable throwable) {
         if (PRINT_JAVA_EXCEPTIONS || PRINT_UNCAUGHT_JAVA_EXCEPTIONS) {
             throwable.printStackTrace();
         }

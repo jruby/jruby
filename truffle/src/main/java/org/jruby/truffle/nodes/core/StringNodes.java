@@ -433,7 +433,7 @@ public abstract class StringNodes {
 
                     return compare(a, coerced);
                 } catch (RaiseException e) {
-                    if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getTypeErrorClass()) {
+                    if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == getContext().getCoreLibrary().getTypeErrorClass()) {
                         return nil();
                     } else {
                         throw e;
@@ -576,7 +576,7 @@ public abstract class StringNodes {
             return string;
         }
 
-        private RubyException charRangeException(Number value) {
+        private RubyBasicObject charRangeException(Number value) {
             return getContext().getCoreLibrary().rangeError(
                     String.format("%d out of char range", value), this);
         }

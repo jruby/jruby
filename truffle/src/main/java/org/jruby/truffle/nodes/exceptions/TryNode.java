@@ -89,7 +89,7 @@ public class TryNode extends RubyNode {
         RubyBasicObject.setInstanceVariable(threadLocals, "$!", exception.getRubyException());
 
         for (RescueNode rescue : rescueParts) {
-            if (rescue.canHandle(frame, exception.getRubyException())) {
+            if (rescue.canHandle(frame, (RubyBasicObject) exception.getRubyException())) {
                 return rescue.execute(frame);
             }
         }

@@ -18,7 +18,6 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyException;
 
 /**
  * Rescue any of several classes, that we get from an expression that evaluates to an array of
@@ -35,7 +34,7 @@ public class RescueSplatNode extends RescueNode {
     }
 
     @Override
-    public boolean canHandle(VirtualFrame frame, RubyException exception) {
+    public boolean canHandle(VirtualFrame frame, RubyBasicObject exception) {
         CompilerDirectives.transferToInterpreter();
 
         final RubyBasicObject handlingClasses = (RubyBasicObject) handlingClassesArray.execute(frame);

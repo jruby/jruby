@@ -16,7 +16,7 @@ import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyThread;
 
 import java.util.Collections;
@@ -158,9 +158,9 @@ public class ThreadManager {
                 });
                 break; // Successfully executed the safepoint and sent the exceptions.
             } catch (RaiseException e) {
-                final RubyException rubyException = e.getRubyException();
+                final Object rubyException = e.getRubyException();
 
-                for (String line : Backtrace.DISPLAY_FORMATTER.format(e.getRubyException().getContext(), rubyException, ExceptionNodes.getBacktrace(rubyException))) {
+                for (String line : Backtrace.DISPLAY_FORMATTER.format(((RubyBasicObject) e.getRubyException()).getContext(), (RubyBasicObject) rubyException, ExceptionNodes.getBacktrace((RubyBasicObject) rubyException))) {
                     System.err.println(line);
                 }
             }

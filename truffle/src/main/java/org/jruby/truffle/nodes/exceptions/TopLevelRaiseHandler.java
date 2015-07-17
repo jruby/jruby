@@ -17,7 +17,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
-import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public class TopLevelRaiseHandler extends RubyNode {
 
@@ -33,9 +33,9 @@ public class TopLevelRaiseHandler extends RubyNode {
         try {
             return body.execute(frame);
         } catch (RaiseException e) {
-            final RubyException rubyException = e.getRubyException();
+            final Object rubyException = e.getRubyException();
 
-            for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), rubyException, ExceptionNodes.getBacktrace(rubyException))) {
+            for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), (RubyBasicObject) rubyException, ExceptionNodes.getBacktrace((RubyBasicObject) rubyException))) {
                 System.err.println(line);
             }
 

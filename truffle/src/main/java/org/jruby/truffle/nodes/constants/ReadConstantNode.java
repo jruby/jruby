@@ -19,6 +19,7 @@ import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public class ReadConstantNode extends RubyNode {
 
@@ -60,7 +61,7 @@ public class ReadConstantNode extends RubyNode {
              *
              * We should maybe try to see if receiver.isDefined() but we also need its value if it is,
              * and we do not want to execute receiver twice. */
-            if (e.getRubyException().getLogicalClass() == context.getCoreLibrary().getNameErrorClass()) {
+            if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == context.getCoreLibrary().getNameErrorClass()) {
                 return nil();
             }
             throw e;
@@ -70,10 +71,10 @@ public class ReadConstantNode extends RubyNode {
         try {
             constant = getConstantNode.getLookupConstantNode().executeLookupConstant(frame, receiverObject, name);
         } catch (RaiseException e) {
-            if (e.getRubyException().getLogicalClass() == context.getCoreLibrary().getTypeErrorClass()) {
+            if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == context.getCoreLibrary().getTypeErrorClass()) {
                 // module is not a class/module
                 return nil();
-            } else if (e.getRubyException().getLogicalClass() == context.getCoreLibrary().getNameErrorClass()) {
+            } else if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == context.getCoreLibrary().getNameErrorClass()) {
                 // private constant
                 return nil();
             }

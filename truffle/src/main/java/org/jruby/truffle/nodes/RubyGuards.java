@@ -165,7 +165,7 @@ public abstract class RubyGuards {
         return time instanceof RubyTime;
     }
 
-    public static boolean isRubyException(RubyBasicObject object) {
+    public static boolean isRubyException(Object object) {
         return object instanceof RubyException;
     }
 

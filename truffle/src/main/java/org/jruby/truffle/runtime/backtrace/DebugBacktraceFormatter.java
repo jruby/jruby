@@ -12,13 +12,14 @@ package org.jruby.truffle.runtime.backtrace;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
-import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.cli.Options;
 
@@ -30,7 +31,9 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
     private static final int BACKTRACE_MAX_VALUE_LENGTH = Options.TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH.load();
 
     @Override
-    public String[] format(RubyContext context, RubyException exception, Backtrace backtrace) {
+    public String[] format(RubyContext context, RubyBasicObject exception, Backtrace backtrace) {
+        assert RubyGuards.isRubyException(exception);
+
         try {
             final List<Activation> activations = backtrace.getActivations();
 

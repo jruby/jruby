@@ -50,7 +50,7 @@ public class RubyThread extends RubyBasicObject {
     private volatile Status status = Status.RUN;
     private volatile AtomicBoolean wakeUp = new AtomicBoolean(false);
 
-    private volatile RubyException exception;
+    private volatile Object exception;
     private volatile Object value;
 
     private final RubyBasicObject threadLocals;
@@ -217,7 +217,7 @@ public class RubyThread extends RubyBasicObject {
         return value;
     }
 
-    public RubyException getException() {
+    public Object getException() {
         return exception;
     }
 

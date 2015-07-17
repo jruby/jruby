@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
@@ -23,7 +24,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.core.RubyThread.InterruptMode;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
@@ -233,12 +233,12 @@ public abstract class ThreadNodes {
             final Object exception = exceptionClass.allocate(this);
             initialize.call(frame, exception, "initialize", null, message);
 
-            if (!(exception instanceof RubyException)) {
+            if (!RubyGuards.isRubyException(exception)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("exception class/object expected", this));
             }
 
-            final RaiseException exceptionWrapper = new RaiseException((RubyException) exception);
+            final RaiseException exceptionWrapper = new RaiseException(exception);
 
             getContext().getSafepointManager().pauseThreadAndExecuteLater(thread.getCurrentFiberJavaThread(), this, new SafepointAction() {
                 @Override

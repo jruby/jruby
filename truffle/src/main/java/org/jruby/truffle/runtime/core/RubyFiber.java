@@ -65,13 +65,13 @@ public class RubyFiber extends RubyBasicObject {
 
     private static class FiberExceptionMessage implements FiberMessage {
 
-        private final RubyException exception;
+        private final RubyBasicObject exception;
 
-        public FiberExceptionMessage(RubyException exception) {
+        public FiberExceptionMessage(RubyBasicObject exception) {
             this.exception = exception;
         }
 
-        public RubyException getException() {
+        public RubyBasicObject getException() {
             return exception;
         }
 
@@ -141,7 +141,7 @@ public class RubyFiber extends RubyBasicObject {
                 } catch (ReturnException e) {
                     sendMessageTo(lastResumedByFiber, new FiberExceptionMessage(getContext().getCoreLibrary().unexpectedReturn(null)));
                 } catch (RaiseException e) {
-                    sendMessageTo(lastResumedByFiber, new FiberExceptionMessage(e.getRubyException()));
+                    sendMessageTo(lastResumedByFiber, new FiberExceptionMessage((RubyBasicObject) e.getRubyException()));
                 }
             }
         });

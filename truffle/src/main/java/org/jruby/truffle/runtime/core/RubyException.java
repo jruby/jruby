@@ -16,6 +16,7 @@ import org.jruby.truffle.runtime.backtrace.Backtrace;
 /**
  * Represents the Ruby {@code Exception} class.
  */
+@Deprecated
 public class RubyException extends RubyBasicObject {
 
     public Object message;
