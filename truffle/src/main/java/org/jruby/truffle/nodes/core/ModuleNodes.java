@@ -1179,12 +1179,12 @@ public abstract class ModuleNodes {
             if (from == getContext().getCoreLibrary().getBasicObjectClass()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("can't copy the root class", this));
-            } else if (from.isSingleton()) {
+            } else if (from.model.isSingleton()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("can't copy singleton class", this));
             }
 
-            self.initCopy(from);
+            self.model.initCopy(from);
             return nil();
         }
 

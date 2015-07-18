@@ -425,8 +425,8 @@ public abstract class KernelNodes {
             final RubyBasicObject newObject = copyNode.executeCopy(frame, self);
 
             // Copy the singleton class if any.
-            if (self.getMetaClass().isSingleton()) {
-                singletonClassNode.executeSingletonClass(frame, newObject).initCopy(self.getMetaClass());
+            if (self.getMetaClass().model.isSingleton()) {
+                singletonClassNode.executeSingletonClass(frame, newObject).model.initCopy(self.getMetaClass());
             }
 
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
@@ -1727,7 +1727,7 @@ public abstract class KernelNodes {
         public RubyBasicObject singletonMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
             RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
 
-            if (!metaClass.isSingleton()) {
+            if (!metaClass.model.isSingleton()) {
                 return createEmptyArray();
             }
 

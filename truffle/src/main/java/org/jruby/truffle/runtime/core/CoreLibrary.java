@@ -209,7 +209,7 @@ public class CoreLibrary {
         moduleClass = ClassNodes.createBootClass(classClass, objectClass, "Module", new ModuleNodes.ModuleAllocator());
 
         // Close the cycles
-        classClass.unsafeSetSuperclass(moduleClass);
+        classClass.model.unsafeSetSuperclass(moduleClass);
 
         classClass.model.getAdoptedByLexicalParent(objectClass, "Class", node);
         basicObjectClass.model.getAdoptedByLexicalParent(objectClass, "BasicObject", node);

@@ -199,7 +199,7 @@ public abstract class ModuleOperations {
 
         for (RubyModule ancestor : module.model.ancestors()) {
             // When we find a class which is not a singleton class, we are done
-            if (ancestor instanceof RubyClass && !((RubyClass) ancestor).isSingleton()) {
+            if (ancestor instanceof RubyClass && !((RubyClass) ancestor).model.isSingleton()) {
                 break;
             }
 
@@ -225,7 +225,7 @@ public abstract class ModuleOperations {
             }
 
             // When we find a class which is not a singleton class, we are done
-            if (ancestor instanceof RubyClass && !((RubyClass) ancestor).isSingleton()) {
+            if (ancestor instanceof RubyClass && !((RubyClass) ancestor).model.isSingleton()) {
                 break;
             }
         }
@@ -347,8 +347,8 @@ public abstract class ModuleOperations {
         // If singleton class, check attached module.
         if (module instanceof RubyClass) {
             RubyClass klass = (RubyClass) module;
-            if (klass.isSingleton() && klass.getAttached() != null) {
-                module = klass.getAttached();
+            if (klass.model.isSingleton() && klass.model.getAttached() != null) {
+                module = klass.model.getAttached();
 
                 result = action.apply(module);
                 if (result != null) {

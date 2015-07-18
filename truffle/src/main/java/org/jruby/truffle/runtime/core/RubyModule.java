@@ -9,14 +9,11 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.ModuleChain;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
-
-import java.util.*;
 
 /**
  * Represents the Ruby {@code Module} class.

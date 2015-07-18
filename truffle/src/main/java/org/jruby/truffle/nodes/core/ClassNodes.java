@@ -47,7 +47,7 @@ public abstract class ClassNodes {
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
         // Allocator is null here, we cannot create instances of singleton classes.
-        return new RubyClass(context, superclass.getLogicalClass(), null, superclass, name, true, attached, null).ensureSingletonConsistency();
+        return new RubyClass(context, superclass.getLogicalClass(), null, superclass, name, true, attached, null).model.ensureSingletonConsistency();
     }
 
     @CoreMethod(names = "allocate")
@@ -61,7 +61,7 @@ public abstract class ClassNodes {
 
         @Specialization
         public RubyBasicObject allocate(RubyClass rubyClass) {
-            if (rubyClass.isSingleton()) {
+            if (rubyClass.model.isSingleton()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
             }
@@ -150,7 +150,7 @@ public abstract class ClassNodes {
         }
 
         private RubyClass initializeGeneralWithoutBlock(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass) {
-            rubyClass.initialize(superclass);
+            rubyClass.model.initialize(superclass);
             triggerInheritedHook(frame, rubyClass, superclass);
 
             return rubyClass;
@@ -159,7 +159,7 @@ public abstract class ClassNodes {
         private RubyClass initializeGeneralWithBlock(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, RubyBasicObject block) {
             assert RubyGuards.isRubyProc(block);
 
-            rubyClass.initialize(superclass);
+            rubyClass.model.initialize(superclass);
             triggerInheritedHook(frame, rubyClass, superclass);
             moduleInitialize(frame, rubyClass, block);
 
@@ -191,7 +191,7 @@ public abstract class ClassNodes {
 
         @Specialization
         public Object getSuperClass(RubyClass rubyClass) {
-            RubyClass superclass = rubyClass.getSuperClass();
+            RubyClass superclass = rubyClass.model.getSuperClass();
             if (superclass == null) {
                 return nil();
             } else {

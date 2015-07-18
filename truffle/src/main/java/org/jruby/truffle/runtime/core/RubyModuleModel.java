@@ -81,7 +81,7 @@ public class RubyModuleModel {
         if (this.name == null) {
             // Tricky, we need to compare with the Object class, but we only have a Class at hand.
             RubyClass classClass = getLogicalClass().getLogicalClass();
-            RubyClass objectClass = classClass.getSuperClass().getSuperClass();
+            RubyClass objectClass = classClass.model.getSuperClass().model.getSuperClass();
 
             if (lexicalParent == objectClass) {
                 this.name = name;
@@ -633,14 +633,14 @@ public class RubyModuleModel {
         assert isClass();
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
-        return createOneSingletonClass().ensureSingletonConsistency();
+        return createOneSingletonClass().model.ensureSingletonConsistency();
     }
 
     public RubyClass createOneSingletonClass() {
         assert isClass();
         CompilerAsserts.neverPartOfCompilation();
 
-        if (rubyModuleObject.getMetaClass().isSingleton()) {
+        if (rubyModuleObject.getMetaClass().model.isSingleton()) {
             return rubyModuleObject.getMetaClass();
         }
 
@@ -648,7 +648,7 @@ public class RubyModuleModel {
         if (getSuperClass() == null) {
             singletonSuperclass = getLogicalClass();
         } else {
-            singletonSuperclass = getSuperClass().createOneSingletonClass();
+            singletonSuperclass = getSuperClass().model.createOneSingletonClass();
         }
 
         String name = String.format("#<Class:%s>", getName());

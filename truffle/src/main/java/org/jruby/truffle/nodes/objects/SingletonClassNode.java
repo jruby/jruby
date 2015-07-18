@@ -82,7 +82,7 @@ public abstract class SingletonClassNode extends RubyNode {
     protected RubyClass singletonClass(RubyClass rubyClass) {
         CompilerAsserts.neverPartOfCompilation();
 
-        return rubyClass.getSingletonClass();
+        return rubyClass.model.getSingletonClass();
     }
 
     @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)", "!isRubyClass(object)" })
@@ -94,10 +94,10 @@ public abstract class SingletonClassNode extends RubyNode {
         CompilerAsserts.neverPartOfCompilation();
 
         if (object instanceof RubyClass) { // For the direct caller
-            return ((RubyClass) object).getSingletonClass();
+            return ((RubyClass) object).model.getSingletonClass();
         }
 
-        if (object.getMetaClass().isSingleton()) {
+        if (object.getMetaClass().model.isSingleton()) {
             return object.getMetaClass();
         }
 

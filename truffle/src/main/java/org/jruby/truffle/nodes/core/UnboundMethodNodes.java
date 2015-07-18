@@ -131,7 +131,7 @@ public abstract class UnboundMethodNodes {
             if (!canBindMethodToModuleNode.executeCanBindMethodToModule(frame, getMethod(unboundMethod), objectMetaClass)) {
                 CompilerDirectives.transferToInterpreter();
                 final RubyModule declaringModule = getMethod(unboundMethod).getDeclaringModule();
-                if (declaringModule instanceof RubyClass && ((RubyClass) declaringModule).isSingleton()) {
+                if (declaringModule instanceof RubyClass && ((RubyClass) declaringModule).model.isSingleton()) {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
                             "singleton method called for a different object", this));
                 } else {
