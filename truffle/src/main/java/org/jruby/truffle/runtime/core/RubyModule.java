@@ -26,8 +26,12 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public final RubyModuleModel model;
 
     public RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, Node currentNode) {
+        this(context, selfClass, lexicalParent, name, currentNode, false, null);
+    }
+
+    public RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, Node currentNode, boolean isSingleton, RubyModule attached) {
         super(context, selfClass);
-        model = new RubyModuleModel(this, context, lexicalParent, name, new CyclicAssumption(name + " is unmodified"));
+        model = new RubyModuleModel(this, context, lexicalParent, name, new CyclicAssumption(name + " is unmodified"), isSingleton, attached);
 
         if (lexicalParent == null) { // bootstrap or anonymous module
             model.name = model.givenBaseName;

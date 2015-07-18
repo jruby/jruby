@@ -25,9 +25,6 @@ public class RubyClass extends RubyModule {
     @CompilationFinal
     private Allocator allocator;
 
-    private final boolean isSingleton;
-    private final RubyModule attached;
-
     public RubyClass(RubyContext context, RubyModule lexicalParent, RubyClass superclass, String name, Allocator allocator) {
         this(context, superclass.getLogicalClass(), lexicalParent, superclass, name, false, null, allocator);
         // Always create a class singleton class for normal classes for consistency.
@@ -35,13 +32,11 @@ public class RubyClass extends RubyModule {
     }
 
     public RubyClass(RubyContext context, RubyClass classClass, RubyModule lexicalParent, RubyClass superclass, String name, boolean isSingleton, RubyModule attached, Allocator allocator) {
-        super(context, classClass, lexicalParent, name, null);
+        super(context, classClass, lexicalParent, name, null, isSingleton, attached);
 
         assert isSingleton || attached == null;
 
         this.unsafeSetAllocator(allocator);
-        this.isSingleton = isSingleton;
-        this.attached = attached;
 
         if (superclass != null) {
             unsafeSetSuperclass(superclass);
@@ -110,11 +105,11 @@ public class RubyClass extends RubyModule {
     }
 
     public boolean isSingleton() {
-        return isSingleton;
+        return model.isSingleton;
     }
 
     public RubyModule getAttached() {
-        return attached;
+        return model.attached;
     }
 
     public RubyClass getSuperClass() {

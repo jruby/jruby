@@ -57,15 +57,21 @@ public class RubyModuleModel {
      */
     private final Set<RubyModule> lexicalDependents = Collections.newSetFromMap(new WeakHashMap<RubyModule, Boolean>());
 
-    public RubyModuleModel(RubyModule rubyModuleObject, RubyContext context, RubyModule lexicalParent, String givenBaseName, CyclicAssumption unmodifiedAssumption) {
+    // Only used for classes
+
+    public final boolean isSingleton;
+    public final RubyModule attached;
+
+    public RubyModuleModel(RubyModule rubyModuleObject, RubyContext context, RubyModule lexicalParent, String givenBaseName, CyclicAssumption unmodifiedAssumption, boolean isSingleton, RubyModule attached) {
         this.rubyModuleObject = rubyModuleObject;
         this.context = context;
         this.lexicalParent = lexicalParent;
         this.givenBaseName = givenBaseName;
         this.unmodifiedAssumption = unmodifiedAssumption;
         start = new PrependMarker(rubyModuleObject);
+        this.isSingleton = isSingleton;
+        this.attached = attached;
     }
-
 
     public void getAdoptedByLexicalParent(RubyModule lexicalParent, String name, Node currentNode) {
         lexicalParent.setConstantInternal(currentNode, name, rubyModuleObject, false);
