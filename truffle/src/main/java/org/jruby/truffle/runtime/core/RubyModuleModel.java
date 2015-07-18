@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class RubyModuleModel {
+public class RubyModuleModel implements ModuleChain {
 
     private final RubyModule rubyModuleObject;
 
@@ -69,7 +69,7 @@ public class RubyModuleModel {
         this.lexicalParent = lexicalParent;
         this.givenBaseName = givenBaseName;
         this.unmodifiedAssumption = unmodifiedAssumption;
-        start = new PrependMarker(rubyModuleObject);
+        start = new PrependMarker(this);
         this.isSingleton = isSingleton;
         this.attached = attached;
     }
@@ -158,7 +158,7 @@ public class RubyModuleModel {
         }
 
         // We need to include the module ancestors in reverse order for a given inclusionPoint
-        ModuleChain inclusionPoint = rubyModuleObject;
+        ModuleChain inclusionPoint = this;
         Stack<RubyModule> modulesToInclude = new Stack<>();
         for (RubyModule ancestor : module.model.ancestors()) {
             if (ModuleOperations.includesModule(rubyModuleObject, ancestor)) {
@@ -215,7 +215,7 @@ public class RubyModuleModel {
 
         ModuleChain mod = module.model.start;
         ModuleChain cur = start;
-        while (mod != null && !(mod instanceof RubyClass)) {
+        while (mod != null && !(mod instanceof RubyModuleModel && ((RubyModuleModel) mod).isClass())) {
             if (!(mod instanceof PrependMarker)) {
                 if (!ModuleOperations.includesModule(rubyModuleObject, mod.getActualModule())) {
                     cur.insertAfter(mod.getActualModule());

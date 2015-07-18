@@ -11,14 +11,13 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
-import org.jruby.truffle.runtime.ModuleChain;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 /**
  * Represents the Ruby {@code Module} class.
  */
-public class RubyModule extends RubyBasicObject implements ModuleChain {
+public class RubyModule extends RubyBasicObject {
 
     public final RubyModuleModel model;
 
@@ -38,11 +37,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     @Override
-    public void insertAfter(RubyModule module) {
-        model.insertAfter(module);
-    }
-
-    @Override
     public RubyContext getContext() {
         return model.getContext();
     }
@@ -55,16 +49,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         model.visitObjectGraphChildren(visitor);
-    }
-
-    @Override
-    public ModuleChain getParentModule() {
-        return model.getParentModule();
-    }
-
-    @Override
-    public RubyModule getActualModule() {
-        return model.getActualModule();
     }
 
 }

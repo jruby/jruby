@@ -17,6 +17,7 @@ public class PrependMarker implements ModuleChain {
     private ModuleChain parentModule;
 
     public PrependMarker(ModuleChain parentModule) {
+        assert parentModule != null;
         this.parentModule = parentModule;
     }
 
