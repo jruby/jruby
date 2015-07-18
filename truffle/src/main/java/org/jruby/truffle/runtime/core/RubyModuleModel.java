@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
@@ -128,7 +129,11 @@ public class RubyModuleModel {
      * If this instance is a module and not a class.
      */
     public boolean isOnlyAModule() {
-        return !(rubyModuleObject instanceof RubyClass);
+        return !isClass();
+    }
+
+    public boolean isClass() {
+        return rubyModuleObject instanceof RubyClass;
     }
 
     // TODO (eregon, 12 May 2015): ideally all callers would be nodes and check themselves.
@@ -587,6 +592,93 @@ public class RubyModuleModel {
 
     public RubyClass getLogicalClass() {
         return rubyModuleObject.getLogicalClass();
+    }
+
+    public void initialize(RubyClass superclass) {
+        assert isClass();
+        unsafeSetSuperclass(superclass);
+        ensureSingletonConsistency();
+        ((RubyClass) rubyModuleObject).unsafeSetAllocator(superclass.getAllocator());
+    }
+
+    /**
+     * This method supports initialization and solves boot-order problems and should not normally be
+     * used.
+     */
+    protected void unsafeSetSuperclass(RubyClass superClass) {
+        assert isClass();
+        assert parentModule == null;
+
+        parentModule = superClass.model.start;
+        superClass.addDependent(rubyModuleObject);
+
+        newVersion();
+    }
+
+    public void initCopy(RubyClass from) {
+        assert isClass();
+        initCopy((RubyModule) from);
+        ((RubyClass) rubyModuleObject).unsafeSetAllocator(((RubyClass) from).getAllocator());
+        // isSingleton is false as we cannot copy a singleton class.
+        // and therefore attached is null.
+    }
+
+    public RubyClass ensureSingletonConsistency() {
+        assert isClass();
+        createOneSingletonClass();
+        return (RubyClass) rubyModuleObject;
+    }
+
+    public RubyClass getSingletonClass() {
+        assert isClass();
+        // We also need to create the singleton class of a singleton class for proper lookup and consistency.
+        // See rb_singleton_class() documentation in MRI.
+        return createOneSingletonClass().ensureSingletonConsistency();
+    }
+
+    public RubyClass createOneSingletonClass() {
+        assert isClass();
+        CompilerAsserts.neverPartOfCompilation();
+
+        if (rubyModuleObject.getMetaClass().isSingleton()) {
+            return rubyModuleObject.getMetaClass();
+        }
+
+        final RubyClass singletonSuperclass;
+        if (getSuperClass() == null) {
+            singletonSuperclass = getLogicalClass();
+        } else {
+            singletonSuperclass = getSuperClass().createOneSingletonClass();
+        }
+
+        String name = String.format("#<Class:%s>", getName());
+        rubyModuleObject.setMetaClass(new RubyClass(getContext(), getLogicalClass(), null, singletonSuperclass, name, true, rubyModuleObject, null));
+
+        return rubyModuleObject.getMetaClass();
+    }
+
+
+    public boolean isSingleton() {
+        assert isClass();
+        return isSingleton;
+    }
+
+    public RubyModule getAttached() {
+        assert isClass();
+        return attached;
+    }
+
+    public RubyClass getSuperClass() {
+        assert isClass();
+        CompilerAsserts.neverPartOfCompilation();
+
+        for (RubyModule ancestor : parentAncestors()) {
+            if (ancestor instanceof RubyClass) {
+                return (RubyClass) ancestor;
+            }
+        }
+
+        return null;
     }
 
 }

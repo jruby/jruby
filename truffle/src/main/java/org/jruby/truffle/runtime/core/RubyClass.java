@@ -44,84 +44,44 @@ public class RubyClass extends RubyModule {
     }
 
     public void initialize(RubyClass superclass) {
-        unsafeSetSuperclass(superclass);
-        ensureSingletonConsistency();
-        unsafeSetAllocator(superclass.getAllocator());
+        model.initialize(superclass);
     }
 
-    /**
-     * This method supports initialization and solves boot-order problems and should not normally be
-     * used.
-     */
     protected void unsafeSetSuperclass(RubyClass superClass) {
-        assert model.parentModule == null;
-
-        model.parentModule = superClass.model.start;
-        superClass.addDependent(this);
-
-        newVersion();
+        model.unsafeSetSuperclass(superClass);
     }
 
     public void initCopy(RubyClass from) {
-        super.initCopy(from);
-        this.unsafeSetAllocator(((RubyClass) from).getAllocator());
-        // isSingleton is false as we cannot copy a singleton class.
-        // and therefore attached is null.
+        model.initCopy(from);
     }
 
     public RubyClass ensureSingletonConsistency() {
-        createOneSingletonClass();
-        return this;
+        return model.ensureSingletonConsistency();
     }
 
     public RubyClass getSingletonClass() {
-        // We also need to create the singleton class of a singleton class for proper lookup and consistency.
-        // See rb_singleton_class() documentation in MRI.
-        return createOneSingletonClass().ensureSingletonConsistency();
+        return model.getSingletonClass();
     }
 
-    private RubyClass createOneSingletonClass() {
-        CompilerAsserts.neverPartOfCompilation();
+    public RubyClass createOneSingletonClass() {
+        return model.createOneSingletonClass();
+    }
 
-        if (getMetaClass().isSingleton()) {
-            return getMetaClass();
-        }
 
-        final RubyClass singletonSuperclass;
-        if (getSuperClass() == null) {
-            singletonSuperclass = getLogicalClass();
-        } else {
-            singletonSuperclass = getSuperClass().createOneSingletonClass();
-        }
+    public boolean isSingleton() {
+        return model.isSingleton();
+    }
 
-        String name = String.format("#<Class:%s>", getName());
-        setMetaClass(new RubyClass(getContext(), getLogicalClass(), null, singletonSuperclass, name, true, this, null));
+    public RubyModule getAttached() {
+        return model.getAttached();
+    }
 
-        return getMetaClass();
+    public RubyClass getSuperClass() {
+        return model.getSuperClass();
     }
 
     public RubyBasicObject allocate(Node currentNode) {
         return getAllocator().allocate(getContext(), this, currentNode);
-    }
-
-    public boolean isSingleton() {
-        return model.isSingleton;
-    }
-
-    public RubyModule getAttached() {
-        return model.attached;
-    }
-
-    public RubyClass getSuperClass() {
-        CompilerAsserts.neverPartOfCompilation();
-
-        for (RubyModule ancestor : parentAncestors()) {
-            if (ancestor instanceof RubyClass) {
-                return (RubyClass) ancestor;
-            }
-        }
-
-        return null;
     }
 
     public Allocator getAllocator() {
