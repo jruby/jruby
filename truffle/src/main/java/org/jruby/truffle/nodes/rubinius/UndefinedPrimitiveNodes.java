@@ -31,7 +31,8 @@ public abstract class UndefinedPrimitiveNodes {
 
         @Specialization
         public Object undefined(Object args) {
-            throw new UnsupportedOperationException("Undefined Rubinius primitive.");
+            throw new UnsupportedOperationException(
+                    "Undefined Rubinius primitive: \"" + getSourceSection().toString().trim() + '"');
         }
 
     }
