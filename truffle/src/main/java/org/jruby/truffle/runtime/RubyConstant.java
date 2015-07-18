@@ -63,7 +63,7 @@ public class RubyConstant {
 
         // Look in ancestors
         if (module instanceof RubyClass) {
-            for (RubyModule included : module.parentAncestors()) {
+            for (RubyModule included : module.model.parentAncestors()) {
                 if (included == declaringModule) {
                     return true;
                 }

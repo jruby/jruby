@@ -40,7 +40,7 @@ public class UndefNode extends RubyNode {
             throw new RuntimeException(e);
         }
 
-        moduleObject.undefMethod(this, name);
+        moduleObject.model.undefMethod(this, name);
     }
 
     @Override

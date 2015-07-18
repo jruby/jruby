@@ -75,8 +75,8 @@ public class RubyModuleModel {
     }
 
     public void getAdoptedByLexicalParent(RubyModule lexicalParent, String name, Node currentNode) {
-        lexicalParent.setConstantInternal(currentNode, name, rubyModuleObject, false);
-        lexicalParent.addLexicalDependent(rubyModuleObject);
+        lexicalParent.model.setConstantInternal(currentNode, name, rubyModuleObject, false);
+        lexicalParent.model.addLexicalDependent(rubyModuleObject);
 
         if (this.name == null) {
             // Tricky, we need to compare with the Object class, but we only have a Class at hand.
@@ -86,8 +86,8 @@ public class RubyModuleModel {
             if (lexicalParent == objectClass) {
                 this.name = name;
                 updateAnonymousChildrenModules();
-            } else if (lexicalParent.hasName()) {
-                this.name = lexicalParent.getName() + "::" + name;
+            } else if (lexicalParent.model.hasName()) {
+                this.name = lexicalParent.model.getName() + "::" + name;
                 updateAnonymousChildrenModules();
             }
             // else: Our lexicalParent is also an anonymous module
@@ -100,8 +100,8 @@ public class RubyModuleModel {
             RubyConstant constant = entry.getValue();
             if (constant.getValue() instanceof RubyModule) {
                 RubyModule module = (RubyModule) constant.getValue();
-                if (!module.hasName()) {
-                    module.getAdoptedByLexicalParent(rubyModuleObject, entry.getKey(), null);
+                if (!module.model.hasName()) {
+                    module.model.getAdoptedByLexicalParent(rubyModuleObject, entry.getKey(), null);
                 }
             }
         }
@@ -120,8 +120,8 @@ public class RubyModuleModel {
             this.parentModule = from.model.parentModule;
         }
 
-        for (RubyModule ancestor : from.ancestors()) {
-            ancestor.addDependent(rubyModuleObject);
+        for (RubyModule ancestor : from.model.ancestors()) {
+            ancestor.model.addDependent(rubyModuleObject);
         }
     }
 
@@ -140,7 +140,7 @@ public class RubyModuleModel {
     public void checkFrozen(Node currentNode) {
         if (getContext().getCoreLibrary() != null && DebugOperations.verySlowIsFrozen(getContext(), rubyModuleObject)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName(), currentNode));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().model.getName(), currentNode));
         }
     }
 
@@ -160,7 +160,7 @@ public class RubyModuleModel {
         // We need to include the module ancestors in reverse order for a given inclusionPoint
         ModuleChain inclusionPoint = rubyModuleObject;
         Stack<RubyModule> modulesToInclude = new Stack<>();
-        for (RubyModule ancestor : module.ancestors()) {
+        for (RubyModule ancestor : module.model.ancestors()) {
             if (ModuleOperations.includesModule(rubyModuleObject, ancestor)) {
                 if (isIncludedModuleBeforeSuperClass(ancestor)) {
                     // Include the modules at the appropriate inclusionPoint
@@ -189,7 +189,7 @@ public class RubyModuleModel {
         while (!moduleAncestors.isEmpty()) {
             RubyModule mod = moduleAncestors.pop();
             inclusionPoint.insertAfter(mod);
-            mod.addDependent(rubyModuleObject);
+            mod.model.addDependent(rubyModuleObject);
         }
     }
 
@@ -219,7 +219,7 @@ public class RubyModuleModel {
             if (!(mod instanceof PrependMarker)) {
                 if (!ModuleOperations.includesModule(rubyModuleObject, mod.getActualModule())) {
                     cur.insertAfter(mod.getActualModule());
-                    mod.getActualModule().addDependent(rubyModuleObject);
+                    mod.getActualModule().model.addDependent(rubyModuleObject);
                     cur = cur.getParentModule();
                 }
             }
@@ -243,7 +243,7 @@ public class RubyModuleModel {
         }
 
         if (value instanceof RubyModule) {
-            ((RubyModule) value).getAdoptedByLexicalParent(rubyModuleObject, name, currentNode);
+            ((RubyModule) value).model.getAdoptedByLexicalParent(rubyModuleObject, name, currentNode);
         } else {
             setConstantInternal(currentNode, name, value, false);
         }
@@ -403,11 +403,11 @@ public class RubyModuleModel {
         } else {
             CompilerDirectives.transferToInterpreter();
             if (givenBaseName != null) {
-                return lexicalParent.getName() + "::" + givenBaseName;
+                return lexicalParent.model.getName() + "::" + givenBaseName;
             } else if (getLogicalClass() == rubyModuleObject) { // For the case of class Class during initialization
                 return "#<cyclic>";
             } else {
-                return "#<" + getLogicalClass().getName() + ":0x" + Long.toHexString(rubyModuleObject.verySlowGetObjectID()) + ">";
+                return "#<" + getLogicalClass().model.getName() + ":0x" + Long.toHexString(rubyModuleObject.verySlowGetObjectID()) + ">";
             }
         }
     }
@@ -442,12 +442,12 @@ public class RubyModuleModel {
 
         // Make dependents new versions
         for (RubyModule dependent : dependents) {
-            dependent.newVersion(alreadyInvalidated, considerLexicalDependents);
+            dependent.model.newVersion(alreadyInvalidated, considerLexicalDependents);
         }
 
         if (considerLexicalDependents) {
             for (RubyModule dependent : lexicalDependents) {
-                dependent.newVersion(alreadyInvalidated, considerLexicalDependents);
+                dependent.model.newVersion(alreadyInvalidated, considerLexicalDependents);
             }
         }
     }
@@ -610,7 +610,7 @@ public class RubyModuleModel {
         assert parentModule == null;
 
         parentModule = superClass.model.start;
-        superClass.addDependent(rubyModuleObject);
+        superClass.model.addDependent(rubyModuleObject);
 
         newVersion();
     }

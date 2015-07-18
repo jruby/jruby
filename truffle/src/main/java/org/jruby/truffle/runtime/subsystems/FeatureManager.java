@@ -83,9 +83,9 @@ public class FeatureManager {
             throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, currentNode));
         } finally {
             if (dataConstantBefore == null) {
-                context.getCoreLibrary().getObjectClass().removeConstant(currentNode, "DATA");
+                context.getCoreLibrary().getObjectClass().model.removeConstant(currentNode, "DATA");
             } else {
-                context.getCoreLibrary().getObjectClass().setConstant(currentNode, "DATA", dataConstantBefore.getValue());
+                context.getCoreLibrary().getObjectClass().model.setConstant(currentNode, "DATA", dataConstantBefore.getValue());
             }
         }
     }

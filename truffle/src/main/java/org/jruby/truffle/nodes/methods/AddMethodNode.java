@@ -59,10 +59,10 @@ public class AddMethodNode extends RubyNode {
         final InternalMethod method = methodObject.withDeclaringModule(module).withVisibility(visibility);
 
         if (method.getVisibility() == Visibility.MODULE_FUNCTION) {
-            module.addMethod(this, method.withVisibility(Visibility.PRIVATE));
-            singletonClassNode.executeSingletonClass(frame, module).addMethod(this, method.withVisibility(Visibility.PUBLIC));
+            module.model.addMethod(this, method.withVisibility(Visibility.PRIVATE));
+            singletonClassNode.executeSingletonClass(frame, module).model.addMethod(this, method.withVisibility(Visibility.PUBLIC));
         } else {
-            module.addMethod(this, method);
+            module.model.addMethod(this, method);
         }
 
         return getSymbol(method.getName());

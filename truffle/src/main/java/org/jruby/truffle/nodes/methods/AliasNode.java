@@ -43,14 +43,14 @@ public abstract class AliasNode extends RubyNode {
 
     @Specialization
     public Object alias(RubyModule module) {
-        module.alias(this, newName, oldName);
+        module.model.alias(this, newName, oldName);
         return module;
     }
 
     // TODO (eregon, 10 May 2015): we should only have the module case as the child should be the default definee
     @Specialization(guards = "!isRubyModule(object)")
     public Object alias(VirtualFrame frame, Object object) {
-        singletonClassNode.executeSingletonClass(frame, object).alias(this, newName, oldName);
+        singletonClassNode.executeSingletonClass(frame, object).model.alias(this, newName, oldName);
         return object;
     }
 

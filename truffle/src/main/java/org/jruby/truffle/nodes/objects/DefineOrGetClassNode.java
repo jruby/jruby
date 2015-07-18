@@ -90,7 +90,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
     private void checkSuperClassCompatibility(RubyContext context, RubyClass superClassObject, RubyClass definingClass) {
         if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && definingClass.getSuperClass() != superClassObject) {
-            throw new RaiseException(context.getCoreLibrary().typeError("superclass mismatch for class " + definingClass.getName(), this));
+            throw new RaiseException(context.getCoreLibrary().typeError("superclass mismatch for class " + definingClass.model.getName(), this));
         }
     }
 }

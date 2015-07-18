@@ -109,7 +109,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             if (value == null) {
                 builder.append("null");
             } else if (value instanceof RubyBasicObject) {
-                builder.append(((RubyBasicObject) value).getLogicalClass().getName());
+                builder.append(((RubyBasicObject) value).getLogicalClass().model.getName());
                 builder.append("(");
                 builder.append(value.getClass().getName());
                 builder.append(")");

@@ -34,7 +34,7 @@ public class ImplementationDebugBacktraceFormatter implements BacktraceFormatter
             final List<String> lines = new ArrayList<>();
 
             if (exception != null) {
-                lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), exception.getLogicalClass().getName()));
+                lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), exception.getLogicalClass().model.getName()));
             }
 
             for (Activation activation : activations) {

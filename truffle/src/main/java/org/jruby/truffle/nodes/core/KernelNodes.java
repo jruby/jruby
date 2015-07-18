@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -73,10 +74,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
@@ -1072,7 +1070,7 @@ public abstract class KernelNodes {
         @Specialization(
                 limit = "getCacheLimit()",
                 guards = {"getMetaClass(frame, self) == cachedMetaClass", "module == cachedModule"},
-                assumptions = "cachedModule.getUnmodifiedAssumption()")
+                assumptions = "getUnmodifiedAssumption(cachedModule)")
         public boolean isACached(VirtualFrame frame,
                                  Object self,
                                  RubyModule module,
@@ -1080,6 +1078,10 @@ public abstract class KernelNodes {
                                  @Cached("module") RubyModule cachedModule,
                                  @Cached("isA(cachedMetaClass, cachedModule)") boolean result) {
             return result;
+        }
+
+        public Assumption getUnmodifiedAssumption(RubyModule module) {
+            return module.model.getUnmodifiedAssumption();
         }
 
         @Specialization
@@ -1273,7 +1275,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    metaClass.filterMethodsOnObject(regular, MethodFilter.PUBLIC_PROTECTED).toArray());
+                    metaClass.model.filterMethodsOnObject(regular, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
 
         @Specialization(guards = "!regular")
@@ -1330,7 +1332,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    metaClass.filterMethodsOnObject(includeAncestors, MethodFilter.PRIVATE).toArray());
+                    metaClass.model.filterMethodsOnObject(includeAncestors, MethodFilter.PRIVATE).toArray());
         }
 
     }
@@ -1385,7 +1387,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    metaClass.filterMethodsOnObject(includeAncestors, MethodFilter.PROTECTED).toArray());
+                    metaClass.model.filterMethodsOnObject(includeAncestors, MethodFilter.PROTECTED).toArray());
         }
 
     }
@@ -1415,7 +1417,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    metaClass.filterMethodsOnObject(includeAncestors, MethodFilter.PUBLIC).toArray());
+                    metaClass.model.filterMethodsOnObject(includeAncestors, MethodFilter.PUBLIC).toArray());
         }
 
     }
@@ -1531,7 +1533,7 @@ public abstract class KernelNodes {
 
             if (feature.toString().equals("openssl") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
                     .getEncapsulatingSourceSection().getSource().getName().endsWith("securerandom.rb")) {
-                getContext().getCoreLibrary().getObjectClass().getConstants().remove("OpenSSL");
+                getContext().getCoreLibrary().getObjectClass().model.getConstants().remove("OpenSSL");
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature.toString(), this));
             }
 
@@ -1731,7 +1733,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    metaClass.filterSingletonMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
+                    metaClass.model.filterSingletonMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
 
     }
@@ -2093,7 +2095,7 @@ public abstract class KernelNodes {
         public RubyBasicObject toS(VirtualFrame frame, Object self) {
             CompilerDirectives.transferToInterpreter();
 
-            String className = classNode.executeGetClass(frame, self).getName();
+            String className = classNode.executeGetClass(frame, self).model.getName();
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
@@ -2124,7 +2126,7 @@ public abstract class KernelNodes {
 
             if (isFrozenNode.executeIsFrozen(object)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
+                throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).model.getName(), this));
             }
 
             writeTaintNode.execute(object, false);

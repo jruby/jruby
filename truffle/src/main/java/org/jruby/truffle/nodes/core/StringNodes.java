@@ -1374,7 +1374,7 @@ public abstract class StringNodes {
             if (isFrozenNode.executeIsFrozen(self)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
-                        getContext().getCoreLibrary().frozenError(self.getLogicalClass().getName(), this));
+                        getContext().getCoreLibrary().frozenError(self.getLogicalClass().model.getName(), this));
             }
 
             // TODO (nirvdrum 03-Apr-15): Rather than dup every time, we should do CoW on String mutations.

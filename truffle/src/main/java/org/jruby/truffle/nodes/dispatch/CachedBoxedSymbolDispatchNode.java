@@ -38,7 +38,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
             DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
 
-        unmodifiedAssumption = context.getCoreLibrary().getSymbolClass().getUnmodifiedAssumption();
+        unmodifiedAssumption = context.getCoreLibrary().getSymbolClass().model.getUnmodifiedAssumption();
         this.method = method;
 
         if (method != null) {

@@ -231,7 +231,7 @@ public class RubyBasicObject implements TruffleObject {
             return ExceptionNodes.getMessage(this) + " : " + super.toString() + "\n" +
                     Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(getContext(), this, ExceptionNodes.getBacktrace(this)));
         } else {
-            return String.format("RubyBasicObject@%x<logicalClass=%s>", System.identityHashCode(this), logicalClass.getName());
+            return String.format("RubyBasicObject@%x<logicalClass=%s>", System.identityHashCode(this), logicalClass.model.getName());
         }
     }
 

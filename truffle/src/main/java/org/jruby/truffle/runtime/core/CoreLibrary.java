@@ -165,7 +165,7 @@ public class CoreLibrary {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(typeError(String.format("allocator undefined for %s", rubyClass.getName()), currentNode));
+            throw new RaiseException(typeError(String.format("allocator undefined for %s", rubyClass.model.getName()), currentNode));
         }
     };
 
@@ -211,10 +211,10 @@ public class CoreLibrary {
         // Close the cycles
         classClass.unsafeSetSuperclass(moduleClass);
 
-        classClass.getAdoptedByLexicalParent(objectClass, "Class", node);
-        basicObjectClass.getAdoptedByLexicalParent(objectClass, "BasicObject", node);
-        objectClass.getAdoptedByLexicalParent(objectClass, "Object", node);
-        moduleClass.getAdoptedByLexicalParent(objectClass, "Module", node);
+        classClass.model.getAdoptedByLexicalParent(objectClass, "Class", node);
+        basicObjectClass.model.getAdoptedByLexicalParent(objectClass, "BasicObject", node);
+        objectClass.model.getAdoptedByLexicalParent(objectClass, "Object", node);
+        moduleClass.model.getAdoptedByLexicalParent(objectClass, "Module", node);
 
         // Create Exception classes
 
@@ -391,15 +391,15 @@ public class CoreLibrary {
     }
 
     private void includeModules(RubyModule comparableModule) {
-        objectClass.include(node, kernelModule);
+        objectClass.model.include(node, kernelModule);
 
-        numericClass.include(node, comparableModule);
-        symbolClass.include(node, comparableModule);
+        numericClass.model.include(node, comparableModule);
+        symbolClass.model.include(node, comparableModule);
 
-        arrayClass.include(node, enumerableModule);
-        dirClass.include(node, enumerableModule);
-        hashClass.include(node, enumerableModule);
-        rangeClass.include(node, enumerableModule);
+        arrayClass.model.include(node, enumerableModule);
+        dirClass.model.include(node, enumerableModule);
+        hashClass.model.include(node, enumerableModule);
+        rangeClass.model.include(node, enumerableModule);
     }
 
     /**
@@ -461,7 +461,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(BigDecimalNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ZlibNodesFactory.getFactories());
 
-        basicObjectSendMethod = basicObjectClass.getMethods().get("__send__");
+        basicObjectSendMethod = basicObjectClass.model.getMethods().get("__send__");
         assert basicObjectSendMethod != null;
     }
 
@@ -492,44 +492,44 @@ public class CoreLibrary {
     private void initializeConstants() {
         // Set constants
 
-        objectClass.setConstant(node, "RUBY_VERSION", StringNodes.createString(stringClass, Constants.RUBY_VERSION));
-        objectClass.setConstant(node, "JRUBY_VERSION", StringNodes.createString(stringClass, Constants.VERSION));
-        objectClass.setConstant(node, "RUBY_PATCHLEVEL", 0);
-        objectClass.setConstant(node, "RUBY_REVISION", Constants.RUBY_REVISION);
-        objectClass.setConstant(node, "RUBY_ENGINE", StringNodes.createString(stringClass, Constants.ENGINE + "+truffle"));
-        objectClass.setConstant(node, "RUBY_PLATFORM", StringNodes.createString(stringClass, Constants.PLATFORM));
-        objectClass.setConstant(node, "RUBY_RELEASE_DATE", StringNodes.createString(stringClass, Constants.COMPILE_DATE));
-        objectClass.setConstant(node, "RUBY_DESCRIPTION", StringNodes.createString(stringClass, OutputStrings.getVersionString()));
-        objectClass.setConstant(node, "RUBY_COPYRIGHT", StringNodes.createString(stringClass, OutputStrings.getCopyrightString()));
+        objectClass.model.setConstant(node, "RUBY_VERSION", StringNodes.createString(stringClass, Constants.RUBY_VERSION));
+        objectClass.model.setConstant(node, "JRUBY_VERSION", StringNodes.createString(stringClass, Constants.VERSION));
+        objectClass.model.setConstant(node, "RUBY_PATCHLEVEL", 0);
+        objectClass.model.setConstant(node, "RUBY_REVISION", Constants.RUBY_REVISION);
+        objectClass.model.setConstant(node, "RUBY_ENGINE", StringNodes.createString(stringClass, Constants.ENGINE + "+truffle"));
+        objectClass.model.setConstant(node, "RUBY_PLATFORM", StringNodes.createString(stringClass, Constants.PLATFORM));
+        objectClass.model.setConstant(node, "RUBY_RELEASE_DATE", StringNodes.createString(stringClass, Constants.COMPILE_DATE));
+        objectClass.model.setConstant(node, "RUBY_DESCRIPTION", StringNodes.createString(stringClass, OutputStrings.getVersionString()));
+        objectClass.model.setConstant(node, "RUBY_COPYRIGHT", StringNodes.createString(stringClass, OutputStrings.getCopyrightString()));
 
         // BasicObject knows itself
-        basicObjectClass.setConstant(node, "BasicObject", basicObjectClass);
+        basicObjectClass.model.setConstant(node, "BasicObject", basicObjectClass);
 
-        objectClass.setConstant(node, "ARGV", argv);
+        objectClass.model.setConstant(node, "ARGV", argv);
 
-        rubiniusModule.setConstant(node, "UNDEFINED", rubiniusUndefined);
-        rubiniusModule.setConstant(node, "LIBC", Platform.LIBC);
+        rubiniusModule.model.setConstant(node, "UNDEFINED", rubiniusUndefined);
+        rubiniusModule.model.setConstant(node, "LIBC", Platform.LIBC);
 
-        processModule.setConstant(node, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
-        processModule.setConstant(node, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
+        processModule.model.setConstant(node, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
+        processModule.model.setConstant(node, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
 
         if (Platform.getPlatform().getOS() == OS_TYPE.LINUX) {
-            processModule.setConstant(node, "CLOCK_THREAD_CPUTIME_ID", ProcessNodes.CLOCK_THREAD_CPUTIME_ID);
+            processModule.model.setConstant(node, "CLOCK_THREAD_CPUTIME_ID", ProcessNodes.CLOCK_THREAD_CPUTIME_ID);
         }
 
-        encodingConverterClass.setConstant(node, "INVALID_MASK", EConvFlags.INVALID_MASK);
-        encodingConverterClass.setConstant(node, "INVALID_REPLACE", EConvFlags.INVALID_REPLACE);
-        encodingConverterClass.setConstant(node, "UNDEF_MASK", EConvFlags.UNDEF_MASK);
-        encodingConverterClass.setConstant(node, "UNDEF_REPLACE", EConvFlags.UNDEF_REPLACE);
-        encodingConverterClass.setConstant(node, "UNDEF_HEX_CHARREF", EConvFlags.UNDEF_HEX_CHARREF);
-        encodingConverterClass.setConstant(node, "PARTIAL_INPUT", EConvFlags.PARTIAL_INPUT);
-        encodingConverterClass.setConstant(node, "AFTER_OUTPUT", EConvFlags.AFTER_OUTPUT);
-        encodingConverterClass.setConstant(node, "UNIVERSAL_NEWLINE_DECORATOR", EConvFlags.UNIVERSAL_NEWLINE_DECORATOR);
-        encodingConverterClass.setConstant(node, "CRLF_NEWLINE_DECORATOR", EConvFlags.CRLF_NEWLINE_DECORATOR);
-        encodingConverterClass.setConstant(node, "CR_NEWLINE_DECORATOR", EConvFlags.CR_NEWLINE_DECORATOR);
-        encodingConverterClass.setConstant(node, "XML_TEXT_DECORATOR", EConvFlags.XML_TEXT_DECORATOR);
-        encodingConverterClass.setConstant(node, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
-        encodingConverterClass.setConstant(node, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
+        encodingConverterClass.model.setConstant(node, "INVALID_MASK", EConvFlags.INVALID_MASK);
+        encodingConverterClass.model.setConstant(node, "INVALID_REPLACE", EConvFlags.INVALID_REPLACE);
+        encodingConverterClass.model.setConstant(node, "UNDEF_MASK", EConvFlags.UNDEF_MASK);
+        encodingConverterClass.model.setConstant(node, "UNDEF_REPLACE", EConvFlags.UNDEF_REPLACE);
+        encodingConverterClass.model.setConstant(node, "UNDEF_HEX_CHARREF", EConvFlags.UNDEF_HEX_CHARREF);
+        encodingConverterClass.model.setConstant(node, "PARTIAL_INPUT", EConvFlags.PARTIAL_INPUT);
+        encodingConverterClass.model.setConstant(node, "AFTER_OUTPUT", EConvFlags.AFTER_OUTPUT);
+        encodingConverterClass.model.setConstant(node, "UNIVERSAL_NEWLINE_DECORATOR", EConvFlags.UNIVERSAL_NEWLINE_DECORATOR);
+        encodingConverterClass.model.setConstant(node, "CRLF_NEWLINE_DECORATOR", EConvFlags.CRLF_NEWLINE_DECORATOR);
+        encodingConverterClass.model.setConstant(node, "CR_NEWLINE_DECORATOR", EConvFlags.CR_NEWLINE_DECORATOR);
+        encodingConverterClass.model.setConstant(node, "XML_TEXT_DECORATOR", EConvFlags.XML_TEXT_DECORATOR);
+        encodingConverterClass.model.setConstant(node, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
+        encodingConverterClass.model.setConstant(node, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
     }
 
     private void initializeSignalConstants() {
@@ -541,7 +541,7 @@ public class CoreLibrary {
             signals[i++] = ArrayNodes.fromObjects(arrayClass, signalName, signal.getValue());
         }
 
-        signalModule.setConstant(node, "SIGNAL_LIST", ArrayNodes.createArray(arrayClass, signals, signals.length));
+        signalModule.model.setConstant(node, "SIGNAL_LIST", ArrayNodes.createArray(arrayClass, signals, signals.length));
     }
 
     private RubyClass defineClass(String name) {
@@ -598,26 +598,26 @@ public class CoreLibrary {
     }
 
     private void initializeRubiniusFFI() {
-        rubiniusFFIModule.setConstant(node, "TYPE_CHAR", RubiniusTypes.TYPE_CHAR);
-        rubiniusFFIModule.setConstant(node, "TYPE_UCHAR", RubiniusTypes.TYPE_UCHAR);
-        rubiniusFFIModule.setConstant(node, "TYPE_BOOL", RubiniusTypes.TYPE_BOOL);
-        rubiniusFFIModule.setConstant(node, "TYPE_SHORT", RubiniusTypes.TYPE_SHORT);
-        rubiniusFFIModule.setConstant(node, "TYPE_USHORT", RubiniusTypes.TYPE_USHORT);
-        rubiniusFFIModule.setConstant(node, "TYPE_INT", RubiniusTypes.TYPE_INT);
-        rubiniusFFIModule.setConstant(node, "TYPE_UINT", RubiniusTypes.TYPE_UINT);
-        rubiniusFFIModule.setConstant(node, "TYPE_LONG", RubiniusTypes.TYPE_LONG);
-        rubiniusFFIModule.setConstant(node, "TYPE_ULONG", RubiniusTypes.TYPE_ULONG);
-        rubiniusFFIModule.setConstant(node, "TYPE_LL", RubiniusTypes.TYPE_LL);
-        rubiniusFFIModule.setConstant(node, "TYPE_ULL", RubiniusTypes.TYPE_ULL);
-        rubiniusFFIModule.setConstant(node, "TYPE_FLOAT", RubiniusTypes.TYPE_FLOAT);
-        rubiniusFFIModule.setConstant(node, "TYPE_DOUBLE", RubiniusTypes.TYPE_DOUBLE);
-        rubiniusFFIModule.setConstant(node, "TYPE_PTR", RubiniusTypes.TYPE_PTR);
-        rubiniusFFIModule.setConstant(node, "TYPE_VOID", RubiniusTypes.TYPE_VOID);
-        rubiniusFFIModule.setConstant(node, "TYPE_STRING", RubiniusTypes.TYPE_STRING);
-        rubiniusFFIModule.setConstant(node, "TYPE_STRPTR", RubiniusTypes.TYPE_STRPTR);
-        rubiniusFFIModule.setConstant(node, "TYPE_CHARARR", RubiniusTypes.TYPE_CHARARR);
-        rubiniusFFIModule.setConstant(node, "TYPE_ENUM", RubiniusTypes.TYPE_ENUM);
-        rubiniusFFIModule.setConstant(node, "TYPE_VARARGS", RubiniusTypes.TYPE_VARARGS);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_CHAR", RubiniusTypes.TYPE_CHAR);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_UCHAR", RubiniusTypes.TYPE_UCHAR);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_BOOL", RubiniusTypes.TYPE_BOOL);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_SHORT", RubiniusTypes.TYPE_SHORT);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_USHORT", RubiniusTypes.TYPE_USHORT);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_INT", RubiniusTypes.TYPE_INT);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_UINT", RubiniusTypes.TYPE_UINT);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_LONG", RubiniusTypes.TYPE_LONG);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_ULONG", RubiniusTypes.TYPE_ULONG);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_LL", RubiniusTypes.TYPE_LL);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_ULL", RubiniusTypes.TYPE_ULL);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_FLOAT", RubiniusTypes.TYPE_FLOAT);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_DOUBLE", RubiniusTypes.TYPE_DOUBLE);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_PTR", RubiniusTypes.TYPE_PTR);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_VOID", RubiniusTypes.TYPE_VOID);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_STRING", RubiniusTypes.TYPE_STRING);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_STRPTR", RubiniusTypes.TYPE_STRPTR);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_CHARARR", RubiniusTypes.TYPE_CHARARR);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_ENUM", RubiniusTypes.TYPE_ENUM);
+        rubiniusFFIModule.model.setConstant(node, "TYPE_VARARGS", RubiniusTypes.TYPE_VARARGS);
     }
 
     public void loadRubyCore(String fileName) {
@@ -659,7 +659,7 @@ public class CoreLibrary {
 
             @Override
             public void defineConstant(int encodingListIndex, String constName) {
-                encodingClass.setConstant(node, constName, EncodingNodes.getEncoding(encodingListIndex));
+                encodingClass.model.setConstant(node, constName, EncodingNodes.getEncoding(encodingListIndex));
             }
         });
 
@@ -672,7 +672,7 @@ public class CoreLibrary {
 
             @Override
             public void defineConstant(int encodingListIndex, String constName) {
-                encodingClass.setConstant(node, constName, EncodingNodes.getEncoding(encodingListIndex));
+                encodingClass.model.setConstant(node, constName, EncodingNodes.getEncoding(encodingListIndex));
             }
         });
     }
@@ -804,7 +804,7 @@ public class CoreLibrary {
 
     public RubyBasicObject argumentErrorWrongArgumentType(Object object, String expectedType, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        String badClassName = getLogicalClass(object).getName();
+        String badClassName = getLogicalClass(object).model.getName();
         return argumentError(String.format("wrong argument type %s (expected %s)", badClassName, expectedType), currentNode);
     }
 
@@ -876,14 +876,14 @@ public class CoreLibrary {
 
     public RubyBasicObject typeErrorCantConvertTo(Object from, RubyClass to, String methodUsed, Object result, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        String fromClass = getLogicalClass(from).getName();
+        String fromClass = getLogicalClass(from).model.getName();
         return typeError(String.format("can't convert %s to %s (%s#%s gives %s)",
-                fromClass, to.getName(), fromClass, methodUsed, getLogicalClass(result).toString()), currentNode);
+                fromClass, to.model.getName(), fromClass, methodUsed, getLogicalClass(result).toString()), currentNode);
     }
 
     public RubyBasicObject typeErrorCantConvertInto(Object from, RubyClass to, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return typeError(String.format("can't convert %s into %s", getLogicalClass(from).getName(), to.getName()), currentNode);
+        return typeError(String.format("can't convert %s into %s", getLogicalClass(from).model.getName(), to.model.getName()), currentNode);
     }
 
     public RubyBasicObject typeErrorIsNotA(String value, String expectedType, Node currentNode) {
@@ -893,7 +893,7 @@ public class CoreLibrary {
 
     public RubyBasicObject typeErrorNoImplicitConversion(Object from, String to, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return typeError(String.format("no implicit conversion of %s into %s", getLogicalClass(from).getName(), to), currentNode);
+        return typeError(String.format("no implicit conversion of %s into %s", getLogicalClass(from).model.getName(), to), currentNode);
     }
 
     public RubyBasicObject typeErrorMustBe(String variable, String type, Node currentNode) {
@@ -903,13 +903,13 @@ public class CoreLibrary {
 
     public RubyBasicObject typeErrorBadCoercion(Object from, String to, String coercionMethod, Object coercedTo, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        String badClassName = getLogicalClass(from).getName();
+        String badClassName = getLogicalClass(from).model.getName();
         return typeError(String.format("can't convert %s to %s (%s#%s gives %s)",
                 badClassName,
                 to,
                 badClassName,
                 coercionMethod,
-                getLogicalClass(coercedTo).getName()), currentNode);
+                getLogicalClass(coercedTo).model.getName()), currentNode);
     }
 
     public RubyBasicObject typeErrorCantCoerce(Object from, String to, Node currentNode) {
@@ -919,13 +919,13 @@ public class CoreLibrary {
 
     public RubyBasicObject typeErrorCantDump(Object object, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        String logicalClass = getLogicalClass(object).getName();
+        String logicalClass = getLogicalClass(object).model.getName();
         return typeError(String.format("can't dump %s", logicalClass), currentNode);
     }
 
     public RubyBasicObject typeErrorWrongArgumentType(Object object, String expectedType, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        String badClassName = getLogicalClass(object).getName();
+        String badClassName = getLogicalClass(object).model.getName();
         return typeError(String.format("wrong argument type %s (expected %s)", badClassName, expectedType), currentNode);
     }
 
@@ -938,7 +938,7 @@ public class CoreLibrary {
 
     public RubyBasicObject nameErrorConstantNotDefined(RubyModule module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("constant %s::%s not defined", module.getName(), name), name, currentNode);
+        return nameError(String.format("constant %s::%s not defined", module.model.getName(), name), name, currentNode);
     }
 
     public RubyBasicObject nameErrorUninitializedConstant(RubyModule module, String name, Node currentNode) {
@@ -947,19 +947,19 @@ public class CoreLibrary {
         if (module == objectClass) {
             message = String.format("uninitialized constant %s", name);
         } else {
-            message = String.format("uninitialized constant %s::%s", module.getName(), name);
+            message = String.format("uninitialized constant %s::%s", module.model.getName(), name);
         }
         return nameError(message, name, currentNode);
     }
 
     public RubyBasicObject nameErrorUninitializedClassVariable(RubyModule module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("uninitialized class variable %s in %s", name, module.getName()), name, currentNode);
+        return nameError(String.format("uninitialized class variable %s in %s", name, module.model.getName()), name, currentNode);
     }
 
     public RubyBasicObject nameErrorPrivateConstant(RubyModule module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("private constant %s::%s referenced", module.getName(), name), name, currentNode);
+        return nameError(String.format("private constant %s::%s referenced", module.model.getName(), name), name, currentNode);
     }
 
     public RubyBasicObject nameErrorInstanceNameNotAllowable(String name, Node currentNode) {
@@ -979,17 +979,17 @@ public class CoreLibrary {
 
     public RubyBasicObject nameErrorUndefinedMethod(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("undefined method `%s' for %s", name, module.getName()), name, currentNode);
+        return nameError(String.format("undefined method `%s' for %s", name, module.model.getName()), name, currentNode);
     }
 
     public RubyBasicObject nameErrorMethodNotDefinedIn(RubyModule module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("method `%s' not defined in %s", name, module.getName()), name, currentNode);
+        return nameError(String.format("method `%s' not defined in %s", name, module.model.getName()), name, currentNode);
     }
 
     public RubyBasicObject nameErrorPrivateMethod(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("method `%s' for %s is private", name, module.getName()), name, currentNode);
+        return nameError(String.format("method `%s' for %s is private", name, module.model.getName()), name, currentNode);
     }
 
     public RubyBasicObject nameErrorLocalVariableNotDefined(String name, RubyBasicObject binding, Node currentNode) {
@@ -1000,7 +1000,7 @@ public class CoreLibrary {
 
     public RubyBasicObject nameErrorClassVariableNotDefined(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("class variable `%s' not defined for %s", name, module.getName()), name, currentNode);
+        return nameError(String.format("class variable `%s' not defined for %s", name, module.model.getName()), name, currentNode);
     }
 
     public RubyBasicObject noMethodError(String message, String name, Node currentNode) {
@@ -1012,22 +1012,22 @@ public class CoreLibrary {
 
     public RubyBasicObject noMethodErrorOnModule(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return noMethodError(String.format("undefined method `%s' for %s", name, module.getName()), name, currentNode);
+        return noMethodError(String.format("undefined method `%s' for %s", name, module.model.getName()), name, currentNode);
     }
 
     public RubyBasicObject noMethodErrorOnReceiver(String name, Object receiver, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         RubyClass logicalClass = getLogicalClass(receiver);
-        String repr = logicalClass.getName();
+        String repr = logicalClass.model.getName();
         if (receiver instanceof RubyModule) {
-            repr = ((RubyModule) receiver).getName() + ":" + repr;
+            repr = ((RubyModule) receiver).model.getName() + ":" + repr;
         }
         return noMethodError(String.format("undefined method `%s' for %s", name, repr), name, currentNode);
     }
 
     public RubyBasicObject privateMethodError(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return noMethodError(String.format("private method `%s' called for %s", name, module.getName()), name, currentNode);
+        return noMethodError(String.format("private method `%s' called for %s", name, module.model.getName()), name, currentNode);
     }
 
     public RubyBasicObject loadError(String message, Node currentNode) {
@@ -1346,7 +1346,7 @@ public class CoreLibrary {
     }
 
     public RubyBasicObject getENV() {
-        return (RubyBasicObject) objectClass.getConstants().get("ENV").getValue();
+        return (RubyBasicObject) objectClass.model.getConstants().get("ENV").getValue();
     }
 
     public ArrayNodes.MinBlock getArrayMinBlock() {

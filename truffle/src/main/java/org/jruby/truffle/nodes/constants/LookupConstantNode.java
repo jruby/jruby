@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.constants;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
@@ -45,7 +46,7 @@ public abstract class LookupConstantNode extends RubyNode {
     @Specialization(guards = {
             "module == cachedModule",
             "guardName(name, cachedName, sameNameProfile)"
-    }, assumptions = "cachedModule.getUnmodifiedAssumption()", limit = "getCacheLimit()")
+    }, assumptions = "getUnmodifiedAssumption(cachedModule)", limit = "getCacheLimit()")
     protected RubyConstant lookupConstant(VirtualFrame frame, RubyModule module, String name,
             @Cached("module") RubyModule cachedModule,
             @Cached("name") String cachedName,
@@ -57,6 +58,10 @@ public abstract class LookupConstantNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateConstant(module, name, this));
         }
         return constant;
+    }
+
+    public Assumption getUnmodifiedAssumption(RubyModule module) {
+        return module.model.getUnmodifiedAssumption();
     }
 
     @TruffleBoundary

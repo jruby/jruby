@@ -37,7 +37,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
 
             if (activations.isEmpty()) {
                 if (exception != null) {
-                    lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), exception.getLogicalClass().getName()));
+                    lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), exception.getLogicalClass().model.getName()));
                 }
             } else {
                 lines.add(formatInLine(context, activations, exception));
@@ -96,7 +96,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
             builder.append(": ");
             builder.append(message);
             builder.append(" (");
-            builder.append(exception.getLogicalClass().getName());
+            builder.append(exception.getLogicalClass().model.getName());
             builder.append(")");
         }
 

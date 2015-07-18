@@ -106,7 +106,7 @@ public class InternalMethod {
                 return true;
 
             case PROTECTED:
-                for (RubyModule ancestor : callerClass.ancestors()) {
+                for (RubyModule ancestor : callerClass.model.ancestors()) {
                     if (ancestor == declaringModule || ancestor.getMetaClass() == declaringModule) {
                         return true;
                     }

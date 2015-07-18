@@ -46,7 +46,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
         super(context, cachedName, next, indirect, dispatchAction);
 
         this.expectedClass = expectedClass;
-        unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
+        unmodifiedAssumption = expectedClass.model.getUnmodifiedAssumption();
         this.method = method;
 
         if (indirect) {

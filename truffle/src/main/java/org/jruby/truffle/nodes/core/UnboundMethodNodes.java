@@ -136,7 +136,7 @@ public abstract class UnboundMethodNodes {
                             "singleton method called for a different object", this));
                 } else {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
-                            "bind argument must be an instance of " + declaringModule.getName(), this));
+                            "bind argument must be an instance of " + declaringModule.model.getName(), this));
                 }
             }
 

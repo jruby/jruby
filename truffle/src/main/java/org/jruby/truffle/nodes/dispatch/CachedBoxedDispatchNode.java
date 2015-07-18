@@ -41,7 +41,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
         super(context, cachedName, next, indirect, dispatchAction);
 
         this.expectedClass = expectedClass;
-        this.unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
+        this.unmodifiedAssumption = expectedClass.model.getUnmodifiedAssumption();
         this.next = next;
         this.method = method;
 
@@ -53,7 +53,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
                 if ((callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit())
                         || (method.getDeclaringModule() != null
-                        && method.getDeclaringModule().getName().equals("TruffleInterop"))) {
+                        && method.getDeclaringModule().model.getName().equals("TruffleInterop"))) {
                     insert(callNode);
                     callNode.cloneCallTarget();
                 }
@@ -134,7 +134,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     public String toString() {
         return String.format("CachedBoxedDispatchNode(:%s, %s@%x, %s)",
                 getCachedNameAsSymbol().toString(),
-                expectedClass.getName(), expectedClass.hashCode(),
+                expectedClass.model.getName(), expectedClass.hashCode(),
                 method == null ? "null" : method.toString());
     }
 

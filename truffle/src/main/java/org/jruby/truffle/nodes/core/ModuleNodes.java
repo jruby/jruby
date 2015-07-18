@@ -322,7 +322,7 @@ public abstract class ModuleNodes {
         public RubyModule aliasMethod(RubyModule module, String newName, String oldName) {
             CompilerDirectives.transferToInterpreter();
 
-            module.alias(this, newName, oldName);
+            module.model.alias(this, newName, oldName);
             return module;
         }
 
@@ -340,7 +340,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             final List<RubyModule> ancestors = new ArrayList<>();
-            for (RubyModule module : self.ancestors()) {
+            for (RubyModule module : self.model.ancestors()) {
                 ancestors.add(module);
             }
 
@@ -364,7 +364,7 @@ public abstract class ModuleNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("append_features must be called only on modules", this));
             }
-            target.include(this, features);
+            target.model.include(this, features);
             taintResultNode.maybeTaint(features, target);
             return nil();
         }
@@ -413,7 +413,7 @@ public abstract class ModuleNodes {
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, false, callTarget, null);
 
-            module.addMethod(this, method);
+            module.model.addMethod(this, method);
             return nil();
         }
     }
@@ -553,11 +553,11 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("empty file name", this));
             }
 
-            if (alreadyLoaded.profile(module.getConstants().get(name) != null)) {
+            if (alreadyLoaded.profile(module.model.getConstants().get(name) != null)) {
                 return nil();
             }
 
-            module.setAutoloadConstant(this, name, filename);
+            module.model.setAutoloadConstant(this, name, filename);
 
             return nil();
         }
@@ -833,7 +833,7 @@ public abstract class ModuleNodes {
             if (inherit) {
                 constants = ModuleOperations.getAllConstants(module);
             } else {
-                constants = module.getConstants();
+                constants = module.model.getConstants();
             }
 
             for (Entry<String, RubyConstant> constant : constants.entrySet()) {
@@ -1011,7 +1011,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
             }
 
-            module.setConstant(this, name, value);
+            module.model.setConstant(this, name, value);
             return value;
         }
 
@@ -1056,7 +1056,7 @@ public abstract class ModuleNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyMethod(method)")
         public RubyBasicObject defineMethodMethod(RubyModule module, String name, RubyBasicObject method, NotProvided block) {
-            module.addMethod(this, MethodNodes.getMethod(method).withName(name));
+            module.model.addMethod(this, MethodNodes.getMethod(method).withName(name));
             return getSymbol(name);
         }
 
@@ -1067,7 +1067,7 @@ public abstract class ModuleNodes {
             RubyModule origin = UnboundMethodNodes.getOrigin(method);
             if (!ModuleOperations.canBindMethodTo(origin, module)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be a subclass of " + origin.getName(), this));
+                throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be a subclass of " + origin.model.getName(), this));
             }
 
             // TODO CS 5-Apr-15 TypeError if the method came from a singleton
@@ -1094,7 +1094,7 @@ public abstract class ModuleNodes {
                 method = method.withVisibility(Visibility.PRIVATE);
             }
 
-            module.addMethod(this, method);
+            module.model.addMethod(this, method);
             return getSymbol(name);
         }
 
@@ -1117,7 +1117,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(module, "Module", this));
             }
 
-            singletonClassNode.executeSingletonClass(frame, object).include(this, module);
+            singletonClassNode.executeSingletonClass(frame, object).model.include(this, module);
             return module;
         }
 
@@ -1168,7 +1168,7 @@ public abstract class ModuleNodes {
         public Object initializeCopy(RubyModule self, RubyModule from) {
             CompilerDirectives.transferToInterpreter();
 
-            self.initCopy(from);
+            self.model.initCopy(from);
             return nil();
         }
 
@@ -1217,8 +1217,8 @@ public abstract class ModuleNodes {
 
             final List<RubyModule> modules = new ArrayList<>();
 
-            for (RubyModule included : module.ancestors()) {
-                if (included.isOnlyAModule() && included != module) {
+            for (RubyModule included : module.model.ancestors()) {
+                if (included.model.isOnlyAModule() && included != module) {
                     modules.add(included);
                 }
             }
@@ -1256,7 +1256,7 @@ public abstract class ModuleNodes {
             if (inherit) {
                 method = ModuleOperations.lookupMethod(module, name);
             } else {
-                method = module.getMethods().get(name);
+                method = module.model.getMethods().get(name);
             }
 
             return method != null && !method.getVisibility().isPrivate();
@@ -1297,11 +1297,11 @@ public abstract class ModuleNodes {
         public Object name(RubyModule module) {
             CompilerDirectives.transferToInterpreter();
 
-            if (!module.hasPartialName()) {
+            if (!module.model.hasPartialName()) {
                 return nil();
             }
 
-            return createString(module.getName());
+            return createString(module.model.getName());
         }
     }
 
@@ -1412,7 +1412,7 @@ public abstract class ModuleNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("prepend_features must be called only on modules", this));
             }
-            target.prepend(this, features);
+            target.model.prepend(this, features);
             taintResultNode.maybeTaint(features, target);
             return nil();
         }
@@ -1488,7 +1488,7 @@ public abstract class ModuleNodes {
         public RubyBasicObject protectedInstanceMethods(RubyModule module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    module.filterMethods(includeAncestors, MethodFilter.PROTECTED).toArray());
+                    module.model.filterMethods(includeAncestors, MethodFilter.PROTECTED).toArray());
         }
     }
 
@@ -1539,7 +1539,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    module.filterMethods(includeAncestors, MethodFilter.PRIVATE).toArray());
+                    module.model.filterMethods(includeAncestors, MethodFilter.PRIVATE).toArray());
         }
     }
 
@@ -1600,7 +1600,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    module.filterMethods(includeAncestors, MethodFilter.PUBLIC).toArray());
+                    module.model.filterMethods(includeAncestors, MethodFilter.PUBLIC).toArray());
         }
     }
 
@@ -1651,7 +1651,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    module.filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
+                    module.model.filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
     }
 
@@ -1701,7 +1701,7 @@ public abstract class ModuleNodes {
 
             for (Object name : args) {
                 if (RubyGuards.isRubySymbol(name)) {
-                    module.changeConstantVisibility(this, SymbolNodes.getString((RubyBasicObject) name), true);
+                    module.model.changeConstantVisibility(this, SymbolNodes.getString((RubyBasicObject) name), true);
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -1723,7 +1723,7 @@ public abstract class ModuleNodes {
 
             for (Object name : args) {
                 if (RubyGuards.isRubySymbol(name)) {
-                    module.changeConstantVisibility(this, SymbolNodes.getString((RubyBasicObject) name), false);
+                    module.model.changeConstantVisibility(this, SymbolNodes.getString((RubyBasicObject) name), false);
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -1769,7 +1769,7 @@ public abstract class ModuleNodes {
         @Specialization
         public Object removeClassVariableString(RubyModule module, String name) {
             RubyContext.checkClassVariableName(getContext(), name, this);
-            return module.removeClassVariable(this, name);
+            return module.model.removeClassVariable(this, name);
         }
 
     }
@@ -1792,7 +1792,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         Object removeConstant(RubyModule module, String name) {
-            RubyConstant oldConstant = module.removeConstant(this, name);
+            RubyConstant oldConstant = module.model.removeConstant(this, name);
             if (oldConstant == null) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorConstantNotDefined(module, name, this));
@@ -1829,8 +1829,8 @@ public abstract class ModuleNodes {
             raiseIfFrozenNode.execute(frame);
 
             CompilerDirectives.transferToInterpreter();
-            if (module.getMethods().containsKey(name)) {
-                module.removeMethod(name);
+            if (module.model.getMethods().containsKey(name)) {
+                module.model.removeMethod(name);
                 methodRemovedNode.call(frame, module, "method_removed", null, getSymbol(name));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -1851,7 +1851,7 @@ public abstract class ModuleNodes {
         public RubyBasicObject toS(RubyModule module) {
             CompilerDirectives.transferToInterpreter();
 
-            return createString(module.getName());
+            return createString(module.model.getName());
         }
 
     }
@@ -1884,7 +1884,7 @@ public abstract class ModuleNodes {
             final InternalMethod method = ModuleOperations.lookupMethod(module, name);
 
             if (method != null) {
-                module.undefMethod(this, method);
+                module.model.undefMethod(this, method);
                 methodUndefinedNode.call(frame, module, "method_undefined", null, getSymbol(name));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -1960,7 +1960,7 @@ public abstract class ModuleNodes {
         RubyModule setMethodVisibility(VirtualFrame frame, RubyModule module, Object name) {
             final String methodName = nameToJavaStringNode.executeToJavaString(frame, name);
 
-            final InternalMethod method = module.deepMethodSearch(methodName);
+            final InternalMethod method = module.model.deepMethodSearch(methodName);
 
             if (method == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1974,10 +1974,10 @@ public abstract class ModuleNodes {
              * to this module.
              */
             if (visibility == Visibility.MODULE_FUNCTION) {
-                module.addMethod(this, method.withVisibility(Visibility.PRIVATE));
-                singletonClassNode.executeSingletonClass(frame, module).addMethod(this, method.withVisibility(Visibility.PUBLIC));
+                module.model.addMethod(this, method.withVisibility(Visibility.PRIVATE));
+                singletonClassNode.executeSingletonClass(frame, module).model.addMethod(this, method.withVisibility(Visibility.PUBLIC));
             } else {
-                module.addMethod(this, method.withVisibility(visibility));
+                module.model.addMethod(this, method.withVisibility(visibility));
             }
 
             return module;

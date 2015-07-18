@@ -40,7 +40,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
             final List<String> lines = new ArrayList<>();
 
             if (exception != null) {
-                lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), exception.getLogicalClass().getName()));
+                lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), exception.getLogicalClass().model.getName()));
             }
 
             for (Activation activation : activations) {
@@ -82,7 +82,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
 
         if (sourceSection instanceof CoreSourceSection) {
             final InternalMethod method = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments());
-            builder.append(method.getDeclaringModule().getName());
+            builder.append(method.getDeclaringModule().model.getName());
             builder.append("#");
             builder.append(method.getName());
         } else {

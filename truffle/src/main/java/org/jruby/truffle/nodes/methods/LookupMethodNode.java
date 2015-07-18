@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.methods;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -21,6 +22,7 @@ import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
@@ -46,13 +48,17 @@ public abstract class LookupMethodNode extends RubyNode {
                     "metaClass(frame, self) == selfMetaClass",
                     "name == cachedName"
             },
-            assumptions = "selfMetaClass.getUnmodifiedAssumption()",
+            assumptions = "getUnmodifiedAssumption(selfMetaClass)",
             limit = "getCacheLimit()")
     protected InternalMethod lookupMethodCached(VirtualFrame frame, Object self, String name,
             @Cached("metaClass(frame, self)") RubyClass selfMetaClass,
             @Cached("name") String cachedName,
             @Cached("doLookup(selfMetaClass, name)") InternalMethod method) {
         return method;
+    }
+
+    public Assumption getUnmodifiedAssumption(RubyModule module) {
+        return module.model.getUnmodifiedAssumption();
     }
 
     @Specialization

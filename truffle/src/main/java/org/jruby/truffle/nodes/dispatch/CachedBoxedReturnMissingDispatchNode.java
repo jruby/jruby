@@ -31,7 +31,7 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
         super(context, cachedName, next, indirect, dispatchAction);
         assert expectedClass != null;
         this.expectedClass = expectedClass;
-        unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
+        unmodifiedAssumption = expectedClass.model.getUnmodifiedAssumption();
         this.next = next;
     }
 

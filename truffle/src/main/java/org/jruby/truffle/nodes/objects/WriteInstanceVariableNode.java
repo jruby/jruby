@@ -51,7 +51,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
             }
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).model.getName(), this));
         }
     }
 
@@ -71,7 +71,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
             }
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).model.getName(), this));
         }
     }
 
@@ -91,7 +91,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
             }
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).model.getName(), this));
         }
     }
 
@@ -104,7 +104,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
             writeNode.execute((RubyBasicObject) object, value);
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).model.getName(), this));
         }
 
         return value;

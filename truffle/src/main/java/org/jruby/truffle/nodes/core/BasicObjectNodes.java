@@ -203,7 +203,7 @@ public abstract class BasicObjectNodes {
                 throw new RaiseException(
                         getContext().getCoreLibrary().nameErrorUndefinedLocalVariableOrMethod(
                                 SymbolNodes.getString(name),
-                                getContext().getCoreLibrary().getLogicalClass(self).getName(),
+                                getContext().getCoreLibrary().getLogicalClass(self).model.getName(),
                                 this));
             } else {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnReceiver(SymbolNodes.getString(name), self, this));

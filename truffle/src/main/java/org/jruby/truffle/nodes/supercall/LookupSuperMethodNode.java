@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.supercall;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -21,6 +22,7 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @NodeChild("self")
@@ -46,13 +48,17 @@ public abstract class LookupSuperMethodNode extends RubyNode {
                     "getCurrentMethod(frame) == currentMethod",
                     "metaClass(frame, self) == selfMetaClass"
             },
-            assumptions = "selfMetaClass.getUnmodifiedAssumption()", // guards against include/prepend/method redefinition
+            assumptions = "getUnmodifiedAssumption(selfMetaClass)", // guards against include/prepend/method redefinition
             limit = "getCacheLimit()")
     protected InternalMethod lookupSuperMethodCached(VirtualFrame frame, Object self,
             @Cached("getCurrentMethod(frame)") InternalMethod currentMethod,
             @Cached("metaClass(frame, self)") RubyClass selfMetaClass,
             @Cached("doLookup(currentMethod, selfMetaClass)") InternalMethod superMethod) {
         return superMethod;
+    }
+
+    public Assumption getUnmodifiedAssumption(RubyModule module) {
+        return module.model.getUnmodifiedAssumption();
     }
 
     @Specialization

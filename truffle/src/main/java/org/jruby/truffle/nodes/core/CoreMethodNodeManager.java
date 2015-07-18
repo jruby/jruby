@@ -106,7 +106,7 @@ public class CoreMethodNodeManager {
             if (method.constructor()) {
                 System.err.println("WARNING: Either constructor or isModuleFunction for " + methodDetails.getIndicativeName());
             }
-            if (!module.isOnlyAModule()) {
+            if (!module.model.isOnlyAModule()) {
                 System.err.println("WARNING: Using isModuleFunction on a Class for " + methodDetails.getIndicativeName());
             }
         }
@@ -138,7 +138,7 @@ public class CoreMethodNodeManager {
             final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
                     Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
 
-            module.addMethod(null, method.withVisibility(visibility).withName(name));
+            module.model.addMethod(null, method.withVisibility(visibility).withName(name));
         }
     }
 
