@@ -539,28 +539,4 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
-    @CoreMethod(names = "thread_raise", required = 2, onSingleton = true)
-    public abstract static class RaiseNode extends CoreMethodArrayArgumentsNode {
-
-        public RaiseNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization(guards = { "isRubyThread(thread)", "isRubyException(exception)" })
-        public RubyBasicObject raise(RubyBasicObject thread, final RubyBasicObject exception) {
-            getContext().getSafepointManager().pauseThreadAndExecuteLater(
-                    ThreadNodes.getCurrentFiberJavaThread(thread),
-                    this,
-                    new SafepointAction() {
-                        @Override
-                        public void run(RubyBasicObject currentThread, Node currentNode) {
-                            throw new RaiseException(exception);
-                        }
-                    });
-
-            return nil();
-        }
-
-    }
-
 }

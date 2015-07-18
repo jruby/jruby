@@ -42,6 +42,13 @@ class Thread
     @recursive_objects ||= {}
   end
 
+  def raise_prim(exc)
+    Rubinius.primitive :thread_raise
+    Kernel.raise PrimitiveFailure, "Thread#raise primitive failed"
+  end
+
+  private :raise_prim
+
   def raise(exc=undefined, msg=nil, trace=nil)
     return self unless alive?
 
@@ -70,7 +77,7 @@ class Thread
       Kernel.raise exc
     else
       exc.capture_backtrace! 2 unless exc.backtrace?
-      Truffle::Primitive.thread_raise self, exc
+      raise_prim exc
     end
   end
 

@@ -69,6 +69,7 @@ public class RubiniusPrimitiveManager {
         nodeFactories.addAll(IOBufferPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(ExceptionPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(ChannelPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(ThreadPrimitiveNodesFactory.getFactories());
 
         // This comes last as a catch-all
         nodeFactories.addAll(UndefinedPrimitiveNodesFactory.getFactories());
