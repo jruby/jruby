@@ -16,8 +16,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyModule;
 
 public class SetMethodDeclarationContext extends RubyNode {
 
@@ -37,7 +37,7 @@ public class SetMethodDeclarationContext extends RubyNode {
     public Object execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        FrameSlot slot = frame.getFrameDescriptor().findOrAddFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID, "visibility for " + what, FrameSlotKind.Object);
+        FrameSlot slot = frame.getFrameDescriptor().findOrAddFrameSlot(ModuleNodes.VISIBILITY_FRAME_SLOT_ID, "visibility for " + what, FrameSlotKind.Object);
         Object oldVisibility = frame.getValue(slot);
 
         try {

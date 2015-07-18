@@ -12,20 +12,43 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
 
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
+
+    /** Special constructor for class Class */
+    public static RubyClass createClassClass(RubyContext context, Allocator allocator) {
+        return new RubyClass(context, null, null, null, "Class", false, null, allocator);
+    }
+
+    /**
+     * This constructor supports initialization and solves boot-order problems and should not
+     * normally be used from outside this class.
+     */
+    public static RubyClass createBootClass(RubyClass classClass, RubyClass superclass, String name, Allocator allocator) {
+        return new RubyClass(classClass.getContext(), classClass, null, superclass, name, false, null, allocator);
+    }
+
+    public static RubyClass createSingletonClassOfObject(RubyContext context, RubyClass superclass, RubyModule attached, String name) {
+        // We also need to create the singleton class of a singleton class for proper lookup and consistency.
+        // See rb_singleton_class() documentation in MRI.
+        // Allocator is null here, we cannot create instances of singleton classes.
+        return new RubyClass(context, superclass.getLogicalClass(), null, superclass, name, true, attached, null).ensureSingletonConsistency();
+    }
 
     @CoreMethod(names = "allocate")
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
@@ -175,5 +198,14 @@ public abstract class ClassNodes {
                 return superclass;
             }
         }
+    }
+
+    public static class ClassAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+            return new RubyClass(context, context.getCoreLibrary().getClassClass(), null, null, null, false, null, null);
+        }
+
     }
 }

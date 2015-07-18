@@ -203,10 +203,10 @@ public class CoreLibrary {
 
         // Create the cyclic classes and modules
 
-        classClass = RubyClass.createClassClass(context, new RubyClass.ClassAllocator());
-        basicObjectClass = RubyClass.createBootClass(classClass, null, "BasicObject", new RubyBasicObject.BasicObjectAllocator());
-        objectClass = RubyClass.createBootClass(classClass, basicObjectClass, "Object", basicObjectClass.getAllocator());
-        moduleClass = RubyClass.createBootClass(classClass, objectClass, "Module", new RubyModule.ModuleAllocator());
+        classClass = ClassNodes.createClassClass(context, new ClassNodes.ClassAllocator());
+        basicObjectClass = ClassNodes.createBootClass(classClass, null, "BasicObject", new RubyBasicObject.BasicObjectAllocator());
+        objectClass = ClassNodes.createBootClass(classClass, basicObjectClass, "Object", basicObjectClass.getAllocator());
+        moduleClass = ClassNodes.createBootClass(classClass, objectClass, "Module", new ModuleNodes.ModuleAllocator());
 
         // Close the cycles
         classClass.unsafeSetSuperclass(moduleClass);

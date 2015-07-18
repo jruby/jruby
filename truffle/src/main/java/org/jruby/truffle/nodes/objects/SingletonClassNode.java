@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -109,7 +110,7 @@ public abstract class SingletonClassNode extends RubyNode {
         }
 
         String name = String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), object.verySlowGetObjectID());
-        RubyClass singletonClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass, attached, name);
+        RubyClass singletonClass = ClassNodes.createSingletonClassOfObject(getContext(), logicalClass, attached, name);
         propagateFrozen(object, singletonClass);
 
         object.setMetaClass(singletonClass);

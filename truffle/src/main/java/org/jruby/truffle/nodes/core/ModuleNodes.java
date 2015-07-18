@@ -55,7 +55,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyModule.MethodFilter;
+import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -70,6 +70,12 @@ import java.util.Map.Entry;
 
 @CoreClass(name = "Module")
 public abstract class ModuleNodes {
+
+    /**
+     * The slot within a module definition method frame where we store the implicit state that is
+     * the current visibility for new methods.
+     */
+    public static final Object VISIBILITY_FRAME_SLOT_ID = new Object();
 
     @CoreMethod(names = "===", required = 1)
     public abstract static class ContainsInstanceNode extends CoreMethodArrayArgumentsNode {
@@ -1926,7 +1932,7 @@ public abstract class ModuleNodes {
             assert callerFrame.getFrameDescriptor() != null;
 
             final FrameSlot visibilitySlot = callerFrame.getFrameDescriptor().findOrAddFrameSlot(
-                    RubyModule.VISIBILITY_FRAME_SLOT_ID, "visibility for frame", FrameSlotKind.Object);
+                    VISIBILITY_FRAME_SLOT_ID, "visibility for frame", FrameSlotKind.Object);
 
             callerFrame.setObject(visibilitySlot, visibility);
         }
@@ -1979,4 +1985,12 @@ public abstract class ModuleNodes {
 
     }
 
+    public static class ModuleAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+            return new RubyModule(context, rubyClass, null, null, currentNode);
+        }
+
+    }
 }

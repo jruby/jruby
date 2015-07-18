@@ -16,6 +16,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -88,7 +89,7 @@ public class AddMethodNode extends RubyNode {
     }
 
     private static Visibility findVisibility(Frame frame) {
-        FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID);
+        FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(ModuleNodes.VISIBILITY_FRAME_SLOT_ID);
         if (slot == null) {
             return null;
         } else {

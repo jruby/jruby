@@ -17,7 +17,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -31,82 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Represents the Ruby {@code Module} class.
  */
 public class RubyModule extends RubyBasicObject implements ModuleChain {
-
-    /**
-     * A reference to an included RubyModule.
-     */
-    private static class IncludedModule implements ModuleChain {
-        private final RubyModule includedModule;
-        @CompilationFinal private ModuleChain parentModule;
-
-        public IncludedModule(RubyModule includedModule, ModuleChain parentModule) {
-            this.includedModule = includedModule;
-            this.parentModule = parentModule;
-        }
-
-        @Override
-        public ModuleChain getParentModule() {
-            return parentModule;
-        }
-
-        @Override
-        public RubyModule getActualModule() {
-            return includedModule;
-        }
-
-        @Override
-        public String toString() {
-            return super.toString() + "(" + includedModule + ")";
-        }
-
-        @Override
-        public void insertAfter(RubyModule module) {
-            parentModule = new IncludedModule(module, parentModule);
-        }
-    }
-
-    private static class PrependMarker implements ModuleChain {
-        @CompilationFinal private ModuleChain parentModule;
-
-        public PrependMarker(ModuleChain parentModule) {
-            this.parentModule = parentModule;
-        }
-
-        @Override
-        public ModuleChain getParentModule() {
-            return parentModule;
-        }
-
-        @Override
-        public RubyModule getActualModule() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void insertAfter(RubyModule module) {
-            parentModule = new IncludedModule(module, parentModule);
-        }
-
-    }
-
-    public static void debugModuleChain(RubyModule module) {
-        ModuleChain chain = module;
-        while (chain != null) {
-            System.err.print(chain.getClass());
-            if (!(chain instanceof PrependMarker)) {
-                RubyModule real = chain.getActualModule();
-                System.err.print(" " + real.getName());
-            }
-            System.err.println();
-            chain = chain.getParentModule();
-        }
-    }
-
-    /**
-     * The slot within a module definition method frame where we store the implicit state that is
-     * the current visibility for new methods.
-     */
-    public static final Object VISIBILITY_FRAME_SLOT_ID = new Object();
 
     // The context is stored here - objects can obtain it via their class (which is a module)
     private final RubyContext context;
@@ -171,7 +94,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         }
     }
 
-    private void updateAnonymousChildrenModules() {
+    public void updateAnonymousChildrenModules() {
         for (Entry<String, RubyConstant> entry : constants.entrySet()) {
             RubyConstant constant = entry.getValue();
             if (constant.getValue() instanceof RubyModule) {
@@ -583,63 +506,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         return this;
     }
 
-    private static class AncestorIterator implements Iterator<RubyModule> {
-        ModuleChain module;
-
-        public AncestorIterator(ModuleChain top) {
-            module = top;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return module != null;
-        }
-
-        @Override
-        public RubyModule next() throws NoSuchElementException {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-
-            ModuleChain mod = module;
-            if (mod instanceof PrependMarker) {
-                mod = mod.getParentModule();
-            }
-
-            module = mod.getParentModule();
-
-            return mod.getActualModule();
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException("remove");
-        }
-    }
-
-    private static class IncludedModulesIterator extends AncestorIterator {
-        private final RubyModule currentModule;
-
-        public IncludedModulesIterator(ModuleChain top, RubyModule currentModule) {
-            super(top instanceof PrependMarker ? top.getParentModule() : top);
-            this.currentModule = currentModule;
-        }
-
-        @Override
-        public boolean hasNext() {
-            if (!super.hasNext()) {
-                return false;
-            }
-
-            if (module == currentModule) {
-                module = module.getParentModule(); // skip self
-                return hasNext();
-            }
-
-            return module instanceof IncludedModule;
-        }
-    }
-
     public Iterable<RubyModule> ancestors() {
         final ModuleChain top = start;
         return new Iterable<RubyModule>() {
@@ -674,41 +540,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
                 return new IncludedModulesIterator(top, currentModule);
             }
         };
-    }
-
-    public static interface MethodFilter {
-
-        public static final MethodFilter PUBLIC = new RubyModule.MethodFilter() {
-            @Override
-            public boolean filter(InternalMethod method) {
-                return method.getVisibility() == Visibility.PUBLIC;
-            }
-        };
-
-        public static final MethodFilter PUBLIC_PROTECTED = new RubyModule.MethodFilter() {
-            @Override
-            public boolean filter(InternalMethod method) {
-                return method.getVisibility() == Visibility.PUBLIC ||
-                        method.getVisibility() == Visibility.PROTECTED;
-            }
-        };
-
-        public static final MethodFilter PROTECTED = new RubyModule.MethodFilter() {
-            @Override
-            public boolean filter(InternalMethod method) {
-                return method.getVisibility() == Visibility.PROTECTED;
-            }
-        };
-
-        public static final MethodFilter PRIVATE = new RubyModule.MethodFilter() {
-            @Override
-            public boolean filter(InternalMethod method) {
-                return method.getVisibility() == Visibility.PRIVATE;
-            }
-        };
-
-        boolean filter(InternalMethod method);
-
     }
 
     public Collection<RubyBasicObject> filterMethods(boolean includeAncestors, MethodFilter filter) {
@@ -752,15 +583,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         }
 
         return filtered;
-    }
-
-    public static class ModuleAllocator implements Allocator {
-
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyModule(context, rubyClass, null, null, currentNode);
-        }
-
     }
 
 }

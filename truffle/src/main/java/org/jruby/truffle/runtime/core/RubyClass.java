@@ -28,33 +28,13 @@ public class RubyClass extends RubyModule {
     private final boolean isSingleton;
     private final RubyModule attached;
 
-    /** Special constructor for class Class */
-    public static RubyClass createClassClass(RubyContext context, Allocator allocator) {
-        return new RubyClass(context, null, null, null, "Class", false, null, allocator);
-    }
-
-    /**
-     * This constructor supports initialization and solves boot-order problems and should not
-     * normally be used from outside this class.
-     */
-    public static RubyClass createBootClass(RubyClass classClass, RubyClass superclass, String name, Allocator allocator) {
-        return new RubyClass(classClass.getContext(), classClass, null, superclass, name, false, null, allocator);
-    }
-
     public RubyClass(RubyContext context, RubyModule lexicalParent, RubyClass superclass, String name, Allocator allocator) {
         this(context, superclass.getLogicalClass(), lexicalParent, superclass, name, false, null, allocator);
         // Always create a class singleton class for normal classes for consistency.
         ensureSingletonConsistency();
     }
 
-    public static RubyClass createSingletonClassOfObject(RubyContext context, RubyClass superclass, RubyModule attached, String name) {
-        // We also need to create the singleton class of a singleton class for proper lookup and consistency.
-        // See rb_singleton_class() documentation in MRI.
-        // Allocator is null here, we cannot create instances of singleton classes.
-        return new RubyClass(context, superclass.getLogicalClass(), null, superclass, name, true, attached, null).ensureSingletonConsistency();
-    }
-
-    private RubyClass(RubyContext context, RubyClass classClass, RubyModule lexicalParent, RubyClass superclass, String name, boolean isSingleton, RubyModule attached, Allocator allocator) {
+    public RubyClass(RubyContext context, RubyClass classClass, RubyModule lexicalParent, RubyClass superclass, String name, boolean isSingleton, RubyModule attached, Allocator allocator) {
         super(context, classClass, lexicalParent, name, null);
 
         assert isSingleton || attached == null;
@@ -94,7 +74,7 @@ public class RubyClass extends RubyModule {
         // and therefore attached is null.
     }
 
-    private RubyClass ensureSingletonConsistency() {
+    public RubyClass ensureSingletonConsistency() {
         createOneSingletonClass();
         return this;
     }
@@ -155,15 +135,6 @@ public class RubyClass extends RubyModule {
 
     public void unsafeSetAllocator(Allocator allocator) {
         this.allocator = allocator;
-    }
-
-    public static class ClassAllocator implements Allocator {
-
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyClass(context, context.getCoreLibrary().getClassClass(), null, null, null, false, null, null);
-        }
-
     }
 
 }
