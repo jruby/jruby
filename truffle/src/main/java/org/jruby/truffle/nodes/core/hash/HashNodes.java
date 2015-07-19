@@ -979,8 +979,6 @@ public abstract class HashNodes {
         @Child private SetNode setNode;
 
         private final BranchProfile nothingFromFirstProfile = BranchProfile.create();
-        private final BranchProfile considerNothingFromSecondProfile = BranchProfile.create();
-        private final BranchProfile nothingFromSecondProfile = BranchProfile.create();
         private final BranchProfile considerResultIsSmallProfile = BranchProfile.create();
         private final BranchProfile resultIsSmallProfile = BranchProfile.create();
         private final BranchProfile promoteProfile = BranchProfile.create();
@@ -1100,17 +1098,6 @@ public abstract class HashNodes {
             if (mergeFromACount == 0) {
                 nothingFromFirstProfile.enter();
                 return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), PackedArrayStrategy.copyStore(storeB), storeBSize, null, null);
-            }
-
-            // Cut off here
-
-            considerNothingFromSecondProfile.enter();
-
-            // If everything in B conflicted with something in A, it's easy
-
-            if (conflictsCount == storeBSize) {
-                nothingFromSecondProfile.enter();
-                return createHash(hash.getLogicalClass(), getDefaultBlock(hash), getDefaultValue(hash), PackedArrayStrategy.copyStore(storeA), storeASize, null, null);
             }
 
             // Cut off here
