@@ -79,12 +79,6 @@ class String
   def append(other)
     self << other
   end
-
-  # The version in Rubinius 2.4.1 is broken, but has since been fixed.  We'll monkey-patch here until we update to
-  # a newer Rubinius in order to keep the number of direct source modifications low.
-  def include?(needle)
-    !!find_string(StringValue(needle), 0)
-  end
 end
 
 class Rational
