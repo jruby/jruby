@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -32,7 +33,7 @@ public class CheckStdoutVariableTypeNode extends RubyNode {
         final Object childValue = child.execute(frame);
 
         if (childValue == nil() || ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(childValue), "write") == null) {
-            throw new RaiseException(getContext().getCoreLibrary().typeError(String.format("$stdout must have write method, %s given", getContext().getCoreLibrary().getLogicalClass(childValue).model.getName()), this));
+            throw new RaiseException(getContext().getCoreLibrary().typeError(String.format("$stdout must have write method, %s given", ModuleNodes.getModel(getContext().getCoreLibrary().getLogicalClass(childValue)).getName()), this));
         }
 
         return childValue;

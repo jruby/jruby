@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyConstant;
@@ -75,7 +76,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         final Object superClassObj = superClass.execute(frame);
 
         if (superClassObj instanceof RubyClass){
-            if (((RubyClass) superClassObj).model.isSingleton()) {
+            if (ModuleNodes.getModel(((RubyClass) superClassObj)).isSingleton()) {
                 throw new RaiseException(context.getCoreLibrary().typeError("can't make subclass of virtual class", this));
             }
 
@@ -89,8 +90,8 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
     }
 
     private void checkSuperClassCompatibility(RubyContext context, RubyClass superClassObject, RubyClass definingClass) {
-        if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && definingClass.model.getSuperClass() != superClassObject) {
-            throw new RaiseException(context.getCoreLibrary().typeError("superclass mismatch for class " + definingClass.model.getName(), this));
+        if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && ModuleNodes.getModel(definingClass).getSuperClass() != superClassObject) {
+            throw new RaiseException(context.getCoreLibrary().typeError("superclass mismatch for class " + ModuleNodes.getModel(definingClass).getName(), this));
         }
     }
 }

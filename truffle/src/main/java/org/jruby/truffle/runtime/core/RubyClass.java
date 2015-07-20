@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -27,7 +28,7 @@ public class RubyClass extends RubyModule {
     public RubyClass(RubyContext context, RubyModule lexicalParent, RubyClass superclass, String name, Allocator allocator) {
         this(context, superclass.getLogicalClass(), lexicalParent, superclass, name, false, null, allocator);
         // Always create a class singleton class for normal classes for consistency.
-        model.ensureSingletonConsistency();
+        ModuleNodes.getModel(this).ensureSingletonConsistency();
     }
 
     public RubyClass(RubyContext context, RubyClass classClass, RubyModule lexicalParent, RubyClass superclass, String name, boolean isSingleton, RubyModule attached, Allocator allocator) {
@@ -38,7 +39,7 @@ public class RubyClass extends RubyModule {
         this.unsafeSetAllocator(allocator);
 
         if (superclass != null) {
-            model.unsafeSetSuperclass(superclass);
+            ModuleNodes.getModel(this).unsafeSetSuperclass(superclass);
         }
     }
 

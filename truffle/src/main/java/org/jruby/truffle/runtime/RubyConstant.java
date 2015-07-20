@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 
@@ -63,7 +64,7 @@ public class RubyConstant {
 
         // Look in ancestors
         if (module instanceof RubyClass) {
-            for (RubyModule included : module.model.parentAncestors()) {
+            for (RubyModule included : ModuleNodes.getModel(module).parentAncestors()) {
                 if (included == declaringModule) {
                     return true;
                 }

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -51,7 +52,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
             }
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).model.getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
         }
     }
 
@@ -71,7 +72,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
             }
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).model.getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
         }
     }
 
@@ -91,7 +92,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
             }
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).model.getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
         }
     }
 
@@ -104,7 +105,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
             writeNode.execute((RubyBasicObject) object, value);
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).model.getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
         }
 
         return value;

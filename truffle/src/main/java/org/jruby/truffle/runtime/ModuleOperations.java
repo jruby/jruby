@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -27,7 +28,7 @@ import java.util.Map.Entry;
 public abstract class ModuleOperations {
 
     public static boolean includesModule(RubyModule module, RubyModule other) {
-        for (RubyModule ancestor : module.model.ancestors()) {
+        for (RubyModule ancestor : ModuleNodes.getModel(module).ancestors()) {
             if (ancestor == other) {
                 return true;
             }
@@ -55,11 +56,11 @@ public abstract class ModuleOperations {
         final Map<String, RubyConstant> constants = new HashMap<>();
 
         // Look in the current module
-        constants.putAll(module.model.getConstants());
+        constants.putAll(ModuleNodes.getModel(module).getConstants());
 
         // Look in ancestors
-        for (RubyModule ancestor : module.model.prependedAndIncludedModules()) {
-            for (Map.Entry<String, RubyConstant> constant : ancestor.model.getConstants().entrySet()) {
+        for (RubyModule ancestor : ModuleNodes.getModel(module).prependedAndIncludedModules()) {
+            for (Map.Entry<String, RubyConstant> constant : ModuleNodes.getModel(ancestor).getConstants().entrySet()) {
                 if (!constants.containsKey(constant.getKey())) {
                     constants.put(constant.getKey(), constant.getValue());
                 }
@@ -83,7 +84,7 @@ public abstract class ModuleOperations {
         RubyConstant constant;
 
         // Look in the current module
-        constant = module.model.getConstants().get(name);
+        constant = ModuleNodes.getModel(module).getConstants().get(name);
 
         if (constant != null) {
             return constant;
@@ -97,7 +98,7 @@ public abstract class ModuleOperations {
             }
 
             while (lexicalScope != context.getRootLexicalScope()) {
-                constant = lexicalScope.getLiveModule().model.getConstants().get(name);
+                constant = ModuleNodes.getModel(lexicalScope.getLiveModule()).getConstants().get(name);
 
                 if (constant != null) {
                     return constant;
@@ -108,8 +109,8 @@ public abstract class ModuleOperations {
         }
 
         // Look in ancestors
-        for (RubyModule ancestor : module.model.parentAncestors()) {
-            constant = ancestor.model.getConstants().get(name);
+        for (RubyModule ancestor : ModuleNodes.getModel(module).parentAncestors()) {
+            constant = ModuleNodes.getModel(ancestor).getConstants().get(name);
 
             if (constant != null) {
                 return constant;
@@ -117,16 +118,16 @@ public abstract class ModuleOperations {
         }
 
         // Look in Object and its included modules
-        if (module.model.isOnlyAModule()) {
+        if (ModuleNodes.getModel(module).isOnlyAModule()) {
             final RubyClass objectClass = context.getCoreLibrary().getObjectClass();
 
-            constant = objectClass.model.getConstants().get(name);
+            constant = ModuleNodes.getModel(objectClass).getConstants().get(name);
             if (constant != null) {
                 return constant;
             }
 
-            for (RubyModule ancestor : objectClass.model.prependedAndIncludedModules()) {
-                constant = ancestor.model.getConstants().get(name);
+            for (RubyModule ancestor : ModuleNodes.getModel(objectClass).prependedAndIncludedModules()) {
+                constant = ModuleNodes.getModel(ancestor).getConstants().get(name);
 
                 if (constant != null) {
                     return constant;
@@ -174,7 +175,7 @@ public abstract class ModuleOperations {
         if (inherit) {
             return ModuleOperations.lookupConstant(context, LexicalScope.NONE, module, name);
         } else {
-            return module.model.getConstants().get(name);
+            return ModuleNodes.getModel(module).getConstants().get(name);
         }
     }
 
@@ -182,8 +183,8 @@ public abstract class ModuleOperations {
     public static Map<String, InternalMethod> getAllMethods(RubyModule module) {
         final Map<String, InternalMethod> methods = new HashMap<>();
 
-        for (RubyModule ancestor : module.model.ancestors()) {
-            for (InternalMethod method : ancestor.model.getMethods().values()) {
+        for (RubyModule ancestor : ModuleNodes.getModel(module).ancestors()) {
+            for (InternalMethod method : ModuleNodes.getModel(ancestor).getMethods().values()) {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
@@ -197,13 +198,13 @@ public abstract class ModuleOperations {
     public static Map<String, InternalMethod> getMethodsBeforeLogicalClass(RubyModule module) {
         final Map<String, InternalMethod> methods = new HashMap<>();
 
-        for (RubyModule ancestor : module.model.ancestors()) {
+        for (RubyModule ancestor : ModuleNodes.getModel(module).ancestors()) {
             // When we find a class which is not a singleton class, we are done
-            if (ancestor instanceof RubyClass && !((RubyClass) ancestor).model.isSingleton()) {
+            if (ancestor instanceof RubyClass && !ModuleNodes.getModel(((RubyClass) ancestor)).isSingleton()) {
                 break;
             }
 
-            for (InternalMethod method : ancestor.model.getMethods().values()) {
+            for (InternalMethod method : ModuleNodes.getModel(ancestor).getMethods().values()) {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
@@ -217,15 +218,15 @@ public abstract class ModuleOperations {
     public static Map<String, InternalMethod> getMethodsUntilLogicalClass(RubyModule module) {
         final Map<String, InternalMethod> methods = new HashMap<>();
 
-        for (RubyModule ancestor : module.model.ancestors()) {
-            for (InternalMethod method : ancestor.model.getMethods().values()) {
+        for (RubyModule ancestor : ModuleNodes.getModel(module).ancestors()) {
+            for (InternalMethod method : ModuleNodes.getModel(ancestor).getMethods().values()) {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
             }
 
             // When we find a class which is not a singleton class, we are done
-            if (ancestor instanceof RubyClass && !((RubyClass) ancestor).model.isSingleton()) {
+            if (ancestor instanceof RubyClass && !ModuleNodes.getModel(((RubyClass) ancestor)).isSingleton()) {
                 break;
             }
         }
@@ -249,8 +250,8 @@ public abstract class ModuleOperations {
         CompilerAsserts.neverPartOfCompilation();
 
         // Look in ancestors
-        for (RubyModule ancestor : module.model.ancestors()) {
-            InternalMethod method = ancestor.model.getMethods().get(name);
+        for (RubyModule ancestor : ModuleNodes.getModel(module).ancestors()) {
+            InternalMethod method = ModuleNodes.getModel(ancestor).getMethods().get(name);
 
             if (method != null) {
                 return method;
@@ -272,18 +273,18 @@ public abstract class ModuleOperations {
         CompilerAsserts.neverPartOfCompilation();
 
         boolean foundDeclaringModule = false;
-        for (RubyModule module : objectMetaClass.model.ancestors()) {
+        for (RubyModule module : ModuleNodes.getModel(objectMetaClass).ancestors()) {
             if (module == declaringModule) {
                 foundDeclaringModule = true;
             } else if (foundDeclaringModule) {
-                InternalMethod method = module.model.getMethods().get(name);
+                InternalMethod method = ModuleNodes.getModel(module).getMethods().get(name);
 
                 if (method != null) {
                     return method;
                 }
             }
         }
-        assert foundDeclaringModule : "Did not find the declaring module in "+ objectMetaClass.model.getName() +" ancestors";
+        assert foundDeclaringModule : "Did not find the declaring module in "+ ModuleNodes.getModel(objectMetaClass).getName() +" ancestors";
 
         return null;
     }
@@ -297,7 +298,7 @@ public abstract class ModuleOperations {
         classVariableLookup(module, new Function<RubyModule, Object>() {
             @Override
             public Object apply(RubyModule module) {
-                classVariables.putAll(module.model.getClassVariables());
+                classVariables.putAll(ModuleNodes.getModel(module).getClassVariables());
                 return null;
             }
         });
@@ -310,7 +311,7 @@ public abstract class ModuleOperations {
         return classVariableLookup(module, new Function<RubyModule, Object>() {
             @Override
             public Object apply(RubyModule module) {
-                return module.model.getClassVariables().get(name);
+                return ModuleNodes.getModel(module).getClassVariables().get(name);
             }
         });
     }
@@ -320,8 +321,8 @@ public abstract class ModuleOperations {
         RubyModule found = classVariableLookup(module, new Function<RubyModule, RubyModule>() {
             @Override
             public RubyModule apply(RubyModule module) {
-                if (module.model.getClassVariables().containsKey(name)) {
-                    module.model.setClassVariable(currentNode, name, value);
+                if (ModuleNodes.getModel(module).getClassVariables().containsKey(name)) {
+                    ModuleNodes.getModel(module).setClassVariable(currentNode, name, value);
                     return module;
                 } else {
                     return null;
@@ -331,7 +332,7 @@ public abstract class ModuleOperations {
 
         if (found == null) {
             // Not existing class variable - set in the current module
-            module.model.setClassVariable(currentNode, name, value);
+            ModuleNodes.getModel(module).setClassVariable(currentNode, name, value);
         }
     }
 
@@ -347,8 +348,8 @@ public abstract class ModuleOperations {
         // If singleton class, check attached module.
         if (module instanceof RubyClass) {
             RubyClass klass = (RubyClass) module;
-            if (klass.model.isSingleton() && klass.model.getAttached() != null) {
-                module = klass.model.getAttached();
+            if (ModuleNodes.getModel(klass).isSingleton() && ModuleNodes.getModel(klass).getAttached() != null) {
+                module = ModuleNodes.getModel(klass).getAttached();
 
                 result = action.apply(module);
                 if (result != null) {
@@ -358,7 +359,7 @@ public abstract class ModuleOperations {
         }
 
         // Look in ancestors
-        for (RubyModule ancestor : module.model.parentAncestors()) {
+        for (RubyModule ancestor : ModuleNodes.getModel(module).parentAncestors()) {
             result = action.apply(ancestor);
             if (result != null) {
                 return result;

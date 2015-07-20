@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 
@@ -106,7 +107,7 @@ public class InternalMethod {
                 return true;
 
             case PROTECTED:
-                for (RubyModule ancestor : callerClass.model.ancestors()) {
+                for (RubyModule ancestor : ModuleNodes.getModel(callerClass).ancestors()) {
                     if (ancestor == declaringModule || ancestor.getMetaClass() == declaringModule) {
                         return true;
                     }

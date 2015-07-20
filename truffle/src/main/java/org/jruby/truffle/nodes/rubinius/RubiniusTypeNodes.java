@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.YieldingCoreMethodNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -31,7 +32,7 @@ public abstract class RubiniusTypeNodes {
 
         @Specialization(guards = "isRubyProc(block)")
         public RubyBasicObject eachAncestor(VirtualFrame frame, RubyModule module, RubyBasicObject block) {
-            for (RubyModule ancestor : module.model.ancestors()) {
+            for (RubyModule ancestor : ModuleNodes.getModel(module).ancestors()) {
                 yield(frame, block, ancestor);
             }
             return nil();

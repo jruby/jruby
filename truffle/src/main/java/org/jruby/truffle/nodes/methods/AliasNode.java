@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
@@ -43,14 +44,14 @@ public abstract class AliasNode extends RubyNode {
 
     @Specialization
     public Object alias(RubyModule module) {
-        module.model.alias(this, newName, oldName);
+        ModuleNodes.getModel(module).alias(this, newName, oldName);
         return module;
     }
 
     // TODO (eregon, 10 May 2015): we should only have the module case as the child should be the default definee
     @Specialization(guards = "!isRubyModule(object)")
     public Object alias(VirtualFrame frame, Object object) {
-        singletonClassNode.executeSingletonClass(frame, object).model.alias(this, newName, oldName);
+        ModuleNodes.getModel(singletonClassNode.executeSingletonClass(frame, object)).alias(this, newName, oldName);
         return object;
     }
 

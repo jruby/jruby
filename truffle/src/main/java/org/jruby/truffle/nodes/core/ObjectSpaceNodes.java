@@ -121,7 +121,7 @@ public abstract class ObjectSpaceNodes {
         }
 
         private boolean isHidden(RubyBasicObject object) {
-            return object instanceof RubyClass && ((RubyClass) object).model.isSingleton();
+            return object instanceof RubyClass && ModuleNodes.getModel(((RubyClass) object)).isSingleton();
         }
 
     }

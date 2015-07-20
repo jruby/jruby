@@ -24,6 +24,7 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.methods.CatchNextNode;
@@ -131,7 +132,7 @@ public class TranslatorDriver {
         final Object data = getData(context);
 
         if (data != null) {
-            context.getCoreLibrary().getObjectClass().model.setConstant(currentNode, "DATA", data);
+            ModuleNodes.getModel(context.getCoreLibrary().getObjectClass()).setConstant(currentNode, "DATA", data);
         }
 
         // Translate to Ruby Truffle nodes

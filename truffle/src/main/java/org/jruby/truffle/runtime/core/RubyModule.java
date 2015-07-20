@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
@@ -30,25 +31,25 @@ public class RubyModule extends RubyBasicObject {
         model = new RubyModuleModel(this, context, lexicalParent, name, new CyclicAssumption(name + " is unmodified"), isSingleton, attached);
 
         if (lexicalParent == null) { // bootstrap or anonymous module
-            model.name = model.givenBaseName;
+            ModuleNodes.getModel(this).name = ModuleNodes.getModel(this).givenBaseName;
         } else {
-            model.getAdoptedByLexicalParent(lexicalParent, name, currentNode);
+            ModuleNodes.getModel(this).getAdoptedByLexicalParent(lexicalParent, name, currentNode);
         }
     }
 
     @Override
     public RubyContext getContext() {
-        return model.getContext();
+        return ModuleNodes.getModel(this).getContext();
     }
 
     @Override
     public String toString() {
-        return model.toString();
+        return ModuleNodes.getModel(this).toString();
     }
 
     @Override
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-        model.visitObjectGraphChildren(visitor);
+        ModuleNodes.getModel(this).visitObjectGraphChildren(visitor);
     }
 
 }

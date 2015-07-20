@@ -19,6 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes.RequireNode;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyConstant;
@@ -56,12 +57,12 @@ public abstract class GetConstantNode extends RubyNode {
 
         // The autoload constant must only be removed if everything succeeds.
         // We remove it first to allow lookup to ignore it and add it back if there was a failure.
-        constant.getDeclaringModule().model.removeConstant(this, name);
+        ModuleNodes.getModel(constant.getDeclaringModule()).removeConstant(this, name);
         try {
             requireNode.require(path);
             return executeGetConstant(frame, module, name);
         } catch (RaiseException e) {
-            constant.getDeclaringModule().model.setAutoloadConstant(this, name, path);
+            ModuleNodes.getModel(constant.getDeclaringModule()).setAutoloadConstant(this, name, path);
             throw e;
         }
     }

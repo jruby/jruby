@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
@@ -46,7 +47,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
         super(context, cachedName, next, indirect, dispatchAction);
 
         this.expectedClass = expectedClass;
-        unmodifiedAssumption = expectedClass.model.getUnmodifiedAssumption();
+        unmodifiedAssumption = ModuleNodes.getModel(expectedClass).getUnmodifiedAssumption();
         this.method = method;
 
         if (indirect) {

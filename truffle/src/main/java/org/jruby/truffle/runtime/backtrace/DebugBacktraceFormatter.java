@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -40,7 +41,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
             final List<String> lines = new ArrayList<>();
 
             if (exception != null) {
-                lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), exception.getLogicalClass().model.getName()));
+                lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), ModuleNodes.getModel(exception.getLogicalClass()).getName()));
             }
 
             for (Activation activation : activations) {
@@ -82,7 +83,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
 
         if (sourceSection instanceof CoreSourceSection) {
             final InternalMethod method = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments());
-            builder.append(method.getDeclaringModule().model.getName());
+            builder.append(ModuleNodes.getModel(method.getDeclaringModule()).getName());
             builder.append("#");
             builder.append(method.getName());
         } else {

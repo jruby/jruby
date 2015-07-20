@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -38,7 +39,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
             DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
 
-        unmodifiedAssumption = context.getCoreLibrary().getSymbolClass().model.getUnmodifiedAssumption();
+        unmodifiedAssumption = ModuleNodes.getModel(context.getCoreLibrary().getSymbolClass()).getUnmodifiedAssumption();
         this.method = method;
 
         if (method != null) {

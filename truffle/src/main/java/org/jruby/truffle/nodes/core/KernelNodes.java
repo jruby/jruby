@@ -425,8 +425,8 @@ public abstract class KernelNodes {
             final RubyBasicObject newObject = copyNode.executeCopy(frame, self);
 
             // Copy the singleton class if any.
-            if (self.getMetaClass().model.isSingleton()) {
-                singletonClassNode.executeSingletonClass(frame, newObject).model.initCopy(self.getMetaClass());
+            if (ModuleNodes.getModel(self.getMetaClass()).isSingleton()) {
+                ModuleNodes.getModel(singletonClassNode.executeSingletonClass(frame, newObject)).initCopy(self.getMetaClass());
             }
 
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
@@ -1081,7 +1081,7 @@ public abstract class KernelNodes {
         }
 
         public Assumption getUnmodifiedAssumption(RubyModule module) {
-            return module.model.getUnmodifiedAssumption();
+            return ModuleNodes.getModel(module).getUnmodifiedAssumption();
         }
 
         @Specialization
@@ -1275,7 +1275,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    metaClass.model.filterMethodsOnObject(regular, MethodFilter.PUBLIC_PROTECTED).toArray());
+                    ModuleNodes.getModel(metaClass).filterMethodsOnObject(regular, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
 
         @Specialization(guards = "!regular")
@@ -1332,7 +1332,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    metaClass.model.filterMethodsOnObject(includeAncestors, MethodFilter.PRIVATE).toArray());
+                    ModuleNodes.getModel(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PRIVATE).toArray());
         }
 
     }
@@ -1387,7 +1387,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    metaClass.model.filterMethodsOnObject(includeAncestors, MethodFilter.PROTECTED).toArray());
+                    ModuleNodes.getModel(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PROTECTED).toArray());
         }
 
     }
@@ -1417,7 +1417,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    metaClass.model.filterMethodsOnObject(includeAncestors, MethodFilter.PUBLIC).toArray());
+                    ModuleNodes.getModel(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PUBLIC).toArray());
         }
 
     }
@@ -1533,7 +1533,7 @@ public abstract class KernelNodes {
 
             if (feature.toString().equals("openssl") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
                     .getEncapsulatingSourceSection().getSource().getName().endsWith("securerandom.rb")) {
-                getContext().getCoreLibrary().getObjectClass().model.getConstants().remove("OpenSSL");
+                ModuleNodes.getModel(getContext().getCoreLibrary().getObjectClass()).getConstants().remove("OpenSSL");
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature.toString(), this));
             }
 
@@ -1727,13 +1727,13 @@ public abstract class KernelNodes {
         public RubyBasicObject singletonMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
             RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
 
-            if (!metaClass.model.isSingleton()) {
+            if (!ModuleNodes.getModel(metaClass).isSingleton()) {
                 return createEmptyArray();
             }
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    metaClass.model.filterSingletonMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
+                    ModuleNodes.getModel(metaClass).filterSingletonMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
 
     }
@@ -2095,7 +2095,7 @@ public abstract class KernelNodes {
         public RubyBasicObject toS(VirtualFrame frame, Object self) {
             CompilerDirectives.transferToInterpreter();
 
-            String className = classNode.executeGetClass(frame, self).model.getName();
+            String className = ModuleNodes.getModel(classNode.executeGetClass(frame, self)).getName();
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
@@ -2126,7 +2126,7 @@ public abstract class KernelNodes {
 
             if (isFrozenNode.executeIsFrozen(object)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).model.getName(), this));
+                throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
             }
 
             writeTaintNode.execute(object, false);

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -41,7 +42,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
         super(context, cachedName, next, indirect, dispatchAction);
 
         this.expectedClass = expectedClass;
-        this.unmodifiedAssumption = expectedClass.model.getUnmodifiedAssumption();
+        this.unmodifiedAssumption = ModuleNodes.getModel(expectedClass).getUnmodifiedAssumption();
         this.next = next;
         this.method = method;
 
@@ -53,7 +54,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
                 if ((callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit())
                         || (method.getDeclaringModule() != null
-                        && method.getDeclaringModule().model.getName().equals("TruffleInterop"))) {
+                        && ModuleNodes.getModel(method.getDeclaringModule()).getName().equals("TruffleInterop"))) {
                     insert(callNode);
                     callNode.cloneCallTarget();
                 }
@@ -134,7 +135,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     public String toString() {
         return String.format("CachedBoxedDispatchNode(:%s, %s@%x, %s)",
                 getCachedNameAsSymbol().toString(),
-                expectedClass.model.getName(), expectedClass.hashCode(),
+                ModuleNodes.getModel(expectedClass).getName(), expectedClass.hashCode(),
                 method == null ? "null" : method.toString());
     }
 

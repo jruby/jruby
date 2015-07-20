@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ClassNodes;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -82,7 +83,7 @@ public abstract class SingletonClassNode extends RubyNode {
     protected RubyClass singletonClass(RubyClass rubyClass) {
         CompilerAsserts.neverPartOfCompilation();
 
-        return rubyClass.model.getSingletonClass();
+        return ModuleNodes.getModel(rubyClass).getSingletonClass();
     }
 
     @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)", "!isRubyClass(object)" })
@@ -94,10 +95,10 @@ public abstract class SingletonClassNode extends RubyNode {
         CompilerAsserts.neverPartOfCompilation();
 
         if (object instanceof RubyClass) { // For the direct caller
-            return ((RubyClass) object).model.getSingletonClass();
+            return ModuleNodes.getModel(((RubyClass) object)).getSingletonClass();
         }
 
-        if (object.getMetaClass().model.isSingleton()) {
+        if (ModuleNodes.getModel(object.getMetaClass()).isSingleton()) {
             return object.getMetaClass();
         }
 
@@ -109,7 +110,7 @@ public abstract class SingletonClassNode extends RubyNode {
             attached = (RubyModule) object;
         }
 
-        String name = String.format("#<Class:#<%s:0x%x>>", logicalClass.model.getName(), object.verySlowGetObjectID());
+        String name = String.format("#<Class:#<%s:0x%x>>", ModuleNodes.getModel(logicalClass).getName(), object.verySlowGetObjectID());
         RubyClass singletonClass = ClassNodes.createSingletonClassOfObject(getContext(), logicalClass, attached, name);
         propagateFrozen(object, singletonClass);
 

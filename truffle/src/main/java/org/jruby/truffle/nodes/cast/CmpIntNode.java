@@ -28,6 +28,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BignumNodes;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -90,8 +91,8 @@ public abstract class CmpIntNode extends RubyNode {
         throw new RaiseException(
             getContext().getCoreLibrary().argumentError(
                 String.format("comparison of %s with %s failed",
-                        getContext().getCoreLibrary().getLogicalClass(receiver).model.getName(),
-                        getContext().getCoreLibrary().getLogicalClass(other).model.getName()), this)
+                        ModuleNodes.getModel(getContext().getCoreLibrary().getLogicalClass(receiver)).getName(),
+                        ModuleNodes.getModel(getContext().getCoreLibrary().getLogicalClass(other)).getName()), this)
         );
     }
 

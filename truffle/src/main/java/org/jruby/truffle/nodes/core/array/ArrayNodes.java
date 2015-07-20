@@ -1208,7 +1208,7 @@ public abstract class ArrayNodes {
                     if (isFrozenNode.executeIsFrozen(array)) {
                         CompilerDirectives.transferToInterpreter();
                         throw new RaiseException(
-                            getContext().getCoreLibrary().frozenError(array.getLogicalClass().model.getName(), this));
+                            getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(array.getLogicalClass()).getName(), this));
                     }
                     found = store[n];
                     continue;
@@ -1245,7 +1245,7 @@ public abstract class ArrayNodes {
                     if (isFrozenNode.executeIsFrozen(array)) {
                         CompilerDirectives.transferToInterpreter();
                         throw new RaiseException(
-                            getContext().getCoreLibrary().frozenError(array.getLogicalClass().model.getName(), this));
+                            getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(array.getLogicalClass()).getName(), this));
                     }
                     found = store[n];
                     continue;
