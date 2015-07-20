@@ -8,5 +8,6 @@ public enum OpClass {
     FLOAT_OP,
     INT_OP,
     RET_OP,
+    MOD_OP,
     OTHER_OP
 }

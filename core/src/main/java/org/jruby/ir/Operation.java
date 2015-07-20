@@ -229,6 +229,8 @@ public enum Operation {
             this.opClass = OpClass.INT_OP;
         } else if ((flags & OpFlags.f_is_float_op) > 0) {
             this.opClass = OpClass.FLOAT_OP;
+        } else if ((flags & OpFlags.f_modifies_code) > 0) {
+            this.opClass = OpClass.MOD_OP;
         } else {
             this.opClass = OpClass.OTHER_OP;
         }

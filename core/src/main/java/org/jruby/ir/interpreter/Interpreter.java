@@ -141,7 +141,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     /**
      * Evaluate the given string.
-     * @param context the current thread's context
+     * @param context the current thread'scope context
      * @param self the self to evaluate under
      * @param src The string containing the text to be evaluated
      * @param file The filename to use when reporting errors during the evaluation
@@ -152,7 +152,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Ruby runtime = context.runtime;
         if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) throw new UnsupportedOperationException();
 
-        // no binding, just eval in "current" frame (caller's frame)
+        // no binding, just eval in "current" frame (caller'scope frame)
         DynamicScope parentScope = context.getCurrentScope();
         DynamicScope evalScope = new ManyVarsDynamicScope(runtime.getStaticScopeFactory().newEvalScope(parentScope.getStaticScope()), parentScope);
 

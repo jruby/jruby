@@ -1710,6 +1710,9 @@ public class IRBuilder {
         // Build IR for arguments (including the block arg)
         receiveMethodArgs(defNode.getArgsNode());
 
+        // FIXME: This should be put potentially onto a back end of the main body instead of after arg prologue
+        addInstr(new ThreadPollInstr(false));
+
         // Build IR for body
         Operand rv = build(defNode.getBodyNode());
 

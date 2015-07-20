@@ -2,7 +2,11 @@ package org.jruby.ir.interpreter;
 
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
-import org.jruby.ir.*;
+import org.jruby.ir.Counter;
+import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
@@ -13,25 +17,37 @@ import org.jruby.runtime.callsite.CachingCallSite;
 
 import java.util.*;
 
+/**
+ * Definitions in profiler:
+ *   instruction tick - called for every significant instr in the system.  Significant currently means instrs which
+ *      are ideally recognized as part of bootstrapping.
+ *   clock tick - hotness profiler granularity (currently denoted as # of thread_poll instrs).
+ *   period - how long between attempts to analyze collected stats (PROFILE_PERIOD).  This is number of clock ticks.
+ */
 public class Profiler {
-    private static class IRCallSite {
-        IRScope  s;
-        int      v; // scope version
-        CallBase call;
-        long     count;
+    private static final int PROFILE_PERIOD = 20000;
+
+    public static class IRCallSite {
+        IRScope scope; // where call resides in
+        CallBase call; // callsite
+        long count;   // how many times call has occurred
         MixedModeIRMethod tgtM;
 
         public IRCallSite() {}
 
         public IRCallSite(IRCallSite cs) {
-            this.s     = cs.s;
-            this.v     = cs.v;
+            this.scope = cs.scope;
             this.call  = cs.call;
             this.count = 0;
         }
 
         public int hashCode() {
             return (int)this.call.callSiteId;
+        }
+
+        public void update(Instr call, IRScope scope) {
+            this.scope = scope;
+            this.call = (CallBase)call;
         }
     }
 
@@ -41,42 +57,55 @@ public class Profiler {
 
         public CallSiteProfile(IRCallSite cs) {
             this.cs = new IRCallSite(cs);
-            this.counters = new HashMap<IRScope,Counter>();
+            this.counters = new HashMap<>();
         }
     }
 
-    private static IRCallSite callerSite = new IRCallSite();
+    // Last or about to be called IR scope
+    public static IRCallSite callerSite = new IRCallSite();
 
     private static int inlineCount = 0;
-    private static int globalThreadPollCount = 0;
+    private static int clockCount = 0;
     private static int codeModificationsCount = 0;
     private static int numCyclesWithNoModifications = 0;
     private static int versionCount = 1;
 
-    private static HashMap<IRScope, Integer> scopeVersionMap = new HashMap<IRScope, Integer>();
-    private static HashMap<IRScope, Counter> scopeThreadPollCounts = new HashMap<IRScope, Counter>();
-    private static HashMap<Long, CallSiteProfile> callProfile = new HashMap<Long, CallSiteProfile>();
-    private static HashMap<Operation, Counter> opStats = new HashMap<Operation, Counter>();
+    private static HashMap<IRScope, Integer> scopeVersionMap = new HashMap<>();
+    private static HashMap<IRScope, Counter> scopeThreadPollCounts = new HashMap<>();
+    private static HashMap<Long, CallSiteProfile> callProfile = new HashMap<>();
+    private static HashMap<Operation, Counter> opStats = new HashMap<>();
+
+    private static final int NUMBER_OF_NON_MODIFYING_EXECUTIONS = 3;
+
+    /*
+     * Have we seen enough new method churn to start looking for hot methods?  We defer
+     * looking for hot methods too quickly by examining rate of change of new methods
+     * coming in.   Note: We should consider whether we want to plug this so we can play
+     * with different mechanisms.
+     */
+    private static boolean isStillBootstrapping() {
+        if (codeModificationsCount == 0) {
+            numCyclesWithNoModifications++;
+        } else {
+            numCyclesWithNoModifications = 0;
+        }
+
+        codeModificationsCount = 0;
+
+        return numCyclesWithNoModifications < NUMBER_OF_NON_MODIFYING_EXECUTIONS;
+    }
 
     private static void analyzeProfile() {
         versionCount++;
 
-        //if (inlineCount == 2) return;
+        System.out.println("CMC: " + codeModificationsCount + ", NMWNM: " + numCyclesWithNoModifications);
+        if (isStillBootstrapping()) return;
 
-        if (codeModificationsCount == 0) numCyclesWithNoModifications++;
-        else numCyclesWithNoModifications = 0;
+//         System.out.println("-------------------start analysis-----------------------");
 
-        codeModificationsCount = 0;
-
-        if (numCyclesWithNoModifications < 3) return;
-
-        // We are now good to go -- start analyzing the profile
-
-        // System.out.println("-------------------start analysis-----------------------");
-
-        final HashMap<IRScope, Long> scopeCounts = new HashMap<IRScope, Long>();
-        final ArrayList<IRCallSite> callSites = new ArrayList<IRCallSite>();
-        HashMap<IRCallSite, Long> callSiteCounts = new HashMap<IRCallSite, Long>();
+        final HashMap<IRScope, Long> scopeCounts = new HashMap<>();
+        final ArrayList<IRCallSite> callSites = new ArrayList<>();
+        HashMap<IRCallSite, Long> callSiteCounts = new HashMap<>();
         // System.out.println("# call sites: " + callProfile.keySet().size());
         long total = 0;
         for (Long id: callProfile.keySet()) {
@@ -84,11 +113,6 @@ public class Profiler {
 
             CallSiteProfile csp = callProfile.get(id);
             IRCallSite      cs  = csp.cs;
-
-            if (cs.v != scopeVersionMap.get(cs.s).intValue()) {
-                System.out.println("Skipping callsite: <" + cs.s + "," + cs.v + "> with compiled version: " + scopeVersionMap.get(cs.s));
-                continue;
-            }
 
             Set<IRScope> calledScopes = csp.counters.keySet();
             cs.count = 0;
@@ -136,7 +160,7 @@ public class Profiler {
         double freq = 0.0;
         int i = 0;
         boolean noInlining = true;
-        Set<IRScope> inlinedScopes = new HashSet<IRScope>();
+        Set<IRScope> inlinedScopes = new HashSet<>();
         for (IRCallSite ircs: callSites) {
             double contrib = (ircs.count*100.0)/total;
 
@@ -150,12 +174,12 @@ public class Profiler {
             if (i == 100 || freq > 99.0) break;
 
             System.out.println("Considering: " + ircs.call + " with id: " + ircs.call.callSiteId +
-            " in scope " + ircs.s + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
+            " in scope " + ircs.scope + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
 
             // Now inline here!
             CallBase call = ircs.call;
 
-            IRScope hs = ircs.s;
+            IRScope hs = ircs.scope;
             boolean isHotClosure = hs instanceof IRClosure;
             IRScope hc = isHotClosure ? hs : null;
             hs = isHotClosure ? hs.getLexicalParent() : hs;
@@ -212,8 +236,8 @@ public class Profiler {
         callProfile = new HashMap<Long, CallSiteProfile>();
 
         // Every 1M thread polls, discard stats
-        if (globalThreadPollCount % 1000000 == 0)  {
-            globalThreadPollCount = 0;
+        if (clockCount % 1000000 == 0)  {
+            clockCount = 0;
         }
     }
 
@@ -239,7 +263,7 @@ public class Profiler {
 
         /*
         LOG.info("------------------------");
-        LOG.info("Stats after " + globalThreadPollCount + " thread polls:");
+        LOG.info("Stats after " + clockCount + " thread polls:");
         LOG.info("------------------------");
         LOG.info("# instructions: " + interpInstrsCount);
         LOG.info("# code modifications in this period : " + codeModificationsCount);
@@ -249,7 +273,7 @@ public class Profiler {
         float f1 = 0.0f;
         for (IRScope s: scopes) {
             long n = scopeThreadPollCounts.get(s).count;
-            float p1 =  ((n*1000)/globalThreadPollCount)/10.0f;
+            float p1 =  ((n*1000)/ clockCount)/10.0f;
             String msg = i + ". " + s + " [file:" + s.getFileName() + ":" + s.getLineNumber() + "] = " + n + "; (" + p1 + "%)";
             if (s instanceof IRClosure) {
                 IRMethod m = s.getNearestMethod();
@@ -270,16 +294,14 @@ public class Profiler {
         codeModificationsCount = 0;
 
         // Every 1M thread polls, discard stats by reallocating the thread-poll count map
-         if (globalThreadPollCount % 1000000 == 0)  {
+         if (clockCount % 1000000 == 0)  {
             //System.out.println("---- resetting thread-poll counters ----");
             scopeThreadPollCounts = new HashMap<IRScope, Counter>();
-            globalThreadPollCount = 0;
+            clockCount = 0;
         }
     }
 
-    public static Integer initProfiling(IRScope scope) {
-        if (scope == null) return null;
-
+    public static int initProfiling(IRScope scope) {
         /* SSS: Not being used currently
         tpCount = scopeThreadPollCounts.get(scope);
         if (tpCount == null) {
@@ -313,26 +335,15 @@ public class Profiler {
         return scopeVersion;
     }
 
-    public static void updateCallSite(Instr instr, IRScope scope, Integer scopeVersion) {
-        if (scope == null) return;
-
-        if (instr instanceof CallBase) {
-            callerSite.s = scope;
-            callerSite.v = scopeVersion;
-            callerSite.call = (CallBase)instr;
-        }
+    // We do not pass profiling instructions through call so we temporarily tuck away last IR executed call in Profiler.
+    public static void markCallAboutToBeCalled(CallBase call, IRScope scope) {
+        callerSite.call = call;
+        callerSite.scope = scope;
     }
 
     public static void clockTick() {
         // tpCount.count++; // SSS: Not being used currently
-        globalThreadPollCount++;
-
-        // 20K is arbitrary
-        // Every 20K profile counts, spit out profile stats
-        if (globalThreadPollCount % 20000 == 0) {
-            analyzeProfile();
-            // outputProfileStats();
-        }
+        if (clockCount++ % PROFILE_PERIOD == 0) analyzeProfile();
     }
 
     public static void instrTick(Operation operation) {

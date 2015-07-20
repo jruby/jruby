@@ -8,6 +8,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.BreakInstr;
+import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
@@ -128,14 +129,8 @@ public class InterpreterEngine {
             Instr instr = instrs[ipc];
 
             Operation operation = instr.getOperation();
-            if (debug) {
-                Interpreter.LOG.info("I: {" + ipc + "} ", instr);
-                Interpreter.interpInstrsCount++;
-            } else if (profile) {
-                Profiler.instrTick(operation);
-                Interpreter.interpInstrsCount++;
-            }
-
+            if (debug) Interpreter.LOG.info("I: {" + ipc + "} ", instr);
+            Interpreter.interpInstrsCount++;
             ipc++;
 
             try {
@@ -150,7 +145,7 @@ public class InterpreterEngine {
                         receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, block);
                         break;
                     case CALL_OP:
-                        if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
+                        if (profile) Profiler.markCallAboutToBeCalled((CallBase) instr, interpreterContext.getScope());
                         processCall(context, instr, operation, currDynScope, currScope, temp, self);
                         break;
                     case RET_OP:
@@ -171,6 +166,10 @@ public class InterpreterEngine {
                         } else {
                             processBookKeepingOp(context, instr, operation, name, args, self, block, blockType, implClass, null);
                         }
+                        break;
+                    case MOD_OP:
+                        if (profile) Profiler.instrTick(operation);
+                        setResult(temp, currDynScope, instr, instr.interpret(context, currScope, currDynScope, self, temp));
                         break;
                     case OTHER_OP:
                         processOtherOp(context, instr, operation, currDynScope, currScope, temp, self, blockType, floats, fixnums, booleans);
