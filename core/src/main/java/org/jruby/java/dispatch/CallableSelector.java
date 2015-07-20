@@ -169,6 +169,19 @@ public class CallableSelector {
                 final IRubyObject lastArg = args.length > 0 ? args[ args.length - 1 ] : null;
                 int mostSpecificArity = Integer.MIN_VALUE;
 
+                final int procArity;
+                if ( lastArg instanceof RubyProc ) {
+                    final Method implMethod; final int last = msTypes.length - 1;
+                    if ( last >= 0 && msTypes[last].isInterface() && ( implMethod = getFunctionalInterfaceMethod(msTypes[last]) ) != null ) {
+                        mostSpecificArity = implMethod.getParameterTypes().length;
+                    }
+                    int arity = ((RubyProc) lastArg).getBlock().arity().getValue();
+                    procArity = arity >= 0 ? arity : - (arity + 1); /* fixedArity = false; */;
+                }
+                else {
+                    procArity = Integer.MIN_VALUE;
+                }
+
                 OUTER: for ( int c = 1; c < size; c++ ) {
                     final T candidate = candidates.get(c);
                     final Class<?>[] cTypes = candidate.getParameterTypes();
@@ -195,16 +208,12 @@ public class CallableSelector {
                     }
 
                     // special handling if we're dealing with Proc#impl :
-                    if ( lastArg instanceof RubyProc ) {
+                    if ( procArity != Integer.MIN_VALUE ) { // lastArg instanceof RubyProc
                         // cases such as (both ifaces - differ in arg count) :
                         // java.io.File#listFiles(java.io.FileFilter) ... accept(File)
                         // java.io.File#listFiles(java.io.FilenameFilter) ... accept(File, String)
-                        int procArity = ((RubyProc) lastArg).getBlock().arity().getValue();
-                        if (procArity < 0) procArity = - (procArity + 1); /* fixedArity = false; */
-
-                        final Method implMethod; final int cLast = cTypes.length - 1;
-
-                        if ( cLast >= 0 && cTypes[cLast].isInterface() && ( implMethod = getFunctionalInterfaceMethod(cTypes[cLast]) ) != null ) {
+                        final Method implMethod; final int last = cTypes.length - 1;
+                        if ( last >= 0 && cTypes[last].isInterface() && ( implMethod = getFunctionalInterfaceMethod(cTypes[last]) ) != null ) {
                             // we're sure to have an interface in the end - match arg count :
                             // NOTE: implMethod.getParameterCount() on Java 8 would do ...
                             final int methodArity = implMethod.getParameterTypes().length;
