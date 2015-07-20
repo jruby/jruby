@@ -127,7 +127,7 @@ public class RubyModuleModel implements ModuleChain {
         this.constants.putAll(from.model.constants);
         this.classVariables.putAll(from.model.classVariables);
 
-        if (from.model.start.getParentModule() != from) {
+        if (from.model.start.getParentModule() != from.model) {
             this.parentModule = from.model.start.getParentModule();
         } else {
             this.parentModule = from.model.parentModule;
