@@ -538,7 +538,7 @@ public class RubyModuleModel implements ModuleChain {
      */
     public Iterable<RubyModule> prependedAndIncludedModules() {
         final ModuleChain top = start;
-        final RubyModule currentModule = rubyModuleObject;
+        final RubyModuleModel currentModule = this;
         return new Iterable<RubyModule>() {
             @Override
             public Iterator<RubyModule> iterator() {
