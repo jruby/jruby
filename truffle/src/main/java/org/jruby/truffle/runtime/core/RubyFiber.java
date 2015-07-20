@@ -26,7 +26,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 @Deprecated
 public class RubyFiber extends RubyBasicObject {
 
-    public class FiberFields {
+    public static class FiberFields {
         public final RubyBasicObject rubyThread;
         public String name;
         public final boolean isRootFiber;
