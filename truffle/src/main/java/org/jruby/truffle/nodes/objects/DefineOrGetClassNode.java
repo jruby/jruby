@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
 
 /**
  * Define a new class, or get the existing one of the same name.
@@ -80,7 +79,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
     private RubyBasicObject getRubySuperClass(VirtualFrame frame, RubyContext context) {
         final Object superClassObj = superClass.execute(frame);
 
-        if (superClassObj instanceof RubyClass){
+        if (RubyGuards.isRubyClass(superClassObj)){
             if (ModuleNodes.getModel(((RubyClass) superClassObj)).isSingleton()) {
                 throw new RaiseException(context.getCoreLibrary().typeError("can't make subclass of virtual class", this));
             }

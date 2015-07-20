@@ -24,13 +24,8 @@ import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
-/**
- * A cache for {@link ModuleOperations#lookupMethod(RubyModule, String)}.
- */
 @NodeChildren({
         @NodeChild("self"),
         @NodeChild("name")

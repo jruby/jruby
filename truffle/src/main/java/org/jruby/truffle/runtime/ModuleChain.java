@@ -10,7 +10,6 @@
 package org.jruby.truffle.runtime;
 
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyModule;
 
 /**
  * Either an IncludedModule, a RubyClass or a RubyModule.

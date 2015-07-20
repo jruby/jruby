@@ -12,7 +12,6 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyModule;
 
 public class LexicalScope {
     public static final LexicalScope NONE = null;
@@ -38,7 +37,7 @@ public class LexicalScope {
         return liveModule;
     }
 
-    public void setLiveModule(RubyModule liveModule) {
+    public void setLiveModule(RubyBasicObject liveModule) {
         this.liveModule = liveModule;
     }
 

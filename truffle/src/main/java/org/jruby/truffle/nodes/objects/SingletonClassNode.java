@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
 
 /**
  * Reads the singleton (meta, eigen) class of an object.
@@ -95,7 +94,7 @@ public abstract class SingletonClassNode extends RubyNode {
     public RubyBasicObject getNormalObjectSingletonClass(RubyBasicObject object) {
         CompilerAsserts.neverPartOfCompilation();
 
-        if (object instanceof RubyClass) { // For the direct caller
+        if (RubyGuards.isRubyClass(object)) { // For the direct caller
             return ModuleNodes.getModel(((RubyClass) object)).getSingletonClass();
         }
 
@@ -106,9 +105,9 @@ public abstract class SingletonClassNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
         final RubyBasicObject logicalClass = object.getLogicalClass();
 
-        RubyModule attached = null;
-        if (object instanceof RubyModule) {
-            attached = (RubyModule) object;
+        RubyBasicObject attached = null;
+        if (RubyGuards.isRubyModule(object)) {
+            attached = object;
         }
 
         final String name = String.format("#<Class:#<%s:0x%x>>", ModuleNodes.getModel(logicalClass).getName(), object.verySlowGetObjectID());

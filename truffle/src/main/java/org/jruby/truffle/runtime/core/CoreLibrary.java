@@ -148,7 +148,7 @@ public class CoreLibrary {
     private final ArrayNodes.MinBlock arrayMinBlock;
     private final ArrayNodes.MaxBlock arrayMaxBlock;
 
-    private final RubyClass rubyInternalMethod;
+    private final RubyBasicObject rubyInternalMethod;
     private final Map<Errno, RubyBasicObject> errnoClasses = new HashMap<>();
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
@@ -1036,8 +1036,8 @@ public class CoreLibrary {
         CompilerAsserts.neverPartOfCompilation();
         RubyBasicObject logicalClass = getLogicalClass(receiver);
         String repr = ModuleNodes.getModel(logicalClass).getName();
-        if (receiver instanceof RubyModule) {
-            repr = ModuleNodes.getModel(((RubyModule) receiver)).getName() + ":" + repr;
+        if (RubyGuards.isRubyModule(receiver)) {
+            repr = ModuleNodes.getModel(((RubyBasicObject) receiver)).getName() + ":" + repr;
         }
         return noMethodError(String.format("undefined method `%s' for %s", name, repr), name, currentNode);
     }

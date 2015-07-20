@@ -16,10 +16,6 @@ import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 
-/**
- * Represents the Ruby {@code Class} class. Note that most of the functionality you might associate
- * with {@code Class} is actually in {@code Module}, implemented by {@link RubyModule}.
- */
 public class RubyClass extends RubyModule {
 
     // TODO(CS): is this compilation final needed? Is it a problem for correctness?

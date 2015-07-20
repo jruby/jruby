@@ -50,10 +50,10 @@ public abstract class ModuleOperations {
         assert RubyGuards.isRubyModule(origin);
         assert RubyGuards.isRubyModule(module);
 
-        if (!(origin instanceof RubyClass)) {
+        if (!(RubyGuards.isRubyClass(origin))) {
             return true;
         } else {
-            return ((module instanceof RubyClass) && ModuleOperations.assignableTo((RubyClass) module, origin));
+            return ((RubyGuards.isRubyClass(module)) && ModuleOperations.assignableTo((RubyClass) module, origin));
         }
     }
 
@@ -163,8 +163,8 @@ public abstract class ModuleOperations {
             RubyConstant constant = lookupConstantWithInherit(context, module, segment, inherit, currentNode);
             if (constant == null) {
                 return null;
-            } else if (constant.getValue() instanceof RubyModule) {
-                module = (RubyModule) constant.getValue();
+            } else if (RubyGuards.isRubyModule(constant.getValue())) {
+                module = (RubyBasicObject) constant.getValue();
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(context.getCoreLibrary().typeError(fullName.substring(0, next) + " does not refer to class/module", currentNode));
@@ -216,7 +216,7 @@ public abstract class ModuleOperations {
 
         for (RubyBasicObject ancestor : ModuleNodes.getModel(module).ancestors()) {
             // When we find a class which is not a singleton class, we are done
-            if (ancestor instanceof RubyClass && !ModuleNodes.getModel(((RubyClass) ancestor)).isSingleton()) {
+            if (RubyGuards.isRubyClass(ancestor) && !ModuleNodes.getModel(((RubyClass) ancestor)).isSingleton()) {
                 break;
             }
 
@@ -244,7 +244,7 @@ public abstract class ModuleOperations {
             }
 
             // When we find a class which is not a singleton class, we are done
-            if (ancestor instanceof RubyClass && !ModuleNodes.getModel(((RubyClass) ancestor)).isSingleton()) {
+            if (RubyGuards.isRubyClass(ancestor) && !ModuleNodes.getModel(((RubyClass) ancestor)).isSingleton()) {
                 break;
             }
         }
@@ -371,8 +371,8 @@ public abstract class ModuleOperations {
         }
 
         // If singleton class, check attached module.
-        if (module instanceof RubyClass) {
-            RubyClass klass = (RubyClass) module;
+        if (RubyGuards.isRubyClass(module)) {
+            RubyBasicObject klass = (RubyBasicObject) module;
             if (ModuleNodes.getModel(klass).isSingleton() && ModuleNodes.getModel(klass).getAttached() != null) {
                 module = ModuleNodes.getModel(klass).getAttached();
 

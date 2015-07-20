@@ -311,7 +311,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object vmSingletonClassObject(Object object) {
-            return object instanceof RubyClass && ModuleNodes.getModel(((RubyClass) object)).isSingleton();
+            return RubyGuards.isRubyClass(object) && ModuleNodes.getModel(((RubyClass) object)).isSingleton();
         }
 
     }

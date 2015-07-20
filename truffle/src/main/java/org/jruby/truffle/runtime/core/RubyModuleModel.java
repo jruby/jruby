@@ -117,8 +117,8 @@ public class RubyModuleModel implements ModuleChain {
     public void updateAnonymousChildrenModules() {
         for (Map.Entry<String, RubyConstant> entry : constants.entrySet()) {
             RubyConstant constant = entry.getValue();
-            if (constant.getValue() instanceof RubyModule) {
-                RubyModule module = (RubyModule) constant.getValue();
+            if (RubyGuards.isRubyModule(constant.getValue())) {
+                RubyBasicObject module = (RubyBasicObject) constant.getValue();
                 if (!ModuleNodes.getModel(module).hasName()) {
                     ModuleNodes.getModel(module).getAdoptedByLexicalParent(rubyModuleObject, entry.getKey(), null);
                 }
@@ -160,7 +160,7 @@ public class RubyModuleModel implements ModuleChain {
     }
 
     public boolean isClass() {
-        return rubyModuleObject instanceof RubyClass;
+        return RubyGuards.isRubyClass(rubyModuleObject);
     }
 
     // TODO (eregon, 12 May 2015): ideally all callers would be nodes and check themselves.
@@ -246,7 +246,7 @@ public class RubyModuleModel implements ModuleChain {
 
         ModuleChain mod = ModuleNodes.getModel(module).start;
         ModuleChain cur = start;
-        while (mod != null && !(mod instanceof RubyModuleModel && ((RubyModuleModel) mod).isClass())) {
+        while (mod != null && !(RubyGuards.isRubyModule(mod) && ((RubyModuleModel) mod).isClass())) {
             if (!(mod instanceof PrependMarker)) {
                 if (!ModuleOperations.includesModule(rubyModuleObject, mod.getActualModule())) {
                     cur.insertAfter(mod.getActualModule());
@@ -273,8 +273,8 @@ public class RubyModuleModel implements ModuleChain {
             }
         }
 
-        if (value instanceof RubyModule) {
-            ModuleNodes.getModel(((RubyModule) value)).getAdoptedByLexicalParent(rubyModuleObject, name, currentNode);
+        if (RubyGuards.isRubyModule(value)) {
+            ModuleNodes.getModel(((RubyBasicObject) value)).getAdoptedByLexicalParent(rubyModuleObject, name, currentNode);
         } else {
             setConstantInternal(currentNode, name, value, false);
         }
@@ -700,7 +700,7 @@ public class RubyModuleModel implements ModuleChain {
         CompilerAsserts.neverPartOfCompilation();
 
         for (RubyBasicObject ancestor : parentAncestors()) {
-            if (ancestor instanceof RubyClass) {
+            if (RubyGuards.isRubyClass(ancestor)) {
                 return (RubyClass) ancestor;
             }
         }

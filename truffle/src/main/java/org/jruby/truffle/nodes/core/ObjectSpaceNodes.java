@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.RespondToNode;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -121,7 +122,7 @@ public abstract class ObjectSpaceNodes {
         }
 
         private boolean isHidden(RubyBasicObject object) {
-            return object instanceof RubyClass && ModuleNodes.getModel(((RubyClass) object)).isSingleton();
+            return RubyGuards.isRubyClass(object) && ModuleNodes.getModel(object).isSingleton();
         }
 
     }

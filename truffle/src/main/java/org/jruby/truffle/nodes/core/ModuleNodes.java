@@ -364,7 +364,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyBasicObject appendFeatures(RubyModule features, RubyModule target) {
-            if (features instanceof RubyClass) {
+            if (RubyGuards.isRubyClass(features)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("append_features must be called only on modules", this));
             }
@@ -1116,7 +1116,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyBasicObject extendObject(VirtualFrame frame, RubyModule module, RubyBasicObject object) {
-            if (module instanceof RubyClass) {
+            if (RubyGuards.isRubyClass(module)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(module, "Module", this));
             }
@@ -1281,7 +1281,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyBasicObject moduleFunction(VirtualFrame frame, RubyModule module, Object[] names) {
-            if (module instanceof RubyClass && !getContext().getCoreLibrary().isLoadingRubyCore()) {
+            if (RubyGuards.isRubyClass(module) && !getContext().getCoreLibrary().isLoadingRubyCore()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("module_function must be called for modules", this));
             }
@@ -1413,7 +1413,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyBasicObject prependFeatures(RubyModule features, RubyModule target) {
-            if (features instanceof RubyClass) {
+            if (RubyGuards.isRubyClass(features)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("prepend_features must be called only on modules", this));
             }

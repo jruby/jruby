@@ -31,7 +31,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyIntegerFixnumRange;
 import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.util.ByteList;

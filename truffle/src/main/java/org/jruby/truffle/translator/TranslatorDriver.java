@@ -34,7 +34,7 @@ import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -117,7 +117,7 @@ public class TranslatorDriver {
         }
         if (parserContext == TranslatorDriver.ParserContext.MODULE) {
             Object module = RubyArguments.getSelf(Truffle.getRuntime().getCurrentFrame().getFrame(FrameAccess.READ_ONLY, true).getArguments());
-            lexicalScope = new LexicalScope(lexicalScope, (RubyModule) module);
+            lexicalScope = new LexicalScope(lexicalScope, (RubyBasicObject) module);
         }
         parseEnvironment.resetLexicalScope(lexicalScope);
 

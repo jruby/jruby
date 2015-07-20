@@ -20,8 +20,6 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
 
 public class ReadClassVariableNode extends RubyNode {
 
@@ -36,7 +34,7 @@ public class ReadClassVariableNode extends RubyNode {
 
     public static RubyBasicObject resolveTargetModule(LexicalScope lexicalScope) {
         // MRI logic: ignore lexical scopes (cref) referring to singleton classes
-        while ((lexicalScope.getLiveModule() instanceof RubyClass) && ModuleNodes.getModel(((RubyClass) lexicalScope.getLiveModule())).isSingleton()) {
+        while (RubyGuards.isRubyClass(lexicalScope.getLiveModule()) && ModuleNodes.getModel((lexicalScope.getLiveModule())).isSingleton()) {
             lexicalScope = lexicalScope.getParent();
         }
         return lexicalScope.getLiveModule();

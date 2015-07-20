@@ -29,8 +29,6 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -86,7 +84,7 @@ public class CoreMethodNodeManager {
                     throw new RuntimeException(String.format("Module %s not found when adding core library", moduleName));
                 }
 
-                module = (RubyModule) constant.getValue();
+                module = (RubyBasicObject) constant.getValue();
             }
         }
 
