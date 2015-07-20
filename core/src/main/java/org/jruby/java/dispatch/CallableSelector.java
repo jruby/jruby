@@ -176,8 +176,7 @@ public class CallableSelector {
                     for ( int i = 0; i < msTypes.length; i++ ) {
                         final Class<?> msType = msTypes[i], cType = cTypes[i];
                         if ( msType != cType && msType.isAssignableFrom(cType) ) {
-                            mostSpecific = candidate;
-                            msTypes = cTypes;
+                            mostSpecific = candidate; msTypes = cTypes;
                             ambiguous = false; continue OUTER;
                         }
                     }
@@ -213,21 +212,21 @@ public class CallableSelector {
                                 if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
                                 // TODO we could try to match parameter types with arg types
                                 else {
-                                    mostSpecific = candidate; ambiguous = false;
-                                    mostSpecificArity = procArity;
+                                    mostSpecific = candidate; msTypes = cTypes;
+                                    mostSpecificArity = procArity; ambiguous = false;
                                 }
-                                continue  /* OUTER */; // we want to check all
+                                continue; /* OUTER */ // we want to check all
                             }
                             else if ( methodArity < procArity && mostSpecificArity != procArity ) { // not ideal but still usable
                                 if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
                                 else if ( mostSpecificArity < methodArity ) { // candidate is "better" match
-                                    mostSpecific = candidate; ambiguous = false;
-                                    mostSpecificArity = methodArity;
+                                    mostSpecific = candidate; msTypes = cTypes;
+                                    mostSpecificArity = methodArity; ambiguous = false;
                                 }
-                                continue /* OUTER */;
+                                continue; /* OUTER */
                             }
                             else { // we're not a match and if there's something else matched than it's not really ambiguous
-                                ambiguous = false; /* continue /* OUTER */;
+                                ambiguous = false; /* continue; /* OUTER */
                             }
                         }
                     }
@@ -309,17 +308,42 @@ public class CallableSelector {
         ParameterTypes[] incoming = callables.clone();
 
         for ( int i = 0; i < args.length; i++ ) {
-            retained.clear();
-            for ( final Matcher matcher : NON_EXACT_MATCH_SEQUENCE ) {
+            retained.clear(); // non-exact match sequence :
+            // PRIMITIVABLE :
+            for ( int c = 0; c < incoming.length; c++ ) {
+                ParameterTypes callable = incoming[c];
+                if ( callable == null ) continue; // removed (matched)
+
+                Class[] types = callable.getParameterTypes();
+
+                if ( PRIMITIVABLE.match( types[i], args[i] ) ) {
+                    retained.add((T) callable);
+                    incoming[c] = null; // retaining - remove
+                }
+            }
+            // ASSIGNABLE :
+            for ( int c = 0; c < incoming.length; c++ ) {
+                ParameterTypes callable = incoming[c];
+                if ( callable == null ) continue; // removed (matched)
+
+                Class[] types = callable.getParameterTypes();
+
+                if ( ASSIGNABLE.match( types[i], args[i] ) ) {
+                    retained.add((T) callable);
+                    incoming[c] = null; // retaining - remove
+                }
+            }
+            if ( retained.isEmpty() ) {
+                // DUCKABLE :
                 for ( int c = 0; c < incoming.length; c++ ) {
                     ParameterTypes callable = incoming[c];
                     if ( callable == null ) continue; // removed (matched)
 
                     Class[] types = callable.getParameterTypes();
 
-                    if ( matcher.match( types[i], args[i] ) ) {
+                    if ( DUCKABLE.match( types[i], args[i] ) ) {
                         retained.add((T) callable);
-                        incoming[c] = null; // retaining - remove
+                        //incoming[c] = null; // retaining - remove
                     }
                 }
             }
@@ -416,9 +440,6 @@ public class CallableSelector {
         }
         @Override public String toString() { return "DUCKABLE"; } // for debugging
     };
-
-    //private static final Matcher[] MATCH_SEQUENCE = new Matcher[] { EXACT, PRIMITIVABLE, ASSIGNABLE, DUCKABLE };
-    private static final Matcher[] NON_EXACT_MATCH_SEQUENCE = new Matcher[] { PRIMITIVABLE, ASSIGNABLE, DUCKABLE };
 
     private static boolean exactMatch(ParameterTypes paramTypes, IRubyObject... args) {
         Class[] types = paramTypes.getParameterTypes();
