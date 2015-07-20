@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
 
 @NodeChild(value="module", type=RubyNode.class)
@@ -42,8 +43,8 @@ public abstract class AliasNode extends RubyNode {
         throw new RaiseException(getContext().getCoreLibrary().typeErrorNoClassToMakeAlias(this));
     }
 
-    @Specialization
-    public Object alias(RubyModule module) {
+    @Specialization(guards = "isRubyModule(module)")
+    public Object alias(RubyBasicObject module) {
         ModuleNodes.getModel(module).alias(this, newName, oldName);
         return module;
     }

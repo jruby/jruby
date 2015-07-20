@@ -27,7 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class RubyModuleModel implements ModuleChain {
 
-    public static void debugModuleChain(RubyModule module) {
+    public static void debugModuleChain(RubyBasicObject module) {
+        assert RubyGuards.isRubyModule(module);
         ModuleChain chain = ModuleNodes.getModel(module);
         while (chain != null) {
             System.err.print(chain.getClass());
@@ -236,7 +237,9 @@ public class RubyModuleModel implements ModuleChain {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void prepend(Node currentNode, RubyModule module) {
+    public void prepend(Node currentNode, RubyBasicObject module) {
+        assert RubyGuards.isRubyModule(module);
+
         checkFrozen(currentNode);
 
         // If the module we want to prepend already includes us, it is cyclic

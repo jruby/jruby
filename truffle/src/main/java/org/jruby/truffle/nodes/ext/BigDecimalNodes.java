@@ -1723,13 +1723,13 @@ public abstract class BigDecimalNodes {
 
         public abstract IntegerCastNode getCast();
 
-        public abstract int executeGetIntegerConstant(VirtualFrame frame, String name, RubyModule module);
+        public abstract int executeGetIntegerConstant(VirtualFrame frame, String name, RubyBasicObject module);
 
         public abstract int executeGetIntegerConstant(VirtualFrame frame, String name);
 
-        @Specialization
+        @Specialization(guards = "isRubyModule(module)")
         public int doInteger(String name,
-                             RubyModule module,
+                             RubyBasicObject module,
                              Object constValue,
                              Object coercedConstValue,
                              int castedValue) {

@@ -164,7 +164,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject vmGetModuleName(RubyModule module) {
+        public RubyBasicObject vmGetModuleName(RubyBasicObject module) {
             return createString(ModuleNodes.getModel(module).getName());
         }
 
@@ -235,8 +235,8 @@ public abstract class VMPrimitiveNodes {
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[] { null, null });
         }
 
-        @Specialization
-        public boolean vmObjectKindOf(VirtualFrame frame, Object object, RubyModule rubyClass) {
+        @Specialization(guards = "isRubyModule(rubyClass)")
+        public boolean vmObjectKindOf(VirtualFrame frame, Object object, RubyBasicObject rubyClass) {
             return isANode.executeIsA(frame, object, rubyClass);
         }
 

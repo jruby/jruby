@@ -19,6 +19,7 @@ import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 /**
  * Represents the Ruby {@code Module} class.
  */
+@Deprecated
 public class RubyModule extends RubyBasicObject {
 
     public final RubyModuleModel model;

@@ -19,6 +19,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.LexicalScope;
@@ -26,6 +27,7 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
 
 @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
@@ -45,11 +47,12 @@ public abstract class LookupConstantNode extends RubyNode {
     public abstract RubyConstant executeLookupConstant(VirtualFrame frame, Object module, String name);
 
     @Specialization(guards = {
+            "isRubyModule(module)",
             "module == cachedModule",
             "guardName(name, cachedName, sameNameProfile)"
     }, assumptions = "getUnmodifiedAssumption(cachedModule)", limit = "getCacheLimit()")
-    protected RubyConstant lookupConstant(VirtualFrame frame, RubyModule module, String name,
-            @Cached("module") RubyModule cachedModule,
+    protected RubyConstant lookupConstant(VirtualFrame frame, RubyBasicObject module, String name,
+            @Cached("module") RubyBasicObject cachedModule,
             @Cached("name") String cachedName,
             @Cached("doLookup(cachedModule, cachedName)") RubyConstant constant,
             @Cached("isVisible(cachedModule, constant)") boolean isVisible,
@@ -61,13 +64,13 @@ public abstract class LookupConstantNode extends RubyNode {
         return constant;
     }
 
-    public Assumption getUnmodifiedAssumption(RubyModule module) {
+    public Assumption getUnmodifiedAssumption(RubyBasicObject module) {
         return ModuleNodes.getModel(module).getUnmodifiedAssumption();
     }
 
     @TruffleBoundary
-    @Specialization
-    protected RubyConstant lookupConstantUncached(RubyModule module, String name) {
+    @Specialization(guards = "isRubyModule(module)")
+    protected RubyConstant lookupConstantUncached(RubyBasicObject module, String name) {
         RubyConstant constant = doLookup(module, name);
         boolean isVisible = isVisible(module, constant);
 
@@ -93,11 +96,11 @@ public abstract class LookupConstantNode extends RubyNode {
         }
     }
 
-    protected RubyConstant doLookup(RubyModule module, String name) {
+    protected RubyConstant doLookup(RubyBasicObject module, String name) {
         return ModuleOperations.lookupConstant(getContext(), lexicalScope, module, name);
     }
 
-    protected boolean isVisible(RubyModule module, RubyConstant constant) {
+    protected boolean isVisible(RubyBasicObject module, RubyConstant constant) {
         return constant == null || constant.isVisibleTo(getContext(), lexicalScope, module);
     }
 

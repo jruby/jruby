@@ -58,8 +58,10 @@ public abstract class ModuleOperations {
     }
 
     @TruffleBoundary
-    public static Map<String, RubyConstant> getAllConstants(RubyModule module) {
+    public static Map<String, RubyConstant> getAllConstants(RubyBasicObject module) {
         CompilerAsserts.neverPartOfCompilation();
+
+        assert RubyGuards.isRubyModule(module);
 
         final Map<String, RubyConstant> constants = new HashMap<>();
 
@@ -311,8 +313,10 @@ public abstract class ModuleOperations {
     }
 
     @TruffleBoundary
-    public static Map<String, Object> getAllClassVariables(RubyModule module) {
+    public static Map<String, Object> getAllClassVariables(RubyBasicObject module) {
         CompilerAsserts.neverPartOfCompilation();
+
+        assert RubyGuards.isRubyModule(module);
 
         final Map<String, Object> classVariables = new HashMap<>();
 

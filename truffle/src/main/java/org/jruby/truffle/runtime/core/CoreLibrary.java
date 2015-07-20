@@ -947,7 +947,7 @@ public class CoreLibrary {
         return nameError;
     }
 
-    public RubyBasicObject nameErrorConstantNotDefined(RubyModule module, String name, Node currentNode) {
+    public RubyBasicObject nameErrorConstantNotDefined(RubyBasicObject module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("constant %s::%s not defined", ModuleNodes.getModel(module).getName(), name), name, currentNode);
     }
@@ -997,12 +997,12 @@ public class CoreLibrary {
         return nameError(String.format("undefined method `%s' for %s", name, ModuleNodes.getModel(module).getName()), name, currentNode);
     }
 
-    public RubyBasicObject nameErrorMethodNotDefinedIn(RubyModule module, String name, Node currentNode) {
+    public RubyBasicObject nameErrorMethodNotDefinedIn(RubyBasicObject module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("method `%s' not defined in %s", name, ModuleNodes.getModel(module).getName()), name, currentNode);
     }
 
-    public RubyBasicObject nameErrorPrivateMethod(String name, RubyModule module, Node currentNode) {
+    public RubyBasicObject nameErrorPrivateMethod(String name, RubyBasicObject module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("method `%s' for %s is private", name, ModuleNodes.getModel(module).getName()), name, currentNode);
     }

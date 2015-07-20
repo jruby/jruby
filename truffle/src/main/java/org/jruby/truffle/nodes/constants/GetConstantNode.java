@@ -44,13 +44,13 @@ public abstract class GetConstantNode extends RubyNode {
 
     public abstract Object executeGetConstant(VirtualFrame frame, Object module, String name);
 
-    @Specialization(guards = { "constant != null", "!constant.isAutoload()" })
-    protected Object getConstant(RubyModule module, String name, RubyConstant constant) {
+    @Specialization(guards = { "isRubyModule(module)", "constant != null", "!constant.isAutoload()" })
+    protected Object getConstant(RubyBasicObject module, String name, RubyConstant constant) {
         return constant.getValue();
     }
 
-    @Specialization(guards = { "constant != null", "constant.isAutoload()" })
-    protected Object autoloadConstant(VirtualFrame frame, RubyModule module, String name, RubyConstant constant,
+    @Specialization(guards = { "isRubyModule(module)", "constant != null", "constant.isAutoload()" })
+    protected Object autoloadConstant(VirtualFrame frame, RubyBasicObject module, String name, RubyConstant constant,
             @Cached("createRequireNode()") RequireNode requireNode) {
 
         final RubyBasicObject path = (RubyBasicObject) constant.getValue();
@@ -67,8 +67,8 @@ public abstract class GetConstantNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "constant == null")
-    protected Object missingConstant(VirtualFrame frame, RubyModule module, String name, Object constant,
+    @Specialization(guards = {"isRubyModule(module)", "constant == null"})
+    protected Object missingConstant(VirtualFrame frame, RubyBasicObject module, String name, Object constant,
             @Cached("isValidConstantName(name)") boolean isValidConstantName,
             @Cached("createConstMissingNode()") CallDispatchHeadNode constMissingNode,
             @Cached("getSymbol(name)") RubyBasicObject symbolName) {
