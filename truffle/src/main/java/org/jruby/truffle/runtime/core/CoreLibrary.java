@@ -163,7 +163,7 @@ public class CoreLibrary {
 
     public final Allocator NO_ALLOCATOR = new Allocator() {
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(typeError(String.format("allocator undefined for %s", ModuleNodes.getModel(rubyClass).getName()), currentNode));
         }

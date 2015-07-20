@@ -16,6 +16,7 @@ import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 
+@Deprecated
 public class RubyClass extends RubyModule {
 
     // TODO(CS): is this compilation final needed? Is it a problem for correctness?

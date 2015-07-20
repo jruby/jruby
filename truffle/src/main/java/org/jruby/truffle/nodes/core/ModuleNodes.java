@@ -52,7 +52,10 @@ import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.MethodFilter;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyModuleModel;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -1177,8 +1180,8 @@ public abstract class ModuleNodes {
             return nil();
         }
 
-        @Specialization
-        public Object initializeCopy(RubyClass self, RubyClass from) {
+        @Specialization(guards = {"isRubyClass(self)", "isRubyClass(from)"})
+        public Object initializeCopy(RubyBasicObject self, RubyBasicObject from) {
             CompilerDirectives.transferToInterpreter();
 
             if (from == getContext().getCoreLibrary().getBasicObjectClass()) {
@@ -1993,7 +1996,7 @@ public abstract class ModuleNodes {
     public static class ModuleAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return new RubyModule(context, rubyClass, null, null, currentNode);
         }
 

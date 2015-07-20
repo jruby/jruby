@@ -173,7 +173,7 @@ public abstract class BigDecimalNodes {
     public static class RubyBigDecimalAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return new RubyBasicObject(rubyClass, BIG_DECIMAL_FACTORY.newInstance(Type.NORMAL, BigDecimal.ZERO));
         }
 

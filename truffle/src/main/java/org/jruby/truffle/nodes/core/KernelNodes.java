@@ -946,8 +946,8 @@ public abstract class KernelNodes {
             classNode = ClassNodeGen.create(context, sourceSection, null);
         }
 
-        @Specialization
-        public boolean instanceOf(VirtualFrame frame, Object self, RubyClass rubyClass) {
+        @Specialization(guards = "isRubyClass(rubyClass)")
+        public boolean instanceOf(VirtualFrame frame, Object self, RubyBasicObject rubyClass) {
             return classNode.executeGetClass(frame, self) == rubyClass;
         }
 

@@ -30,7 +30,7 @@ public class RubyBinding extends RubyBasicObject {
 
     public static class BindingAllocator implements Allocator {
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return BindingNodes.createRubyBinding(rubyClass);
         }
     }

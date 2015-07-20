@@ -39,7 +39,6 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
@@ -310,7 +309,7 @@ public abstract class HashNodes {
 
         @ExplodeLoop
         @Specialization(guards = "isSmallArrayOfPairs(args)")
-        public Object construct(VirtualFrame frame, RubyClass hashClass, Object[] args) {
+        public Object construct(VirtualFrame frame, RubyBasicObject hashClass, Object[] args) {
             final RubyBasicObject array = (RubyBasicObject) args[0];
 
             final Object[] store = (Object[]) ArrayNodes.getStore(array);
@@ -347,7 +346,7 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public Object constructFallback(VirtualFrame frame, RubyClass hashClass, Object[] args) {
+        public Object constructFallback(VirtualFrame frame, RubyBasicObject hashClass, Object[] args) {
             return ruby(frame, "_constructor_fallback(*args)", "args", ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), args));
         }
 
@@ -1599,7 +1598,7 @@ public abstract class HashNodes {
     public static class HashAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return createEmptyHash(rubyClass);
         }
 

@@ -4620,7 +4620,7 @@ public abstract class ArrayNodes {
     public static class ArrayAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return createEmptyArray(rubyClass);
         }
 

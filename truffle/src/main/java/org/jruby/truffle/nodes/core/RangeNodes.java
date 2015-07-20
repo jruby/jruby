@@ -24,7 +24,10 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyIntegerFixnumRange;
+import org.jruby.truffle.runtime.core.RubyLongFixnumRange;
+import org.jruby.truffle.runtime.core.RubyObjectRange;
 
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
@@ -473,7 +476,7 @@ public abstract class RangeNodes {
     public static class RangeAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return new RubyObjectRange(rubyClass, context.getCoreLibrary().getNilObject(), context.getCoreLibrary().getNilObject(), false);
         }
 

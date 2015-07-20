@@ -21,7 +21,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 
@@ -49,7 +48,7 @@ public abstract class MutexNodes {
 
     public static class MutexAllocator implements Allocator {
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return new RubyBasicObject(rubyClass, MUTEX_FACTORY.newInstance(new ReentrantLock()));
         }
     }

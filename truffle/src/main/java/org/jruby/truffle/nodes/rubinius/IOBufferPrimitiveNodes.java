@@ -48,7 +48,6 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.util.ByteList;
 
 import java.util.EnumSet;
@@ -136,7 +135,7 @@ public abstract class IOBufferPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject allocate(VirtualFrame frame, RubyClass classToAllocate) {
+        public RubyBasicObject allocate(RubyBasicObject classToAllocate) {
             return new RubyBasicObject(classToAllocate, IO_BUFFER_FACTORY.newInstance(
                     true,
                     ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),

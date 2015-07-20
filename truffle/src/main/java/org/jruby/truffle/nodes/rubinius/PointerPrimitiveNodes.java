@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.core.PointerGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.util.ByteList;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -33,12 +32,12 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject malloc(RubyClass pointerClass, int size) {
+        public RubyBasicObject malloc(RubyBasicObject pointerClass, int size) {
             return malloc(pointerClass, (long) size);
         }
 
         @Specialization
-        public RubyBasicObject malloc(RubyClass pointerClass, long size) {
+        public RubyBasicObject malloc(RubyBasicObject pointerClass, long size) {
             return PointerNodes.createPointer(pointerClass, getMemoryManager().newPointer(UnsafeHolder.U.allocateMemory(size)));
         }
 

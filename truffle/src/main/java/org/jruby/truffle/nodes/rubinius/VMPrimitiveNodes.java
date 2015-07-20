@@ -564,7 +564,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject setClass(RubyBasicObject object, RubyClass newClass) {
+        public RubyBasicObject setClass(RubyBasicObject object, RubyBasicObject newClass) {
             // TODO CS 17-Apr-15 - what about the @CompilationFinals on the class in RubyBasicObject?
             CompilerDirectives.bailout("We're not sure how vm_set_class (Rubinius::Unsafe.set_class) will interact with compilation");
             object.unsafeChangeLogicalClass(newClass);

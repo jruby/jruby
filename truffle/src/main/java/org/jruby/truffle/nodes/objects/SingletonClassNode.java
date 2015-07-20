@@ -79,8 +79,8 @@ public abstract class SingletonClassNode extends RubyNode {
         return noSingletonClass();
     }
 
-    @Specialization
-    protected RubyBasicObject singletonClass(RubyClass rubyClass) {
+    @Specialization(guards = "isRubyClass(rubyClass)")
+    protected RubyBasicObject singletonClassClass(RubyBasicObject rubyClass) {
         CompilerAsserts.neverPartOfCompilation();
 
         return ModuleNodes.getModel(rubyClass).getSingletonClass();

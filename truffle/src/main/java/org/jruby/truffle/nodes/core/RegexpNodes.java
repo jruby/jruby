@@ -36,7 +36,10 @@ import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyMatchData;
+import org.jruby.truffle.runtime.core.RubyRegexp;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.*;
 
 import java.nio.ByteBuffer;
@@ -470,7 +473,7 @@ public abstract class RegexpNodes {
         return regexp;
     }
 
-    public static RubyBasicObject createRubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, int options) {
+    public static RubyBasicObject createRubyRegexp(Node currentNode, RubyBasicObject regexpClass, ByteList regex, int options) {
         final RubyBasicObject regexp = new RubyRegexp(regexpClass);
         RegexpNodes.setOptions(regexp, RegexpOptions.fromEmbeddedOptions(options));
         RegexpNodes.initialize(regexp, RegexpNodes.compile(currentNode, regexpClass.getContext(), regex, RegexpNodes.getOptions(regexp)), regex);
@@ -484,7 +487,7 @@ public abstract class RegexpNodes {
         return regexp;
     }
 
-    public static RubyBasicObject createRubyRegexp(RubyClass regexpClass, Regex regex, ByteList source) {
+    public static RubyBasicObject createRubyRegexp(RubyBasicObject regexpClass, Regex regex, ByteList source) {
         final RubyBasicObject regexp = new RubyRegexp(regexpClass);
         RegexpNodes.initialize(regexp, regex, source);
         return regexp;
@@ -701,7 +704,7 @@ public abstract class RegexpNodes {
     public static class RegexpAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return new RubyRegexp(rubyClass);
         }
 

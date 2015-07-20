@@ -27,7 +27,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.util.ByteList;
 
 /**
@@ -43,7 +42,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
 
         @Specialization
-        public Object encodingConverterAllocate(RubyClass encodingConverterClass, NotProvided unused1, NotProvided unused2) {
+        public Object encodingConverterAllocate(RubyBasicObject encodingConverterClass, NotProvided unused1, NotProvided unused2) {
             return EncodingConverterNodes.createEncodingConverter(encodingConverterClass, null);
         }
 

@@ -218,7 +218,7 @@ public class RubyBasicObject implements TruffleObject {
         // TODO(CS): why on earth is this a boundary? Seems like a really bad thing.
         @TruffleBoundary
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return new RubyBasicObject(rubyClass);
         }
 

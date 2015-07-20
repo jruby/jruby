@@ -26,7 +26,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyFiber;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
@@ -184,7 +183,7 @@ public abstract class FiberNodes {
         return getFields(fiber).alive || !getFields(fiber).messageQueue.isEmpty();
     }
 
-    public static RubyBasicObject createRubyFiber(RubyBasicObject parent, RubyClass rubyClass, String name) {
+    public static RubyBasicObject createRubyFiber(RubyBasicObject parent, RubyBasicObject rubyClass, String name) {
         assert RubyGuards.isRubyThread(parent);
         return new RubyFiber(parent, rubyClass, name);
     }
@@ -346,7 +345,7 @@ public abstract class FiberNodes {
     public static class FiberAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             RubyBasicObject parent = context.getThreadManager().getCurrentThread();
             return createRubyFiber(parent, rubyClass, null);
         }

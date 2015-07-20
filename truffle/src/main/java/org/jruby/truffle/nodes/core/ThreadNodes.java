@@ -332,8 +332,8 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isRubySymbol(timing)", "isRubyProc(block)"})
-        public Object handle_interrupt(VirtualFrame frame, RubyBasicObject self, RubyClass exceptionClass, RubyBasicObject timing, RubyBasicObject block) {
+        @Specialization(guards = {"isRubyClass(exceptionClass)", "isRubySymbol(timing)", "isRubyProc(block)"})
+        public Object handle_interrupt(VirtualFrame frame, RubyBasicObject self, RubyBasicObject exceptionClass, RubyBasicObject timing, RubyBasicObject block) {
             // TODO (eregon, 12 July 2015): should we consider exceptionClass?
             final InterruptMode newInterruptMode = symbolToInterruptMode(timing);
 
@@ -598,7 +598,7 @@ public abstract class ThreadNodes {
     public static class ThreadAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return createRubyThread(rubyClass, context.getThreadManager());
         }
 
