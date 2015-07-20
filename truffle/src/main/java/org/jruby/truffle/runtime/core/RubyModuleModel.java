@@ -26,6 +26,19 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class RubyModuleModel implements ModuleChain {
 
+    public static void debugModuleChain(RubyModule module) {
+        ModuleChain chain = module.model;
+        while (chain != null) {
+            System.err.print(chain.getClass());
+            if (!(chain instanceof PrependMarker)) {
+                RubyModule real = chain.getActualModule();
+                System.err.print(" " + real.model.getName());
+            }
+            System.err.println();
+            chain = chain.getParentModule();
+        }
+    }
+
     private final RubyModule rubyModuleObject;
 
     // The context is stored here - objects can obtain it via their class (which is a module)
