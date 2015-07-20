@@ -81,8 +81,7 @@ project 'JRuby Complete' do
 
       # use the javadocs and sources from jruby-core !!!
       phase :package do
-        set = ['sources']
-        set << 'javadocs' if name != 'snapshots'
+        set = ['sources', 'javadoc' ]
         plugin :dependency do
           items = set.collect do |classifier|
             { 'groupId' =>  '${project.groupId}',
