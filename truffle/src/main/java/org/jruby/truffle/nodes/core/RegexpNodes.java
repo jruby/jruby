@@ -463,7 +463,7 @@ public abstract class RegexpNodes {
         setSource(regexp, setSource);
     }
 
-    public static RubyBasicObject createRubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, RegexpOptions options) {
+    public static RubyBasicObject createRubyRegexp(Node currentNode, RubyBasicObject regexpClass, ByteList regex, RegexpOptions options) {
         final RubyBasicObject regexp = new RubyRegexp(regexpClass);
         RegexpNodes.setOptions(regexp, options);
         RegexpNodes.initialize(regexp, RegexpNodes.compile(currentNode, regexpClass.getContext(), regex, options), regex);
@@ -477,7 +477,7 @@ public abstract class RegexpNodes {
         return regexp;
     }
 
-    public static RubyBasicObject createRubyRegexp(RubyClass regexpClass, Regex regex, ByteList source, RegexpOptions options) {
+    public static RubyBasicObject createRubyRegexp(RubyBasicObject regexpClass, Regex regex, ByteList source, RegexpOptions options) {
         final RubyBasicObject regexp = new RubyRegexp(regexpClass);
         RegexpNodes.setOptions(regexp, options);
         RegexpNodes.initialize(regexp, regex, source);

@@ -42,7 +42,7 @@ public abstract class ArrayBuilderNode extends Node {
     public abstract Object appendValue(Object store, int index, Object value);
     public abstract Object finish(Object store, int length);
 
-    public RubyBasicObject finishAndCreate(RubyClass arrayClass, Object store, int length) {
+    public RubyBasicObject finishAndCreate(RubyBasicObject arrayClass, Object store, int length) {
         return ArrayNodes.createGeneralArray(arrayClass, finish(store, length), length);
     }
 

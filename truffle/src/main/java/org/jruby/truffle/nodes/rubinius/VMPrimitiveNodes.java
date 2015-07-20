@@ -202,7 +202,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyClass vmObjectClass(VirtualFrame frame, Object object) {
+        public RubyBasicObject vmObjectClass(VirtualFrame frame, Object object) {
             return classNode.executeGetClass(frame, object);
         }
 

@@ -38,12 +38,12 @@ public class RubyProc extends RubyBasicObject {
     @CompilationFinal public Object self;
     @CompilationFinal public RubyBasicObject block;
 
-    public RubyProc(RubyClass procClass, ProcNodes.Type type) {
+    public RubyProc(RubyBasicObject procClass, ProcNodes.Type type) {
         super(procClass);
         this.type = type;
     }
 
-    public RubyProc(RubyClass procClass, ProcNodes.Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks,
+    public RubyProc(RubyBasicObject procClass, ProcNodes.Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks,
                     CallTarget callTargetForProcs, CallTarget callTargetForLambdas, MaterializedFrame declarationFrame,
                     InternalMethod method, Object self, RubyBasicObject block) {
         this(procClass, type);

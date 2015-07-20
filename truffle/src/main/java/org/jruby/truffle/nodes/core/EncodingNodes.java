@@ -70,7 +70,7 @@ public abstract class EncodingNodes {
         lookup.put(aliasName.toLowerCase(Locale.ENGLISH), encoding);
     }
 
-    public static RubyBasicObject newEncoding(RubyClass encodingClass, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
+    public static RubyBasicObject newEncoding(RubyBasicObject encodingClass, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
         return createRubyEncoding(encodingClass, encoding, new ByteList(name, p, end), dummy);
     }
 
@@ -97,7 +97,7 @@ public abstract class EncodingNodes {
         return clone;
     }
 
-    public static RubyBasicObject createRubyEncoding(RubyClass encodingClass, Encoding encoding, ByteList name, boolean dummy) {
+    public static RubyBasicObject createRubyEncoding(RubyBasicObject encodingClass, Encoding encoding, ByteList name, boolean dummy) {
         return new RubyEncoding(encodingClass, encoding, name, dummy);
     }
 

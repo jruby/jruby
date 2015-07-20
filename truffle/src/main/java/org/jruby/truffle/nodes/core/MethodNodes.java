@@ -67,7 +67,7 @@ public abstract class MethodNodes {
         METHOD_FACTORY = shape.createFactory();
     }
 
-    public static RubyBasicObject createMethod(RubyClass rubyClass, Object receiver, InternalMethod method) {
+    public static RubyBasicObject createMethod(RubyBasicObject rubyClass, Object receiver, InternalMethod method) {
         return new RubyBasicObject(rubyClass, METHOD_FACTORY.newInstance(receiver, method));
     }
 
@@ -179,7 +179,7 @@ public abstract class MethodNodes {
         }
 
         @Specialization
-        public RubyModule owner(RubyBasicObject method) {
+        public RubyBasicObject owner(RubyBasicObject method) {
             return getMethod(method).getDeclaringModule();
         }
 
@@ -255,7 +255,7 @@ public abstract class MethodNodes {
 
         @Specialization
         public RubyBasicObject unbind(VirtualFrame frame, RubyBasicObject method) {
-            RubyClass receiverClass = classNode.executeGetClass(frame, getReceiver(method));
+            final RubyBasicObject receiverClass = classNode.executeGetClass(frame, getReceiver(method));
             return UnboundMethodNodes.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), receiverClass, getMethod(method));
         }
 

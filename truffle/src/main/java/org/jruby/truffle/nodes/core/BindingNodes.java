@@ -40,7 +40,7 @@ public abstract class BindingNodes {
         return createRubyBinding(bindingClass, null, null);
     }
 
-    public static RubyBasicObject createRubyBinding(RubyClass bindingClass, Object self, MaterializedFrame frame) {
+    public static RubyBasicObject createRubyBinding(RubyBasicObject bindingClass, Object self, MaterializedFrame frame) {
         return new RubyBinding(bindingClass, self, frame);
     }
 

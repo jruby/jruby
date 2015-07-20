@@ -27,12 +27,12 @@ public class PrependMarker implements ModuleChain {
     }
 
     @Override
-    public RubyModule getActualModule() {
+    public RubyBasicObject getActualModule() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void insertAfter(RubyModule module) {
+    public void insertAfter(RubyBasicObject module) {
         parentModule = new IncludedModule(module, parentModule);
     }
 

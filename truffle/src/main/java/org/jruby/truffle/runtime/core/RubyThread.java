@@ -65,7 +65,7 @@ public class RubyThread extends RubyBasicObject {
 
     public ThreadFields fields;
 
-    public RubyThread(RubyClass rubyClass, ThreadManager manager) {
+    public RubyThread(RubyBasicObject rubyClass, ThreadManager manager) {
         super(rubyClass);
         fields = new ThreadFields(manager, new FiberManager(this, manager), new RubyBasicObject(rubyClass.getContext().getCoreLibrary().getObjectClass()));
     }

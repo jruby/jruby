@@ -10,17 +10,19 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.ModuleChain;
 
 /**
  * A reference to an included RubyModule.
  */
 public class IncludedModule implements ModuleChain {
-    private final RubyModule includedModule;
+    private final RubyBasicObject includedModule;
     @CompilerDirectives.CompilationFinal
     private ModuleChain parentModule;
 
-    public IncludedModule(RubyModule includedModule, ModuleChain parentModule) {
+    public IncludedModule(RubyBasicObject includedModule, ModuleChain parentModule) {
+        assert RubyGuards.isRubyModule(includedModule);
         this.includedModule = includedModule;
         this.parentModule = parentModule;
     }
@@ -31,7 +33,7 @@ public class IncludedModule implements ModuleChain {
     }
 
     @Override
-    public RubyModule getActualModule() {
+    public RubyBasicObject getActualModule() {
         return includedModule;
     }
 
@@ -41,7 +43,7 @@ public class IncludedModule implements ModuleChain {
     }
 
     @Override
-    public void insertAfter(RubyModule module) {
+    public void insertAfter(RubyBasicObject module) {
         parentModule = new IncludedModule(module, parentModule);
     }
 }

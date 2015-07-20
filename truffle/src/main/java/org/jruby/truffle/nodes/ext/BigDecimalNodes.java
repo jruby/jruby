@@ -277,7 +277,7 @@ public abstract class BigDecimalNodes {
                     roundModeCall.call(frame, getBigDecimalClass(), "mode", null, 256)));
         }
 
-        protected RubyClass getBigDecimalClass() {
+        protected RubyBasicObject getBigDecimalClass() {
             return getContext().getCoreLibrary().getBigDecimalClass();
         }
     }
@@ -334,7 +334,7 @@ public abstract class BigDecimalNodes {
         public abstract RubyBasicObject executeCreate(VirtualFrame frame, Object value, RubyBasicObject alreadyAllocatedSelf, int digits);
 
         public final RubyBasicObject executeCreate(VirtualFrame frame, Object value) {
-            return executeCreate(frame, value, getBigDecimalClass().allocate(this));
+            return executeCreate(frame, value, ((RubyClass) getBigDecimalClass()).allocate(this));
         }
 
         public final RubyBasicObject executeCreate(VirtualFrame frame, Object value, RubyBasicObject alreadyAllocatedSelf) {

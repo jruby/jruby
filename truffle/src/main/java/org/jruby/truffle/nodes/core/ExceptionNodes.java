@@ -63,11 +63,11 @@ public abstract class ExceptionNodes {
         ((RubyException) exception).message = message;
     }
 
-    public static RubyBasicObject createRubyException(RubyClass rubyClass) {
+    public static RubyBasicObject createRubyException(RubyBasicObject rubyClass) {
         return new RubyException(rubyClass);
     }
 
-    public static RubyBasicObject createRubyException(RubyClass rubyClass, Object message, Backtrace backtrace) {
+    public static RubyBasicObject createRubyException(RubyBasicObject rubyClass, Object message, Backtrace backtrace) {
         return new RubyException(rubyClass, message, backtrace);
     }
 

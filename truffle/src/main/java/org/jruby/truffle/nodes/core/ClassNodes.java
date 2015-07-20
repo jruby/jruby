@@ -31,7 +31,7 @@ import org.jruby.truffle.runtime.core.RubyModule;
 public abstract class ClassNodes {
 
     /** Special constructor for class Class */
-    public static RubyClass createClassClass(RubyContext context, Allocator allocator) {
+    public static RubyBasicObject createClassClass(RubyContext context, Allocator allocator) {
         return new RubyClass(context, null, null, null, "Class", false, null, allocator);
     }
 
@@ -39,14 +39,18 @@ public abstract class ClassNodes {
      * This constructor supports initialization and solves boot-order problems and should not
      * normally be used from outside this class.
      */
-    public static RubyClass createBootClass(RubyClass classClass, RubyClass superclass, String name, Allocator allocator) {
+    public static RubyBasicObject createBootClass(RubyBasicObject classClass, RubyBasicObject superclass, String name, Allocator allocator) {
+        assert RubyGuards.isRubyClass(classClass);
+        assert superclass == null || RubyGuards.isRubyClass(superclass);
         return new RubyClass(classClass.getContext(), classClass, null, superclass, name, false, null, allocator);
     }
 
-    public static RubyClass createSingletonClassOfObject(RubyContext context, RubyClass superclass, RubyModule attached, String name) {
+    public static RubyBasicObject createSingletonClassOfObject(RubyContext context, RubyBasicObject superclass, RubyBasicObject attached, String name) {
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
         // Allocator is null here, we cannot create instances of singleton classes.
+        assert RubyGuards.isRubyClass(superclass);
+        assert attached == null || RubyGuards.isRubyModule(attached);
         return ModuleNodes.getModel(new RubyClass(context, superclass.getLogicalClass(), null, superclass, name, true, attached, null)).ensureSingletonConsistency();
     }
 
@@ -111,7 +115,10 @@ public abstract class ClassNodes {
             super(context, sourceSection);
         }
 
-        void triggerInheritedHook(VirtualFrame frame, RubyClass subClass, RubyClass superClass) {
+        void triggerInheritedHook(VirtualFrame frame, RubyBasicObject subClass, RubyBasicObject superClass) {
+            assert RubyGuards.isRubyClass(subClass);
+            assert RubyGuards.isRubyClass(superClass);
+
             if (inheritedNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
@@ -119,7 +126,8 @@ public abstract class ClassNodes {
             inheritedNode.call(frame, superClass, "inherited", null, subClass);
         }
 
-        void moduleInitialize(VirtualFrame frame, RubyClass rubyClass, RubyBasicObject block) {
+        void moduleInitialize(VirtualFrame frame, RubyBasicObject rubyClass, RubyBasicObject block) {
+            assert RubyGuards.isRubyClass(rubyClass);
             assert RubyGuards.isRubyProc(block);
 
             if (moduleInitializeNode == null) {
@@ -130,33 +138,37 @@ public abstract class ClassNodes {
         }
 
         @Specialization
-        public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, NotProvided superclass, NotProvided block) {
+        public RubyBasicObject initialize(VirtualFrame frame, RubyClass rubyClass, NotProvided superclass, NotProvided block) {
             return initializeGeneralWithoutBlock(frame, rubyClass, getContext().getCoreLibrary().getObjectClass());
         }
 
         @Specialization
-        public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, NotProvided block) {
+        public RubyBasicObject initialize(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, NotProvided block) {
             return initializeGeneralWithoutBlock(frame, rubyClass, superclass);
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, NotProvided superclass, RubyBasicObject block) {
+        public RubyBasicObject initialize(VirtualFrame frame, RubyClass rubyClass, NotProvided superclass, RubyBasicObject block) {
             return initializeGeneralWithBlock(frame, rubyClass, getContext().getCoreLibrary().getObjectClass(), block);
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public RubyClass initialize(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, RubyBasicObject block) {
+        public RubyBasicObject initialize(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, RubyBasicObject block) {
             return initializeGeneralWithBlock(frame, rubyClass, superclass, block);
         }
 
-        private RubyClass initializeGeneralWithoutBlock(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass) {
+        private RubyBasicObject initializeGeneralWithoutBlock(VirtualFrame frame, RubyBasicObject rubyClass, RubyBasicObject superclass) {
+            assert RubyGuards.isRubyClass(rubyClass);
+            assert RubyGuards.isRubyClass(superclass);
             ModuleNodes.getModel(rubyClass).initialize(superclass);
             triggerInheritedHook(frame, rubyClass, superclass);
 
             return rubyClass;
         }
 
-        private RubyClass initializeGeneralWithBlock(VirtualFrame frame, RubyClass rubyClass, RubyClass superclass, RubyBasicObject block) {
+        private RubyBasicObject initializeGeneralWithBlock(VirtualFrame frame, RubyBasicObject rubyClass, RubyBasicObject superclass, RubyBasicObject block) {
+            assert RubyGuards.isRubyClass(rubyClass);
+            assert RubyGuards.isRubyClass(superclass);
             assert RubyGuards.isRubyProc(block);
 
             ModuleNodes.getModel(rubyClass).initialize(superclass);
@@ -191,7 +203,7 @@ public abstract class ClassNodes {
 
         @Specialization
         public Object getSuperClass(RubyClass rubyClass) {
-            RubyClass superclass = ModuleNodes.getModel(rubyClass).getSuperClass();
+            final RubyBasicObject superclass = ModuleNodes.getModel(rubyClass).getSuperClass();
             if (superclass == null) {
                 return nil();
             } else {

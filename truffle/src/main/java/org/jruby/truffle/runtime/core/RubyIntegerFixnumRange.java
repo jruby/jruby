@@ -16,7 +16,7 @@ public class RubyIntegerFixnumRange extends RubyBasicObject {
     public final int begin;
     public final int end;
 
-    public RubyIntegerFixnumRange(RubyClass rangeClass, int begin, int end, boolean excludeEnd) {
+    public RubyIntegerFixnumRange(RubyBasicObject rangeClass, int begin, int end, boolean excludeEnd) {
         super(rangeClass);
         this.begin = begin;
         this.end = end;

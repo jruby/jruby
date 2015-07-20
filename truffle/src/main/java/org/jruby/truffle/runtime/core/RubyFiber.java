@@ -45,11 +45,11 @@ public class RubyFiber extends RubyBasicObject {
 
     public final FiberFields fields;
 
-    public RubyFiber(RubyBasicObject parent, RubyClass rubyClass, String name) {
+    public RubyFiber(RubyBasicObject parent, RubyBasicObject rubyClass, String name) {
         this(parent, ThreadNodes.getFiberManager(parent), ThreadNodes.getThreadManager(parent), rubyClass, name, false);
     }
 
-    public RubyFiber(RubyBasicObject parent, FiberManager fiberManager, ThreadManager threadManager, RubyClass rubyClass, String name, boolean isRootFiber) {
+    public RubyFiber(RubyBasicObject parent, FiberManager fiberManager, ThreadManager threadManager, RubyBasicObject rubyClass, String name, boolean isRootFiber) {
         super(rubyClass);
         fields = new FiberFields(parent, isRootFiber);
         FiberNodes.getFields(this).name = name;

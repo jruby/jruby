@@ -29,13 +29,8 @@ public class LexicalScopeNode extends RubyNode {
     }
 
     @Override
-    public RubyModule executeRubyModule(VirtualFrame frame) {
-        return lexicalScope.getLiveModule();
-    }
-
-    @Override
     public Object execute(VirtualFrame frame) {
-        return executeRubyModule(frame);
+        return lexicalScope.getLiveModule();
     }
 
 }

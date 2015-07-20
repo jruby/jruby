@@ -69,7 +69,7 @@ public class RubyMatchData extends RubyBasicObject {
 
     public final MatchDataFields fields;
 
-    public RubyMatchData(RubyClass rubyClass, RubyBasicObject source, RubyBasicObject regexp, Region region, Object[] values, RubyBasicObject pre, RubyBasicObject post, RubyBasicObject global, int begin, int end) {
+    public RubyMatchData(RubyBasicObject rubyClass, RubyBasicObject source, RubyBasicObject regexp, Region region, Object[] values, RubyBasicObject pre, RubyBasicObject post, RubyBasicObject global, int begin, int end) {
         super(rubyClass);
         assert RubyGuards.isRubyRegexp(regexp);
         fields = new MatchDataFields(source, regexp, region, values, pre, post, global, begin, end);

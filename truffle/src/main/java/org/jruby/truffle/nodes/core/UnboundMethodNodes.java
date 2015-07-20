@@ -65,13 +65,13 @@ public abstract class UnboundMethodNodes {
         UNBOUND_METHOD_FACTORY = shape.createFactory();
     }
 
-    public static RubyBasicObject createUnboundMethod(RubyClass rubyClass, RubyModule origin, InternalMethod method) {
+    public static RubyBasicObject createUnboundMethod(RubyBasicObject rubyClass, RubyBasicObject origin, InternalMethod method) {
         return new RubyBasicObject(rubyClass, UNBOUND_METHOD_FACTORY.newInstance(origin, method));
     }
 
-    public static RubyModule getOrigin(RubyBasicObject method) {
+    public static RubyBasicObject getOrigin(RubyBasicObject method) {
         assert method.getDynamicObject().getShape().hasProperty(ORIGIN_IDENTIFIER);
-        return (RubyModule) ORIGIN_PROPERTY.get(method.getDynamicObject(), true);
+        return (RubyBasicObject) ORIGIN_PROPERTY.get(method.getDynamicObject(), true);
     }
 
     public static InternalMethod getMethod(RubyBasicObject method) {
@@ -126,12 +126,12 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public RubyBasicObject bind(VirtualFrame frame, RubyBasicObject unboundMethod, Object object) {
-            final RubyClass objectMetaClass = metaClass(frame, object);
+            final RubyBasicObject objectMetaClass = metaClass(frame, object);
 
             if (!canBindMethodToModuleNode.executeCanBindMethodToModule(frame, getMethod(unboundMethod), objectMetaClass)) {
                 CompilerDirectives.transferToInterpreter();
-                final RubyModule declaringModule = getMethod(unboundMethod).getDeclaringModule();
-                if (declaringModule instanceof RubyClass && ModuleNodes.getModel(((RubyClass) declaringModule)).isSingleton()) {
+                final RubyBasicObject declaringModule = getMethod(unboundMethod).getDeclaringModule();
+                if (declaringModule instanceof RubyClass && ModuleNodes.getModel(declaringModule).isSingleton()) {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
                             "singleton method called for a different object", this));
                 } else {
@@ -143,7 +143,7 @@ public abstract class UnboundMethodNodes {
             return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, getMethod(unboundMethod));
         }
 
-        protected RubyClass metaClass(VirtualFrame frame, Object object) {
+        protected RubyBasicObject metaClass(VirtualFrame frame, Object object) {
             return metaClassNode.executeMetaClass(frame, object);
         }
 
@@ -172,7 +172,7 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public RubyModule origin(RubyBasicObject unboundMethod) {
+        public RubyBasicObject origin(RubyBasicObject unboundMethod) {
             return getOrigin(unboundMethod);
         }
 
@@ -186,7 +186,7 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public RubyModule owner(RubyBasicObject unboundMethod) {
+        public RubyBasicObject owner(RubyBasicObject unboundMethod) {
             return getMethod(unboundMethod).getDeclaringModule();
         }
 

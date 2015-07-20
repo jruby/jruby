@@ -16,7 +16,7 @@ public class RubyObjectRange extends RubyBasicObject {
     public Object begin;
     public Object end;
 
-    public RubyObjectRange(RubyClass rangeClass, Object begin, Object end, boolean excludeEnd) {
+    public RubyObjectRange(RubyBasicObject rangeClass, Object begin, Object end, boolean excludeEnd) {
         super(rangeClass);
         this.begin = begin;
         this.end = end;

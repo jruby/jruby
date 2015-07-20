@@ -56,7 +56,7 @@ public abstract class BignumNodes {
         BIGNUM_FACTORY = shape.createFactory();
     }
 
-    public static RubyBasicObject createRubyBignum(RubyClass rubyClass, BigInteger value) {
+    public static RubyBasicObject createRubyBignum(RubyBasicObject rubyClass, BigInteger value) {
         assert value.compareTo(LONG_MIN) < 0 || value.compareTo(LONG_MAX) > 0 : String.format("%s not in Bignum range", value);
         return new RubyBasicObject(rubyClass, BIGNUM_FACTORY.newInstance(value));
     }

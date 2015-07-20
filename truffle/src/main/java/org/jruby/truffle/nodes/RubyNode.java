@@ -121,16 +121,6 @@ public abstract class RubyNode extends Node {
         }
     }
 
-    public RubyModule executeRubyModule(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (value instanceof RubyModule) {
-            return (RubyModule) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
     // If you try to make this RubyBasicObject things break in the DSL
 
     public RubyHash executeRubyHash(VirtualFrame frame) throws UnexpectedResultException {

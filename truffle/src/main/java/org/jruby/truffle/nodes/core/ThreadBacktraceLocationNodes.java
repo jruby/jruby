@@ -35,7 +35,7 @@ public class ThreadBacktraceLocationNodes {
         THREAD_BACKTRACE_LOCATION_FACTORY = shape.createFactory();
     }
 
-    public static RubyBasicObject createRubyThreadBacktraceLocation(RubyClass rubyClass, Activation activation) {
+    public static RubyBasicObject createRubyThreadBacktraceLocation(RubyBasicObject rubyClass, Activation activation) {
         return new RubyBasicObject(rubyClass, THREAD_BACKTRACE_LOCATION_FACTORY.newInstance(activation));
     }
 

@@ -50,7 +50,7 @@ public abstract class TimeNodes {
         ((RubyTime) time).offset = offset;
     }
 
-    public static RubyBasicObject createRubyTime(RubyClass timeClass, DateTime dateTime, Object offset) {
+    public static RubyBasicObject createRubyTime(RubyBasicObject timeClass, DateTime dateTime, Object offset) {
         return new RubyTime(timeClass, dateTime, offset);
     }
 

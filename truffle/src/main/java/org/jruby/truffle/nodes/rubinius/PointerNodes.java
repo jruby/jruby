@@ -48,7 +48,7 @@ public abstract class PointerNodes {
         }
     }
 
-    public static RubyBasicObject createPointer(RubyClass rubyClass, Pointer pointer) {
+    public static RubyBasicObject createPointer(RubyBasicObject rubyClass, Pointer pointer) {
         if (pointer == null) {
             pointer = NULL_POINTER;
         }

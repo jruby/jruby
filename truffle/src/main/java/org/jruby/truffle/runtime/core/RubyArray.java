@@ -18,7 +18,7 @@ public final class RubyArray extends RubyBasicObject {
     public Object store;
     public int size;
 
-    public RubyArray(RubyClass arrayClass, Object store, int size, DynamicObject dynamicObject) {
+    public RubyArray(RubyBasicObject arrayClass, Object store, int size, DynamicObject dynamicObject) {
         super(arrayClass, dynamicObject);
         ArrayNodes.setStore(this, store, size);
     }

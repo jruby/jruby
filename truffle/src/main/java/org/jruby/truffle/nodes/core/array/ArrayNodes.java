@@ -150,7 +150,7 @@ public abstract class ArrayNodes {
     public static final boolean RANDOMIZE_STORAGE_ARRAY = Options.TRUFFLE_RANDOMIZE_STORAGE_ARRAY.load();
     private static final Random random = new Random(Options.TRUFFLE_RANDOMIZE_SEED.load());
 
-    public static RubyBasicObject fromObject(RubyClass arrayClass, Object object) {
+    public static RubyBasicObject fromObject(RubyBasicObject arrayClass, Object object) {
         final Object store;
 
         if (object instanceof Integer) {
@@ -166,7 +166,7 @@ public abstract class ArrayNodes {
         return createGeneralArray(arrayClass, store, 1);
     }
 
-    public static RubyBasicObject fromObjects(RubyClass arrayClass, Object... objects) {
+    public static RubyBasicObject fromObjects(RubyBasicObject arrayClass, Object... objects) {
         return createGeneralArray(arrayClass, storeFromObjects(arrayClass.getContext(), objects), objects.length);
     }
 
@@ -367,28 +367,28 @@ public abstract class ArrayNodes {
         return true;
     }
 
-    public static RubyBasicObject createEmptyArray(RubyClass arrayClass) {
+    public static RubyBasicObject createEmptyArray(RubyBasicObject arrayClass) {
         return createGeneralArray(arrayClass, null, 0);
     }
 
-    public static RubyBasicObject createArray(RubyClass arrayClass, int[] store, int size) {
+    public static RubyBasicObject createArray(RubyBasicObject arrayClass, int[] store, int size) {
         return createGeneralArray(arrayClass, store, size);
     }
 
-    public static RubyBasicObject createArray(RubyClass arrayClass, long[] store, int size) {
+    public static RubyBasicObject createArray(RubyBasicObject arrayClass, long[] store, int size) {
         return createGeneralArray(arrayClass, store, size);
     }
 
-    public static RubyBasicObject createArray(RubyClass arrayClass, double[] store, int size) {
+    public static RubyBasicObject createArray(RubyBasicObject arrayClass, double[] store, int size) {
         return createGeneralArray(arrayClass, store, size);
     }
 
-    public static RubyBasicObject createArray(RubyClass arrayClass, Object[] store, int size) {
+    public static RubyBasicObject createArray(RubyBasicObject arrayClass, Object[] store, int size) {
         return createGeneralArray(arrayClass, store, size);
     }
 
-    public static RubyBasicObject createGeneralArray(RubyClass arrayClass, Object store, int size) {
-        //return new RubyArray(arrayClass, store, size, ARRAY_FACTORY.newInstance(store, size));
+    public static RubyBasicObject createGeneralArray(RubyBasicObject arrayClass, Object store, int size) {
+        assert RubyGuards.isRubyClass(arrayClass);
         return new RubyArray(arrayClass, store, size, RubyBasicObject.LAYOUT.newInstance(RubyBasicObject.EMPTY_SHAPE));
     }
 

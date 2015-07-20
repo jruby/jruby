@@ -22,12 +22,12 @@ public class RubyException extends RubyBasicObject {
     public Object message;
     public Backtrace backtrace;
 
-    public RubyException(RubyClass rubyClass) {
+    public RubyException(RubyBasicObject rubyClass) {
         super(rubyClass);
         ExceptionNodes.setMessage(this, StringNodes.createEmptyString(rubyClass.getContext().getCoreLibrary().getStringClass()));
     }
 
-    public RubyException(RubyClass rubyClass, Object message, Backtrace backtrace) {
+    public RubyException(RubyBasicObject rubyClass, Object message, Backtrace backtrace) {
         this(rubyClass);
         ExceptionNodes.setMessage(this, message);
         ExceptionNodes.setBacktrace(this, backtrace);

@@ -256,15 +256,15 @@ public abstract class HashNodes {
         ((RubyHash) hash).lastInSequence = lastInSequence;
     }
 
-    public static RubyBasicObject createEmptyHash(RubyClass hashClass) {
+    public static RubyBasicObject createEmptyHash(RubyBasicObject hashClass) {
         return createHash(hashClass, null, null, null, 0, null, null);
     }
 
-    public static RubyBasicObject createHash(RubyClass hashClass, Object[] store, int size) {
+    public static RubyBasicObject createHash(RubyBasicObject hashClass, Object[] store, int size) {
         return createHash(hashClass, null, null, store, size, null, null);
     }
 
-    public static RubyBasicObject createHash(RubyClass hashClass, RubyBasicObject defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
+    public static RubyBasicObject createHash(RubyBasicObject hashClass, RubyBasicObject defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
         return new RubyHash(hashClass, defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, HASH_FACTORY.newInstance());
     }
 

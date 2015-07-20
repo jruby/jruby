@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.dispatch;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
@@ -55,10 +56,12 @@ public abstract class DispatchNode extends RubyNode {
 
     @TruffleBoundary
     protected InternalMethod lookup(
-            RubyClass callerClass,
+            RubyBasicObject callerClass,
             Object receiver,
             String name,
             boolean ignoreVisibility) {
+        assert callerClass == null || RubyGuards.isRubyClass(callerClass);
+
         InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), name);
 
         // If no method was found, use #method_missing

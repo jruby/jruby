@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -29,7 +30,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
     private static final boolean DISPATCH_METHODMISSING_ALWAYS_CLONED = Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED.load();
     private static final boolean DISPATCH_METHODMISSING_ALWAYS_INLINED = Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_INLINED.load();
 
-    private final RubyClass expectedClass;
+    private final RubyBasicObject expectedClass;
     private final Assumption unmodifiedAssumption;
     private final InternalMethod method;
 
@@ -40,12 +41,13 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             RubyContext context,
             Object cachedName,
             DispatchNode next,
-            RubyClass expectedClass,
+            RubyBasicObject expectedClass,
             InternalMethod method,
             boolean indirect,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
 
+        assert RubyGuards.isRubyClass(expectedClass);
         this.expectedClass = expectedClass;
         unmodifiedAssumption = ModuleNodes.getModel(expectedClass).getUnmodifiedAssumption();
         this.method = method;

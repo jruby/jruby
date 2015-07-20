@@ -32,7 +32,7 @@ public class RubyModuleModel implements ModuleChain {
         while (chain != null) {
             System.err.print(chain.getClass());
             if (!(chain instanceof PrependMarker)) {
-                RubyModule real = chain.getActualModule();
+                RubyBasicObject real = chain.getActualModule();
                 System.err.print(" " + ModuleNodes.getModel(real).getName());
             }
             System.err.println();
@@ -40,7 +40,7 @@ public class RubyModuleModel implements ModuleChain {
         }
     }
 
-    private final RubyModule rubyModuleObject;
+    private final RubyBasicObject rubyModuleObject;
 
     // The context is stored here - objects can obtain it via their class (which is a module)
     private final RubyContext context;
@@ -49,7 +49,7 @@ public class RubyModuleModel implements ModuleChain {
     @CompilerDirectives.CompilationFinal
     protected ModuleChain parentModule;
 
-    private final RubyModule lexicalParent;
+    private final RubyBasicObject lexicalParent;
     public final String givenBaseName;
     /**
      * Full name, including named parent
@@ -66,18 +66,21 @@ public class RubyModuleModel implements ModuleChain {
      * Keep track of other modules that depend on the configuration of this module in some way. The
      * include subclasses and modules that include this module.
      */
-    private final Set<RubyModule> dependents = Collections.newSetFromMap(new WeakHashMap<RubyModule, Boolean>());
+    private final Set<RubyBasicObject> dependents = Collections.newSetFromMap(new WeakHashMap<RubyBasicObject, Boolean>());
     /**
      * Lexical dependent modules, to take care of changes to a module constants.
      */
-    private final Set<RubyModule> lexicalDependents = Collections.newSetFromMap(new WeakHashMap<RubyModule, Boolean>());
+    private final Set<RubyBasicObject> lexicalDependents = Collections.newSetFromMap(new WeakHashMap<RubyBasicObject, Boolean>());
 
     // Only used for classes
 
     public final boolean isSingleton;
-    public final RubyModule attached;
+    public final RubyBasicObject attached;
 
-    public RubyModuleModel(RubyModule rubyModuleObject, RubyContext context, RubyModule lexicalParent, String givenBaseName, CyclicAssumption unmodifiedAssumption, boolean isSingleton, RubyModule attached) {
+    public RubyModuleModel(RubyBasicObject rubyModuleObject, RubyContext context, RubyBasicObject lexicalParent, String givenBaseName, CyclicAssumption unmodifiedAssumption, boolean isSingleton, RubyBasicObject attached) {
+        assert RubyGuards.isRubyModule(rubyModuleObject);
+        assert lexicalParent == null || RubyGuards.isRubyModule(lexicalParent);
+        assert attached == null || RubyGuards.isRubyModule(attached);
         this.rubyModuleObject = rubyModuleObject;
         this.context = context;
         this.lexicalParent = lexicalParent;
@@ -88,14 +91,16 @@ public class RubyModuleModel implements ModuleChain {
         this.attached = attached;
     }
 
-    public void getAdoptedByLexicalParent(RubyModule lexicalParent, String name, Node currentNode) {
+    public void getAdoptedByLexicalParent(RubyBasicObject lexicalParent, String name, Node currentNode) {
+        assert RubyGuards.isRubyModule(lexicalParent);
+
         ModuleNodes.getModel(lexicalParent).setConstantInternal(currentNode, name, rubyModuleObject, false);
         ModuleNodes.getModel(lexicalParent).addLexicalDependent(rubyModuleObject);
 
         if (this.name == null) {
             // Tricky, we need to compare with the Object class, but we only have a Class at hand.
-            RubyClass classClass = getLogicalClass().getLogicalClass();
-            RubyClass objectClass = ModuleNodes.getModel(ModuleNodes.getModel(classClass).getSuperClass()).getSuperClass();
+            final RubyBasicObject classClass = getLogicalClass().getLogicalClass();
+            final RubyBasicObject objectClass = ModuleNodes.getModel(ModuleNodes.getModel(classClass).getSuperClass()).getSuperClass();
 
             if (lexicalParent == objectClass) {
                 this.name = name;
@@ -122,7 +127,9 @@ public class RubyModuleModel implements ModuleChain {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void initCopy(RubyModule from) {
+    public void initCopy(RubyBasicObject from) {
+        assert RubyGuards.isRubyModule(from);
+
         // Do not copy name, the copy is an anonymous module
         this.methods.putAll(ModuleNodes.getModel(from).methods);
         this.constants.putAll(ModuleNodes.getModel(from).constants);
@@ -134,8 +141,14 @@ public class RubyModuleModel implements ModuleChain {
             this.parentModule = ModuleNodes.getModel(from).parentModule;
         }
 
-        for (RubyModule ancestor : ModuleNodes.getModel(from).ancestors()) {
+        for (RubyBasicObject ancestor : ModuleNodes.getModel(from).ancestors()) {
             ModuleNodes.getModel(ancestor).addDependent(rubyModuleObject);
+        }
+
+        if (isClass()) {
+            ((RubyClass) rubyModuleObject).unsafeSetAllocator(((RubyClass) from).getAllocator());
+            // isSingleton is false as we cannot copy a singleton class.
+            // and therefore attached is null.
         }
     }
 
@@ -158,12 +171,14 @@ public class RubyModuleModel implements ModuleChain {
         }
     }
 
-    public void insertAfter(RubyModule module) {
+    public void insertAfter(RubyBasicObject module) {
         parentModule = new IncludedModule(module, parentModule);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void include(Node currentNode, RubyModule module) {
+    public void include(Node currentNode, RubyBasicObject module) {
+        assert RubyGuards.isRubyModule(module);
+
         checkFrozen(currentNode);
 
         // If the module we want to include already includes us, it is cyclic
@@ -173,8 +188,8 @@ public class RubyModuleModel implements ModuleChain {
 
         // We need to include the module ancestors in reverse order for a given inclusionPoint
         ModuleChain inclusionPoint = this;
-        Stack<RubyModule> modulesToInclude = new Stack<>();
-        for (RubyModule ancestor : ModuleNodes.getModel(module).ancestors()) {
+        Stack<RubyBasicObject> modulesToInclude = new Stack<>();
+        for (RubyBasicObject ancestor : ModuleNodes.getModel(module).ancestors()) {
             if (ModuleOperations.includesModule(rubyModuleObject, ancestor)) {
                 if (isIncludedModuleBeforeSuperClass(ancestor)) {
                     // Include the modules at the appropriate inclusionPoint
@@ -199,15 +214,17 @@ public class RubyModuleModel implements ModuleChain {
         newVersion();
     }
 
-    public void performIncludes(ModuleChain inclusionPoint, Stack<RubyModule> moduleAncestors) {
+    public void performIncludes(ModuleChain inclusionPoint, Stack<RubyBasicObject> moduleAncestors) {
         while (!moduleAncestors.isEmpty()) {
-            RubyModule mod = moduleAncestors.pop();
+            RubyBasicObject mod = moduleAncestors.pop();
+            assert RubyGuards.isRubyModule(mod);
             inclusionPoint.insertAfter(mod);
             ModuleNodes.getModel(mod).addDependent(rubyModuleObject);
         }
     }
 
-    public boolean isIncludedModuleBeforeSuperClass(RubyModule module) {
+    public boolean isIncludedModuleBeforeSuperClass(RubyBasicObject module) {
+        assert RubyGuards.isRubyModule(module);
         ModuleChain included = parentModule;
         while (included instanceof IncludedModule) {
             if (included.getActualModule() == module) {
@@ -440,14 +457,14 @@ public class RubyModuleModel implements ModuleChain {
     }
 
     public void newVersion() {
-        newVersion(new HashSet<RubyModule>(), false);
+        newVersion(new HashSet<RubyBasicObject>(), false);
     }
 
     public void newLexicalVersion() {
-        newVersion(new HashSet<RubyModule>(), true);
+        newVersion(new HashSet<RubyBasicObject>(), true);
     }
 
-    public void newVersion(Set<RubyModule> alreadyInvalidated, boolean considerLexicalDependents) {
+    public void newVersion(Set<RubyBasicObject> alreadyInvalidated, boolean considerLexicalDependents) {
         if (alreadyInvalidated.contains(rubyModuleObject))
             return;
 
@@ -455,22 +472,24 @@ public class RubyModuleModel implements ModuleChain {
         alreadyInvalidated.add(rubyModuleObject);
 
         // Make dependents new versions
-        for (RubyModule dependent : dependents) {
+        for (RubyBasicObject dependent : dependents) {
             ModuleNodes.getModel(dependent).newVersion(alreadyInvalidated, considerLexicalDependents);
         }
 
         if (considerLexicalDependents) {
-            for (RubyModule dependent : lexicalDependents) {
+            for (RubyBasicObject dependent : lexicalDependents) {
                 ModuleNodes.getModel(dependent).newVersion(alreadyInvalidated, considerLexicalDependents);
             }
         }
     }
 
-    public void addDependent(RubyModule dependent) {
+    public void addDependent(RubyBasicObject dependent) {
+        RubyGuards.isRubyModule(dependent);
         dependents.add(dependent);
     }
 
-    public void addLexicalDependent(RubyModule lexicalChild) {
+    public void addLexicalDependent(RubyBasicObject lexicalChild) {
+        assert RubyGuards.isRubyModule(lexicalChild);
         if (lexicalChild != rubyModuleObject)
             lexicalDependents.add(lexicalChild);
     }
@@ -510,7 +529,7 @@ public class RubyModuleModel implements ModuleChain {
             }
         }
 
-        for (RubyModule ancestor : ancestors()) {
+        for (RubyBasicObject ancestor : ancestors()) {
             ancestor.visitObjectGraph(visitor);
         }
     }
@@ -519,25 +538,25 @@ public class RubyModuleModel implements ModuleChain {
         return parentModule;
     }
 
-    public RubyModule getActualModule() {
+    public RubyBasicObject getActualModule() {
         return rubyModuleObject;
     }
 
-    public Iterable<RubyModule> ancestors() {
+    public Iterable<RubyBasicObject> ancestors() {
         final ModuleChain top = start;
-        return new Iterable<RubyModule>() {
+        return new Iterable<RubyBasicObject>() {
             @Override
-            public Iterator<RubyModule> iterator() {
+            public Iterator<RubyBasicObject> iterator() {
                 return new AncestorIterator(top);
             }
         };
     }
 
-    public Iterable<RubyModule> parentAncestors() {
+    public Iterable<RubyBasicObject> parentAncestors() {
         final ModuleChain top = start;
-        return new Iterable<RubyModule>() {
+        return new Iterable<RubyBasicObject>() {
             @Override
-            public Iterator<RubyModule> iterator() {
+            public Iterator<RubyBasicObject> iterator() {
                 final AncestorIterator iterator = new AncestorIterator(top);
                 if (iterator.hasNext()) {
                     iterator.next();
@@ -550,12 +569,12 @@ public class RubyModuleModel implements ModuleChain {
     /**
      * Iterates over include'd and prepend'ed modules.
      */
-    public Iterable<RubyModule> prependedAndIncludedModules() {
+    public Iterable<RubyBasicObject> prependedAndIncludedModules() {
         final ModuleChain top = start;
         final RubyModuleModel currentModule = this;
-        return new Iterable<RubyModule>() {
+        return new Iterable<RubyBasicObject>() {
             @Override
-            public Iterator<RubyModule> iterator() {
+            public Iterator<RubyBasicObject> iterator() {
                 return new IncludedModulesIterator(top, currentModule);
             }
         };
@@ -604,22 +623,24 @@ public class RubyModuleModel implements ModuleChain {
         return filtered;
     }
 
-    public RubyClass getLogicalClass() {
+    public RubyBasicObject getLogicalClass() {
         return rubyModuleObject.getLogicalClass();
     }
 
-    public void initialize(RubyClass superclass) {
+    public void initialize(RubyBasicObject superclass) {
         assert isClass();
+        assert RubyGuards.isRubyClass(superclass);
         unsafeSetSuperclass(superclass);
         ensureSingletonConsistency();
-        ((RubyClass) rubyModuleObject).unsafeSetAllocator(superclass.getAllocator());
+        ((RubyClass) rubyModuleObject).unsafeSetAllocator(((RubyClass) superclass).getAllocator());
     }
 
     /**
      * This method supports initialization and solves boot-order problems and should not normally be
      * used.
      */
-    protected void unsafeSetSuperclass(RubyClass superClass) {
+    protected void unsafeSetSuperclass(RubyBasicObject superClass) {
+        assert RubyGuards.isRubyClass(superClass);
         assert isClass();
         assert parentModule == null;
 
@@ -629,28 +650,20 @@ public class RubyModuleModel implements ModuleChain {
         newVersion();
     }
 
-    public void initCopy(RubyClass from) {
-        assert isClass();
-        initCopy((RubyModule) from);
-        ((RubyClass) rubyModuleObject).unsafeSetAllocator(((RubyClass) from).getAllocator());
-        // isSingleton is false as we cannot copy a singleton class.
-        // and therefore attached is null.
-    }
-
-    public RubyClass ensureSingletonConsistency() {
+    public RubyBasicObject ensureSingletonConsistency() {
         assert isClass();
         createOneSingletonClass();
         return (RubyClass) rubyModuleObject;
     }
 
-    public RubyClass getSingletonClass() {
+    public RubyBasicObject getSingletonClass() {
         assert isClass();
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
         return ModuleNodes.getModel(createOneSingletonClass()).ensureSingletonConsistency();
     }
 
-    public RubyClass createOneSingletonClass() {
+    public RubyBasicObject createOneSingletonClass() {
         assert isClass();
         CompilerAsserts.neverPartOfCompilation();
 
@@ -658,7 +671,7 @@ public class RubyModuleModel implements ModuleChain {
             return rubyModuleObject.getMetaClass();
         }
 
-        final RubyClass singletonSuperclass;
+        final RubyBasicObject singletonSuperclass;
         if (getSuperClass() == null) {
             singletonSuperclass = getLogicalClass();
         } else {
@@ -677,16 +690,16 @@ public class RubyModuleModel implements ModuleChain {
         return isSingleton;
     }
 
-    public RubyModule getAttached() {
+    public RubyBasicObject getAttached() {
         assert isClass();
         return attached;
     }
 
-    public RubyClass getSuperClass() {
+    public RubyBasicObject getSuperClass() {
         assert isClass();
         CompilerAsserts.neverPartOfCompilation();
 
-        for (RubyModule ancestor : parentAncestors()) {
+        for (RubyBasicObject ancestor : parentAncestors()) {
             if (ancestor instanceof RubyClass) {
                 return (RubyClass) ancestor;
             }

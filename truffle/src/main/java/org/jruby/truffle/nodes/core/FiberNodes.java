@@ -189,7 +189,7 @@ public abstract class FiberNodes {
         return new RubyFiber(parent, rubyClass, name);
     }
 
-    public static RubyBasicObject createRubyFiber(RubyBasicObject parent, FiberManager fiberManager, ThreadManager threadManager, RubyClass rubyClass, String name, boolean isRootFiber) {
+    public static RubyBasicObject createRubyFiber(RubyBasicObject parent, FiberManager fiberManager, ThreadManager threadManager, RubyBasicObject rubyClass, String name, boolean isRootFiber) {
         assert RubyGuards.isRubyThread(parent);
         return new RubyFiber(parent, fiberManager, threadManager, rubyClass, name, isRootFiber);
     }

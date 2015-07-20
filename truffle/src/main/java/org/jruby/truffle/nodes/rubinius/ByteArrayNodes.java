@@ -47,7 +47,7 @@ public abstract class ByteArrayNodes {
         BYTE_ARRAY_FACTORY = shape.createFactory();
     }
 
-    public static RubyBasicObject createByteArray(RubyClass rubyClass, ByteList bytes) {
+    public static RubyBasicObject createByteArray(RubyBasicObject rubyClass, ByteList bytes) {
         return new RubyBasicObject(rubyClass, BYTE_ARRAY_FACTORY.newInstance(bytes));
     }
 

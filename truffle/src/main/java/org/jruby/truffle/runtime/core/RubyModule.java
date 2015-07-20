@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
@@ -22,12 +23,15 @@ public class RubyModule extends RubyBasicObject {
 
     public final RubyModuleModel model;
 
-    public RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, Node currentNode) {
+    public RubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode) {
         this(context, selfClass, lexicalParent, name, currentNode, false, null);
     }
 
-    public RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, Node currentNode, boolean isSingleton, RubyModule attached) {
+    public RubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode, boolean isSingleton, RubyBasicObject attached) {
         super(context, selfClass);
+
+        assert lexicalParent == null || RubyGuards.isRubyModule(lexicalParent);
+
         model = new RubyModuleModel(this, context, lexicalParent, name, new CyclicAssumption(name + " is unmodified"), isSingleton, attached);
 
         if (lexicalParent == null) { // bootstrap or anonymous module

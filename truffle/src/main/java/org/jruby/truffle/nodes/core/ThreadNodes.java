@@ -39,7 +39,7 @@ import java.util.concurrent.locks.Lock;
 @CoreClass(name = "Thread")
 public abstract class ThreadNodes {
 
-    public static RubyBasicObject createRubyThread(RubyClass rubyClass, ThreadManager manager) {
+    public static RubyBasicObject createRubyThread(RubyBasicObject rubyClass, ThreadManager manager) {
         return new RubyThread(rubyClass, manager);
     }
 
@@ -463,14 +463,14 @@ public abstract class ThreadNodes {
             return raise(frame, thread, getContext().getCoreLibrary().getRuntimeErrorClass(), message);
         }
 
-        @Specialization
-        public RubyBasicObject raise(VirtualFrame frame, RubyBasicObject thread, RubyClass exceptionClass, NotProvided message) {
+        @Specialization(guards = "isRubyClass(exceptionClass)")
+        public RubyBasicObject raiseClass(VirtualFrame frame, RubyBasicObject thread, RubyBasicObject exceptionClass, NotProvided message) {
             return raise(frame, thread, exceptionClass, createEmptyString());
         }
 
-        @Specialization(guards = "isRubyString(message)")
-        public RubyBasicObject raise(VirtualFrame frame, final RubyBasicObject thread, RubyClass exceptionClass, RubyBasicObject message) {
-            final Object exception = exceptionClass.allocate(this);
+        @Specialization(guards = {"isRubyClass(exceptionClass)", "isRubyString(message)"})
+        public RubyBasicObject raise(VirtualFrame frame, final RubyBasicObject thread, RubyBasicObject exceptionClass, RubyBasicObject message) {
+            final Object exception = ((RubyClass) exceptionClass).allocate(this);
             initialize.call(frame, exception, "initialize", null, message);
 
             if (!RubyGuards.isRubyException(exception)) {

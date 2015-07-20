@@ -34,7 +34,7 @@ public class RescueClassesNode extends RescueNode {
     public boolean canHandle(VirtualFrame frame, RubyBasicObject exception) {
         CompilerDirectives.transferToInterpreter();
 
-        final RubyClass exceptionRubyClass = exception.getLogicalClass();
+        final RubyBasicObject exceptionRubyClass = exception.getLogicalClass();
 
         for (RubyNode handlingClassNode : handlingClassNodes) {
             // TODO(CS): what if we don't get a class?

@@ -48,46 +48,51 @@ public class RubyBasicObject implements TruffleObject {
     private final DynamicObject dynamicObject;
 
     /** The class of the object, not a singleton class. */
-    @CompilationFinal private RubyClass logicalClass;
+    @CompilationFinal private RubyBasicObject logicalClass;
     /** Either the singleton class if it exists or the logicalClass. */
-    @CompilationFinal private RubyClass metaClass;
+    @CompilationFinal private RubyBasicObject metaClass;
 
-    public RubyBasicObject(RubyClass rubyClass) {
+    public RubyBasicObject(RubyBasicObject rubyClass) {
         this(rubyClass.getContext(), rubyClass);
     }
 
-    public RubyBasicObject(RubyClass rubyClass, DynamicObject dynamicObject) {
+    public RubyBasicObject(RubyBasicObject rubyClass, DynamicObject dynamicObject) {
         this(rubyClass.getContext(), rubyClass, dynamicObject);
     }
 
-    protected RubyBasicObject(RubyContext context, RubyClass rubyClass) {
+    protected RubyBasicObject(RubyContext context, RubyBasicObject rubyClass) {
         this(context, rubyClass, LAYOUT.newInstance(EMPTY_SHAPE));
     }
 
-    private RubyBasicObject(RubyContext context, RubyClass rubyClass, DynamicObject dynamicObject) {
+    private RubyBasicObject(RubyContext context, RubyBasicObject rubyClass, DynamicObject dynamicObject) {
+        assert rubyClass == null || RubyGuards.isRubyClass(rubyClass);
+
         this.dynamicObject = dynamicObject;
 
         if (rubyClass == null && this instanceof RubyClass) { // For class Class
-            rubyClass = (RubyClass) this;
+            rubyClass = this;
         }
         unsafeSetLogicalClass(rubyClass);
     }
 
-    protected void unsafeSetLogicalClass(RubyClass newLogicalClass) {
+    protected void unsafeSetLogicalClass(RubyBasicObject newLogicalClass) {
+        assert RubyGuards.isRubyClass(newLogicalClass);
         assert logicalClass == null;
         unsafeChangeLogicalClass(newLogicalClass);
     }
 
-    public void unsafeChangeLogicalClass(RubyClass newLogicalClass) {
+    public void unsafeChangeLogicalClass(RubyBasicObject newLogicalClass) {
+        assert RubyGuards.isRubyClass(newLogicalClass);
         logicalClass = newLogicalClass;
         metaClass = newLogicalClass;
     }
 
-    public RubyClass getMetaClass() {
+    public RubyBasicObject getMetaClass() {
         return metaClass;
     }
 
-    public void setMetaClass(RubyClass metaClass) {
+    public void setMetaClass(RubyBasicObject metaClass) {
+        assert RubyGuards.isRubyClass(metaClass);
         this.metaClass = metaClass;
     }
 
@@ -200,7 +205,7 @@ public class RubyBasicObject implements TruffleObject {
         return (BasicObjectType) dynamicObject.getShape().getObjectType();
     }
 
-    public RubyClass getLogicalClass() {
+    public RubyBasicObject getLogicalClass() {
         return logicalClass;
     }
 

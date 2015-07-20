@@ -64,7 +64,7 @@ public class UncachedDispatchNode extends DispatchNode {
             Object argumentsObjects) {
         final DispatchAction dispatchAction = getDispatchAction();
 
-        final RubyClass callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(frame, RubyArguments.getSelf(frame.getArguments()));
+        final RubyBasicObject callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(frame, RubyArguments.getSelf(frame.getArguments()));
 
         final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, name),
                 ignoreVisibility);

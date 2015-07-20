@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
@@ -37,61 +38,61 @@ public abstract class SingletonClassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract RubyClass executeSingletonClass(VirtualFrame frame, Object value);
+    public abstract RubyBasicObject executeSingletonClass(VirtualFrame frame, Object value);
 
     @Specialization(guards = "value")
-    protected RubyClass singletonClassTrue(boolean value) {
+    protected RubyBasicObject singletonClassTrue(boolean value) {
         return getContext().getCoreLibrary().getTrueClass();
     }
 
     @Specialization(guards = "!value")
-    protected RubyClass singletonClassFalse(boolean value) {
+    protected RubyBasicObject singletonClassFalse(boolean value) {
         return getContext().getCoreLibrary().getFalseClass();
     }
 
     @Specialization(guards = "isNil(value)")
-    protected RubyClass singletonClassNil(RubyBasicObject value) {
+    protected RubyBasicObject singletonClassNil(RubyBasicObject value) {
         return getContext().getCoreLibrary().getNilClass();
     }
 
     @Specialization
-    protected RubyClass singletonClass(int value) {
+    protected RubyBasicObject singletonClass(int value) {
         return noSingletonClass();
     }
 
     @Specialization
-    protected RubyClass singletonClass(long value) {
+    protected RubyBasicObject singletonClass(long value) {
         return noSingletonClass();
     }
 
     @Specialization
-    protected RubyClass singletonClass(double value) {
+    protected RubyBasicObject singletonClass(double value) {
         return noSingletonClass();
     }
 
     @Specialization(guards = "isRubyBignum(value)")
-    protected RubyClass singletonClassBignum(RubyBasicObject value) {
+    protected RubyBasicObject singletonClassBignum(RubyBasicObject value) {
         return noSingletonClass();
     }
 
     @Specialization(guards = "isRubySymbol(value)")
-    protected RubyClass singletonClassSymbol(RubyBasicObject value) {
+    protected RubyBasicObject singletonClassSymbol(RubyBasicObject value) {
         return noSingletonClass();
     }
 
     @Specialization
-    protected RubyClass singletonClass(RubyClass rubyClass) {
+    protected RubyBasicObject singletonClass(RubyClass rubyClass) {
         CompilerAsserts.neverPartOfCompilation();
 
         return ModuleNodes.getModel(rubyClass).getSingletonClass();
     }
 
     @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)", "!isRubyClass(object)" })
-    protected RubyClass singletonClass(RubyBasicObject object) {
+    protected RubyBasicObject singletonClass(RubyBasicObject object) {
         return getNormalObjectSingletonClass(object);
     }
 
-    public RubyClass getNormalObjectSingletonClass(RubyBasicObject object) {
+    public RubyBasicObject getNormalObjectSingletonClass(RubyBasicObject object) {
         CompilerAsserts.neverPartOfCompilation();
 
         if (object instanceof RubyClass) { // For the direct caller
@@ -103,15 +104,15 @@ public abstract class SingletonClassNode extends RubyNode {
         }
 
         CompilerDirectives.transferToInterpreter();
-        final RubyClass logicalClass = object.getLogicalClass();
+        final RubyBasicObject logicalClass = object.getLogicalClass();
 
         RubyModule attached = null;
         if (object instanceof RubyModule) {
             attached = (RubyModule) object;
         }
 
-        String name = String.format("#<Class:#<%s:0x%x>>", ModuleNodes.getModel(logicalClass).getName(), object.verySlowGetObjectID());
-        RubyClass singletonClass = ClassNodes.createSingletonClassOfObject(getContext(), logicalClass, attached, name);
+        final String name = String.format("#<Class:#<%s:0x%x>>", ModuleNodes.getModel(logicalClass).getName(), object.verySlowGetObjectID());
+        final RubyBasicObject singletonClass = ClassNodes.createSingletonClassOfObject(getContext(), logicalClass, attached, name);
         propagateFrozen(object, singletonClass);
 
         object.setMetaClass(singletonClass);
@@ -119,7 +120,9 @@ public abstract class SingletonClassNode extends RubyNode {
         return singletonClass;
     }
 
-    private void propagateFrozen(Object object, RubyClass singletonClass) {
+    private void propagateFrozen(Object object, RubyBasicObject singletonClass) {
+        assert RubyGuards.isRubyClass(singletonClass);
+
         if (isFrozenNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
@@ -131,7 +134,7 @@ public abstract class SingletonClassNode extends RubyNode {
         }
     }
 
-    private RubyClass noSingletonClass() {
+    private RubyBasicObject noSingletonClass() {
         CompilerDirectives.transferToInterpreter();
         throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
     }

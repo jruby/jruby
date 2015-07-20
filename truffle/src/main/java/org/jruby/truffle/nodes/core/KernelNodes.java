@@ -338,7 +338,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public RubyBasicObject callerLocations(int omit, int length) {
-            final RubyClass threadBacktraceLocationClass = getContext().getCoreLibrary().getThreadBacktraceLocationClass();
+            final RubyBasicObject threadBacktraceLocationClass = getContext().getCoreLibrary().getThreadBacktraceLocationClass();
 
             final Backtrace backtrace = RubyCallStack.getBacktrace(this, 1 + omit, true);
 
@@ -370,7 +370,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyClass getClass(VirtualFrame frame, Object self) {
+        public RubyBasicObject getClass(VirtualFrame frame, Object self) {
             return classNode.executeGetClass(frame, self);
         }
 
@@ -385,10 +385,10 @@ public abstract class KernelNodes {
         public abstract RubyBasicObject executeCopy(VirtualFrame frame, RubyBasicObject self);
 
         @Specialization
-        public RubyBasicObject copy(VirtualFrame frame, RubyBasicObject self) {
+        public RubyBasicObject copy(RubyBasicObject self) {
             // This method is pretty crappy for compilation - it should improve with the OM
 
-            final RubyBasicObject newObject = self.getLogicalClass().allocate(this);
+            final RubyBasicObject newObject = ((RubyClass) self.getLogicalClass()).allocate(this);
 
             RubyBasicObject.setInstanceVariables(newObject, RubyBasicObject.getInstanceVariables(self));
 
@@ -1060,7 +1060,7 @@ public abstract class KernelNodes {
             metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
         }
 
-        public abstract boolean executeIsA(VirtualFrame frame, Object self, RubyModule rubyClass);
+        public abstract boolean executeIsA(VirtualFrame frame, Object self, RubyBasicObject rubyClass);
 
         @Specialization(guards = {"isNil(nil)", "!isRubyModule(nil)"})
         public boolean isANil(RubyBasicObject self, Object nil) {
@@ -1069,23 +1069,23 @@ public abstract class KernelNodes {
 
         @Specialization(
                 limit = "getCacheLimit()",
-                guards = {"getMetaClass(frame, self) == cachedMetaClass", "module == cachedModule"},
+                guards = {"isRubyModule(module)", "getMetaClass(frame, self) == cachedMetaClass", "module == cachedModule"},
                 assumptions = "getUnmodifiedAssumption(cachedModule)")
         public boolean isACached(VirtualFrame frame,
                                  Object self,
-                                 RubyModule module,
-                                 @Cached("getMetaClass(frame, self)") RubyClass cachedMetaClass,
-                                 @Cached("module") RubyModule cachedModule,
+                                 RubyBasicObject module,
+                                 @Cached("getMetaClass(frame, self)") RubyBasicObject cachedMetaClass,
+                                 @Cached("module") RubyBasicObject cachedModule,
                                  @Cached("isA(cachedMetaClass, cachedModule)") boolean result) {
             return result;
         }
 
-        public Assumption getUnmodifiedAssumption(RubyModule module) {
+        public Assumption getUnmodifiedAssumption(RubyBasicObject module) {
             return ModuleNodes.getModel(module).getUnmodifiedAssumption();
         }
 
-        @Specialization
-        public boolean isAUncached(VirtualFrame frame, Object self, RubyModule module) {
+        @Specialization(guards = "isRubyModule(module)")
+        public boolean isAUncached(VirtualFrame frame, Object self, RubyBasicObject module) {
             return isA(getMetaClass(frame, self), module);
         }
 
@@ -1096,11 +1096,11 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
-        protected boolean isA(RubyClass metaClass, RubyModule module) {
+        protected boolean isA(RubyBasicObject metaClass, RubyBasicObject module) {
             return ModuleOperations.assignableTo(metaClass, module);
         }
 
-        protected RubyClass getMetaClass(VirtualFrame frame, Object object) {
+        protected RubyBasicObject getMetaClass(VirtualFrame frame, Object object) {
             return metaClassNode.executeMetaClass(frame, object);
         }
 
@@ -1271,7 +1271,7 @@ public abstract class KernelNodes {
         @Specialization(guards = "regular")
         public RubyBasicObject methodsRegular(VirtualFrame frame, Object self, boolean regular,
                 @Cached("createMetaClassNode()") MetaClassNode metaClassNode) {
-            final RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
+            final RubyBasicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
@@ -1328,7 +1328,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyBasicObject privateMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
-            RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
+            RubyBasicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
@@ -1383,7 +1383,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyBasicObject protectedMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
-            RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
+            final RubyBasicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
@@ -1413,7 +1413,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyBasicObject publicMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
-            RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
+            final RubyBasicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
@@ -1696,7 +1696,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyClass singletonClass(VirtualFrame frame, Object self) {
+        public RubyBasicObject singletonClass(VirtualFrame frame, Object self) {
             return singletonClassNode.executeSingletonClass(frame, self);
         }
 
@@ -1725,7 +1725,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyBasicObject singletonMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
-            RubyClass metaClass = metaClassNode.executeMetaClass(frame, self);
+            final RubyBasicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             if (!ModuleNodes.getModel(metaClass).isSingleton()) {
                 return createEmptyArray();

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
@@ -47,10 +48,10 @@ public class AddMethodNode extends RubyNode {
 
         final InternalMethod methodObject = (InternalMethod) methodNode.execute(frame);
 
-        RubyModule module;
+        RubyBasicObject module;
 
-        if (receiverObject instanceof RubyModule) {
-            module = (RubyModule) receiverObject;
+        if (RubyGuards.isRubyModule(receiverObject)) {
+            module = (RubyBasicObject) receiverObject;
         } else {
             module = singletonClassNode.executeSingletonClass(frame, receiverObject);
         }

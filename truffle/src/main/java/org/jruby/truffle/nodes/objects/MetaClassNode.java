@@ -28,35 +28,35 @@ public abstract class MetaClassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract RubyClass executeMetaClass(VirtualFrame frame, Object value);
+    public abstract RubyBasicObject executeMetaClass(VirtualFrame frame, Object value);
 
     @Specialization(guards = "value")
-    protected RubyClass singletonClassTrue(boolean value) {
+    protected RubyBasicObject singletonClassTrue(boolean value) {
         return getContext().getCoreLibrary().getTrueClass();
     }
 
     @Specialization(guards = "!value")
-    protected RubyClass singletonClassFalse(boolean value) {
+    protected RubyBasicObject singletonClassFalse(boolean value) {
         return getContext().getCoreLibrary().getFalseClass();
     }
 
     @Specialization
-    protected RubyClass singletonClass(int value) {
+    protected RubyBasicObject singletonClass(int value) {
         return getContext().getCoreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected RubyClass singletonClass(long value) {
+    protected RubyBasicObject singletonClass(long value) {
         return getContext().getCoreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected RubyClass singletonClass(double value) {
+    protected RubyBasicObject singletonClass(double value) {
         return getContext().getCoreLibrary().getFloatClass();
     }
 
     @Specialization
-    protected RubyClass singletonClass(RubyBasicObject object) {
+    protected RubyBasicObject singletonClass(RubyBasicObject object) {
         return object.getMetaClass();
     }
 

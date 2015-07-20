@@ -100,7 +100,9 @@ public abstract class ModuleNodes {
         }
         
         @TruffleBoundary
-        public boolean includes(RubyModule metaClass, RubyModule module) {
+        public boolean includes(RubyBasicObject metaClass, RubyBasicObject module) {
+            assert RubyGuards.isRubyModule(metaClass);
+            assert RubyGuards.isRubyModule(module);
             return ModuleOperations.includesModule(metaClass, module);
         }
     }
@@ -321,7 +323,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule aliasMethod(RubyModule module, String newName, String oldName) {
+        public RubyBasicObject aliasMethod(RubyModule module, String newName, String oldName) {
             CompilerDirectives.transferToInterpreter();
 
             getModel(module).alias(this, newName, oldName);
@@ -341,8 +343,8 @@ public abstract class ModuleNodes {
         public RubyBasicObject ancestors(RubyModule self) {
             CompilerDirectives.transferToInterpreter();
 
-            final List<RubyModule> ancestors = new ArrayList<>();
-            for (RubyModule module : getModel(self).ancestors()) {
+            final List<RubyBasicObject> ancestors = new ArrayList<>();
+            for (RubyBasicObject module : getModel(self).ancestors()) {
                 ancestors.add(module);
             }
 
@@ -684,7 +686,7 @@ public abstract class ModuleNodes {
             yield = new YieldDispatchHeadNode(context);
         }
 
-        public abstract Object executeClassExec(VirtualFrame frame, RubyModule self, Object[] args, RubyBasicObject block);
+        public abstract Object executeClassExec(VirtualFrame frame, RubyBasicObject self, Object[] args, RubyBasicObject block);
 
         @Specialization(guards = "isRubyProc(block)")
         public Object classExec(VirtualFrame frame, RubyModule self, Object[] args, RubyBasicObject block) {
@@ -1066,7 +1068,7 @@ public abstract class ModuleNodes {
         public RubyBasicObject defineMethod(VirtualFrame frame, RubyModule module, String name, RubyBasicObject method, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
-            RubyModule origin = UnboundMethodNodes.getOrigin(method);
+            final RubyBasicObject origin = UnboundMethodNodes.getOrigin(method);
             if (!ModuleOperations.canBindMethodTo(origin, module)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be a subclass of " + getModel(origin).getName(), this));
@@ -1134,9 +1136,10 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        public abstract RubyModule executeInitialize(VirtualFrame frame, RubyModule module, RubyBasicObject block);
+        public abstract RubyBasicObject executeInitialize(VirtualFrame frame, RubyBasicObject module, RubyBasicObject block);
 
-        void classEval(VirtualFrame frame, RubyModule module, RubyBasicObject block) {
+        void classEval(VirtualFrame frame, RubyBasicObject module, RubyBasicObject block) {
+            assert RubyGuards.isRubyModule(module);
             assert RubyGuards.isRubyProc(block);
 
             if (classExecNode == null) {
@@ -1147,12 +1150,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule initialize(RubyModule module, NotProvided block) {
+        public RubyBasicObject initialize(RubyModule module, NotProvided block) {
             return module;
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public RubyModule initialize(VirtualFrame frame, RubyModule module, RubyBasicObject block) {
+        public RubyBasicObject initialize(VirtualFrame frame, RubyModule module, RubyBasicObject block) {
             classEval(frame, module, block);
             return module;
         }
@@ -1217,9 +1220,9 @@ public abstract class ModuleNodes {
         public RubyBasicObject includedModules(RubyModule module) {
             CompilerDirectives.transferToInterpreter();
 
-            final List<RubyModule> modules = new ArrayList<>();
+            final List<RubyBasicObject> modules = new ArrayList<>();
 
-            for (RubyModule included : getModel(module).ancestors()) {
+            for (RubyBasicObject included : getModel(module).ancestors()) {
                 if (getModel(included).isOnlyAModule() && included != module) {
                     modules.add(included);
                 }
@@ -1277,7 +1280,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule moduleFunction(VirtualFrame frame, RubyModule module, Object[] names) {
+        public RubyBasicObject moduleFunction(VirtualFrame frame, RubyModule module, Object[] names) {
             if (module instanceof RubyClass && !getContext().getCoreLibrary().isLoadingRubyCore()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("module_function must be called for modules", this));
@@ -1318,14 +1321,14 @@ public abstract class ModuleNodes {
         public RubyBasicObject nesting() {
             CompilerDirectives.transferToInterpreter();
 
-            final List<RubyModule> modules = new ArrayList<>();
+            final List<RubyBasicObject> modules = new ArrayList<>();
 
             InternalMethod method = RubyCallStack.getCallingMethod(getContext());
             LexicalScope lexicalScope = method == null ? null : method.getSharedMethodInfo().getLexicalScope();
-            RubyClass object = getContext().getCoreLibrary().getObjectClass();
+            RubyBasicObject object = getContext().getCoreLibrary().getObjectClass();
 
             while (lexicalScope != null) {
-                RubyModule enclosing = lexicalScope.getLiveModule();
+                final RubyBasicObject enclosing = lexicalScope.getLiveModule();
                 if (enclosing == object)
                     break;
                 modules.add(enclosing);
@@ -1346,10 +1349,10 @@ public abstract class ModuleNodes {
             setVisibilityNode = SetVisibilityNodeGen.create(context, sourceSection, Visibility.PUBLIC, null, null);
         }
 
-        public abstract RubyModule executePublic(VirtualFrame frame, RubyModule module, Object[] args);
+        public abstract RubyBasicObject executePublic(VirtualFrame frame, RubyBasicObject module, Object[] args);
 
         @Specialization
-        public RubyModule doPublic(VirtualFrame frame, RubyModule module, Object[] names) {
+        public RubyBasicObject doPublic(VirtualFrame frame, RubyModule module, Object[] names) {
             return setVisibilityNode.executeSetVisibility(frame, module, names);
         }
 
@@ -1368,8 +1371,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        RubyModule publicClassMethod(VirtualFrame frame, RubyModule module, Object[] names) {
-            final RubyClass singletonClass = singletonClassNode.executeSingletonClass(frame, module);
+        public RubyBasicObject publicClassMethod(VirtualFrame frame, RubyModule module, Object[] names) {
+            final RubyBasicObject singletonClass = singletonClassNode.executeSingletonClass(frame, module);
 
             for (Object name : names) {
                 setMethodVisibilityNode.executeSetMethodVisibility(frame, singletonClass, name);
@@ -1389,10 +1392,10 @@ public abstract class ModuleNodes {
             setVisibilityNode = SetVisibilityNodeGen.create(context, sourceSection, Visibility.PRIVATE, null, null);
         }
 
-        public abstract RubyModule executePrivate(VirtualFrame frame, RubyModule module, Object[] args);
+        public abstract RubyBasicObject executePrivate(VirtualFrame frame, RubyBasicObject module, Object[] args);
 
         @Specialization
-        public RubyModule doPrivate(VirtualFrame frame, RubyModule module, Object[] names) {
+        public RubyBasicObject doPrivate(VirtualFrame frame, RubyModule module, Object[] names) {
             return setVisibilityNode.executeSetVisibility(frame, module, names);
         }
 
@@ -1433,8 +1436,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule privateClassMethod(VirtualFrame frame, RubyModule module, Object[] names) {
-            final RubyClass singletonClass = singletonClassNode.executeSingletonClass(frame, module);
+        public RubyBasicObject privateClassMethod(VirtualFrame frame, RubyModule module, Object[] names) {
+            final RubyBasicObject singletonClass = singletonClassNode.executeSingletonClass(frame, module);
 
             for (Object name : names) {
                 setMethodVisibilityNode.executeSetMethodVisibility(frame, singletonClass, name);
@@ -1698,7 +1701,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule privateConstant(RubyModule module, Object[] args) {
+        public RubyBasicObject privateConstant(RubyModule module, Object[] args) {
             CompilerDirectives.transferToInterpreter();
 
             for (Object name : args) {
@@ -1720,7 +1723,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule publicConstant(RubyModule module, Object[] args) {
+        public RubyBasicObject publicConstant(RubyModule module, Object[] args) {
             CompilerDirectives.transferToInterpreter();
 
             for (Object name : args) {
@@ -1745,7 +1748,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule doProtected(VirtualFrame frame, RubyModule module, Object[] names) {
+        public RubyBasicObject doProtected(VirtualFrame frame, RubyModule module, Object[] names) {
             return setVisibilityNode.executeSetVisibility(frame, module, names);
         }
 
@@ -1820,7 +1823,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule removeMethods(VirtualFrame frame, RubyModule module, Object[] names) {
+        public RubyBasicObject removeMethods(VirtualFrame frame, RubyModule module, Object[] names) {
             for (Object name : names) {
                 removeMethod(frame, module, nameToJavaStringNode.executeToJavaString(frame, name));
             }
@@ -1873,7 +1876,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule undefMethods(VirtualFrame frame, RubyModule module, Object[] names) {
+        public RubyBasicObject undefMethods(VirtualFrame frame, RubyModule module, Object[] names) {
             for (Object name : names) {
                 undefMethod(frame, module, nameToJavaStringNode.executeToJavaString(frame, name));
             }
@@ -1909,10 +1912,10 @@ public abstract class ModuleNodes {
             this.setMethodVisibilityNode = SetMethodVisibilityNodeGen.create(context, sourceSection, visibility, null, null);
         }
 
-        public abstract RubyModule executeSetVisibility(VirtualFrame frame, RubyModule module, Object[] arguments);
+        public abstract RubyBasicObject executeSetVisibility(VirtualFrame frame, RubyModule module, Object[] arguments);
 
         @Specialization
-        RubyModule setVisibility(VirtualFrame frame, RubyModule module, Object[] names) {
+        public RubyBasicObject setVisibility(VirtualFrame frame, RubyModule module, Object[] names) {
             CompilerDirectives.transferToInterpreter();
 
             if (names.length == 0) {
@@ -1956,10 +1959,10 @@ public abstract class ModuleNodes {
             this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         }
 
-        public abstract RubyModule executeSetMethodVisibility(VirtualFrame frame, RubyModule module, Object name);
+        public abstract RubyBasicObject executeSetMethodVisibility(VirtualFrame frame, RubyBasicObject module, Object name);
 
         @Specialization
-        RubyModule setMethodVisibility(VirtualFrame frame, RubyModule module, Object name) {
+        public RubyBasicObject setMethodVisibility(VirtualFrame frame, RubyModule module, Object name) {
             final String methodName = nameToJavaStringNode.executeToJavaString(frame, name);
 
             final InternalMethod method = getModel(module).deepMethodSearch(methodName);

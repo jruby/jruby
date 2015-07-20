@@ -239,28 +239,29 @@ public abstract class StringNodes {
         return StringSupport.isSingleByteOptimizable(getCodeRangeable(string), EncodingUtils.STR_ENC_GET(getCodeRangeable(string)));
     }
 
-    public static RubyBasicObject createEmptyString(RubyClass stringClass) {
+    public static RubyBasicObject createEmptyString(RubyBasicObject stringClass) {
         return createString(stringClass, new ByteList());
     }
 
-    public static RubyBasicObject createString(RubyClass stringClass, String string) {
+    public static RubyBasicObject createString(RubyBasicObject stringClass, String string) {
         return createString(stringClass, string, UTF8Encoding.INSTANCE);
     }
 
     @TruffleBoundary
-    public static RubyBasicObject createString(RubyClass stringClass, String string, Encoding encoding) {
+    public static RubyBasicObject createString(RubyBasicObject stringClass, String string, Encoding encoding) {
         return createString(stringClass, org.jruby.RubyString.encodeBytelist(string, encoding));
     }
 
-    public static RubyBasicObject createString(RubyClass stringClass, byte[] bytes) {
+    public static RubyBasicObject createString(RubyBasicObject stringClass, byte[] bytes) {
         return createString(stringClass, new ByteList(bytes));
     }
 
-    public static RubyBasicObject createString(RubyClass stringClass, ByteBuffer bytes) {
+    public static RubyBasicObject createString(RubyBasicObject stringClass, ByteBuffer bytes) {
         return createString(stringClass, new ByteList(bytes.array()));
     }
 
-    public static RubyBasicObject createString(RubyClass stringClass, ByteList bytes) {
+    public static RubyBasicObject createString(RubyBasicObject stringClass, ByteList bytes) {
+        assert RubyGuards.isRubyClass(stringClass);
         return new RubyString(stringClass, bytes, STRING_FACTORY.newInstance());
     }
 

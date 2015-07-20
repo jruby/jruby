@@ -22,7 +22,7 @@ public class RubyBinding extends RubyBasicObject {
     @CompilationFinal public Object self;
     @CompilationFinal public MaterializedFrame frame;
 
-    public RubyBinding(RubyClass bindingClass, Object self, MaterializedFrame frame) {
+    public RubyBinding(RubyBasicObject bindingClass, Object self, MaterializedFrame frame) {
         super(bindingClass);
         this.self = self;
         this.frame = frame;

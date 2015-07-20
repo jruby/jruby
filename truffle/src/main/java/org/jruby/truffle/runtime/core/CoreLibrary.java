@@ -63,81 +63,81 @@ public class CoreLibrary {
 
     private final RubyContext context;
 
-    private final RubyClass argumentErrorClass;
-    private final RubyClass arrayClass;
-    private final RubyClass basicObjectClass;
-    private final RubyClass bignumClass;
-    private final RubyClass bindingClass;
-    private final RubyClass classClass;
-    private final RubyClass complexClass;
-    private final RubyClass dirClass;
-    private final RubyClass encodingClass;
-    private final RubyClass encodingErrorClass;
-    private final RubyClass exceptionClass;
-    private final RubyClass falseClass;
-    private final RubyClass fiberClass;
-    private final RubyClass fixnumClass;
-    private final RubyClass floatClass;
-    private final RubyClass floatDomainErrorClass;
-    private final RubyClass hashClass;
-    private final RubyClass integerClass;
-    private final RubyClass indexErrorClass;
-    private final RubyClass ioErrorClass;
-    private final RubyClass loadErrorClass;
-    private final RubyClass localJumpErrorClass;
-    private final RubyClass lookupTableClass;
-    private final RubyClass matchDataClass;
-    private final RubyClass moduleClass;
-    private final RubyClass nameErrorClass;
-    private final RubyClass nilClass;
-    private final RubyClass noMethodErrorClass;
-    private final RubyClass notImplementedErrorClass;
-    private final RubyClass numericClass;
-    private final RubyClass objectClass;
-    private final RubyClass procClass;
-    private final RubyModule processModule;
-    private final RubyClass rangeClass;
-    private final RubyClass rangeErrorClass;
-    private final RubyClass rationalClass;
-    private final RubyClass regexpClass;
-    private final RubyClass regexpErrorClass;
-    private final RubyClass rubyTruffleErrorClass;
-    private final RubyClass runtimeErrorClass;
-    private final RubyClass securityErrorClass;
-    private final RubyClass standardErrorClass;
-    private final RubyClass stringClass;
-    private final RubyClass stringDataClass;
-    private final RubyClass symbolClass;
-    private final RubyClass syntaxErrorClass;
-    private final RubyClass systemCallErrorClass;
-    private final RubyClass threadClass;
-    private final RubyClass threadBacktraceClass;
-    private final RubyClass threadBacktraceLocationClass;
-    private final RubyClass timeClass;
-    private final RubyClass transcodingClass;
-    private final RubyClass trueClass;
-    private final RubyClass tupleClass;
-    private final RubyClass typeErrorClass;
-    private final RubyClass zeroDivisionErrorClass;
-    private final RubyModule enumerableModule;
-    private final RubyModule errnoModule;
-    private final RubyModule kernelModule;
-    private final RubyModule rubiniusModule;
-    private final RubyClass rubiniusChannelClass;
-    private final RubyModule rubiniusFFIModule;
-    private final RubyClass rubiniusFFIPointerClass;
-    private final RubyClass rubiniusMirrorClass;
-    private final RubyModule signalModule;
-    private final RubyModule truffleModule;
-    private final RubyClass bigDecimalClass;
-    private final RubyClass encodingConverterClass;
-    private final RubyClass encodingCompatibilityErrorClass;
-    private final RubyClass methodClass;
-    private final RubyClass unboundMethodClass;
-    private final RubyClass byteArrayClass;
-    private final RubyClass fiberErrorClass;
-    private final RubyClass threadErrorClass;
-    private final RubyClass ioBufferClass;
+    private final RubyBasicObject argumentErrorClass;
+    private final RubyBasicObject arrayClass;
+    private final RubyBasicObject basicObjectClass;
+    private final RubyBasicObject bignumClass;
+    private final RubyBasicObject bindingClass;
+    private final RubyBasicObject classClass;
+    private final RubyBasicObject complexClass;
+    private final RubyBasicObject dirClass;
+    private final RubyBasicObject encodingClass;
+    private final RubyBasicObject encodingErrorClass;
+    private final RubyBasicObject exceptionClass;
+    private final RubyBasicObject falseClass;
+    private final RubyBasicObject fiberClass;
+    private final RubyBasicObject fixnumClass;
+    private final RubyBasicObject floatClass;
+    private final RubyBasicObject floatDomainErrorClass;
+    private final RubyBasicObject hashClass;
+    private final RubyBasicObject integerClass;
+    private final RubyBasicObject indexErrorClass;
+    private final RubyBasicObject ioErrorClass;
+    private final RubyBasicObject loadErrorClass;
+    private final RubyBasicObject localJumpErrorClass;
+    private final RubyBasicObject lookupTableClass;
+    private final RubyBasicObject matchDataClass;
+    private final RubyBasicObject moduleClass;
+    private final RubyBasicObject nameErrorClass;
+    private final RubyBasicObject nilClass;
+    private final RubyBasicObject noMethodErrorClass;
+    private final RubyBasicObject notImplementedErrorClass;
+    private final RubyBasicObject numericClass;
+    private final RubyBasicObject objectClass;
+    private final RubyBasicObject procClass;
+    private final RubyBasicObject processModule;
+    private final RubyBasicObject rangeClass;
+    private final RubyBasicObject rangeErrorClass;
+    private final RubyBasicObject rationalClass;
+    private final RubyBasicObject regexpClass;
+    private final RubyBasicObject regexpErrorClass;
+    private final RubyBasicObject rubyTruffleErrorClass;
+    private final RubyBasicObject runtimeErrorClass;
+    private final RubyBasicObject securityErrorClass;
+    private final RubyBasicObject standardErrorClass;
+    private final RubyBasicObject stringClass;
+    private final RubyBasicObject stringDataClass;
+    private final RubyBasicObject symbolClass;
+    private final RubyBasicObject syntaxErrorClass;
+    private final RubyBasicObject systemCallErrorClass;
+    private final RubyBasicObject threadClass;
+    private final RubyBasicObject threadBacktraceClass;
+    private final RubyBasicObject threadBacktraceLocationClass;
+    private final RubyBasicObject timeClass;
+    private final RubyBasicObject transcodingClass;
+    private final RubyBasicObject trueClass;
+    private final RubyBasicObject tupleClass;
+    private final RubyBasicObject typeErrorClass;
+    private final RubyBasicObject zeroDivisionErrorClass;
+    private final RubyBasicObject enumerableModule;
+    private final RubyBasicObject errnoModule;
+    private final RubyBasicObject kernelModule;
+    private final RubyBasicObject rubiniusModule;
+    private final RubyBasicObject rubiniusChannelClass;
+    private final RubyBasicObject rubiniusFFIModule;
+    private final RubyBasicObject rubiniusFFIPointerClass;
+    private final RubyBasicObject rubiniusMirrorClass;
+    private final RubyBasicObject signalModule;
+    private final RubyBasicObject truffleModule;
+    private final RubyBasicObject bigDecimalClass;
+    private final RubyBasicObject encodingConverterClass;
+    private final RubyBasicObject encodingCompatibilityErrorClass;
+    private final RubyBasicObject methodClass;
+    private final RubyBasicObject unboundMethodClass;
+    private final RubyBasicObject byteArrayClass;
+    private final RubyBasicObject fiberErrorClass;
+    private final RubyBasicObject threadErrorClass;
+    private final RubyBasicObject ioBufferClass;
 
     private final RubyBasicObject argv;
     private final RubyBasicObject globalVariablesObject;
@@ -149,7 +149,7 @@ public class CoreLibrary {
     private final ArrayNodes.MaxBlock arrayMaxBlock;
 
     private final RubyClass rubyInternalMethod;
-    private final Map<Errno, RubyClass> errnoClasses = new HashMap<>();
+    private final Map<Errno, RubyBasicObject> errnoClasses = new HashMap<>();
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
 
@@ -205,7 +205,7 @@ public class CoreLibrary {
 
         classClass = ClassNodes.createClassClass(context, new ClassNodes.ClassAllocator());
         basicObjectClass = ClassNodes.createBootClass(classClass, null, "BasicObject", new RubyBasicObject.BasicObjectAllocator());
-        objectClass = ClassNodes.createBootClass(classClass, basicObjectClass, "Object", basicObjectClass.getAllocator());
+        objectClass = ClassNodes.createBootClass(classClass, basicObjectClass, "Object", ((RubyClass) basicObjectClass).getAllocator());
         moduleClass = ClassNodes.createBootClass(classClass, objectClass, "Module", new ModuleNodes.ModuleAllocator());
 
         // Close the cycles
@@ -267,7 +267,7 @@ public class CoreLibrary {
         }
 
         // ScriptError
-        RubyClass scriptErrorClass = defineClass(exceptionClass, "ScriptError");
+        RubyBasicObject scriptErrorClass = defineClass(exceptionClass, "ScriptError");
         loadErrorClass = defineClass(scriptErrorClass, "LoadError");
         notImplementedErrorClass = defineClass(scriptErrorClass, "NotImplementedError");
         syntaxErrorClass = defineClass(scriptErrorClass, "SyntaxError");
@@ -276,7 +276,7 @@ public class CoreLibrary {
         securityErrorClass = defineClass(exceptionClass, "SecurityError");
 
         // SignalException
-        RubyClass signalExceptionClass = defineClass(exceptionClass, "SignalException");
+        RubyBasicObject signalExceptionClass = defineClass(exceptionClass, "SignalException");
         defineClass(signalExceptionClass, "Interrupt");
 
         // SystemExit
@@ -311,7 +311,7 @@ public class CoreLibrary {
         nilClass = defineClass("NilClass", NO_ALLOCATOR);
         procClass = defineClass("Proc", new ProcNodes.ProcAllocator());
         processModule = defineModule("Process");
-        RubyClass queueClass = defineClass("Queue", new QueueNodes.QueueAllocator());
+        RubyBasicObject queueClass = defineClass("Queue", new QueueNodes.QueueAllocator());
         defineClass(queueClass, "SizedQueue", new SizedQueueNodes.SizedQueueAllocator());
         rangeClass = defineClass("Range", new RangeNodes.RangeAllocator());
         regexpClass = defineClass("Regexp", new RegexpNodes.RegexpAllocator());
@@ -323,12 +323,12 @@ public class CoreLibrary {
         timeClass = defineClass("Time", new TimeNodes.TimeAllocator());
         trueClass = defineClass("TrueClass", NO_ALLOCATOR);
         unboundMethodClass = defineClass("UnboundMethod", NO_ALLOCATOR);
-        final RubyClass ioClass = defineClass("IO", new IOPrimitiveNodes.IOAllocator());
+        final RubyBasicObject ioClass = defineClass("IO", new IOPrimitiveNodes.IOAllocator());
         ioBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
 
         // Modules
 
-        RubyModule comparableModule = defineModule("Comparable");
+        RubyBasicObject comparableModule = defineModule("Comparable");
         defineModule("Config");
         enumerableModule = defineModule("Enumerable");
         defineModule("GC");
@@ -358,7 +358,7 @@ public class CoreLibrary {
         rubiniusFFIModule = defineModule(rubiniusModule, "FFI");
         defineModule(defineModule(rubiniusFFIModule, "Platform"), "POSIX");
         rubiniusFFIPointerClass = defineClass(rubiniusFFIModule, objectClass, "Pointer", new PointerNodes.PointerAllocator());
-        
+
         rubiniusChannelClass = defineClass(rubiniusModule, objectClass, "Channel");
         rubiniusMirrorClass = defineClass(rubiniusModule, objectClass, "Mirror");
         defineModule(rubiniusModule, "Type");
@@ -390,7 +390,9 @@ public class CoreLibrary {
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
     }
 
-    private void includeModules(RubyModule comparableModule) {
+    private void includeModules(RubyBasicObject comparableModule) {
+        assert RubyGuards.isRubyModule(comparableModule);
+
         ModuleNodes.getModel(objectClass).include(node, kernelModule);
 
         ModuleNodes.getModel(numericClass).include(node, comparableModule);
@@ -544,35 +546,42 @@ public class CoreLibrary {
         ModuleNodes.getModel(signalModule).setConstant(node, "SIGNAL_LIST", ArrayNodes.createArray(arrayClass, signals, signals.length));
     }
 
-    private RubyClass defineClass(String name) {
-        return defineClass(objectClass, name, objectClass.getAllocator());
+    private RubyBasicObject defineClass(String name) {
+        return defineClass(objectClass, name, ((RubyClass) objectClass).getAllocator());
     }
 
-    private RubyClass defineClass(String name, Allocator allocator) {
+    private RubyBasicObject defineClass(String name, Allocator allocator) {
         return defineClass(objectClass, name, allocator);
     }
 
-    private RubyClass defineClass(RubyClass superclass, String name) {
-        return new RubyClass(context, objectClass, superclass, name, superclass.getAllocator());
+    private RubyBasicObject defineClass(RubyBasicObject superclass, String name) {
+        assert RubyGuards.isRubyClass(superclass);
+        return new RubyClass(context, objectClass, superclass, name, ((RubyClass) superclass).getAllocator());
     }
 
-    private RubyClass defineClass(RubyClass superclass, String name, Allocator allocator) {
+    private RubyBasicObject defineClass(RubyBasicObject superclass, String name, Allocator allocator) {
+        assert RubyGuards.isRubyClass(superclass);
         return new RubyClass(context, objectClass, superclass, name, allocator);
     }
 
-    private RubyClass defineClass(RubyModule lexicalParent, RubyClass superclass, String name) {
-        return new RubyClass(context, lexicalParent, superclass, name, superclass.getAllocator());
+    private RubyBasicObject defineClass(RubyBasicObject lexicalParent, RubyBasicObject superclass, String name) {
+        assert RubyGuards.isRubyModule(lexicalParent);
+        assert RubyGuards.isRubyClass(superclass);
+        return new RubyClass(context, lexicalParent, superclass, name, ((RubyClass) superclass).getAllocator());
     }
 
-    private RubyClass defineClass(RubyModule lexicalParent, RubyClass superclass, String name, Allocator allocator) {
+    private RubyBasicObject defineClass(RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, Allocator allocator) {
+        assert RubyGuards.isRubyModule(lexicalParent);
+        assert RubyGuards.isRubyClass(superclass);
         return new RubyClass(context, lexicalParent, superclass, name, allocator);
     }
 
-    private RubyModule defineModule(String name) {
+    private RubyBasicObject defineModule(String name) {
         return defineModule(objectClass, name);
     }
 
-    private RubyModule defineModule(RubyModule lexicalParent, String name) {
+    private RubyBasicObject defineModule(RubyBasicObject lexicalParent, String name) {
+        assert RubyGuards.isRubyModule(lexicalParent);
         return new RubyModule(context, moduleClass, lexicalParent, name, node);
     }
 
@@ -677,7 +686,7 @@ public class CoreLibrary {
         });
     }
 
-    public RubyClass getMetaClass(Object object) {
+    public RubyBasicObject getMetaClass(Object object) {
         if (object instanceof RubyBasicObject) {
             return ((RubyBasicObject) object).getMetaClass();
         } else if (object instanceof Boolean) {
@@ -700,7 +709,7 @@ public class CoreLibrary {
         }
     }
 
-    public RubyClass getLogicalClass(Object object) {
+    public RubyBasicObject getLogicalClass(Object object) {
         if (object instanceof RubyBasicObject) {
             return ((RubyBasicObject) object).getLogicalClass();
         } else if (object instanceof Boolean) {
@@ -874,15 +883,17 @@ public class CoreLibrary {
         return typeError(String.format("%s#%s should return %s", object, method, expectedType), currentNode);
     }
 
-    public RubyBasicObject typeErrorCantConvertTo(Object from, RubyClass to, String methodUsed, Object result, Node currentNode) {
+    public RubyBasicObject typeErrorCantConvertTo(Object from, RubyBasicObject to, String methodUsed, Object result, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
+        assert RubyGuards.isRubyClass(to);
         String fromClass = ModuleNodes.getModel(getLogicalClass(from)).getName();
         return typeError(String.format("can't convert %s to %s (%s#%s gives %s)",
                 fromClass, ModuleNodes.getModel(to).getName(), fromClass, methodUsed, getLogicalClass(result).toString()), currentNode);
     }
 
-    public RubyBasicObject typeErrorCantConvertInto(Object from, RubyClass to, Node currentNode) {
+    public RubyBasicObject typeErrorCantConvertInto(Object from, RubyBasicObject to, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
+        assert RubyGuards.isRubyClass(to);
         return typeError(String.format("can't convert %s into %s", ModuleNodes.getModel(getLogicalClass(from)).getName(), ModuleNodes.getModel(to).getName()), currentNode);
     }
 
@@ -941,8 +952,9 @@ public class CoreLibrary {
         return nameError(String.format("constant %s::%s not defined", ModuleNodes.getModel(module).getName(), name), name, currentNode);
     }
 
-    public RubyBasicObject nameErrorUninitializedConstant(RubyModule module, String name, Node currentNode) {
+    public RubyBasicObject nameErrorUninitializedConstant(RubyBasicObject module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
+        assert RubyGuards.isRubyModule(module);
         final String message;
         if (module == objectClass) {
             message = String.format("uninitialized constant %s", name);
@@ -952,13 +964,15 @@ public class CoreLibrary {
         return nameError(message, name, currentNode);
     }
 
-    public RubyBasicObject nameErrorUninitializedClassVariable(RubyModule module, String name, Node currentNode) {
+    public RubyBasicObject nameErrorUninitializedClassVariable(RubyBasicObject module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
+        assert RubyGuards.isRubyModule(module);
         return nameError(String.format("uninitialized class variable %s in %s", name, ModuleNodes.getModel(module).getName()), name, currentNode);
     }
 
-    public RubyBasicObject nameErrorPrivateConstant(RubyModule module, String name, Node currentNode) {
+    public RubyBasicObject nameErrorPrivateConstant(RubyBasicObject module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
+        assert RubyGuards.isRubyModule(module);
         return nameError(String.format("private constant %s::%s referenced", ModuleNodes.getModel(module).getName(), name), name, currentNode);
     }
 
@@ -977,8 +991,9 @@ public class CoreLibrary {
         return nameError(String.format("undefined local variable or method `%s' for %s", name, object), name, currentNode);
     }
 
-    public RubyBasicObject nameErrorUndefinedMethod(String name, RubyModule module, Node currentNode) {
+    public RubyBasicObject nameErrorUndefinedMethod(String name, RubyBasicObject module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
+        assert RubyGuards.isRubyModule(module);
         return nameError(String.format("undefined method `%s' for %s", name, ModuleNodes.getModel(module).getName()), name, currentNode);
     }
 
@@ -998,8 +1013,9 @@ public class CoreLibrary {
         return nameError(String.format("local variable `%s' not defined for %s", name, binding.toString()), name, currentNode);
     }
 
-    public RubyBasicObject nameErrorClassVariableNotDefined(String name, RubyModule module, Node currentNode) {
+    public RubyBasicObject nameErrorClassVariableNotDefined(String name, RubyBasicObject module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
+        assert RubyGuards.isRubyModule(module);
         return nameError(String.format("class variable `%s' not defined for %s", name, ModuleNodes.getModel(module).getName()), name, currentNode);
     }
 
@@ -1010,14 +1026,15 @@ public class CoreLibrary {
         return noMethodError;
     }
 
-    public RubyBasicObject noMethodErrorOnModule(String name, RubyModule module, Node currentNode) {
+    public RubyBasicObject noMethodErrorOnModule(String name, RubyBasicObject module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
+        assert RubyGuards.isRubyModule(module);
         return noMethodError(String.format("undefined method `%s' for %s", name, ModuleNodes.getModel(module).getName()), name, currentNode);
     }
 
     public RubyBasicObject noMethodErrorOnReceiver(String name, Object receiver, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        RubyClass logicalClass = getLogicalClass(receiver);
+        RubyBasicObject logicalClass = getLogicalClass(receiver);
         String repr = ModuleNodes.getModel(logicalClass).getName();
         if (receiver instanceof RubyModule) {
             repr = ModuleNodes.getModel(((RubyModule) receiver)).getName() + ":" + repr;
@@ -1025,8 +1042,9 @@ public class CoreLibrary {
         return noMethodError(String.format("undefined method `%s' for %s", name, repr), name, currentNode);
     }
 
-    public RubyBasicObject privateMethodError(String name, RubyModule module, Node currentNode) {
+    public RubyBasicObject privateMethodError(String name, RubyBasicObject module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
+        assert RubyGuards.isRubyModule(module);
         return noMethodError(String.format("private method `%s' called for %s", name, ModuleNodes.getModel(module).getName()), name, currentNode);
     }
 
@@ -1195,129 +1213,129 @@ public class CoreLibrary {
         return context;
     }
 
-    public RubyClass getArrayClass() {
+    public RubyBasicObject getArrayClass() {
         return arrayClass;
     }
 
-    public RubyClass getBasicObjectClass() {
+    public RubyBasicObject getBasicObjectClass() {
         return basicObjectClass;
     }
 
-    public RubyClass getBignumClass() {
+    public RubyBasicObject getBignumClass() {
         return bignumClass;
     }
 
-    public RubyClass getBigDecimalClass() {
+    public RubyBasicObject getBigDecimalClass() {
         return bigDecimalClass;
     }
 
-    public RubyClass getBindingClass() {
+    public RubyBasicObject getBindingClass() {
         return bindingClass;
     }
 
-    public RubyClass getClassClass() {
+    public RubyBasicObject getClassClass() {
         return classClass;
     }
 
-    public RubyClass getFalseClass() {
+    public RubyBasicObject getFalseClass() {
         return falseClass;
     }
 
-    public RubyClass getFiberClass() {
+    public RubyBasicObject getFiberClass() {
         return fiberClass;
     }
 
-    public RubyClass getFixnumClass() {
+    public RubyBasicObject getFixnumClass() {
         return fixnumClass;
     }
 
-    public RubyClass getFloatClass() {
+    public RubyBasicObject getFloatClass() {
         return floatClass;
     }
 
-    public RubyClass getHashClass() {
+    public RubyBasicObject getHashClass() {
         return hashClass;
     }
 
-    public RubyClass getLoadErrorClass() {
+    public RubyBasicObject getLoadErrorClass() {
         return loadErrorClass;
     }
 
-    public RubyClass getMatchDataClass() {
+    public RubyBasicObject getMatchDataClass() {
         return matchDataClass;
     }
 
-    public RubyClass getModuleClass() {
+    public RubyBasicObject getModuleClass() {
         return moduleClass;
     }
 
-    public RubyClass getNameErrorClass() {
+    public RubyBasicObject getNameErrorClass() {
         return nameErrorClass;
     }
 
-    public RubyClass getNilClass() {
+    public RubyBasicObject getNilClass() {
         return nilClass;
     }
 
-    public RubyClass getRubyInternalMethod() {
+    public RubyBasicObject getRubyInternalMethod() {
         return rubyInternalMethod;
     }
 
-    public RubyClass getNoMethodErrorClass() {
+    public RubyBasicObject getNoMethodErrorClass() {
         return noMethodErrorClass;
     }
 
-    public RubyClass getObjectClass() {
+    public RubyBasicObject getObjectClass() {
         return objectClass;
     }
 
-    public RubyClass getProcClass() {
+    public RubyBasicObject getProcClass() {
         return procClass;
     }
 
-    public RubyClass getRangeClass() {
+    public RubyBasicObject getRangeClass() {
         return rangeClass;
     }
 
-    public RubyClass getRationalClass() {
+    public RubyBasicObject getRationalClass() {
         return rationalClass;
     }
 
-    public RubyClass getRegexpClass() {
+    public RubyBasicObject getRegexpClass() {
         return regexpClass;
     }
 
-    public RubyClass getRubyTruffleErrorClass() {
+    public RubyBasicObject getRubyTruffleErrorClass() {
         return rubyTruffleErrorClass;
     }
 
-    public RubyClass getRuntimeErrorClass() {
+    public RubyBasicObject getRuntimeErrorClass() {
         return runtimeErrorClass;
     }
 
-    public RubyClass getStringClass() {
+    public RubyBasicObject getStringClass() {
         return stringClass;
     }
 
-    public RubyClass getThreadClass() {
+    public RubyBasicObject getThreadClass() {
         return threadClass;
     }
 
-    public RubyClass getTimeClass() {
+    public RubyBasicObject getTimeClass() {
         return timeClass;
     }
 
-    public RubyClass getTypeErrorClass() { return typeErrorClass; }
+    public RubyBasicObject getTypeErrorClass() { return typeErrorClass; }
 
-    public RubyClass getTrueClass() {
+    public RubyBasicObject getTrueClass() {
         return trueClass;
     }
 
-    public RubyClass getZeroDivisionErrorClass() {
+    public RubyBasicObject getZeroDivisionErrorClass() {
         return zeroDivisionErrorClass;
     }
 
-    public RubyModule getKernelModule() {
+    public RubyBasicObject getKernelModule() {
         return kernelModule;
     }
 
@@ -1357,59 +1375,59 @@ public class CoreLibrary {
         return arrayMaxBlock;
     }
 
-    public RubyClass getNumericClass() {
+    public RubyBasicObject getNumericClass() {
         return numericClass;
     }
 
-    public RubyClass getIntegerClass() {
+    public RubyBasicObject getIntegerClass() {
         return integerClass;
     }
 
-    public RubyClass getEncodingConverterClass() {
+    public RubyBasicObject getEncodingConverterClass() {
         return encodingConverterClass;
     }
 
-    public RubyClass getUnboundMethodClass() {
+    public RubyBasicObject getUnboundMethodClass() {
         return unboundMethodClass;
     }
 
-    public RubyClass getMethodClass() {
+    public RubyBasicObject getMethodClass() {
         return methodClass;
     }
 
-    public RubyClass getComplexClass() {
+    public RubyBasicObject getComplexClass() {
         return complexClass;
     }
 
-    public RubyClass getByteArrayClass() {
+    public RubyBasicObject getByteArrayClass() {
         return byteArrayClass;
     }
 
-    public RubyClass getLookupTableClass() {
+    public RubyBasicObject getLookupTableClass() {
         return lookupTableClass;
     }
 
-    public RubyClass getStringDataClass() {
+    public RubyBasicObject getStringDataClass() {
         return stringDataClass;
     }
 
-    public RubyClass getTranscodingClass() {
+    public RubyBasicObject getTranscodingClass() {
         return transcodingClass;
     }
 
-    public RubyClass getTupleClass() {
+    public RubyBasicObject getTupleClass() {
         return tupleClass;
     }
 
-    public RubyClass getRubiniusChannelClass() {
+    public RubyBasicObject getRubiniusChannelClass() {
         return rubiniusChannelClass;
     }
 
-    public RubyClass getRubiniusFFIPointerClass() {
+    public RubyBasicObject getRubiniusFFIPointerClass() {
         return rubiniusFFIPointerClass;
     }
 
-    public RubyClass getRubiniusMirrorClass() {
+    public RubyBasicObject getRubiniusMirrorClass() {
         return rubiniusMirrorClass;
     }
 
@@ -1417,19 +1435,19 @@ public class CoreLibrary {
         return rubiniusUndefined;
     }
 
-    public RubyClass getErrnoClass(Errno errno) {
+    public RubyBasicObject getErrnoClass(Errno errno) {
         return errnoClasses.get(errno);
     }
 
-    public RubyClass getSymbolClass() {
+    public RubyBasicObject getSymbolClass() {
         return symbolClass;
     }
 
-    public RubyClass getThreadBacktraceLocationClass() {
+    public RubyBasicObject getThreadBacktraceLocationClass() {
         return threadBacktraceLocationClass;
     }
 
-    public RubyClass getIOBufferClass() {
+    public RubyBasicObject getIOBufferClass() {
         return ioBufferClass;
     }
 

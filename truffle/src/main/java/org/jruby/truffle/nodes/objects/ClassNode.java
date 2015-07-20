@@ -28,35 +28,35 @@ public abstract class ClassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract RubyClass executeGetClass(VirtualFrame frame, Object value);
+    public abstract RubyBasicObject executeGetClass(VirtualFrame frame, Object value);
 
     @Specialization(guards = "value")
-    protected RubyClass getClassTrue(boolean value) {
+    protected RubyBasicObject getClassTrue(boolean value) {
         return getContext().getCoreLibrary().getTrueClass();
     }
 
     @Specialization(guards = "!value")
-    protected RubyClass getClassFalse(boolean value) {
+    protected RubyBasicObject getClassFalse(boolean value) {
         return getContext().getCoreLibrary().getFalseClass();
     }
 
     @Specialization
-    protected RubyClass getClass(int value) {
+    protected RubyBasicObject getClass(int value) {
         return getContext().getCoreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected RubyClass getClass(long value) {
+    protected RubyBasicObject getClass(long value) {
         return getContext().getCoreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected RubyClass getClass(double value) {
+    protected RubyBasicObject getClass(double value) {
         return getContext().getCoreLibrary().getFloatClass();
     }
 
     @Specialization
-    protected RubyClass getClass(RubyBasicObject object) {
+    protected RubyBasicObject getClass(RubyBasicObject object) {
         return object.getLogicalClass();
     }
 

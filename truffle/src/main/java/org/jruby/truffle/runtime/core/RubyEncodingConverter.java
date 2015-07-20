@@ -16,7 +16,7 @@ public class RubyEncodingConverter extends RubyBasicObject {
 
     public EConv econv;
 
-    public RubyEncodingConverter(RubyClass rubyClass, EConv econv) {
+    public RubyEncodingConverter(RubyBasicObject rubyClass, EConv econv) {
         super(rubyClass);
         this.econv = econv;
     }

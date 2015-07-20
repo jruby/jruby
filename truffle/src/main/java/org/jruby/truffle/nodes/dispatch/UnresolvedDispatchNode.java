@@ -119,7 +119,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             DispatchNode first,
             Object receiverObject,
             Object methodName) {
-        final RubyClass callerClass;
+        final RubyBasicObject callerClass;
 
         if (ignoreVisibility) {
             callerClass = null;
@@ -171,7 +171,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object receiverObject,
             Object methodName,
             Object argumentsObjects) {
-        final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
+        final RubyBasicObject callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
         final InternalMethod method = lookup(callerClass, receiverObject, toString(methodName), ignoreVisibility);
 

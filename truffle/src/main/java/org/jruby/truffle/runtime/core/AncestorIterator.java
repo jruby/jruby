@@ -14,7 +14,7 @@ import org.jruby.truffle.runtime.ModuleChain;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class AncestorIterator implements Iterator<RubyModule> {
+public class AncestorIterator implements Iterator<RubyBasicObject> {
     ModuleChain module;
 
     public AncestorIterator(ModuleChain top) {
@@ -27,7 +27,7 @@ public class AncestorIterator implements Iterator<RubyModule> {
     }
 
     @Override
-    public RubyModule next() throws NoSuchElementException {
+    public RubyBasicObject next() throws NoSuchElementException {
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
