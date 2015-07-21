@@ -423,6 +423,7 @@ module Commands
   end
 
   def check_ambiguous_arguments
+    ENV.delete "JRUBY_ECLIPSE" # never run from the Eclipse launcher here
     pom = "#{JRUBY_DIR}/truffle/pom.rb"
     contents = File.read(pom)
     contents.gsub!(/^(\s+)'source'\s*=>.+'1.7'.+,\n\s+'target'\s*=>.+\s*'1.7.+,\n/) do
