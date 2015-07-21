@@ -225,21 +225,30 @@ public class CallableSelector {
                                 }
                                 continue; /* OUTER */ // we want to check all
                             }
-                            else if ( methodArity < procArity && mostSpecificArity != procArity ) { // not ideal but still usable
-                                if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
-                                else if ( mostSpecificArity < methodArity ) { // candidate is "better" match
-                                    mostSpecific = candidate; msTypes = cTypes;
-                                    mostSpecificArity = methodArity; ambiguous = false;
+                            else if ( mostSpecificArity != procArity ) {
+                                if ( methodArity < procArity ) { // not ideal but still usable
+                                    if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
+                                    else if ( mostSpecificArity < methodArity ) { // candidate is "better" match
+                                        mostSpecific = candidate; msTypes = cTypes;
+                                        mostSpecificArity = methodArity; ambiguous = false;
+                                    }
+                                    continue; /* OUTER */
                                 }
-                                continue; /* OUTER */
-                            }
-                            else if ( procArity < 0 && methodArity >= -(procArity + 1) && mostSpecificArity != procArity ) {
-                                if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
-                                else if ( mostSpecificArity > methodArity ) { // candidate is "better" match
-                                    mostSpecific = candidate; msTypes = cTypes;
-                                    mostSpecificArity = methodArity; ambiguous = false;
+                                else if ( procArity < 0 && methodArity >= -(procArity + 1) ) { // *splat that fits
+                                    if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
+                                    else {
+                                        final int msa = mostSpecificArity + procArity;
+                                        final int ma = methodArity + procArity;
+                                        if ( ( msa < 0 && ma < 0 && msa < ma ) ||
+                                             ( msa >= 0 && ma >= 0 && msa > ma ) ||
+                                             ( msa > ma ) ) {
+                                            mostSpecific = candidate; msTypes = cTypes;
+                                            mostSpecificArity = methodArity; // ambiguous = false;
+                                        }
+                                    }
+                                    ambiguous = false;
+                                    continue; /* OUTER */
                                 }
-                                continue; /* OUTER */
                             }
                             else { // we're not a match and if there's something else matched than it's not really ambiguous
                                 ambiguous = false; /* continue; /* OUTER */

@@ -124,6 +124,48 @@ public class CallableSelectorTest {
         result = CallableSelector.matchingCallableArityOne(runtime, cache, methods, dummyProc);
         assertEquals(new JavaMethod(runtime, list1), result);
 
+        // arity -3 :
+
+        BlockBody body_3 = new NullBlockBody() { // arity -3
+            @Override public Arity arity() { return Arity.TWO_REQUIRED; }
+        };
+        dummyProc = RubyProc.newProc(runtime, new Block(body_3, binding), Block.Type.PROC);
+
+        cache = IntHashMap.nullMap();
+        methods = new JavaMethod[] {
+            new JavaMethod(runtime, list1), new JavaMethod(runtime, list2)
+        };
+        result = CallableSelector.matchingCallableArityOne(runtime, cache, methods, dummyProc);
+        assertEquals(new JavaMethod(runtime, list2), result);
+
+        cache = IntHashMap.nullMap();
+        methods = new JavaMethod[] {
+            new JavaMethod(runtime, list2), new JavaMethod(runtime, list1)
+        };
+        result = CallableSelector.matchingCallableArityOne(runtime, cache, methods, dummyProc);
+        assertEquals(new JavaMethod(runtime, list2), result);
+
+        // arity -2 :
+
+        BlockBody body_2 = new NullBlockBody() { // arity -2 (arg1, *rest) should prefer (single)
+            @Override public Arity arity() { return Arity.ONE_REQUIRED; }
+        };
+        dummyProc = RubyProc.newProc(runtime, new Block(body_2, binding), Block.Type.PROC);
+
+        cache = IntHashMap.nullMap();
+        methods = new JavaMethod[] {
+            new JavaMethod(runtime, list1), new JavaMethod(runtime, list2)
+        };
+        result = CallableSelector.matchingCallableArityOne(runtime, cache, methods, dummyProc);
+        assertEquals(new JavaMethod(runtime, list1), result);
+
+        cache = IntHashMap.nullMap();
+        methods = new JavaMethod[] {
+            new JavaMethod(runtime, list2), new JavaMethod(runtime, list1)
+        };
+        result = CallableSelector.matchingCallableArityOne(runtime, cache, methods, dummyProc);
+        assertEquals(new JavaMethod(runtime, list1), result);
+
     }
 
 }
