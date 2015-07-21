@@ -175,8 +175,7 @@ public class CallableSelector {
                     if ( last >= 0 && msTypes[last].isInterface() && ( implMethod = getFunctionalInterfaceMethod(msTypes[last]) ) != null ) {
                         mostSpecificArity = implMethod.getParameterTypes().length;
                     }
-                    int arity = ((RubyProc) lastArg).getBlock().arity().getValue();
-                    procArity = arity >= 0 ? arity : - (arity + 1); /* fixedArity = false; */;
+                    procArity = ((RubyProc) lastArg).getBlock().arity().getValue();
                 }
                 else {
                     procArity = Integer.MIN_VALUE;
@@ -229,6 +228,14 @@ public class CallableSelector {
                             else if ( methodArity < procArity && mostSpecificArity != procArity ) { // not ideal but still usable
                                 if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
                                 else if ( mostSpecificArity < methodArity ) { // candidate is "better" match
+                                    mostSpecific = candidate; msTypes = cTypes;
+                                    mostSpecificArity = methodArity; ambiguous = false;
+                                }
+                                continue; /* OUTER */
+                            }
+                            else if ( procArity < 0 && methodArity >= -(procArity + 1) && mostSpecificArity != procArity ) {
+                                if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
+                                else if ( mostSpecificArity > methodArity ) { // candidate is "better" match
                                     mostSpecific = candidate; msTypes = cTypes;
                                     mostSpecificArity = methodArity; ambiguous = false;
                                 }
