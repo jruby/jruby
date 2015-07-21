@@ -63,21 +63,17 @@ public class GeneralSuperReCallNode extends RubyNode {
             originalArguments = frame.getArguments();
         }
 
-        Object[] superArguments = RubyArguments.extractUserArguments(originalArguments);
+        // Reload the arguments
+        Object[] superArguments = new Object[reloadNodes.length];
+        for (int n = 0; n < superArguments.length; n++) {
+            superArguments[n] = reloadNodes[n].execute(frame);
+        }
 
-        if (!inBlock) {
-            // Reload the arguments
-            superArguments = new Object[reloadNodes.length];
-            for (int n = 0; n < superArguments.length; n++) {
-                superArguments[n] = reloadNodes[n].execute(frame);
-            }
-
-            if (isSplatted) {
-                CompilerDirectives.transferToInterpreter();
-                assert superArguments.length == 1;
-                assert RubyGuards.isRubyArray(superArguments[0]);
-                superArguments = ArrayNodes.slowToArray(((RubyBasicObject) superArguments[0]));
-            }
+        if (isSplatted) {
+            CompilerDirectives.transferToInterpreter();
+            assert superArguments.length == 1;
+            assert RubyGuards.isRubyArray(superArguments[0]);
+            superArguments = ArrayNodes.slowToArray(((RubyBasicObject) superArguments[0]));
         }
 
         // Execute or inherit the block
