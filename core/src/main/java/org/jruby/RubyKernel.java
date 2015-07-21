@@ -600,12 +600,12 @@ public class RubyKernel {
         return RubyArgsFile.readlines(context, context.runtime.getArgsFile(), args);
     }
 
-    @JRubyMethod(name = "respond_to_missing?", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "respond_to_missing?", visibility = PRIVATE)
     public static IRubyObject respond_to_missing_p(ThreadContext context, IRubyObject recv, IRubyObject symbol) {
         return context.runtime.getFalse();
     }
 
-    @JRubyMethod(name = "respond_to_missing?", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "respond_to_missing?", visibility = PRIVATE)
     public static IRubyObject respond_to_missing_p(ThreadContext context, IRubyObject recv, IRubyObject symbol, IRubyObject isPrivate) {
         return context.runtime.getFalse();
     }
