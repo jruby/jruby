@@ -46,7 +46,6 @@ import java.lang.reflect.Type;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
@@ -57,16 +56,12 @@ import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.util.CodegenUtils.getBoxType;
 import static org.jruby.util.CodegenUtils.prettyParams;
 
 @JRubyClass(name="Java::JavaMethod")
 public class JavaMethod extends JavaCallable {
-
-    //private static final Logger LOG = LoggerFactory.getLogger("JavaMethod");
 
     //private final static boolean USE_HANDLES = RubyInstanceConfig.USE_GENERATED_HANDLES;
     //private final static boolean HANDLE_DEBUG = false;
@@ -188,7 +183,7 @@ public class JavaMethod extends JavaCallable {
 
     @Override
     public final boolean equals(Object other) {
-        return other instanceof JavaMethod && this.method.equals( ((JavaMethod)other).method );
+        return other instanceof JavaMethod && this.method.equals( ((JavaMethod) other).method );
     }
 
     @Override
@@ -594,7 +589,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     @Override
-    public AccessibleObject accessibleObject() {
+    public final AccessibleObject accessibleObject() {
         return method;
     }
 
