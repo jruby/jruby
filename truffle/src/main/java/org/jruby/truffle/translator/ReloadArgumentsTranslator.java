@@ -78,15 +78,13 @@ public class ReloadArgumentsTranslator extends Translator {
     @Override
     public RubyNode visitArgumentNode(org.jruby.ast.ArgumentNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
-        return new ReadLocalVariableNode(context, sourceSection, slot);
+        return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), sourceSection);
     }
 
     @Override
     public RubyNode visitOptArgNode(org.jruby.ast.OptArgNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
-        return new ReadLocalVariableNode(context, sourceSection, slot);
+        return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), sourceSection);
     }
 
     @Override

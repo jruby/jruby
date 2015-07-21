@@ -16,6 +16,8 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.ast.ArgsNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
@@ -34,6 +36,7 @@ import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.supercall.GeneralSuperCallNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperReCallNode;
+import org.jruby.truffle.nodes.supercall.ZSuperOutsideMethodNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -279,22 +282,33 @@ class MethodTranslator extends BodyTranslator {
             environment.setNeedsDeclarationFrame();
         }
 
-        final RubyNode blockNode;
+        currentCallMethodName = environment.getNamedMethodName();
 
+        final RubyNode blockNode;
         if (node.getIterNode() != null) {
-            currentCallMethodName = environment.getNamedMethodName();
             blockNode = node.getIterNode().accept(this);
         } else {
             blockNode = null;
         }
 
+        boolean insideDefineMethod = false;
+        MethodTranslator methodArgumentsTranslator = this;
+        while (methodArgumentsTranslator.isBlock) {
+            if (!(methodArgumentsTranslator.parent instanceof MethodTranslator)) {
+                return new ZSuperOutsideMethodNode(context, sourceSection, insideDefineMethod);
+            } else if (methodArgumentsTranslator.currentCallMethodName.equals("define_method")) {
+                insideDefineMethod = true;
+            }
+            methodArgumentsTranslator = (MethodTranslator) methodArgumentsTranslator.parent;
+        }
+
         final ReloadArgumentsTranslator reloadTranslator = new ReloadArgumentsTranslator(
                 currentNode, context, source, this);
 
+        final ArgsNode argsNode = methodArgumentsTranslator.argsNode;
         final SequenceNode reloadSequence = (SequenceNode) reloadTranslator.visitArgsNode(argsNode);
 
         return new GeneralSuperReCallNode(context, sourceSection,
-                environment.isBlock(),
                 reloadTranslator.isSplatted(),
                 reloadSequence.getSequence(),
                 blockNode);

@@ -30,7 +30,6 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
  */
 public class GeneralSuperReCallNode extends RubyNode {
 
-    private final boolean inBlock;
     private final boolean isSplatted;
     @Children private final RubyNode[] reloadNodes;
     @Child private RubyNode block;
@@ -38,9 +37,8 @@ public class GeneralSuperReCallNode extends RubyNode {
     @Child LookupSuperMethodNode lookupSuperMethodNode;
     @Child CallMethodNode callMethodNode;
 
-    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, boolean inBlock, boolean isSplatted, RubyNode[] reloadNodes, RubyNode block) {
+    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, boolean isSplatted, RubyNode[] reloadNodes, RubyNode block) {
         super(context, sourceSection);
-        this.inBlock = inBlock;
         this.isSplatted = isSplatted;
         this.reloadNodes = reloadNodes;
         this.block = block;
@@ -56,12 +54,7 @@ public class GeneralSuperReCallNode extends RubyNode {
 
         final Object self = RubyArguments.getSelf(frame.getArguments());
 
-        final Object[] originalArguments;
-        if (inBlock) {
-            originalArguments = RubyArguments.getDeclarationFrame(frame.getArguments()).getArguments();
-        } else {
-            originalArguments = frame.getArguments();
-        }
+        final Object[] originalArguments = frame.getArguments();
 
         // Reload the arguments
         Object[] superArguments = new Object[reloadNodes.length];
