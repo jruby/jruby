@@ -111,7 +111,7 @@ public class CoreMethodNodeManager {
             }
         }
         if (method.onSingleton() && method.constructor()) {
-            System.err.println("WARNING: Either onSingleton or isModuleFunction for " + methodDetails.getIndicativeName());
+            System.err.println("WARNING: Either onSingleton or constructor for " + methodDetails.getIndicativeName());
         }
 
         final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
