@@ -2393,13 +2393,15 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         IRubyObject[] arr = new IRubyObject[realLength];
 
-        for (int i = 0; i < realLength; i++) {
+        int i;
+        for (i = 0; i < realLength; i++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
             // See JRUBY-5434
             arr[i] = block.yield(context, safeArrayRef(values, i + begin));
         }
 
-        return new RubyArray(runtime, arr);
+        // use iteration count as new size in case something was deleted along the way
+        return new RubyArray(runtime, arr, 0, i);
     }
 
     @JRubyMethod(name = {"collect"}, compat = RUBY1_9)
