@@ -51,12 +51,12 @@ describe "Fixnum#[]" do
 
   it "calls #to_int to coerce a String to a Bignum and returns 0" do
     obj = mock('bignum value')
-    obj.should_receive(:to_int).and_return(bignum_value())
+    obj.should_receive(:to_int).and_return(bignum_value)
 
     3[obj].should == 0
   end
 
   it "returns 0 when passed a Float in the range of a Bignum" do
-    3[bignum_value().to_f].should == 0
+    3[bignum_value.to_f].should == 0
   end
 end

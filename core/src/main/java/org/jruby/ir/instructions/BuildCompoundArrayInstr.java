@@ -60,7 +60,7 @@ public class BuildCompoundArrayInstr extends ResultBaseInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject v1 = (IRubyObject)getAppendingArg().retrieve(context, self, currScope, currDynScope, temp);
         IRubyObject v2 = (IRubyObject)getAppendedArg().retrieve(context, self, currScope, currDynScope, temp);
-        return isArgsPush ? Helpers.argsPush((RubyArray) v1, v2) : Helpers.argsCat(v1, v2);
+        return isArgsPush ? Helpers.argsPush(context, (RubyArray) v1, v2) : Helpers.argsCat(context, v1, v2);
     }
 
     @Override

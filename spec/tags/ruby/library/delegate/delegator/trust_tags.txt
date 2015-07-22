@@ -1,3 +1,0 @@
-fails:Delegator#trust raises a SecurityError when modifying a trusted delegator
-fails:Delegator#trust raises a SecurityError when modifying a trusted delegate
-fails:Delegator#trust raises an ArgumentError for obsolete $SAFE=4

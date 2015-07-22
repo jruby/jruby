@@ -54,11 +54,19 @@ public abstract class RubyGuards {
     }
 
     public static boolean isIntegerFixnumRange(Object value) {
-        return value instanceof RubyRange.IntegerFixnumRange;
+        return value instanceof RubyIntegerFixnumRange;
+    }
+
+    public static boolean isLongFixnumRange(Object value) {
+        return value instanceof RubyLongFixnumRange;
+    }
+
+    public static boolean isObjectRange(Object value) {
+        return value instanceof RubyObjectRange;
     }
 
     public static boolean isRubyRange(Object value) {
-        return value instanceof RubyRange;
+        return isIntegerFixnumRange(value) || isLongFixnumRange(value) || isObjectRange(value);
     }
 
     public static boolean isRubyArray(Object value) {
@@ -161,6 +169,26 @@ public abstract class RubyGuards {
         return encodingConverter instanceof RubyEncodingConverter;
     }
 
+    public static boolean isRubyTime(RubyBasicObject time) {
+        return time instanceof RubyTime;
+    }
+
+    public static boolean isRubyException(Object object) {
+        return object instanceof RubyException;
+    }
+
+    public static boolean isRubyFiber(Object fiber) {
+        return fiber instanceof RubyFiber;
+    }
+
+    public static boolean isRubyThread(Object object) {
+        return object instanceof RubyThread;
+    }
+
+    public static boolean isRubyMatchData(Object object) {
+        return object instanceof RubyMatchData;
+    }
+
     // Internal types
 
     public static boolean isThreadLocal(Object value) {
@@ -190,5 +218,4 @@ public abstract class RubyGuards {
     public static boolean isInfinity(double value) {
         return Double.isInfinite(value);
     }
-
 }

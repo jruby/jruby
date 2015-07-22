@@ -16,11 +16,11 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 
 import java.lang.ref.ReferenceQueue;
@@ -60,7 +60,7 @@ public class ObjectSpaceManager {
 
     private final Map<RubyBasicObject, FinalizerReference> finalizerReferences = new WeakHashMap<>();
     private final ReferenceQueue<RubyBasicObject> finalizerQueue = new ReferenceQueue<>();
-    private RubyThread finalizerThread;
+    private RubyBasicObject finalizerThread;
 
     public ObjectSpaceManager(RubyContext context) {
         this.context = context;
@@ -83,8 +83,8 @@ public class ObjectSpaceManager {
         if (finalizerThread == null) {
             // TODO(CS): should we be running this in a real Ruby thread?
 
-            finalizerThread = new RubyThread(context.getCoreLibrary().getThreadClass(), context.getThreadManager());
-            finalizerThread.initialize(context, null, "finalizer", new Runnable() {
+            finalizerThread = ThreadNodes.createRubyThread(context.getCoreLibrary().getThreadClass(), context.getThreadManager());
+            ThreadNodes.initialize(finalizerThread, context, null, "finalizer", new Runnable() {
                 @Override
                 public void run() {
                     runFinalizers();
@@ -150,7 +150,7 @@ public class ObjectSpaceManager {
         context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
 
             @Override
-            public void run(RubyThread currentThread, Node currentNode) {
+            public void run(RubyBasicObject currentThread, Node currentNode) {
                 synchronized (liveObjects) {
                     currentThread.visitObjectGraph(visitor);
                     context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);

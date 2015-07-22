@@ -21,7 +21,6 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.util.ByteList;
 
@@ -47,7 +46,7 @@ public abstract class ByteArrayNodes {
         BYTE_ARRAY_FACTORY = shape.createFactory();
     }
 
-    public static RubyBasicObject createByteArray(RubyClass rubyClass, ByteList bytes) {
+    public static RubyBasicObject createByteArray(RubyBasicObject rubyClass, ByteList bytes) {
         return new RubyBasicObject(rubyClass, BYTE_ARRAY_FACTORY.newInstance(bytes));
     }
 

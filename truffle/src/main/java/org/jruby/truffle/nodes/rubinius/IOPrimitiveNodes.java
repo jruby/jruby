@@ -58,7 +58,6 @@ import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.sockets.FDSet;
 import org.jruby.truffle.runtime.sockets.FDSetFactory;
 import org.jruby.truffle.runtime.sockets.FDSetFactoryFactory;
@@ -106,7 +105,7 @@ public abstract class IOPrimitiveNodes {
 
     public static class IOAllocator implements Allocator {
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return new RubyBasicObject(rubyClass, IO_FACTORY.newInstance(context.getCoreLibrary().getNilObject(), 0, 0, 0));
         }
     }
@@ -147,7 +146,7 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject allocate(VirtualFrame frame, RubyClass classToAllocate) {
+        public RubyBasicObject allocate(VirtualFrame frame, RubyBasicObject classToAllocate) {
             final Object buffer = newBufferNode.call(frame, getContext().getCoreLibrary().getIOBufferClass(), "new", null);
             return new RubyBasicObject(classToAllocate, IO_FACTORY.newInstance(buffer, 0, 0, 0));
         }
@@ -635,7 +634,7 @@ public abstract class IOPrimitiveNodes {
                 readableSet.set(fd);
             }
 
-            final int result = getContext().getThreadManager().runOnce(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
+            final int result = getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
                     return nativeSockets().select(
@@ -669,7 +668,7 @@ public abstract class IOPrimitiveNodes {
                 writableSet.set(fd);
             }
 
-            final int result = getContext().getThreadManager().runOnce(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
+            final int result = getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
                     return nativeSockets().select(

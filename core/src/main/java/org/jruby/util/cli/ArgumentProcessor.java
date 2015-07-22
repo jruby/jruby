@@ -652,8 +652,9 @@ public class ArgumentProcessor {
         result = resolve("uri:classloader:/bin", scriptName);
         if (result != null) return result;
 
-        String path = config.getEnvironment().get("PATH").toString();
-        if (path != null) {
+        Object maybePath = config.getEnvironment().get("PATH");
+        if (maybePath != null) {
+            String path = maybePath.toString();
             String[] paths = path.split(System.getProperty("path.separator"));
             for (int i = 0; i < paths.length; i++) {
                 result = resolve(paths[i], scriptName);

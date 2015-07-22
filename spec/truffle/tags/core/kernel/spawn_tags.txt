@@ -35,9 +35,6 @@ fails:Kernel#spawn redirects STDERR to the given file if :err => String
 fails:Kernel#spawn redirects both STDERR and STDOUT to the given file descriptior
 fails:Kernel#spawn redirects both STDERR and STDOUT to the given IO
 fails:Kernel#spawn does NOT redirect both STDERR and STDOUT at the time to the given name
-fails:Kernel#spawn closes file descriptors >= 3 in the child process
-fails:Kernel#spawn closes file descriptors >= 3 in the child process even if given a false :close_others option because they are set close_on_exec
-fails:Kernel#spawn does not close file descriptors >= 3 in the child process when given a false :close_others option and fds are set close_on_exec=false
 fails:Kernel#spawn raises an ArgumentError if passed no command arguments
 fails:Kernel#spawn raises an ArgumentError if passed env or options but no command arguments
 fails:Kernel#spawn raises an ArgumentError if passed env and options but no command arguments
@@ -104,9 +101,6 @@ fails:Kernel.spawn redirects STDERR to the given file if :err => String
 fails:Kernel.spawn redirects both STDERR and STDOUT to the given file descriptior
 fails:Kernel.spawn redirects both STDERR and STDOUT to the given IO
 fails:Kernel.spawn does NOT redirect both STDERR and STDOUT at the time to the given name
-fails:Kernel.spawn closes file descriptors >= 3 in the child process
-fails:Kernel.spawn closes file descriptors >= 3 in the child process even if given a false :close_others option because they are set close_on_exec
-fails:Kernel.spawn does not close file descriptors >= 3 in the child process when given a false :close_others option and fds are set close_on_exec=false
 fails:Kernel.spawn raises an ArgumentError if passed no command arguments
 fails:Kernel.spawn raises an ArgumentError if passed env or options but no command arguments
 fails:Kernel.spawn raises an ArgumentError if passed env and options but no command arguments

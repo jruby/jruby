@@ -60,7 +60,9 @@ import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThrowException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
@@ -115,7 +117,7 @@ public abstract class VMPrimitiveNodes {
                         SourceSection sourceSection = getSourceSection();
                         clearExceptionVariableNode = insert(
                                 new WriteInstanceVariableNode(getContext(), getSourceSection(), "$!",
-                                        new LiteralNode(getContext(), getSourceSection(), getContext().getThreadManager().getCurrentThread().getThreadLocals()),
+                                        new LiteralNode(getContext(), getSourceSection(), ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread())),
                                         new DefinedWrapperNode(context, sourceSection,
                                                 new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                                                 "nil"),
@@ -141,7 +143,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject vmGCStart() {
-            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
+            final RubyBasicObject runningThread = getContext().getThreadManager().leaveGlobalLock();
 
             try {
                 System.gc();
@@ -162,8 +164,8 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject vmGetModuleName(RubyModule module) {
-            return createString(module.getName());
+        public RubyBasicObject vmGetModuleName(RubyBasicObject module) {
+            return createString(ModuleNodes.getModel(module).getName());
         }
 
     }
@@ -200,7 +202,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyClass vmObjectClass(VirtualFrame frame, Object object) {
+        public RubyBasicObject vmObjectClass(VirtualFrame frame, Object object) {
             return classNode.executeGetClass(frame, object);
         }
 
@@ -233,8 +235,8 @@ public abstract class VMPrimitiveNodes {
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[] { null, null });
         }
 
-        @Specialization
-        public boolean vmObjectKindOf(VirtualFrame frame, Object object, RubyModule rubyClass) {
+        @Specialization(guards = "isRubyModule(rubyClass)")
+        public boolean vmObjectKindOf(VirtualFrame frame, Object object, RubyBasicObject rubyClass) {
             return isANode.executeIsA(frame, object, rubyClass);
         }
 
@@ -280,8 +282,8 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject vmRaiseException(RubyException exception) {
+        @Specialization(guards = "isRubyException(exception)")
+        public RubyBasicObject vmRaiseException(RubyBasicObject exception) {
             throw new RaiseException(exception);
         }
     }
@@ -309,7 +311,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object vmSingletonClassObject(Object object) {
-            return object instanceof RubyClass && ((RubyClass) object).isSingleton();
+            return RubyGuards.isRubyClass(object) && ModuleNodes.getModel(((RubyClass) object)).isSingleton();
         }
 
     }
@@ -508,7 +510,7 @@ public abstract class VMPrimitiveNodes {
             final int finalOptions = options;
 
             // retry:
-            pid = getContext().getThreadManager().runOnce(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
+            pid = getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
                     return posix().waitpid(input_pid, statusReference, finalOptions);
@@ -562,7 +564,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject setClass(RubyBasicObject object, RubyClass newClass) {
+        public RubyBasicObject setClass(RubyBasicObject object, RubyBasicObject newClass) {
             // TODO CS 17-Apr-15 - what about the @CompilationFinals on the class in RubyBasicObject?
             CompilerDirectives.bailout("We're not sure how vm_set_class (Rubinius::Unsafe.set_class) will interact with compilation");
             object.unsafeChangeLogicalClass(newClass);

@@ -17,10 +17,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyModule;
 
 public class YieldDispatchHeadNode extends Node {
 
@@ -67,7 +67,7 @@ public class YieldDispatchHeadNode extends Node {
 
     @TruffleBoundary
     private FrameSlot getVisibilitySlot(Frame frame) {
-        return frame.getFrameDescriptor().findOrAddFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID, "dynamic visibility for def", FrameSlotKind.Object);
+        return frame.getFrameDescriptor().findOrAddFrameSlot(ModuleNodes.VISIBILITY_FRAME_SLOT_ID, "dynamic visibility for def", FrameSlotKind.Object);
     }
 
     public YieldDispatchNode getDispatch() {

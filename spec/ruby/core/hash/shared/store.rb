@@ -22,15 +22,15 @@ describe :hash_store, :shared => true do
     k1.should_receive(:hash).and_return(0)
     k2.should_receive(:hash).and_return(0)
 
-    h[k1] = 1
-    h[k2] = 2
+    h.send(@method, k1, 1)
+    h.send(@method, k2, 2)
     h.size.should == 2
   end
 
   it "accepts keys with private #hash method" do
     key = HashSpecs::KeyWithPrivateHash.new
     h = new_hash
-    h[key] = "foo"
+    h.send(@method, key, "foo")
     h[key].should == "foo"
   end
 

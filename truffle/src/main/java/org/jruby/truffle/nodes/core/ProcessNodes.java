@@ -9,12 +9,17 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.source.SourceSection;
+import jnr.ffi.LibraryLoader;
+import jnr.ffi.Struct;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.DefaultValueNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import sun.misc.Signal;
@@ -23,46 +28,77 @@ import sun.misc.Signal;
 @CoreClass(name = "Process")
 public abstract class ProcessNodes {
 
+    public final static class TimeSpec extends Struct {
+        public final time_t tv_sec = new time_t();
+        public final SignedLong tv_nsec = new SignedLong();
+
+        public TimeSpec(jnr.ffi.Runtime runtime) {
+            super(runtime);
+        }
+
+        public long getTVsec() {
+            return tv_sec.get();
+        }
+
+        public long getTVnsec() {
+            return tv_nsec.get();
+        }
+    }
+
+    public interface LibCClockGetTime {
+        int clock_gettime(int clock_id, TimeSpec timeSpec);
+    }
+
     public static final int CLOCK_MONOTONIC = 1;
     public static final int CLOCK_REALTIME = 2;
+    public static final int CLOCK_THREAD_CPUTIME_ID = 3; // Linux only
 
     @CoreMethod(names = "clock_gettime", onSingleton = true, required = 1, optional = 1)
-    public abstract static class ClockGetTimeNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "clock_id"),
+            @NodeChild(type = RubyNode.class, value = "unit")
+    })
+    public abstract static class ClockGetTimeNode extends CoreMethodNode {
 
-        private final RubyBasicObject floatSecondSymbol;
-        private final RubyBasicObject nanosecondSymbol;
+        private final RubyBasicObject floatSecondSymbol = getContext().getSymbol("float_second");
+        private final RubyBasicObject nanosecondSymbol = getContext().getSymbol("nanosecond");
 
         public ClockGetTimeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            floatSecondSymbol = context.getSymbol("float_second");
-            nanosecondSymbol = context.getSymbol("nanosecond");
         }
 
-        @Specialization(guards = "isMonotonic(clock_id)")
-        Object clock_gettime_monotonic(int clock_id, NotProvided unit) {
-            return clock_gettime_monotonic(CLOCK_MONOTONIC, floatSecondSymbol);
+        @CreateCast("unit")
+        public RubyNode coerceUnit(RubyNode unit) {
+            return DefaultValueNodeGen.create(getContext(), getSourceSection(), floatSecondSymbol, unit);
         }
 
-        @Specialization(guards = "isRealtime(clock_id)")
-        Object clock_gettime_realtime(int clock_id, NotProvided unit) {
-            return clock_gettime_realtime(CLOCK_REALTIME, floatSecondSymbol);
-        }
-
-        @Specialization(guards = {"isMonotonic(clock_id)", "isRubySymbol(unit)"})
-        Object clock_gettime_monotonic(int clock_id, RubyBasicObject unit) {
+        @Specialization(guards = { "isMonotonic(clock_id)", "isRubySymbol(unit)" })
+        protected Object clock_gettime_monotonic(int clock_id, RubyBasicObject unit) {
             long time = System.nanoTime();
             return timeToUnit(time, unit);
         }
 
-        @Specialization(guards = {"isRealtime(clock_id)", "isRubySymbol(unit)"})
-        Object clock_gettime_realtime(int clock_id, RubyBasicObject unit) {
-            long time = System.currentTimeMillis() * 1000000;
+        @Specialization(guards = { "isRealtime(clock_id)", "isRubySymbol(unit)" })
+        protected Object clock_gettime_realtime(int clock_id, RubyBasicObject unit) {
+            long time = System.currentTimeMillis() * 1_000_000;
             return timeToUnit(time, unit);
         }
 
-        Object timeToUnit(long time, RubyBasicObject unit) {
-            assert RubyGuards.isRubySymbol(unit);
+        @Specialization(guards = { "isThreadCPUTime(clock_id)", "isRubySymbol(unit)" })
+        protected Object clock_gettime_thread_cputime(int clock_id, RubyBasicObject unit,
+                @Cached("getLibCClockGetTime()") LibCClockGetTime libCClockGetTime) {
+            TimeSpec timeSpec = new TimeSpec(jnr.ffi.Runtime.getRuntime(libCClockGetTime));
+            int r = libCClockGetTime.clock_gettime(CLOCK_THREAD_CPUTIME_ID, timeSpec);
+            if (r != 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().systemCallError("clock_gettime failed: " + r, this));
+            }
+            long nanos = timeSpec.getTVsec() * 1_000_000_000 + timeSpec.getTVnsec();
+            return timeToUnit(nanos, unit);
+        }
 
+        private Object timeToUnit(long time, RubyBasicObject unit) {
+            assert RubyGuards.isRubySymbol(unit);
             if (unit == nanosecondSymbol) {
                 return time;
             } else if (unit == floatSecondSymbol) {
@@ -72,12 +108,20 @@ public abstract class ProcessNodes {
             }
         }
 
-        static boolean isMonotonic(int clock_id) {
+        protected static boolean isMonotonic(int clock_id) {
             return clock_id == CLOCK_MONOTONIC;
         }
 
-        static boolean isRealtime(int clock_id) {
+        protected static boolean isRealtime(int clock_id) {
             return clock_id == CLOCK_REALTIME;
+        }
+
+        protected static boolean isThreadCPUTime(int clock_id) {
+            return clock_id == CLOCK_THREAD_CPUTIME_ID;
+        }
+
+        protected static LibCClockGetTime getLibCClockGetTime() {
+            return LibraryLoader.create(LibCClockGetTime.class).library("c").load();
         }
 
     }

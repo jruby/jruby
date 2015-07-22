@@ -174,7 +174,7 @@ describe "Single-method Java interfaces" do
   end
 
   it "should be implementable with .impl" do
-    impl = SingleMethodInterface.impl {|name| name}
+    impl = SingleMethodInterface.impl { |name| name }
     impl.should be_kind_of(SingleMethodInterface)
     SingleMethodInterface.should === impl
 
@@ -182,22 +182,53 @@ describe "Single-method Java interfaces" do
   end
 
   it "should allow assignable equivalents to be passed to a method" do
-    impl = DescendantOfSingleMethodInterface.impl {|name| name}
+    impl = DescendantOfSingleMethodInterface.impl { |name| name }
     impl.should be_kind_of(SingleMethodInterface)
     DescendantOfSingleMethodInterface.should === impl
     UsesSingleMethodInterface.callIt(impl).should == :callIt
     UsesSingleMethodInterface.new.callIt2(impl).should == :callIt
   end
 
+  it "passes correct arguments to proc .impl" do
+    Java::java.io.File.new('.').list do |dir, name| # FilenameFilter
+      dir.should be_kind_of(java.io.File)
+      name.should be_kind_of(String)
+      true # boolean accept(File dir, String name)
+    end
+
+    caller = Java::java_integration.fixtures.iface.SingleMethodInterfaceWithArg::Caller
+
+    caller.call { |arg| arg.should == 42 }
+    caller.call('x') { |arg| arg.should == 'x' }
+
+    Java::java_integration.fixtures.iface.SingleMethodInterfaceWith4Args::Caller.call do
+      |arg1, arg2, arg3, arg4|
+      arg2.should == 'hello'
+      arg3.should == 'world'
+      arg4.should == 42
+      [ arg2, arg3, arg4 ] # return Object[]
+    end
+  end
+
+  it "resolves 'ambiguous' method by proc argument count (with .impl)" do
+    java.io.File.new('.').listFiles do |pathname| # FileFilter#accept(File)
+      pathname.should be_kind_of(java.io.File)
+    end
+    java.io.File.new('.').listFiles do |dir, name| # FilenameFilter#accept(File, String)
+      dir.should be_kind_of(java.io.File)
+      name.should be_kind_of(String)
+    end
+  end
+
   it "should maintain Ruby object equality when passed through Java and back" do
-    result = SingleMethodInterface.impl {|name| name}
-    callable = mock "callable"
+    result = SingleMethodInterface.impl { |name| name }
+    callable = double "callable"
     callable.should_receive(:call).and_return result
     UsesSingleMethodInterface.new.callIt3(callable).should == result
   end
 
   it "coerces to that interface after duck-typed implementation has happened" do
-    callable = mock "SingleMethodInterfaceImpl"
+    callable = double "SingleMethodInterfaceImpl"
     callable.should_receive(:callIt).and_return :callIt
     UsesSingleMethodInterface.callIt(callable).should == :callIt
 
@@ -210,7 +241,7 @@ describe "Single-method Java interfaces" do
       interfaces.concat(cls.interfaces)
       cls = cls.superclass
     end
-    
+
     interfaces.should include(SingleMethodInterface.java_class)
   end
 end
@@ -538,7 +569,7 @@ end
 
 describe "Coercion of normal ruby objects" do
   it "should allow an object passed to a java method to be coerced to the interface" do
-    ri = mock "returns interface"
+    ri = double "returns interface"
     consumer = ReturnsInterfaceConsumer.new
     consumer.set_returns_interface ri
     ri.should be_kind_of(ReturnsInterface)
@@ -546,7 +577,7 @@ describe "Coercion of normal ruby objects" do
 
 
   it "should return the original ruby object when returned back to Ruby" do
-    obj = mock "ruby object"
+    obj = double "ruby object"
     cti = CoerceToInterface.new
     result = cti.returnArgumentBackToRuby(JRuby.runtime, obj)
     obj.should be_kind_of(Java::JavaLang::Runnable)
@@ -555,7 +586,7 @@ describe "Coercion of normal ruby objects" do
   end
 
   it "should return the original ruby object when converted back to Ruby" do
-    obj = mock "ruby object"
+    obj = double "ruby object"
     cti = CoerceToInterface.new
     result = cti.coerceArgumentBackToRuby(JRuby.runtime, obj)
     obj.should be_kind_of(Java::JavaLang::Runnable)
@@ -563,8 +594,8 @@ describe "Coercion of normal ruby objects" do
   end
 
   it "should pass the original ruby object when converted back to Ruby and used as an argument to another Ruby object" do
-    obj = mock "ruby object"
-    callable = mock "callable"
+    obj = double "ruby object"
+    callable = double "callable"
     callable.should_receive(:call).with(obj)
     cti = CoerceToInterface.new
     cti.passArgumentToInvokableRubyObject(callable, obj)
@@ -572,15 +603,15 @@ describe "Coercion of normal ruby objects" do
   end
 
   it "should allow an object passed to a java constructor to be coerced to the interface" do
-    ri = mock "returns interface"
+    ri = double "returns interface"
     ReturnsInterfaceConsumer.new(ri)
     ri.should be_kind_of(ReturnsInterface)
   end
 
   it "should allow an object to be coerced as a return type of a java method" do
-    ri = mock "returns interface"
-    value = mock "return value runnable"
-    ri.stub!(:getRunnable).and_return value
+    ri = double "returns interface"
+    value = double "return value runnable"
+    ri.stub(:getRunnable).and_return value
 
     consumer = ReturnsInterfaceConsumer.new(ri)
     runnable = consumer.getRunnable
@@ -688,15 +719,15 @@ describe "A Ruby class implementing an interface" do
       lambda {c2.new}.should_not raise_error
     end
   end
-  
+
   it "returns the Java class implementing the interface for .java_class" do
     cls = Class.new do
       include java.lang.Runnable
     end
     obj = cls.new
-    
+
     java_cls = obj.java_class
-    
+
     java_cls.interfaces.should include(java.lang.Runnable.java_class)
   end
 end

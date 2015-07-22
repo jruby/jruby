@@ -113,12 +113,6 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         } catch (Exception e) {
             if (debug) LOG.debug(e);
         }
-        // close the resources of the classloader as well
-        try {
-            close();
-        } catch (IOException e) {
-            if (debug) LOG.debug(e);
-        }
     }
 
     public synchronized Runnable getJDBCDriverUnloader() {

@@ -801,15 +801,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     /** rb_ary_to_ary
      *
      */
-    private static RubyArray aryToAry(IRubyObject obj) {
-        if (obj instanceof RubyArray) return (RubyArray) obj;
+    public static RubyArray aryToAry(IRubyObject obj) {
+        IRubyObject tmp = TypeConverter.checkArrayType(obj);
 
-        if (obj.respondsTo("to_ary")) return obj.convertToArray();
-
-        RubyArray arr = new RubyArray(obj.getRuntime(), false); // possibly should not in object space
-        arr.values = new IRubyObject[]{obj};
-        arr.realLength = 1;
-        return arr;
+        if (!tmp.isNil()) return (RubyArray)tmp;
+        return obj.getRuntime().newArray(obj);
     }
 
     /** rb_ary_splice
@@ -1053,24 +1049,17 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      *
      */
     public IRubyObject subseq(long beg, long len) {
-        int realLength = this.realLength;
-        if (beg > realLength || beg < 0 || len < 0) return getRuntime().getNil();
-
-        if (beg + len > realLength) {
-            len = realLength - beg;
-
-            if (len < 0) len = 0;
-        }
-
-        if (len == 0) return new RubyArray(getRuntime(), getMetaClass(), IRubyObject.NULL_ARRAY);
-
-        return makeShared(begin + (int) beg, (int) len, getMetaClass());
+        return subseq(getMetaClass(), beg, len, true);
     }
 
     /** rb_ary_subseq
      *
      */
     public IRubyObject subseqLight(long beg, long len) {
+        return subseq(getMetaClass(), beg, len, true);
+    }
+
+    public IRubyObject subseq(RubyClass metaClass, long beg, long len, boolean light) {
         Ruby runtime = getRuntime();
         if (beg > realLength || beg < 0 || len < 0) return runtime.getNil();
 
@@ -1079,8 +1068,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             if (len < 0) len = 0;
         }
 
-        if (len == 0) return new RubyArray(runtime, getMetaClass(), IRubyObject.NULL_ARRAY, false);
-        return makeShared(begin + (int) beg, (int) len, new RubyArray(runtime, getMetaClass(), false));
+        if (len == 0) return new RubyArray(runtime, metaClass, IRubyObject.NULL_ARRAY, !light);
+        return makeShared(begin + (int) beg, (int) len, new RubyArray(runtime, metaClass, !light));
     }
 
     /** rb_ary_length
@@ -2290,13 +2279,15 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         IRubyObject[] arr = new IRubyObject[realLength];
 
-        for (int i = 0; i < realLength; i++) {
+        int i;
+        for (i = 0; i < realLength; i++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
             // See JRUBY-5434
             arr[i] = block.yield(context, safeArrayRef(values, i + begin));
         }
 
-        return new RubyArray(runtime, arr);
+        // use iteration count as new size in case something was deleted along the way
+        return new RubyArray(runtime, arr, 0, i);
     }
 
     @JRubyMethod(name = {"collect"})

@@ -36,7 +36,10 @@ describe "Array#|" do
 
   # MRI follows hashing semantics here, so doesn't actually call eql?/hash for Fixnum/Symbol
   it "acts as if using an intermediate hash to collect values" do
-    ([5.0, 4.0] | [5, 4]).should == [5.0, 4.0, 5, 4]
+    not_supported_on :opal do
+      ([5.0, 4.0] | [5, 4]).should == [5.0, 4.0, 5, 4]
+    end
+
     str = "x"
     ([str] | [str.dup]).should == [str]
 
@@ -48,11 +51,13 @@ describe "Array#|" do
     def obj2.eql? a; true; end
 
     ([obj1] | [obj2]).should == [obj1]
+    ([obj1, obj1, obj2, obj2] | [obj2]).should == [obj1]
 
     def obj1.eql? a; false; end
     def obj2.eql? a; false; end
 
     ([obj1] | [obj2]).should == [obj1, obj2]
+    ([obj1, obj1, obj2, obj2] | [obj2]).should == [obj1, obj2]
   end
 
   it "does not return subclass instances for Array subclasses" do

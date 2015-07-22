@@ -25,7 +25,7 @@ public class RubyHash extends RubyBasicObject {
     public Entry lastInSequence;
     public boolean compareByIdentity;
 
-    public RubyHash(RubyClass rubyClass, RubyBasicObject defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence, DynamicObject dynamicObject) {
+    public RubyHash(RubyBasicObject rubyClass, RubyBasicObject defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence, DynamicObject dynamicObject) {
         super(rubyClass, dynamicObject);
         assert defaultBlock == null || RubyGuards.isRubyProc(defaultBlock);
         this.defaultBlock = defaultBlock;

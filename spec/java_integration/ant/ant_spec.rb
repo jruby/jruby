@@ -28,19 +28,19 @@ describe Ant, '.load' do
   end
 
   it "adds tools.jar to the CLASSPATH when JAVA_HOME is set and it exists" do
-    stubs_file!
+    stub_File!
     Ant.load
     $CLASSPATH.should include("file:#{@tools_jar}")
   end
 
   it "adds classes.zip to the CLASSPATH when JAVA_HOME is set and it exists" do
-    stubs_file!
+    stub_File!
     Ant.load
     $CLASSPATH.should include("file:#{@classes_zip}")
   end
 
-  def stubs_file!
-    File.stub!(:exist?).and_return false
+  def stub_File!
+    File.stub(:exist?).and_return false
     File.should_receive(:exist?).with(ENV['JAVA_HOME']).and_return true
     File.should_receive(:exist?).with(@tools_jar).and_return true
     File.should_receive(:exist?).with(@classes_zip).and_return true

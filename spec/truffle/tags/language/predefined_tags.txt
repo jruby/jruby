@@ -1,10 +1,8 @@
 fails:The predefined global constant ARGV contains Strings encoded in locale Encoding
-slow:Execution variable $: does not include '.' when the taint check level > 1
 slow:The predefined global constant STDERR has the encodings set by #set_encoding
 slow:The predefined global constant STDIN retains the encoding set by #set_encoding when Encoding.default_external is changed
 slow:The predefined global constant STDIN has the encodings set by #set_encoding
 slow:The predefined global constant STDOUT has the encodings set by #set_encoding
-windows:Execution variable $: does not include '.' when the taint check level > 1
 windows:The predefined global constant STDIN has the encodings set by #set_encoding
 windows:The predefined global constant STDIN retains the encoding set by #set_encoding when Encoding.default_external is changed
 windows:The predefined global constant STDOUT has the encodings set by #set_encoding

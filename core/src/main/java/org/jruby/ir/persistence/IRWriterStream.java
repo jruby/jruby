@@ -33,8 +33,6 @@ import org.jruby.util.ByteList;
  * Represents a file which is persisted to storage.
  */
 public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
-    private static final int VERSION = 0;
-
     private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<>();
     // FIXME: Allocate direct and use one per thread?
     private final ByteBuffer buf = ByteBuffer.allocate(TWO_MEGS);
@@ -260,6 +258,7 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     @Override
     public void endEncoding(IRScope script) {
         try {
+            stream.write(ByteBuffer.allocate(4).putInt(VERSION).array());
             stream.write(ByteBuffer.allocate(4).putInt(headersOffset).array());
             stream.write(ByteBuffer.allocate(4).putInt(poolOffset).array());
             buf.flip();

@@ -639,20 +639,6 @@ public class IRBuilder {
         return newArgs;
     }
 
-    // Non-arg masgn (actually a nested masgn)
-    public void buildVersionSpecificAssignment(Node node, Variable v) {
-        switch (node.getNodeType()) {
-        case MULTIPLEASGNNODE: {
-            Variable tmp = createTemporaryVariable();
-            addInstr(new ToAryInstr(tmp, v));
-            buildMultipleAsgn19Assignment((MultipleAsgnNode)node, null, tmp);
-            break;
-        }
-        default:
-            throw new NotCompilableException("Can't build assignment node: " + node);
-        }
-    }
-
     // This method is called to build assignments for a multiple-assignment instruction
     public void buildAssignment(Node node, Variable rhsVal) {
         switch (node.getNodeType()) {
@@ -689,8 +675,14 @@ public class IRBuilder {
             }
             case ZEROARGNODE:
                 throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
+            case MULTIPLEASGNNODE: {
+                Variable tmp = createTemporaryVariable();
+                addInstr(new ToAryInstr(tmp, rhsVal));
+                buildMultipleAsgn19Assignment((MultipleAsgnNode)node, null, tmp);
+                break;
+            }
             default:
-                buildVersionSpecificAssignment(node, rhsVal);
+                throw new NotCompilableException("Can't build assignment node: " + node);
         }
     }
 

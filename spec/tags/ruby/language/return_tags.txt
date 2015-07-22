@@ -1,1 +1,0 @@
-fails:The return keyword within define_method stops at the method when the return is used directly

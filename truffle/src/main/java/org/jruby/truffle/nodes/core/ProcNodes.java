@@ -33,7 +33,6 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -128,11 +127,11 @@ public abstract class ProcNodes {
         ((RubyProc) proc).block = block;
     }
 
-    public static RubyBasicObject createRubyProc(RubyClass procClass, Type type) {
+    public static RubyBasicObject createRubyProc(RubyBasicObject procClass, Type type) {
         return createRubyProc(procClass, type, null, null, null, null, null, null, null, null);
     }
 
-    public static RubyBasicObject createRubyProc(RubyClass procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks,
+    public static RubyBasicObject createRubyProc(RubyBasicObject procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks,
                                           CallTarget callTargetForProcs, CallTarget callTargetForLambdas, MaterializedFrame declarationFrame,
                                           InternalMethod method, Object self, RubyBasicObject block) {
         return new RubyProc(procClass, type, sharedMethodInfo, callTargetForBlocks, callTargetForProcs, callTargetForLambdas, declarationFrame, method, self, block);
@@ -307,7 +306,7 @@ public abstract class ProcNodes {
     public static class ProcAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return createRubyProc(rubyClass, Type.PROC);
         }
 

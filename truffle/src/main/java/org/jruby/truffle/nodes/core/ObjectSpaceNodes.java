@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.RespondToNode;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -21,7 +22,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 @CoreClass(name = "ObjectSpace")
@@ -104,8 +104,8 @@ public abstract class ObjectSpaceNodes {
             return count;
         }
 
-        @Specialization(guards = "isRubyProc(block)")
-        public int eachObject(VirtualFrame frame, RubyClass ofClass, RubyBasicObject block) {
+        @Specialization(guards = {"isRubyClass(ofClass)", "isRubyProc(block)"})
+        public int eachObject(VirtualFrame frame, RubyBasicObject ofClass, RubyBasicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             int count = 0;
@@ -121,7 +121,7 @@ public abstract class ObjectSpaceNodes {
         }
 
         private boolean isHidden(RubyBasicObject object) {
-            return object instanceof RubyClass && ((RubyClass) object).isSingleton();
+            return RubyGuards.isRubyClass(object) && ModuleNodes.getModel(object).isSingleton();
         }
 
     }

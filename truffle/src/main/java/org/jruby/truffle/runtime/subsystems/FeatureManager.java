@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.LexicalScope;
@@ -34,7 +35,7 @@ import java.util.Arrays;
  */
 public class FeatureManager {
 
-    private final boolean SHOW_RESOLUTION = Options.TRUFFLE_REQUIRE_SHOW_RESOLUTION.load();
+    private static final boolean SHOW_RESOLUTION = Options.TRUFFLE_REQUIRE_SHOW_RESOLUTION.load();
 
     private final RubyContext context;
 
@@ -83,9 +84,9 @@ public class FeatureManager {
             throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, currentNode));
         } finally {
             if (dataConstantBefore == null) {
-                context.getCoreLibrary().getObjectClass().removeConstant(currentNode, "DATA");
+                ModuleNodes.getModel(context.getCoreLibrary().getObjectClass()).removeConstant(currentNode, "DATA");
             } else {
-                context.getCoreLibrary().getObjectClass().setConstant(currentNode, "DATA", dataConstantBefore.getValue());
+                ModuleNodes.getModel(context.getCoreLibrary().getObjectClass()).setConstant(currentNode, "DATA", dataConstantBefore.getValue());
             }
         }
     }

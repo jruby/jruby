@@ -40,7 +40,10 @@ describe "Array#&" do
   end
 
   it "determines equivalence between elements in the sense of eql?" do
-    ([5.0, 4.0] & [5, 4]).should == []
+    not_supported_on :opal do
+      ([5.0, 4.0] & [5, 4]).should == []
+    end
+
     str = "x"
     ([str] & [str.dup]).should == [str]
 
@@ -52,11 +55,13 @@ describe "Array#&" do
     def obj2.eql? a; true; end
 
     ([obj1] & [obj2]).should == [obj1]
+    ([obj1, obj1, obj2, obj2] & [obj2]).should == [obj1]
 
     def obj1.eql? a; false; end
     def obj2.eql? a; false; end
 
     ([obj1] & [obj2]).should == []
+    ([obj1, obj1, obj2, obj2] & [obj2]).should == [obj2]
   end
 
   it "does return subclass instances for Array subclasses" do

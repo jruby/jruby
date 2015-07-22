@@ -46,7 +46,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 
 import java.math.BigDecimal;
@@ -173,7 +172,7 @@ public abstract class BigDecimalNodes {
     public static class RubyBigDecimalAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return new RubyBasicObject(rubyClass, BIG_DECIMAL_FACTORY.newInstance(Type.NORMAL, BigDecimal.ZERO));
         }
 
@@ -277,7 +276,7 @@ public abstract class BigDecimalNodes {
                     roundModeCall.call(frame, getBigDecimalClass(), "mode", null, 256)));
         }
 
-        protected RubyClass getBigDecimalClass() {
+        protected RubyBasicObject getBigDecimalClass() {
             return getContext().getCoreLibrary().getBigDecimalClass();
         }
     }
@@ -334,7 +333,7 @@ public abstract class BigDecimalNodes {
         public abstract RubyBasicObject executeCreate(VirtualFrame frame, Object value, RubyBasicObject alreadyAllocatedSelf, int digits);
 
         public final RubyBasicObject executeCreate(VirtualFrame frame, Object value) {
-            return executeCreate(frame, value, getBigDecimalClass().allocate(this));
+            return executeCreate(frame, value, ClassNodes.allocate(((RubyClass) getBigDecimalClass()), this));
         }
 
         public final RubyBasicObject executeCreate(VirtualFrame frame, Object value, RubyBasicObject alreadyAllocatedSelf) {
@@ -1723,13 +1722,13 @@ public abstract class BigDecimalNodes {
 
         public abstract IntegerCastNode getCast();
 
-        public abstract int executeGetIntegerConstant(VirtualFrame frame, String name, RubyModule module);
+        public abstract int executeGetIntegerConstant(VirtualFrame frame, String name, RubyBasicObject module);
 
         public abstract int executeGetIntegerConstant(VirtualFrame frame, String name);
 
-        @Specialization
+        @Specialization(guards = "isRubyModule(module)")
         public int doInteger(String name,
-                             RubyModule module,
+                             RubyBasicObject module,
                              Object constValue,
                              Object coercedConstValue,
                              int castedValue) {

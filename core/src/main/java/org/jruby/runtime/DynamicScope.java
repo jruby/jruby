@@ -47,11 +47,7 @@ public abstract class DynamicScope {
 
     private EvalType evalType;
 
-    // A place to store that special hiding space that bindings need to implement things like:
-    // eval("a = 1", binding); eval("p a").  All binding instances must get access to this
-    // hidden shared scope.  We store it here.  This will be null if no binding has yet
-    // been called.
-    protected DynamicScope evalScope;
+    private boolean lambda;
 
     protected DynamicScope(StaticScope staticScope, DynamicScope parent) {
         this.staticScope = staticScope;
@@ -320,5 +316,13 @@ public abstract class DynamicScope {
 
     public void clearEvalType() {
         evalType = EvalType.NONE;
+    }
+
+    public void setLambda(boolean lambda) {
+        this.lambda = lambda;
+    }
+
+    public boolean isLambda() {
+        return lambda;
     }
 }

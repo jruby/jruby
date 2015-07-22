@@ -9,8 +9,10 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.FiberNodes;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyFiber;
-import org.jruby.truffle.runtime.core.RubyThread;
 
 import java.util.Collections;
 import java.util.Set;
@@ -21,39 +23,42 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FiberManager {
 
-    private final RubyFiber rootFiber;
-    private RubyFiber currentFiber;
-    private final Set<RubyFiber> runningFibers = Collections.newSetFromMap(new ConcurrentHashMap<RubyFiber, Boolean>());
+    private final RubyBasicObject rootFiber;
+    private RubyBasicObject currentFiber;
+    private final Set<RubyBasicObject> runningFibers = Collections.newSetFromMap(new ConcurrentHashMap<RubyBasicObject, Boolean>());
 
-    public FiberManager(RubyThread rubyThread, ThreadManager threadManager) {
-        this.rootFiber = RubyFiber.newRootFiber(rubyThread, this, threadManager);
+    public FiberManager(RubyBasicObject rubyThread, ThreadManager threadManager) {
+        this.rootFiber = FiberNodes.newRootFiber(rubyThread, this, threadManager);
         this.currentFiber = rootFiber;
     }
 
-    public RubyFiber getRootFiber() {
+    public RubyBasicObject getRootFiber() {
         return rootFiber;
     }
 
-    public RubyFiber getCurrentFiber() {
+    public RubyBasicObject getCurrentFiber() {
         return currentFiber;
     }
 
-    public void setCurrentFiber(RubyFiber fiber) {
+    public void setCurrentFiber(RubyBasicObject fiber) {
+        assert RubyGuards.isRubyFiber(fiber);
         currentFiber = fiber;
     }
 
-    public void registerFiber(RubyFiber fiber) {
+    public void registerFiber(RubyBasicObject fiber) {
+        assert RubyGuards.isRubyFiber(fiber);
         runningFibers.add(fiber);
     }
 
-    public void unregisterFiber(RubyFiber fiber) {
+    public void unregisterFiber(RubyBasicObject fiber) {
+        assert RubyGuards.isRubyFiber(fiber);
         runningFibers.remove(fiber);
     }
 
     public void shutdown() {
-        for (RubyFiber fiber : runningFibers) {
-            if (!fiber.isRootFiber()) {
-                fiber.shutdown();
+        for (RubyBasicObject fiber : runningFibers) {
+            if (!FiberNodes.getFields(((RubyFiber) fiber)).isRootFiber) {
+                FiberNodes.shutdown(fiber);
             }
         }
     }

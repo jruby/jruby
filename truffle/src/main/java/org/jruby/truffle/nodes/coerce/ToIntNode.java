@@ -100,7 +100,7 @@ public abstract class ToIntNode extends RubyNode {
         try {
             coerced = toIntNode.call(frame, object, "to_int", null);
         } catch (RaiseException e) {
-            if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "Integer", this));
             } else {

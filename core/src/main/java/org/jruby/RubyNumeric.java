@@ -284,11 +284,11 @@ public class RubyNumeric extends RubyObject {
     }
 
     public static RubyInteger str2inum(Ruby runtime, RubyString str, int base) {
-        return str2inum(runtime,str,base,false);
+        return str2inum(runtime, str, base, false);
     }
 
     public static RubyNumeric int2fix(Ruby runtime, long val) {
-        return RubyFixnum.newFixnum(runtime,val);
+        return RubyFixnum.newFixnum(runtime, val);
     }
 
     /** rb_num2fix
@@ -341,12 +341,24 @@ public class RubyNumeric extends RubyObject {
     }
 
     /**
-     * Converts a string representation of a floating-point number to the 
-     * numeric value.  Parsing starts at the beginning of the string (after 
-     * leading and trailing whitespace have been removed), and stops at the 
-     * end or at the first character that can't be part of a number.  If 
+     * Same as RubyNumeric.str2fnum passing false for strict.
+     *
+     * @param runtime  the ruby runtime
+     * @param arg   the string to be converted
+     * @return  a RubyFloat representing the result of the conversion, which
+     *          will be 0.0 if the conversion failed.
+     */
+    public static RubyFloat str2fnum(Ruby runtime, RubyString arg) {
+        return str2fnum(runtime, arg, false);
+    }
+
+    /**
+     * Converts a string representation of a floating-point number to the
+     * numeric value.  Parsing starts at the beginning of the string (after
+     * leading and trailing whitespace have been removed), and stops at the
+     * end or at the first character that can't be part of a number.  If
      * the string fails to parse as a number, 0.0 is returned.
-     * 
+     *
      * @param runtime  the ruby runtime
      * @param arg   the string to be converted
      * @param strict if true, enforce the strict criteria for String encoding of
@@ -358,7 +370,7 @@ public class RubyNumeric extends RubyObject {
      * @return  a RubyFloat representing the result of the conversion, which
      *          will be 0.0 if the conversion failed.
      */
-    public static RubyFloat str2fnum19(Ruby runtime, RubyString arg, boolean strict) {
+    public static RubyFloat str2fnum(Ruby runtime, RubyString arg, boolean strict) {
         return str2fnumCommon(runtime, arg, strict, biteListCaller19);
     }
 
@@ -1223,5 +1235,10 @@ public class RubyNumeric extends RubyObject {
         public Throwable fillInStackTrace() {
             return this;
         }
+    }
+
+    @Deprecated
+    public static RubyFloat str2fnum19(Ruby runtime, RubyString arg, boolean strict) {
+        return str2fnumCommon(runtime, arg, strict, biteListCaller19);
     }
 }

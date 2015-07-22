@@ -13,7 +13,6 @@ import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Signature;
 
 import java.io.IOException;
@@ -25,8 +24,14 @@ import org.jruby.util.KeyValuePair;
  *
  * @author enebo
  */
-public class IRReader {
+public class IRReader implements IRPersistenceValues {
     public static IRScope load(IRManager manager, IRReaderDecoder file) throws IOException {
+        int version = file.decodeIntRaw();
+
+        if (version != VERSION) {
+            throw new IOException("Trying to read incompatable persistence format (version found: " +
+                    version + ", version expected: " + VERSION);
+        }
         int headersOffset = file.decodeIntRaw();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("header_offset = " + headersOffset);
         int poolOffset = file.decodeIntRaw();

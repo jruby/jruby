@@ -153,6 +153,10 @@
     <Class name="org.jruby.truffle.nodes.control.SequenceNode" />
     <Bug pattern="EI_EXPOSE_REP" />
   </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.FiberNodes$FiberResumeMessage" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
 
   <!-- Hacks that should go away at some point -->
 
@@ -161,9 +165,14 @@
     <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD" />
   </Match>
   <Match>
-    <Class name="org.jruby.truffle.runtime.core.RubyMatchData$Pair" />
-    <Bug pattern="EQ_COMPARETO_USE_OBJECT_EQUALS" />
+    <Class name="org.jruby.truffle.runtime.core.RubyMatchData$MatchDataFields" />
+    <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR" />
   </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.MatchDataNodes$Pair" />
+    <Bug pattern="EQ_COMPARETO_USE_OBJECT_EQUALS" />
+   </Match>
+
 
   <!-- These we really should fix sooner rather than later -->
 

@@ -12,10 +12,12 @@ package org.jruby.truffle.nodes.constants;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * Represents writing a constant into some module.
@@ -42,14 +44,14 @@ public class WriteConstantNode extends RubyNode {
 
         final Object receiverObject = module.execute(frame);
 
-        if (!(receiverObject instanceof RubyModule)) {
+        if (!(RubyGuards.isRubyModule(receiverObject))) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(receiverObject.toString(), "class/module", this));
         }
 
-        final RubyModule module = (RubyModule) receiverObject;
+        final RubyBasicObject module = (RubyBasicObject) receiverObject;
 
-        module.setConstant(this, name, rhsValue);
+        ModuleNodes.getModel(module).setConstant(this, name, rhsValue);
 
         return rhsValue;
     }

@@ -32,7 +32,8 @@ module JRuby
       pb.redirect_input(Redirect::INHERIT)
       pb.redirect_error(Redirect::INHERIT)
       pb.environment(ShellLauncher.get_current_env(JRuby.runtime))
-      pb.directory(JFile.new(JRuby.runtime.current_directory))
+      cwd = JRuby.runtime.current_directory.start_with?('uri:classloader:/') ? ENV_JAVA['user.dir'] : JRuby.runtime.current_directory
+      pb.directory(JFile.new(cwd))
       process = pb.start
 
       pid = ShellLauncher.reflect_pid_from_process(process)

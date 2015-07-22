@@ -9,7 +9,6 @@ fails:Kernel#load (path resolution) does not require file twice after $LOAD_PATH
 fails:Kernel#load (path resolution) resolves a non-canonical path against $LOAD_PATH entries
 fails:Kernel#load (path resolution) with an unreadable file raises a LoadError
 fails:Kernel#load loads file even after $LOAD_PATH change
-fails:Kernel#load sets the enclosing scope to an anonymous module if passed true for 'wrap'
 fails:Kernel#load (shell expansion) expands a tilde to the HOME environment variable as the path to load
 fails:Kernel.load (path resolution) loads a non-canonical absolute path
 fails:Kernel.load (path resolution) calls #to_str on non-String objects
@@ -22,7 +21,6 @@ fails:Kernel.load (path resolution) does not require file twice after $LOAD_PATH
 fails:Kernel.load (path resolution) resolves a non-canonical path against $LOAD_PATH entries
 fails:Kernel.load (path resolution) with an unreadable file raises a LoadError
 fails:Kernel.load loads file even after $LOAD_PATH change
-fails:Kernel.load sets the enclosing scope to an anonymous module if passed true for 'wrap'
 fails:Kernel.load (shell expansion) expands a tilde to the HOME environment variable as the path to load
 windows:Kernel#load loads a file that recursively requires itself
 windows:Kernel.load loads a file that recursively requires itself

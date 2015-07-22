@@ -10,7 +10,7 @@ describe :io_new, :shared => true do
   end
 
   after :each do
-    if @io and !@io.closed?
+    if @io
       @io.close
     elsif @fd
       IO.new(@fd, "w").close
@@ -73,12 +73,6 @@ describe :io_new, :shared => true do
   it "accepts a mode argument with a :mode option set to nil" do
     @io = IO.send(@method, @fd, "w", :mode => nil)
     @io.write("foo").should == 3
-  end
-
-  it "raises an error if passed modes two ways" do
-    lambda {
-      IO.send(@method, @fd, "w", :mode => "w")
-    }.should raise_error(ArgumentError)
   end
 
   it "uses the external encoding specified in the mode argument" do
@@ -146,18 +140,6 @@ describe :io_new, :shared => true do
     @io.internal_encoding.to_s.should == ''
   end
 
-  it "raises an error if passed encodings two ways" do
-    lambda {
-      @io = IO.send(@method, @fd, 'w:ISO-8859-1', {:encoding => 'ISO-8859-1'})
-    }.should raise_error(ArgumentError)
-    lambda {
-      @io = IO.send(@method, @fd, 'w:ISO-8859-1', {:external_encoding => 'ISO-8859-1'})
-    }.should raise_error(ArgumentError)
-    lambda {
-      @io = IO.send(@method, @fd, 'w:ISO-8859-1:UTF-8', {:internal_encoding => 'ISO-8859-1'})
-    }.should raise_error(ArgumentError)
-  end
-
   it "sets binmode from mode string" do
     @io = IO.send(@method, @fd, 'wb')
     @io.binmode?.should == true
@@ -176,53 +158,6 @@ describe :io_new, :shared => true do
   it "does not set binmode from false :binmode" do
     @io = IO.send(@method, @fd, 'w', {:binmode => false})
     @io.binmode?.should == false
-  end
-
-  ruby_version_is ""..."2.1" do
-    it "raises an error if passed conflicting binary/text mode two ways" do
-      ["wb", "wt"].each do |mode|
-        [:binmode, :textmode].each do |key|
-          [true, false].each do |value|
-
-            mode_agreement = (mode == "wb" && key == :textmode && value == false)
-            mode_agreement ||= (mode == "wt" && key == :binmode && value == false)
-
-            if mode_agreement
-              lambda {
-                @io = IO.send(@method, @fd, mode, key => value)
-              }.should_not raise_error
-            else
-              lambda {
-                @io = IO.send(@method, @fd, mode, key => value)
-              }.should raise_error(ArgumentError)
-            end
-          end
-        end
-      end
-    end
-  end
-
-  ruby_version_is "2.1" do
-    it "raises an error if passed binary/text mode two ways" do
-      ["wb", "wt"].each do |mode|
-        [:binmode, :textmode].each do |key|
-          [true, false].each do |value|
-            lambda {
-              @io = IO.send(@method, @fd, mode, key => value)
-            }.should raise_error(ArgumentError)
-          end
-        end
-      end
-    end
-  end
-
-  it "raises an error when trying to set both binmode and textmode" do
-    lambda {
-      @io = IO.send(@method, @fd, "w", :textmode => true, :binmode => true)
-    }.should raise_error(ArgumentError)
-    lambda {
-      @io = IO.send(@method, @fd, File::Constants::WRONLY, :textmode => true, :binmode => true)
-    }.should raise_error(ArgumentError)
   end
 
   it "sets external encoding to binary with binmode in mode string" do
@@ -315,24 +250,6 @@ describe :io_new, :shared => true do
     @io = IO.send(@method, @fd, options)
   end
 
-  it "raises ArgumentError if not passed a hash or nil for options" do
-    lambda {
-      @io = IO.send(@method, @fd, 'w', false)
-    }.should raise_error(ArgumentError)
-    lambda {
-      @io = IO.send(@method, @fd, false, false)
-    }.should raise_error(ArgumentError)
-    lambda {
-      @io = IO.send(@method, @fd, nil, false)
-    }.should raise_error(ArgumentError)
-  end
-
-  it "raises TypeError if passed a hash for mode and nil for options" do
-    lambda {
-      @io = IO.send(@method, @fd, {:mode => 'w'}, nil)
-    }.should raise_error(TypeError)
-  end
-
   it "accepts an :autoclose option" do
     @io = IO.send(@method, @fd, 'w', :autoclose => false)
     @io.autoclose?.should == false
@@ -372,5 +289,84 @@ describe :io_new_errors, :shared => true do
 
   it "raises ArgumentError if passed an empty mode string" do
     lambda { IO.send(@method, @fd, "") }.should raise_error(ArgumentError)
+  end
+
+  it "raises an error if passed modes two ways" do
+    lambda {
+      IO.send(@method, @fd, "w", :mode => "w")
+    }.should raise_error(ArgumentError)
+  end
+
+  it "raises an error if passed encodings two ways" do
+    lambda {
+      @io = IO.send(@method, @fd, 'w:ISO-8859-1', {:encoding => 'ISO-8859-1'})
+    }.should raise_error(ArgumentError)
+    lambda {
+      @io = IO.send(@method, @fd, 'w:ISO-8859-1', {:external_encoding => 'ISO-8859-1'})
+    }.should raise_error(ArgumentError)
+    lambda {
+      @io = IO.send(@method, @fd, 'w:ISO-8859-1:UTF-8', {:internal_encoding => 'ISO-8859-1'})
+    }.should raise_error(ArgumentError)
+  end
+
+  ruby_version_is "2.1" do
+    it "raises an error if passed matching binary/text mode two ways" do
+      lambda {
+        @io = IO.send(@method, @fd, "wb", :binmode => true)
+      }.should raise_error(ArgumentError)
+      lambda {
+        @io = IO.send(@method, @fd, "wt", :textmode => true)
+      }.should raise_error(ArgumentError)
+
+      lambda {
+        @io = IO.send(@method, @fd, "wb", :textmode => false)
+      }.should raise_error(ArgumentError)
+      lambda {
+        @io = IO.send(@method, @fd, "wt", :binmode => false)
+      }.should raise_error(ArgumentError)
+    end
+
+    it "raises an error if passed conflicting binary/text mode two ways" do
+      lambda {
+        @io = IO.send(@method, @fd, "wb", :binmode => false)
+      }.should raise_error(ArgumentError)
+      lambda {
+        @io = IO.send(@method, @fd, "wt", :textmode => false)
+      }.should raise_error(ArgumentError)
+
+      lambda {
+        @io = IO.send(@method, @fd, "wb", :textmode => true)
+      }.should raise_error(ArgumentError)
+      lambda {
+        @io = IO.send(@method, @fd, "wt", :binmode => true)
+      }.should raise_error(ArgumentError)
+    end
+  end
+
+  it "raises an error when trying to set both binmode and textmode" do
+    lambda {
+      @io = IO.send(@method, @fd, "w", :textmode => true, :binmode => true)
+    }.should raise_error(ArgumentError)
+    lambda {
+      @io = IO.send(@method, @fd, File::Constants::WRONLY, :textmode => true, :binmode => true)
+    }.should raise_error(ArgumentError)
+  end
+
+  it "raises ArgumentError if not passed a hash or nil for options" do
+    lambda {
+      @io = IO.send(@method, @fd, 'w', false)
+    }.should raise_error(ArgumentError)
+    lambda {
+      @io = IO.send(@method, @fd, false, false)
+    }.should raise_error(ArgumentError)
+    lambda {
+      @io = IO.send(@method, @fd, nil, false)
+    }.should raise_error(ArgumentError)
+  end
+
+  it "raises TypeError if passed a hash for mode and nil for options" do
+    lambda {
+      @io = IO.send(@method, @fd, {:mode => 'w'}, nil)
+    }.should raise_error(TypeError)
   end
 end

@@ -9,207 +9,49 @@
  */
 package org.jruby.truffle.nodes.core.fixnum;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.CoreLibrary;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyRange;
 
-public class FixnumLowerNode extends RubyNode {
+/**
+ * Passes through {@code int} values unmodified, but will convert a {@code long} value to an {@code int}, if it fits
+ * within the range of an {@code int}. Leaves all other values unmodified. Used where a specialization only accepts
+ * {@code int}, such as Java array indexing, but we would like to also handle {@code long} if they also fit within an
+ * {@code int}.
+ */
+@NodeChild(value = "value", type = RubyNode.class)
+public abstract class FixnumLowerNode extends RubyNode {
 
-    @Child private RubyNode child;
-
-    @CompilationFinal private boolean hasSeenInteger = false;
-    @CompilationFinal private boolean hasSeenLong = false;
-    @CompilationFinal private boolean hasSeenIntegerRange = false;
-    @CompilationFinal private boolean hasSeenLongRange = false;
-    @CompilationFinal private boolean hasSeenUndefined = false;
-
-    @CompilationFinal private boolean hasNeededToLowerLongFixnum = false;
-    @CompilationFinal private boolean hasNeededToLowerLongFixnumRange = false;
-
-    public FixnumLowerNode(RubyNode child) {
-        super(child.getContext(), child.getEncapsulatingSourceSection());
-        this.child = child;
+    public FixnumLowerNode(RubyContext context, SourceSection sourceSection) {
+        super(context, sourceSection);
     }
 
-    @Override
-    public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) throws UnexpectedResultException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        final Object value = child.execute(frame);
-
-        if (hasSeenInteger && value instanceof Integer) {
-            return value;
-        }
-
-        if (hasSeenLong && value instanceof Long) {
-            if (canLower((long) value)) {
-                return lower((long) value);
-            } else {
-                return value;
-            }
-        }
-
-        if (hasSeenIntegerRange && value instanceof RubyRange.IntegerFixnumRange) {
-            return value;
-        }
-
-        if (hasSeenLongRange && value instanceof RubyRange.LongFixnumRange) {
-            if (canLower((RubyRange.LongFixnumRange) value)) {
-                return lower((RubyRange.LongFixnumRange) value);
-            } else {
-                return value;
-            }
-        }
-
-        if (hasSeenUndefined && value instanceof NotProvided) {
-            return value;
-        }
-
-        CompilerDirectives.transferToInterpreterAndInvalidate();
-
-        if (value instanceof Integer) {
-            hasSeenInteger = true;
-            return value;
-        }
-
-        if (value instanceof Long) {
-            hasSeenLong = true;
-            if (canLower((long) value)) {
-                return lower((long) value);
-            } else {
-                return value;
-            }
-        }
-
-        if (value instanceof RubyRange.IntegerFixnumRange) {
-            hasSeenIntegerRange = true;
-            return value;
-        }
-
-        if (value instanceof RubyRange.LongFixnumRange) {
-            hasSeenLongRange = true;
-            if (canLower((RubyRange.LongFixnumRange) value)) {
-                return lower((RubyRange.LongFixnumRange) value);
-            } else {
-                return value;
-            }
-        }
-
-        if (value instanceof NotProvided) {
-            hasSeenUndefined = true;
-            return value;
-        }
-
+    @Specialization
+    public int lower(int value) {
         return value;
     }
 
-    @Override
-    public int executeInteger(VirtualFrame frame) throws UnexpectedResultException {
-        try {
-            if (hasNeededToLowerLongFixnum) {
-                final long value = super.executeLong(frame);
-
-                if (canLower(value)) {
-                    return lower(value);
-                } else {
-                    throw new UnexpectedResultException(value);
-                }
-            } else {
-                return super.executeInteger(frame);
-            }
-        } catch (UnexpectedResultException e) {
-            if (e.getResult() instanceof Long && canLower((long) e.getResult())) {
-                hasNeededToLowerLongFixnum = true;
-                return lower((long) e.getResult());
-            } else if (e.getResult() instanceof RubyRange.LongFixnumRange && canLower((RubyRange.LongFixnumRange) e.getResult())) {
-                hasNeededToLowerLongFixnumRange = true;
-                throw new UnexpectedResultException(lower((RubyRange.LongFixnumRange) e.getResult()));
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    @Override
-    public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
-        throw new RuntimeException();
-    }
-
-    @Override
-    public RubyRange.IntegerFixnumRange executeIntegerFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        try {
-            if (hasNeededToLowerLongFixnumRange) {
-                final RubyRange.LongFixnumRange range = super.executeLongFixnumRange(frame);
-
-                if (canLower(range)) {
-                    return lower(range);
-                } else {
-                    throw new UnexpectedResultException(range);
-                }
-            } else {
-                return super.executeIntegerFixnumRange(frame);
-            }
-        } catch (UnexpectedResultException e) {
-            if (e.getResult() instanceof Long && canLower((long) e.getResult())) {
-                hasNeededToLowerLongFixnum = true;
-                throw new UnexpectedResultException(lower((long) e.getResult()));
-            } else if (e.getResult() instanceof RubyRange.LongFixnumRange && canLower((RubyRange.LongFixnumRange) e.getResult())) {
-                hasNeededToLowerLongFixnumRange = true;
-                return lower((RubyRange.LongFixnumRange) e.getResult());
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    @Override
-    public RubyRange.LongFixnumRange executeLongFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        throw new RuntimeException();
-
-    }
-
-    @Override
-    public NotProvided executeNotProvided(VirtualFrame frame) throws UnexpectedResultException {
-        try {
-            return super.executeNotProvided(frame);
-        } catch (UnexpectedResultException e) {
-            if (e.getResult() instanceof Long && canLower((long) e.getResult())) {
-                hasNeededToLowerLongFixnum = true;
-                throw new UnexpectedResultException(lower((long) e.getResult()));
-            } else if (e.getResult() instanceof RubyRange.LongFixnumRange && canLower((RubyRange.LongFixnumRange) e.getResult())) {
-                hasNeededToLowerLongFixnumRange = true;
-                throw new UnexpectedResultException(e.getResult());
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    private static boolean canLower(long value) {
-        return CoreLibrary.fitsIntoInteger(value);
-    }
-
-    private static int lower(long value) {
-        assert canLower(value);
+    @Specialization(guards = "canLower(value)")
+    public int lower(long value) {
         return (int) value;
     }
 
-    private static boolean canLower(RubyRange.LongFixnumRange range) {
-        return canLower(range.getBegin()) && canLower(range.getEnd());
+    @Specialization(guards = "!canLower(value)")
+    public long lowerFails(long value) {
+        return value;
     }
 
-    private static RubyRange.IntegerFixnumRange lower(RubyRange.LongFixnumRange range) {
-        assert canLower(range);
-        return new RubyRange.IntegerFixnumRange(range.getContext().getCoreLibrary().getRangeClass(), lower(range.getBegin()), lower(range.getEnd()), range.doesExcludeEnd());
+    @Specialization(guards = { "!isInteger(value)", "!isLong(value)" })
+    public Object passThrough(Object value) {
+        return value;
+    }
+
+    protected static boolean canLower(long value) {
+        return CoreLibrary.fitsIntoInteger(value);
     }
 
 }
+

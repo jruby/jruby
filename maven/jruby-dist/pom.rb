@@ -78,6 +78,9 @@ project 'JRuby Dist' do
       ( Dir[ File.join( gems, '**/*' ) ] + Dir[ File.join( gems, '**/.*' ) ] ).each do |f|
         File.chmod( 0644, f ) rescue nil if File.file?( f )
       end
+      Dir[ File.join( gems, '**/maven-home/bin/mvn' ) ].each do |f|
+        File.chmod( 0755, f ) rescue nil if File.file?( f )
+      end
     end
 
     execute :dump_full_specs_of_ruby_maven do |ctx|
@@ -143,6 +146,9 @@ project 'JRuby Dist' do
                                         :type => 'zip',
                                         :classifier => 'src' } ] )
         
+      end
+      plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin', '1.2' ) do
+        execute_goals( :artifacts, :algorithms => ['SHA256' ] )
       end
     end
   end

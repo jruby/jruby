@@ -131,6 +131,15 @@ describe "String#split with String" do
     $~.should == nil
   end
 
+  it "returns the original string if no matches are found" do
+    "foo".split("bar").should == ["foo"]
+    "foo".split("bar", -1).should == ["foo"]
+    "foo".split("bar", 0).should == ["foo"]
+    "foo".split("bar", 1).should == ["foo"]
+    "foo".split("bar", 2).should == ["foo"]
+    "foo".split("bar", 3).should == ["foo"]
+  end
+
   it "returns subclass instances based on self" do
     ["", "x.y.z.", "  x  y  "].each do |str|
       ["", ".", " "].each do |pat|
@@ -310,7 +319,12 @@ describe "String#split with Regexp" do
   end
 
   it "returns the original string if no matches are found" do
-    "foo".split("\n").should == ["foo"]
+    "foo".split(/bar/).should == ["foo"]
+    "foo".split(/bar/, -1).should == ["foo"]
+    "foo".split(/bar/, 0).should == ["foo"]
+    "foo".split(/bar/, 1).should == ["foo"]
+    "foo".split(/bar/, 2).should == ["foo"]
+    "foo".split(/bar/, 3).should == ["foo"]
   end
 
   it "returns subclass instances based on self" do

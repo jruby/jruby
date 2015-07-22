@@ -30,17 +30,16 @@ import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBinding;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "Binding")
 public abstract class BindingNodes {
 
-    public static RubyBasicObject createRubyBinding(RubyClass bindingClass) {
+    public static RubyBasicObject createRubyBinding(RubyBasicObject bindingClass) {
         return createRubyBinding(bindingClass, null, null);
     }
 
-    public static RubyBasicObject createRubyBinding(RubyClass bindingClass, Object self, MaterializedFrame frame) {
+    public static RubyBasicObject createRubyBinding(RubyBasicObject bindingClass, Object self, MaterializedFrame frame) {
         return new RubyBinding(bindingClass, self, frame);
     }
 

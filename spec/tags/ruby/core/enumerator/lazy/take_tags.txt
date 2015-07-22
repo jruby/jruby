@@ -1,2 +1,3 @@
 fails:Enumerator::Lazy#take sets given count to size if the given count is less than old size
 fails:Enumerator::Lazy#take on a nested Lazy sets given count to size if the given count is less than old size
+fails:Enumerator::Lazy#take sets given count to size if the old size is Infinity

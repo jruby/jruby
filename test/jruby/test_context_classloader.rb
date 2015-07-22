@@ -12,7 +12,10 @@ class TestContextClassloader < Test::Unit::TestCase
   end
   
   def test_main_thread
-    assert_equal(JRuby.runtime.jruby_class_loader.parent, org.jruby.Ruby.java_class.class_loader || java.lang.Thread.current_thread.context_class_loader)
+    # This launches externally because our test run doesn't call through Main,
+    # so the executing thread's context classloader is not set to JRuby's.
+    assert_equal("true\n",
+      jruby('-rjava -rjruby -e "p(JRuby.runtime.jruby_class_loader == java.lang.Thread.current_thread.context_class_loader)"'))
   end
   
   def test_ruby_thread

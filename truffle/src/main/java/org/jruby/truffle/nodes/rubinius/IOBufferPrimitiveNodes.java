@@ -43,12 +43,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
+import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.util.ByteList;
 
 import java.util.EnumSet;
@@ -136,7 +135,7 @@ public abstract class IOBufferPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject allocate(VirtualFrame frame, RubyClass classToAllocate) {
+        public RubyBasicObject allocate(RubyBasicObject classToAllocate) {
             return new RubyBasicObject(classToAllocate, IO_BUFFER_FACTORY.newInstance(
                     true,
                     ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
@@ -218,7 +217,7 @@ public abstract class IOBufferPrimitiveNodes {
                         continue;
                     } else {
                         CompilerDirectives.transferToInterpreter();
-                        throw new RaiseException(new RubyException(getContext().getCoreLibrary().getErrnoClass(Errno.valueOf(errno))));
+                        throw new RaiseException(ExceptionNodes.createRubyException(getContext().getCoreLibrary().getErrnoClass(Errno.valueOf(errno))));
                     }
                 } else {
                     break;

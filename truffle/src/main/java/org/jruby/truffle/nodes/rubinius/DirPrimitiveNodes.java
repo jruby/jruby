@@ -48,8 +48,6 @@ import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyEncoding;
 
 import java.io.File;
 
@@ -68,7 +66,7 @@ public abstract class DirPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject allocate(RubyClass dirClass) {
+        public RubyBasicObject allocate(RubyBasicObject dirClass) {
             return new RubyBasicObject(dirClass);
         }
 
@@ -110,8 +108,8 @@ public abstract class DirPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(path)")
-        public RubyBasicObject open(RubyBasicObject dir, RubyBasicObject path, RubyEncoding encoding) {
+        @Specialization(guards = {"isRubyString(path)", "isRubyEncoding(encoding)"})
+        public RubyBasicObject openEncoding(RubyBasicObject dir, RubyBasicObject path, RubyBasicObject encoding) {
             // TODO BJF 30-APR-2015 HandleEncoding
             return open(dir, path, nil());
         }

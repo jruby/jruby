@@ -12,14 +12,46 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
+import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyTime;
 
 @CoreClass(name = "Time")
 public abstract class TimeNodes {
+
+    private static final DateTime ZERO = new DateTime(0);
+
+    public static DateTime getDateTime(RubyBasicObject time) {
+        assert RubyGuards.isRubyTime(time);
+        return ((RubyTime) time).dateTime;
+    }
+
+    public static void setDateTime(RubyBasicObject time, DateTime dateTime) {
+        assert RubyGuards.isRubyTime(time);
+        ((RubyTime) time).dateTime = dateTime;
+    }
+
+    public static Object getOffset(RubyBasicObject time) {
+        assert RubyGuards.isRubyTime(time);
+        return ((RubyTime) time).offset;
+    }
+
+    public static void setOffset(RubyBasicObject time, Object offset) {
+        assert RubyGuards.isRubyTime(time);
+        assert offset != null;
+        ((RubyTime) time).offset = offset;
+    }
+
+    public static RubyBasicObject createRubyTime(RubyBasicObject timeClass, DateTime dateTime, Object offset) {
+        return new RubyTime(timeClass, dateTime, offset);
+    }
 
     // We need it to copy the internal data for a call to Kernel#clone.
     @CoreMethod(names = "initialize_copy", required = 1)
@@ -29,10 +61,10 @@ public abstract class TimeNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object initializeCopy(RubyTime self, RubyTime from) {
-            self.setDateTime(from.getDateTime());
-            self.setOffset(from.getOffset());
+        @Specialization(guards = "isRubyTime(from)")
+        public Object initializeCopy(RubyBasicObject self, RubyBasicObject from) {
+            setDateTime(self, getDateTime(from));
+            setOffset(self, getOffset(from));
             return self;
         }
 
@@ -47,10 +79,10 @@ public abstract class TimeNodes {
         }
 
         @Specialization
-        public boolean internalGMT(RubyTime time) {
-            return time.getOffset() == nil() &&
-                    (time.getDateTime().getZone().equals(DateTimeZone.UTC) ||
-                     time.getDateTime().getZone().getOffset(time.getDateTime().getMillis()) == 0);
+        public boolean internalGMT(RubyBasicObject time) {
+            return getOffset(time) == nil() &&
+                    (getDateTime(time).getZone().equals(DateTimeZone.UTC) ||
+                     getDateTime(time).getZone().getOffset(getDateTime(time).getMillis()) == 0);
         }
     }
 
@@ -66,9 +98,9 @@ public abstract class TimeNodes {
         }
 
         @Specialization
-        public boolean internalSetGMT(RubyTime time, boolean isGMT) {
+        public boolean internalSetGMT(RubyBasicObject time, boolean isGMT) {
             if (isGMT) {
-                time.setDateTime(time.getDateTime().withZone(DateTimeZone.UTC));
+                setDateTime(time, getDateTime(time).withZone(DateTimeZone.UTC));
             } else {
                 // Do nothing I guess - we can't change it to another zone, as what zone would that be?
             }
@@ -86,8 +118,8 @@ public abstract class TimeNodes {
         }
 
         @Specialization
-        public Object internalOffset(RubyTime time) {
-            return time.getOffset();
+        public Object internalOffset(RubyBasicObject time) {
+            return getOffset(time);
         }
     }
 
@@ -103,10 +135,18 @@ public abstract class TimeNodes {
         }
 
         @Specialization
-        public Object internalSetOffset(RubyTime time, Object offset) {
-            time.setOffset(offset);
+        public Object internalSetOffset(RubyBasicObject time, Object offset) {
+            setOffset(time, offset);
             return offset;
         }
     }
 
+    public static class TimeAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
+            return createRubyTime(rubyClass, ZERO, context.getCoreLibrary().getNilObject());
+        }
+
+    }
 }

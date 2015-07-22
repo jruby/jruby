@@ -47,7 +47,9 @@ import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.CoreLibrary;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.SymbolTable;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 import org.jruby.truffle.runtime.rubinius.RubiniusConfiguration;
@@ -412,8 +414,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             return toJRubyString((RubyBasicObject) object);
         } else if (RubyGuards.isRubyArray(object)) {
             return toJRubyArray((RubyBasicObject) object);
-        } else if (object instanceof RubyEncoding) {
-            return toJRuby((RubyEncoding) object);
+        } else if (RubyGuards.isRubyEncoding(object)) {
+            return toJRubyEncoding((RubyBasicObject) object);
         } else {
             throw getRuntime().newRuntimeError("cannot pass " + object + " (" + object.getClass().getName()  + ") to JRuby");
         }
@@ -434,8 +436,9 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return runtime.newArray(toJRuby(ArrayNodes.slowToArray(array)));
     }
 
-    public IRubyObject toJRuby(RubyEncoding encoding) {
-        return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(encoding.getName()));
+    public IRubyObject toJRubyEncoding(RubyBasicObject encoding) {
+        assert RubyGuards.isRubyEncoding(encoding);
+        return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(EncodingNodes.getName(encoding)));
     }
 
     public org.jruby.RubyString toJRubyString(RubyBasicObject string) {
@@ -510,7 +513,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return truffleString;
     }
 
-    public RubyException toTruffle(org.jruby.RubyException jrubyException, RubyNode currentNode) {
+    public RubyBasicObject toTruffle(org.jruby.RubyException jrubyException, RubyNode currentNode) {
         switch (jrubyException.getMetaClass().getName()) {
             case "ArgumentError":
                 return getCoreLibrary().argumentError(jrubyException.getMessage().toString(), currentNode);

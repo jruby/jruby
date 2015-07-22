@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
@@ -22,7 +23,7 @@ public class ThreadLocalObjectNode extends RubyNode {
 
     @Override
     public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) {
-        return getContext().getThreadManager().getCurrentThread().getThreadLocals();
+        return ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread());
     }
 
     @Override

@@ -30,7 +30,8 @@ import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.util.ByteList;
 
@@ -111,51 +112,11 @@ public abstract class RubyNode extends Node {
         }
     }
 
-    public RubyRange.IntegerFixnumRange executeIntegerFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (value instanceof RubyRange.IntegerFixnumRange) {
-            return (RubyRange.IntegerFixnumRange) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
-    public RubyRange.LongFixnumRange executeLongFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (value instanceof RubyRange.LongFixnumRange) {
-            return (RubyRange.LongFixnumRange) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
     public double executeDouble(VirtualFrame frame) throws UnexpectedResultException {
         final Object value = execute(frame);
 
         if (value instanceof Double) {
             return (double) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
-    public RubyRegexp executeRubyRegexp(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (value instanceof RubyRegexp) {
-            return (RubyRegexp) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
-    public RubyModule executeRubyModule(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (value instanceof RubyModule) {
-            return (RubyModule) value;
         } else {
             throw new UnexpectedResultException(value);
         }

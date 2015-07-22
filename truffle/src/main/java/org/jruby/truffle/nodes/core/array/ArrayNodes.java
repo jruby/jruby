@@ -31,7 +31,7 @@ import org.jruby.truffle.nodes.coerce.ToAryNodeGen;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNode;
+import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
@@ -150,7 +150,7 @@ public abstract class ArrayNodes {
     public static final boolean RANDOMIZE_STORAGE_ARRAY = Options.TRUFFLE_RANDOMIZE_STORAGE_ARRAY.load();
     private static final Random random = new Random(Options.TRUFFLE_RANDOMIZE_SEED.load());
 
-    public static RubyBasicObject fromObject(RubyClass arrayClass, Object object) {
+    public static RubyBasicObject fromObject(RubyBasicObject arrayClass, Object object) {
         final Object store;
 
         if (object instanceof Integer) {
@@ -166,7 +166,7 @@ public abstract class ArrayNodes {
         return createGeneralArray(arrayClass, store, 1);
     }
 
-    public static RubyBasicObject fromObjects(RubyClass arrayClass, Object... objects) {
+    public static RubyBasicObject fromObjects(RubyBasicObject arrayClass, Object... objects) {
         return createGeneralArray(arrayClass, storeFromObjects(arrayClass.getContext(), objects), objects.length);
     }
 
@@ -367,28 +367,28 @@ public abstract class ArrayNodes {
         return true;
     }
 
-    public static RubyBasicObject createEmptyArray(RubyClass arrayClass) {
+    public static RubyBasicObject createEmptyArray(RubyBasicObject arrayClass) {
         return createGeneralArray(arrayClass, null, 0);
     }
 
-    public static RubyBasicObject createArray(RubyClass arrayClass, int[] store, int size) {
+    public static RubyBasicObject createArray(RubyBasicObject arrayClass, int[] store, int size) {
         return createGeneralArray(arrayClass, store, size);
     }
 
-    public static RubyBasicObject createArray(RubyClass arrayClass, long[] store, int size) {
+    public static RubyBasicObject createArray(RubyBasicObject arrayClass, long[] store, int size) {
         return createGeneralArray(arrayClass, store, size);
     }
 
-    public static RubyBasicObject createArray(RubyClass arrayClass, double[] store, int size) {
+    public static RubyBasicObject createArray(RubyBasicObject arrayClass, double[] store, int size) {
         return createGeneralArray(arrayClass, store, size);
     }
 
-    public static RubyBasicObject createArray(RubyClass arrayClass, Object[] store, int size) {
+    public static RubyBasicObject createArray(RubyBasicObject arrayClass, Object[] store, int size) {
         return createGeneralArray(arrayClass, store, size);
     }
 
-    public static RubyBasicObject createGeneralArray(RubyClass arrayClass, Object store, int size) {
-        //return new RubyArray(arrayClass, store, size, ARRAY_FACTORY.newInstance(store, size));
+    public static RubyBasicObject createGeneralArray(RubyBasicObject arrayClass, Object store, int size) {
+        assert RubyGuards.isRubyClass(arrayClass);
         return new RubyArray(arrayClass, store, size, RubyBasicObject.LAYOUT.newInstance(RubyBasicObject.EMPTY_SHAPE));
     }
 
@@ -673,15 +673,15 @@ public abstract class ArrayNodes {
             return readSliceNode.executeReadSlice(frame, (RubyBasicObject) array, start, length);
         }
 
-        @Specialization
-        public Object slice(VirtualFrame frame, RubyBasicObject array, RubyRange.IntegerFixnumRange range, NotProvided len) {
-            final int normalizedIndex = normalizeIndex(array, range.getBegin());
+        @Specialization(guards = "isIntegerFixnumRange(range)")
+        public Object slice(VirtualFrame frame, RubyBasicObject array, RubyBasicObject range, NotProvided len) {
+            final int normalizedIndex = normalizeIndex(array, RangeNodes.getBegin(((RubyIntegerFixnumRange) range)));
 
             if (normalizedIndex < 0 || normalizedIndex > getSize(array)) {
                 return nil();
             } else {
-                final int end = normalizeIndex(array, range.getEnd());
-                final int exclusiveEnd = clampExclusiveIndex(array, range.doesExcludeEnd() ? end : end + 1);
+                final int end = normalizeIndex(array, RangeNodes.getEnd(((RubyIntegerFixnumRange) range)));
+                final int exclusiveEnd = clampExclusiveIndex(array, RangeNodes.isExcludeEnd(((RubyIntegerFixnumRange) range)) ? end : end + 1);
 
                 if (exclusiveEnd <= normalizedIndex) {
                     return ArrayNodes.createEmptyArray(array.getLogicalClass());
@@ -957,10 +957,10 @@ public abstract class ArrayNodes {
             return replacement;
         }
 
-        @Specialization(guards = "!isRubyArray(other)")
-        public Object setRange(VirtualFrame frame, RubyBasicObject array, RubyRange.IntegerFixnumRange range, Object other, NotProvided unused) {
-            final int normalizedStart = normalizeIndex(array, range.getBegin());
-            int normalizedEnd = range.doesExcludeEnd() ? normalizeIndex(array, range.getEnd()) - 1 : normalizeIndex(array, range.getEnd());
+        @Specialization(guards = {"!isRubyArray(other)", "isIntegerFixnumRange(range)"})
+        public Object setRange(VirtualFrame frame, RubyBasicObject array, RubyBasicObject range, Object other, NotProvided unused) {
+            final int normalizedStart = normalizeIndex(array, RangeNodes.getBegin(((RubyIntegerFixnumRange) range)));
+            int normalizedEnd = RangeNodes.isExcludeEnd(((RubyIntegerFixnumRange) range)) ? normalizeIndex(array, RangeNodes.getEnd(((RubyIntegerFixnumRange) range))) - 1 : normalizeIndex(array, RangeNodes.getEnd(((RubyIntegerFixnumRange) range)));
             if (normalizedEnd < 0) {
                 normalizedEnd = -1;
             }
@@ -972,15 +972,15 @@ public abstract class ArrayNodes {
             return setObject(frame, array, normalizedStart, length, other);
         }
 
-        @Specialization(guards = {"isRubyArray(other)", "!isIntArray(array) || !isIntArray(other)"})
-        public Object setRangeArray(VirtualFrame frame, RubyBasicObject array, RubyRange.IntegerFixnumRange range, RubyBasicObject other, NotProvided unused) {
-            final int normalizedStart = normalizeIndex(array, range.getBegin());
+        @Specialization(guards = {"isRubyArray(other)", "!isIntArray(array) || !isIntArray(other)", "isIntegerFixnumRange(range)"})
+        public Object setRangeArray(VirtualFrame frame, RubyBasicObject array, RubyBasicObject range, RubyBasicObject other, NotProvided unused) {
+            final int normalizedStart = normalizeIndex(array, RangeNodes.getBegin(((RubyIntegerFixnumRange) range)));
             if (normalizedStart < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
             }
 
-            int normalizedEnd = range.doesExcludeEnd() ? normalizeIndex(array, range.getEnd()) - 1 : normalizeIndex(array, range.getEnd());
+            int normalizedEnd = RangeNodes.isExcludeEnd(((RubyIntegerFixnumRange) range)) ? normalizeIndex(array, RangeNodes.getEnd(((RubyIntegerFixnumRange) range))) - 1 : normalizeIndex(array, RangeNodes.getEnd(((RubyIntegerFixnumRange) range)));
             if (normalizedEnd < 0) {
                 normalizedEnd = -1;
             }
@@ -989,14 +989,14 @@ public abstract class ArrayNodes {
             return setOtherArray(frame, array, normalizedStart, length, other);
         }
 
-        @Specialization(guards = {"isIntArray(array)", "isRubyArray(other)", "isIntArray(other)"})
-        public Object setIntegerFixnumRange(VirtualFrame frame, RubyBasicObject array, RubyRange.IntegerFixnumRange range, RubyBasicObject other, NotProvided unused) {
-            if (range.doesExcludeEnd()) {
+        @Specialization(guards = {"isIntArray(array)", "isRubyArray(other)", "isIntArray(other)", "isIntegerFixnumRange(range)"})
+        public Object setIntegerFixnumRange(VirtualFrame frame, RubyBasicObject array, RubyBasicObject range, RubyBasicObject other, NotProvided unused) {
+            if (RangeNodes.isExcludeEnd(((RubyIntegerFixnumRange) range))) {
                 CompilerDirectives.transferToInterpreter();
                 return setRangeArray(frame, array, range, other, unused);
             } else {
-                int normalizedBegin = normalizeIndex(array, range.getBegin());
-                int normalizedEnd = normalizeIndex(array, range.getEnd());
+                int normalizedBegin = normalizeIndex(array, RangeNodes.getBegin(((RubyIntegerFixnumRange) range)));
+                int normalizedEnd = normalizeIndex(array, RangeNodes.getEnd(((RubyIntegerFixnumRange) range)));
                 if (normalizedEnd < 0) {
                     normalizedEnd = -1;
                 }
@@ -1028,7 +1028,8 @@ public abstract class ArrayNodes {
         }
 
         @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
-            return new FixnumLowerNode(ToIntNodeGen.create(getContext(), getSourceSection(), index));
+            return FixnumLowerNodeGen.create(getContext(), getSourceSection(),
+                    ToIntNodeGen.create(getContext(), getSourceSection(), index));
         }
 
         @Specialization
@@ -1207,7 +1208,7 @@ public abstract class ArrayNodes {
                     if (isFrozenNode.executeIsFrozen(array)) {
                         CompilerDirectives.transferToInterpreter();
                         throw new RaiseException(
-                            getContext().getCoreLibrary().frozenError(array.getLogicalClass().getName(), this));
+                            getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(array.getLogicalClass()).getName(), this));
                     }
                     found = store[n];
                     continue;
@@ -1244,7 +1245,7 @@ public abstract class ArrayNodes {
                     if (isFrozenNode.executeIsFrozen(array)) {
                         CompilerDirectives.transferToInterpreter();
                         throw new RaiseException(
-                            getContext().getCoreLibrary().frozenError(array.getLogicalClass().getName(), this));
+                            getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(array.getLogicalClass()).getName(), this));
                     }
                     found = store[n];
                     continue;
@@ -4619,7 +4620,7 @@ public abstract class ArrayNodes {
     public static class ArrayAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return createEmptyArray(rubyClass);
         }
 

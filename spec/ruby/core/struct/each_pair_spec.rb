@@ -4,21 +4,28 @@ require File.expand_path('../shared/accessor', __FILE__)
 require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Struct#each_pair" do
+  before :each do
+    @car = StructClasses::Car.new('Ford', 'Ranger', 2001)
+  end
+
   it "passes each key value pair to the given block" do
-    car = StructClasses::Car.new('Ford', 'Ranger', 2001)
-    car.each_pair do |key, value|
-      value.should == car[key]
+    @car.each_pair do |key, value|
+      value.should == @car[key]
+    end
+  end
+
+  context "with a block variable" do
+    it "passes an array to the given block" do
+      @car.each_pair.map { |var| var }.should == StructClasses::Car.members.zip(@car.values)
     end
   end
 
   it "returns self if passed a block" do
-    car = StructClasses::Car.new('Ford', 'Ranger')
-    car.each_pair {}.should == car
+    @car.each_pair {}.should equal(@car)
   end
 
   it "returns an Enumerator if not passed a block" do
-    car = StructClasses::Car.new('Ford', 'Ranger')
-    car.each_pair.should be_an_instance_of(enumerator_class)
+    @car.each_pair.should be_an_instance_of(enumerator_class)
   end
 
   it_behaves_like :struct_accessor, :each_pair

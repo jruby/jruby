@@ -67,6 +67,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
+import org.jruby.truffle.nodes.core.EncodingNodes;
 import org.jruby.truffle.nodes.core.StringGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.StringNodesFactory;
@@ -75,9 +76,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyEncoding;
-import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
@@ -284,8 +282,8 @@ public abstract class StringPrimitiveNodes {
             return stringByteSubstring(string, (int) index, length);
         }
 
-        @Specialization
-        public Object stringByteSubstring(RubyBasicObject string, RubyRange range, NotProvided length) {
+        @Specialization(guards = "isRubyRange(range)")
+        public Object stringByteSubstring(RubyBasicObject string, RubyBasicObject range, NotProvided length) {
             return null;
         }
 
@@ -533,20 +531,20 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isSimple(code, encoding)")
-        public RubyBasicObject stringFromCodepointSimple(int code, RubyEncoding encoding) {
+        @Specialization(guards = {"isRubyEncoding(encoding)", "isSimple(code, encoding)"})
+        public RubyBasicObject stringFromCodepointSimple(int code, RubyBasicObject encoding) {
             return StringNodes.createString(
                     getContext().getCoreLibrary().getStringClass(),
-                    new ByteList(new byte[]{(byte) code}, encoding.getEncoding()));
+                    new ByteList(new byte[]{(byte) code}, EncodingNodes.getEncoding(encoding)));
         }
 
         @TruffleBoundary
-        @Specialization(guards = "!isSimple(code, encoding)")
-        public RubyBasicObject stringFromCodepoint(int code, RubyEncoding encoding) {
+        @Specialization(guards = {"isRubyEncoding(encoding)", "!isSimple(code, encoding)"})
+        public RubyBasicObject stringFromCodepoint(int code, RubyBasicObject encoding) {
             final int length;
 
             try {
-                length = encoding.getEncoding().codeToMbcLength(code);
+                length = EncodingNodes.getEncoding(encoding).codeToMbcLength(code);
             } catch (EncodingException e) {
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
@@ -558,7 +556,7 @@ public abstract class StringPrimitiveNodes {
             final byte[] bytes = new byte[length];
 
             try {
-                encoding.getEncoding().codeToMbc(code, bytes, 0);
+                EncodingNodes.getEncoding(encoding).codeToMbc(code, bytes, 0);
             } catch (EncodingException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
@@ -566,11 +564,11 @@ public abstract class StringPrimitiveNodes {
 
             return StringNodes.createString(
                     getContext().getCoreLibrary().getStringClass(),
-                    new ByteList(bytes, encoding.getEncoding()));
+                    new ByteList(bytes, EncodingNodes.getEncoding(encoding)));
         }
 
-        @Specialization
-        public RubyBasicObject stringFromCodepointSimple(long code, RubyEncoding encoding) {
+        @Specialization(guards = "isRubyEncoding(encoding)")
+        public RubyBasicObject stringFromCodepointSimple(long code, RubyBasicObject encoding) {
             if (code < Integer.MIN_VALUE || code > Integer.MAX_VALUE) {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException();
@@ -579,8 +577,8 @@ public abstract class StringPrimitiveNodes {
             return stringFromCodepointSimple((int) code, encoding);
         }
 
-        protected boolean isSimple(int code, RubyEncoding encoding) {
-            return encoding.getEncoding() == ASCIIEncoding.INSTANCE && code >= 0x00 && code <= 0xFF;
+        protected boolean isSimple(int code, RubyBasicObject encoding) {
+            return EncodingNodes.getEncoding(encoding) == ASCIIEncoding.INSTANCE && code >= 0x00 && code <= 0xFF;
         }
 
     }
@@ -1066,19 +1064,19 @@ public abstract class StringPrimitiveNodes {
 
 
         @Specialization(guards = "value == 0")
-        public RubyBasicObject stringPatternZero(RubyClass stringClass, int size, int value) {
+        public RubyBasicObject stringPatternZero(RubyBasicObject stringClass, int size, int value) {
             return StringNodes.createString(stringClass, new ByteList(new byte[size]));
         }
 
         @Specialization(guards = "value != 0")
-        public RubyBasicObject stringPattern(RubyClass stringClass, int size, int value) {
+        public RubyBasicObject stringPattern(RubyBasicObject stringClass, int size, int value) {
             final byte[] bytes = new byte[size];
             Arrays.fill(bytes, (byte) value);
             return StringNodes.createString(stringClass, new ByteList(bytes));
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public RubyBasicObject stringPattern(RubyClass stringClass, int size, RubyBasicObject string) {
+        public RubyBasicObject stringPattern(RubyBasicObject stringClass, int size, RubyBasicObject string) {
             final byte[] bytes = new byte[size];
             final ByteList byteList = StringNodes.getByteList(string);
 

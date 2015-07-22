@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.Writer;
 import java.net.URL;
 
 import org.jruby.Ruby;
@@ -71,8 +70,9 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
-    private RubyRuntimeAdapter adapter = JavaEmbedUtils.newRuntimeAdapter();
-    private ScriptingContainer container;
+
+    private final RubyRuntimeAdapter adapter = JavaEmbedUtils.newRuntimeAdapter();
+    private final ScriptingContainer container;
 
     public EmbedRubyRuntimeAdapterImpl(ScriptingContainer container) {
         this.container = container;
@@ -164,10 +164,10 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
         if (filename == null || filename.length() == 0) {
             filename = container.getScriptFilename();
         }
-        Ruby runtime = container.getProvider().getRuntime();
-        IAccessor d = new ValueAccessor(RubyString.newString(runtime, filename));
-        runtime.getGlobalVariables().define("$PROGRAM_NAME", d, GlobalVariable.Scope.GLOBAL);
-        runtime.getGlobalVariables().define("$0", d, GlobalVariable.Scope.GLOBAL);
+        final Ruby runtime = container.getProvider().getRuntime();
+        IAccessor $0 = new ValueAccessor(RubyString.newString(runtime, filename));
+        runtime.getGlobalVariables().define("$PROGRAM_NAME", $0, GlobalVariable.Scope.GLOBAL);
+        runtime.getGlobalVariables().define("$0", $0, GlobalVariable.Scope.GLOBAL);
 
         int line = 0;
         if (lines != null && lines.length > 0) {
@@ -183,7 +183,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             if (sharing_variables) {
                 scope = getManyVarsDynamicScope(container, 0);
             }
-            Node node = null;
+            final Node node;
             if (input instanceof String) {
                 node = runtime.parseEval((String)input, filename, scope, line);
             } else {
@@ -233,7 +233,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
 
         // JRUBY-5501: ensure we've set up a cref for the scope too
         scope.getStaticScope().determineModule();
-        
+
         return scope;
     }
 

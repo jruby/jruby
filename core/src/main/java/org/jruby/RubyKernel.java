@@ -396,7 +396,7 @@ public class RubyKernel {
             if (arg.toString().startsWith("0x")) {
                 return ConvertBytes.byteListToInum19(runtime, arg.getByteList(), 16, true).toFloat();
             }
-            return RubyNumeric.str2fnum19(runtime, arg,true);
+            return RubyNumeric.str2fnum(runtime, arg, true);
         } else if(object.isNil()){
             throw runtime.newTypeError("can't convert nil into Float");
         } else {
@@ -600,12 +600,12 @@ public class RubyKernel {
         return RubyArgsFile.readlines(context, context.runtime.getArgsFile(), args);
     }
 
-    @JRubyMethod(name = "respond_to_missing?", module = true)
+    @JRubyMethod(name = "respond_to_missing?", visibility = PRIVATE)
     public static IRubyObject respond_to_missing_p(ThreadContext context, IRubyObject recv, IRubyObject symbol) {
         return context.runtime.getFalse();
     }
 
-    @JRubyMethod(name = "respond_to_missing?", module = true)
+    @JRubyMethod(name = "respond_to_missing?", visibility = PRIVATE)
     public static IRubyObject respond_to_missing_p(ThreadContext context, IRubyObject recv, IRubyObject symbol, IRubyObject isPrivate) {
         return context.runtime.getFalse();
     }

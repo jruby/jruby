@@ -22,7 +22,6 @@ fails:Kernel.spawn calls #to_str to convert the environment keys
 fails:Kernel.spawn calls #to_str to convert the environment values
 fails:Kernel.spawn joins a new process group if :pgroup => 0
 fails:Kernel.spawn sets the umask if given the :umask option
-fails:Kernel.spawn closes file descriptors >= 3 in the child process
 fails:Kernel.spawn raises an Errno::EACCES when passed a directory
 fails:Kernel.spawn raises an ArgumentError when passed a string key in options
 fails:Kernel.spawn raises an ArgumentError when passed an unknown option key
@@ -36,9 +35,7 @@ fails:Kernel.spawn with a command array raises an ArgumentError if the Strings i
 fails:Kernel.spawn with a command array raises a TypeError if an element in the Array does not respond to #to_str
 fails:Kernel.spawn does NOT redirect both STDERR and STDOUT at the time to the given name
 fails(only in full runs):Kernel.spawn with multiple arguments does not subject the arguments to shell expansion
-fails:Kernel#spawn does not close file descriptors >= 3 in the child process when given a false :close_others option and fds are set close_on_exec=false
 fails:Kernel#spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
-fails:Kernel.spawn does not close file descriptors >= 3 in the child process when given a false :close_others option and fds are set close_on_exec=false
 fails:Kernel.spawn when passed :chdir changes to the directory passed for :chdir
 fails:Kernel.spawn when passed :chdir calls #to_path to convert the :chdir value
 fails:Kernel.spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
@@ -54,3 +51,5 @@ fails:Kernel#spawn when passed :close_others => false does not close file descri
 fails:Kernel.spawn when passed :close_others => false does not close file descriptors >= 3 in the child process if fds are set close_on_exec=false
 fails:Kernel#spawn when passed :close_others => false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
 fails:Kernel.spawn when passed :close_others => false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
+fails:Kernel#spawn redirects STDOUT to the given file if :out => [String name, String mode]
+fails:Kernel.spawn redirects STDOUT to the given file if :out => [String name, String mode]

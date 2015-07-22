@@ -46,7 +46,7 @@ describe :kernel_send, :shared => true do
 
   it "raises an ArgumentError if no arguments are given" do
     class KernelSpecs::Foo; end
-    lambda { KernelSpecs::Foo.new.send }.should raise_error(ArgumentError)
+    lambda { KernelSpecs::Foo.new.send @method }.should raise_error(ArgumentError)
   end
 
   it "raises an ArgumentError if called with more arguments than available parameters" do
@@ -54,7 +54,7 @@ describe :kernel_send, :shared => true do
       def bar; end
     end
 
-    lambda { KernelSpecs::Foo.new.send(:bar, :arg) }.should raise_error(ArgumentError)
+    lambda { KernelSpecs::Foo.new.send(@method, :bar, :arg) }.should raise_error(ArgumentError)
   end
 
   it "raises an ArgumentError if called with fewer arguments than required parameters" do
@@ -104,13 +104,13 @@ describe :kernel_send, :shared => true do
   not_compliant_on :rubinius do
     # Confirm commit r24306
     it "has an arity of -1" do
-      method(:__send__).arity.should == -1
+      method(@method).arity.should == -1
     end
   end
 
   deviates_on :rubinius do
     it "has an arity of -2" do
-      method(:__send__).arity.should == -2
+      method(@method).arity.should == -2
     end
   end
 end

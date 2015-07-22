@@ -20,10 +20,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   issue_management 'https://github.com/jruby/jruby/issues', 'GitHub'
 
-  [ 'user', 'dev', 'scm', 'annouce' ].each do |id|
-    mailing_list "jruby-#{id}" do
-      archives "http://markmail.org/search/list:org.codehaus.jruby.#{id}"
-    end
+  mailing_list "jruby" do
+    archives "http://blade.nagaokaut.ac.jp/ruby/jruby/index.shtml"
   end
 
   license 'GPL 3', 'http://www.gnu.org/licenses/gpl-3.0-standalone.html'
@@ -110,6 +108,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin :assembly, '2.4'
     plugin :install, '2.4'
     plugin :deploy, '2.7'
+    plugin :javadoc, '2.7'
     plugin :resources, '2.6'
     plugin :clean, '2.5'
     plugin :dependency, '2.8'
@@ -120,7 +119,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
     rules = { :requireMavenVersion => { :version => '[3.3.0,)' } }
     unless model.version =~ /-SNAPSHOT/
-       rules[:requireReleaseDeps] = { :message => 'No Snapshots Allowed!' }
+       #rules[:requireReleaseDeps] = { :message => 'No Snapshots Allowed!' }
     end
     plugin :enforcer, '1.4' do
       execute_goal :enforce, :rules => rules
@@ -286,8 +285,11 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       default_goal :deploy
     end
 
-    plugin(:source, '2.1.2') do
+    plugin(:source) do
       execute_goals('jar-no-fork', :id => 'attach-sources')
+    end
+    plugin(:javadoc) do
+      execute_goals('jar', :id => 'attach-javadocs')
     end
   end
 

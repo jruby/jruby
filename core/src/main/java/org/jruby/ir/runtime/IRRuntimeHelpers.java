@@ -122,7 +122,6 @@ public class IRRuntimeHelpers {
         // If not in a lambda, check if this was a non-local return
         if (IRRuntimeHelpers.inLambda(blockType)) return returnValue;
 
-        IRScopeType scopeType = dynScope.getStaticScope().getScopeType();
         while (dynScope != null) {
             StaticScope ss = dynScope.getStaticScope();
             // SSS FIXME: Why is scopeType empty? Looks like this static-scope
@@ -133,7 +132,9 @@ public class IRRuntimeHelpers {
             // To be investigated.
             IRScopeType ssType = ss.getScopeType();
             if (ssType != null) {
-                if (ssType.isMethodType() || (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT)) {
+                if (ssType.isMethodType() ||
+                        (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT) ||
+                        (ssType.isClosureType() && dynScope.isLambda())) {
                     break;
                 }
             }
@@ -152,8 +153,8 @@ public class IRRuntimeHelpers {
         } else {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
-            // If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating.
-            if (inNonMethodBodyLambda(scope, blockType) || (rj.methodToReturnFrom == dynScope)) {
+            // If we are in the method scope we are supposed to return from, stop propagating.
+            if (rj.methodToReturnFrom == dynScope) {
                 if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope + " matching dynscope? " + (rj.methodToReturnFrom == dynScope));
                 return (IRubyObject) rj.returnValue;
             }
@@ -1325,26 +1326,24 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static RubyArray irSplat(ThreadContext context, IRubyObject maybeAry) {
-        return Helpers.splatValue19(maybeAry);
+    public static RubyArray irSplat(ThreadContext context, IRubyObject ary) {
+        Ruby runtime = context.runtime;
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck19(ary, runtime.getArray(), "to_a");
+        if (tmp.isNil()) {
+            tmp = runtime.newArray(ary);
+        }
+        else if (true /**RTEST(flag)**/) { // this logic is only used for bare splat, and MRI dups
+            tmp = ((RubyArray)tmp).aryDup();
+        }
+        return (RubyArray)tmp;
     }
 
     public static IRubyObject irToAry(ThreadContext context, IRubyObject value) {
-        if (value instanceof RubyArray) {
-            return value;
-        } else {
-            IRubyObject newValue = TypeConverter.convertToType19(value, context.runtime.getArray(), "to_ary", false);
-            if (newValue.isNil()) {
-                return RubyArray.newArrayLight(context.runtime, value);
-            }
-
-            // must be array by now, or error
-            if (!(newValue instanceof RubyArray)) {
-                throw context.runtime.newTypeError(newValue.getMetaClass() + "#" + "to_ary" + " should return Array");
-            }
-
-            return newValue;
+        if (!(value instanceof RubyArray)) {
+            value = RubyArray.aryToAry(value);
         }
+
+        return value;
     }
 
     public static int irReqdArgMultipleAsgnIndex(int n,  int preArgsCount, int index, int postArgsCount) {

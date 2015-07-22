@@ -1,5 +1,3 @@
-fails(inherited):Basic multiple assignment with a splatted single RHS value does not call #to_ary on an object
-fails(inherited):Basic multiple assignment with a splatted single RHS value calls #to_a even if it's private
 fails(inherited):Multiple assignment with a single RHS value does not call #to_ary if #respond_to? returns false
 fails(inherited):Multiple assignment with a single RHS value raises a TypeError of #to_ary does not return an Array
 fails(inherited):Multiple assignment with a single RHS value raises a TypeError if #to_ary does not return an Array

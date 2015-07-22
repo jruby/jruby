@@ -27,6 +27,8 @@ args << "-Djruby.shell=/bin/sh"
 
 java_flags = []
 rest = []
+
+ARGV.concat ENV["JRUBY_OPTS"].to_s.split(' ')
 ARGV.each { |arg|
   if arg.start_with?("-Xmx") or arg == "-ea"
     java_flags << arg

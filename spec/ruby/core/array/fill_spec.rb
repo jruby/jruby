@@ -225,7 +225,7 @@ describe "Array#fill with (filler, index, length)" do
 
   deviates_on :rubinius do
     it "raises an ArgumentError if the length is not a Fixnum" do
-      lambda { [1, 2].fill(10, 1, bignum_value()) }.should raise_error(ArgumentError)
+      lambda { [1, 2].fill(10, 1, bignum_value) }.should raise_error(ArgumentError)
     end
   end
 end

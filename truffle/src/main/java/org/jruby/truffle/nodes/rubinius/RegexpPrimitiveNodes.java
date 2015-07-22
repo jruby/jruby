@@ -18,19 +18,17 @@ import org.jcodings.Encoding;
 import org.joni.Matcher;
 import org.joni.Regex;
 import org.jruby.truffle.nodes.core.RegexpGuards;
+import org.jruby.truffle.nodes.core.RegexpNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpSupport;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Regexp} class.
- * <p>
- * Also see {@link RubyRegexp}.
 
  */
 public abstract class RegexpPrimitiveNodes {
@@ -43,8 +41,8 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization
-        public boolean fixedEncoding(RubyRegexp regexp) {
-            return regexp.getOptions().isFixed();
+        public boolean fixedEncoding(RubyBasicObject regexp) {
+            return RegexpNodes.getOptions(regexp).isFixed();
         }
 
     }
@@ -58,20 +56,20 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization(guards = {"isRegexpLiteral(regexp)", "isRubyString(pattern)"})
-        public RubyRegexp initializeRegexpLiteral(RubyRegexp regexp, RubyBasicObject pattern, int options) {
+        public RubyBasicObject initializeRegexpLiteral(RubyBasicObject regexp, RubyBasicObject pattern, int options) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().securityError("can't modify literal regexp", this));
         }
 
         @Specialization(guards = {"!isRegexpLiteral(regexp)", "isInitialized(regexp)", "isRubyString(pattern)"})
-        public RubyRegexp initializeAlreadyInitialized(RubyRegexp regexp, RubyBasicObject pattern, int options) {
+        public RubyBasicObject initializeAlreadyInitialized(RubyBasicObject regexp, RubyBasicObject pattern, int options) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("already initialized regexp", this));
         }
 
         @Specialization(guards = {"!isRegexpLiteral(regexp)", "!isInitialized(regexp)", "isRubyString(pattern)"})
-        public RubyRegexp initialize(RubyRegexp regexp, RubyBasicObject pattern, int options) {
-            regexp.initialize(this, StringNodes.getByteList(pattern), options);
+        public RubyBasicObject initialize(RubyBasicObject regexp, RubyBasicObject pattern, int options) {
+            RegexpNodes.initialize(regexp, this, StringNodes.getByteList(pattern), options);
             return regexp;
         }
 
@@ -86,12 +84,12 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization(guards = "isInitialized(regexp)")
-        public int options(RubyRegexp regexp) {
-            return regexp.getOptions().toOptions();
+        public int options(RubyBasicObject regexp) {
+            return RegexpNodes.getOptions(regexp).toOptions();
         }
 
         @Specialization(guards = "!isInitialized(regexp)")
-        public int optionsNotInitialized(RubyRegexp regexp) {
+        public int optionsNotInitialized(RubyBasicObject regexp) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
         }
@@ -106,7 +104,7 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject propagateLastMatch(RubyClass regexpClass) {
+        public RubyBasicObject propagateLastMatch(RubyBasicObject regexpClass) {
             // TODO (nirvdrum 08-Jun-15): This method seems to exist just to fix Rubinius's broken frame-local scoping.  This assertion needs to be verified, however.
             return nil();
         }
@@ -122,13 +120,13 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization(guards = {"!isInitialized(regexp)", "isRubyString(string)"})
-        public Object searchRegionNotInitialized(RubyRegexp regexp, RubyBasicObject string, int start, int end, boolean forward) {
+        public Object searchRegionNotInitialized(RubyBasicObject regexp, RubyBasicObject string, int start, int end, boolean forward) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
         }
 
         @Specialization(guards = {"isRubyString(string)", "!isValidEncoding(string)"})
-        public Object searchRegionInvalidEncoding(RubyRegexp regexp, RubyBasicObject string, int start, int end, boolean forward) {
+        public Object searchRegionInvalidEncoding(RubyBasicObject regexp, RubyBasicObject string, int start, int end, boolean forward) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(
                     String.format("invalid byte sequence in %s", StringNodes.getByteList(string).getEncoding()), this));
@@ -136,21 +134,21 @@ public abstract class RegexpPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)"})
-        public Object searchRegion(RubyRegexp regexp, RubyBasicObject string, int start, int end, boolean forward) {
+        public Object searchRegion(RubyBasicObject regexp, RubyBasicObject string, int start, int end, boolean forward) {
             final ByteList stringBl = StringNodes.getByteList(string);
-            final ByteList bl = regexp.getSource();
-            final Encoding enc = regexp.checkEncoding(StringNodes.getCodeRangeable(string), true);
+            final ByteList bl = RegexpNodes.getSource(regexp);
+            final Encoding enc = RegexpNodes.checkEncoding(regexp, StringNodes.getCodeRangeable(string), true);
             final ByteList preprocessed = RegexpSupport.preprocess(getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
 
-            final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), regexp.getRegex().getOptions(), regexp.checkEncoding(StringNodes.getCodeRangeable(string), true));
+            final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), RegexpNodes.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, StringNodes.getCodeRangeable(string), true));
             final Matcher matcher = r.matcher(stringBl.getUnsafeBytes(), stringBl.begin(), stringBl.begin() + stringBl.realSize());
 
             if (forward) {
                 // Search forward through the string.
-                return regexp.matchCommon(string, false, false, matcher, start + stringBl.begin(), end + stringBl.begin());
+                return RegexpNodes.matchCommon(regexp, string, false, false, matcher, start + stringBl.begin(), end + stringBl.begin());
             } else {
                 // Search backward through the string.
-                return regexp.matchCommon(string, false, false, matcher, end + stringBl.begin(), start + stringBl.begin());
+                return RegexpNodes.matchCommon(regexp, string, false, false, matcher, end + stringBl.begin(), start + stringBl.begin());
             }
         }
 
@@ -164,9 +162,9 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization
-        public Object setLastMatch(RubyClass regexpClass, Object matchData) {
+        public Object setLastMatch(RubyBasicObject regexpClass, Object matchData) {
             RubyBasicObject.setInstanceVariable(
-                    getContext().getThreadManager().getCurrentThread().getThreadLocals(), "$~", matchData);
+                    ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread()), "$~", matchData);
 
             return matchData;
         }
@@ -181,7 +179,7 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject setBlockLastMatch(RubyClass regexpClass) {
+        public RubyBasicObject setBlockLastMatch(RubyBasicObject regexpClass) {
             // TODO CS 7-Mar-15 what does this do?
             return nil();
         }

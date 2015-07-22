@@ -46,21 +46,23 @@ describe "Array#-" do
   it "removes an item identified as equivalent via #hash and #eql?" do
     obj1 = mock('1')
     obj2 = mock('2')
-    obj1.should_receive(:hash).and_return(0)
-    obj2.should_receive(:hash).and_return(0)
-    obj1.should_receive(:eql?).with(obj2).and_return(true)
+    obj1.should_receive(:hash).at_least(1).and_return(0)
+    obj2.should_receive(:hash).at_least(1).and_return(0)
+    obj1.should_receive(:eql?).at_least(1).and_return(true)
 
     ([obj1] - [obj2]).should == []
+    ([obj1, obj1, obj2, obj2] - [obj2]).should == []
   end
 
   it "doesn't remove an item with the same hash but not #eql?" do
     obj1 = mock('1')
     obj2 = mock('2')
-    obj1.should_receive(:hash).and_return(0)
-    obj2.should_receive(:hash).and_return(0)
-    obj1.should_receive(:eql?).with(obj2).and_return(false)
+    obj1.should_receive(:hash).at_least(1).and_return(0)
+    obj2.should_receive(:hash).at_least(1).and_return(0)
+    obj1.should_receive(:eql?).at_least(1).and_return(false)
 
     ([obj1] - [obj2]).should == [obj1]
+    ([obj1, obj1, obj2, obj2] - [obj2]).should == [obj1, obj1]
   end
 
   it "removes an identical item even when its #eql? isn't reflexive" do

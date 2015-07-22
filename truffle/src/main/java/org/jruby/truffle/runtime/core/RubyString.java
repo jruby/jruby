@@ -20,7 +20,7 @@ public class RubyString extends RubyBasicObject {
     public int codeRange = StringSupport.CR_UNKNOWN;
     public StringCodeRangeableWrapper codeRangeableWrapper;
 
-    public RubyString(RubyClass stringClass, ByteList bytes, DynamicObject dynamicObject) {
+    public RubyString(RubyBasicObject stringClass, ByteList bytes, DynamicObject dynamicObject) {
         super(stringClass, dynamicObject);
         this.bytes = bytes;
     }

@@ -14,8 +14,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public class UndefNode extends RubyNode {
 
@@ -32,15 +33,15 @@ public class UndefNode extends RubyNode {
     public void executeVoid(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        final RubyModule moduleObject;
+        final RubyBasicObject moduleObject;
 
         try {
-            moduleObject = module.executeRubyModule(frame);
+            moduleObject = module.executeRubyBasicObject(frame);
         } catch (UnexpectedResultException e) {
             throw new RuntimeException(e);
         }
 
-        moduleObject.undefMethod(this, name);
+        ModuleNodes.getModel(moduleObject).undefMethod(this, name);
     }
 
     @Override
