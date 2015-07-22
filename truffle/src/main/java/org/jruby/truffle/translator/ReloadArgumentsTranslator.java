@@ -9,20 +9,20 @@
  */
 package org.jruby.truffle.translator;
 
-import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.source.Source;
-import com.oracle.truffle.api.source.SourceSection;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.jruby.ast.RestArgNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
-import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
 import org.jruby.truffle.runtime.RubyContext;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 
 /**
  * Produces code to reload arguments from local variables back into the
@@ -34,8 +34,8 @@ public class ReloadArgumentsTranslator extends Translator {
 
     private final BodyTranslator methodBodyTranslator;
 
-    private boolean isSplatted = false;
-    private int originalArgumentIndex = 0;
+    private int index = 0;
+    private boolean hasRestParameter = false;
 
     public ReloadArgumentsTranslator(Node currentNode, RubyContext context, Source source, BodyTranslator methodBodyTranslator) {
         super(currentNode, context, source);
@@ -48,28 +48,23 @@ public class ReloadArgumentsTranslator extends Translator {
 
         final List<RubyNode> sequence = new ArrayList<>();
 
-        if (node.getPreCount() > 0 || node.getOptArgs() != null) {
-            if (node.getPre() != null) {
-                for (org.jruby.ast.Node arg : node.getPre().children()) {
-                    sequence.add(arg.accept(this));
-                    originalArgumentIndex++;
-                }
+        if (node.getPre() != null) {
+            for (org.jruby.ast.Node arg : node.getPre().children()) {
+                sequence.add(arg.accept(this));
+                index++;
             }
+        }
 
-            if (node.getOptArgs() != null) {
-                for (org.jruby.ast.Node arg : node.getOptArgs().children()) {
-                    sequence.add(arg.accept(this));
-                }
+        if (node.getOptArgs() != null) {
+            for (org.jruby.ast.Node arg : node.getOptArgs().children()) {
+                sequence.add(arg.accept(this));
+                index++;
             }
+        }
 
-            if (node.hasRestArg()) {
-                // TODO CS 19-May-15 - documented in failing specs as well
-                //System.err.println("warning: " + node.getPosition());
-            }
-        } else if (node.hasRestArg()) {
-            sequence.add(visitArgumentNode(node.getRestArgNode()));
-
-            isSplatted = true;
+        if (node.hasRestArg()) {
+            hasRestParameter = true;
+            sequence.add(node.getRestArgNode().accept(this));
         }
 
         return SequenceNode.sequenceNoFlatten(context, sourceSection, sequence);
@@ -90,7 +85,13 @@ public class ReloadArgumentsTranslator extends Translator {
     @Override
     public RubyNode visitMultipleAsgnNode(org.jruby.ast.MultipleAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        return new ReadPreArgumentNode(context, sourceSection, originalArgumentIndex, MissingArgumentBehaviour.NIL);
+        return new ReadPreArgumentNode(context, sourceSection, index, MissingArgumentBehaviour.NIL);
+    }
+
+    @Override
+    public RubyNode visitRestArgNode(RestArgNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
+        return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), sourceSection);
     }
 
     @Override
@@ -105,7 +106,7 @@ public class ReloadArgumentsTranslator extends Translator {
     }
 
     public boolean isSplatted() {
-        return isSplatted;
+        return hasRestParameter;
     }
 
 }

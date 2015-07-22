@@ -9,11 +9,14 @@
  */
 package org.jruby.truffle.nodes.supercall;
 
+import java.util.Arrays;
+
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -21,6 +24,7 @@ import org.jruby.truffle.nodes.methods.CallMethodNode;
 import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -30,16 +34,16 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
  */
 public class GeneralSuperReCallNode extends RubyNode {
 
-    private final boolean isSplatted;
+    private final boolean hasRestParameter;
     @Children private final RubyNode[] reloadNodes;
     @Child private RubyNode block;
 
     @Child LookupSuperMethodNode lookupSuperMethodNode;
     @Child CallMethodNode callMethodNode;
 
-    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, boolean isSplatted, RubyNode[] reloadNodes, RubyNode block) {
+    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, boolean hasRestParameter, RubyNode[] reloadNodes, RubyNode block) {
         super(context, sourceSection);
-        this.isSplatted = isSplatted;
+        this.hasRestParameter = hasRestParameter;
         this.reloadNodes = reloadNodes;
         this.block = block;
 
@@ -62,11 +66,15 @@ public class GeneralSuperReCallNode extends RubyNode {
             superArguments[n] = reloadNodes[n].execute(frame);
         }
 
-        if (isSplatted) {
+        if (hasRestParameter) {
             CompilerDirectives.transferToInterpreter();
-            assert superArguments.length == 1;
-            assert RubyGuards.isRubyArray(superArguments[0]);
-            superArguments = ArrayNodes.slowToArray(((RubyBasicObject) superArguments[0]));
+            // TODO (eregon, 22 July 2015): Assumes rest arg is last, not true if post or keyword args.
+            final Object restArg = superArguments[superArguments.length - 1];
+            assert RubyGuards.isRubyArray(restArg);
+            final Object[] restArgs = ArrayNodes.slowToArray((RubyBasicObject) restArg);
+            final int restArgIndex = reloadNodes.length - 1;
+            superArguments = Arrays.copyOf(superArguments, restArgIndex + restArgs.length);
+            ArrayUtils.arraycopy(restArgs, 0, superArguments, restArgIndex, restArgs.length);
         }
 
         // Execute or inherit the block
