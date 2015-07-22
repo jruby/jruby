@@ -1690,7 +1690,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         if (canonicalize) {
             try {
-                realPath = new File(realPath).getCanonicalPath();
+                realPath = JRubyFile.normalizeSeps(new File(realPath).getCanonicalPath());
             } catch (IOException ioe) {
                 // Earlier canonicalization will have to do.
             }
