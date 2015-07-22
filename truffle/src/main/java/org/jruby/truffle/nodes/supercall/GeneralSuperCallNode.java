@@ -14,7 +14,10 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.methods.CallMethodNode;
 import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
@@ -34,6 +37,7 @@ public class GeneralSuperCallNode extends RubyNode {
     @Child private RubyNode block;
     @Children private final RubyNode[] arguments;
 
+    @Child ProcOrNullNode procOrNullNode;
     @Child LookupSuperMethodNode lookupSuperMethodNode;
     @Child CallMethodNode callMethodNode;
 
@@ -45,6 +49,7 @@ public class GeneralSuperCallNode extends RubyNode {
         this.arguments = arguments;
         this.isSplatted = isSplatted;
 
+        procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
         lookupSuperMethodNode = LookupSuperMethodNodeGen.create(context, sourceSection, null);
         callMethodNode = CallMethodNodeGen.create(context, sourceSection, null, new RubyNode[] {});
     }
@@ -65,12 +70,7 @@ public class GeneralSuperCallNode extends RubyNode {
         // Execute the block
         final RubyBasicObject blockObject;
         if (block != null) {
-            final Object blockTempObject = block.execute(frame);
-            if (blockTempObject == nil()) {
-                blockObject = null;
-            } else {
-                blockObject = (RubyBasicObject) blockTempObject;
-            }
+            blockObject = procOrNullNode.executeProcOrNull(block.execute(frame));
         } else {
             blockObject = null;
         }
