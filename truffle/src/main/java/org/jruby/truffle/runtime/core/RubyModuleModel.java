@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -147,7 +148,7 @@ public class RubyModuleModel implements ModuleChain {
         }
 
         if (isClass()) {
-            ((RubyClass) rubyModuleObject).unsafeSetAllocator(((RubyClass) from).getAllocator());
+            ClassNodes.unsafeSetAllocator(((RubyClass) rubyModuleObject), ClassNodes.getAllocator(((RubyClass) from)));
             // isSingleton is false as we cannot copy a singleton class.
             // and therefore attached is null.
         }
@@ -635,7 +636,7 @@ public class RubyModuleModel implements ModuleChain {
         assert RubyGuards.isRubyClass(superclass);
         unsafeSetSuperclass(superclass);
         ensureSingletonConsistency();
-        ((RubyClass) rubyModuleObject).unsafeSetAllocator(((RubyClass) superclass).getAllocator());
+        ClassNodes.unsafeSetAllocator(((RubyClass) rubyModuleObject), ClassNodes.getAllocator(((RubyClass) superclass)));
     }
 
     /**

@@ -35,7 +35,7 @@ public abstract class FiberNodes {
 
     public static RubyFiber.FiberFields getFields(RubyBasicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
-        return ((RubyFiber) fiber).fields;
+        return getFields(((RubyFiber) fiber));
     }
 
     public static RubyBasicObject newRootFiber(RubyBasicObject thread, FiberManager fiberManager, ThreadManager threadManager) {
@@ -139,7 +139,7 @@ public abstract class FiberNodes {
             throw new RaiseException(((FiberExceptionMessage) message).getException());
         } else if (message instanceof FiberResumeMessage) {
             final FiberResumeMessage resumeMessage = (FiberResumeMessage) message;
-            assert fiber.getContext().getThreadManager().getCurrentThread() == ((RubyFiber) resumeMessage.getSendingFiber()).fields.rubyThread;
+            assert fiber.getContext().getThreadManager().getCurrentThread() == getFields(((RubyFiber) resumeMessage.getSendingFiber())).rubyThread;
             if (!(resumeMessage.isYield())) {
                 getFields(fiber).lastResumedByFiber = resumeMessage.getSendingFiber();
             }
@@ -193,6 +193,10 @@ public abstract class FiberNodes {
         return new RubyFiber(parent, fiberManager, threadManager, rubyClass, name, isRootFiber);
     }
 
+    public static RubyFiber.FiberFields getFields(RubyFiber fiber) {
+        return fiber.fields;
+    }
+
     public interface FiberMessage {
     }
 
@@ -223,7 +227,7 @@ public abstract class FiberNodes {
             }
 
             RubyBasicObject currentThread = getContext().getThreadManager().getCurrentThread();
-            if (((RubyFiber) fiber).fields.rubyThread != currentThread) {
+            if (getFields(((RubyFiber) fiber)).rubyThread != currentThread) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().fiberError("fiber called across threads", this));
             }
@@ -283,9 +287,9 @@ public abstract class FiberNodes {
         public Object yield(VirtualFrame frame, Object[] args) {
             final RubyBasicObject currentThread = getContext().getThreadManager().getCurrentThread();
             final RubyBasicObject yieldingFiber = ThreadNodes.getFiberManager(currentThread).getCurrentFiber();
-            final RubyBasicObject fiberYieldedTo = ((RubyFiber) yieldingFiber).fields.lastResumedByFiber;
+            final RubyBasicObject fiberYieldedTo = getFields(((RubyFiber) yieldingFiber)).lastResumedByFiber;
 
-            if (((RubyFiber) yieldingFiber).fields.isRootFiber || fiberYieldedTo == null) {
+            if (getFields(((RubyFiber) yieldingFiber)).isRootFiber || fiberYieldedTo == null) {
                 throw new RaiseException(getContext().getCoreLibrary().yieldFromRootFiberError(this));
             }
 

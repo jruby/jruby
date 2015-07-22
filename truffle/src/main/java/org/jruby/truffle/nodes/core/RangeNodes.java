@@ -32,6 +32,42 @@ import org.jruby.truffle.runtime.core.RubyObjectRange;
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
 
+    public static boolean isExcludeEnd(RubyIntegerFixnumRange range) {
+        return range.excludeEnd;
+    }
+
+    public static int getBegin(RubyIntegerFixnumRange range) {
+        return range.begin;
+    }
+
+    public static int getEnd(RubyIntegerFixnumRange range) {
+        return range.end;
+    }
+
+    public static boolean isExcludeEnd(RubyLongFixnumRange range) {
+        return range.excludeEnd;
+    }
+
+    public static long getBegin(RubyLongFixnumRange range) {
+        return range.begin;
+    }
+
+    public static long getEnd(RubyLongFixnumRange range) {
+        return range.end;
+    }
+
+    public static boolean isExcludeEnd(RubyObjectRange range) {
+        return range.excludeEnd;
+    }
+
+    public static Object getBegin(RubyObjectRange range) {
+        return range.begin;
+    }
+
+    public static Object getEnd(RubyObjectRange range) {
+        return range.end;
+    }
+
     @CoreMethod(names = {"collect", "map"}, needsBlock = true, lowerFixnumSelf = true)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
 
@@ -44,12 +80,12 @@ public abstract class RangeNodes {
 
         @Specialization(guards = {"isIntegerFixnumRange(range)", "isRubyProc(block)"})
         public RubyBasicObject collect(VirtualFrame frame, RubyBasicObject range, RubyBasicObject block) {
-            final int begin = ((RubyIntegerFixnumRange) range).begin;
+            final int begin = getBegin(((RubyIntegerFixnumRange) range));
             int result;
-            if (((RubyIntegerFixnumRange) range).excludeEnd) {
-                result = ((RubyIntegerFixnumRange) range).end;
+            if (isExcludeEnd(((RubyIntegerFixnumRange) range))) {
+                result = getEnd(((RubyIntegerFixnumRange) range));
             } else {
-                result = ((RubyIntegerFixnumRange) range).end + 1;
+                result = getEnd(((RubyIntegerFixnumRange) range)) + 1;
             }
             final int exclusiveEnd = result;
             final int length = exclusiveEnd - begin;
@@ -87,17 +123,17 @@ public abstract class RangeNodes {
         @Specialization(guards = {"isIntegerFixnumRange(range)", "isRubyProc(block)"})
         public Object eachInt(VirtualFrame frame, RubyBasicObject range, RubyBasicObject block) {
             int result;
-            if (((RubyIntegerFixnumRange) range).excludeEnd) {
-                result = ((RubyIntegerFixnumRange) range).end;
+            if (isExcludeEnd(((RubyIntegerFixnumRange) range))) {
+                result = getEnd(((RubyIntegerFixnumRange) range));
             } else {
-                result = ((RubyIntegerFixnumRange) range).end + 1;
+                result = getEnd(((RubyIntegerFixnumRange) range)) + 1;
             }
             final int exclusiveEnd = result;
 
             int count = 0;
 
             try {
-                for (int n = ((RubyIntegerFixnumRange) range).begin; n < exclusiveEnd; n++) {
+                for (int n = getBegin(((RubyIntegerFixnumRange) range)); n < exclusiveEnd; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -116,17 +152,17 @@ public abstract class RangeNodes {
         @Specialization(guards = {"isLongFixnumRange(range)", "isRubyProc(block)"})
         public Object eachLong(VirtualFrame frame, RubyBasicObject range, RubyBasicObject block) {
             long result;
-            if (((RubyLongFixnumRange) range).excludeEnd) {
-                result = ((RubyLongFixnumRange) range).end;
+            if (isExcludeEnd(((RubyLongFixnumRange) range))) {
+                result = getEnd(((RubyLongFixnumRange) range));
             } else {
-                result = ((RubyLongFixnumRange) range).end + 1;
+                result = getEnd(((RubyLongFixnumRange) range)) + 1;
             }
             final long exclusiveEnd = result;
 
             int count = 0;
 
             try {
-                for (long n = ((RubyLongFixnumRange) range).begin; n < exclusiveEnd; n++) {
+                for (long n = getBegin(((RubyLongFixnumRange) range)); n < exclusiveEnd; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -168,17 +204,17 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public boolean excludeEndInt(RubyBasicObject range) {
-            return ((RubyIntegerFixnumRange) range).excludeEnd;
+            return isExcludeEnd(((RubyIntegerFixnumRange) range));
         }
 
         @Specialization(guards = "isLongFixnumRange(range)")
         public boolean excludeEndLong(RubyBasicObject range) {
-            return ((RubyLongFixnumRange) range).excludeEnd;
+            return isExcludeEnd(((RubyLongFixnumRange) range));
         }
 
         @Specialization(guards = "isObjectRange(range)")
         public boolean excludeEndObject(RubyBasicObject range) {
-            return ((RubyObjectRange) range).excludeEnd;
+            return isExcludeEnd(((RubyObjectRange) range));
         }
 
     }
@@ -192,17 +228,17 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public int eachInt(RubyBasicObject range) {
-            return ((RubyIntegerFixnumRange) range).begin;
+            return getBegin(((RubyIntegerFixnumRange) range));
         }
 
         @Specialization(guards = "isLongFixnumRange(range)")
         public long eachLong(RubyBasicObject range) {
-            return ((RubyLongFixnumRange) range).begin;
+            return getBegin(((RubyLongFixnumRange) range));
         }
 
         @Specialization(guards = "isObjectRange(range)")
         public Object eachObject(RubyBasicObject range) {
-            return ((RubyObjectRange) range).begin;
+            return getBegin(((RubyObjectRange) range));
         }
 
     }
@@ -238,17 +274,17 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public int lastInt(RubyBasicObject range) {
-            return ((RubyIntegerFixnumRange) range).end;
+            return getEnd(((RubyIntegerFixnumRange) range));
         }
 
         @Specialization(guards = "isLongFixnumRange(range)")
         public long lastLong(RubyBasicObject range) {
-            return ((RubyLongFixnumRange) range).end;
+            return getEnd(((RubyLongFixnumRange) range));
         }
 
         @Specialization(guards = "isObjectRange(range)")
         public Object lastObject(RubyBasicObject range) {
-            return ((RubyObjectRange) range).end;
+            return getEnd(((RubyObjectRange) range));
         }
 
     }
@@ -266,12 +302,12 @@ public abstract class RangeNodes {
 
             try {
                 int result;
-                if (((RubyIntegerFixnumRange) range).excludeEnd) {
-                    result = ((RubyIntegerFixnumRange) range).end;
+                if (isExcludeEnd(((RubyIntegerFixnumRange) range))) {
+                    result = getEnd(((RubyIntegerFixnumRange) range));
                 } else {
-                    result = ((RubyIntegerFixnumRange) range).end + 1;
+                    result = getEnd(((RubyIntegerFixnumRange) range)) + 1;
                 }
-                for (int n = ((RubyIntegerFixnumRange) range).begin; n < result; n += step) {
+                for (int n = getBegin(((RubyIntegerFixnumRange) range)); n < result; n += step) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -293,12 +329,12 @@ public abstract class RangeNodes {
 
             try {
                 long result;
-                if (((RubyLongFixnumRange) range).excludeEnd) {
-                    result = ((RubyLongFixnumRange) range).end;
+                if (isExcludeEnd(((RubyLongFixnumRange) range))) {
+                    result = getEnd(((RubyLongFixnumRange) range));
                 } else {
-                    result = ((RubyLongFixnumRange) range).end + 1;
+                    result = getEnd(((RubyLongFixnumRange) range)) + 1;
                 }
-                for (long n = ((RubyLongFixnumRange) range).begin; n < result; n += step) {
+                for (long n = getBegin(((RubyLongFixnumRange) range)); n < result; n += step) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -385,12 +421,12 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public RubyBasicObject toA(RubyBasicObject range) {
-            final int begin = ((RubyIntegerFixnumRange) range).begin;
+            final int begin = getBegin(((RubyIntegerFixnumRange) range));
             int result;
-            if (((RubyIntegerFixnumRange) range).excludeEnd) {
-                result = ((RubyIntegerFixnumRange) range).end;
+            if (isExcludeEnd(((RubyIntegerFixnumRange) range))) {
+                result = getEnd(((RubyIntegerFixnumRange) range));
             } else {
-                result = ((RubyIntegerFixnumRange) range).end + 1;
+                result = getEnd(((RubyIntegerFixnumRange) range)) + 1;
             }
             final int length = result - begin;
 

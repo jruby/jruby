@@ -10,8 +10,8 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
@@ -21,7 +21,7 @@ public class RubyClass extends RubyModule {
 
     // TODO(CS): is this compilation final needed? Is it a problem for correctness?
     @CompilationFinal
-    private Allocator allocator;
+    public Allocator allocator;
 
     public RubyClass(RubyContext context, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, Allocator allocator) {
         this(context, superclass.getLogicalClass(), lexicalParent, superclass, name, false, null, allocator);
@@ -36,23 +36,11 @@ public class RubyClass extends RubyModule {
 
         assert isSingleton || attached == null;
 
-        this.unsafeSetAllocator(allocator);
+        ClassNodes.unsafeSetAllocator(this, allocator);
 
         if (superclass != null) {
             ModuleNodes.getModel(this).unsafeSetSuperclass(superclass);
         }
-    }
-
-    public RubyBasicObject allocate(Node currentNode) {
-        return getAllocator().allocate(getContext(), this, currentNode);
-    }
-
-    public Allocator getAllocator() {
-        return allocator;
-    }
-
-    public void unsafeSetAllocator(Allocator allocator) {
-        this.allocator = allocator;
     }
 
 }

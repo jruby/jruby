@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -62,7 +63,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         RubyBasicObject superClassObject = getRubySuperClass(frame, context);
 
         if (constant == null) {
-            definingClass = new RubyClass(context, lexicalParent, superClassObject, name, ((RubyClass) superClassObject).getAllocator());
+            definingClass = new RubyClass(context, lexicalParent, superClassObject, name, ClassNodes.getAllocator(((RubyClass) superClassObject)));
             callInherited(frame, superClassObject, definingClass);
         } else {
             if (RubyGuards.isRubyClass(constant.getValue())) {

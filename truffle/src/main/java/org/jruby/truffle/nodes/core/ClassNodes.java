@@ -53,6 +53,18 @@ public abstract class ClassNodes {
         return ModuleNodes.getModel(new RubyClass(context, superclass.getLogicalClass(), null, superclass, name, true, attached, null)).ensureSingletonConsistency();
     }
 
+    public static RubyBasicObject allocate(RubyClass rubyClass, Node currentNode) {
+        return getAllocator(rubyClass).allocate(rubyClass.getContext(), rubyClass, currentNode);
+    }
+
+    public static Allocator getAllocator(RubyClass rubyClass) {
+        return rubyClass.allocator;
+    }
+
+    public static void unsafeSetAllocator(RubyClass rubyClass, Allocator allocator) {
+        rubyClass.allocator = allocator;
+    }
+
     @CoreMethod(names = "allocate")
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
@@ -68,7 +80,7 @@ public abstract class ClassNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
             }
-            return ((RubyClass) rubyClass).allocate(this);
+            return ClassNodes.allocate(((RubyClass) rubyClass), this);
         }
 
     }

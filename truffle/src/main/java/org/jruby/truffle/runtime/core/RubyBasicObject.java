@@ -173,18 +173,18 @@ public class RubyBasicObject implements TruffleObject {
         } else if (RubyGuards.isRubyProc(this)) {
             getContext().getObjectSpaceManager().visitFrame(ProcNodes.getDeclarationFrame(this), visitor);
         } else if (RubyGuards.isRubyMatchData(this)) {
-            for (Object object : ((RubyMatchData) this).fields.values) {
+            for (Object object : MatchDataNodes.getFields(((RubyMatchData) this)).values) {
                 if (object instanceof RubyBasicObject) {
                     ((RubyBasicObject) object).visitObjectGraph(visitor);
                 }
             }
         } else if (RubyGuards.isObjectRange(this)) {
-            if (((RubyObjectRange) this).begin instanceof RubyBasicObject) {
-                ((RubyBasicObject) ((RubyObjectRange) this).begin).visitObjectGraph(visitor);
+            if (RangeNodes.getBegin(((RubyObjectRange) this)) instanceof RubyBasicObject) {
+                ((RubyBasicObject) RangeNodes.getBegin(((RubyObjectRange) this))).visitObjectGraph(visitor);
             }
 
-            if (((RubyObjectRange) this).end instanceof RubyBasicObject) {
-                ((RubyBasicObject) ((RubyObjectRange) this).end).visitObjectGraph(visitor);
+            if (RangeNodes.getEnd(((RubyObjectRange) this)) instanceof RubyBasicObject) {
+                ((RubyBasicObject) RangeNodes.getEnd(((RubyObjectRange) this))).visitObjectGraph(visitor);
             }
         }
     }

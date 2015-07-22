@@ -390,7 +390,7 @@ public abstract class KernelNodes {
         public RubyBasicObject copy(RubyBasicObject self) {
             // This method is pretty crappy for compilation - it should improve with the OM
 
-            final RubyBasicObject newObject = ((RubyClass) self.getLogicalClass()).allocate(this);
+            final RubyBasicObject newObject = ClassNodes.allocate(((RubyClass) self.getLogicalClass()), this);
 
             RubyBasicObject.setInstanceVariables(newObject, RubyBasicObject.getInstanceVariables(self));
 

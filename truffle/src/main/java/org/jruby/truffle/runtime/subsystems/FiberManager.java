@@ -57,7 +57,7 @@ public class FiberManager {
 
     public void shutdown() {
         for (RubyBasicObject fiber : runningFibers) {
-            if (!((RubyFiber) fiber).fields.isRootFiber) {
+            if (!FiberNodes.getFields(((RubyFiber) fiber)).isRootFiber) {
                 FiberNodes.shutdown(fiber);
             }
         }

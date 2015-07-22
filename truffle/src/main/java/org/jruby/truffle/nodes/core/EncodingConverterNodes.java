@@ -37,7 +37,7 @@ import org.jruby.util.io.EncodingUtils;
 public abstract class EncodingConverterNodes {
 
     public static EConv getEConv(RubyBasicObject encodingConverter) {
-        return ((RubyEncodingConverter) encodingConverter).econv;
+        return getEconv(((RubyEncodingConverter) encodingConverter));
     }
 
     public static void setEConv(RubyBasicObject encodingConverter, EConv econv) {
@@ -46,6 +46,10 @@ public abstract class EncodingConverterNodes {
 
     public static RubyBasicObject createEncodingConverter(RubyBasicObject rubyClass, EConv econv) {
         return new RubyEncodingConverter(rubyClass, econv);
+    }
+
+    public static EConv getEconv(RubyEncodingConverter encodingConverter) {
+        return encodingConverter.econv;
     }
 
     @RubiniusOnly

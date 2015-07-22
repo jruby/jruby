@@ -205,7 +205,7 @@ public class CoreLibrary {
 
         classClass = ClassNodes.createClassClass(context, new ClassNodes.ClassAllocator());
         basicObjectClass = ClassNodes.createBootClass(classClass, null, "BasicObject", new RubyBasicObject.BasicObjectAllocator());
-        objectClass = ClassNodes.createBootClass(classClass, basicObjectClass, "Object", ((RubyClass) basicObjectClass).getAllocator());
+        objectClass = ClassNodes.createBootClass(classClass, basicObjectClass, "Object", ClassNodes.getAllocator(((RubyClass) basicObjectClass)));
         moduleClass = ClassNodes.createBootClass(classClass, objectClass, "Module", new ModuleNodes.ModuleAllocator());
 
         // Close the cycles
@@ -547,7 +547,7 @@ public class CoreLibrary {
     }
 
     private RubyBasicObject defineClass(String name) {
-        return defineClass(objectClass, name, ((RubyClass) objectClass).getAllocator());
+        return defineClass(objectClass, name, ClassNodes.getAllocator(((RubyClass) objectClass)));
     }
 
     private RubyBasicObject defineClass(String name, Allocator allocator) {
@@ -556,7 +556,7 @@ public class CoreLibrary {
 
     private RubyBasicObject defineClass(RubyBasicObject superclass, String name) {
         assert RubyGuards.isRubyClass(superclass);
-        return new RubyClass(context, objectClass, superclass, name, ((RubyClass) superclass).getAllocator());
+        return new RubyClass(context, objectClass, superclass, name, ClassNodes.getAllocator(((RubyClass) superclass)));
     }
 
     private RubyBasicObject defineClass(RubyBasicObject superclass, String name, Allocator allocator) {
@@ -567,7 +567,7 @@ public class CoreLibrary {
     private RubyBasicObject defineClass(RubyBasicObject lexicalParent, RubyBasicObject superclass, String name) {
         assert RubyGuards.isRubyModule(lexicalParent);
         assert RubyGuards.isRubyClass(superclass);
-        return new RubyClass(context, lexicalParent, superclass, name, ((RubyClass) superclass).getAllocator());
+        return new RubyClass(context, lexicalParent, superclass, name, ClassNodes.getAllocator(((RubyClass) superclass)));
     }
 
     private RubyBasicObject defineClass(RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, Allocator allocator) {
@@ -1149,9 +1149,9 @@ public class CoreLibrary {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isIntegerFixnumRange(range);
         return rangeError(String.format("%d..%s%d out of range",
-                ((RubyIntegerFixnumRange) range).begin,
-                ((RubyIntegerFixnumRange) range).excludeEnd ? "." : "",
-                ((RubyIntegerFixnumRange) range).end), currentNode);
+                RangeNodes.getBegin(((RubyIntegerFixnumRange) range)),
+                RangeNodes.isExcludeEnd(((RubyIntegerFixnumRange) range)) ? "." : "",
+                RangeNodes.getEnd(((RubyIntegerFixnumRange) range))), currentNode);
     }
 
     public RubyBasicObject rangeError(String message, Node currentNode) {
